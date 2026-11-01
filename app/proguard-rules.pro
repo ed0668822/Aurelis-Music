@@ -26,11 +26,26 @@
 -keep class com.music.aurelis.data.lyrics.** { *; }
 -keep class com.music.aurelis.data.model.** { *; }
 
-# 5. Conservar librerías de terceros que usan reflexión
+# 5. Librerías de terceros que usan reflexión
 -keep class org.jsoup.** { *; }
 -keep class okhttp3.** { *; }
 -keep class androidx.media3.** { *; }
 -keep class com.microsoft.onnxruntime.** { *; }
+
+# 5b. Coil 3 (usa ServiceLoader y reflexión para ImageLoader)
+-keep class coil3.** { *; }
+-keep class coil3.network.** { *; }
+-keep class coil3.request.** { *; }
+
+# 5c. Haze (Compose + RuntimeShader)
+-keep class dev.chrisbanes.haze.** { *; }
+
+# 5d. NextLib (Media3 extension vendoreada)
+-keep class io.github.anilbeesetti.nextlib.** { *; }
+
+# 5e. Guava (reflexión en algunas clases internas)
+-keep class com.google.common.** { *; }
+-dontwarn com.google.common.**
 
 # 6. Evitar que R8 elimine metadatos de depuración
 -keepattributes SourceFile,LineNumberTable
@@ -39,5 +54,6 @@
 # 7. Reglas específicas para las librerías nativas y FFmpeg vendorizado
 -keep class androidx.media3.decoder.ffmpeg.** { *; }
 
-# 8. Silenciar warnings de Jsoup 1.18+ (usa anotaciones JSpecify en compileOnly)
+# 8. Silenciar warnings de Jsoup 1.18+ y JSpecify
 -dontwarn org.jspecify.annotations.**
+-dontwarn javax.annotation.**
