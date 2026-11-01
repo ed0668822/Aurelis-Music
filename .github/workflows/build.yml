@@ -8,6 +8,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -24,8 +27,9 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.11.1"
+
+      - name: Ensure gradlew is executable
+        run: chmod +x ./gradlew
 
       - name: Decode keystore (optional)
         env:
@@ -38,6 +42,15 @@ jobs:
             echo "::warning::KEYSTORE_BASE64 no configurado. Se firmará con la clave debug."
           fi
 
+      - name: Run unit tests (if any)
+        env:
+          STORE_FILE:        "aurelis-release.jks"
+          STORE_PASSWORD:    ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
       - name: Build Release APK
         env:
           STORE_FILE:        "aurelis-release.jks"
@@ -45,17 +58,35 @@ jobs:
           KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
-      - name: Verify APK exists
+      - name: Verify APK exists and is not empty
         run: |
-          APK=$(ls app/build/outputs/apk/release/*.apk | head -n1)
-          echo "APK: $APK"
-          ls -la app/build/outputs/apk/release/
+          set -e
+          APK_DIR="app/build/outputs/apk/release"
+          if [ ! -d "$APK_DIR" ]; then
+            echo "::error::Directorio de salida no existe: $APK_DIR"
+            ls -la app/build/outputs/ || true
+            exit 1
+          fi
+          APK=$(ls "$APK_DIR"/*.apk 2>/dev/null | head -n1 || true)
+          if [ -z "$APK" ]; then
+            echo "::error::No se generó ningún APK en $APK_DIR"
+            ls -la "$APK_DIR" || true
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$APK")
+          echo "APK: $APK ($SIZE bytes)"
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "::error::El APK pesa menos de 1 MB ($SIZE bytes). Algo falló."
+            exit 1
+          fi
+          ls -la "$APK_DIR"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: aurelis-release
+          name: aurelis-release-${{ github.run_number }}
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+          retention-days: 14
