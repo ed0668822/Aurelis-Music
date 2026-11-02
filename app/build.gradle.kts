@@ -133,6 +133,11 @@ android {
         }
     }
 
+    // AÑADIDO: Genera un reporte de Lint en formato Checkstyle para que Reviewdog pueda leerlo
+    lint {
+        checkstyleReport = file("build/reports/lint-results-checkstyle.xml")
+    }
+
     buildTypes {
         debug {
             signingConfigs.findByName("release")?.let { signingConfig = it }
