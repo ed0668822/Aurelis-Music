@@ -134,10 +134,9 @@ android {
     }
 
     lint {
-        checkstyleReport = file("build/reports/lint-results-checkstyle.xml")
+        checkstyleOutput = file("build/reports/lint-results-checkstyle.xml")
     }
 
-    // AÑADIDO: Cambia el nombre del archivo APK a "Aurelis Music-vX.X.X.apk"
     applicationVariants.all {
         val variant = this
         outputs.all {
