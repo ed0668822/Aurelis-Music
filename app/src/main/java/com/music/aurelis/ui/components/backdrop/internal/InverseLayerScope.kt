@@ -3,9 +3,7 @@ package com.music.aurelis.ui.components.backdrop.internal
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.DefaultCameraDistance
 import androidx.compose.ui.graphics.DefaultShadowColor
@@ -43,8 +41,6 @@ internal class InverseLayerScope : GraphicsLayerScope {
     override var shape: Shape = RectangleShape
     override var clip: Boolean = false
     override var renderEffect: RenderEffect? = null
-    override var blendMode: BlendMode = BlendMode.SrcOver
-    override var colorFilter: ColorFilter? = null
     override var compositingStrategy: CompositingStrategy = CompositingStrategy.Auto
 
     private var matrix: Matrix? = null
@@ -87,8 +83,6 @@ internal class InverseLayerScope : GraphicsLayerScope {
         shape = RectangleShape
         clip = false
         renderEffect = null
-        blendMode = BlendMode.SrcOver
-        colorFilter = null
         compositingStrategy = CompositingStrategy.Auto
 
         matrix = null
