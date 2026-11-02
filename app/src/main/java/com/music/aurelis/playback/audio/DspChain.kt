@@ -59,6 +59,7 @@ class DspChain(
         loudness.process(block)
     }
 
+    @Suppress("DEPRECATION")
     override fun flush() {
         spatial.flush()
         equalizer.flush()

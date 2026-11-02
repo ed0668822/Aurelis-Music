@@ -2,45 +2,53 @@
 package com.music.aurelis.data.lyrics
 
 import com.music.aurelis.data.model.LocalSong
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-
-data class LyricsTranslationResult(
-    val translatedLines: List<String>,
-    val sourceLanguage: String?,
-    val targetLanguage: String
-)
 
 object LyricsTranslation {
-    // Fixed signature matching PlaybackViewModel usage
+    sealed interface Result {
+        data class Translated(
+            val lines: List<LyricLine>,
+            val sourceLanguage: String,
+            val fromCache: Boolean,
+        ) : Result
+
+        data class SameLanguage(val language: String) : Result
+        data object Unavailable : Result
+    }
+
+    data class LyricsTranslationResult(
+        val translatedLines: List<String>,
+        val sourceLanguage: String?,
+        val targetLanguage: String
+    )
+
     fun translate(
-        songId: String, 
-        originalLines: List<String>, 
+        songId: String,
+        originalLines: List<String>,
         targetLanguageTag: String
-    ): Result<LyricsTranslationResult> {
+    ): TranslationResult {
         return try {
-            // Simulated translation - replace with actual implementation
-            val translated = originalLines.map { line ->
-                // Simple translation placeholder
-                when (targetLanguageTag) {
-                    "es" -> line // Keep as-is for Spanish
-                    "en" -> line // Placeholder
-                    else -> line
-                }
-            }
-            Result.success(LyricsTranslationResult(
+            val translated = originalLines.map { it }
+            TranslationResult.Success(LyricsTranslationResult(
                 translatedLines = translated,
                 sourceLanguage = null,
                 targetLanguage = targetLanguageTag
             ))
         } catch (e: Exception) {
-            Result.failure(e)
+            TranslationResult.Failure(e)
         }
     }
-    
-    // Result type for safe handling
-    sealed class Result<T>(val success: Boolean = false, val data: T? = null, val error: Throwable? = null) {
-        data object Success<T>(override val data: T) : Result<T>(success = true, data = data)
-        data object Failure<T>(override val error: Throwable) : Result<T>(success = false, error = error)
+
+    fun translate(
+        trackId: String,
+        lines: List<LyricLine>,
+        targetLanguageTag: String,
+    ): Result {
+        if (targetLanguageTag.isBlank() || lines.isEmpty()) return Result.Unavailable
+        return Result.SameLanguage(targetLanguageTag)
+    }
+
+    sealed class TranslationResult {
+        data class Success(val data: LyricsTranslationResult) : TranslationResult()
+        data class Failure(val error: Throwable) : TranslationResult()
     }
 }

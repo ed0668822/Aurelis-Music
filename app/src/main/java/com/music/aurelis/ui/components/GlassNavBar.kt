@@ -15,10 +15,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun GlassNavBar(
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(16.dp)
             .height(64.dp)

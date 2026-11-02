@@ -18,7 +18,8 @@ object Megalobiz {
         val lrc = raw.replace(Regex("""(?i)<br\s*/?>"""), "\n")
             .replace(Regex("""<[^>]+>"""), "")
             .let(EnhancedLrc::decodeEntities)
-        LrcLib.parseLrc(lrc).takeIf { lines -> lines.any { it.text.isNotBlank() } }
+        val lines = LrcLib.parseLrc(lrc)
+        if (lines.any { it.text.isNotBlank() }) lines else null
     }
 
     private val LRC_LINK = Regex("""href=[\"'](/lrc/maker/download/[^\"']+)[\"']""", RegexOption.IGNORE_CASE)

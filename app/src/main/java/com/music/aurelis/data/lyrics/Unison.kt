@@ -38,7 +38,13 @@ object Unison {
         val lines = when {
             data.format.equals(TTML, ignoreCase = true) -> TtmlLyrics.parse(text)
             data.syncType.equals(PLAIN, ignoreCase = true) -> plain(text)
-            else -> EnhancedLrc.parse(text).takeIf { it.isNotEmpty() } ?: LrcLib.parseLrc(text)
+            else -> {
+                val enhanced = EnhancedLrc.parse(text)
+                if (enhanced.isNotEmpty()) enhanced else {
+                    val lrc = LrcLib.parseLrc(text)
+                    if (lrc.isNotEmpty()) lrc else emptyList()
+                }
+            }
         }
         return lines.takeIf { it.isNotEmpty() }
     }

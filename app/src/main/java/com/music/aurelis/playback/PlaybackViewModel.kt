@@ -165,7 +165,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                         current.copy(lyrics = now.copy(translation = TranslationState.None))
                     }
                 }
-                LyricsTranslation.Result.Unavailable -> {
+                is LyricsTranslation.Result.Unavailable -> {
                     _state.update { current ->
                         val now = current.lyrics as? LyricsState.Loaded ?: return@update current
                         current.copy(lyrics = now.copy(translation = TranslationState.Failed))

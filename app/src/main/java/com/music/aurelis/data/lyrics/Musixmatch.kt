@@ -63,7 +63,8 @@ object Musixmatch {
         val subtitle = if (track.hasSubtitles != 0) fetchSubtitle(track.trackId) else null
         val lrc = subtitle?.let(::subtitleToLrc)?.takeIf { it.isNotBlank() }
             ?: return@withContext null
-        LrcLib.parseLrc(lrc).takeIf { it.isNotEmpty() }
+        val lines = LrcLib.parseLrc(lrc)
+        if (lines.isNotEmpty()) lines else null
     }
 
     private suspend fun bestTrack(title: String, artist: String, seconds: Int): Track? {

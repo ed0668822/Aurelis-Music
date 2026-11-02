@@ -153,12 +153,16 @@ private fun AurelisApp() {
                     recentlyPlayed = emptyList(),
                     mostPlayed = emptyList(),
                     recentlyAdded = librarySuccess?.recentlyAdded ?: emptyList(),
+                    albums = librarySuccess?.albums ?: emptyList(),
+                    artists = librarySuccess?.artists ?: emptyList(),
                     listState = listState,
                     onSongClick = { song: LocalSong ->
                         val idx = allSongs.indexOfFirst { it.id == song.id }
                         if (idx >= 0) playbackViewModel.playSongs(allSongs, idx)
                     },
                     onSongLongPress = { },
+                    onAlbumClick = { },
+                    onArtistClick = { },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
                     contentPadding = PaddingValues(0.dp),
@@ -232,13 +236,13 @@ LibraryLink("Ajustes", AurelisIcons.Home) { },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (playbackState.currentSong != null) {
+                    val song = playbackState.currentSong
                     MiniPlayer(
-                        state = playbackState,
-                        hazeState = hazeState,
-                        onPlayPause = { playbackViewModel.togglePlayPause() },
-                        onNext = { playbackViewModel.next() },
-                        onPrevious = { playbackViewModel.previous() },
-                        onExpand = { showNowPlaying = true },
+                        title = song?.title.orEmpty(),
+                        artist = song?.artist.orEmpty(),
+                        isPlaying = playbackState.isPlaying,
+                        onPlayPauseClick = { playbackViewModel.togglePlayPause() },
+                        onClick = { showNowPlaying = true },
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     )
                 }

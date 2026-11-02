@@ -16,8 +16,13 @@ object ProviderLyrics {
                 content.contains("http://www.w3.org/ns/ttml", ignoreCase = true) -> TtmlLyrics.parse(content)
             KaraokeLrc.looksLike(content) -> KaraokeLrc.parse(content)
             content.trimStart().startsWith("<") -> emptyList()
-            else -> EnhancedLrc.parse(content).ifEmpty { LrcLib.parseLrc(content) }
-                .ifEmpty { plain(content) }
+            else -> {
+                val enhanced = EnhancedLrc.parse(content)
+                if (enhanced.isNotEmpty()) enhanced else {
+                    val lrc = LrcLib.parseLrc(content)
+                    if (lrc.isNotEmpty()) lrc else plain(content)
+                }
+            }
         }
         return lines.takeIf { found -> found.any { it.text.isNotBlank() } }
     }
