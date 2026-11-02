@@ -4,7 +4,7 @@ package com.music.aurelis.data.lyrics
 import kotlinx.serialization.Serializable
 
 @Serializable
-data.class LrcLibTrack(
+data class LrcLibTrack(
     val id: Long,
     val trackName: String,
     val artistName: String,
@@ -16,9 +16,7 @@ data.class LrcLibTrack(
 )
 
 class LrcLibClient {
-    // Client for offline/cached LrcLib metadata and local lyrics retrieval
     suspend fun searchLyrics(title: String, artist: String, duration: Int?): LrcLibTrack? {
-        // Implementation for local/cached lyrics lookup
         return null
     }
 }

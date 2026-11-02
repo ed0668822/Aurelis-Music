@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fn SourcesScreen(
+fun SourcesScreen(
     onSelectFolder: () -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
