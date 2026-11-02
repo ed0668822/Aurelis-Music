@@ -1,9 +1,14 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.data.stats
 
-class ListeningStats {
-    // Computes local playback statistics and top tracks/artists offline
-    fun computeTopTracks(): List<String> {
-        return emptyList()
+import com.music.aurelis.data.model.LocalSong
+
+object ListeningStats {
+    fun record(song: LocalSong, deltaMs: Long, completed: Boolean) {
+        // Implementación mínima para que compile.
+    }
+
+    fun flush() {
+        // Implementación mínima para que compile.
     }
 }
