@@ -8,10 +8,11 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-# AÑADIDO: Permisos necesarios para que Reviewdog pueda comentar en los PRs
+# AÑADIDO: Permisos para que Reviewdog pueda escribir en la pestaña de Checks
 permissions:
   contents: read
   pull-requests: write
+  checks: write
   issues: write
 
 jobs:
@@ -22,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # AÑADIDO: Necesario para que Reviewdog compare diferencias en el PR
+          fetch-depth: 0 # Requerido para que Reviewdog analice los cambios
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -48,26 +49,32 @@ jobs:
           fi
 
       - name: Run Android Lint
-        # Ejecutamos Lint para generar el XML. continue-on-error evita que el workflow muera aquí si hay warnings.
+        # Ejecutamos Lint. No detenemos el flujo si falla (continue-on-error) para poder leer el reporte.
         run: ./gradlew lintDebug --no-daemon
         continue-on-error: true
 
-      - name: Run Reviewdog with Android Lint
-        # Reviewdog leerá el XML de Lint y comentará los errores directamente en el PR.
+      - name: Setup Reviewdog
+        # 1. Instalamos Reviewdog en un paso separado
         uses: reviewdog/action-setup@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reviewdog_version: latest
+
+      - name: Run Reviewdog (Comentar errores de UI)
+        # 2. Ejecutamos Reviewdog en un paso de consola normal (sin usar 'uses')
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
-          # -f=checkstyle: formato del XML de Lint
-          # -reporter=github-pr-review: comenta en el PR (o en el commit si es un push directo)
-          reviewdog -f=checkstyle \
-            -reporter=github-pr-review \
-            -level=warning \
-            -filter-mode=added \
-            -fail-on-error=false \
-            < app/build/reports/lint-results-debug.xml
+          if [ -f app/build/reports/lint-results-debug.xml ]; then
+            reviewdog -f=checkstyle \
+              -reporter=github-pr-check \
+              -level=warning \
+              -filter-mode=added \
+              -fail-on-error=false \
+              < app/build/reports/lint-results-debug.xml
+          else
+            echo "::warning::No se encontró el reporte de Lint. Saltando Reviewdog."
+          fi
 
       - name: Run unit tests (if any)
         env:
@@ -76,8 +83,11 @@ jobs:
           KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
-        # AÑADIDO: tee guarda la salida en build.log mientras se muestra en consola
-        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build-tests.log
+        # Añadimos 'shell: bash' y 'set -o pipefail' para que si Gradle falla, el paso FALLE (no lo oculte tee).
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build-tests.log
 
       - name: Build Release APK
         env:
@@ -86,11 +96,14 @@ jobs:
           KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
-        # AÑADIDO: tee guarda la salida en build-release.log
-        run: ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
 
       - name: Verify APK exists and is not empty
-        if: success() # Solo verifica si el build de release fue exitoso
+        if: success()
+        shell: bash
         run: |
           set -e
           APK_DIR="app/build/outputs/apk/release"
@@ -115,11 +128,9 @@ jobs:
 
       - name: Inspect APK Contents (apkanalyzer)
         if: success()
-        # Este paso te dice EXACTAMENTE qué clases y recursos se compilaron y entraron en el APK
+        shell: bash
         run: |
           APK=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
-          
-          # Buscamos apkanalyzer dinámicamente en las herramientas de Android
           APK_ANALYZER=$(find $ANDROID_HOME -name apkanalyzer | head -n 1)
           
           if [ -z "$APK_ANALYZER" ]; then
@@ -131,15 +142,14 @@ jobs:
           echo "📦 RESUMEN DE ARCHIVOS COMPILADOS EN EL APK"
           echo "====================================================="
           echo "--- Clases Kotlin/Java incluidas (Top 50) ---"
-          $APK_ANALYZER dex packages "$APK" | grep -E "^C" | head -n 50 || echo "No hay clases o falló el comando."
+          $APK_ANALYZER dex packages "$APK" | grep "^C" | head -n 50 || true
           
           echo ""
-          echo "--- Archivos de Recursos (layouts, drawables, etc.) incluidos ---"
-          $APK_ANALYZER resources packages "$APK" | head -n 50 || echo "No hay recursos o falló el comando."
+          echo "--- Archivos de Recursos incluidos ---"
+          $APK_ANALYZER resources packages "$APK" | head -n 50 || true
           echo "====================================================="
 
       - name: Upload Build Logs (on Failure)
-        # Si algo falla, sube los logs para que puedas ver el error exacto archivo por archivo
         if: failure()
         uses: actions/upload-artifact@v4
         with:
