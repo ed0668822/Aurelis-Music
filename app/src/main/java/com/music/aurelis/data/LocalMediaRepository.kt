@@ -2,15 +2,18 @@
 package com.music.aurelis.data
 
 import android.content.Context
+import com.music.aurelis.data.model.LocalSong
 import java.io.File
 
-class LocalMediaRepository {
+object LocalMediaRepository {
     // Scans and manages local music directories and metadata for Aurelis
-    fun scanLocalFolders(folders: List<File>): List<Map<String, String>> {
+    fun scanLocalFolders(folders: List<File>): List<LocalSong> {
         return emptyList()
     }
 
     suspend fun getAllSongs(context: Context, filterNonMusic: Boolean): List<LocalSong> {
+        // Implementation would scan media store and return LocalSong objects
+        // This is a placeholder - real implementation queries Android MediaStore
         return emptyList()
     }
 }

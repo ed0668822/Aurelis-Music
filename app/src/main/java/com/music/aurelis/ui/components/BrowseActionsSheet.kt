@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.aurelis.R
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.ui.icons.AurelisIcons
 
 enum class LocalBrowseType { ALBUM, ARTIST, PLAYLIST, OTHER }
 

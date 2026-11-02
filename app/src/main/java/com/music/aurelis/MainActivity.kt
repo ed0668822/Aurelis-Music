@@ -178,9 +178,9 @@ private fun AurelisApp() {
                     else -> {
                         val listState = rememberLazyListState()
                         val links = listOf(
-                            LibraryLink("Canciones", AurelisIcons.MusicNote) { showLocalMusic = true },
-                            LibraryLink("Replay", AurelisIcons.Clock) { showReplay = true },
-                            LibraryLink("Ajustes", AurelisIcons.Home) { showSettings = true },
+LibraryLink("Canciones", AurelisIcons.MusicNote) { },
+LibraryLink("Replay", AurelisIcons.Clock) { },
+LibraryLink("Ajustes", AurelisIcons.Home) { },
                         )
                         LibraryScreen(
                             listState = listState,
@@ -209,10 +209,8 @@ private fun AurelisApp() {
                     onFocusHandled = { },
                     onSongClick = { songs, index -> playbackViewModel.playSongs(songs, index) },
                     onSongLongPress = { },
-                    onSongSwipe = { },
                     history = emptyList(),
                     onSubmit = { },
-                    onSuggestionClick = { },
                     onHistoryClick = { },
                     onHistoryRemove = { },
                     onHistoryClear = { },
@@ -245,10 +243,8 @@ private fun AurelisApp() {
                     )
                 }
                 GlassNavBar(
-                    tabs = tabs,
-                    selectedIndex = selectedTab,
+                    selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
-                    hazeState = hazeState,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
