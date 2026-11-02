@@ -2,8 +2,6 @@
 package com.music.aurelis.ui.icons
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ChevronLeft
-import androidx.compose.material.icons.automirrored.rounded.ChevronRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -31,8 +29,8 @@ object AurelisIcons {
     val Playlist: ImageVector get() = Icons.Default.PlaylistPlay
     val MoreVert: ImageVector get() = Icons.Default.MoreVert
     val ArrowBack: ImageVector get() = Icons.Default.ArrowBack
-    val ChevronRight: ImageVector get() = Icons.AutoMirrored.Rounded.ChevronRight
-    val ChevronLeft: ImageVector get() = Icons.AutoMirrored.Rounded.ChevronLeft
+    val ChevronRight: ImageVector get() = Icons.Default.ChevronRight
+    val ChevronLeft: ImageVector get() = Icons.Default.ChevronLeft
     val Close: ImageVector get() = Icons.Default.Close
     val Check: ImageVector get() = Icons.Default.Check
     val Add: ImageVector get() = Icons.Default.Add
