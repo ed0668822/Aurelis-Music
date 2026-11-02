@@ -28,16 +28,16 @@ fun PlaylistPickerSheet(
                 .padding(24.dp)
         ) {
             Text(
-                text = \"Añadir a playlist local\",
+                text = "Añadir a playlist local",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { onPlaylistSelected(\"Favoritos\") },
+                onClick = { onPlaylistSelected("Favoritos") },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(\"Favoritos\")
+                Text("Favoritos")
             }
         }
     }

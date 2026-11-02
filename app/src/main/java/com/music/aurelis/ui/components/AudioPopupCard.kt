@@ -22,12 +22,12 @@ fun AudioPopupCard(
         tonalElevation = 8.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = \"Audio Output & Quality\", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Audio Output & Quality", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = \"Manage local playback audio pipeline and output devices.\", style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Manage local playback audio pipeline and output devices.", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                Text(\"Close\")
+                Text("Close")
             }
         }
     }

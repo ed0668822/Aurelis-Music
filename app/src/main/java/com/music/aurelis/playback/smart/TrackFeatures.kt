@@ -81,7 +81,7 @@ object TrackFeatures {
     )
 
     private fun JsonObject.number(name: String): Double =
-        (this[name]?.jsonPrimitive?.doubleOrNull ?: 0.0).orZero()
+        (this[name]?.jsonPrimitive?.doubleOrNull ?: 0.0) ?: 0.0
 
     private fun JsonObject.text(name: String): String =
         this[name]?.jsonPrimitive?.contentOrNull ?: ""
