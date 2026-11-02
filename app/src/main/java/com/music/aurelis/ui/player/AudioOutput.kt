@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import android.content.Context
@@ -9,17 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-
-enum class AudioOutputKind { PHONE, WIRED, BLUETOOTH, USB, HDMI, OTHER }
-enum class BluetoothForm { UNKNOWN, BUDS, HEADPHONES, SPEAKER, CAR }
-
-data class AudioOutputDevice(
-    val id: Int,
-    val name: String,
-    val kind: AudioOutputKind,
-    val isActive: Boolean,
-    val form: BluetoothForm = BluetoothForm.UNKNOWN,
-)
 
 @Composable
 internal fun rememberAndroidAudioOutputs(): List<AudioOutputDevice> {

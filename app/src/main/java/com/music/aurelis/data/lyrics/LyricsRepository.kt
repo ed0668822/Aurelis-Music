@@ -1,24 +1,32 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.data.lyrics
 
-import kotlinx.serialization.Serializable
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-@Serializable
-data class LyricLine(
-    val time: Long,
-    val text: String,
-    val translation: String? = null
-)
+class LyricsRepository {
+    private val _lyrics = MutableStateFlow<LyricsResult?>(null)
+    val lyrics: StateFlow<LyricsResult?> = _lyrics.asStateFlow()
 
-@Serializable
-data class LyricsResult(
-    val lines: List<LyricLine>,
-    val source: String,
-    val isSynced: Boolean
-)
+    private val _translation = MutableStateFlow<LyricsResult?>(null)
+    val translation: StateFlow<LyricsResult?> = _translation.asStateFlow()
 
-interface LyricsProvider {
-    val name: String
-    suspend fun getLyrics(title: String, artist: String, durationMs: Long): LyricsResult?
-    suspend fun translateLyrics(lines: List<LyricLine>, targetLanguage: String): List<LyricLine>
+    private val _lines = MutableStateFlow<List<LyricLine>>(emptyList())
+    val lines: StateFlow<List<LyricLine>> = _lines.asStateFlow()
+
+    private val _source = MutableStateFlow<String>("")
+    val source: StateFlow<String> = _source.asStateFlow()
+
+    fun flush() {
+        _lyrics.value = null
+        _translation.value = null
+        _lines.value = emptyList()
+        _source.value = ""
+    }
+
+    fun record(lines: List<LyricLine>, source: String) {
+        _lines.value = lines
+        _source.value = source
+    }
 }

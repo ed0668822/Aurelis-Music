@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun OptimizedHaze(
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable () -> Unit
 ) {
     Surface(
         modifier = modifier,

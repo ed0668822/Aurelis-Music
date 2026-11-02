@@ -75,7 +75,7 @@ class AurelisPlaybackService : MediaSessionService() {
                 )
             },
             balance = SettingsRepository.equalizerBalance.value,
-        )
+        ) ?: Unit
     }
 
     private fun applySpatialSettings() {

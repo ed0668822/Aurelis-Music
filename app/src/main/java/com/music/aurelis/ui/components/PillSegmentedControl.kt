@@ -24,7 +24,7 @@ fun PillSegmentedControl(
             .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedEqual
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         items.forEachIndexed { index, item ->
             val selected = index == selectedIndex

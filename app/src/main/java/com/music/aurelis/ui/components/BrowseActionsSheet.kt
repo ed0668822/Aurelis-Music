@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import android.net.Uri
@@ -39,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.aurelis.R
 import com.music.aurelis.data.model.LocalSong
-import com.music.aurelis.ui.icons.AurelisIcons
 
 enum class LocalBrowseType { ALBUM, ARTIST, PLAYLIST, OTHER }
 
@@ -53,6 +53,43 @@ data class BrowseTarget(
     val isLocalPlaylist: Boolean = false,
     val fromCard: Boolean = true,
 )
+
+enum class SongActionsPresentation { Menu, Sheet }
+
+enum class ActionRowStyle { Menu, Sheet }
+
+val LocalActionRowStyle = compositionLocalOf { ActionRowStyle.Sheet }
+
+@Composable
+fun ActionRow(
+    icon: ImageVector,
+    label: String,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = tint,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
 
 @Composable
 fun BrowseActionsSheet(
@@ -82,7 +119,7 @@ fun BrowseActionsSheet(
             }
 
             onPlay?.let { ActionRow(Icons.Rounded.PlayArrow, stringResource(R.string.play), onClick = it) }
-            onShuffle?.let { ActionRow(AurelisIcons.Shuffle, stringResource(R.string.shuffle), onClick = it) }
+            onShuffle?.let { ActionRow(Icons.Rounded.QueueMusic, stringResource(R.string.shuffle), onClick = it) }
             ActionRow(
                 Icons.AutoMirrored.Rounded.PlaylistPlay,
                 stringResource(R.string.play_next),
@@ -95,7 +132,7 @@ fun BrowseActionsSheet(
             )
             onOpen?.let {
                 ActionRow(
-                    AurelisIcons.ChevronRight,
+                    Icons.Rounded.PlayArrow,
                     when (target.type) {
                         LocalBrowseType.ALBUM -> stringResource(R.string.open_album)
                         LocalBrowseType.ARTIST -> stringResource(R.string.open_artist)
@@ -142,7 +179,6 @@ private fun BrowseSheetHeader(target: BrowseTarget) {
             modifier = Modifier
                 .size(52.dp)
                 .clip(shape)
-                .thumbnailBorder(shape)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         )
         Spacer(Modifier.width(14.dp))

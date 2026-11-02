@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun LiquidGlass(
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable () -> Unit
 ) {
     Surface(
         modifier = modifier,

@@ -69,8 +69,7 @@ private val ScrimColor = Color.Black.copy(alpha = 0.5f)
 private val DrawerMaxWidth = 640.dp
 private const val StepMs = 100
 private const val DismissDragFraction = 0.25f
-internal const val MIN_LYRICS_OFFSET_MS = -5_000
-internal const val MAX_LYRICS_OFFSET_MS = 5_000
+
 
 @OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable

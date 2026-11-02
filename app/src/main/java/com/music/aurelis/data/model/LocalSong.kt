@@ -1,14 +1,5 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.data.model
-
-enum class QueueTier {
-    USER_QUEUE,
-    CONTEXT,
-    AUTOPLAY,
-}
-
-enum class PlaybackSourceType {
-    HOME, SEARCH, HISTORY, REPLAY, EXPLORE, BROWSE, SHARED_LINK, QUEUE,
-}
 
 data class LocalSong(
     val id: String,
@@ -51,7 +42,4 @@ data class LocalSong(
         }
 }
 
-fun LocalSong.isSameTrackAs(other: LocalSong?): Boolean {
-    other ?: return false
-    return title == other.title && artist == other.artist
-}
+

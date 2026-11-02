@@ -36,7 +36,7 @@ fun FrostedTopBar(
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedAlignment(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 actions()
             }
