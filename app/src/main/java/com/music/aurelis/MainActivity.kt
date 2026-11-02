@@ -1,5 +1,4 @@
 // Aurelis © 2026. GPL-3.0-or-later.
-
 package com.music.aurelis
 
 import android.content.Intent
@@ -173,7 +172,7 @@ private fun AurelisApp() {
 
             2 -> {
                 when {
-                    showReplay -> ReplayScreen(onBackClick = { showReplay = false })
+                    showReplay -> ReplayScreen(onBack = { showReplay = false })
                     showLocalMusic -> LocalMusicScreen(
                         playbackViewModel = playbackViewModel,
                         onBackClick = { showLocalMusic = false },
@@ -182,9 +181,9 @@ private fun AurelisApp() {
                     else -> {
                         val listState = rememberLazyListState()
                         val links = listOf(
-LibraryLink("Canciones", AurelisIcons.MusicNote) { },
-LibraryLink("Replay", AurelisIcons.Clock) { },
-LibraryLink("Ajustes", AurelisIcons.Home) { },
+                            LibraryLink("Canciones", AurelisIcons.MusicNote) { },
+                            LibraryLink("Replay", AurelisIcons.Clock) { },
+                            LibraryLink("Ajustes", AurelisIcons.Home) { },
                         )
                         LibraryScreen(
                             listState = listState,
