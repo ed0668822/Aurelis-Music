@@ -133,9 +133,17 @@ android {
         }
     }
 
-    // AÑADIDO: Genera un reporte de Lint en formato Checkstyle para que Reviewdog pueda leerlo
     lint {
         checkstyleReport = file("build/reports/lint-results-checkstyle.xml")
+    }
+
+    // AÑADIDO: Cambia el nombre del archivo APK a "Aurelis Music-vX.X.X.apk"
+    applicationVariants.all {
+        val variant = this
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output.outputFileName = "Aurelis Music-v${variant.versionName}.apk"
+        }
     }
 
     buildTypes {
