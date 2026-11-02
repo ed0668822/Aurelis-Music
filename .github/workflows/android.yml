@@ -48,32 +48,19 @@ jobs:
           fi
 
       # ──────────────────────────────────────────────────────────────
-      # 1. Lint + Reviewdog (análisis estático de UI y recursos)
+      # 1. Lint + Reporte en PR/Checks
       # ──────────────────────────────────────────────────────────────
       - name: Run Android Lint
         run: ./gradlew lintDebug --no-daemon
         continue-on-error: true
 
-      - name: Setup Reviewdog
-        uses: reviewdog/action-setup@v1
+      - name: Report Android Lint Results
+        uses: ilyagulya/android-lint-action@v1
         with:
-          reviewdog_version: latest
-
-      - name: Run Reviewdog (Comentar errores en PR/Checks)
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          if [ -f app/build/reports/lint-results-checkstyle.xml ]; then
-            reviewdog -f=checkstyle \
-              -reporter=github-pr-check \
-              -level=warning \
-              -filter-mode=added \
-              -fail-on-error=false \
-              < app/build/reports/lint-results-checkstyle.xml
-          else
-            echo "::warning::No se encontró el reporte Checkstyle de Lint."
-          fi
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          lint_xml_file: app/build/reports/lint-results-debug.xml
+          reporter: github-pr-check
+          level: warning
 
       # ──────────────────────────────────────────────────────────────
       # 2. Tests unitarios
@@ -91,7 +78,7 @@ jobs:
           ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build-tests.log
 
       # ──────────────────────────────────────────────────────────────
-      # 3. Build del APK — con continue-on-error para poder reportar
+      # 3. Build del APK
       # ──────────────────────────────────────────────────────────────
       - name: Build Release APK
         id: build
@@ -109,7 +96,7 @@ jobs:
           exit ${PIPESTATUS[0]}
 
       # ──────────────────────────────────────────────────────────────
-      # 4. Inventario de archivos fuente (siempre)
+      # 4. Inventario de archivos fuente
       # ──────────────────────────────────────────────────────────────
       - name: Generate Source Inventory
         if: always()
@@ -140,7 +127,6 @@ jobs:
         if: always()
         shell: bash
         run: |
-          # Extraer errores y warnings del log de Gradle
           grep -E '^e: file://' build-release.log 2>/dev/null \
             | sed -E 's|^e: file://[^:]*/app/src|app/src|' \
             | sed -E 's|:[0-9]+:[0-9]+ | |' > errors.txt || true
@@ -148,13 +134,11 @@ jobs:
             | sed -E 's|^w: file://[^:]*/app/src|app/src|' \
             | sed -E 's|:[0-9]+:[0-9]+ | |' > warnings.txt || true
 
-          # Capturar la razón general si el build falló
           if [ "${{ steps.build.outcome }}" != "success" ]; then
             grep -A 8 "What went wrong" build-release.log 2>/dev/null | head -n 15 > failure-reason.txt || true
             grep -A 3 "FAILURE: Build failed" build-release.log 2>/dev/null | head -n 5 >> failure-reason.txt || true
           fi
 
-          # Determinar estado por archivo
           ok_count=0; warn_count=0; err_count=0
           : > file-status.txt
           while IFS= read -r file; do
@@ -175,7 +159,6 @@ jobs:
             fi
           done < <(find app/src -type f \( -name "*.kt" -o -name "*.java" \) | sort)
 
-          # Resumen en la pestaña Summary
           {
             echo ""
             echo "## 🧪 Estado de compilación por archivo"
@@ -209,7 +192,6 @@ jobs:
             fi
           } >> $GITHUB_STEP_SUMMARY
 
-          # Reporte completo como archivo
           {
             echo "# Reporte de compilación — Aurelis Music"
             echo ""
@@ -242,7 +224,7 @@ jobs:
           } > compilation-report.txt
 
       # ──────────────────────────────────────────────────────────────
-      # 6. Verificación y análisis del APK (solo si compiló bien)
+      # 6. Verificación y análisis del APK
       # ──────────────────────────────────────────────────────────────
       - name: Verify APK exists and is not empty
         if: steps.build.outcome == 'success'
@@ -312,7 +294,7 @@ jobs:
           retention-days: 14
 
       # ──────────────────────────────────────────────────────────────
-      # 8. Marcar el workflow como fallido al final (honestidad de CI)
+      # 8. Marcar el workflow como fallido al final
       # ──────────────────────────────────────────────────────────────
       - name: Fail workflow if build failed
         if: steps.build.outcome == 'failure'
