@@ -1,38 +1,15 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback
 
-import android.os.SystemClock
-import kotlinx.coroutines.flow.MutableStateFlow
+class SleepTimer {
+    // Sleep timer for stopping local music playback automatically
+    private var remainingMs: Long = 0L
 
-object SleepTimer {
-
-    val deadline = MutableStateFlow<Long?>(null)
-
-    val minutes = MutableStateFlow<Int?>(null)
-
-    val afterTrack = MutableStateFlow(false)
-
-    val PRESETS = listOf(15, 30, 45, 60)
-
-    val isRunning: Boolean get() = deadline.value != null || afterTrack.value
-
-    fun start(minutes: Int) {
-        afterTrack.value = false
-        this.minutes.value = minutes
-        deadline.value = SystemClock.elapsedRealtime() + minutes * 60_000L
-    }
-
-    fun startAfterTrack() {
-        minutes.value = null
-        deadline.value = null
-        afterTrack.value = true
+    fun start(durationMs: Long) {
+        remainingMs = durationMs
     }
 
     fun cancel() {
-        minutes.value = null
-        deadline.value = null
-        afterTrack.value = false
+        remainingMs = 0L
     }
-
-    fun remainingMs(): Long? =
-        deadline.value?.let { (it - SystemClock.elapsedRealtime()).coerceAtLeast(0L) }
 }
