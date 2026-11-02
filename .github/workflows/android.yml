@@ -48,7 +48,8 @@ jobs:
           fi
 
       # ──────────────────────────────────────────────────────────────
-      # Preinstalar NDK con reintentos (evita el fallo de zip corrupto)
+      # Preinstalar NDK con reintentos (evita el fallo de zip corrupto
+      # y el "Broken pipe" del comando `yes`)
       # ──────────────────────────────────────────────────────────────
       - name: Install NDK (robust, with retries)
         shell: bash
@@ -57,6 +58,7 @@ jobs:
           NDK_VERSION="27.0.12077973"
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           NDK_DIR="${SDK_DIR}/ndk/${NDK_VERSION}"
+          SDKMANAGER="${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager"
 
           if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
             echo "✅ NDK ${NDK_VERSION} already installed at ${NDK_DIR}"
@@ -65,24 +67,34 @@ jobs:
           fi
 
           echo "📦 Installing NDK ${NDK_VERSION} (with retries)…"
+
+          echo "── Accepting SDK licenses ──"
+          ( set +o pipefail; yes 2>/dev/null | "$SDKMANAGER" --licenses >/dev/null 2>&1 ) || true
+
           for attempt in 1 2 3; do
             echo "── Attempt ${attempt}/3 ──"
-            rm -rf "${SDK_DIR}/.temp" 2>/dev/null || true
-            rm -rf "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
+            rm -rf "${SDK_DIR}/.temp" "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
 
-            if yes | "${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${NDK_VERSION}" 2>&1; then
-              if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
-                echo "✅ NDK installed successfully on attempt ${attempt}"
+            "$SDKMANAGER" --install "ndk;${NDK_VERSION}" > /tmp/sdkmanager-ndk.log 2>&1 || true
+
+            if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
+              SIZE=$(du -sm "$NDK_DIR" 2>/dev/null | awk '{print $1}')
+              if [ -n "$SIZE" ] && [ "$SIZE" -ge 500 ]; then
+                echo "✅ NDK installed successfully on attempt ${attempt} (${SIZE} MB)"
                 ls -la "$NDK_DIR" | head -20
                 exit 0
+              else
+                echo "⚠️  NDK directory exists but looks incomplete (${SIZE:-0} MB). Will retry."
               fi
             fi
 
             echo "⚠️  Attempt ${attempt} failed, retrying in 10s…"
+            tail -n 30 /tmp/sdkmanager-ndk.log 2>/dev/null || true
             sleep 10
           done
 
           echo "::error::Failed to install NDK ${NDK_VERSION} after 3 attempts."
+          cat /tmp/sdkmanager-ndk.log 2>/dev/null || true
           exit 1
 
       # ──────────────────────────────────────────────────────────────
