@@ -1,5 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later.
 
+import com.android.build.OutputFile
 import java.util.Properties
 
 plugins {
@@ -49,9 +50,6 @@ fun escapeForBuildConfig(value: String): String {
     return sb.toString()
 }
 
-val lastfmApiKey = ""
-val lastfmSecret = ""
-
 val listenTogetherServer = readValue(
     "LISTEN_TOGETHER_SERVER",
     ""
@@ -78,9 +76,9 @@ android {
         buildConfigField("String", "LASTFM_SECRET", "\"\"")
         buildConfigField("String", "LISTEN_TOGETHER_SERVER", escapeForBuildConfig(listenTogetherServer))
 
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
-        }
+        // ⚠️ ELIMINADO: ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+        // Ahora los ABIs los decide el bloque `splits` de abajo.
+        // Si lo dejábamos aquí, se pisaban con los splits y solo se generaba un APK.
 
         externalNativeBuild {
             cmake {
@@ -93,6 +91,18 @@ android {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // GENERACIÓN DE DOS APKs: 32-bit (armeabi-v7a) y 64-bit (arm64-v8a)
+    // ═══════════════════════════════════════════════════════════════════
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a")
+            isUniversalApk = false
         }
     }
 
@@ -133,11 +143,21 @@ android {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // RENOMBRADO POR ABI (cada APK recibe su nombre único)
+    // ═══════════════════════════════════════════════════════════════════
     applicationVariants.all {
         val variant = this
         outputs.all {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "Aurelis Music-v${variant.versionName}.apk"
+            val abi = output.getFilter(OutputFile.ABI)
+            val abiLabel = when (abi) {
+                "armeabi-v7a" -> "32bit"
+                "arm64-v8a"   -> "64bit"
+                null          -> "universal"
+                else          -> abi
+            }
+            output.outputFileName = "Aurelis Music-v${variant.versionName}-${abiLabel}.apk"
         }
     }
 
