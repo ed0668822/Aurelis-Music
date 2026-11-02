@@ -14,6 +14,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import com.music.aurelis.ui.theme.LocalPlayerTint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
