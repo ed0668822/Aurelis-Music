@@ -4,8 +4,6 @@ package com.music.aurelis.ui.navigation
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
 import com.music.aurelis.data.model.LocalShelf
-import com.music.aurelis.ui.screens.SettingsCategory
-import com.music.aurelis.ui.screens.SettingsChoiceKind
 
 sealed interface AppRoute {
     data object Settings : AppRoute
