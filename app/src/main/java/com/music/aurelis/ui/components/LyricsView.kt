@@ -23,7 +23,7 @@ fun LyricsView(
     modifier: Modifier = Modifier
 ) {
     val currentIndex = remember(currentPositionMs, lines) {
-        lines.indexOfLast { it.time <= currentPositionMs }.coerceAtLeast(0)
+        lines.indexOfLast { it.timeMs <= currentPositionMs }.coerceAtLeast(0)
     }
 
     Box(modifier = modifier.background(Color.Black.copy(alpha = 0.8f))) {
@@ -57,17 +57,6 @@ fun LyricsView(
                             .fillMaxWidth()
                             .padding(horizontal = 32.dp)
                     )
-                    if (!line.translation.isNullOrBlank()) {
-                        Text(
-                            text = line.translation!!,
-                            color = textColor.copy(alpha = 0.7f),
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 32.dp, vertical = 4.dp)
-                        )
-                    }
                 }
             }
         }
