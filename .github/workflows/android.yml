@@ -47,7 +47,47 @@ jobs:
             echo "::warning::KEYSTORE_BASE64 no configurado. Se firmará con la clave debug."
           fi
 
+      # ──────────────────────────────────────────────────────────────
+      # Preinstalar NDK con reintentos (evita el fallo de zip corrupto)
+      # ──────────────────────────────────────────────────────────────
+      - name: Install NDK (robust, with retries)
+        shell: bash
+        run: |
+          set -e
+          NDK_VERSION="27.0.12077973"
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          NDK_DIR="${SDK_DIR}/ndk/${NDK_VERSION}"
+
+          if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
+            echo "✅ NDK ${NDK_VERSION} already installed at ${NDK_DIR}"
+            ls -la "$NDK_DIR" | head -20
+            exit 0
+          fi
+
+          echo "📦 Installing NDK ${NDK_VERSION} (with retries)…"
+          for attempt in 1 2 3; do
+            echo "── Attempt ${attempt}/3 ──"
+            rm -rf "${SDK_DIR}/.temp" 2>/dev/null || true
+            rm -rf "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
+
+            if yes | "${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${NDK_VERSION}" 2>&1; then
+              if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
+                echo "✅ NDK installed successfully on attempt ${attempt}"
+                ls -la "$NDK_DIR" | head -20
+                exit 0
+              fi
+            fi
+
+            echo "⚠️  Attempt ${attempt} failed, retrying in 10s…"
+            sleep 10
+          done
+
+          echo "::error::Failed to install NDK ${NDK_VERSION} after 3 attempts."
+          exit 1
+
+      # ──────────────────────────────────────────────────────────────
       # 1. Lint (informativo — no bloquea el build)
+      # ──────────────────────────────────────────────────────────────
       - name: Run Android Lint
         run: ./gradlew lintDebug --no-daemon
         continue-on-error: true
@@ -58,6 +98,7 @@ jobs:
           reviewdog_version: latest
 
       - name: Report Android Lint Results
+        if: hashFiles('app/build/reports/lint-results-debug.xml') != ''
         uses: ilyagulya/android-lint-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -65,7 +106,9 @@ jobs:
           reporter: github-pr-check
           level: warning
 
+      # ──────────────────────────────────────────────────────────────
       # 2. Tests unitarios
+      # ──────────────────────────────────────────────────────────────
       - name: Run unit tests
         env:
           STORE_FILE:        "aurelis-release.jks"
@@ -78,7 +121,9 @@ jobs:
           set -o pipefail
           ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build-tests.log
 
+      # ──────────────────────────────────────────────────────────────
       # 3. Build Release
+      # ──────────────────────────────────────────────────────────────
       - name: Build Release APK
         id: build
         continue-on-error: true
@@ -94,7 +139,9 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
           exit ${PIPESTATUS[0]}
 
+      # ──────────────────────────────────────────────────────────────
       # 4. Inventario de fuentes
+      # ──────────────────────────────────────────────────────────────
       - name: Generate Source Inventory
         if: always()
         shell: bash
@@ -117,7 +164,9 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY
           find app/src -type f \( -name "*.kt" -o -name "*.java" -o -name "*.c" -o -name "*.cpp" -o -name "*.h" \) | sort > source-inventory.txt
 
+      # ──────────────────────────────────────────────────────────────
       # 5. Reporte per-file
+      # ──────────────────────────────────────────────────────────────
       - name: Generate Per-File Compilation Report
         if: always()
         shell: bash
@@ -218,7 +267,9 @@ jobs:
             cat warnings.txt
           } > compilation-report.txt
 
-      # 6. Verificar APK(s)
+      # ──────────────────────────────────────────────────────────────
+      # 6. Verificar APK
+      # ──────────────────────────────────────────────────────────────
       - name: Verify APK exists and is not empty
         if: steps.build.outcome == 'success'
         shell: bash
@@ -244,7 +295,9 @@ jobs:
             fi
           done
 
+      # ──────────────────────────────────────────────────────────────
       # 7. Inspeccionar APK
+      # ──────────────────────────────────────────────────────────────
       - name: Inspect APK Contents (apkanalyzer)
         if: steps.build.outcome == 'success'
         shell: bash
@@ -258,7 +311,7 @@ jobs:
           : > apk-contents.txt
           {
             echo ""
-            echo "## 📲 APK(s) generado(s)"
+            echo "## 📲 APK generado"
             echo ""
             echo "| Archivo | Tamaño |"
             echo "|---------|--------|"
@@ -271,7 +324,9 @@ jobs:
             $APK_ANALYZER dex packages "$APK" >> apk-contents.txt 2>&1 || true
           done
 
+      # ──────────────────────────────────────────────────────────────
       # 8. Subir artefactos
+      # ──────────────────────────────────────────────────────────────
       - name: Upload Compilation Report (siempre)
         if: always()
         uses: actions/upload-artifact@v4
@@ -298,7 +353,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # ──────────────────────────────────────────────────────────────
       # 9. Marcar workflow fallido
+      # ──────────────────────────────────────────────────────────────
       - name: Fail workflow if build failed
         if: steps.build.outcome == 'failure'
         shell: bash
