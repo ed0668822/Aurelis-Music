@@ -47,9 +47,7 @@ jobs:
             echo "::warning::KEYSTORE_BASE64 no configurado. Se firmará con la clave debug."
           fi
 
-      # ──────────────────────────────────────────────────────────────
-      # 1. Lint + Reporte en PR/Checks
-      # ──────────────────────────────────────────────────────────────
+      # 1. Lint (informativo — no bloquea el build)
       - name: Run Android Lint
         run: ./gradlew lintDebug --no-daemon
         continue-on-error: true
@@ -67,9 +65,7 @@ jobs:
           reporter: github-pr-check
           level: warning
 
-      # ──────────────────────────────────────────────────────────────
       # 2. Tests unitarios
-      # ──────────────────────────────────────────────────────────────
       - name: Run unit tests
         env:
           STORE_FILE:        "aurelis-release.jks"
@@ -82,9 +78,7 @@ jobs:
           set -o pipefail
           ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build-tests.log
 
-      # ──────────────────────────────────────────────────────────────
-      # 3. Build del APK
-      # ──────────────────────────────────────────────────────────────
+      # 3. Build Release
       - name: Build Release APK
         id: build
         continue-on-error: true
@@ -100,9 +94,7 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
           exit ${PIPESTATUS[0]}
 
-      # ──────────────────────────────────────────────────────────────
-      # 4. Inventario de archivos fuente
-      # ──────────────────────────────────────────────────────────────
+      # 4. Inventario de fuentes
       - name: Generate Source Inventory
         if: always()
         shell: bash
@@ -125,9 +117,7 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY
           find app/src -type f \( -name "*.kt" -o -name "*.java" -o -name "*.c" -o -name "*.cpp" -o -name "*.h" \) | sort > source-inventory.txt
 
-      # ──────────────────────────────────────────────────────────────
-      # 5. Reporte per-file (OK / WARNING / ERROR)
-      # ──────────────────────────────────────────────────────────────
+      # 5. Reporte per-file
       - name: Generate Per-File Compilation Report
         if: always()
         shell: bash
@@ -228,9 +218,7 @@ jobs:
             cat warnings.txt
           } > compilation-report.txt
 
-      # ──────────────────────────────────────────────────────────────
-      # 6. Verificación y análisis del APK
-      # ──────────────────────────────────────────────────────────────
+      # 6. Verificar APK(s)
       - name: Verify APK exists and is not empty
         if: steps.build.outcome == 'success'
         shell: bash
@@ -241,37 +229,49 @@ jobs:
             echo "::error::Directorio no existe: $APK_DIR"
             exit 1
           fi
-          APK=$(ls "$APK_DIR"/*.apk 2>/dev/null | head -n1 || true)
-          if [ -z "$APK" ]; then
+          shopt -s nullglob
+          APKS=("$APK_DIR"/*.apk)
+          if [ ${#APKS[@]} -eq 0 ]; then
             echo "::error::No se generó ningún APK"
             exit 1
           fi
-          SIZE=$(stat -c%s "$APK")
-          echo "APK: $APK ($SIZE bytes)"
-          [ "$SIZE" -ge 1000000 ] || { echo "::error::APK < 1 MB"; exit 1; }
+          for APK in "${APKS[@]}"; do
+            SIZE=$(stat -c%s "$APK")
+            echo "APK: $APK ($SIZE bytes)"
+            if [ "$SIZE" -lt 1000000 ]; then
+              echo "::error::APK demasiado pequeño: $APK"
+              exit 1
+            fi
+          done
 
+      # 7. Inspeccionar APK
       - name: Inspect APK Contents (apkanalyzer)
         if: steps.build.outcome == 'success'
         shell: bash
         run: |
-          APK=$(ls app/build/outputs/apk/release/*.apk | head -n1)
           APK_ANALYZER=$(find $ANDROID_HOME -name apkanalyzer | head -n1)
           if [ -z "$APK_ANALYZER" ]; then
             echo "::warning::apkanalyzer no encontrado"; exit 0
           fi
+          shopt -s nullglob
+          APKS=(app/build/outputs/apk/release/*.apk)
+          : > apk-contents.txt
           {
             echo ""
-            echo "## 📲 Clases incluidas en el APK (Top 60)"
+            echo "## 📲 APK(s) generado(s)"
             echo ""
-            echo '```'
-            $APK_ANALYZER dex packages "$APK" | grep "^C" | head -n 60 || true
-            echo '```'
+            echo "| Archivo | Tamaño |"
+            echo "|---------|--------|"
           } >> $GITHUB_STEP_SUMMARY
-          $APK_ANALYZER dex packages "$APK" > apk-contents.txt 2>&1 || true
+          for APK in "${APKS[@]}"; do
+            NAME=$(basename "$APK")
+            SIZE=$(stat -c%s "$APK")
+            echo "| \`$NAME\` | $SIZE bytes |" >> $GITHUB_STEP_SUMMARY
+            echo "=== $NAME ===" >> apk-contents.txt
+            $APK_ANALYZER dex packages "$APK" >> apk-contents.txt 2>&1 || true
+          done
 
-      # ──────────────────────────────────────────────────────────────
-      # 7. Subir artefactos
-      # ──────────────────────────────────────────────────────────────
+      # 8. Subir artefactos
       - name: Upload Compilation Report (siempre)
         if: always()
         uses: actions/upload-artifact@v4
@@ -298,9 +298,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # ──────────────────────────────────────────────────────────────
-      # 8. Marcar el workflow como fallido al final
-      # ──────────────────────────────────────────────────────────────
+      # 9. Marcar workflow fallido
       - name: Fail workflow if build failed
         if: steps.build.outcome == 'failure'
         shell: bash
