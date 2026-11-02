@@ -133,8 +133,10 @@ android {
         }
     }
 
+    // CORREGIDO: Usar checkstyleReportOutput con .set() para AGP 8.10.1
     lint {
-        checkstyleOutput = file("build/reports/lint-results-checkstyle.xml")
+        checkstyleReport = true
+        checkstyleReportOutput.set(file("build/reports/lint-results-checkstyle.xml"))
     }
 
     applicationVariants.all {
