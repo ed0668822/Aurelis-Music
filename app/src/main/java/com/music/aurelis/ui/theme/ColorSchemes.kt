@@ -1,13 +1,12 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.theme
 
-import androidx.compose.material3.colorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 // Schemas de color para modo oscuro - adapted for Aurelis Music
-val DarkColorScheme = colorScheme(
+val DarkColorScheme = darkColorScheme(
     primary = Color(0xFFBB86FC),
     secondary = Color(0xFF03DAC6),
     tertiary = Color(0xFF673AB7),
@@ -26,7 +25,7 @@ val DarkColorScheme = colorScheme(
 )
 
 // Schemas de color para modo claro - adapted for Aurelis Music
-val LightColorScheme = colorScheme(
+val LightColorScheme = lightColorScheme(
     primary = Color(0xFF6650A4),
     secondary = Color(0xFF00BFA5),
     tertiary = Color(0xFF00E676),
