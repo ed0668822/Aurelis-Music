@@ -1,5 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
-
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.background
@@ -22,6 +21,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Person
@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -111,7 +110,7 @@ fun LocalMusicScreen(
             }
             Box {
                 IconButton(onClick = { showSortMenu = true }) {
-                    Icon(Icons.Filled.Sort, contentDescription = "Ordenar")
+                    Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Ordenar")
                 }
                 DropdownMenu(
                     expanded = showSortMenu,
