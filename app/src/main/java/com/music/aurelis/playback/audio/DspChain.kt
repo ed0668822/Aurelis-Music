@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback.audio
 
 import android.util.Log
@@ -17,12 +18,12 @@ class DspChain(
     private var currentSampleRate: Int = 0
     private var processCounter: Long = 0L
 
-    override fun configure(sampleRate: Int, channelCount: Int) {
+    override fun configure(sampleRate: Int, channels: Int) {
         this.currentSampleRate = sampleRate
-        spatial.configure(sampleRate, channelCount)
-        equalizer.configure(sampleRate, channelCount)
-        transition.configure(sampleRate, channelCount)
-        loudness.configure(sampleRate, channelCount)
+        spatial.configure(sampleRate, channels)
+        equalizer.configure(sampleRate, channels)
+        transition.configure(sampleRate, channels)
+        loudness.configure(sampleRate, channels)
     }
 
     fun onStreamBoundary() {
