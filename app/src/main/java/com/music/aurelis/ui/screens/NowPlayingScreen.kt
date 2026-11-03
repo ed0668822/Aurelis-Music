@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.Subject
@@ -32,9 +32,6 @@ import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Chip
-import androidx.compose.material3.ChipDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,17 +45,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.music.aurelis.R
+import com.music.aurelis.data.AudioQuality
 import com.music.aurelis.data.SettingsRepository
-import com.music.aurelis.data.SettingsRepository.AudioQuality
 import com.music.aurelis.playback.LyricsState
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.playback.TranslationState
@@ -77,7 +72,6 @@ import com.music.aurelis.ui.theme.DynamicThemeViewModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NowPlayingScreen(
     playbackViewModel: PlaybackViewModel,
@@ -120,7 +114,7 @@ fun NowPlayingScreen(
             targetOffsetY = { it },
         ) + fadeOut(animationSpec = tween(220)),
     ) {
-        if (song == null) return@AnimatedVisibility
+        val s = song ?: return@AnimatedVisibility
 
         DynamicAurelisTheme(colors = artworkColors ?: fallbackColors) {
             Box(
@@ -129,10 +123,10 @@ fun NowPlayingScreen(
                     .background(MaterialTheme.colorScheme.background)
                     .hazeSource(hazeState),
             ) {
-                val meshPalette = rememberArtworkColors(song.artworkUri?.let { Uri.parse(it) })
+                val meshPalette = rememberArtworkColors(s.artworkUri?.let { Uri.parse(it) })
                 MeshGradientBackground(
                     palette = meshPalette,
-                    trackKey = song.id,
+                    trackKey = s.id,
                     continuous = state.isPlaying,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -170,9 +164,7 @@ fun NowPlayingScreen(
                                 modifier = Modifier.size(32.dp),
                             )
                         }
-
                         Spacer(modifier = Modifier.weight(1f))
-
                         IconButton(onClick = { showLyricsSources = true }) {
                             Icon(
                                 imageVector = Icons.Rounded.MoreHoriz,
@@ -181,7 +173,6 @@ fun NowPlayingScreen(
                                 modifier = Modifier.size(26.dp),
                             )
                         }
-
                         IconButton(onClick = onOpenQueue) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
@@ -199,9 +190,9 @@ fun NowPlayingScreen(
                     } else 0f
 
                     AnimatedArtwork(
-                        songKey = song.id,
-                        artworkUri = song.artworkUri,
-                        title = song.title,
+                        songKey = s.id,
+                        artworkUri = s.artworkUri,
+                        title = s.title,
                         size = 320.dp,
                         progressFraction = progressFraction,
                     )
@@ -214,7 +205,7 @@ fun NowPlayingScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            text = song.title,
+                            text = s.title,
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
@@ -226,28 +217,26 @@ fun NowPlayingScreen(
                             AudioQuality.LOSSLESS -> "Lossless"
                             AudioQuality.HIGH -> "Alta calidad"
                             AudioQuality.STANDARD -> "Estándar"
-                            else -> "Estándar"
                         }
-                        Chip(
-                            onClick = null,
-                            label = {
-                                Text(
-                                    text = qualityLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            },
-                            colors = ChipDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            ),
-                            modifier = Modifier.size(90.dp, 24.dp),
-                        )
+                        // FIX: Chip cambió de firma en Material3 — usamos Box+Text
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        ) {
+                            Text(
+                                text = qualityLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = song.artist,
+                        text = s.artist,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -320,11 +309,7 @@ fun NowPlayingScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 IconButton(onClick = { showLyrics = false }) {
-                                    Icon(
-                                        Icons.Rounded.KeyboardArrowDown,
-                                        "Cerrar letras",
-                                        tint = Color.White,
-                                    )
+                                    Icon(Icons.Rounded.KeyboardArrowDown, "Cerrar letras", tint = Color.White)
                                 }
                                 Spacer(Modifier.weight(1f))
                                 IconButton(onClick = { showTranslationLanguages = true }) {
@@ -352,7 +337,7 @@ fun NowPlayingScreen(
 
                                 SyncedLyricsPanel(
                                     lines = lines,
-                                    trackKey = song.id,
+                                    trackKey = s.id,
                                     position = position,
                                     looking = true,
                                     isPlaying = state.isPlaying,
