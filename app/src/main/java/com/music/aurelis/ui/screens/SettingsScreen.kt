@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import android.content.Intent
@@ -24,9 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.music.aurelis.data.AudioQuality
 import com.music.aurelis.data.ProfileRepository
 import com.music.aurelis.data.SettingsRepository
-import com.music.aurelis.data.SettingsRepository.AudioQuality
 import com.music.aurelis.ui.components.*
 
 @Composable
@@ -43,7 +43,7 @@ fun SettingsScreen(
     var showNameDialog by remember { mutableStateOf(false) }
 
     val photoPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+        contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri != null) {
             try {
@@ -79,7 +79,7 @@ fun SettingsScreen(
                     showNameDialog = false
                 }) { Text("Guardar") }
             },
-            dismissButton = { TextButton(onClick = { showNameDialog = false }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { showNameDialog = false }) { Text("Cancelar") } },
         )
     }
 
@@ -87,7 +87,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(rememberScrollState()),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp, bottom = 16.dp),
@@ -176,14 +176,15 @@ fun SettingsScreen(
                         AudioQuality.STANDARD -> 0
                         AudioQuality.HIGH -> 1
                         AudioQuality.LOSSLESS -> 2
-                        else -> 0
                     },
                     onSelect = { index ->
-                        SettingsRepository.setAudioQuality(when (index) {
-                            0 -> AudioQuality.STANDARD
-                            1 -> AudioQuality.HIGH
-                            else -> AudioQuality.LOSSLESS
-                        })
+                        SettingsRepository.setAudioQuality(
+                            when (index) {
+                                0 -> AudioQuality.STANDARD
+                                1 -> AudioQuality.HIGH
+                                else -> AudioQuality.LOSSLESS
+                            },
+                        )
                     },
                 )
             }
@@ -234,7 +235,7 @@ fun SettingsScreen(
             SettingsRow(
                 icon = Icons.Rounded.MotionPhotosOff,
                 title = "Reduce animation",
-                subtitle = "Congela el gradiente del reproductor en lugar de dejarlo flotar.",
+                subtitle = "Congela el gradiente del reproductor.",
                 trailing = {
                     Switch(
                         checked = reduceAnimation,
@@ -248,7 +249,7 @@ fun SettingsScreen(
             SettingsRow(
                 icon = Icons.Rounded.BlurOff,
                 title = "Reduce dynamic blur",
-                subtitle = "Cambia el cristal difuminado por fondos sólidos en toda la app.",
+                subtitle = "Cambia el cristal difuminado por fondos sólidos.",
                 trailing = {
                     Switch(
                         checked = reduceDynamicBlur,
