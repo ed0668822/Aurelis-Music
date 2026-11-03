@@ -253,17 +253,22 @@ fun rememberMixPulse(mixBlend: () -> MixBlend?, enabled: Boolean): MixPulse {
                 val dt = (now - last).coerceIn(0L, MAX_FRAME_NANOS)
                 last = now
                 val blend = pulse.blendNow()
-                val beatNanos = blend?.beatMs?.takeIf { it > 0f }?.let { it * 1_000_000.0 }
                 var phase = pulse.phase
-                if (beatNanos != null && blend != null) {
-                    phase += dt / beatNanos
-                    val target = Math.floorMod(now - blend.beatAnchorNanos, beatNanos.toLong()) / beatNanos
-                    val error = ((target - phase) % 1.0 + 1.5) % 1.0 - 0.5
-                    phase += if (pulse.locked) error * PHASE_PULL else error
-                    pulse.locked = true
+                if (blend != null) {
+                    val beatNanos = blend.beatMs.takeIf { it > 0f }?.let { it * 1_000_000.0 }
+                    if (beatNanos != null) {
+                        phase += dt / beatNanos
+                        val target =
+                            Math.floorMod(now - blend.beatAnchorNanos, beatNanos.toLong()) / beatNanos
+                        val error = ((target - phase) % 1.0 + 1.5) % 1.0 - 0.5
+                        phase += if (pulse.locked) error * PHASE_PULL else error
+                        pulse.locked = true
+                    } else {
+                        phase += dt / BREATH_NANOS
+                        pulse.locked = false
+                    }
                 } else {
                     phase += dt / BREATH_NANOS
-                    if (blend != null) pulse.locked = false
                 }
                 phase -= kotlin.math.floor(phase)
                 pulse.phase = phase
