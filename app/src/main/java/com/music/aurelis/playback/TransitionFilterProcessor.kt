@@ -371,6 +371,7 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
     }
 }
 
+@UnstableApi
 interface TransitionFilters {
     fun incoming(lowPassHz: Float, highPassHz: Float)
     fun outgoing(lowPassHz: Float, highPassHz: Float)
