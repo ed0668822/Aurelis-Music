@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.data
 
 import android.content.Context
@@ -55,12 +56,12 @@ object AppUpdateChecker {
             val body = httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) null else response.body?.string()
             } ?: return@runCatching
-            
+
             val release = json.parseToJsonElement(body) as? JsonObject ?: return@runCatching
             val tag = release["tag_name"]?.jsonPrimitive?.contentOrNull ?: return@runCatching
             val url = release["html_url"]?.jsonPrimitive?.contentOrNull ?: return@runCatching
             val apkUrl = apkAssetUrl(release)
-            
+
             val latest = tag.removePrefix("v")
             if (isNewer(latest, BuildConfig.VERSION_NAME)) {
                 _available.value = UpdateInfo(latest, url, apkUrl)
@@ -74,7 +75,8 @@ object AppUpdateChecker {
             ?.mapNotNull { asset ->
                 val name = asset["name"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
                 val url = asset["browser_download_url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val ours = name.endsWith(".apk", ignoreCase = true) && asset["state"]?.jsonPrimitive?.contentOrNull == "uploaded"
+                val ours = name.endsWith(".apk", ignoreCase = true) &&
+                    asset["state"]?.jsonPrimitive?.contentOrNull == "uploaded"
                 if (ours) url else null
             }?.firstOrNull()
     }.getOrNull()
@@ -110,7 +112,9 @@ object AppUpdateChecker {
                             output.write(buffer, 0, read)
                             readTotal += read
                             total?.let {
-                                _download.value = DownloadState.Downloading((readTotal.toFloat() / it).coerceIn(0f, 1f))
+                                _download.value = DownloadState.Downloading(
+                                    (readTotal.toFloat() / it).coerceIn(0f, 1f),
+                                )
                             }
                         }
                     }
@@ -118,7 +122,11 @@ object AppUpdateChecker {
             }
             _download.value = DownloadState.Ready(target)
         }.onFailure { error ->
-            _download.value = if (downloadCancelled) DownloadState.Idle else DownloadState.Failed(error.message ?: "Error")
+            _download.value = if (downloadCancelled) {
+                DownloadState.Idle
+            } else {
+                DownloadState.Failed(error.message ?: "Error")
+            }
         }
     }
 
@@ -126,18 +134,24 @@ object AppUpdateChecker {
     fun resetDownload() { _download.value = DownloadState.Idle }
 
     fun installApk(context: Context, file: File) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !context.packageManager.canRequestPackageInstalls()
+        ) {
             val opened = runCatching {
-                context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                context.startActivity(
+                    Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                        .setData(Uri.parse("package:${context.packageName}"))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
             }.isSuccess
             if (opened) return
         }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         context.startActivity(
-            Intent(Intent.ACTION_INSTALL_PACKAGE)
+            Intent(Intent.ACTION_VIEW)
                 .setDataAndType(uri, "application/vnd.android.package-archive")
                 .putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }
 
