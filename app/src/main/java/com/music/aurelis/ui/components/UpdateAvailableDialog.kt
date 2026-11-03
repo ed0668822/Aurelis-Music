@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
@@ -18,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.aurelis.data.AppUpdateChecker
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 
@@ -38,61 +39,85 @@ fun UpdateAvailableDialog(
 
     Box(
         modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)).clickable(onClick = onDismiss),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             modifier = Modifier
                 .width(300.dp)
                 .clip(shape)
-                .hazeChild(state = hazeState, style = HazeMaterials.thick(MaterialTheme.colorScheme.surface))
+                .hazeEffect(state = hazeState, style = HazeMaterials.thick(MaterialTheme.colorScheme.surface))
                 .clickable(enabled = false) {},
         ) {
-            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
                     text = "Actualización Disponible",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "La versión $version está lista.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
-                
+
                 if (state is AppUpdateChecker.DownloadState.Downloading) {
                     Spacer(Modifier.height(16.dp))
                     val fraction = (state as AppUpdateChecker.DownloadState.Downloading).fraction
-                    LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(
+                        progress = { fraction },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
 
-            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                thickness = 0.5.dp,
+            )
 
             when (state) {
                 is AppUpdateChecker.DownloadState.Downloading -> {
-                    TextButton(onClick = onCancelDownload, modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                    TextButton(
+                        onClick = onCancelDownload,
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    ) {
                         Text("Cancelar descarga", color = MaterialTheme.colorScheme.error)
                     }
                 }
                 is AppUpdateChecker.DownloadState.Ready -> {
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        TextButton(onClick = onDismiss, modifier = Modifier.weight(1f).padding(8.dp)) {
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f).padding(8.dp),
+                        ) {
                             Text("Después")
                         }
-                        TextButton(onClick = onInstall, modifier = Modifier.weight(1f).padding(8.dp)) {
+                        TextButton(
+                            onClick = onInstall,
+                            modifier = Modifier.weight(1f).padding(8.dp),
+                        ) {
                             Text("Instalar", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
                 else -> {
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        TextButton(onClick = onDismiss, modifier = Modifier.weight(1f).padding(8.dp)) {
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f).padding(8.dp),
+                        ) {
                             Text("Recordar después")
                         }
-                        TextButton(onClick = onDownload, modifier = Modifier.weight(1f).padding(8.dp)) {
+                        TextButton(
+                            onClick = onDownload,
+                            modifier = Modifier.weight(1f).padding(8.dp),
+                        ) {
                             Text("Descargar", fontWeight = FontWeight.Bold)
                         }
                     }
