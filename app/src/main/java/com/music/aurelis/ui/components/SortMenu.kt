@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.clickable
@@ -6,8 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -41,7 +42,7 @@ fun SortMenu(
         modifier = modifier.size(40.dp),
     ) {
         Icon(
-            imageVector = Icons.Filled.Sort,
+            imageVector = Icons.AutoMirrored.Filled.Sort,
             contentDescription = "Ordenar biblioteca",
             tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(22.dp),
