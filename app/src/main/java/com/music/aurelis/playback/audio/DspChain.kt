@@ -2,12 +2,14 @@
 package com.music.aurelis.playback.audio
 
 import android.util.Log
+import androidx.media3.common.util.UnstableApi
 import com.music.aurelis.BuildConfig
 import com.music.aurelis.playback.EqualizerProcessor
 import com.music.aurelis.playback.LoudnessProcessor
 import com.music.aurelis.playback.SpatialAudioProcessor
 import com.music.aurelis.playback.TransitionFilterProcessor
 
+@UnstableApi
 class DspChain(
     val spatial: SpatialAudioProcessor = SpatialAudioProcessor(),
     val equalizer: EqualizerProcessor = EqualizerProcessor(),
