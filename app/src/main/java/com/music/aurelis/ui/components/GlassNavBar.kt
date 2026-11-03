@@ -1,19 +1,9 @@
 // Aurelis © 2026. GPL-3.0-or-later
-/*
- * The liquid glass navigation bar: the iOS 26 shape where the now playing
- * controls and the tabs are one component rather than two stacked bars.
- *
- * Adapted from BitChord's GlassNavBar, using Aurelis's own Haptics, PlayerDock
- * and LocalSong in place of BitChord's Haptic, PlayerDock and Song. The tab
- * strip is a plain Row (Aurelis's FloatingTabBar is ported separately in B2).
- */
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +17,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,17 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.music.aurelis.R
 import com.music.aurelis.data.model.LocalSong
-import com.music.aurelis.ui.components.BottomTab
 import com.music.aurelis.ui.haptics.Haptic
-import com.music.aurelis.ui.haptics.Haptics
 import com.music.aurelis.ui.haptics.rememberHaptics
 import com.music.aurelis.ui.player.PlayerDock
 
@@ -82,7 +68,6 @@ fun GlassNavBar(
     dock: PlayerDock? = null,
     modifier: Modifier = Modifier,
 ) {
-    val pillShape = remember { RoundedCornerShape(percent = 50) }
     val contentColor = glassContentColor()
     val selectedColor = contentColor
     val unselectedColor = contentColor.copy(alpha = 0.65f)
@@ -96,7 +81,6 @@ fun GlassNavBar(
             .padding(bottom = NAV_BAR_LIFT)
             .fillMaxWidth(),
     ) {
-        // Tab pill with liquid glass surface
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -147,18 +131,14 @@ fun GlassNavBar(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    if (index < tabs.lastIndex) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
+                    if (index < tabs.lastIndex) Spacer(modifier = Modifier.width(4.dp))
                 }
             }
         }
 
-        // Now playing accessory (inline, collapsed)
         song?.let { current ->
             GlassNowPlaying(
                 song = current,
-                isInline = true,
                 isPlaying = isPlaying,
                 isLoading = isLoading,
                 contentColor = contentColor,
@@ -167,8 +147,6 @@ fun GlassNavBar(
                 onPrevious = onPrevious,
                 onExpand = onExpand,
                 controlsLocked = controlsLocked,
-                onBlockedControl = onBlockedControl,
-                dock = dock,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
@@ -180,7 +158,6 @@ fun GlassNavBar(
 @Composable
 private fun GlassNowPlaying(
     song: LocalSong,
-    isInline: Boolean,
     isPlaying: Boolean,
     isLoading: Boolean,
     contentColor: Color,
@@ -189,28 +166,16 @@ private fun GlassNowPlaying(
     onPrevious: () -> Unit,
     onExpand: () -> Unit,
     controlsLocked: Boolean,
-    onBlockedControl: () -> Unit,
-    dock: PlayerDock?,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(
-            onClick = { onPrevious() },
-            enabled = !controlsLocked,
-        ) {
-            Icon(
-                imageVector = Icons.Default.SkipPrevious,
-                contentDescription = null,
-                tint = contentColor,
-            )
+        IconButton(onClick = onPrevious, enabled = !controlsLocked) {
+            Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = null, tint = contentColor)
         }
-        IconButton(
-            onClick = { onPlayPause() },
-            enabled = !controlsLocked,
-        ) {
+        IconButton(onClick = onPlayPause, enabled = !controlsLocked) {
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp))
             } else {
@@ -221,19 +186,10 @@ private fun GlassNowPlaying(
                 )
             }
         }
-        IconButton(
-            onClick = { onNext() },
-            enabled = !controlsLocked,
-        ) {
-            Icon(
-                imageVector = Icons.Default.SkipNext,
-                contentDescription = null,
-                tint = contentColor,
-            )
+        IconButton(onClick = onNext, enabled = !controlsLocked) {
+            Icon(imageVector = Icons.Default.SkipNext, contentDescription = null, tint = contentColor)
         }
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.titleMedium,
@@ -250,11 +206,7 @@ private fun GlassNowPlaying(
             )
         }
         IconButton(onClick = onExpand) {
-            Icon(
-                imageVector = Icons.Default.ExpandLess,
-                contentDescription = null,
-                tint = contentColor,
-            )
+            Icon(imageVector = Icons.Default.ExpandLess, contentDescription = null, tint = contentColor)
         }
     }
 }
