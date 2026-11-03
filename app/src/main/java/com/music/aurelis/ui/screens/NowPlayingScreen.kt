@@ -32,6 +32,8 @@ import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Chip
+import androidx.compose.material3.ChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -103,6 +105,7 @@ fun NowPlayingScreen(
     var showLyricsOffset by remember { mutableStateOf(false) }
 
     val lyricsOffset by SettingsRepository.lyricsOffsetMs.collectAsState()
+    val audioQuality by SettingsRepository.audioQuality.collectAsState()
     val hazeState = remember { HazeState() }
 
     AnimatedVisibility(
@@ -218,14 +221,25 @@ fun NowPlayingScreen(
                             textAlign = TextAlign.Center,
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        if (song.filePath?.endsWith(".flac", ignoreCase = true) == true) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_lossless),
-                                contentDescription = "Lossless",
-                                modifier = Modifier.size(20.dp, 12.dp),
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
-                            )
+                        val qualityLabel = when (audioQuality) {
+                            AudioQuality.LOSSLESS -> "Lossless"
+                            AudioQuality.HIGH -> "Alta calidad"
+                            AudioQuality.STANDARD -> "Estándar"
                         }
+                        Chip(
+                            onClick = null,
+                            label = {
+                                Text(
+                                    text = qualityLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            },
+                            colors = ChipDefaults.colors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            ),
+                            modifier = Modifier.size(90.dp, 24.dp),
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))

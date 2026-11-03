@@ -1,13 +1,16 @@
 // Aurelis © 2026. GPL-3.0-or-later.
 package com.music.aurelis.ui.player
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.scrollToItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.music.aurelis.data.lyrics.LyricLine
@@ -25,23 +28,54 @@ fun SyncedLyricsPanel(
     modifier: Modifier = Modifier,
 ) {
     if (lines.isEmpty()) {
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        androidx.compose.foundation.layout.Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 text = "Letras no disponibles",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         return
     }
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        items(lines) { line ->
+    val listState = remember { LazyListState() }
+
+    // Línea activa: la última cuyo timeMs <= posición actual
+    val activeIndex by derivedStateOf {
+        var idx = -1
+        for (i in lines.indices) {
+            if (lines[i].timeMs <= position.positionMs) {
+                idx = i
+            } else {
+                break
+            }
+        }
+        idx
+    }
+
+    // Scroll automático a la línea activa cuando cambia
+    val lastReportedIndex by rememberUpdatedState(activeIndex)
+    var lastScrolled by remember { mutableIntStateOf(-1) }
+    if (lastReportedIndex != lastScrolled && lastReportedIndex >= 0) {
+        listState.scrollToItem(lastReportedIndex)
+        lastScrolled = lastReportedIndex
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = modifier.fillMaxSize(),
+    ) {
+        itemsIndexed(lines) { index, line ->
+            val isActive = index == activeIndex
             Text(
                 text = line.text,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.fillMaxSize()
+                color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
+                fontWeight = if (isActive) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clickable { onSeekToLine(line.timeMs) },
             )
         }
     }

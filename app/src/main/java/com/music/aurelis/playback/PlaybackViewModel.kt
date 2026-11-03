@@ -220,7 +220,6 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         lyricsJob = viewModelScope.launch {
             val result = runCatching {
                 LyricsRepository.lyrics(
-                    videoId = song.id,
                     title = song.title,
                     artist = song.artist,
                     durationMs = song.durationMs,

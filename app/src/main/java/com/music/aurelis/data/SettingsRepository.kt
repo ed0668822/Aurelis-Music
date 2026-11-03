@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 enum class EqualizerMode { DYNAMIC, MANUAL }
 
+/** Calidad de audio preferida para reproducción local. */
+enum class AudioQuality { STANDARD, HIGH, LOSSLESS }
+
 object SettingsRepository {
     private lateinit var prefs: SharedPreferences
 
@@ -37,6 +40,9 @@ object SettingsRepository {
     // ── Spatial / Loudness ────────────────────────────────────────────────────
     val spatialAudio = MutableStateFlow(false)
     val loudnessNormalization = MutableStateFlow(false)
+
+    // ── Audio Quality ─────────────────────────────────────────────────────────
+    val audioQuality = MutableStateFlow(AudioQuality.LOSSLESS)
 
     // ── Player ────────────────────────────────────────────────────────────────
     val hideVolumeBar = MutableStateFlow(false)
@@ -82,6 +88,7 @@ object SettingsRepository {
 
         spatialAudio.value = prefs.getBoolean("spatial_audio", false)
         loudnessNormalization.value = prefs.getBoolean("loudness_norm", false)
+        audioQuality.value = AudioQuality.entries.getOrElse(prefs.getInt("audio_quality", 2)) { AudioQuality.LOSSLESS }
         hideVolumeBar.value = prefs.getBoolean("hide_volume_bar", false)
         showNerdStats.value = prefs.getBoolean("show_nerd_stats", false)
         lyricsOffsetMs.value = prefs.getInt("lyrics_offset_ms", 0)
@@ -151,6 +158,11 @@ object SettingsRepository {
     // ── Spatial / Loudness setters ────────────────────────────────────────────
     fun setSpatialAudio(value: Boolean) { spatialAudio.value = value; prefs.edit().putBoolean("spatial_audio", value).apply() }
     fun setLoudnessNormalization(value: Boolean) { loudnessNormalization.value = value; prefs.edit().putBoolean("loudness_norm", value).apply() }
+
+    fun setAudioQuality(value: AudioQuality) {
+        audioQuality.value = value
+        prefs.edit().putInt("audio_quality", value.ordinal).apply()
+    }
 
     // ── Player setters ────────────────────────────────────────────────────────
     fun setHideVolumeBar(value: Boolean) { hideVolumeBar.value = value; prefs.edit().putBoolean("hide_volume_bar", value).apply() }

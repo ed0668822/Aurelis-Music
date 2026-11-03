@@ -63,6 +63,7 @@ fun SettingsScreen(
     val filterNonMusic by SettingsRepository.filterNonMusicAudio.collectAsState()
     val autoplay by SettingsRepository.autoplay.collectAsState()
     val crossfade by SettingsRepository.crossfadeSeconds.collectAsState()
+    val audioQuality by SettingsRepository.audioQuality.collectAsState()
 
     if (showNameDialog) {
         var tempName by remember { mutableStateOf(userName) }
@@ -165,18 +166,25 @@ fun SettingsScreen(
                 onClick = { SettingsRepository.setDolbyAtmos(!dolbyAtmos) },
             )
             RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.GraphicEq,
-                title = "Lossless",
-                subtitle = "Reproduce la máxima calidad local.",
-                trailing = {
-                    Text(
-                        "Lossless",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Calidad de audio", style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(8.dp))
+                SegmentedControl(
+                    options = listOf("Estándar", "Alta", "Lossless"),
+                    selectedIndex = when (audioQuality) {
+                        AudioQuality.STANDARD -> 0
+                        AudioQuality.HIGH -> 1
+                        AudioQuality.LOSSLESS -> 2
+                    },
+                    onSelect = { index ->
+                        SettingsRepository.setAudioQuality(when (index) {
+                            0 -> AudioQuality.STANDARD
+                            1 -> AudioQuality.HIGH
+                            else -> AudioQuality.LOSSLESS
+                        })
+                    },
+                )
+            }
             RowDivider()
             SettingsRow(
                 icon = Icons.Rounded.Tune,
