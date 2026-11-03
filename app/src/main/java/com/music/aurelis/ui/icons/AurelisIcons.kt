@@ -2,6 +2,10 @@
 package com.music.aurelis.ui.icons
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -19,16 +23,16 @@ object AurelisIcons {
     val Repeat: ImageVector get() = Icons.Default.Repeat
     val Heart: ImageVector get() = Icons.Default.Favorite
     val HeartBorder: ImageVector get() = Icons.Default.FavoriteBorder
-    val Queue: ImageVector get() = Icons.Default.QueueMusic
+    val Queue: ImageVector get() = Icons.AutoMirrored.Filled.QueueMusic
     val Lyrics: ImageVector get() = Icons.Default.Subtitles
     val Equalizer: ImageVector get() = Icons.Default.Equalizer
-    val Volume: ImageVector get() = Icons.Default.VolumeUp
+    val Volume: ImageVector get() = Icons.AutoMirrored.Filled.VolumeUp
     val Folder: ImageVector get() = Icons.Default.Folder
     val Album: ImageVector get() = Icons.Default.Album
     val Artist: ImageVector get() = Icons.Default.Person
-    val Playlist: ImageVector get() = Icons.Default.PlaylistPlay
+    val Playlist: ImageVector get() = Icons.AutoMirrored.Filled.PlaylistPlay
     val MoreVert: ImageVector get() = Icons.Default.MoreVert
-    val ArrowBack: ImageVector get() = Icons.Default.ArrowBack
+    val ArrowBack: ImageVector get() = Icons.AutoMirrored.Filled.ArrowBack
     val ChevronRight: ImageVector get() = Icons.Default.ChevronRight
     val ChevronLeft: ImageVector get() = Icons.Default.ChevronLeft
     val Close: ImageVector get() = Icons.Default.Close
