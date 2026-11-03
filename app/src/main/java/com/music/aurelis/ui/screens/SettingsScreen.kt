@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.ProfileRepository
 import com.music.aurelis.data.SettingsRepository
+import com.music.aurelis.data.SettingsRepository.AudioQuality
 import com.music.aurelis.ui.components.*
 
 @Composable
@@ -175,6 +176,7 @@ fun SettingsScreen(
                         AudioQuality.STANDARD -> 0
                         AudioQuality.HIGH -> 1
                         AudioQuality.LOSSLESS -> 2
+                        else -> 0
                     },
                     onSelect = { index ->
                         SettingsRepository.setAudioQuality(when (index) {

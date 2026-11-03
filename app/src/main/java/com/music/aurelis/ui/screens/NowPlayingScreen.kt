@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.R
 import com.music.aurelis.data.SettingsRepository
+import com.music.aurelis.data.SettingsRepository.AudioQuality
 import com.music.aurelis.playback.LyricsState
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.playback.TranslationState
@@ -225,6 +226,7 @@ fun NowPlayingScreen(
                             AudioQuality.LOSSLESS -> "Lossless"
                             AudioQuality.HIGH -> "Alta calidad"
                             AudioQuality.STANDARD -> "Estándar"
+                            else -> "Estándar"
                         }
                         Chip(
                             onClick = null,

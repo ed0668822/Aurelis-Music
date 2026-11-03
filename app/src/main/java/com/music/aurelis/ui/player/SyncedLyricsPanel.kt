@@ -55,10 +55,10 @@ fun SyncedLyricsPanel(
 
     // Scroll automático a la línea activa cuando cambia
     val lastReportedIndex by rememberUpdatedState(activeIndex)
-    var lastScrolled by remember { mutableIntStateOf(-1) }
-    if (lastReportedIndex != lastScrolled && lastReportedIndex >= 0) {
-        listState.scrollToItem(lastReportedIndex)
-        lastScrolled = lastReportedIndex
+    LaunchedEffect(lastReportedIndex) {
+        if (lastReportedIndex >= 0) {
+            listState.animateScrollToItem(lastReportedIndex)
+        }
     }
 
     LazyColumn(

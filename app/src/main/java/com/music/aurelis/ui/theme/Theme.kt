@@ -112,18 +112,6 @@ private fun Typography.withFamily(family: FontFamily) = Typography(
     labelSmall = labelSmall.copy(fontFamily = family),
 )
 
-@Composable
-fun AurelisTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = AurelisTypography,
-        content = content
-    )
-}
-
 /**
  * Draws the status and navigation bar glyphs dark or light.
  *

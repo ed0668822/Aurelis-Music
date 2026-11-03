@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 
 object FloatingTabBarDefaults {
 
+    @Composable
     fun colors(
         backgroundColor: Color = MaterialTheme.colorScheme.surface,
         accessoryBackgroundColor: Color = MaterialTheme.colorScheme.surface,
@@ -18,6 +19,7 @@ object FloatingTabBarDefaults {
         indicatorColor = indicatorColor,
     )
 
+    @Composable
     fun elevations(
         inlineElevation: Dp = 0.dp,
         expandedElevation: Dp = 0.dp,
@@ -26,6 +28,7 @@ object FloatingTabBarDefaults {
         expandedElevation = expandedElevation,
     )
 
+    @Composable
     fun sizes(
         tabBarContentPadding: PaddingValues = PaddingValues(0.dp),
         tabExpandedContentPadding: PaddingValues = PaddingValues(0.dp),

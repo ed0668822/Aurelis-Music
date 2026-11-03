@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.aurelis.R
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.ui.components.BottomTab
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.Haptics
 import com.music.aurelis.ui.haptics.rememberHaptics
@@ -63,11 +64,6 @@ val INLINE_SPACING = 12.dp
 val INLINE_GUTTER = 28.dp
 val INLINE_LIFT = 4.dp
 val TAB_ICON_SIZE = 24.dp
-
-data class BottomTab(
-    val icon: androidx.compose.ui.graphics.ImageVector,
-    val label: String,
-)
 
 @Composable
 fun GlassNavBar(

@@ -114,11 +114,13 @@ class CrossfadeController(
 
     private var transitionJob: Job? = null
 
-    /** Punto del blend donde ocurre el intercambio de roles (mitad del crossfade). */
-    private const val HANDOFF_AT: Float = 0.5f
+    companion object {
+        /** Punto del blend donde ocurre el intercambio de roles (mitad del crossfade). */
+        @JvmField val HANDOFF_AT: Float = 0.5f
 
-    /** Longitud del paso de ganancia por frame para el desvanecimiento. */
-    private const val GAIN_STEP_FRAMES: Int = 16
+        /** Longitud del paso de ganancia por frame para el desvanecimiento. */
+        @JvmField val GAIN_STEP_FRAMES: Int = 16
+    }
 
     /**
      * Inicia una transición de [outgoing] a [incoming]. No hace nada si ya hay una
@@ -165,7 +167,7 @@ class CrossfadeController(
         phase = Phase.ARMED
     }
 
-    private fun blend(outgoing: ExoPlayer, incoming: ExoPlayer, plan: TransitionPlan) {
+    private suspend fun blend(outgoing: ExoPlayer, incoming: ExoPlayer, plan: TransitionPlan) {
         val durationMs = plan.crossfadeDurationMs.coerceIn(
             TransitionPolicy.MIN_CROSSFADE_MS,
             TransitionPolicy.MAX_CROSSFADE_MS,
@@ -187,14 +189,12 @@ class CrossfadeController(
 
             // Intercambio de roles a mitad del blend.
             if (t >= HANDOFF_AT && phase == Phase.BLENDING) {
-                withContext(Dispatchers.Main) {
-                    onHandoff(outgoing, incoming)
-                }
+                onHandoff(outgoing, incoming)
                 phase = Phase.HANDOFF_COMPLETE
             }
 
             frame += framesPerStep
-            delay(GAIN_STEP_FRAMES)
+            delay(GAIN_STEP_FRAMES.toLong())
         }
 
         // Asegurar ganancias finales: saliente a 0, entrante a 1.
@@ -203,13 +203,11 @@ class CrossfadeController(
         phase = Phase.SETTLING
     }
 
-    private fun finish(outgoing: ExoPlayer, incoming: ExoPlayer) {
+    private suspend fun finish(outgoing: ExoPlayer, incoming: ExoPlayer) {
         outgoing.stop()
         outgoing.clearMediaItems()
         phase = Phase.IDLE
-        withContext(Dispatchers.Main) {
-            onSettled()
-        }
+        onSettled()
     }
 
     private fun sqrt(v: Float): Float = kotlin.math.sqrt(v.toDouble()).toFloat()

@@ -30,7 +30,7 @@ class AutomixAnalysisSource {
      * Retorna [TrackFeatures.empty] si el archivo no se puede decodificar.
      */
     fun analyzeTrack(filePath: String): TrackFeatures {
-        val source = MediaDataSource(filePath)
+        val source = FileMediaDataSource(filePath)
         return runCatching {
             val region = AudioDecoder.decodeRegion(
                 source = source,
@@ -53,6 +53,27 @@ class AutomixAnalysisSource {
     }
 
     /** Estimación muy aproximada de tempo por autocorrelación simple del envelope. */
+    /** MediaDataSource concreta que lee de un archivo local. */
+    private class FileMediaDataSource(private val path: String) : MediaDataSource() {
+        override fun readAt(position: Long, length: Int): ByteArray {
+            val file = java.io.File(path)
+            val size = file.length().coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            val start = position.coerceIn(0L, size.toLong().coerceAtLeast(0)).toInt()
+            val end = (start + length).coerceAtMost(size)
+            if (start >= end) return ByteArray(0)
+            val buffer = ByteArray(end - start)
+            java.io.FileInputStream(file).use { fis ->
+                fis.skip(start.toLong())
+                fis.readFully(buffer)
+            }
+            return buffer
+        }
+
+        override fun getSize(): Long = java.io.File(path).length()
+
+        override fun close() {}
+    }
+
     private fun estimateTempo(pcm: Pcm, sampleRate: Float): Float {
         val samples = pcm.samples
         if (samples.size < 1024) return 120f
