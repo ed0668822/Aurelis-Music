@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback
 
 import androidx.media3.common.C
@@ -155,6 +155,7 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
         return inputAudioFormat
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onFlush() {
         lowState.fill(0f)
         highState.fill(0f)
