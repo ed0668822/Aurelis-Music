@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import android.net.Uri
@@ -25,10 +25,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material.icons.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.Subject
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -180,7 +180,7 @@ fun NowPlayingScreen(
 
                         IconButton(onClick = onOpenQueue) {
                             Icon(
-                                imageVector = Icons.Rounded.QueueMusic,
+                                imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
                                 contentDescription = "Abrir cola",
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(28.dp),
@@ -207,7 +207,7 @@ fun NowPlayingScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
                             text = song.title,
@@ -223,7 +223,7 @@ fun NowPlayingScreen(
                                 painter = painterResource(id = R.drawable.ic_lossless),
                                 contentDescription = "Lossless",
                                 modifier = Modifier.size(20.dp, 12.dp),
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant)
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
                             )
                         }
                     }
@@ -246,11 +246,15 @@ fun NowPlayingScreen(
                         onClick = { showLyrics = true },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            contentColor = MaterialTheme.colorScheme.onSurface
+                            contentColor = MaterialTheme.colorScheme.onSurface,
                         ),
-                        shape = CircleShape
+                        shape = CircleShape,
                     ) {
-                        Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Subject,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Ver Letras")
                     }
@@ -292,15 +296,19 @@ fun NowPlayingScreen(
                         Modifier
                             .fillMaxSize()
                             .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
-                            .statusBarsPadding()
+                            .statusBarsPadding(),
                     ) {
                         Column(Modifier.fillMaxSize()) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 IconButton(onClick = { showLyrics = false }) {
-                                    Icon(Icons.Rounded.KeyboardArrowDown, "Cerrar letras", tint = Color.White)
+                                    Icon(
+                                        Icons.Rounded.KeyboardArrowDown,
+                                        "Cerrar letras",
+                                        tint = Color.White,
+                                    )
                                 }
                                 Spacer(Modifier.weight(1f))
                                 IconButton(onClick = { showTranslationLanguages = true }) {
@@ -311,12 +319,12 @@ fun NowPlayingScreen(
                             if (lines.isEmpty()) {
                                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                                     Text(
-                                        text = when(lyricsState) {
+                                        text = when (lyricsState) {
                                             is LyricsState.Loading -> "Buscando letras..."
                                             is LyricsState.Missing -> "No se encontraron letras."
                                             else -> "Cargando..."
                                         },
-                                        color = Color.White.copy(alpha = 0.7f)
+                                        color = Color.White.copy(alpha = 0.7f),
                                     )
                                 }
                             } else {
@@ -333,7 +341,7 @@ fun NowPlayingScreen(
                                     looking = true,
                                     isPlaying = state.isPlaying,
                                     onSeekToLine = { playbackViewModel.seekTo(it) },
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
                         }
@@ -351,7 +359,7 @@ fun NowPlayingScreen(
                             if (currentLang.isNotBlank()) {
                                 playbackViewModel.translateLyrics(currentLang)
                             }
-                        }
+                        },
                     )
                 }
                 if (showLyricsOffset) {
@@ -359,7 +367,7 @@ fun NowPlayingScreen(
                         hazeState = hazeState,
                         offsetMs = lyricsOffset,
                         onOffsetChange = { SettingsRepository.setLyricsOffsetMs(it) },
-                        onDismiss = { showLyricsOffset = false }
+                        onDismiss = { showLyricsOffset = false },
                     )
                 }
             }
