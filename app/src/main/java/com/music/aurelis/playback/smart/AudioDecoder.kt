@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback.smart
 
 import android.media.MediaCodec
@@ -78,6 +79,7 @@ object AudioDecoder {
         return samples
     }
 
+    @Suppress("DEPRECATION")
     private fun decodeRaw(
         source: MediaDataSource,
         startSeconds: Double,
@@ -218,5 +220,6 @@ object AudioDecoder {
         right += rightChunk
     }
 
-    private fun MediaFormat.intOrNull(key: String): Int? = if (containsKey(key)) getInteger(key) else null
+    private fun MediaFormat.intOrNull(key: String): Int? =
+        if (containsKey(key)) getInteger(key) else null
 }
