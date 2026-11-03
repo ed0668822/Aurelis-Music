@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.music.aurelis.ui.components.glassContentColor
 
 @Composable
 fun FloatingTabBar(
@@ -49,8 +48,12 @@ fun FloatingTabBar(
     content: @Composable () -> Unit,
 ) {
     val transition = updateTransition(selectedTabKey, label = "FloatingTabBar transition")
+
+    // FIX: transitionSpec en Transition.animateFloat es
+    // @Composable Transition.Segment<S>.() -> FiniteAnimationSpec<Float>
+    // (receiver), NO (from, to) -> spec.
     val expanded by transition.animateFloat(
-        transitionSpec = { _, _ -> tween(220, easing = FastOutSlowInEasing) },
+        transitionSpec = { tween(220, easing = FastOutSlowInEasing) },
         label = "expanded",
     ) { state -> if (state == selectedTabKey) 1f else 0f }
 
@@ -106,7 +109,9 @@ fun FloatingTabItem(
     isSelected: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val tint = if (isSelected) MaterialTheme.colorScheme.primary
+    else MaterialTheme.colorScheme.onSurfaceVariant
+
     Column(
         modifier = modifier
             .fillMaxWidth()
