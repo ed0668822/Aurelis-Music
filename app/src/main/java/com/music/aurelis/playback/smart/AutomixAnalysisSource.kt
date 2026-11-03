@@ -56,23 +56,19 @@ class AutomixAnalysisSource {
     /** Estimación muy aproximada de tempo por autocorrelación simple del envelope. */
     /** MediaDataSource concreta que lee de un archivo local. */
     private class FileMediaDataSource(private val path: String) : MediaDataSource() {
-        override fun readAt(position: Long, length: Int): ByteArray {
-            val file = java.io.File(path)
-            val size = file.length().coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-            val start = position.coerceIn(0L, size.toLong().coerceAtLeast(0)).toInt()
-            val end = (start + length).coerceAtMost(size)
-            if (start >= end) return ByteArray(0)
-            val buffer = ByteArray(end - start)
-            java.io.FileInputStream(file).use { fis ->
-                fis.skip(start.toLong())
-                fis.readFully(buffer)
-            }
-            return buffer
+        private val raf = java.io.RandomAccessFile(java.io.File(path), "r")
+
+        override fun readAt(position: Long, buffer: ByteArray?, offset: Int, size: Int): Int {
+            if (buffer == null) return -1
+            raf.seek(position)
+            return raf.read(buffer, offset, size)
         }
 
-        override fun getSize(): Long = java.io.File(path).length()
+        override fun getSize(): Long = raf.length()
 
-        override fun close() {}
+        override fun close() {
+            raf.close()
+        }
     }
 
     private fun estimateTempo(pcm: Pcm, sampleRate: Float): Float {

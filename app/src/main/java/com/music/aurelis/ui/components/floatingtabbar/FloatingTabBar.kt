@@ -7,8 +7,10 @@
 package com.music.aurelis.ui.components.floatingtabbar
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.floatAnimatable
+import androidx.compose.animation.core.Animatable as floatAnimatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.updateTransition
 import androidx.compose.foundation.background
