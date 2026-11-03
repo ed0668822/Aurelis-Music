@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -16,31 +17,8 @@ import java.net.URLEncoder
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-/**
- * Web scraper for Genius.com lyrics.
- *
- * Used strictly as a last resort fallback when none of the time-synced providers
- * (LRCLIB, Musixmatch, BetterLyrics, KuGou, etc.) have lyrics for a track.
- *
- * Genius does not offer timestamps, but carries an immense catalogue. The scraper:
- *  1. Searches Genius's open multi-search endpoint (no API key required).
- *  2. Matches the best candidate song and grabs its webpage URL.
- *  3. Fetches the page HTML and extracts lyrics from `data-lyrics-container` tags.
- *  4. Cleans out Genius metadata (headers, translation links, "You might also like", "Embed").
- *  5. Retains section headers (e.g. "[Verse 1]", "[Chorus]") for beautiful formatted display.
- *
- * Only endpoint reached: https://genius.com (no API key).
- */
 object Genius {
 
-    /**
-     * What this says it is, which is deliberately not a browser.
-     *
-     * Genius sits behind Cloudflare, and Cloudflare now challenges a
-     * browser-claiming User-Agent whose TLS fingerprint and `sec-ch-ua`
-     * headers do not back the claim. A plain UA is answered `200` with the
-     * JSON and the lyrics HTML; a Chrome UA is answered `403`.
-     */
     private const val USER_AGENT = "Aurelis"
 
     private val json by lazy { Json { ignoreUnknownKeys = true; isLenient = true } }
@@ -53,14 +31,9 @@ object Genius {
     }
 
     suspend fun lyrics(title: String, artist: String): List<LyricLine>? = withContext(Dispatchers.IO) {
-        runCatching {
-            scrapeLyrics(title, artist)
-        }.getOrNull()
+        runCatching { scrapeLyrics(title, artist) }.getOrNull()
     }
 
-    /**
-     * Checks if a line is a section header like "[Verse 1]", "[Chorus]", "[Bridge]".
-     */
     fun isSectionHeader(text: String): Boolean =
         Regex("""^\s*\[[^\]]+\]\s*$""").matches(text)
 
@@ -68,7 +41,6 @@ object Genius {
         val cleanTitle = cleanQuery(title)
         val cleanArtist = cleanQuery(artist)
 
-        // If the title is in "Artist - Title" format, extract both parts
         val titleParts = if (cleanTitle.contains(TITLE_SEPARATOR)) {
             cleanTitle.split(TITLE_SEPARATOR, limit = 2)
         } else null
@@ -95,23 +67,16 @@ object Genius {
 
         val searchAttempts = mutableListOf<SearchAttempt>()
 
-        // 1. Extracted artist + extracted title
         if (extractedArtist.isNotBlank() && extractedTitle.isNotBlank()) {
             searchAttempts.add(SearchAttempt("$extractedArtist $extractedTitle".trim(), extractedTitle, extractedArtist))
         }
-
-        // 2. Extracted artist + title without brackets
         if (extractedArtist.isNotBlank() && titleWithoutBrackets.isNotBlank() && titleWithoutBrackets != extractedTitle) {
             searchAttempts.add(SearchAttempt("$extractedArtist $titleWithoutBrackets".trim(), titleWithoutBrackets, extractedArtist))
         }
-
-        // 3. Clean artist + clean title (in case separator wasn't Artist - Title)
         if (cleanTitle != extractedTitle) {
             searchAttempts.add(SearchAttempt("$cleanArtist $cleanTitle".trim(), cleanTitle, cleanArtist))
             searchAttempts.add(SearchAttempt(cleanTitle, extractedTitle, extractedArtist))
         }
-
-        // 4. Standalone extracted title without artist prefix
         if (titleWithoutBrackets.isNotBlank()) {
             searchAttempts.add(SearchAttempt(titleWithoutBrackets, titleWithoutBrackets, extractedArtist))
         } else if (extractedTitle.isNotBlank()) {
@@ -124,17 +89,12 @@ object Genius {
             .mapNotNull { attempt -> searchSongUrl(attempt.query, attempt.title, attempt.artist) }
             .firstOrNull() ?: return null
 
-        val html = fetchHtml(songUrl)
-        if (html.isNullOrBlank()) return null
-
-        val lines = parseHtml(html)
-        if (lines.isNullOrEmpty()) return null
+        val html = fetchHtml(songUrl) ?: return null
+        val lines = parseHtml(html) ?: return null
+        if (lines.isEmpty()) return null
         return lines
     }
 
-    /**
-     * Searches Genius for the track and returns the song's page URL.
-     */
     private fun searchSongUrl(query: String, targetTitle: String, targetArtist: String): String? {
         val url = "https://genius.com/api/search/multi?q=${URLEncoder.encode(query, "UTF-8")}"
         val responseBody = httpGet(url) ?: return null
@@ -179,52 +139,40 @@ object Genius {
             else if (titleMatches) score += 25
 
             if (artistMatches) {
-                if (artist == normArtist) score += 40
-                else score += 20
+                if (artist == normArtist) score += 40 else score += 20
             }
 
-            // Penalize translations / instrumentals / reviews unless specifically requested
             val path = item["path"]?.jsonPrimitive?.contentOrNull ?: ""
             if (path.contains("translation", ignoreCase = true) && !normTitle.contains("translation")) score -= 30
             if (path.contains("türkçe", ignoreCase = true) || path.contains("polskie-tlumaczenie", ignoreCase = true)) score -= 40
             if (path.contains("tracklist", ignoreCase = true) || path.contains("album-art", ignoreCase = true)) score -= 50
 
             if (score <= 0) return@mapNotNull null
-
             Pair(item, score)
         }
         return scored.maxByOrNull { it.second }?.first
     }
 
-    /**
-     * Parses the Genius lyrics HTML page using regex, extracting text while preserving
-     * stanzas and section headers.
-     */
-    fun parseHtml(html: String): List<LyricLine>? {
-        return runCatching {
-            parseHtmlUnsafe(html)
-        }.getOrNull()
-    }
+    fun parseHtml(html: String): List<LyricLine>? = runCatching { parseHtmlUnsafe(html) }.getOrNull()
 
     private fun parseHtmlUnsafe(html: String): List<LyricLine>? {
-        // Find all lyrics containers: modern Genius uses data-lyrics-container="true",
-        // older pages use div.lyrics
-        val containerRegex = Regex("""<div[^>]*(?:data-lyrics-container=["']true["']|class=["'][^"']*lyrics[^"']*["'])[^>]*>(.*?)</div>""", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
-        val containers = containerRegex.findAll(html).map { it.groupValues[1] }
+        // FIX: RegexOption no se puede combinar con `or`; usa setOf(...)
+        val containerRegex = Regex(
+            """<div[^>]*(?:data-lyrics-container=["']true["']|class=["'][^"']*lyrics[^"']*["'])[^>]*>(.*?)</div>""",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+        )
+        val containers = containerRegex.findAll(html).map { it.groupValues[1] }.toList()
         if (containers.isEmpty()) return null
 
         val fullTextBuilder = StringBuilder()
 
         for (container in containers) {
-            // Remove headers, contributors, translation links, buttons, ads, scripts, styles
             var cleaned = container
                 .replace(Regex("""(?s)<script[^>]*>.*?</script>"""), "")
                 .replace(Regex("""(?s)<style[^>]*>.*?</style>"""), "")
                 .replace(Regex("""(?s)<button[^>]*>.*?</button>"""), "")
                 .replace(Regex("""<[^>]+>"""), "")
 
-            // Turn <br> into explicit newlines before extracting text (already stripped by tag removal above,
-            // but handle standalone <br>)
             cleaned = cleaned.replace(Regex("""(?i)<br\s*/?>"""), "\n")
 
             val text = cleaned
@@ -239,9 +187,7 @@ object Genius {
                 .replace('\u200B', ' ')
                 .replace('\uFEFF', ' ')
 
-            if (text.isNotBlank()) {
-                fullTextBuilder.append(text).append("\n")
-            }
+            if (text.isNotBlank()) fullTextBuilder.append(text).append("\n")
         }
 
         val rawLyrics = fullTextBuilder.toString()
@@ -251,29 +197,16 @@ object Genius {
         return textToLyricLines(cleaned).takeIf { it.isNotEmpty() }
     }
 
-    /**
-     * Cleans common web scraper artifacts found on Genius:
-     * - "You might also like" insertions
-     * - Trailing "Embed" or "[0-9]+Embed"
-     * - Non-breaking or zero-width unicode spaces
-     */
-    fun stripArtifacts(raw: String): String {
-        return raw
-            // Replace non-breaking / special unicode spaces with normal space
+    fun stripArtifacts(raw: String): String =
+        raw
             .replace('\u00A0', ' ')
             .replace('\u200B', ' ')
             .replace('\uFEFF', ' ')
-            // Remove "You might also like" mid-text recommendations
             .replace(YOU_MIGHT_ALSO_LIKE, "")
             .trim()
-            // Remove trailing "123Embed" or "Embed" at the very end
             .replace(TRAILING_EMBED, "")
             .trim()
-    }
 
-    /**
-     * Converts clean multi-line lyrics text into structured [LyricLine]s.
-     */
     fun textToLyricLines(text: String): List<LyricLine> {
         val result = mutableListOf<LyricLine>()
         var lastWasGap = false
@@ -291,15 +224,13 @@ object Genius {
             }
         }
 
-        // Drop leading and trailing gaps
         while (result.isNotEmpty() && result.first().isGap) result.removeAt(0)
         while (result.isNotEmpty() && result.last().isGap) result.removeAt(result.lastIndex)
-
         return result
     }
 
     private fun cleanQuery(text: String): String {
-        var cleaned = text
+        val cleaned = text
             .replace(DECORATIVE_CHARS, " ")
             .replace(NOISE, " ")
             .replace(PRODUCER_TAGS, " ")
@@ -309,11 +240,7 @@ object Genius {
         return cleaned.ifBlank { text.trim() }
     }
 
-    private data class SearchAttempt(
-        val query: String,
-        val title: String,
-        val artist: String,
-    )
+    private data class SearchAttempt(val query: String, val title: String, val artist: String)
 
     private fun httpGet(url: String): String? = runCatching {
         val request = Request.Builder()
@@ -331,9 +258,7 @@ object Genius {
 
     private val TITLE_SEPARATOR by lazy { Regex("""\s*[-–—:]\s*""") }
     private val DECORATIVE_CHARS by lazy { Regex("""[♪♫★☆【】《》「」~_]""") }
-    private val PRODUCER_TAGS by lazy {
-        Regex("""(?i)\b(?:prod(?:uced)?\.?(?:\s+by)?)\s+.*$""")
-    }
+    private val PRODUCER_TAGS by lazy { Regex("""(?i)\b(?:prod(?:uced)?\.?(?:\s+by)?)\s+.*$""") }
     private val NOISE by lazy {
         Regex(
             """\s*[(\[]\s*(?:from|feat\.?|ft\.?|featuring|with|prod\.?|produced by|official|lyrical|video|audio|remix|music video|visualizer|mv|hd|4k|hq|full song)[^)\]]*[)\]]|""" +
