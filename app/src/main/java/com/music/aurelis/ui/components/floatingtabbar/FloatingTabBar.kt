@@ -146,7 +146,7 @@ fun FloatingTabItem(
     val tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         modifier = modifier
-            .weight(1f)
+            .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -167,4 +167,4 @@ fun FloatingTabItem(
     }
 }
 
-private fun Dp.toPx(density: Density): Float = with(density) { this.toPx() }
+

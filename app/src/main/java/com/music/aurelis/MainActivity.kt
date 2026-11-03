@@ -246,8 +246,16 @@ private fun AurelisApp() {
                     )
                 }
                 GlassNavBar(
-                    selectedTab = selectedTab,
+                    tabs = tabs,
+                    selectedIndex = selectedTab,
                     onTabSelected = { selectedTab = it },
+                    song = playbackState.currentSong,
+                    isPlaying = playbackState.isPlaying,
+                    isLoading = false,
+                    onPlayPause = { playbackViewModel.togglePlayPause() },
+                    onNext = { playbackViewModel.next() },
+                    onPrevious = { playbackViewModel.previous() },
+                    onExpand = { showNowPlaying = true },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

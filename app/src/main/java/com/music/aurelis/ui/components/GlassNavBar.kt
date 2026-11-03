@@ -128,7 +128,7 @@ fun GlassNavBar(
                     }
                     Column(
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .clickable(onClick = onClick)
                             .padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -232,7 +232,7 @@ private fun GlassNowPlaying(
             )
         }
         Column(
-            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         ) {
             Text(
                 text = song.title,
