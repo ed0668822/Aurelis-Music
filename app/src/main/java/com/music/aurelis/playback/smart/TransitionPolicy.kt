@@ -1,6 +1,9 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback.smart
 
+import kotlin.math.cos
+import kotlin.math.sin
+
 /**
  * Estilos de transición entre pistas para reproducción local.
  *
@@ -34,7 +37,7 @@ data class TransitionPlan(
     fun outgoingGain(t: Float): Float {
         val x = t.coerceIn(0f, 1f)
         return when (style) {
-            TransitionStyle.CROSSFADE -> cos(x * Math.PI / 2)
+            TransitionStyle.CROSSFADE -> cos(x * kotlin.math.PI.toFloat() / 2f)
             TransitionStyle.GAPLESS -> 1f
             TransitionStyle.ABRUPT -> if (x < 1f) 1f else 0f
         }
@@ -44,7 +47,7 @@ data class TransitionPlan(
     fun incomingGain(t: Float): Float {
         val x = t.coerceIn(0f, 1f)
         return when (style) {
-            TransitionStyle.CROSSFADE -> sin(x * Math.PI / 2)
+            TransitionStyle.CROSSFADE -> sin(x * kotlin.math.PI.toFloat() / 2f)
             TransitionStyle.GAPLESS -> 1f
             TransitionStyle.ABRUPT -> if (x < 1f) 0f else 1f
         }

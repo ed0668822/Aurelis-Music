@@ -4,6 +4,7 @@ package com.music.aurelis.ui.components.floatingtabbar
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 object FloatingTabBarDefaults {
