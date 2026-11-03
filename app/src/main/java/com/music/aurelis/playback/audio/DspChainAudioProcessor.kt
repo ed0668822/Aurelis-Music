@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback.audio
 
 import androidx.media3.common.C
@@ -92,6 +92,7 @@ class DspChainAudioProcessor(
         dst.flip()
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onFlush() {
         // A seek, a track change, or a format change: the filters' tails would
         // otherwise carry across the boundary and bleed one track into the next.
