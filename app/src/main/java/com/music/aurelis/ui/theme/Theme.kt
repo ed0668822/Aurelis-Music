@@ -4,23 +4,19 @@ package com.music.aurelis.ui.theme
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
-import com.music.aurelis.R
 
-// Apple Music's signature red. Kept for the spots (Replay's rank badge) that
-// want that specific red regardless of theme.
 val AccentRed = Color(0xFFFA2D48)
 
 private val DarkColors = darkColorScheme(
@@ -48,39 +44,22 @@ private val LightColors = lightColorScheme(
 )
 
 /**
- * SF Pro Display, the face Apple Music itself is set in, drawn one weight
- * lighter than it is asked for.
+ * Si dispones de los .otf de SF Pro Display (W400–W800), colócalos en
+ * `app/src/main/res/font/sf_pro_display_{regular,medium,semibold,bold}.otf`
+ * y restaura:
  *
- * Measured against Apple Music's own screens, every weight here came out a
- * cut heavier than the same text there: its titles are Semibold where these
- * asked for Bold, its metadata Medium where these asked for Semibold. The
- * shift is made once, in the family, so it reaches the type scale and every
- * weight set in place alike and keeps the steps between them: Heavy draws
- * Bold, Bold draws Semibold, Semibold draws Medium, Medium draws Regular.
- * Regular stays Regular — no lighter cut is bundled, and Apple's body text is
- * Regular too. A FontWeight in this app therefore names the step it sits at in
- * the scale, not the cut it draws.
+ *   val SFProDisplay = FontFamily(
+ *       Font(R.font.sf_pro_display_regular,  FontWeight.W400),
+ *       Font(R.font.sf_pro_display_regular,  FontWeight.W500),
+ *       Font(R.font.sf_pro_display_medium,   FontWeight.W600),
+ *       Font(R.font.sf_pro_display_semibold, FontWeight.W700),
+ *       Font(R.font.sf_pro_display_bold,     FontWeight.W800),
+ *   )
  *
- * Compose synthesises nothing, so a weight outside these falls back to the
- * nearest one listed.
+ * Mientras tanto se usa la familia por defecto del sistema.
  */
-val SFProDisplay = FontFamily(
-    Font(R.font.sf_pro_display_regular, FontWeight.W400),
-    Font(R.font.sf_pro_display_regular, FontWeight.W500),
-    Font(R.font.sf_pro_display_medium, FontWeight.W600),
-    Font(R.font.sf_pro_display_semibold, FontWeight.W700),
-    Font(R.font.sf_pro_display_bold, FontWeight.W800),
-)
+val SFProDisplay: FontFamily = FontFamily.Default
 
-/*
- * Letter spacing measured off Apple Music's own screens: the spacing the
- * bundled Display cut needs, at the weight it draws, to set a line to the
- * width Apple sets it. Apple sets text under 20pt in SF Pro Text, which is
- * spaced looser than Display, so the small sizes open up — about +0.25 to
- * +0.4 at 12 to 14 — and the spacing closes as the size grows, to just under
- * nothing for semibold titles at 18 to 24. The large titles had nothing to
- * measure against and follow the same trend.
- */
 private val AurelisTypography = Typography(
     displayLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 34.sp, letterSpacing = (-0.5).sp),
     headlineLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 30.sp, letterSpacing = (-0.4).sp),
@@ -93,7 +72,6 @@ private val AurelisTypography = Typography(
     labelSmall = TextStyle(fontWeight = FontWeight.W600, fontSize = 11.sp, letterSpacing = 0.3.sp),
 ).withFamily(SFProDisplay)
 
-/** Applies [family] to every style in the scale, so nothing is left on Roboto. */
 private fun Typography.withFamily(family: FontFamily) = Typography(
     displayLarge = displayLarge.copy(fontFamily = family),
     displayMedium = displayMedium.copy(fontFamily = family),
@@ -112,12 +90,6 @@ private fun Typography.withFamily(family: FontFamily) = Typography(
     labelSmall = labelSmall.copy(fontFamily = family),
 )
 
-/**
- * Draws the status and navigation bar glyphs dark or light.
- *
- * The bars have to follow the content the app is actually painting. Hence a
- * parameter rather than reading the system dark-mode setting here.
- */
 @Composable
 fun SystemBarIcons(dark: Boolean) {
     val view = LocalView.current
