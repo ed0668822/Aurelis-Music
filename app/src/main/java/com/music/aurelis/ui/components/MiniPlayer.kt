@@ -2,9 +2,11 @@
 package com.music.aurelis.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -41,14 +43,21 @@ fun MiniPlayer(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val pulse by animateFloatAsState(
-        targetValue = if (isPlaying) 1.05f else 1f,
-        animationSpec = if (isPlaying) {
+    // FIX: animationSpec no es nullable en animateFloatAsState.
+    // Cuando no se reproduce, no animamos (snap()). Cuando sí, oscilamos.
+    val pulseSpec: AnimationSpec<Float> =
+        if (isPlaying) {
             infiniteRepeatable(
                 animation = tween(durationMillis = 800),
                 repeatMode = RepeatMode.Reverse,
             )
-        } else null,
+        } else {
+            snap()
+        }
+
+    val pulse by animateFloatAsState(
+        targetValue = if (isPlaying) 1.05f else 1f,
+        animationSpec = pulseSpec,
         label = "miniPlayerPulse",
     )
 
