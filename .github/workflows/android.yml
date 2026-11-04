@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          NDK_VERSION="27.0.12077973"
+          NDK_VERSION="26.1.10909125"
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           NDK_DIR="${SDK_DIR}/ndk/${NDK_VERSION}"
           SDKMANAGER="${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager"
