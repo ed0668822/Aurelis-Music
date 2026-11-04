@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.ui.icons.AurelisIcons
 
 val PlayingAccent = Color(0xFFB4A7F5)
 
@@ -73,27 +76,33 @@ fun SongRow(
         }
         Spacer(Modifier.width(8.dp))
         if (onAutoMixClick != null || onLyricsClick != null) {
-            IconButton(
-                onClick = { onAutoMixClick?.invoke() },
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Favorite,
-                    contentDescription = "AutoMix",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            IconButton(
-                onClick = { onLyricsClick?.invoke() },
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Lyrics,
-                    contentDescription = "Ver Letras",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
+            Row(Modifier.size(32.dp)) {
+                if (onAutoMixClick != null) {
+                    IconButton(
+                        onClick = { onAutoMixClick() },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = AurelisIcons.Heart,
+                            contentDescription = "AutoMix",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+                if (onLyricsClick != null) {
+                    IconButton(
+                        onClick = { onLyricsClick() },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = AurelisIcons.Lyrics,
+                            contentDescription = "Ver Letras",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
             }
         }
     }

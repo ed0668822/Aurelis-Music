@@ -2,6 +2,7 @@
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,12 +29,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.music.aurelis.data.settings.DecoderFormat
+import com.music.aurelis.ui.icons.AurelisIcons
+
+/**
+ * Formato de decodificación disponible en Aurelis Music.
+ */
+enum class DecoderFormat {
+    DSD,
+    FFMPEG,
+    PCM
+}
 
 /**
  * DecoderControls es un panel de controles para los decodificadores de Aurelis Music.
  *
- * Permite ajustar el formato de decodificación (DSD, FFmpeg, etc.).
+ * Permite ajustar el formato de decodificación (DSD, FFmpeg, PCM).
  */
 @Composable
 fun DecoderControls(
@@ -66,7 +76,7 @@ fun DecoderControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.Favorite,
+                imageVector = AurelisIcons.Heart,
                 contentDescription = "DSD",
                 tint = if (useDsd) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp),
@@ -95,7 +105,7 @@ fun DecoderControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.FastForward,
+                imageVector = AurelisIcons.SkipNext,
                 contentDescription = "FFmpeg",
                 tint = if (useFfmpeg) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp),
@@ -126,7 +136,7 @@ fun DecoderControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.Speed,
+                imageVector = AurelisIcons.Equalizer,
                 contentDescription = "Tasa de muestreo",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp),
@@ -161,7 +171,6 @@ fun DecoderControls(
                         )
                         .clickable {
                             sampleRate = rate
-                            onDecoderFormatChange(decoderFormat?.copy(sampleRate = rate) ?: DecoderFormat.FFMPEG)
                         }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
@@ -186,7 +195,7 @@ fun DecoderControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.SurroundSound,
+                imageVector = AurelisIcons.Queue,
                 contentDescription = "Canales",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp),
@@ -221,7 +230,6 @@ fun DecoderControls(
                         )
                         .clickable {
                             channels = channelCount
-                            onDecoderFormatChange(decoderFormat?.copy(channels = channelCount) ?: DecoderFormat.FFMPEG)
                         }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {

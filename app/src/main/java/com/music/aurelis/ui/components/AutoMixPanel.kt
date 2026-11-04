@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -29,25 +30,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.music.aurelis.data.settings.MixBlend
-import com.music.aurelis.ui.haptics.Haptic
-import com.music.aurelis.ui.haptics.rememberHaptics
+import com.music.aurelis.ui.icons.AurelisIcons
+import com.music.aurelis.ui.player.PlayerHost
 
 /**
  * AutoMixPanel es un panel de controles para el AutoMix de Aurelis Music.
  *
- * Permite ajustar los parámetros de mezcla (volumen, crossfade, etc.).
+ * Permite ajustar los parámetros de mezcla (volumen, crossfade, intensidad).
  */
 @Composable
 fun AutoMixPanel(
-    mixBlend: MixBlend?,
-    onMixBlendChange: (MixBlend) -> Unit,
+    mixBlend: PlayerHost.MixBlend?,
+    onMixBlendChange: (PlayerHost.MixBlend) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val haptics = rememberHaptics()
-    var volume by remember { mutableFloatStateOf(mixBlend?.volume ?: 0.5f) }
-    var crossfade by remember { mutableFloatStateOf(mixBlend?.crossfade ?: 0.5f) }
-    var intensity by remember { mutableFloatStateOf(mixBlend?.intensity ?: 0.5f) }
+    var volume by remember { mutableFloatStateOf(0.5f) }
+    var crossfade by remember { mutableFloatStateOf(0.5f) }
+    var intensity by remember { mutableFloatStateOf(0.5f) }
+    var enabled by remember { mutableStateOf(mixBlend?.playing == true) }
 
     Column(
         modifier = modifier
@@ -69,7 +69,7 @@ fun AutoMixPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.VolumeUp,
+                imageVector = AurelisIcons.Volume,
                 contentDescription = "Volumen",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp),
@@ -91,8 +91,6 @@ fun AutoMixPanel(
             value = volume,
             onValueChange = {
                 volume = it
-                onMixBlendChange(mixBlend?.copy(volume = it) ?: MixBlend())
-                haptics.play(Haptic.Select)
             },
             valueRange = 0f..1f,
             modifier = Modifier
@@ -111,7 +109,7 @@ fun AutoMixPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.FastForward,
+                imageVector = AurelisIcons.SkipNext,
                 contentDescription = "Crossfade",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp),
@@ -133,8 +131,6 @@ fun AutoMixPanel(
             value = crossfade,
             onValueChange = {
                 crossfade = it
-                onMixBlendChange(mixBlend?.copy(crossfade = it) ?: MixBlend())
-                haptics.play(Haptic.Select)
             },
             valueRange = 0f..1f,
             modifier = Modifier
@@ -153,7 +149,7 @@ fun AutoMixPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.Favorite,
+                imageVector = AurelisIcons.Equalizer,
                 contentDescription = "Intensidad",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp),
@@ -175,8 +171,6 @@ fun AutoMixPanel(
             value = intensity,
             onValueChange = {
                 intensity = it
-                onMixBlendChange(mixBlend?.copy(intensity = it) ?: MixBlend())
-                haptics.play(Haptic.Select)
             },
             valueRange = 0f..1f,
             modifier = Modifier
@@ -197,7 +191,7 @@ fun AutoMixPanel(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(
-                    color = if (mixBlend?.enabled == true) {
+                    color = if (enabled) {
                         MaterialTheme.colorScheme.primaryContainer
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
@@ -214,18 +208,18 @@ fun AutoMixPanel(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
-                        text = if (mixBlend?.enabled == true) "AutoMix activado" else "AutoMix desactivado",
+                        text = if (enabled) "AutoMix activado" else "AutoMix desactivado",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = if (mixBlend?.enabled == true) {
+                        color = if (enabled) {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
                     )
                     Text(
-                        text = if (mixBlend?.enabled == true) "Mezcla automática de pistas" else "Mezcla manual",
+                        text = if (enabled) "Mezcla automática de pistas" else "Mezcla manual",
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (mixBlend?.enabled == true) {
+                        color = if (enabled) {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -234,20 +228,24 @@ fun AutoMixPanel(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Icon(
-                    imageVector = if (mixBlend?.enabled == true) {
-                        androidx.compose.material.icons.Icons.Default.Check
-                    } else {
-                        androidx.compose.material.icons.Icons.Default.Close
-                    },
-                    contentDescription = null,
-                    tint = if (mixBlend?.enabled == true) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(24.dp),
-                )
+                IconButton(
+                    onClick = { enabled = !enabled },
+                ) {
+                    Icon(
+                        imageVector = if (enabled) {
+                            AurelisIcons.Check
+                        } else {
+                            AurelisIcons.Close
+                        },
+                        contentDescription = null,
+                        tint = if (enabled) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
             }
         }
     }

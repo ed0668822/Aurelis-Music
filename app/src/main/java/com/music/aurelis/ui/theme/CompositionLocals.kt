@@ -5,5 +5,4 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 val LocalPlayerTint = compositionLocalOf { Color.Black }
-val LocalAppBackdrop = compositionLocalOf { Color.Black }
 val LocalMusicScreen = compositionLocalOf { "Home" }

@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -30,6 +31,15 @@ fun rememberHazeState(): HazeState {
 }
 
 /**
+ * Estilos de haze disponibles (nombres propios para evitar conflicto con dev.chrisbanes.haze.HazeStyle).
+ */
+enum class AurelisHazeStyle {
+    Thin,
+    Regular,
+    Thick,
+}
+
+/**
  * Aplica un efecto de haze a un elemento, usando el material de haze (blur + tint).
  *
  * @param modifier El modifier del elemento.
@@ -38,9 +48,9 @@ fun rememberHazeState(): HazeState {
  * @param tint El color de tint para el haze (se adapta automáticamente al tema).
  */
 @Composable
-fun Modifier.hazeEffect(
+fun Modifier.aurelisHazeEffect(
     hazeState: HazeState,
-    style: HazeStyle = HazeStyle.Regular,
+    style: AurelisHazeStyle = AurelisHazeStyle.Regular,
     tint: Color? = null,
 ): Modifier {
     val themeTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
@@ -51,24 +61,18 @@ fun Modifier.hazeEffect(
     val finalTint = tint ?: themeTint
 
     return when (style) {
-        HazeStyle.Thin -> hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint))
-        HazeStyle.Regular -> hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint))
-        HazeStyle.Thick -> hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint))
+        AurelisHazeStyle.Thin -> hazeSource(hazeState)
+            .then(hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint)))
+        AurelisHazeStyle.Regular -> hazeSource(hazeState)
+            .then(hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint)))
+        AurelisHazeStyle.Thick -> hazeSource(hazeState)
+            .then(hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint)))
     }
 }
 
 /**
- * Estilos de haze disponibles.
- */
-enum class HazeStyle {
-    Thin,
-    Regular,
-    Thick,
-}
-
-/**
  * Aplica un efecto de haze a un Box que cubre toda la pantalla, permitiendo que
- * cualquier elemento con `.hazeEffect()` pueda samplear el fondo.
+ * cualquier elemento con `.aurelisHazeEffect()` pueda samplear el fondo.
  *
  * @param modifier El modifier del Box.
  * @param hazeState El HazeState creado con [rememberHazeState].

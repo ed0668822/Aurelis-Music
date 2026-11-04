@@ -8,7 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 /**
- * NavigationController gestiona las rutas de navegación de Aurelis Music.
+ * NavigationRoute gestiona las rutas de navegación de Aurelis Music.
  *
  * Rutas disponibles:
  * - 0: Home
@@ -29,6 +29,11 @@ sealed class NavigationRoute(val index: Int) {
     object Queue : NavigationRoute(5)
     object Settings : NavigationRoute(6)
     object Replay : NavigationRoute(7)
+
+    companion object {
+        fun values(): List<NavigationRoute> =
+            listOf(Home, Explore, Library, Search, NowPlaying, Queue, Settings, Replay)
+    }
 }
 
 /**
