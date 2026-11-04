@@ -78,8 +78,7 @@ fun GlassNavBar(
     Column(
         modifier = modifier
             .padding(horizontal = NAV_BAR_GUTTER)
-            .padding(bottom = NAV_BAR_LIFT)
-            .fillMaxWidth(),
+            .padding(bottom = NAV_BAR_LIFT),
     ) {
         Box(
             modifier = Modifier
