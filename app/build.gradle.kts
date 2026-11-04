@@ -117,7 +117,7 @@ android {
     }
 
     androidResources {
-        noCompress.add("")
+        noCompress.add("onnx")
     }
 
     packaging {
@@ -127,12 +127,10 @@ android {
         }
     }
 
-    // Renombrado simple: una sola APK, sin splits, sin depender de OutputFile.
-    applicationVariants.all {
-        val variant = this
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "Aurelis Music-v${variant.versionName}.apk"
+    // Renombrado simple: una sola APK, sin splits, sin depender de API interna de AGP.
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            output.outputFileName.set("Aurelis Music-v${variant.versionName.get()}.apk")
         }
     }
 
