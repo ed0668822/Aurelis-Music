@@ -57,13 +57,13 @@ val autoVersionName = if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
 
 android {
     namespace = "com.music.aurelis"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.music.aurelis"
         minSdk = 33
-        targetSdk = 35
+        targetSdk = 37
         versionCode = autoVersionCode
         versionName = autoVersionName
 
