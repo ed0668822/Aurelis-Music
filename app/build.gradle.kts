@@ -8,12 +8,20 @@ plugins {
 
 val localProps = java.util.Properties().apply {
     val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
+    if (file.exists()) {
+        file.inputStream().use { stream ->
+            this.load(stream)
+        }
+    }
 }
 
 val signingProps = java.util.Properties().apply {
     val file = rootProject.file("keystore.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
+    if (file.exists()) {
+        file.inputStream().use { stream ->
+            this.load(stream)
+        }
+    }
 }
 
 fun readValue(key: String, default: String = ""): String {
