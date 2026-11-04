@@ -16,12 +16,12 @@ fun rememberBackdrop(
     onDraw: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit
 ): Backdrop {
     return remember(backdrop, onDraw) {
-        Backdrop(backdrop, onDraw)
+        ComposedBackdrop(backdrop, onDraw)
     }
 }
 
 @Immutable
-private class Backdrop(
+private class ComposedBackdrop(
     val backdrop: Backdrop,
     val onDraw: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit
 ) : Backdrop {
