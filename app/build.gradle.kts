@@ -64,13 +64,13 @@ val autoVersionName = if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
 
 android {
     namespace = "com.music.aurelis"
-    compileSdk = 37
+    compileSdk = 36
     ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.music.aurelis"
         minSdk = 33
-        targetSdk = 37
+        targetSdk = 36
         versionCode = autoVersionCode
         versionName = autoVersionName
 
@@ -207,4 +207,4 @@ dependencies {
     implementation("org.checkerframework:checker-qual:3.48.3")
     implementation("org.jsoup:jsoup:1.18.1")
     compileOnly("org.jspecify:jspecify:1.0.0")
-}
+}}
