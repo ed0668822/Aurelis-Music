@@ -1,0 +1,94 @@
+// Aurelis © 2026. GPL-3.0-or-later
+package com.music.aurelis.ui.theme
+
+import android.os.Build
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.HazeMaterials
+
+/**
+ * Haze es una biblioteca de Chris Banes para efectos de desenfoque (blur) en
+ * Compose, disponible en Android 12+ (API 31+). Se usa para crear efectos de
+ * cristal (glassmorphism) y desenfoque de fondo en la UI.
+ *
+ * Esta función crea un HazeState y lo aplica a un Box que cubre toda la pantalla,
+ * permitiendo que cualquier elemento con `.hazeEffect()` pueda samplear el fondo.
+ */
+@Composable
+fun rememberHazeState(): HazeState {
+    return remember { HazeState() }
+}
+
+/**
+ * Aplica un efecto de haze a un elemento, usando el material de haze (blur + tint).
+ *
+ * @param modifier El modifier del elemento.
+ * @param hazeState El HazeState creado con [rememberHazeState].
+ * @param style El estilo de haze (thin, regular, thick).
+ * @param tint El color de tint para el haze (se adapta automáticamente al tema).
+ */
+@Composable
+fun Modifier.hazeEffect(
+    hazeState: HazeState,
+    style: HazeStyle = HazeStyle.Regular,
+    tint: Color? = null,
+): Modifier {
+    val themeTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
+        Color(0xFFFAFAFA)
+    } else {
+        Color(0xFF121212)
+    }
+    val finalTint = tint ?: themeTint
+
+    return when (style) {
+        HazeStyle.Thin -> hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint))
+        HazeStyle.Regular -> hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint))
+        HazeStyle.Thick -> hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint))
+    }
+}
+
+/**
+ * Estilos de haze disponibles.
+ */
+enum class HazeStyle {
+    Thin,
+    Regular,
+    Thick,
+}
+
+/**
+ * Aplica un efecto de haze a un Box que cubre toda la pantalla, permitiendo que
+ * cualquier elemento con `.hazeEffect()` pueda samplear el fondo.
+ *
+ * @param modifier El modifier del Box.
+ * @param hazeState El HazeState creado con [rememberHazeState].
+ * @param content El contenido del Box.
+ */
+@Composable
+fun HazeBox(
+    modifier: Modifier = Modifier,
+    hazeState: HazeState = rememberHazeState(),
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .hazeSource(hazeState),
+        content = content,
+    )
+}
+
+/**
+ * Verifica si el dispositivo soporta haze (Android 12+).
+ */
+fun isHazeSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt >= Build.VERSION_CODES.S

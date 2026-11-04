@@ -164,7 +164,7 @@ private fun AurelisApp() {
                     onArtistClick = { },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
-                    contentPadding = PaddingValues(0.dp),
+                    contentPadding = PaddingValues(bottom = 180.dp),
                 )
             }
 
@@ -189,7 +189,7 @@ private fun AurelisApp() {
                             listState = listState,
                             links = links,
                             onShowAll = { },
-                            contentPadding = PaddingValues(0.dp),
+                            contentPadding = PaddingValues(bottom = 180.dp),
                         )
                     }
                 }
@@ -219,7 +219,7 @@ private fun AurelisApp() {
                     onHistoryClear = { },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
-                    contentPadding = PaddingValues(0.dp),
+                    contentPadding = PaddingValues(bottom = 180.dp),
                     topPadding = 0.dp,
                 )
             }

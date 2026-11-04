@@ -98,7 +98,6 @@ fun GlassNavBar(
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -112,7 +111,7 @@ fun GlassNavBar(
                     }
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .weight(1f)
                             .clickable(onClick = onClick)
                             .padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,

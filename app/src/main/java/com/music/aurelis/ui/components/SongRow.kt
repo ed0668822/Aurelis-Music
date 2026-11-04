@@ -36,6 +36,8 @@ fun SongRow(
     isPlaying: Boolean,
     searchPlayingStyle: Boolean = false,
     activeTint: Color = PlayingAccent,
+    onAutoMixClick: (() -> Unit)? = null,
+    onLyricsClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -68,6 +70,31 @@ fun SongRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+        Spacer(Modifier.width(8.dp))
+        if (onAutoMixClick != null || onLyricsClick != null) {
+            IconButton(
+                onClick = { onAutoMixClick?.invoke() },
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Favorite,
+                    contentDescription = "AutoMix",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            IconButton(
+                onClick = { onLyricsClick?.invoke() },
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Lyrics,
+                    contentDescription = "Ver Letras",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }
