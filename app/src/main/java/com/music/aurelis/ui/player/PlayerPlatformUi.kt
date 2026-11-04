@@ -1,6 +1,5 @@
 package com.music.aurelis.ui.player
 
-import android.os.Build
 import android.os.SystemClock
 import android.view.View
 import android.window.OnBackInvokedCallback
@@ -19,8 +18,7 @@ import androidx.compose.ui.platform.LocalView
 internal fun uptimeMillis(): Long = SystemClock.uptimeMillis()
 
 /** Whether `Modifier.blur` actually blurs here, rather than being a no-op. */
-internal val renderEffectBlurSupported: Boolean
-    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+internal val renderEffectBlurSupported: Boolean = true
 
 /** Holds off the display's idle timeout for as long as [enabled]. */
 @Composable
@@ -56,12 +54,10 @@ internal fun appLanguageTag(): String {
 @Composable
 internal fun PlayerBackHandler(enabled: Boolean, onBack: () -> Unit) {
     BackHandler(enabled = enabled, onBack = onBack)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val view = LocalView.current
-        DisposableEffect(view, enabled) {
-            val callback = if (enabled) OverlayBack.register(view, onBack) else null
-            onDispose { OverlayBack.unregister(view, callback) }
-        }
+    val view = LocalView.current
+    DisposableEffect(view, enabled) {
+        val callback = if (enabled) OverlayBack.register(view, onBack) else null
+        onDispose { OverlayBack.unregister(view, callback) }
     }
 }
 

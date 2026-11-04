@@ -47,9 +47,9 @@ fun SearchField(
     query: String,
     onQueryChange: (String) -> Unit,
     onSubmit: () -> Unit,
+    modifier: Modifier = Modifier,
     focusRequester: FocusRequester = remember { FocusRequester() },
     placeholder: String = stringResource(R.string.search_hint),
-    modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current

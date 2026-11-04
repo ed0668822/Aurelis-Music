@@ -4,7 +4,6 @@ package com.music.aurelis.data
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.core.content.FileProvider
 import com.music.aurelis.BuildConfig
@@ -134,13 +133,11 @@ object AppUpdateChecker {
     fun resetDownload() { _download.value = DownloadState.Idle }
 
     fun installApk(context: Context, file: File) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            !context.packageManager.canRequestPackageInstalls()
-        ) {
+        if (!context.packageManager.canRequestPackageInstalls()) {
             val opened = runCatching {
                 context.startActivity(
                     Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-                        .setData(Uri.parse("package:${context.packageName}"))
+                        .setData("package:${context.packageName}".toUri())
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                 )
             }.isSuccess

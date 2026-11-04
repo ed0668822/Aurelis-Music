@@ -72,8 +72,7 @@ fun ArtworkMeshBackdrop(
     reduceAnimation: Boolean = false,
     reduceDynamicBlur: Boolean = false,
 ) {
-    val canBlur = !reduceDynamicBlur &&
-        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+    val canBlur = !reduceDynamicBlur
 
     var shown by remember { mutableStateOf(mesh) }
     var incoming by remember { mutableStateOf<ArtworkMesh?>(null) }

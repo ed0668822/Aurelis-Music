@@ -29,6 +29,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -77,7 +78,7 @@ fun ThinSlider(
         label = "sliderHeight",
     )
     var shownLoading by remember { mutableStateOf(loading) }
-    var sheenStart by remember { mutableStateOf(System.nanoTime()) }
+    var sheenStart by remember { mutableLongStateOf(System.nanoTime()) }
     LaunchedEffect(loading) {
         if (loading) {
             sheenStart = System.nanoTime()

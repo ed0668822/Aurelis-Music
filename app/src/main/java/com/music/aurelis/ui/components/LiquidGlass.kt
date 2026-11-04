@@ -9,7 +9,6 @@
  */
 package com.music.aurelis.ui.components
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CornerBasedShape
@@ -56,8 +55,9 @@ internal val LocalGlassExport = androidx.compose.runtime.compositionLocalOf<Laye
 /**
  * The backdrop blur pipeline requires [android.graphics.RenderEffect] on a
  * [android.graphics.RenderNode], available from Android 12 (API 31).
+ * Since minSdk is 33, this is always supported.
  */
-fun isGlassSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt >= Build.VERSION_CODES.S
+fun isGlassSupported(): Boolean = true
 
 /** Apple-matched defaults (Echo's GlassEffectConfig()), fixed rather than user sliders. */
 private const val VIBRANCY = 1f
@@ -121,7 +121,7 @@ fun Modifier.lightweightLiquidGlass(
     shape: CornerBasedShape,
     fallbackColor: Color,
 ): Modifier {
-    val useGlass = LocalLiquidGlassEnabled.current && isGlassSupported()
+    val useGlass = LocalLiquidGlassEnabled.current
     val glassTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
         Color(0xFFFAFAFA)
     } else {
@@ -158,7 +158,7 @@ fun Modifier.lightweightLiquidGlass(
  */
 @Composable
 fun Modifier.liquidGlassRim(shape: CornerBasedShape): Modifier {
-    if (!LocalLiquidGlassEnabled.current || !isGlassSupported()) return this
+    if (!LocalLiquidGlassEnabled.current) return this
     val shapeProvider = remember(shape) { ShapeProvider { shape } }
     return then(
         HighlightElement(
@@ -188,7 +188,6 @@ fun Modifier.liquidGlass(
     /** Drawn over the glass in place of the theme's default tint, when set. */
     surfaceTint: Color? = null,
 ): Modifier {
-    if (!isGlassSupported()) return this
     val reduceDynamicBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
     if (reduceDynamicBlur) {
         return background(MaterialTheme.colorScheme.surface, shape)
@@ -213,14 +212,12 @@ fun Modifier.liquidGlass(
         effects = {
             colorControls(saturation = 1f + 0.5f * VIBRANCY)
             blur(blurPx)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                lens(
-                    refractionHeight = lensHeightPx,
-                    refractionAmount = lensAmountPx,
-                    depthEffect = true,
-                    chromaticAberration = true,
-                )
-            }
+            lens(
+                refractionHeight = lensHeightPx,
+                refractionAmount = lensAmountPx,
+                depthEffect = true,
+                chromaticAberration = true,
+            )
         },
         highlight = { Highlight.Default },
         shadow = { Shadow.Default },

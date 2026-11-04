@@ -36,8 +36,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun FloatingTabBar(
     selectedTabKey: Int,
-    scrollConnection: FloatingTabBarScrollConnection? = null,
     modifier: Modifier = Modifier,
+    scrollConnection: FloatingTabBarScrollConnection? = null,
     tabBarContentModifier: Modifier = Modifier,
     inlineAccessory: (@Composable (Modifier, Any?) -> Unit)? = null,
     expandedAccessory: (@Composable (Modifier, Any?) -> Unit)? = null,

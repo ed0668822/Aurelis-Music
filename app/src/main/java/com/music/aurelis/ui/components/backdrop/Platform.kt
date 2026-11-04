@@ -1,11 +1,9 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components.backdrop
 
-import android.os.Build
-import androidx.annotation.ChecksSdkIntAtLeast
+/**
+ * Since minSdk is 33 (TIRAMISU), both RenderEffect and RuntimeShader are always supported.
+ */
+fun isRenderEffectSupported(): Boolean = true
 
-@ChecksSdkIntAtLeast(Build.VERSION_CODES.S)
-fun isRenderEffectSupported(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-
-@ChecksSdkIntAtLeast(Build.VERSION_CODES.TIRAMISU)
-fun isRuntimeShaderSupported(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+fun isRuntimeShaderSupported(): Boolean = true

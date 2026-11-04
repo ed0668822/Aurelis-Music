@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Aurelis Music</string>
 
     <!-- Search -->
@@ -160,7 +160,7 @@
     <string name="replay_this_week">Esta semana</string>
     <string name="replay_period_weekly">Semanal</string>
     <string name="replay_period_monthly">Mensual</string>
-    <string name="replay_period_yearly">Anual</string>
+    <string name="replay_period_yearly">Annual</string>
     <string name="replay_period_lifetime">Histórico</string>
     <string name="share_my_replay">Compartir mi Replay</string>
     <string name="your_replay">Tu Replay</string>
@@ -212,7 +212,7 @@
     <string name="equalizer_balance_right">R</string>
     <string name="equalizer_dynamic">Dinámico</string>
     <string name="equalizer_manual">Manual</string>
-    <string name="selected">Seleccionado</string>
+    <string name="selected" tools:override="true">Seleccionado</string>
     <string name="system_equalizer">Ecualizador del sistema</string>
     <string name="system_equalizer_subtitle">Abrir el panel de audio del dispositivo</string>
     <string name="system_equalizer_footer">Usa el ecualizador del sistema si tu dispositivo lo soporta.</string>

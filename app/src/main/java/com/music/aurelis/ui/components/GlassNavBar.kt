@@ -63,10 +63,10 @@ fun GlassNavBar(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     onExpand: () -> Unit,
+    modifier: Modifier = Modifier,
     controlsLocked: Boolean = false,
     onBlockedControl: () -> Unit = {},
     dock: PlayerDock? = null,
-    modifier: Modifier = Modifier,
 ) {
     val contentColor = glassContentColor()
     val selectedColor = contentColor

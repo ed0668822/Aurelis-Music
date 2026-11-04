@@ -1,7 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CornerBasedShape
@@ -33,8 +32,9 @@ internal val LocalGlassExport = compositionLocalOf<Any?> { null }
 /**
  * The backdrop blur pipeline requires [android.graphics.RenderEffect] on a
  * [android.graphics.RenderNode], available from Android 12 (API 31).
+ * Since minSdk is 33, this is always supported.
  */
-fun isGlassSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt >= Build.VERSION_CODES.S
+fun isGlassSupported(): Boolean = true
 
 /** Apple-matched defaults (Echo's GlassEffectConfig()), fixed rather than user sliders. */
 private const val VIBRANCY = 1f
@@ -90,7 +90,7 @@ fun Modifier.lightweightLiquidGlass(
     shape: CornerBasedShape,
     fallbackColor: Color,
 ): Modifier {
-    val useGlass = LocalLiquidGlassEnabled.current && isGlassSupported()
+    val useGlass = LocalLiquidGlassEnabled.current
     val glassTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
         Color(0xFFFAFAFA)
     } else {
@@ -111,7 +111,7 @@ fun Modifier.lightweightLiquidGlass(
  */
 @Composable
 fun Modifier.liquidGlassRim(shape: CornerBasedShape): Modifier {
-    if (!LocalLiquidGlassEnabled.current || !isGlassSupported()) return this
+    if (!LocalLiquidGlassEnabled.current) return this
     return then(
         Modifier.border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape),
     )
@@ -128,7 +128,6 @@ fun Modifier.liquidGlass(
     /** Drawn over the glass in place of the theme's default tint, when set. */
     surfaceTint: Color? = null,
 ): Modifier {
-    if (!isGlassSupported()) return this
     val backdrop = LocalAppBackdrop.current
     val density = LocalDensity.current
     val blurPx = with(density) { BLUR_RADIUS_DP.dp.toPx() } * GLASS_RESOLUTION_SCALE

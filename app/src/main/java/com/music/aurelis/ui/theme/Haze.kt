@@ -1,7 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,12 +62,12 @@ fun Modifier.aurelisHazeEffect(
     val finalTint = tint ?: themeTint
 
     return when (style) {
-        AurelisHazeStyle.Thin -> hazeSource(hazeState)
-            .then(hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint)))
-        AurelisHazeStyle.Regular -> hazeSource(hazeState)
-            .then(hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint)))
-        AurelisHazeStyle.Thick -> hazeSource(hazeState)
-            .then(hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint)))
+        AurelisHazeStyle.Thin -> Modifier.hazeSource(hazeState)
+            .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint)))
+        AurelisHazeStyle.Regular -> Modifier.hazeSource(hazeState)
+            .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint)))
+        AurelisHazeStyle.Thick -> Modifier.hazeSource(hazeState)
+            .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint)))
     }
 }
 
@@ -96,5 +95,6 @@ fun HazeBox(
 
 /**
  * Verifica si el dispositivo soporta haze (Android 12+).
+ * Since minSdk is 33, this is always supported.
  */
-fun isHazeSupported(sdkInt: Int = Build.VERSION.SDK_INT): Boolean = sdkInt >= Build.VERSION_CODES.S
+fun isHazeSupported(): Boolean = true

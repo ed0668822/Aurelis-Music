@@ -21,7 +21,7 @@ class AurelisApplication : Application(), SingletonImageLoader.Factory {
         val lastVersion = meta.getInt("last_version_code", 0)
         if (lastVersion != BuildConfig.VERSION_CODE) {
             runCatching { cacheDir.resolve("image_cache").deleteRecursively() }
-            meta.edit().putInt("last_version_code", BuildConfig.VERSION_CODE).apply()
+            meta.edit { putInt("last_version_code", BuildConfig.VERSION_CODE) }
         }
     }
 

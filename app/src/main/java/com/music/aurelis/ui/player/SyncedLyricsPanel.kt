@@ -32,8 +32,8 @@ fun SyncedLyricsPanel(
     looking: Boolean,
     isPlaying: Boolean,
     onSeekToLine: (Long) -> Unit,
-    centerFocus: Boolean = false,
     modifier: Modifier = Modifier,
+    centerFocus: Boolean = false,
 ) {
     if (lines.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -20,7 +20,7 @@ fun ArtworkBackdrop(
         modifier = modifier
             .fillMaxSize()
             .background(
-                BrushVertical(
+                brushVertical(
                     listOf(
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                         MaterialTheme.colorScheme.surface
@@ -31,4 +31,4 @@ fun ArtworkBackdrop(
 }
 
 @Composable
-fun BrushVertical(colors: List<Color>) = androidx.compose.ui.graphics.Brush.verticalGradient(colors)
+fun brushVertical(colors: List<Color>) = androidx.compose.ui.graphics.Brush.verticalGradient(colors)

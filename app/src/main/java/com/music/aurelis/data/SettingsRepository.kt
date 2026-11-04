@@ -122,82 +122,82 @@ object SettingsRepository {
     }
 
     // ── Existing setters ──────────────────────────────────────────────────────
-    fun setThemeMode(value: Int) { themeMode.value = value; prefs.edit().putInt("theme_mode", value).apply() }
-    fun setDolbyAtmos(value: Boolean) { dolbyAtmos.value = value; prefs.edit().putBoolean("dolby_atmos", value).apply() }
-    fun setLiquidGlass(value: Boolean) { liquidGlass.value = value; prefs.edit().putBoolean("liquid_glass", value).apply() }
-    fun setReduceAnimation(value: Boolean) { reduceAnimation.value = value; prefs.edit().putBoolean("reduce_animation", value).apply() }
-    fun setReduceDynamicBlur(value: Boolean) { reduceDynamicBlur.value = value; prefs.edit().putBoolean("reduce_dynamic_blur", value).apply() }
-    fun setSyncedLyrics(value: Boolean) { syncedLyrics.value = value; prefs.edit().putBoolean("synced_lyrics", value).apply() }
-    fun setBlurUnfocusedLyrics(value: Boolean) { blurUnfocusedLyrics.value = value; prefs.edit().putBoolean("blur_lyrics", value).apply() }
-    fun setFilterNonMusicAudio(value: Boolean) { filterNonMusicAudio.value = value; prefs.edit().putBoolean("filter_non_music", value).apply() }
-    fun setAutoplay(value: Boolean) { autoplay.value = value; prefs.edit().putBoolean("autoplay", value).apply() }
-    fun setCrossfadeSeconds(value: Int) { crossfadeSeconds.value = value; prefs.edit().putInt("crossfade", value).apply() }
+    fun setThemeMode(value: Int) { themeMode.value = value; prefs.edit { putInt("theme_mode", value) } }
+    fun setDolbyAtmos(value: Boolean) { dolbyAtmos.value = value; prefs.edit { putBoolean("dolby_atmos", value) } }
+    fun setLiquidGlass(value: Boolean) { liquidGlass.value = value; prefs.edit { putBoolean("liquid_glass", value) } }
+    fun setReduceAnimation(value: Boolean) { reduceAnimation.value = value; prefs.edit { putBoolean("reduce_animation", value) } }
+    fun setReduceDynamicBlur(value: Boolean) { reduceDynamicBlur.value = value; prefs.edit { putBoolean("reduce_dynamic_blur", value) } }
+    fun setSyncedLyrics(value: Boolean) { syncedLyrics.value = value; prefs.edit { putBoolean("synced_lyrics", value) } }
+    fun setBlurUnfocusedLyrics(value: Boolean) { blurUnfocusedLyrics.value = value; prefs.edit { putBoolean("blur_lyrics", value) } }
+    fun setFilterNonMusicAudio(value: Boolean) { filterNonMusicAudio.value = value; prefs.edit { putBoolean("filter_non_music", value) } }
+    fun setAutoplay(value: Boolean) { autoplay.value = value; prefs.edit { putBoolean("autoplay", value) } }
+    fun setCrossfadeSeconds(value: Int) { crossfadeSeconds.value = value; prefs.edit { putInt("crossfade", value) } }
 
     // ── Equalizer setters ─────────────────────────────────────────────────────
-    fun setEqualizerEnabled(value: Boolean) { equalizerEnabled.value = value; prefs.edit().putBoolean("eq_enabled", value).apply() }
-    fun setEqualizerMode(value: EqualizerMode) { equalizerMode.value = value; prefs.edit().putInt("eq_mode", value.ordinal).apply() }
+    fun setEqualizerEnabled(value: Boolean) { equalizerEnabled.value = value; prefs.edit { putBoolean("eq_enabled", value) } }
+    fun setEqualizerMode(value: EqualizerMode) { equalizerMode.value = value; prefs.edit { putInt("eq_mode", value.ordinal) } }
     fun setEqualizerTone(x: Int, y: Int) {
         equalizerToneX.value = x; equalizerToneY.value = y
-        prefs.edit().putInt("eq_tone_x", x).putInt("eq_tone_y", y).apply()
+        prefs.edit { putInt("eq_tone_x", x); putInt("eq_tone_y", y) }
     }
-    fun setEqualizerFocused(value: Boolean) { equalizerFocused.value = value; prefs.edit().putBoolean("eq_focused", value).apply() }
-    fun setEqualizerBalance(value: Float) { equalizerBalance.value = value; prefs.edit().putFloat("eq_balance", value).apply() }
+    fun setEqualizerFocused(value: Boolean) { equalizerFocused.value = value; prefs.edit { putBoolean("eq_focused", value) } }
+    fun setEqualizerBalance(value: Float) { equalizerBalance.value = value; prefs.edit { putFloat("eq_balance", value) } }
     fun setEqualizerBands(bands: List<Float>) {
         equalizerBands.value = bands
-        val editor = prefs.edit()
-        bands.forEachIndexed { i, v -> editor.putFloat("eq_band_$i", v) }
-        editor.apply()
+        prefs.edit {
+            bands.forEachIndexed { i, v -> putFloat("eq_band_$i", v) }
+        }
     }
     fun setEqualizerPreset(value: EqualizerPreset) {
         equalizerPreset.value = value
-        prefs.edit().putString("eq_preset", value.name).apply()
+        prefs.edit { putString("eq_preset", value.name) }
         if (value != EqualizerPreset.CUSTOM) {
             setEqualizerBands(value.bands)
         }
     }
 
     // ── Spatial / Loudness setters ────────────────────────────────────────────
-    fun setSpatialAudio(value: Boolean) { spatialAudio.value = value; prefs.edit().putBoolean("spatial_audio", value).apply() }
-    fun setLoudnessNormalization(value: Boolean) { loudnessNormalization.value = value; prefs.edit().putBoolean("loudness_norm", value).apply() }
+    fun setSpatialAudio(value: Boolean) { spatialAudio.value = value; prefs.edit { putBoolean("spatial_audio", value) } }
+    fun setLoudnessNormalization(value: Boolean) { loudnessNormalization.value = value; prefs.edit { putBoolean("loudness_norm", value) } }
 
     fun setAudioQuality(value: AudioQuality) {
         audioQuality.value = value
-        prefs.edit().putInt("audio_quality", value.ordinal).apply()
+        prefs.edit { putInt("audio_quality", value.ordinal) }
     }
 
     // ── Player setters ────────────────────────────────────────────────────────
-    fun setHideVolumeBar(value: Boolean) { hideVolumeBar.value = value; prefs.edit().putBoolean("hide_volume_bar", value).apply() }
-    fun setShowNerdStats(value: Boolean) { showNerdStats.value = value; prefs.edit().putBoolean("show_nerd_stats", value).apply() }
-    fun setLyricsOffsetMs(value: Int) { lyricsOffsetMs.value = value; prefs.edit().putInt("lyrics_offset_ms", value).apply() }
+    fun setHideVolumeBar(value: Boolean) { hideVolumeBar.value = value; prefs.edit { putBoolean("hide_volume_bar", value) } }
+    fun setShowNerdStats(value: Boolean) { showNerdStats.value = value; prefs.edit { putBoolean("show_nerd_stats", value) } }
+    fun setLyricsOffsetMs(value: Int) { lyricsOffsetMs.value = value; prefs.edit { putInt("lyrics_offset_ms", value) } }
     fun setShowQueueHistory(value: Boolean) {
         showQueueHistory.value = value
-        prefs.edit().putBoolean("show_queue_history", value).apply()
+        prefs.edit { putBoolean("show_queue_history", value) }
     }
 
     // ── Lyrics / translation setters ──────────────────────────────────────────
     fun setTranslationLanguage(value: String) {
         translationLanguage.value = value
-        prefs.edit().putString("translation_language", value).apply()
+        prefs.edit { putString("translation_language", value) }
     }
 
     fun setLyricsSources(value: Set<LyricsSource>) {
         lyricsSources.value = value
-        prefs.edit().putStringSet("lyrics_sources", value.map { it.name }.toSet()).apply()
+        prefs.edit { putStringSet("lyrics_sources", value.map { it.name }.toSet()) }
     }
 
     fun setLyricsSourceOrder(value: List<LyricsSource>) {
         lyricsSourceOrder.value = value
-        prefs.edit().putString("lyrics_source_order", value.joinToString(",") { it.name }).apply()
+        prefs.edit { putString("lyrics_source_order", value.joinToString(",") { it.name }) }
     }
 
     fun setPrioritizeSyllableSync(value: Boolean) {
         prioritizeSyllableSync.value = value
-        prefs.edit().putBoolean("prioritize_syllable_sync", value).apply()
+        prefs.edit { putBoolean("prioritize_syllable_sync", value) }
     }
 
     fun setPaxSenixApiKey(value: String) {
         paxSenixApiKey.value = value
-        prefs.edit().putString("paxsenix_api_key", value).apply()
+        prefs.edit { putString("paxsenix_api_key", value) }
     }
 
     /** Back to the enum's own default order and to "every visible source on". */
@@ -205,10 +205,10 @@ object SettingsRepository {
         lyricsSources.value = LyricsSource.offered.toSet()
         lyricsSourceOrder.value = LyricsSource.offered
         prioritizeSyllableSync.value = false
-        prefs.edit()
-            .remove("lyrics_sources")
-            .remove("lyrics_source_order")
-            .remove("prioritize_syllable_sync")
-            .apply()
+        prefs.edit {
+            remove("lyrics_sources")
+            remove("lyrics_source_order")
+            remove("prioritize_syllable_sync")
+        }
     }
 }

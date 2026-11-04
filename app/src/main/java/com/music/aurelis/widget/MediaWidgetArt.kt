@@ -241,7 +241,7 @@ internal object MediaWidgetArt {
     private fun Bitmap.halvedTo(target: Float): Bitmap {
         var current = this
         while (current.height / 2 >= target && current.width / 2 >= 2) {
-            val next = Bitmap.createScaledBitmap(current, current.width / 2, current.height / 2, true)
+            val next = current.scale(current.width / 2, current.height / 2, true)
             if (current !== this) current.recycle()
             current = next
         }

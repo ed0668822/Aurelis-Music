@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
-import android.os.Build
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -92,7 +91,6 @@ object AudioRouting {
 
     @Suppress("DEPRECATION", "MissingPermission")
     private fun formFromClass(info: AudioDeviceInfo): Form? {
-        if (Build.VERSION.SDK_INT < 28) return null
         val address = info.address.takeIf { BluetoothAdapter.checkBluetoothAddress(it) } ?: return null
         val deviceClass = runCatching {
             BluetoothAdapter.getDefaultAdapter()?.getRemoteDevice(address)?.bluetoothClass?.deviceClass

@@ -30,17 +30,17 @@ internal data class MediaWidgetSnapshot(
         )
 
         fun save(context: Context, snapshot: MediaWidgetSnapshot) {
-            prefs(context).edit()
-                .putString(KEY_MEDIA_ID, snapshot.mediaId)
-                .putString(KEY_TITLE, snapshot.title)
-                .putString(KEY_ARTIST, snapshot.artist)
-                .putString(KEY_ARTWORK_KEY, snapshot.artworkKey)
-                .putString(KEY_ARTWORK_URI, snapshot.artworkUri)
-                .putBoolean(KEY_PLAYING, snapshot.isPlaying)
-                .putBoolean(KEY_HAS_PREVIOUS, snapshot.hasPrevious)
-                .putBoolean(KEY_HAS_NEXT, snapshot.hasNext)
-                .putBoolean(KEY_SHUFFLE, snapshot.shuffleEnabled)
-                .apply()
+            prefs(context).edit {
+                putString(KEY_MEDIA_ID, snapshot.mediaId)
+                putString(KEY_TITLE, snapshot.title)
+                putString(KEY_ARTIST, snapshot.artist)
+                putString(KEY_ARTWORK_KEY, snapshot.artworkKey)
+                putString(KEY_ARTWORK_URI, snapshot.artworkUri)
+                putBoolean(KEY_PLAYING, snapshot.isPlaying)
+                putBoolean(KEY_HAS_PREVIOUS, snapshot.hasPrevious)
+                putBoolean(KEY_HAS_NEXT, snapshot.hasNext)
+                putBoolean(KEY_SHUFFLE, snapshot.shuffleEnabled)
+            }
         }
 
         fun load(context: Context): MediaWidgetSnapshot {

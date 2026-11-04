@@ -17,9 +17,9 @@ object ProfileRepository {
 
     var userName: String
         get() = if (::prefs.isInitialized) prefs.getString(KEY_NAME, "Aurelis User") ?: "Aurelis User" else "Aurelis User"
-        set(value) = prefs.edit().putString(KEY_NAME, value).apply()
+        set(value) = prefs.edit { putString(KEY_NAME, value) }
 
     var userPhotoUri: String?
         get() = if (::prefs.isInitialized) prefs.getString(KEY_PHOTO, null) else null
-        set(value) = prefs.edit().putString(KEY_PHOTO, value).apply()
+        set(value) = prefs.edit { putString(KEY_PHOTO, value) }
 }

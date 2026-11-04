@@ -20,6 +20,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,8 +57,8 @@ fun DecoderControls(
 ) {
     var useDsd by remember { mutableStateOf(decoderFormat == DecoderFormat.DSD) }
     var useFfmpeg by remember { mutableStateOf(decoderFormat == DecoderFormat.FFMPEG) }
-    var sampleRate by remember { mutableStateOf(decoderFormat?.sampleRate ?: 48000) }
-    var channels by remember { mutableStateOf(decoderFormat?.channels ?: 2) }
+    var sampleRate by remember { mutableIntStateOf(decoderFormat?.sampleRate ?: 48000) }
+    var channels by remember { mutableIntStateOf(decoderFormat?.channels ?: 2) }
 
     Column(
         modifier = modifier

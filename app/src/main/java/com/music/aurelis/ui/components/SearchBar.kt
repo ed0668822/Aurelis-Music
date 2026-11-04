@@ -47,10 +47,10 @@ import androidx.compose.ui.unit.dp
 fun SearchBar(
     query: String,
     onQueryChanged: (String) -> Unit,
+    modifier: Modifier = Modifier,
     onSubmit: () -> Unit = {},
     focusRequester: FocusRequester = remember { FocusRequester() },
     placeholder: String = "Buscar canciones, artistas, álbumes…",
-    modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
