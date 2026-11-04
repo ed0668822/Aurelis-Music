@@ -1,12 +1,14 @@
 // Aurelis © 2026. GPL-3.0-or-later.
 
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val localProps = java.util.Properties().apply {
+val localProps = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) {
         file.inputStream().use { stream ->
@@ -15,7 +17,7 @@ val localProps = java.util.Properties().apply {
     }
 }
 
-val signingProps = java.util.Properties().apply {
+val signingProps = Properties().apply {
     val file = rootProject.file("keystore.properties")
     if (file.exists()) {
         file.inputStream().use { stream ->
