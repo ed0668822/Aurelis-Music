@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,7 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.music.aurelis.ui.icons.AurelisIcons
-import com.music.aurelis.ui.player.PlayerHost
+import com.music.aurelis.ui.player.MixBlend
 
 /**
  * AutoMixPanel es un panel de controles para el AutoMix de Aurelis Music.
@@ -40,8 +41,8 @@ import com.music.aurelis.ui.player.PlayerHost
  */
 @Composable
 fun AutoMixPanel(
-    mixBlend: PlayerHost.MixBlend?,
-    onMixBlendChange: (PlayerHost.MixBlend) -> Unit,
+    mixBlend: MixBlend?,
+    onMixBlendChange: (MixBlend) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var volume by remember { mutableFloatStateOf(0.5f) }

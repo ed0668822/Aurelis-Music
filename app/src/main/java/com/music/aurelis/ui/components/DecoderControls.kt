@@ -34,10 +34,13 @@ import com.music.aurelis.ui.icons.AurelisIcons
 /**
  * Formato de decodificación disponible en Aurelis Music.
  */
-enum class DecoderFormat {
-    DSD,
-    FFMPEG,
-    PCM
+enum class DecoderFormat(
+    val sampleRate: Int,
+    val channels: Int,
+) {
+    DSD(112000, 2),
+    FFMPEG(48000, 2),
+    PCM(44100, 2);
 }
 
 /**
