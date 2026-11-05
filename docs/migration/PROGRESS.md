@@ -207,7 +207,7 @@ bloque por separado. B07 requerirá nueva autorización.
 
 - Autorización: B05 y B06 concedidos juntos; se ejecuta primero B05.
 - Base: `2e82e1a2d87fc8f11452da2e5f0b0a31f597da09`; misma rama/PR #1.
-- Estado: implementación y dos revisiones completadas; entrega B05 en curso.
+- Estado: implementación y dos revisiones completadas; publicado en la rama del PR #1.
 - Cambios: LocalUserLibrary y LocalHomeData nuevos; Home/hero con datos/estados reales;
   rutas y pantalla de colecciones nuevas, wiring en Application/MainActivity,
   hook ListeningStats existente implementado y transición de sesión en PlaybackViewModel.
@@ -227,7 +227,10 @@ bloque por separado. B07 requerirá nueva autorización.
 - El caso de diálogo detectó bucle de medida; se aisló renderer y
   se corrigió fijando ancho del diálogo y acotando/desplazando su contenido, sin retirar aserciones.
 - Las capturas usan el fondo de aplicación explícito, también aplicado en el host.
-- Build final: exit 0, 1m 34s. Commit, Actions y publicación: pendientes de entrega.
+- Build final: exit 0, 1m 34s. Commit B05:
+  `6e07a40b66e285daf2084bf64ada3063ec129f3f`, con identidad Git local del usuario.
+  Push confirmado en la rama `feature/bitchord-local-migration`; no se crea otro PR.
+  Actions sigue sin verificarse por Forbidden al consultar su API.
 - Límites: seguimiento actual desde ViewModel, no servicio íntegro; Replay e integración
   avanzada de B08 siguen pendientes, sin afirmar estadísticas de fondo completas.
 - Después de cerrar B05 se continuará B06, ya autorizado; no se pide permiso otra vez.
