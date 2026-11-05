@@ -420,3 +420,13 @@ son StaticFieldLeak del singleton que guarda únicamente applicationContext,
 sin Activity/Service, y recomendaciones UseKtx en operaciones commit cuyo resultado
 se comprueba para no anunciar persistencia ante un fallo. No se suprimen reglas.
 CI del nuevo commit no acreditado: el listado público aún mostraba #117 anterior.
+
+
+## Beta-local B01.1 — perfil único
+
+Base b2bf434 más cambios de perfil. BUILD SUCCESSFUL in 5m 12s.
+137 pruebas debug y137 release sin fallos/errores/omitidos;47 casos seleccionados
+previos. assemble/lint de ambas variantes correctos y R8 verificado. Evidencia
+actual de APK y resultados en [B01_1_EVIDENCE](beta-local/B01_1_EVIDENCE.json).
+No trasladar hashes históricos a esta entrega. Falta hardware/SAF real y CI por SHA.
+No cambia ORT ni resuelve el hallazgo ELF16KB de B00.

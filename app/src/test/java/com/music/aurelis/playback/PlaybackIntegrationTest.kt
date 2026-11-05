@@ -41,17 +41,14 @@ class PlaybackIntegrationTest {
     private fun settle() { dispatcher.scheduler.runCurrent(); shadowOf(Looper.getMainLooper()).idle(); dispatcher.scheduler.runCurrent() }
     private fun play() { vm.playSongs(listOf(song("1"), song("2"), song("3"))); settle() }
 
-    @Test fun switchingProfileCancelsTapWaitingForControllerAndNewTapCanConnect() {
+    @Test fun editingSingleProfileDoesNotCancelPendingPlaybackOrChangeTheQueue() {
         val gate = CompletableDeferred<Unit>()
         vm = PlaybackViewModel(app) { gate.await(); player }; store.put("player", vm)
         vm.playSongs(listOf(song("1"))); settle()
-        val second = ProfileRepository.create("Segundo")
-        ProfileRepository.switchTo(second)
+        ProfileRepository.rename("Nombre local")
         gate.complete(Unit); settle()
-        assertEquals(0, player.mediaItemCount)
-        assertNull(vm.state.value.currentSong)
-        vm.playSongs(listOf(song("2"))); settle()
-        assertEquals("2", vm.state.value.currentSong?.id)
+        assertEquals("1", vm.state.value.currentSong?.id)
+        assertEquals(1, player.mediaItemCount)
     }
 
     @Test fun immediateTapWaitsForConnectionClampsIndexAndUsesCompleteMetadata() {

@@ -7,7 +7,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | Bloque | Dependencias | Complejidad | Estado nuevo plan |
 |---|---|---|---|
 | B00 | Aprobación recibida | Media | Completado y publicado |
-| B01 | B00 | Alta | Pendiente de autorización/previas |
+| B01 | B00 | Alta | B01.1 completado localmente; B01.2/3 pendientes |
 | B02 | B01 | Alta | Pendiente de autorización/previas |
 | B03 | B02 | Media-alta | Pendiente de autorización/previas |
 | B04 | B03 | Alta | Pendiente de autorización/previas |
@@ -71,3 +71,36 @@ ya acreditadas; leer solo filas/archivos de la unidad al reanudar.
   de B00_EVIDENCE sigue siendo01c1ba5, sin cambios funcionales respecto a entrega.
 - Siguiente unidad: B01.1, requiere autorización. Perfil múltiple, Dolby y demás
   cambios previstos NO se han implementado todavía.
+
+
+## B01.1 — en implementación y validación
+
+- Autorización expresa recibida; base b2bf434. Rama/PR originales.
+- Perfil único; nombre/foto y ID del ámbito activo conservados. Respaldo privado
+  tipado/verificado y recibo atómico antes de consolidar; sin borrar legacy.
+- Modificados ProfileRepository/Storage/Avatars y SettingsScreen. Application,
+  MainActivity, PlaybackViewModel y ProfilePlaybackBinding retiran únicamente
+  conexiones multiusuario. No se implementan B01.2/B01.3.
+- Nuevos SingleProfileMigration, su suite de pruebas y B01_1_MIGRATION. Pruebas
+  de perfiles/playback/UI adaptadas a la decisión de perfil único; las pruebas
+  de ámbitos de almacenamiento legacy se mantienen para recuperación.
+- Revisión1 completada: respaldo/atomicidad/paths/tipos/estado y preservación.
+- Revisión2 en cierre:47 casos seleccionados correctos. Suite/debug/release/lint
+  corriendo; no declarar hardware ni migración en dispositivo verificados.
+- Registro legal: implementación propia, sin copiar componentes nuevos de BitChord;
+  avisos existentes conservados, cabecera definitiva pendiente del CSV histórico.
+- Commit/PR/CI se registran tras verificaciones y publicación. Siguiente unidad
+  B01.2 MediaStore/metadatos, requiere autorización.
+
+
+## B01.1 — cierre local
+
+- Estado: implementado y revisado; publicación/CI se registran a continuación.
+- Compilación: BUILD SUCCESSFUL in 5m 12s. Debug/release, R8 y lint correctos.
+- Suite137 debug +137 release:0 fallos/errores/omitidos;47 seleccionados previos.
+- Lint advertencias debug/release: 215/214;0 errores. Firmas y ZIP válidos;9 textos legales idénticos y12 .so ARM64.
+- Revisiones1/2 completadas en pasadas separadas del mismo agente. Las pruebas
+  adaptadas sustituyen requisitos multiusuario retirados por invariantes de perfil
+  único, preservación de datos y reproducción; no se excluyen pruebas por fallar.
+- No dispositivos físicos/SAF real; no importación/exportación UI ni B01.2/3.
+  B01_1_MIGRATION y B01_1_EVIDENCE documentan formato, privacidad y limitaciones.

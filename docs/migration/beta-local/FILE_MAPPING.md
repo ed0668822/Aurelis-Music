@@ -13,7 +13,7 @@ ha revisado semánticamente. Revalidar cada fila al iniciar su unidad.
 | ID | BitChord | Aurelis existente | Nuevos previstos | Estrategia/dependencias |
 |---|---|---|---|---|
 | F00 | LICENSE; build.gradle.kts; app/build.gradle.kts; app/src/main/AndroidManifest.xml; .github/workflows/** | LICENSE; NOTICE; LICENSES/**; build.gradle.kts; app/build.gradle.kts; app/src/main/AndroidManifest.xml; .github/workflows/android.yml | docs/migration/beta-local/** | Auditoría; no sustituir plataforma |
-| F01 | A:auth/** (solo apariencia) | D:data/ProfileRepository.kt; data/ProfileStorage.kt; data/ProfileAvatars.kt; ui/screens/SettingsScreen.kt | D:data/SingleProfileMigration.kt | Perfil único, respaldo y conservación de ID legacy |
+| F01 | A:auth/** (solo apariencia) | D:data/ProfileRepository.kt; data/ProfileStorage.kt; data/ProfileAvatars.kt; ui/screens/SettingsScreen.kt; AurelisApplication.kt; MainActivity.kt; playback/PlaybackViewModel.kt; playback/ProfilePlaybackBinding.kt | D:data/SingleProfileMigration.kt | Perfil único, respaldo y conservación de ID legacy |
 | F02 | A:data/LocalMediaRepository.kt; data/LocalGroups.kt; ui/screens/LocalFolder.kt | D:data/LocalMediaRepository.kt; data/model/LocalSong.kt; data/LocalLibrarySource.kt; LibraryViewModel.kt | D:data/LocalFolderRepository.kt; data/LocalMetadataReader.kt | MediaStore/SAF/géneros reales |
 | F03 | A:ui/components/backdrop/**; ui/components/LiquidGlass.kt; ui/components/floatingtabbar/**; ui/theme/Theme.kt; U:ui/graphics/**; sharedUi/src/androidMain/** | D:ui/components/backdrop/**; ui/components/LiquidGlass.kt; ui/components/floatingtabbar/**; ui/theme/** | Recursos de fuente autorizados y pruebas visuales | Portar efectos sin retirar avisos ni copiar SF Pro |
 | F04 | A:ui/navigation/AppNavigator.kt; U:ui/AppUi.kt; ui/screens/HomeScreen.kt | D:MainActivity.kt; ui/navigation/**; ui/AppUi.kt; ui/screens/HomeScreen.kt; data/LocalHomeData.kt | Contratos locales dentro de archivos existentes | Host inicializado y carruseles reales; no pegar MainActivity origen |
@@ -47,3 +47,9 @@ adaptación se marca nueva. LocalAutoMix está en playback/, no en data/.
 AutoMixPanel existe solo en Aurelis; no hay archivo homónimo en el árbol origen.
 Cada port requiere las dependencias aprobadas en B00, procedencia/avisos del
 LICENSE_AUDIT y pruebas del IMPLEMENTATION_BLOCKS.
+
+
+B01.1: F01 incluye las conexiones existentes Application/MainActivity/player para
+retirar listeners de cambio de perfil. No modifica catálogo (F02), DSP ni motor.
+Modelo público nuevo LocalProfileState singular; APIs multiusuario retiradas.
+SingleProfileMigration es interna; respaldo privado y protocolo en B01_1_MIGRATION.

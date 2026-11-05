@@ -577,3 +577,12 @@ Plan aprobado y B00 ejecutado sin cambios de código de app. Ver
 126 pruebas debug +126 release ejecutadas nuevamente con --rerun; build/lint correctos.
 Hallazgo: dos ELF de ONNX con LOAD4KB, pendiente B09/B10/B13 aunque ZIP16KB pase.
 La numeración B00–B13 nueva no equivale a los bloques históricos. B01 no iniciado.
+
+
+## Beta-local B01.1 — perfil único y respaldo
+
+Autorizado expresamente; implementado perfil único/nombre/foto y respaldo privado
+validado, preservando ámbito activo y datos legacy. Revisiones1/2 completadas,
+137 tests por variante, build/lint debug/release correctos. Ver
+[registro vigente](beta-local/PROGRESS_TRACKER.md) y [migración](beta-local/B01_1_MIGRATION.md).
+B01.2 no iniciado. Entrega/CI se registran en el progreso vigente tras publicar.

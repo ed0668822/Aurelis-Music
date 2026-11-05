@@ -1,5 +1,12 @@
 # MASTER_PLAN — Aurelis Music beta local
 
+## Estado vigente
+
+B01.1 autorizado e implementado; consultar [PROGRESS_TRACKER](PROGRESS_TRACKER.md)
+y [migración](B01_1_MIGRATION.md). Las observaciones siguientes conservan la base
+de auditoría B00; su hallazgo de múltiples perfiles queda resuelto por B01.1.
+B01.2/B01.3 y siguientes esperan autorización.
+
 ## Estado y alcance
 
 Plan aprobado mediante «Implement the proposed plan». Esta entrega ejecuta solo

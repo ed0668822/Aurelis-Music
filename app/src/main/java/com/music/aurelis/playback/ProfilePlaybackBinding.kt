@@ -5,10 +5,9 @@ import androidx.media3.common.Player
 import com.music.aurelis.AurelisApplication
 import com.music.aurelis.data.*
 import com.music.aurelis.data.model.LocalSong
-import com.music.aurelis.data.model.ProfileId
 import kotlinx.coroutines.*
 
-/** One recorder per active profile; the player and MediaSession remain the same. */
+/** Restores and records the sole local profile. Owned by the existing service. */
 internal class ProfilePlaybackBinding(
     private val context: Context,
     private val player: Player,
@@ -18,20 +17,13 @@ internal class ProfilePlaybackBinding(
         if (AudioPermission.isGranted(context)) LocalMediaRepository.getAllSongs(context, SettingsRepository.filterNonMusicAudio.value)
         else emptyList()
     },
-) : ProfileSessionListener {
+) {
     private var recorder: ServicePlaybackRecorder? = null
     private var restoreJob: Job? = null
-    init { ProfileRepository.addListener(this); afterProfileChange(ProfileRepository.profileId) }
-    override fun beforeProfileChange(previous: ProfileId, next: ProfileId) {
-        restoreJob?.cancel()
-        recorder?.close(); recorder = null
-        player.pause()
-        player.clearMediaItems()
-        player.repeatMode = Player.REPEAT_MODE_OFF
-        player.shuffleModeEnabled = false
-    }
-    override fun afterProfileChange(active: ProfileId) {
-        restoreJob?.cancel(); recorder?.close()
+    private var closed = false
+    init { restore() }
+    private fun restore() {
+        val active = ProfileRepository.profileId
         val store = LocalQueueStore(context, active)
         val snapshot = store.read()
         recorder = ServicePlaybackRecorder(player, library(), store, scope)
@@ -52,7 +44,8 @@ internal class ProfilePlaybackBinding(
         }
     }
     fun close() {
-        ProfileRepository.removeListener(this)
+        if (closed) return
+        closed = true
         restoreJob?.cancel(); recorder?.close(); recorder = null
     }
 }

@@ -16,11 +16,11 @@ enum class ProfileDataArea(internal val legacyFile: String, internal val key: St
 
 /**
  * The default profile keeps the existing files, keys and unknown values intact.
- * Other profiles use a separate private file per area; IDs cannot contain dots,
+ * An inherited non-default ID keeps its private file per area; IDs cannot contain dots,
  * so profile and area boundaries cannot collide. Device-wide stores (widget,
  * app metadata), MediaStore and shared media caches do not belong here.
  *
- * ProfileRepository owns creation, switching and deletion of these scopes.
+ * SingleProfileMigration selects one scope and archives the previous registry.
  */
 class ProfileStorage(context: Context) {
     private val appContext = context.applicationContext

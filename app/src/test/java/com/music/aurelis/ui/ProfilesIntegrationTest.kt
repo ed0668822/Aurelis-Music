@@ -20,22 +20,24 @@ import org.robolectric.annotation.GraphicsMode
 class ProfilesIntegrationTest {
     @get:Rule(order = 0) val registerActivity = RobolectricActivityRule()
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
-    @Test fun createSwitchRenameAndConfirmedDeletionWorkThroughSettings() {
+    @Test fun settingsOnlyEditsOneLocalProfileAndPreservesItsIdentity() {
+        val id = ProfileRepository.profileId
         compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
-        compose.onNodeWithText("Crear perfil").performScrollTo().performClick()
-        compose.onNode(hasSetTextAction()).performTextInput("Segundo")
-        compose.onNodeWithText("Guardar").performClick()
-        compose.runOnIdle { assertEquals(2, ProfileRepository.state.value.profiles.size) }
-        compose.onNodeWithText("Segundo · Cambiar").performScrollTo().performClick()
-        compose.runOnIdle { assertEquals("Segundo", ProfileRepository.userName) }
+        compose.onNodeWithText("Crear perfil").assertDoesNotExist()
+        compose.onNodeWithText("Perfiles locales").assertDoesNotExist()
         compose.onNodeWithText("Nombre").performScrollTo().performClick()
-        compose.onNode(hasSetTextAction()).performTextReplacement("Nuevo")
+        compose.onNode(hasSetTextAction()).performTextReplacement("Mi nombre")
         compose.onNodeWithText("Guardar").performClick()
-        compose.onNodeWithContentDescription("Eliminar perfil Nuevo").performScrollTo().performClick()
-        compose.onNodeWithText("Cancelar").performClick()
-        compose.runOnIdle { assertEquals(2, ProfileRepository.state.value.profiles.size) }
-        compose.onNodeWithContentDescription("Eliminar perfil Nuevo").performScrollTo().performClick()
-        compose.onNodeWithText("Eliminar", useUnmergedTree = true).performClick()
-        compose.runOnIdle { assertEquals(1, ProfileRepository.state.value.profiles.size); assertEquals("Aurelis User", ProfileRepository.userName) }
+        compose.onAllNodesWithText("Mi nombre").onFirst().assertIsDisplayed()
+        compose.runOnIdle { assertEquals(id, ProfileRepository.profileId); assertEquals("Mi nombre", ProfileRepository.userName) }
+        compose.onNodeWithText("Eliminar perfil Mi nombre").assertDoesNotExist()
+    }
+    @Test fun removingPhotoDoesNotRemoveProfileOrItsName() {
+        compose.runOnIdle { ProfileRepository.userPhotoUri = "content://legacy/photo"; ProfileRepository.rename("Mi perfil") }
+        compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
+        compose.onNodeWithText("Quitar foto").performClick()
+        compose.runOnIdle { assertNull(ProfileRepository.userPhotoUri); assertEquals("Mi perfil", ProfileRepository.userName) }
+        compose.onAllNodesWithText("Mi perfil").onFirst().assertIsDisplayed()
+        compose.onNodeWithText("Quitar foto").assertDoesNotExist()
     }
 }

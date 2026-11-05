@@ -51,3 +51,11 @@ sin activar clientes legacy. Last.fm no autoriza embeber un secreto en el APK.
 Hallazgo estático B00: ORT1.19.2 incluye dos ELF con LOAD4KB. Ver B00_EVIDENCE.
 La solución de compatibilidad deberá conservar licencias y acreditar modelos/ABI;
 ZIP alineado no certifica ELF.175 dependencias sin cambios vs auditoría histórica.
+
+
+## B01.1
+
+Migración/backup propios sobre APIs Android/Java ya presentes. Sin dependencias,
+recursos, modelos o código nuevo de terceros. Avisos existentes intactos; archivo
+SingleProfileMigration sin cabecera Aurelis definitiva mientras falta CSV.
+No cambios de LICENSE/NOTICE/firma ni actualización ORT/ABI; mantiene pendientes B00.

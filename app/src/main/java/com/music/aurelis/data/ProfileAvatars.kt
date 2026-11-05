@@ -48,7 +48,7 @@ object ProfileAvatars {
                 } finally { bitmap.recycle() }
             }
             currentCoroutineContext().ensureActive()
-            val old = ProfileRepository.state.value.profiles.firstOrNull { it.id == id }?.avatar
+            val old = ProfileRepository.state.value.profile.takeIf { it.id == id }?.avatar
             ProfileRepository.setAvatar(id, Uri.fromFile(output).toString())
             committed = true
             deleteOwned(directory, old)
@@ -57,7 +57,7 @@ object ProfileAvatars {
         }
     }
     fun remove(id: ProfileId) {
-        val old = ProfileRepository.state.value.profiles.firstOrNull { it.id == id }?.avatar
+        val old = ProfileRepository.state.value.profile.takeIf { it.id == id }?.avatar
         ProfileRepository.setAvatar(id, null)
         deleteOwned(ProfileRepository.avatarDirectory(id), old)
     }

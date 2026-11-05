@@ -1,0 +1,56 @@
+{
+  "base_commit": "b2bf434531dae4c174411f1afb515a5a61b64248",
+  "unit": "B01.1",
+  "result": "BUILD SUCCESSFUL in 5m 12s",
+  "command": "source /workspace/toolchains/activate.sh; bash gradlew :app:testDebugUnitTest :app:testReleaseUnitTest :app:assembleDebug :app:assembleRelease :app:lintDebug :app:lintRelease --no-daemon --max-workers=4",
+  "targeted_tests": 47,
+  "log_external": "/workspace/toolchains/beta-b01-1-final.log",
+  "log_sha256": "4a2cdff927e47cfef414915704905542ad1f4f13514f67b3e0ab08ea14ba4413",
+  "review1": "Architecture/data preservation/atomicity/types/paths and removal of switching hooks.",
+  "review2": "Real repository/UI/Media3 regression tests, builds, lint, signatures and legal ZIP assets. Separate pass by same agent.",
+  "variants": {
+    "debug": {
+      "tests": {
+        "tests": 137,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 215
+      },
+      "signature": "Verifies\nVerified using v1 scheme (JAR signing): false\nVerified using v2 scheme (APK Signature Scheme v2): true\nVerified using v3 scheme (APK Signature Scheme v3): false\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\nVerified using v4 scheme (APK Signature Scheme v4): false\nVerified for SourceStamp: false\nNumber of signers: 1",
+      "apk_sha256": "bb2b0daeec3b72876cb1b59ababbc17ff04fd6d63f6afb93b79e2e6ee2fbe00a",
+      "bytes": 121086470,
+      "legal_assets": 9,
+      "native_libraries": 12
+    },
+    "release": {
+      "tests": {
+        "tests": 137,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 214
+      },
+      "signature": "Verifies\nVerified using v1 scheme (JAR signing): false\nVerified using v2 scheme (APK Signature Scheme v2): true\nVerified using v3 scheme (APK Signature Scheme v3): false\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\nVerified using v4 scheme (APK Signature Scheme v4): false\nVerified for SourceStamp: false\nNumber of signers: 1",
+      "apk_sha256": "92d97b1fdbe86267a3a65ad5888910a25a4d0f11d3311ff980bddc09153bed23",
+      "bytes": 56819153,
+      "legal_assets": 9,
+      "native_libraries": 12
+    }
+  },
+  "limitations": [
+    "No Android device/emulator, real SAF chooser or process-kill instrumentation executed.",
+    "Private recovery archive has a tested typed reader; user-facing backup import/export is B11, not implemented.",
+    "No guarantee of measured startup cost on physical devices; snapshot is bounded to64MiB.",
+    "B00 ELF4KB ONNX issue and legal/API/model provenance blockers remain.",
+    "CI by delivery SHA checked separately after publication."
+  ]
+}
