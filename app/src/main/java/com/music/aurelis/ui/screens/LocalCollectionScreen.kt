@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -61,6 +62,7 @@ fun LocalCollectionScreen(
         LocalCollectionKind.ALBUM -> album?.name.orEmpty()
         LocalCollectionKind.ARTIST -> artist?.name.orEmpty()
     }
+    var orderSong by remember { mutableStateOf<String?>(null) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
     var deleting by remember { mutableStateOf(false) }
@@ -100,6 +102,16 @@ fun LocalCollectionScreen(
                         }
                         IconButton(onClick = { name = ""; addSongId = song.id }, enabled = !user.readOnly) {
                             Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, stringResource(R.string.playlist_add_track, song.title))
+                        }
+                        if (playlist != null) Box {
+                            IconButton(onClick = { orderSong = song.id }, enabled = !user.readOnly) { Icon(Icons.Rounded.MoreVert, "Orden de ${song.title}") }
+                            val savedIndex = playlist.songIds.indexOf(song.id)
+                            DropdownMenu(expanded = orderSong == song.id, onDismissRequest = { orderSong = null }) {
+                                DropdownMenuItem(text = { Text("Subir") }, enabled = savedIndex > 0,
+                                    onClick = { store.movePlaylistSong(playlist.id, savedIndex, savedIndex - 1); orderSong = null })
+                                DropdownMenuItem(text = { Text("Bajar") }, enabled = savedIndex < playlist.songIds.lastIndex,
+                                    onClick = { store.movePlaylistSong(playlist.id, savedIndex, savedIndex + 1); orderSong = null })
+                            }
                         }
                         if (playlist != null) IconButton(onClick = {
                             store.setPlaylistSongs(playlist.id, playlist.songIds.filterNot { it == song.id })

@@ -66,6 +66,7 @@ import com.music.aurelis.ui.screens.LocalMusicScreen
 import com.music.aurelis.ui.screens.NowPlayingScreen
 import com.music.aurelis.ui.screens.QueueScreen
 import com.music.aurelis.ui.screens.ReplayScreen
+import com.music.aurelis.ui.components.SongActionsDialog
 import com.music.aurelis.ui.screens.SearchScreen
 import com.music.aurelis.ui.screens.SettingsScreen
 import com.music.aurelis.ui.theme.AurelisTheme
@@ -189,6 +190,7 @@ internal fun AurelisNavigationContent(
     val libraryUiState by libraryViewModel.uiState.collectAsState()
     val userStore = (LocalContext.current.applicationContext as AurelisApplication).userLibrary
     val userState by userStore.state.collectAsState()
+    var actionSong by remember { mutableStateOf<LocalSong?>(null) }
     val route = navigator.visibleRoute()
     LaunchedEffect(route) {
         // Let the existing ViewModel report missing permission instead of leaving Loading forever.
@@ -224,7 +226,7 @@ internal fun AurelisNavigationContent(
                         val idx = allSongs.indexOfFirst { it.id == song.id }
                         if (idx >= 0) playbackViewModel.playSongs(allSongs, idx)
                     },
-                    onSongLongPress = { },
+                    onSongLongPress = { actionSong = it },
                     onAlbumClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
                     onArtistClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) },
                     currentSong = playbackState.currentSong,
@@ -281,7 +283,7 @@ internal fun AurelisNavigationContent(
                     focusRequested = false,
                     onFocusHandled = { },
                     onSongClick = { songs, index -> playbackViewModel.playSongs(songs, index) },
-                    onSongLongPress = { },
+                    onSongLongPress = { actionSong = it },
                     history = emptyList(),
                     onSubmit = { },
                     onHistoryClick = { },
@@ -311,7 +313,8 @@ internal fun AurelisNavigationContent(
                     onOpenEqualizer = { navigator.push(AppRoute.Equalizer) },
                 )
                 AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
-                AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() })
+                AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() }, store = userStore,
+                    songs = allSongs, onPlay = { playbackViewModel.playSongs(listOf(it)) })
                 is AppRoute.Collection -> LocalCollectionScreen(
                     page, libraryUiState.libraryState, userStore,
                     playbackState.currentSong?.id, playbackState.isPlaying,
@@ -382,4 +385,7 @@ internal fun AurelisNavigationContent(
             }
         },
     )
+    actionSong?.let { song -> SongActionsDialog(song, userStore,
+        onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null }) }
+
 }

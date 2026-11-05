@@ -143,3 +143,14 @@ Sin código adicional copiado de BitChord; se amplía la infraestructura local d
 
 Se reutiliza código ya presente en Aurelis; no se copia otro host ni código de BitChord.
 FullScreenPlayerHost y AurelisPlayerPlatform legados no se instalan como motor/host activos.
+
+## Colecciones y continuidad B08
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Cola privada | LocalQueueStore, ProfileStorage.QUEUE | Versionado, IDs y posición; reconstrucción contra catálogo sin autoplay |
+| Registro | ServicePlaybackRecorder, AurelisPlaybackService | Un único contador monotónico desde el servicio, no desde UI |
+| Transporte | PlaybackViewModel, QueueScreen | Añadir y reordenar sin reiniciar posición; comandos Media3 existentes |
+| Colecciones | LocalUserLibrary, LocalCollectionScreen, SongActionsDialog | Favoritos, membresía y orden persistentes |
+| Historial | ReplayScreen y MainActivity | Agregados reales, resolver temas actuales y confirmar borrado |
+| Pruebas | ServiceCollectionsTest, PlayerIntegrationTest | Persistencia, tiempo real frente a seek, orden, opciones y borrado |

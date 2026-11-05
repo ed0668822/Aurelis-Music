@@ -265,3 +265,14 @@ bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers
   reproduce audio ni se validan DSP, auriculares, foco, notificación visible o
   pantalla de bloqueo física. Mantener comprobaciones en dispositivo pendientes.
 - Actions: API bloqueada por proxy CONNECT 403; no se afirma CI verde.
+
+## B08 — Verificación final
+
+`testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4`: exit 0
+en 1m 49s, 57 tareas (18 ejecutadas). XML: 73 casos, 0 fallos/errores/omitidos.
+Lint: 0 errores, 209 advertencias. APK debug generado y apksigner verify exit 0.
+Log local `/workspace/toolchains/b08-validation-final.log`. Primera suite detectó
+comparación de tipos numéricos incorrecta en una aserción; corregida sin cambiar
+el comportamiento esperado. Pruebas de servicio usan eventos Media3 controlados,
+no decodifican audio ni verifican ejecución física prolongada. Actions bloqueado
+por proxy CONNECT 403; comprobaciones remotas pendientes.

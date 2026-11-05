@@ -5,7 +5,7 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B05 y B06 fueron autorizados juntos; B07 autorizado después. B08 y siguientes no están autorizados.
+autorizado. B05 y B06 fueron autorizados juntos; B07 autorizado después; B08/B09 autorizados juntos. B10 y siguientes no están autorizados.
 
 PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
 Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
@@ -311,3 +311,27 @@ bloque por separado. B07 requerirá nueva autorización.
   no se crea otro PR y no se hace merge. Este cierre se publica como otro commit
   documental, sin reescribir historial. Actions no verificable por proxy 403.
 - B07 cerrado con comprobaciones físicas pendientes; detener antes de B08.
+
+## B08 — Playlists, favoritos, historial y cola
+
+- Autorización: B08/B09 concedidos juntos, se cierra B08 antes de implementar B09.
+- Base: `697b2b8be6aa04ccc9cefe958a23b838bc606cca`; misma rama/PR #1.
+- Estado: implementación y doble revisión completadas; publicando B08.
+- Nuevos: LocalQueueStore, ServicePlaybackRecorder, SongActionsDialog y
+  ServiceCollectionsTest. Modificados: ProfileStorage, LocalUserLibrary, servicio,
+  PlaybackViewModel, MainActivity, NowPlayingScreen, ReplayScreen, QueueScreen,
+  LocalCollectionScreen, RecordingPlayer y PlayerIntegrationTest; cinco documentos.
+- Revisión 1: pasada separada del mismo agente sobre propietario único del registro
+  de escucha, pausa/buffering/seek, restauración sin autoplay, carrera con selección
+  nueva, aislamiento/versiones privadas, IDs ausentes y referencias de listas.
+- Revisión 2: segunda pasada del mismo agente, 73 pruebas correctas, sin fallos,
+  errores ni omitidas. Incluye tiempo frente a seek, versiones desconocidas,
+  aislamiento de cola, orden, favorito/playlist/append y borrado confirmado.
+- Validación final: exit 0 en 1m 49s; APK debug y firma verificados; lint sin
+  errores y 209 advertencias. Fallo inicial de prueba: comparación Integer/Long,
+  corregida conservando el valor esperado. No se afirman revisores humanos distintos.
+- Actions: API bloqueada por proxy CONNECT 403; no se afirma CI verde.
+- Límites: historial agregado por canción, no diario de eventos ni Replay anual;
+  recuperación depende de IDs MediaStore. Registro de segundo plano conectado al
+  servicio y probado con eventos controlados, sin prueba física de larga duración.
+- Siguiente bloque: B09 ya autorizado; B10 no autorizado.

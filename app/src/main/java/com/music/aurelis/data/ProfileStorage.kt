@@ -11,6 +11,7 @@ enum class ProfileDataArea(internal val legacyFile: String, internal val key: St
     FAVORITES("aurelis_favorites", "favorites"),
     PLAYLISTS("aurelis_playlists", "playlists"),
     HISTORY("aurelis_history", "history"),
+    QUEUE("aurelis_queue", "queue"),
 }
 
 /**

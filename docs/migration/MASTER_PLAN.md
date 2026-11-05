@@ -2,8 +2,8 @@
 
 ## Alcance y referencias
 
-Documento iniciado en B01 (auditoría y planificación). B02–B07 fueron autorizados
-después e incorporan únicamente sus secciones específicas. B08 y siguientes no están autorizados.
+Documento iniciado en B01 (auditoría y planificación). B02–B09 fueron autorizados
+después e incorporan únicamente sus secciones específicas. B08 y B09 autorizados juntos; B10 y siguientes no están autorizados.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -350,3 +350,31 @@ de audio controlado, puente real MediaSession↔MediaController y grafo Compose.
 Las pruebas no decodifican audio ni validan hardware, notificación visible o
 pantalla de bloqueo física. Esas comprobaciones deben hacerse en dispositivo
 antes de afirmar aceptación física completa; B08 no queda autorizado por B07.
+
+## B08 — Colecciones, historial y cola
+
+Base `697b2b8be6aa04ccc9cefe958a23b838bc606cca`. Se amplía LocalUserLibrary
+y no se instala la persistencia legacy OfflinePlaylists/ListeningRecorder.
+Favoritos y pertenencia a listas se editan desde opciones de canción del reproductor
+y pulsación larga de Home/Búsqueda. Se conserva crear/renombrar/eliminar con
+confirmación; listas permiten subir/bajar sin eliminar referencias a medios ausentes.
+Replay usa estadísticas reales por canción, último acceso, tiempo y frecuencia,
+con borrado confirmado que conserva listas/favoritos; no representa un diario
+de cada sesión individual ni un resumen anual inventado.
+
+ServicePlaybackRecorder, propiedad exclusiva de AurelisPlaybackService, sustituye
+el registro de escucha del ViewModel. Solo cuenta tiempo monotónico mientras
+Media3 reproduce; seeks no suman distancia de audio, buffering/pausa no acumulan,
+y cambios/repeticiones reinician sesión. Guarda al pausar, cambiar y cerrar; el
+proceso forzado puede perder hasta el último intervalo de guardado. El ViewModel
+conserva polling visual, sin segundo contador. Ajustar almacenamiento para catálogos
+masivos queda como trabajo de rendimiento; no se afirma medición en hardware.
+
+Cola: añadir sin reiniciar, saltar, quitar no actual y subir/bajar conservando el
+tema actual por Media3. LocalQueueStore usa ámbito privado QUEUE de ProfileStorage,
+JSON versionado con IDs ordenados (permite repeticiones), índice, posición, repeat y
+shuffle. No almacena intención de autoplay ni rutas. Versiones desconocidas se
+conservan sin escribir. Al crear el servicio se resuelve contra MediaStore, filtra
+ausentes y restaura idle/pausado; una selección nueva impide sobrescritura tardía.
+Si no hay permiso/catálogo se conserva la copia. Checkpoint cada 15s y en eventos.
+No se inicia otro reproductor. Perfiles múltiples se integrarán en B12.

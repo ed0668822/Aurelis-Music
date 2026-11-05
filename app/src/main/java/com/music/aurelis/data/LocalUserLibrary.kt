@@ -100,6 +100,20 @@ class LocalUserLibrary(
         savePlaylists(state.value.playlists.map { if (it.id == id) it.copy(songIds = songIds.distinct()) else it })
     }
 
+    @Synchronized fun movePlaylistSong(id: String, from: Int, to: Int) {
+        writable()
+        val playlist = state.value.playlists.firstOrNull { it.id == id } ?: return
+        if (from !in playlist.songIds.indices || to !in playlist.songIds.indices) return
+        val ids = playlist.songIds.toMutableList(); ids.add(to, ids.removeAt(from))
+        setPlaylistSongs(id, ids)
+    }
+
+    @Synchronized fun clearHistory() {
+        writable()
+        pendingListening.clear(); dirty = true; flush()
+        // Keep the current session counted so clearing never fabricates another play.
+    }
+
     private fun savePlaylists(items: List<LocalPlaylist>) {
         val array = JSONArray()
         items.forEach { array.put(JSONObject().put("id", it.id).put("name", it.name).put("songs", JSONArray(it.songIds))) }

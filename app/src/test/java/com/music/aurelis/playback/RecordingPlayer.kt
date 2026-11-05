@@ -38,6 +38,18 @@ internal class RecordingPlayer : SimpleBasePlayer(Looper.getMainLooper()) {
         return done(snapshot.buildUpon().setPlaylist(remaining).setCurrentMediaItemIndex(
             if (from < snapshot.currentMediaItemIndex) snapshot.currentMediaItemIndex - (to - from) else snapshot.currentMediaItemIndex).build())
     }
+    override fun handleMoveMediaItems(from: Int, to: Int, newIndex: Int): com.google.common.util.concurrent.ListenableFuture<*> {
+        val current = snapshot.playlist.getOrNull(snapshot.currentMediaItemIndex)?.uid
+        val rows = snapshot.playlist.toMutableList()
+        val moving = rows.subList(from, to).toList(); rows.subList(from, to).clear(); rows.addAll(newIndex, moving)
+        return done(snapshot.buildUpon().setPlaylist(rows).setCurrentMediaItemIndex(rows.indexOfFirst { it.uid == current }).build())
+    }
+    override fun handleAddMediaItems(index: Int, items: List<MediaItem>): com.google.common.util.concurrent.ListenableFuture<*> {
+        val rows = snapshot.playlist.toMutableList()
+        rows.addAll(index, items.mapIndexed { n, item -> MediaItemData.Builder("added:$index:$n:${item.mediaId}")
+            .setMediaItem(item).setIsSeekable(true).setDurationUs(60_000_000).build() })
+        return done(snapshot.buildUpon().setPlaylist(rows).setCurrentMediaItemIndex(snapshot.currentMediaItemIndex.coerceAtLeast(0)).build())
+    }
     override fun handleRelease(): com.google.common.util.concurrent.ListenableFuture<*> {
         released = true
         return Futures.immediateVoidFuture()

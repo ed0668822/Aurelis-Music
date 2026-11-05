@@ -14,7 +14,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -111,6 +112,12 @@ fun QueueScreen(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                }
+                                IconButton(onClick = { playbackViewModel.moveQueueItem(index, index - 1) }, enabled = state.isConnected && index > 0) {
+                                    Icon(Icons.Rounded.KeyboardArrowUp, "Subir en la cola")
+                                }
+                                IconButton(onClick = { playbackViewModel.moveQueueItem(index, index + 1) }, enabled = state.isConnected && index < state.queue.lastIndex) {
+                                    Icon(Icons.Rounded.KeyboardArrowDown, "Bajar en la cola")
                                 }
                                 IconButton(onClick = { playbackViewModel.removeFromQueue(index) },
                                     enabled = state.isConnected && !isCurrent) {

@@ -18,7 +18,6 @@ import com.music.aurelis.data.lyrics.LyricsRepository
 import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.data.lyrics.LyricsTranslation
 import com.music.aurelis.data.model.LocalSong
-import com.music.aurelis.data.stats.ListeningStats
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,21 +79,18 @@ class PlaybackViewModel internal constructor(
     private var lyricsJob: Job? = null
     private var translationJob: Job? = null
     private var lastLyricsSongId: String? = null
-    private var lastTickPositionMs = 0L
 
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-            lastTickPositionMs = 0L
             syncState()
-            ListeningStats.onTrackChanged(_state.value.currentSong?.id)
         }
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _state.update { it.copy(isPlaying = isPlaying) }
             if (isPlaying) startPositionPolling()
-            else { stopPositionPolling(); ListeningStats.flush() }
+            else stopPositionPolling()
         }
         override fun onPlaybackStateChanged(playbackState: Int) {
             _state.update { it.copy(isLoading = playbackState == Player.STATE_BUFFERING) }
@@ -121,7 +117,6 @@ class PlaybackViewModel internal constructor(
                 player.addListener(playerListener)
                 _state.update { it.copy(isConnected = true, errorMessage = null) }
                 syncState()
-                lastTickPositionMs = player.currentPosition.coerceAtLeast(0)
                 if (player.isPlaying) startPositionPolling()
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -175,7 +170,6 @@ class PlaybackViewModel internal constructor(
         val player = controller ?: return
         if (!_state.value.canSeek) return
         val target = positionMs.coerceIn(0, _state.value.durationMs.coerceAtLeast(0))
-        lastTickPositionMs = target
         player.seekTo(target)
         syncState()
     }
@@ -193,6 +187,22 @@ class PlaybackViewModel internal constructor(
         if (index !in 0 until player.mediaItemCount || index == player.currentMediaItemIndex) return
         player.removeMediaItem(index)
         syncState() // Timeline callbacks may already have updated the queue; never remove twice.
+    }
+
+    fun moveQueueItem(from: Int, to: Int) {
+        val player = controller ?: return
+        if (from !in 0 until player.mediaItemCount || to !in 0 until player.mediaItemCount) return
+        player.moveMediaItem(from, to)
+        syncState()
+    }
+
+    fun enqueue(songs: List<LocalSong>) {
+        if (songs.isEmpty()) return
+        playRequestJob = viewModelScope.launch {
+            connect(); connectionJob?.join()
+            controller?.addMediaItems(songs.map { it.toMediaItem() })
+            syncState()
+        }
     }
 
     fun translateLyrics(targetLanguageTag: String) {
@@ -311,11 +321,6 @@ class PlaybackViewModel internal constructor(
             while (isActive) {
                 val ctrl = controller ?: break
                 val currentPos = ctrl.currentPosition.coerceAtLeast(0L)
-                val delta = currentPos - lastTickPositionMs
-                if (delta in 1..5000 && _state.value.currentSong != null && ctrl.isPlaying) {
-                    ListeningStats.record(_state.value.currentSong!!, delta, false)
-                }
-                lastTickPositionMs = currentPos
                 _state.update {
                     it.copy(
                         positionMs = currentPos,
@@ -338,7 +343,6 @@ class PlaybackViewModel internal constructor(
         positionJob?.cancel()
         lyricsJob?.cancel()
         translationJob?.cancel()
-        ListeningStats.flush()
         controller?.let { ctrl ->
             ctrl.removeListener(playerListener)
             ctrl.release()

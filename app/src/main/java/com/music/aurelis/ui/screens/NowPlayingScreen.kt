@@ -2,6 +2,10 @@
 package com.music.aurelis.ui.screens
 
 import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import com.music.aurelis.AurelisApplication
+import com.music.aurelis.ui.components.SongActionsDialog
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -92,6 +96,8 @@ fun NowPlayingScreen(
 ) {
     val state by playbackViewModel.state.collectAsState()
     val song = state.currentSong
+    val userStore = (LocalContext.current.applicationContext as AurelisApplication).userLibrary
+    var showSongActions by remember { mutableStateOf(false) }
     val themeViewModel: DynamicThemeViewModel = viewModel()
 
     LaunchedEffect(song?.artworkUri) {
@@ -181,6 +187,9 @@ fun NowPlayingScreen(
                             )
                         }
                         Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = { showSongActions = true }) {
+                            Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, "Opciones de canción")
+                        }
                         IconButton(onClick = { showLyricsSources = true }) {
                             Icon(
                                 imageVector = Icons.Rounded.MoreHoriz,
@@ -380,6 +389,8 @@ fun NowPlayingScreen(
                     }
                 }
 
+                if (showSongActions) SongActionsDialog(s, userStore,
+                    onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false })
                 if (showLyricsSources) {
                     LyricsSourcesDialog(onDismiss = { showLyricsSources = false })
                 }

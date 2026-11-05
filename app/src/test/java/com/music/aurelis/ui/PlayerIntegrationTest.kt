@@ -94,6 +94,43 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
     }
+    @Test fun songActionsPersistFavoritePlaylistAndAppendWithoutRestartingQueue() {
+        start()
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithText("Añadir a favoritos").performClick()
+        compose.runOnIdle { assertEquals(setOf("1"), app.userLibrary.state.value.favorites) }
+        compose.onNode(hasSetTextAction()).performTextInput("Mi lista")
+        compose.onNodeWithText("Crear playlist con esta canción").performClick()
+        compose.runOnIdle { assertEquals(listOf("1"), app.userLibrary.state.value.playlists.single().songIds) }
+        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithText("Añadir a la cola").performClick()
+        compose.runOnIdle { assertEquals(listOf("1", "2", "3", "1"), vm.state.value.queue.map { it.id }) }
+        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onAllNodesWithContentDescription("Bajar en la cola")[0].performClick()
+        compose.runOnIdle {
+            assertEquals(listOf("2", "1", "3", "1"), vm.state.value.queue.map { it.id })
+            assertEquals("1", vm.state.value.currentSong?.id); assertEquals(1, vm.state.value.currentIndex)
+        }
+    }
+    @Test fun replayShowsActualHistoryAndRequiresConfirmationToClearIt() {
+        val store = app.userLibrary
+        store.recordListening(song("1"), 5000, true); store.flush()
+        store.toggleFavorite("1"); store.createPlaylist("Conservar", listOf("1"))
+        compose.setContent { AurelisTheme { com.music.aurelis.ui.screens.ReplayScreen(
+            store = store, songs = listOf(song("1")), onPlay = {}) } }
+        compose.onNodeWithText("1 reproducciones · 5 s").assertIsDisplayed()
+        compose.onNodeWithText("Borrar historial").performClick()
+        compose.onNodeWithText("Cancelar").performClick()
+        compose.runOnIdle { assertEquals(1, store.state.value.listening.size) }
+        compose.onNodeWithText("Borrar historial").performClick()
+        compose.onAllNodesWithText("Borrar historial").onLast().performClick()
+        compose.runOnIdle {
+            assertTrue(store.state.value.listening.isEmpty())
+            assertEquals(setOf("1"), store.state.value.favorites)
+            assertEquals(1, store.state.value.playlists.size)
+        }
+    }
     private fun capture(name: String) {
         val bitmap = compose.runOnIdle {
             val view = compose.activity.window.decorView

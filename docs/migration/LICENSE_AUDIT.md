@@ -112,3 +112,9 @@ Orchard u otros proyectos. Iconos y carátulas usan dependencias existentes y UR
 locales; capturas de prueba con texto ficticio y fallback propio, sin portadas
 de terceros. Pruebas nuevas originales; sin nuevas dependencias ni cambios de
 LICENSE/NOTICE. Sigue pendiente «Formato de licencias.csv» para cabeceras definitivas.
+
+## Registro B08
+
+Aportes nuevos propios sobre almacenamiento privado, servicio y UI existentes.
+Sin código ni recursos nuevos de BitChord, nuevas dependencias o cambios en avisos
+y LICENSE/NOTICE. Cabeceras definitivas pendientes del CSV, preservando las existentes.
