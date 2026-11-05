@@ -7,13 +7,15 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.music.aurelis.data.AudioPermission
 import com.music.aurelis.data.LibraryState
-import com.music.aurelis.data.LocalMediaRepository
+import com.music.aurelis.data.LocalLibrarySource
+import com.music.aurelis.data.MediaStoreLibrarySource
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.model.LocalAlbum
 import com.music.aurelis.data.model.LocalArtist
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.data.model.SortOption
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +30,10 @@ data class LibraryUiState(
     val filteredSongs: List<LocalSong> = emptyList(),
 )
 
-class LibraryViewModel(application: Application) : AndroidViewModel(application) {
+class LibraryViewModel @JvmOverloads constructor(
+    application: Application,
+    private val librarySource: LocalLibrarySource = MediaStoreLibrarySource(application),
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
@@ -66,7 +71,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
             try {
                 val filterNonMusic = SettingsRepository.filterNonMusicAudio.value
-                val result = LocalMediaRepository.getAllSongs(context, filterNonMusic)
+                val result = librarySource.songs(filterNonMusic)
                 allSongs = result
                 val (albums, artists, recent) = deriveGroupings(result)
                 _uiState.update {
@@ -80,6 +85,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                     )
                 }
                 applyFilterAndSort()
+            } catch (cancelled: CancellationException) {
+                scanned = false
+                throw cancelled
             } catch (e: Exception) {
                 scanned = false
                 _uiState.update {

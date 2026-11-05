@@ -5,6 +5,7 @@ package com.music.aurelis.data
 import androidx.core.content.edit
 import android.content.Context
 import android.content.SharedPreferences
+import com.music.aurelis.data.model.ProfileId
 import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.playback.EqualizerPreset
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,7 +65,7 @@ object SettingsRepository {
     val paxSenixApiKey = MutableStateFlow("")
 
     fun init(context: Context) {
-        prefs = context.applicationContext.getSharedPreferences("aurelis_settings", Context.MODE_PRIVATE)
+        prefs = ProfileStorage(context).open(ProfileId.DEFAULT, ProfileDataArea.PREFERENCES)
 
         themeMode.value = prefs.getInt("theme_mode", 0)
         dolbyAtmos.value = prefs.getBoolean("dolby_atmos", true)

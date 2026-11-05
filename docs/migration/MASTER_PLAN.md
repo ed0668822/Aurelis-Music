@@ -2,7 +2,8 @@
 
 ## Alcance y referencias
 
-B01: auditoría y planificación exclusivamente. No autoriza B02 ni cambios de aplicación.
+Documento iniciado en B01 (auditoría y planificación). B02 fue autorizado después
+e incorpora exclusivamente la base descrita al final. B03 y siguientes no están autorizados.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -96,3 +97,54 @@ Para B01, el diff es exclusivamente documental: `git diff --check`, enlaces/ruta
 coherencia de referencias son las comprobaciones requeridas. La compilación previa
 sirve de línea base, no de prueba funcional ni de CI del futuro commit.
 No repetir builds completos sin cambios que los justifiquen.
+
+## B02 — Decisiones de arquitectura implementadas
+
+Autorizado expresamente después de B01. Su alcance es la base de almacenamiento,
+identidad y lectura local; no adelanta UI de perfiles (B12), CRUD de listas/historial
+(B08), nuevo escáner incremental (B06) ni cambios visuales (B03).
+
+- `data/model/ProfileId.kt`: identidad estable, independiente del nombre visible.
+  El perfil heredado es `ProfileId.DEFAULT` (`default`). IDs de 1–64 caracteres
+  ASCII minúsculos, dígitos, guion o guion bajo, empezando por letra/dígito.
+  No derivar IDs del nombre editable; B12 podrá generar identificadores UUID.
+- `data/ProfileStorage.kt`: límite de persistencia privada por perfil y área.
+  `open(profileId, area)` devuelve SharedPreferences; los repositorios de dominio
+  serán responsables de tipos, serialización y operaciones. No crea cuentas ni
+  activa perfiles; no contiene credenciales remotas.
+- Áreas `PROFILE`, `PREFERENCES`, `FAVORITES`, `PLAYLISTS`, `HISTORY`.
+  Default reutiliza `aurelis_profile`, `aurelis_settings`, `aurelis_favorites`,
+  `aurelis_playlists`, `aurelis_history`, respectivamente. Solo los dos primeros
+  tenían un repositorio persistente observado. Los restantes son límites reservados,
+  no una implementación completa de favoritos/listas/historial.
+- Otros perfiles: `aurelis_profiles.<id>.<area>`; los puntos están prohibidos en
+  IDs para que no se mezclen límites. Abrir un perfil nuevo no hereda preferencias
+  del predeterminado ni copia datos sensibles. El acceso sigue siendo privado a la
+  aplicación; esto no proporciona autenticación ni aislamiento frente a código de
+  la propia app. No hay selección global de perfil activo en B02.
+- La transición del esquema previo es en el mismo archivo: no hay renombrado,
+  copia, borrado, conversión de claves ni marcador que pueda quedar a medio migrar.
+  Las claves desconocidas y valores se conservan. Inicializar repetidamente es
+  idempotente; renombrar el usuario no cambia ProfileId. No se requiere Room ni
+  DataStore para este cambio. La biblioteca y sus IDs actuales no se migran.
+- `AurelisApplication` inicializa ProfileRepository antes de mostrar Ajustes;
+  ProfileRepository y SettingsRepository usan los ámbitos predeterminados. No se
+  añade un motor ni se modifica el servicio Media3. Widget, metadatos de app,
+  archivos musicales y cachés compartidas permanecen fuera de estos ámbitos.
+- `data/LocalLibrarySource.kt`: `suspend songs(filterNonMusic): List<LocalSong>`
+  propaga fallos/cancelación. MediaStoreLibrarySource delega al escáner actual con
+  applicationContext. LibraryViewModel permite inyectar el contrato conservando
+  su constructor Android de un argumento; permisos y agrupaciones siguen vigentes.
+  CancellationException se propaga y permite reintento, sin mostrarla como error.
+- Dependencias nuevas solo de pruebas: JUnit 4.13.2, Robolectric 4.14.1 y
+  kotlinx-coroutines-test 1.9.0. Toolchain y dependencias de producción conservados.
+
+### Aceptación B02
+
+Probar datos heredados reales en SharedPreferences simuladas por Robolectric/API 33:
+nombre, avatar, ajustes y claves desconocidas intactos tras dos inicializaciones;
+escrituras siguen en archivos heredados; separación por perfil y área; validación de
+IDs; inicialización desde Application. Probar el contrato de biblioteca, permiso
+denegado, caché/reescaneo forzado, error recuperable, cancelación y constructor Android.
+Ejecutar unitarias, assembleDebug y lintDebug. Las simulaciones no acreditan reinicio
+real de proceso, MediaStore físico ni audio en dispositivo; esas pruebas siguen pendientes.

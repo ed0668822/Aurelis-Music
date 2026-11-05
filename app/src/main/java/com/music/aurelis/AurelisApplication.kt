@@ -11,11 +11,13 @@ import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.request.crossfade
 import com.music.aurelis.data.SettingsRepository
+import com.music.aurelis.data.ProfileRepository
 
 class AurelisApplication : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        ProfileRepository.init(this)
         SettingsRepository.init(this)
 
         val meta = getSharedPreferences("app_meta", MODE_PRIVATE)

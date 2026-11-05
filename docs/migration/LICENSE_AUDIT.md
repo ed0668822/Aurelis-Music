@@ -46,3 +46,16 @@ No añadir comentarios a formatos que no los permiten ni cabeceras que invaliden
 3. Verificar autorización de fuentes, iconos, imágenes, modelos ONNX y sus datos asociados antes de importarlos.
 4. Auditar licencias de dependencias nuevas por bloque; B01 no añade ninguna.
 5. Conservar la identidad GPL-3.0-or-later del trabajo propio sin borrar obligaciones diferentes de terceros.
+
+## Registro B02
+
+ProfileId, ProfileStorage, LocalLibrarySource y sus pruebas son implementación propia
+para Aurelis; no se copiaron nuevas piezas de BitChord, Orchard ni recursos visuales.
+Se conservaron avisos de archivos existentes. Los nuevos archivos no llevan cabeceras
+definitivas mientras falta el CSV, siguiendo la decisión de B01; su incorporación
+sigue pendiente y no justifica borrar atribuciones existentes.
+Las dependencias añadidas son solo de pruebas: JUnit 4.13.2 (EPL-1.0), Robolectric
+4.14.1 (MIT) y kotlinx-coroutines-test 1.9.0 (Apache-2.0), según sus licencias
+upstream, contrastadas con los POM descargados por Gradle. No se incorporan estas
+herramientas al APK de producción. No se resuelven
+en B02 los pendientes jurídicos de componentes ya incluidos.

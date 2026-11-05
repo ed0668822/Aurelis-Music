@@ -5,7 +5,7 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B02 no está autorizado.
+autorizado. B02 fue autorizado expresamente; B03 y siguientes no están autorizados.
 
 ## B01 — Auditoría y planificación
 
@@ -60,9 +60,8 @@ autorizado. B02 no está autorizado.
 
 ## Próximo bloque
 
-B02 — Arquitectura base, únicamente tras autorización explícita del usuario.
-Su primera tarea será trazar persistencia y llamadas existentes, fijar contratos
-locales y asociación de datos a perfiles, y definir migraciones sin pérdida de datos.
+B03 — Sistema visual, únicamente tras nueva autorización explícita del usuario
+y cierre de B02. No iniciar automáticamente.
 
 ## Verificaciones documentales B01
 
@@ -73,3 +72,31 @@ locales y asociación de datos a perfiles, y definir migraciones sin pérdida de
 - No se repitió Gradle: no hubo cambios de código, recursos o dependencias.
 - Las dos revisiones son pasadas separadas; los resultados no sustituyen una
   revisión externa de licencias ni una validación de audio en dispositivo.
+
+## B02 — Arquitectura base
+
+- Autorización: concedida expresamente por el usuario tras configurar su identidad Git local.
+- Estado: implementación y revisiones completadas; entrega en curso.
+- Base: `e6f58f937a1f84166236705c7f8b9a3a2947f571`; misma rama de migración.
+- Añadidos: ProfileId, ProfileStorage, LocalLibrarySource; ProfileStorageTest y
+  LibraryViewModelTest en los paquetes correspondientes de `app/src/test/`.
+- Modificados: AurelisApplication, ProfileRepository, SettingsRepository,
+  LibraryViewModel y dependencias de pruebas de `app/build.gradle.kts`;
+  documentos de esta carpeta actualizados.
+- Migración: ámbitos default apuntan a los mismos archivos/claves, sin copia ni
+  borrado; identidad independiente del nombre. Aislamiento preparado para B08/B12.
+- Funcionamiento existente corregido: inicialización de perfil antes de Ajustes;
+  cancelación de biblioteca propagada, sin convertirla en error visible.
+- Revisión 1 (arquitectura/código): completada como pasada separada del mismo agente.
+  Se contrastaron las llamadas de Ajustes, archivos previos, inicialización Application,
+  límites de perfil, constructor Android, imports y ausencia de duplicación de escáner/motor.
+  Sin cambios de firmas, identificadores de app ni versiones de producción.
+- Revisión 2 (funcionamiento/integración): completada como segunda pasada del mismo
+  agente. Se añadió cobertura de una canción local y se ejecutaron las pruebas finales;
+  conservación de datos/aislamiento y reintentos contrastados con resultados XML.
+  No equivale a una revisión de otro humano ni a pruebas en dispositivo.
+- Compilación: assembleDebug correcto. Unitarias finales: 11 correctas, 0 fallos,
+  0 errores, 0 omitidas. Lint sin errores y 209 advertencias; no se deshabilitan checks.
+- Actions, commit y PR: pendientes de entrega; el bloqueo API de B01 sigue registrado.
+- Límites: sin UI de perfiles ni funcionalidades de B08; sin nuevo motor Media3.
+- Cabeceras definitivas pendientes del CSV; no se alteran atribuciones de terceros.

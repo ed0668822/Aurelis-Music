@@ -231,5 +231,9 @@ dependencies {
     implementation("org.jsoup:jsoup:1.18.1")
 
     compileOnly("org.jspecify:jspecify:1.0.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }
 

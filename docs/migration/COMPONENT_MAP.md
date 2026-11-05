@@ -35,3 +35,20 @@ No hay evidencia de fidelidad visual en dispositivo ni de funcionamiento de todo
 los proveedores. No seleccionar automáticamente recursos SF Pro del origen.
 Las nuevas rutas de producción se decidirán en el bloque correspondiente tras
 trazar las llamadas existentes; B01 solo añade documentos.
+
+## Cambios propios B02
+
+Sin nuevas copias de BitChord ni cambios en sus fuentes. Referencias históricas
+anteriores se mantienen para próximos bloques.
+
+| Contrato / integración | Destino añadido o modificado | Resultado |
+|---|---|---|
+| Identidad local | `data/model/ProfileId.kt` | ID estable; default conserva la instalación previa |
+| Ámbitos privados | `data/ProfileStorage.kt` | Cinco áreas; archivos separados para otros IDs, sin CRUD ni selector de perfiles |
+| Compatibilidad heredada | `data/ProfileRepository.kt`, `data/SettingsRepository.kt` | Mismos archivos y claves del perfil default, sin copiar/borrar datos |
+| Inicio de aplicación | `AurelisApplication.kt` | Inicializa ProfileRepository para las escrituras de Ajustes existentes |
+| Lectura de biblioteca | `data/LocalLibrarySource.kt`, `LibraryViewModel.kt` | Adapter MediaStore existente, inyección y propagación de cancelación |
+| Verificación | `app/src/test/java/com/music/aurelis/` desde raíz | Pruebas Robolectric de persistencia y contrato de biblioteca |
+
+No se modifican los stubs de playlists/historial ni la UI. Los ámbitos de almacenamiento
+permiten implementarlos después sin mezclar datos de perfiles.

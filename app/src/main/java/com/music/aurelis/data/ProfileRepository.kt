@@ -4,16 +4,17 @@ package com.music.aurelis.data
 import androidx.core.content.edit
 import android.content.Context
 import android.content.SharedPreferences
+import com.music.aurelis.data.model.ProfileId
 
 object ProfileRepository {
-    private const val PREFS_NAME = "aurelis_profile"
+    val profileId: ProfileId = ProfileId.DEFAULT
     private const val KEY_NAME = "user_name"
     private const val KEY_PHOTO = "user_photo"
 
     private lateinit var prefs: SharedPreferences
 
     fun init(context: Context) {
-        prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs = ProfileStorage(context).open(profileId, ProfileDataArea.PROFILE)
     }
 
     var userName: String
