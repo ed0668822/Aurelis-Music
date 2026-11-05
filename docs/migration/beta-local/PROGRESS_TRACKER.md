@@ -6,7 +6,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 
 | Bloque | Dependencias | Complejidad | Estado nuevo plan |
 |---|---|---|---|
-| B00 | Aprobación recibida | Media | Completado localmente; publicación pendiente |
+| B00 | Aprobación recibida | Media | Completado y publicado |
 | B01 | B00 | Alta | Pendiente de autorización/previas |
 | B02 | B01 | Alta | Pendiente de autorización/previas |
 | B03 | B02 | Media-alta | Pendiente de autorización/previas |
@@ -53,3 +53,21 @@ ya acreditadas; leer solo filas/archivos de la unidad al reanudar.
   Firmas/ZIP/actionlint correctos; hallazgo ELF16KB registrado sin ocultarlo.
 - B00_AUDIT y B00_EVIDENCE contienen evidencia/limitaciones. La entrega no afirma
   B01, funciones futuras, paridad ni hardware aprobados. SHA/PR al publicar.
+
+
+## Entrega B00 confirmada
+
+- Commit: `b89a6b5089ac20562253697d565af934b724976e`, autor/committer ed0668822 <ed0668822@gmail.com>.
+- Push confirmado desde01c1ba5; rama remota y refs/pull/1/head coinciden con SHA.
+- PR: https://github.com/ed0668822/Aurelis-Music/pull/1, OPEN, título conservado
+  «Aurelis Music Beta UI and components». No merge ni cambio de rama.
+- GitHub Actions web muestra run119 histórico exitoso
+  (https://github.com/ed0668822/Aurelis-Music/actions/runs/42101996135).
+  No acredita el SHA nuevo: CI de B00/checkpoint pendiente de verificación.
+  No se transfiere el verde histórico a esta entrega.
+- Solo documentación, inventarios y evidencia. No modifica código/tests de app,
+  Gradle/CMake, manifest, workflows, LICENSE/NOTICE ni secretos/configuración de firma.
+- Nuevo checkpoint documental registra este SHA real tras publicar; el baseline
+  de B00_EVIDENCE sigue siendo01c1ba5, sin cambios funcionales respecto a entrega.
+- Siguiente unidad: B01.1, requiere autorización. Perfil múltiple, Dolby y demás
+  cambios previstos NO se han implementado todavía.

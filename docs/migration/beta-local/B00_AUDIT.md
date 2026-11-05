@@ -77,3 +77,8 @@ en LICENSE_AUDIT. SDK XMLv3/v4 emitió aviso de herramientas, sin fallo de build
 
 Siguiente unidad: B01.1 perfil único y respaldo, solo después de autorización.
 CI/commit/PR de esta entrega se registran tras publicar. No se hace merge.
+
+
+Entrega publicada: `b89a6b5089ac20562253697d565af934b724976e`; rama y PR1/head confirmados por Git.
+PR1 abierto con título intacto. Nueva CI aún no acreditada por SHA; listado web
+mostró119 anterior exitoso, sin atribuirlo a B00. Solo checkpoint documental posterior.
