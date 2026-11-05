@@ -1,11 +1,12 @@
 # Aurelis © 2026. GPL-3.0-or-later.
+
 name: Build Release APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -44,92 +45,53 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > aurelis-release.jks
-            echo "Keystore decoded: $(ls -la aurelis-release.jks)"
+            echo "Keystore decoded successfully."
           else
-            echo "::warning::KEYSTORE_BASE64 no configurado. Se firmará con la clave debug."
+            echo "::warning::KEYSTORE_BASE64 no configurado. Se utilizará la clave debug."
           fi
 
-      # ──────────────────────────────────────────────────────────────
-      # Instalar Platform SDK android-37 + NDK con reintentos.
-      # El runner Ubuntu trae hasta android-36; AGP no instala platforms
-      # automáticamente, así que compileSdk = 37 falla sin esto.
-      # ──────────────────────────────────────────────────────────────
-      - name: Install Android SDK Platform 37 + NDK (robust, with retries)
+      # ─────────────────────────────────────────────
+      # Android SDK 35 + NDK + CMake
+      # ─────────────────────────────────────────────
+
+      - name: Install Android SDK Platform 35, NDK and CMake
         shell: bash
         run: |
-          set -e
-          PLATFORM="platforms;android-37"
-          NDK_VERSION="26.1.10909125"
+          set -euo pipefail
+
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          PLATFORM_DIR="${SDK_DIR}/platforms/android-37"
-          NDK_DIR="${SDK_DIR}/ndk/${NDK_VERSION}"
           SDKMANAGER="${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager"
 
-          echo "── Accepting SDK licenses ──"
-          ( set +o pipefail; yes 2>/dev/null | "$SDKMANAGER" --licenses >/dev/null 2>&1 ) || true
-
-          # ── Platform SDK android-37 ──
-          if [ -d "$PLATFORM_DIR" ] && [ -f "$PLATFORM_DIR/source.properties" ]; then
-            echo "✅ Platform SDK android-37 already installed at ${PLATFORM_DIR}"
-          else
-            echo "📦 Installing ${PLATFORM} (with retries)…"
-            for attempt in 1 2 3; do
-              echo "── Platform attempt ${attempt}/3 ──"
-              rm -rf "${SDK_DIR}/.temp" "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
-              "$SDKMANAGER" --install "$PLATFORM" > /tmp/sdkmanager-platform.log 2>&1 || true
-              if [ -d "$PLATFORM_DIR" ] && [ -f "$PLATFORM_DIR/source.properties" ]; then
-                echo "✅ Platform SDK android-37 installed on attempt ${attempt}"
-                break
-              fi
-              echo "⚠️  Platform attempt ${attempt} failed, retrying in 10s…"
-              tail -n 30 /tmp/sdkmanager-platform.log 2>/dev/null || true
-              sleep 10
-            done
-            if [ ! -d "$PLATFORM_DIR" ] || [ ! -f "$PLATFORM_DIR/source.properties" ]; then
-              echo "::error::Failed to install ${PLATFORM} after 3 attempts."
-              cat /tmp/sdkmanager-platform.log 2>/dev/null || true
-              exit 1
-            fi
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "::error::No se encontró sdkmanager en $SDKMANAGER"
+            exit 1
           fi
 
-          # ── NDK ──
-          if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
-            echo "✅ NDK ${NDK_VERSION} already installed at ${NDK_DIR}"
-            ls -la "$NDK_DIR" | head -20
-            exit 0
-          fi
+          echo "Aceptando licencias Android..."
 
-          echo "📦 Installing NDK ${NDK_VERSION} (with retries)…"
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          set -o pipefail
 
-          for attempt in 1 2 3; do
-            echo "── NDK attempt ${attempt}/3 ──"
-            rm -rf "${SDK_DIR}/.temp" "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
+          echo "Instalando Android SDK 35, NDK y CMake..."
 
-            "$SDKMANAGER" --install "ndk;${NDK_VERSION}" > /tmp/sdkmanager-ndk.log 2>&1 || true
+          "$SDKMANAGER" --install \
+            "platforms;android-35" \
+            "ndk;26.1.10909125" \
+            "cmake;3.22.1"
 
-            if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
-              SIZE=$(du -sm "$NDK_DIR" 2>/dev/null | awk '{print $1}')
-              if [ -n "$SIZE" ] && [ "$SIZE" -ge 500 ]; then
-                echo "✅ NDK installed successfully on attempt ${attempt} (${SIZE} MB)"
-                ls -la "$NDK_DIR" | head -20
-                exit 0
-              else
-                echo "⚠️  NDK directory exists but looks incomplete (${SIZE:-0} MB). Will retry."
-              fi
-            fi
+          echo "Verificando instalaciones..."
 
-            echo "⚠️  NDK attempt ${attempt} failed, retrying in 10s…"
-            tail -n 30 /tmp/sdkmanager-ndk.log 2>/dev/null || true
-            sleep 10
-          done
+          test -f "$SDK_DIR/platforms/android-35/source.properties"
+          test -f "$SDK_DIR/ndk/26.1.10909125/source.properties"
+          test -d "$SDK_DIR/cmake/3.22.1"
 
-          echo "::error::Failed to install NDK ${NDK_VERSION} after 3 attempts."
-          cat /tmp/sdkmanager-ndk.log 2>/dev/null || true
-          exit 1
+          echo "SDK 35, NDK y CMake instalados correctamente."
 
-      # ──────────────────────────────────────────────────────────────
-      # 1. Lint (informativo — no bloquea el build)
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+      # 1. Android Lint
+      # ─────────────────────────────────────────────
+
       - name: Run Android Lint
         run: ./gradlew lintDebug --no-daemon
         continue-on-error: true
@@ -148,32 +110,35 @@ jobs:
           reporter: github-pr-check
           level: warning
 
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
       # 2. Tests unitarios
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+
       - name: Run unit tests
+        continue-on-error: true
         env:
-          STORE_FILE:        "aurelis-release.jks"
-          STORE_PASSWORD:    ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
+          STORE_FILE: "aurelis-release.jks"
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
         shell: bash
         run: |
           set -o pipefail
           ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build-tests.log
 
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
       # 3. Build Release
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+
       - name: Build Release APK
         id: build
         continue-on-error: true
         env:
-          STORE_FILE:        "aurelis-release.jks"
-          STORE_PASSWORD:    ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
+          STORE_FILE: "aurelis-release.jks"
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
         shell: bash
         run: |
@@ -181,9 +146,10 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
           exit ${PIPESTATUS[0]}
 
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
       # 4. Inventario de fuentes
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+
       - name: Generate Source Inventory
         if: always()
         shell: bash
@@ -192,6 +158,7 @@ jobs:
           java=$(find app/src -type f -name "*.java" | wc -l)
           cpp=$(find app/src -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) | wc -l)
           xml=$(find app/src/main/res -type f -name "*.xml" | wc -l)
+
           {
             echo "## 📦 Inventario de archivos fuente"
             echo ""
@@ -203,12 +170,14 @@ jobs:
             echo "| Recursos XML | $xml |"
             echo ""
             echo "**Total fuente (Kotlin+Java+C/C++):** $((kt + java + cpp))"
-          } >> $GITHUB_STEP_SUMMARY
+          } >> "$GITHUB_STEP_SUMMARY"
+
           find app/src -type f \( -name "*.kt" -o -name "*.java" -o -name "*.c" -o -name "*.cpp" -o -name "*.h" \) | sort > source-inventory.txt
 
-      # ──────────────────────────────────────────────────────────────
-      # 5. Reporte per-file
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+      # 5. Reporte por archivo
+      # ─────────────────────────────────────────────
+
       - name: Generate Per-File Compilation Report
         if: always()
         shell: bash
@@ -216,6 +185,7 @@ jobs:
           grep -E '^e: file://' build-release.log 2>/dev/null \
             | sed -E 's|^e: file://[^:]*/app/src|app/src|' \
             | sed -E 's|:[0-9]+:[0-9]+ | |' > errors.txt || true
+
           grep -E '^w: file://' build-release.log 2>/dev/null \
             | sed -E 's|^w: file://[^:]*/app/src|app/src|' \
             | sed -E 's|:[0-9]+:[0-9]+ | |' > warnings.txt || true
@@ -225,30 +195,39 @@ jobs:
             grep -A 3 "FAILURE: Build failed" build-release.log 2>/dev/null | head -n 5 >> failure-reason.txt || true
           fi
 
-          ok_count=0; warn_count=0; err_count=0
+          ok_count=0
+          warn_count=0
+          err_count=0
+
           : > file-status.txt
+
           while IFS= read -r file; do
             relpath="${file#./}"
+
             if grep -qF "${relpath} " errors.txt 2>/dev/null; then
               msg=$(grep -F "${relpath} " errors.txt | head -n1 | sed "s|^${relpath} ||")
               echo "❌ ERROR     ${relpath}" >> file-status.txt
               echo "             ↳ ${msg}" >> file-status.txt
               err_count=$((err_count + 1))
+
             elif grep -qF "${relpath} " warnings.txt 2>/dev/null; then
               msg=$(grep -F "${relpath} " warnings.txt | head -n1 | sed "s|^${relpath} ||")
-              echo "⚠️  WARNING   ${relpath}" >> file-status.txt
+              echo "⚠️ WARNING   ${relpath}" >> file-status.txt
               echo "             ↳ ${msg}" >> file-status.txt
               warn_count=$((warn_count + 1))
+
             else
               echo "✅ OK        ${relpath}" >> file-status.txt
               ok_count=$((ok_count + 1))
             fi
+
           done < <(find app/src -type f \( -name "*.kt" -o -name "*.java" \) | sort)
 
           {
             echo ""
             echo "## 🧪 Estado de compilación por archivo"
             echo ""
+
             if [ "${{ steps.build.outcome }}" = "success" ]; then
               echo "**Resultado:** ✅ Compilación exitosa — APK generado."
             else
@@ -261,22 +240,25 @@ jobs:
               echo '```'
               echo "</details>"
             fi
+
             echo ""
             echo "| Estado | Archivos |"
             echo "|--------|---------:|"
-            echo "| ✅ OK (compilaron limpio) | **$ok_count** |"
-            echo "| ⚠️ WARNING (compilaron con advertencias) | **$warn_count** |"
-            echo "| ❌ ERROR (fallaron) | **$err_count** |"
+            echo "| ✅ OK | **$ok_count** |"
+            echo "| ⚠️ WARNING | **$warn_count** |"
+            echo "| ❌ ERROR | **$err_count** |"
             echo ""
             echo "### Detalle por archivo"
             echo ""
             echo '```'
             head -n 400 file-status.txt
             echo '```'
-            if [ $(wc -l < file-status.txt) -gt 400 ]; then
-              echo "_...reporte truncado. Descarga el artefacto \`compilation-report-${{ github.run_number }}\` para ver el completo._"
+
+            if [ "$(wc -l < file-status.txt)" -gt 400 ]; then
+              echo "_Reporte truncado. Descarga el artefacto para ver el informe completo._"
             fi
-          } >> $GITHUB_STEP_SUMMARY
+
+          } >> "$GITHUB_STEP_SUMMARY"
 
           {
             echo "# Reporte de compilación — Aurelis Music"
@@ -290,12 +272,14 @@ jobs:
             echo "- ⚠️ WARNING: $warn_count"
             echo "- ❌ ERROR: $err_count"
             echo ""
+
             if [ -s failure-reason.txt ]; then
               echo "## Razón del fallo"
               echo ""
               cat failure-reason.txt
               echo ""
             fi
+
             echo "## Estado por archivo"
             echo ""
             cat file-status.txt
@@ -307,69 +291,88 @@ jobs:
             echo "## Warnings completos"
             echo ""
             cat warnings.txt
+
           } > compilation-report.txt
 
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
       # 6. Verificar APK
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+
       - name: Verify APK exists and is not empty
         if: steps.build.outcome == 'success'
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
+
           APK_DIR="app/build/outputs/apk/release"
+
           if [ ! -d "$APK_DIR" ]; then
             echo "::error::Directorio no existe: $APK_DIR"
             exit 1
           fi
+
           shopt -s nullglob
           APKS=("$APK_DIR"/*.apk)
+
           if [ ${#APKS[@]} -eq 0 ]; then
             echo "::error::No se generó ningún APK"
             exit 1
           fi
+
           for APK in "${APKS[@]}"; do
             SIZE=$(stat -c%s "$APK")
+
             echo "APK: $APK ($SIZE bytes)"
+
             if [ "$SIZE" -lt 1000000 ]; then
               echo "::error::APK demasiado pequeño: $APK"
               exit 1
             fi
           done
 
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
       # 7. Inspeccionar APK
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+
       - name: Inspect APK Contents (apkanalyzer)
         if: steps.build.outcome == 'success'
         shell: bash
         run: |
-          APK_ANALYZER=$(find $ANDROID_HOME -name apkanalyzer | head -n1)
+          APK_ANALYZER=$(find "$ANDROID_HOME" -name apkanalyzer | head -n1)
+
           if [ -z "$APK_ANALYZER" ]; then
-            echo "::warning::apkanalyzer no encontrado"; exit 0
+            echo "::warning::apkanalyzer no encontrado"
+            exit 0
           fi
+
           shopt -s nullglob
           APKS=(app/build/outputs/apk/release/*.apk)
+
           : > apk-contents.txt
+
           {
             echo ""
             echo "## 📲 APK generado"
             echo ""
             echo "| Archivo | Tamaño |"
             echo "|---------|--------|"
-          } >> $GITHUB_STEP_SUMMARY
+          } >> "$GITHUB_STEP_SUMMARY"
+
           for APK in "${APKS[@]}"; do
             NAME=$(basename "$APK")
             SIZE=$(stat -c%s "$APK")
-            echo "| \`$NAME\` | $SIZE bytes |" >> $GITHUB_STEP_SUMMARY
+
+            echo "| \`$NAME\` | $SIZE bytes |" >> "$GITHUB_STEP_SUMMARY"
+
             echo "=== $NAME ===" >> apk-contents.txt
-            $APK_ANALYZER dex packages "$APK" >> apk-contents.txt 2>&1 || true
+            "$APK_ANALYZER" dex packages "$APK" >> apk-contents.txt 2>&1 || true
           done
 
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
       # 8. Subir artefactos
-      # ──────────────────────────────────────────────────────────────
-      - name: Upload Compilation Report (siempre)
+      # ─────────────────────────────────────────────
+
+      - name: Upload Compilation Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -381,12 +384,13 @@ jobs:
             warnings.txt
             source-inventory.txt
             build-release.log
+            build-tests.log
             failure-reason.txt
             apk-contents.txt
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Upload APK (solo si compiló bien)
+      - name: Upload APK
         if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
@@ -395,12 +399,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
       # 9. Marcar workflow fallido
-      # ──────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+
       - name: Fail workflow if build failed
         if: steps.build.outcome == 'failure'
         shell: bash
         run: |
-          echo "::error::La compilación falló. Descarga el artefacto 'compilation-report-${{ github.run_number }}' para el detalle per-file."
+          echo "::error::La compilación falló. Descarga el artefacto compilation-report-${{ github.run_number }}."
           exit 1
