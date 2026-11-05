@@ -502,3 +502,17 @@ bloque por separado. B07 requerirá nueva autorización.
 - Microprueba AutoMix JVM17 10k temas: 494.62ms calentamiento, 311.24/194.72ms
   siguientes; no son resultados de dispositivo/batería.
 - RELEASE_READINESS.md agrupa los bloqueos y requisitos de cierre.
+
+- Entrega B14: `ecee4c1f00a8bbd7dd9876629f6fbb4735fdda11`, push confirmado
+  desde B13 a la misma rama. Autor/committer del usuario verificados.
+- PR #1 confirmado OPEN por HTML público, 23 commits al revisar, B13/B14 presentes
+  y título «Aurelis Music Beta UI and components» conservado; rama remota coincide.
+- Vista web de Actions: última ejecución observada #116
+  https://github.com/ed0668822/Aurelis-Music/actions/runs/42074651656 en curso.
+  La anterior #115 figura exitosa, pero las páginas específicas no permitieron
+  acreditar el SHA exacto; no se traslada ese éxito a B14 ni al checkpoint posterior.
+- Este cierre se publica como commit documental posterior, sin merge ni reescribir
+  historial. El último commit debe consultarse en Actions antes de afirmar CI verde.
+- B13 completado; B14 verificado localmente y pendiente de cierre global según
+  RELEASE_READINESS. Incorporar «Formato de licencias.csv» y autorizar B12 antes
+  de completar esos pendientes. No se inicia B12 automáticamente.

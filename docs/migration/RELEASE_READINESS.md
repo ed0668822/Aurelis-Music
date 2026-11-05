@@ -16,7 +16,7 @@ No se hace merge ni se publica un APK como versión final.
 | Traducción | Cliente configurable y caché, sin servidor desplegado/configurado aquí | Prueba en vivo pendiente |
 | AutoMix | Cola local finita por metadatos, sin BPM inventado | Sin crossfade/beatmatching |
 | Licencias | NOTICE corregido, textos completos e inventario POM | Cierre legal pendiente |
-| CI | actionlint/YAML/bash válidos; SDK36 y gate de errores corregidos | Run del último commit por verificar |
+| CI | actionlint/YAML/bash válidos; SDK36 y gate de errores corregidos | Último run observado #116 en curso; commit de cierre por verificar |
 
 ## Cambios de integración
 
@@ -67,3 +67,7 @@ capturas reales de Compose con datos de fixture. Esas pruebas no acreditan un
 renderizador/decoder/dispositivo real ni ausencia de transitorios audibles.
 Consultar PROGRESS y BUILD_STATUS antes de continuar; los éxitos históricos de CI
 no validan automáticamente el último commit.
+
+Las huellas de APK_EVIDENCE corresponden al build local v1.9.0-dev y certificado
+de desarrollo. CI puede usar versión por número de ejecución y firma configurada
+del usuario, por lo que no se espera igualdad de bytes con ese build local.

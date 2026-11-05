@@ -379,3 +379,7 @@ al cambiar curvas; no afirma medición de consumo físico. B12 continúa pendien
   confunde éxito histórico con el actual. Dispositivo/servicios en vivo no probados.
 - No cerrar B14 global hasta resolver B12, CSV, procedencia/suministro de fuentes
   de binarios y pruebas físicas/CI. Ver RELEASE_READINESS.md.
+
+Consulta web tras publicar B14: run #116 en curso, #115 histórico figura exitoso.
+No se acreditó el SHA exacto desde la página específica y no se afirma CI verde
+del commit final/documental; consultar PROGRESS/Actions al retomar.
