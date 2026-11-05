@@ -142,7 +142,8 @@ internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: 
     return QueueTracks(track(currentIndex, "np"), user, context, autoplay, history)
 }
 
-private fun Modifier.queueMotion(): Modifier = animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = QUEUE_ROW_MOTION)
+private fun LazyItemScope.queueMotion(): Modifier =
+    Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = QUEUE_ROW_MOTION)
 
 @Composable
 internal fun InlineQueue(
@@ -197,18 +198,18 @@ internal fun InlineQueue(
                 if (tracks.history.isNotEmpty()) {
                     item(key = "header-history") { QueueHeading(stringResource(R.string.previously_played), Modifier.padding(top = 12.dp, bottom = 6.dp)) }
                     items(tracks.history, key = { it.key }) { track ->
-                        InlineQueueRow(track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = controlsLocked, modifier = Modifier.queueMotion())
+                        InlineQueueRow(track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = controlsLocked, modifier = queueMotion())
                     }
                 }
                 if (nowPlaying != null) {
                     item(key = "header-now-playing") { QueueHeading(stringResource(R.string.now_playing), Modifier.padding(top = 12.dp, bottom = 6.dp)) }
                     item(key = nowPlaying.key) {
-                        InlineQueueRow(nowPlaying.song, true, { onJumpTo(nowPlaying.timelineIndex) }, { onRemove(nowPlaying.timelineIndex) }, locked = controlsLocked, modifier = Modifier.queueMotion())
+                        InlineQueueRow(nowPlaying.song, true, { onJumpTo(nowPlaying.timelineIndex) }, { onRemove(nowPlaying.timelineIndex) }, locked = controlsLocked, modifier = queueMotion())
                     }
                 }
                 if (tracks.user.isNotEmpty()) {
                     item(key = "header-user-queue") {
-                        QueueHeading(stringResource(R.string.next_in_queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(Modifier.queueMotion())) {
+                        QueueHeading(stringResource(R.string.next_in_queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion())) {
                             QueueClearButton(MaterialTheme.typography.labelLarge, controlsLocked, onClear)
                         }
                     }
@@ -216,12 +217,12 @@ internal fun InlineQueue(
                 }
                 if (tracks.context.isNotEmpty()) {
                     item(key = "header-context") {
-                        QueueHeading(if (contextTitle != null) stringResource(R.string.next_from, contextTitle) else stringResource(R.string.queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(Modifier.queueMotion()))
+                        QueueHeading(if (contextTitle != null) stringResource(R.string.next_from, contextTitle) else stringResource(R.string.queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion()))
                     }
                     queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, onRemove)
                 }
                 if (autoplayEnabled || tracks.autoplay.isNotEmpty()) {
-                    item(key = "autoplay-heading") { AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = Modifier.queueMotion()) }
+                    item(key = "autoplay-heading") { AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = queueMotion()) }
                     queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, onRemove)
                 }
             }

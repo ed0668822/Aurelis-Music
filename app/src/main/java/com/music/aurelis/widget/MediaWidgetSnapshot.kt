@@ -1,6 +1,7 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.widget
 
+import androidx.core.content.edit
 import android.content.Context
 
 internal data class MediaWidgetSnapshot(

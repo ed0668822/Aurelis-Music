@@ -1,6 +1,7 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.data
 
+import androidx.core.net.toUri
 import android.content.Context
 import android.content.Intent
 import android.net.Uri

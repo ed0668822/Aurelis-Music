@@ -1,6 +1,7 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis
 
+import androidx.core.content.edit
 import android.app.Application
 import coil3.ImageLoader
 import coil3.PlatformContext

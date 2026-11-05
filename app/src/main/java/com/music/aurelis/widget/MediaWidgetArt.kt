@@ -1,6 +1,7 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.widget
 
+import androidx.core.graphics.scale
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapShader
