@@ -50,28 +50,27 @@ jobs:
           fi
 
       # ──────────────────────────────────────────────────────────────
-      # Instalar Platform SDK android-36 + NDK con reintentos.
-      # android-37 es preview y no está en el canal estable del sdkmanager;
-      # el proyecto compila contra 36 (ver android.suppressUnsupportedCompileSdk
-      # en gradle.properties, que cubre 36 y 37).
+      # Instalar Platform SDK android-37 + NDK con reintentos.
+      # El runner Ubuntu trae hasta android-36; AGP no instala platforms
+      # automáticamente, así que compileSdk = 37 falla sin esto.
       # ──────────────────────────────────────────────────────────────
-      - name: Install Android SDK Platform 36 + NDK (robust, with retries)
+      - name: Install Android SDK Platform 37 + NDK (robust, with retries)
         shell: bash
         run: |
           set -e
-          PLATFORM="platforms;android-36"
+          PLATFORM="platforms;android-37"
           NDK_VERSION="26.1.10909125"
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          PLATFORM_DIR="${SDK_DIR}/platforms/android-36"
+          PLATFORM_DIR="${SDK_DIR}/platforms/android-37"
           NDK_DIR="${SDK_DIR}/ndk/${NDK_VERSION}"
           SDKMANAGER="${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager"
 
           echo "── Accepting SDK licenses ──"
           ( set +o pipefail; yes 2>/dev/null | "$SDKMANAGER" --licenses >/dev/null 2>&1 ) || true
 
-          # ── Platform SDK android-36 ──
+          # ── Platform SDK android-37 ──
           if [ -d "$PLATFORM_DIR" ] && [ -f "$PLATFORM_DIR/source.properties" ]; then
-            echo "✅ Platform SDK android-36 already installed at ${PLATFORM_DIR}"
+            echo "✅ Platform SDK android-37 already installed at ${PLATFORM_DIR}"
           else
             echo "📦 Installing ${PLATFORM} (with retries)…"
             for attempt in 1 2 3; do
@@ -79,7 +78,7 @@ jobs:
               rm -rf "${SDK_DIR}/.temp" "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
               "$SDKMANAGER" --install "$PLATFORM" > /tmp/sdkmanager-platform.log 2>&1 || true
               if [ -d "$PLATFORM_DIR" ] && [ -f "$PLATFORM_DIR/source.properties" ]; then
-                echo "✅ Platform SDK android-36 installed on attempt ${attempt}"
+                echo "✅ Platform SDK android-37 installed on attempt ${attempt}"
                 break
               fi
               echo "⚠️  Platform attempt ${attempt} failed, retrying in 10s…"
