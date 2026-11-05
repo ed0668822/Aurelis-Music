@@ -165,7 +165,7 @@ y cierre de B04. No iniciar automáticamente.
 
 - Autorización: concedida expresamente por el usuario tras B03.
 - Base: `309c732e5051f80f198e533ac6752c3902678f64`; misma rama y PR #1.
-- Estado: implementación y dos revisiones completadas; entrega en curso.
+- Estado: implementación y dos revisiones completadas; rama publicada para el PR #1.
 - Modificados: MainActivity, AppNavigator, GlassNavBar, LocalMusicScreen,
   ReplayScreen, EqualizerScreen, strings y documentación.
 - Añadidos: AppNavigationHost, AppNavigatorTest, NavigationIntegrationTest.
@@ -191,7 +191,12 @@ y cierre de B04. No iniciar automáticamente.
   ViewModel. La prueba del grafo ahora deniega audio y verifica su Error visible.
 - Tras la corrección: suite/debug/lint completos correctos en 1m 38s; 28 pruebas
   sin fallos/errores/omisiones, 205 advertencias de lint y firma APK verificada de nuevo.
-- Commit final de corrección/publicación: pendiente de registro de entrega.
+- Commit de corrección: `462ecb25294694ff685aa31f2b0fa05ab550482a`.
+  Push confirmado desde `7e477be` y SHA de rama remota verificado. Autor/committer
+  `ed0668822 <ed0668822@gmail.com>`. Este cierre se registra en un commit documental
+  posterior, sin reescribir ninguno de los commits anteriores.
+- PR: https://github.com/ed0668822/Aurelis-Music/pull/1,
+  «Aurelis Music Beta UI and components»; misma rama. No se crea ni renombra otro PR.
 - Actions: consulta REST de runs de la rama denegada (Forbidden); estado remoto
   desconocido. No se modifican workflows ni se afirma CI verde.
 - Límites: sin Home nueva, detalles álbum/artista, estadísticas ni controles EQ nuevos.

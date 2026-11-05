@@ -185,3 +185,7 @@ bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers
   Informes XML actuales en `app/build/test-results/testDebugUnitTest/`.
 - Release, dispositivo físico y Actions remoto quedan fuera de estos resultados;
   no se deshabilitan comprobaciones ni se alteran workflows.
+- Entrega: implementación inicial `7e477befcd547966f06ba1bc0c777a1f290586b5` y
+  corrección `462ecb25294694ff685aa31f2b0fa05ab550482a` publicadas en la rama
+  del PR #1. La consulta REST de Actions volvió a responder Forbidden; no se conoce
+  su resultado remoto. El registro de entrega se conserva en otro commit documental.
