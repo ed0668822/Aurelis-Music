@@ -344,3 +344,38 @@ Se reemplazó el reflejo activo por borde de gradiente, conservando la prueba na
 Tras corregir también contraste oscuro, suite completa repetida y aprobada.
 No prueba hardware, escucha subjetiva, latencia real ni ausencia de transitorios
 al cambiar curvas; no afirma medición de consumo físico. B12 continúa pendiente.
+
+## B14 — Integración local (cierre global pendiente)
+
+- Pipeline Gradle: `testDebugUnitTest testReleaseUnitTest assembleDebug assembleRelease
+  lintDebug lintRelease :app:dependencies --configuration releaseRuntimeClasspath
+  --no-daemon --max-workers=4`. Exit 0 en **3m 1s**, 120 tareas (38 ejecutadas).
+- Debug: **114** casos; release: **114** casos; en ambas, 0 fallos/errores/omitidos.
+  Son 114 casos por variante, no 228 pruebas funcionales distintas. R8 release correcto.
+- Lint debug: 0 errores/211 advertencias; release: 0 errores/210 advertencias.
+- Primera ejecución de release falló 28 casos Compose por actividad de test ausente.
+  Registro solo en memoria con regla ordenada antes del escenario, manteniendo
+  todas las aserciones. No se añade dependencia/actividad de pruebas a release.
+- Después solo se completaron textos legales/NOTICE, sin cambiar código de app:
+  `assembleDebug assembleRelease` exit 0 en **51s**, 90 tareas (14 ejecutadas).
+- Ambos APK: ZIP íntegro, firmas verificadas, nueve textos de licencia comparados
+  byte por byte con fuentes, doce .so exclusivamente ARM64. Release sin actividad
+  ComponentActivity de pruebas ni descriptor RobolectricActivityRule en DEX.
+- Identidad: com.music.aurelis; min33/target35/compile36; v1.9.0-dev, versionCode1.
+  Firma local de release: **Android Debug**, fallback existente, sin cambiar claves
+  ni configuración. **No es firma/publicación de producción**.
+- Hashes/tamaños: APK_EVIDENCE.json. Logs locales b14-validation-final.log y
+  b14-legal-packaging-final.log bajo /workspace/toolchains.
+- CI estático: actionlint 1.7.7 oficial (checksum verificado), exit0; YAML y bash -n
+  válidos. SDK36, lint ambas variantes y gate final de lint/tests/build; PRs
+  sustituidos se cancelan a favor del último, main/manual independientes.
+- Dependencias: 175 módulos/constraints/BOMs de runtime, POMs/herencia, inventario TSV.
+  No es auditoría de vulnerabilidades ni certificación de cada binario.
+- Rendimiento indicativo en JVM17 del host, heap máximo512MiB, catálogo sintético
+  10 000 temas/800 artistas, salida20: calentamiento494.62ms, siguientes311.24ms y
+  194.72ms. IDs únicos/tamaño verificados. No son mediciones de Android ni batería.
+- CI remoto: la API sigue bloqueada, pero la vista web pública permite consultar
+  runs. Estado exacto del commit de entrega se registra al publicarlo; no se
+  confunde éxito histórico con el actual. Dispositivo/servicios en vivo no probados.
+- No cerrar B14 global hasta resolver B12, CSV, procedencia/suministro de fuentes
+  de binarios y pruebas físicas/CI. Ver RELEASE_READINESS.md.

@@ -9,6 +9,11 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+# Keep full checks on the newest PR commit; main/manual executions remain independent.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
   pull-requests: write
@@ -51,10 +56,10 @@ jobs:
           fi
 
       # ─────────────────────────────────────────────
-      # Android SDK 35 + NDK + CMake
+      # Android SDK 36 + NDK + CMake
       # ─────────────────────────────────────────────
 
-      - name: Install Android SDK Platform 35, NDK and CMake
+      - name: Install Android SDK Platform 36, NDK and CMake
         shell: bash
         run: |
           set -euo pipefail
@@ -73,27 +78,28 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
           set -o pipefail
 
-          echo "Instalando Android SDK 35, NDK y CMake..."
+          echo "Instalando Android SDK 36, NDK y CMake..."
 
           "$SDKMANAGER" --install \
-            "platforms;android-35" \
+            "platforms;android-36" \
             "ndk;26.1.10909125" \
             "cmake;3.22.1"
 
           echo "Verificando instalaciones..."
 
-          test -f "$SDK_DIR/platforms/android-35/source.properties"
+          test -f "$SDK_DIR/platforms/android-36/source.properties"
           test -f "$SDK_DIR/ndk/26.1.10909125/source.properties"
           test -d "$SDK_DIR/cmake/3.22.1"
 
-          echo "SDK 35, NDK y CMake instalados correctamente."
+          echo "SDK 36, NDK y CMake instalados correctamente."
 
       # ─────────────────────────────────────────────
       # 1. Android Lint
       # ─────────────────────────────────────────────
 
       - name: Run Android Lint
-        run: ./gradlew lintDebug --no-daemon
+        id: lint
+        run: ./gradlew lintDebug lintRelease --no-daemon
         continue-on-error: true
 
       - name: Setup Reviewdog
@@ -115,6 +121,7 @@ jobs:
       # ─────────────────────────────────────────────
 
       - name: Run unit tests
+        id: tests
         continue-on-error: true
         env:
           STORE_FILE: "aurelis-release.jks"
@@ -403,9 +410,9 @@ jobs:
       # 9. Marcar workflow fallido
       # ─────────────────────────────────────────────
 
-      - name: Fail workflow if build failed
-        if: steps.build.outcome == 'failure'
+      - name: Fail workflow if verification failed
+        if: always() && (steps.build.outcome == 'failure' || steps.lint.outcome == 'failure' || steps.tests.outcome == 'failure')
         shell: bash
         run: |
-          echo "::error::La compilación falló. Descarga el artefacto compilation-report-${{ github.run_number }}."
+          echo "::error::La compilación, lint o las pruebas fallaron. Descarga el artefacto compilation-report-${{ github.run_number }}."
           exit 1

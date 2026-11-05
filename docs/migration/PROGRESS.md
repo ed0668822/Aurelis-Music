@@ -442,7 +442,7 @@ bloque por separado. B07 requerirá nueva autorización.
 
 - Autorización: B13 y B14 concedidos juntos; B12 no autorizado, no implementado.
 - Base: `c115b1bdc2eb32383ef69071c7007969271b1739`; misma rama/PR #1.
-- Estado: implementación y doble revisión completadas; publicando B13.
+- Estado: implementación, doble revisión y publicación completadas.
 - Modificados: SettingsScreen/Repository, EqualizerScreen/Processor, servicio,
   tema/Haze/LiquidGlass, panel/NowPlaying/Queue, diálogo traducción y tests de letras.
   Nuevos: AudioSettingsBinding, EqualizerProcessorTest, SettingsPersistenceTest
@@ -465,3 +465,40 @@ bloque por separado. B07 requerirá nueva autorización.
   inspeccionadas. También se corrigió contraste de etiquetas sobre fondo oscuro
   usando Surface con color de contenido explícito; se repitió la suite completa.
 - Actions: API bloqueada previamente por proxy; consultar entrega del bloque.
+
+- Publicación B13 confirmada: `640b936179e95356fc58df6aa458e3d0858fd226`,
+  push desde `c115b1b`, identidad Git local del usuario. Actions API CONNECT 403.
+
+## B14 — Integración y revisión final
+
+- Autorización: concedida junto con B13; B12 sigue no autorizado y pendiente.
+- Base: `640b936179e95356fc58df6aa458e3d0858fd226`; rama/PR #1 existentes.
+- Estado: verificaciones locales completadas; cierre global pendiente.
+- Cambios: workflow SDK 36 y gate de lint/tests/build; build.gradle empaqueta
+  avisos legales; NOTICE corregido con licencias POM. LICENSES añade textos íntegros
+  de terceros. RobolectricActivityRule y ocho suites registran actividad solo en
+  tests para release. Inventario TSV, evidencia APK y RELEASE_READINESS nuevos.
+- Revisión 1: pasada separada del mismo agente sobre Gradle/CI, alcance real de
+  pruebas, manifest, ABI/identidad/firma, licencias/copyrights y datos no autorizados.
+  No se cambian secretos, claves, firma configurada ni workflows para esconder fallos.
+- Revisión 2: segunda pasada del mismo agente; debug 114 y release 114 casos, todos
+  sin fallos/errores/omitidos; assemble y lint de ambas variantes correctos.
+  No se presentan como revisores humanos independientes ni pruebas físicas.
+- Primera ejecución release: 28 casos Compose sin actividad de test; se corrigió
+  el harness y se repitió todo. No se excluyó ninguna prueba ni se añadió actividad
+  de test al APK release. Logs y evidencias en BUILD_STATUS/APK_EVIDENCE.
+- Cierre pendiente: B12 (sin autorización), CSV requerido para cabeceras, procedencia
+  exacta de exportaciones ONNX/obligaciones de fuentes de binarios y pruebas físicas.
+  CI del commit de entrega se consulta después de publicar, sin asumir verde.
+- Próximo trabajo: B12 solo con autorización; luego cerrar los pendientes de B14.
+
+- Evidencia B14 local: pipeline debug/release exit0 en 3m 1s, 114 casos por variante,
+  lint sin errores (211/210 advertencias), R8 y firmas correctos. Textos legales
+  finales reempaquetados sin cambios de código: exit0 en51s; nueve textos verificados
+  y APKs/identidad/ABI registrados en APK_EVIDENCE.json. Firma release de desarrollo
+  por fallback original; no se declara publicación de producción.
+- actionlint 1.7.7/YAML/bash válidos; CI cancela solo PRs sustituidos, mantiene
+  todas las verificaciones en el último y no cambia main/manual.
+- Microprueba AutoMix JVM17 10k temas: 494.62ms calentamiento, 311.24/194.72ms
+  siguientes; no son resultados de dispositivo/batería.
+- RELEASE_READINESS.md agrupa los bloqueos y requisitos de cierre.

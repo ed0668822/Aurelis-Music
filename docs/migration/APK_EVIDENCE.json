@@ -1,0 +1,36 @@
+{
+  "debug": {
+    "bytes": 121066950,
+    "sha256": "2c555170394f065e20e9ddc7369485b5523ee5de41838806c8958e12c80c44f4",
+    "bundled_licenses": 9,
+    "native_libraries": 12
+  },
+  "release": {
+    "bytes": 56802769,
+    "sha256": "2890ecde3e1e1ceb0c66200d1c4e0cc4d19402844e2a4934252481f46ac1d692",
+    "bundled_licenses": 9,
+    "native_libraries": 12
+  },
+  "applicationId": "com.music.aurelis",
+  "minSdk": 33,
+  "targetSdk": 35,
+  "compileSdk": 36,
+  "versionName": "1.9.0-dev",
+  "versionCode": 1,
+  "abi": "arm64-v8a",
+  "signing": "Android Debug certificate via existing fallback; not a publication signature",
+  "validation": "Local Gradle/ZIP/signature checks; no device or remote CI success asserted",
+  "tests_debug": {
+    "tests": 114,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "tests_release": {
+    "tests": 114,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "validation_base_commit": "640b936179e95356fc58df6aa458e3d0858fd226 (B13); B14 adds workflow/test-only harness/legal assets"
+}

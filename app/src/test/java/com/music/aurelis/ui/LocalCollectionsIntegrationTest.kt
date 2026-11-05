@@ -24,7 +24,8 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [33], qualifiers = "w360dp-h800dp-mdpi", application = AurelisApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class LocalCollectionsIntegrationTest {
-    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    @get:org.junit.Rule(order = 0) val registerActivity = com.music.aurelis.ui.RobolectricActivityRule()
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun realHomeAlbumActionsCreateFavoritesAndPersistentPlaylistMembership() {
         val app = RuntimeEnvironment.getApplication() as AurelisApplication

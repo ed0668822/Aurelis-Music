@@ -206,3 +206,16 @@ YouTube/Opus y transiciones Orchard quedan fuera de esta selección local.
 | Letras/movimiento | SyncedLyricsPanel, NowPlayingScreen, QueueScreen | Ajustes respetados sin inventar marcas ni desactivar lectura |
 | Traducción | TranslationLanguageDialog | Guardar desde ajustes no traduce ni envía letras |
 | Pruebas | EqualizerProcessorTest, SettingsPersistenceTest, SettingsIntegrationTest | PCM espectral, pipeline/estado vivo y UI/capturas |
+
+## Integración B14
+
+| Área | Archivos/evidencia | Resultado |
+|---|---|---|
+| CI | `.github/workflows/android.yml` | SDK 36; cierre falla por lint/tests/build y conserva informes |
+| Release tests | RobolectricActivityRule y ocho suites Compose | Registro en memoria; release libre de helper/actividad de tests |
+| Avisos | NOTICE, LICENSES, bundleLicenseTexts en Gradle | Nueve textos íntegros en assets/licenses, sin relabelar terceros |
+| Dependencias | DEPENDENCIES_RELEASE.tsv | Versiones y licencias declaradas por POM, con herencia |
+| APK | APK_EVIDENCE.json | Hashes, tamaños, firma de desarrollo, identidad y ABI verificadas |
+| Cierre | RELEASE_READINESS.md | Distingue éxito local de producto completo/dispositivo/CI/licencias |
+
+Ningún cambio en B12 ni nueva integración de streaming/segundo motor.

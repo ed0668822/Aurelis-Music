@@ -524,3 +524,35 @@ real en dos canales (sin llamarla Dolby Atmos). Suscripciones propiedad del serv
 aplican cambios sin recrear ExoPlayer; cancelan con su scope. No se habilita una
 normalización de loudness que el helper legado no implementa. No se promete ausencia
 de transitorios al cambiar curvas ni resultado audible en hardware sin probarlo.
+
+## B14 — Integración: verificación local y cierre pendiente
+
+Autorizado junto con B13. Se valida el árbol existente, incluyendo B13, sin
+implementar B12 ni declarar que la migración completa esté terminada.
+Debug/release: unitarias de ambas variantes, assemble de ambas y lint de ambas;
+release con R8. El harness Robolectric registra ComponentActivity solo en memoria
+de tests cuando falta, sin añadir ui-test-manifest a release ni omitir casos.
+Firma/configuración técnica originales conservadas; el fallback local produce
+release firmado con certificado Android Debug, no una firma de publicación.
+
+CI: plataforma SDK 36 alineada con compileSdk; lint debug/release e IDs explícitos
+de lint/tests. Se conserva recolección de informes con continue-on-error, pero el
+cierre always() falla ante cualquiera de lint/tests/build. actionlint 1.7.7,
+YAML y bash -n verificados. API de GitHub deniega acceso en este entorno; la vista
+web pública permite observar estado de runs, sin confundir estados históricos
+con el commit actual ni afirmar éxito si sigue en curso.
+
+Licencias: inventario de 175 módulos de releaseRuntimeClasspath (incluye BOMs,
+aliases y restricciones; no equivale a 175 binarios en APK), POMs y herencia.
+Corregido NextLib 1.11.1-0.16.0: POM declara GPLv3, no Apache-2.0. Se incorporan
+textos completos AGPL/Apache y avisos MIT originales conocidos y se empaquetan
+verbatim con LICENSE/NOTICE. No se relabelan terceros ni se escriben cabeceras
+Aurelis definitivas sin «Formato de licencias.csv». No se afirma suministro
+completo de fuentes de binarios FFmpeg ni certificación legal de los modelos
+quantizados; ver LICENSE_AUDIT y RELEASE_READINESS.
+
+Se verifican ZIP, firmas, appId, SDKs, ABI, ausencia de actividad/helper de pruebas
+en release y nueve textos legales iguales a sus fuentes. Hashes/tamaños quedan
+en APK_EVIDENCE.json. Autorizaciones y pendientes se reflejan en PROGRESS.
+No se hace merge ni se publica APK como versión final. B12, CSV, hardware y cierre
+legal/CI deben resolverse antes de cerrar globalmente B14.

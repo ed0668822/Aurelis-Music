@@ -121,8 +121,8 @@ Their original notices are preserved below.
 
 5. ONNX models (Beat This! and Open-Unmix)
 
-   The Automix feature optionally uses two quantized neural-network
-   models distributed as ONNX files:
+   Legacy optional audio-analysis modules include two quantized ONNX
+   models. Active local AutoMix selection does not load these models:
 
    • beat_this_int8.onnx
      Derived from CPJKU/beat_this (https://github.com/CPJKU/beat_this)
@@ -134,9 +134,10 @@ Their original notices are preserved below.
      Copyright (c) Inria / SigSep
      License: MIT
 
-   Both are redistributed under the MIT License, whose full text
-   appears in section 4 above. The models are optional: Aurelis works
-   without them, falling back to the pure-DSP analyzer.
+   Upstream MIT notices are preserved in LICENSES/beat_this-MIT.txt
+   and LICENSES/open-unmix-MIT.txt. Exact quantized-export provenance
+   remains under review. Open-Unmix's umxl model has different,
+   non-commercial terms; it must not be confused with umxhq above.
 
 ────────────────────────────────────────────────────────────────────
 
@@ -151,11 +152,19 @@ Their original notices are preserved below.
    • OkHttp — Apache-2.0
    • Coil — Apache-2.0
    • Haze (dev.chrisbanes.haze) — Apache-2.0
-   • nextlib (io.github.anilbeesetti) — Apache-2.0
+   • nextlib-media3ext 1.11.1-0.16.0 (io.github.anilbeesetti) — GPL-3.0
+     (as declared by its published POM; not Apache-2.0). Sources:
+     https://github.com/anilbeesetti/nextlib. FFmpeg binary/source
+     distribution obligations must also be retained.
    • ONNX Runtime Android (com.microsoft.onnxruntime) — MIT
    • Guava (com.google.guava) — Apache-2.0
-   • Checker Framework (org.checkerframework) — MIT / GPL-2.0-with-classpath-exception
+   • checker-qual 3.48.3 (org.checkerframework) — MIT (artifact POM)
+   • org.json:json 20240303 — Public Domain (artifact POM)
    • Jsoup (org.jsoup) — MIT
 
-   Full license texts for the Apache-2.0 and MIT licenses appear
-   above in sections 3 and 4 respectively.
+   Full license texts and upstream MIT notices are included in LICENSES/;
+   the project GPL text is LICENSE. The original notices above and these
+   files are bundled under assets/licenses/ in both APK variants.
+   AGPL-governed source remains subject to AGPL-3.0-or-later; the full
+   text is LICENSES/AGPL-3.0-or-later.txt. These references do not replace
+   the obligation to supply corresponding source for distributed binaries.

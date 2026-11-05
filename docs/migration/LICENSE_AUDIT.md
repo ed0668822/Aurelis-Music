@@ -181,3 +181,48 @@ ligero evita shaders y no cambia avisos ni fuentes vendorizadas de backdrop.
 Fixtures son señales sinusoidales propias; las capturas no incluyen recursos
 de terceros. B12 no implementado ni atribuido como terminado. CSV aún ausente;
 no se aplican cabeceras definitivas nuevas ni se eliminan avisos existentes.
+
+## Registro B14
+
+Se contrastaron los POMs de releaseRuntimeClasspath y sus padres: 175 módulos
+incluyendo BOMs/aliases/restricciones, no 175 librerías empaquetadas. Inventario
+`DEPENDENCIES_RELEASE.tsv`; todas las filas tienen licencia declarada resuelta.
+Esto no sustituye una auditoría de contenido ni vulnerabilidades de cada binario.
+NextLib-media3ext 1.11.1-0.16.0 declara GNU GPLv3 en su POM: se corrige el Apache-2.0
+incorrecto de NOTICE sin atribuir su código a Aurelis ni conceder «o posterior»
+no acreditado. Checker-qual 3.48.3 declara MIT, también corregido.
+
+LICENSES conserva textos íntegros: AGPLv3 (SPDX license-list-data), Apache-2.0
+(texto estándar), MIT Beat This!/Open-Unmix desde upstream, ONNX Runtime v1.19.2,
+Jsoup jsoup-1.18.1 y checker-qual del JAR exacto. Se mantienen copyrights originales.
+Gradle empaqueta estos siete archivos junto con LICENSE/NOTICE (nueve entradas),
+verificadas byte por byte. No se agregan cabeceras propias a textos de terceros.
+
+Beat This!: README oficial CPJKU/beat_this declara MIT para código y pesos, con
+advertencia sobre datos de entrenamiento. Open-Unmix distingue umxl (CC BY-NC-SA
+4.0) de umxhq; la app declara umxhq, por lo que no se traslada automáticamente la
+restricción de umxl a ese archivo. Se conserva la declaración MIT upstream y su
+copyright; falta registrar la procedencia/exportación cuantizada exacta. No se
+reemplazan ni descargan pesos. Assets existentes y hashes:
+
+- beat_this_int8.onnx: 4 533 252 bytes, SHA-256 `9dc29f1fcd713d18f48a2755109fce01429ba6d1639607af8ae5c7449b47070f`.
+- vocals_umxhq_int8.onnx: 9 054 206 bytes, SHA-256 `a2be987b55a29bc149d3a6ae99b08175d81f85ee292a8ea21f96c3a473bc94cb`.
+
+Los doce .so ARM64 de release se inventariaron sin cambios. No se pudo determinar
+la configuración completa FFmpeg por cadenas enable/disable-gpl del binario; no
+se infiere una licencia distinta por ausencia de esas cadenas. Las obligaciones
+de suministro de fuentes correspondientes de esos binarios siguen pendientes
+de acreditación; links/NOTICE no se declaran suficientes como certificación.
+
+«Formato de licencias.csv» sigue ausente en repo/workspace. Por la regla del usuario
+no se aplican cabeceras definitivas propias. La revisión legal final permanece
+pendiente junto con esos puntos de procedencia; no se declara cumplimiento total
+ni publicación lista. No se han versionado archivos de firma/configuración local
+según revisión de patrones, ni se han leído o modificado claves privadas.
+
+Textos upstream consultados: CPJKU/beat_this main/LICENSE y README,
+sigsep/open-unmix-pytorch master/LICENSE y README, Microsoft/onnxruntime
+v1.19.2/LICENSE, jhy/jsoup jsoup-1.18.1/LICENSE, checker-qual 3.48.3
+META-INF/LICENSE.txt del JAR y SPDX license-list-data AGPL-3.0-or-later.
+Son avisos íntegros, no componentes de ejecución nuevos; no se cambian modelos,
+dependencias ni copyright de contribuciones anteriores.

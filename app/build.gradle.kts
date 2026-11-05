@@ -181,6 +181,16 @@ android {
     }
 }
 
+// Bundle verbatim project and third-party notices; never edit license text during builds.
+val bundleLicenseTexts by tasks.registering(Sync::class) {
+    from(rootProject.file("LICENSE"))
+    from(rootProject.file("NOTICE"))
+    from(rootProject.file("LICENSES"))
+    into(layout.buildDirectory.dir("generated/legalAssets/licenses"))
+}
+android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/legalAssets"))
+tasks.named("preBuild").configure { dependsOn(bundleLicenseTexts) }
+
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
