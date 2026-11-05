@@ -113,11 +113,6 @@ private fun AurelisApp() {
     LaunchedEffect(hasPermission) {
         if (hasPermission) libraryViewModel.loadLibrary()
     }
-    LaunchedEffect(navigator.visibleRoute()) {
-        if (navigator.visibleRoute() == AppRoute.LocalMusic && AudioPermission.isGranted(context)) {
-            libraryViewModel.refresh()
-        }
-    }
     LaunchedEffect(updateInfo) {
         if (updateInfo != null) showUpdateDialog = true
     }
@@ -164,6 +159,10 @@ internal fun AurelisNavigationContent(
     val playbackState by playbackViewModel.state.collectAsState()
     val libraryUiState by libraryViewModel.uiState.collectAsState()
     val route = navigator.visibleRoute()
+    LaunchedEffect(route) {
+        // Let the existing ViewModel report missing permission instead of leaving Loading forever.
+        if (route == AppRoute.LocalMusic) libraryViewModel.refresh()
+    }
     val tabs = listOf(
         BottomTab(stringResource(R.string.home), Icons.Filled.Home),
         BottomTab(stringResource(R.string.explore), Icons.Filled.Explore),

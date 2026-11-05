@@ -1,6 +1,7 @@
 package com.music.aurelis.ui.navigation
 
 import androidx.activity.ComponentActivity
+import android.Manifest
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -15,6 +16,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -80,10 +83,13 @@ class NavigationIntegrationTest {
     }
 
     @Test fun localMusicSearchOwnsBackBeforeItsParentPage() {
+        shadowOf(RuntimeEnvironment.getApplication()).denyPermissions(Manifest.permission.READ_MEDIA_AUDIO)
         val restoration = startApp()
         tab("Biblioteca").performClick()
         compose.onNodeWithText("Canciones").performClick()
         compose.runOnIdle { assertEquals(AppRoute.LocalMusic, navigator.visibleRoute()) }
+        compose.onNodeWithText("Permiso de acceso a música no concedido. " +
+            "Concédelo en Ajustes para escanear el dispositivo.").assertIsDisplayed()
         compose.onNodeWithContentDescription("Buscar").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("audio local")
         restoration.emulateSavedInstanceStateRestore()

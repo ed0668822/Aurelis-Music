@@ -151,11 +151,15 @@ bash gradlew compileDebugKotlin --no-daemon --max-workers=4
 bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4
 # Tras ampliar solo el caso de prueba de restauración de búsqueda local:
 bash gradlew testDebugUnitTest lintDebug --no-daemon --max-workers=4
+# Tras corregir la entrada a Canciones sin permiso y ampliar el test del grafo:
+bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4
 ```
 
 - Compilación incremental inicial: exit 0 en 26s.
 - Primera suite/debug/lint: exit 0 en 1m 42s; APK generado.
-- Ejecución final: exit 0 en 32s; 38 tareas (5 ejecutadas, 33 up-to-date).
+- Ejecución intermedia de tests/lint: exit 0 en 32s; 38 tareas (5 ejecutadas, 33 up-to-date).
+- Ejecución final tras corrección de permisos: exit 0 en 1m 38s;
+  57 tareas (18 ejecutadas, 39 up-to-date). Debug y firma verificados de nuevo.
 - 28 pruebas, 0 fallos, 0 errores, 0 omitidas. Se mantienen las 16 previas;
   AppNavigatorTest añade 8 y NavigationIntegrationTest añade 4.
 - Lint sin errores, 205 advertencias; firma APK comprobada con apksigner.
@@ -166,6 +170,8 @@ bash gradlew testDebugUnitTest lintDebug --no-daemon --max-workers=4
   vuelve a Biblioteca; consulta de búsqueda sobrevive a pestañas/rutas/restauración;
   búsqueda local restaurada consume Atrás antes que su padre; cola restaurada vuelve
   al estado de reproductor sin canción y permite regresar a la pestaña original.
+  La entrada a música local con permiso denegado muestra el Error del ViewModel
+  existente, en lugar de permanecer cargando. No se añade un sistema de permisos paralelo.
 - Se ejecuta AurelisNavigationContent, la misma composición usada por MainActivity,
   con sus pantallas y ViewModels reales; no se inician actualizador, conexiones Media3
   ni solicitudes de permisos. No se prueban acciones de audio o estadísticas mediante

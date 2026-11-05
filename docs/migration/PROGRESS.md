@@ -184,7 +184,16 @@ y cierre de B04. No iniciar automáticamente.
 - Compilación incremental: compileDebugKotlin correcto en 26s.
 - Debug: correcto; firma APK verificada. Suite final: 28 pruebas correctas,
   0 fallos, 0 errores y 0 omitidas. Lint sin errores y 205 advertencias.
-- Commit, publicación y Actions: pendientes de entrega.
+- Implementación inicial publicada: `7e477befcd547966f06ba1bc0c777a1f290586b5`.
+- En la revisión posterior a ese commit se detectó el caso de Canciones sin permiso:
+  se evitaba invocar al ViewModel y podía quedar Loading. Se trasladó la solicitud
+  de refresh a la entrada de ruta, conservando la comprobación de permisos del
+  ViewModel. La prueba del grafo ahora deniega audio y verifica su Error visible.
+- Tras la corrección: suite/debug/lint completos correctos en 1m 38s; 28 pruebas
+  sin fallos/errores/omisiones, 205 advertencias de lint y firma APK verificada de nuevo.
+- Commit final de corrección/publicación: pendiente de registro de entrega.
+- Actions: consulta REST de runs de la rama denegada (Forbidden); estado remoto
+  desconocido. No se modifican workflows ni se afirma CI verde.
 - Límites: sin Home nueva, detalles álbum/artista, estadísticas ni controles EQ nuevos.
   Replay/Equalizer se exponen como estructuras existentes incompletas; no funciones simuladas.
 - Próximo bloque: B05, pendiente de nueva autorización.

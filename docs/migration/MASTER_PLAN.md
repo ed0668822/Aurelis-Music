@@ -226,6 +226,10 @@ al grafo ni se crea una segunda instancia de navegación de producción.
 - Se separa AurelisNavigationContent de los efectos de arranque en AurelisApp para
   probar el mismo grafo sin conectar Media3, solicitar permisos ni consultar redes.
   Arranque, permisos y conexión reales se mantienen en MainActivity.
+  Al entrar en LocalMusic, el grafo solicita refresh al ViewModel incluso si el
+  permiso falta: el ViewModel existente debe exponer su estado Error, sin dejar
+  Loading indefinido ni saltarse sus comprobaciones. El test del grafo deniega
+  explícitamente audio y verifica el mensaje antes de probar búsqueda/restauración.
 
 Aceptación: pruebas de orden de pila y compatibilidad de detalles, ausencia de rutas
 duplicadas consecutivas, retorno cola→reproductor→origen, raíz Inicio no interceptada,
