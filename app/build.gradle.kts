@@ -207,4 +207,4 @@ dependencies {
     implementation("org.checkerframework:checker-qual:3.48.3")
     implementation("org.jsoup:jsoup:1.18.1")
     compileOnly("org.jspecify:jspecify:1.0.0")
-}}
+}
