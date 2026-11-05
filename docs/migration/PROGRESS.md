@@ -552,3 +552,19 @@ bloque por separado. B07 requerirá nueva autorización.
   no se debe seguir listando «B12 sin autorización» como bloqueo actual.
 - Siguiente trabajo: cierre de pendientes B14 según RELEASE_READINESS; no se inicia
   automáticamente otro bloque con esta entrega B12/B13.
+
+
+- Entrega B12/B13 confirmada: `30569f194d8f05ebe728caa3b51406a27ccbf96b`; push desde `2ecce6e` y
+  rama remota coincidente. Autor y committer `ed0668822 <ed0668822@gmail.com>`;
+  configuración exclusivamente local, sin reescribir commits anteriores.
+- PR existente: https://github.com/ed0668822/Aurelis-Music/pull/1, abierto y
+  título «Aurelis Music Beta UI and components» conservado.
+- Actions: vista pública consultada tras el push; todavía mostraba el run anterior
+  #117 exitoso (42075256890). No acredita CI del nuevo commit; comprobación del
+  commit B12/B13 y checkpoint documental pendiente. API sigue no disponible según
+  diagnóstico del entorno; no se cambian comprobaciones ni políticas de acceso.
+- Cierre local: exit0 en 5m39s; 126 casos por variante, lint0 errores con
+  218/217 advertencias debug/release. Firmas/ZIP/9 avisos/12 .so ARM64 correctos.
+- Este checkpoint documental registra el commit real después de su publicación;
+  no cambia el código validado ni inicia otro bloque. Próximo: pendientes B14
+  de RELEASE_READINESS (CSV, procedencia/fuentes, hardware, servicios y CI).

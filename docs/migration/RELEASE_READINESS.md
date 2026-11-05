@@ -17,7 +17,7 @@ No se hace merge ni se publica un APK como versión final.
 | Traducción | Cliente configurable y caché, sin servidor desplegado/configurado aquí | Prueba en vivo pendiente |
 | AutoMix | Cola local finita por metadatos, sin BPM inventado | Sin crossfade/beatmatching |
 | Licencias | NOTICE corregido, textos completos e inventario POM | Cierre legal pendiente |
-| CI | actionlint/YAML/bash válidos; SDK36 y gate de errores corregidos | Run anterior #117 exitoso; commit B12/B13 por verificar después de push |
+| CI | actionlint/YAML/bash válidos; SDK36 y gate de errores corregidos | Push B12/B13 confirmado; CI del commit exacto pendiente (#117 es anterior) |
 
 ## Cambios de integración
 

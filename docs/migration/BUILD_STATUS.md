@@ -412,3 +412,11 @@ bash gradlew :app:testDebugUnitTest :app:testReleaseUnitTest :app:assembleDebug 
   b12-debug-signature.log / b12-release-signature.log. No son archivos del repo.
 - No se han probado dispositivos físicos; servicios elegidos y CI del commit
   publicado se registran aparte. Sin cambios de secretos, firma ni applicationId.
+
+
+Código entregado: `30569f194d8f05ebe728caa3b51406a27ccbf96b` (mismo código de la validación precommit;
+solo este checkpoint documental es posterior). Las siete advertencias adicionales
+son StaticFieldLeak del singleton que guarda únicamente applicationContext,
+sin Activity/Service, y recomendaciones UseKtx en operaciones commit cuyo resultado
+se comprueba para no anunciar persistencia ante un fallo. No se suprimen reglas.
+CI del nuevo commit no acreditado: el listado público aún mostraba #117 anterior.

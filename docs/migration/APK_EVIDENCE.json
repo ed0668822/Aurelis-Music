@@ -32,5 +32,6 @@
     "errors": 0,
     "skipped": 0
   },
-  "validation_base_commit": "2ecce6e96d15f6e033a9ee407fa9f0958504c911 plus B12/B13 source changes; delivery commit recorded in PROGRESS"
+  "validation_base_commit": "2ecce6e96d15f6e033a9ee407fa9f0958504c911 plus B12/B13 source changes; delivery commit recorded in PROGRESS",
+  "validation_source_commit": "30569f194d8f05ebe728caa3b51406a27ccbf96b"
 }
