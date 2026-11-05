@@ -378,3 +378,44 @@ conservan sin escribir. Al crear el servicio se resuelve contra MediaStore, filt
 ausentes y restaura idle/pausado; una selección nueva impide sobrescritura tardía.
 Si no hay permiso/catálogo se conserva la copia. Checkpoint cada 15s y en eventos.
 No se inicia otro reproductor. Perfiles múltiples se integrarán en B12.
+
+## B09 — Letras locales, caché y sincronización
+
+Se integra LocalLyricsRepository con el reproductor existente: LRC importado
+mediante Storage Access Framework → etiquetas incrustadas compatibles → caché
+privada → LRCLIB únicamente al solicitar «Buscar en LRCLIB». Respeta la selección
+de LRCLIB en ajustes. Reproducción y carga inicial de letras no esperan red.
+Otras clases de proveedores existentes se conservan; no se habilitan nuevas
+integraciones sin revisar sus condiciones. La traducción existente no se amplía
+en B09: B10 conserva su alcance y sigue pendiente de autorización.
+
+LRC admite marcas repetidas, orden, fracciones, offset global (positivo adelanta),
+BOM UTF-8/UTF-16 y huecos temporales. Texto no sincronizado conserva tiempos cero
+y nunca se resalta ni permite seek. No se inventan tiempos ni contenido. Lectura
+incrustada acotada a 2 MiB de metadatos, ID3v2.3/2.4 USLT y comentarios FLAC
+LYRICS/UNSYNCEDLYRICS; SYLT, ID3 comprimido/unsync/extended headers y otros formatos
+no se declaran soportados. No se añaden dependencias ni acceso general a archivos.
+
+Por scoped storage, un LRC externo requiere selección explícita; se guarda una
+copia privada validada de hasta 1 MiB. Una importación fallida no sustituye la
+anterior. Nombre interno SHA-256 de URI/tamaño/duración/título/artista; no depende
+del path del archivo y evita reutilizar automáticamente otra grabación tras
+cambiar esos metadatos. No detecta reemplazos idénticos en todos esos campos.
+Importaciones en filesDir; caché descargada en cacheDir, versionada y acotada a
+100 entradas/32 MiB. Caché/importaciones de letras pertenecen al catálogo compartido,
+no a las playlists/historial privados de perfil. No se incluyen en Git.
+
+Las escrituras son atómicas y serializadas. Jobs/generaciones evitan resultados
+atrasados al cambiar de canción o petición; selección de archivo captura ID para
+no importar en otra canción tras cambiar mientras el selector estaba abierto.
+Caché no disponible no invalida un resultado remoto válido. Cancelación propagada.
+
+UI: fuente y caché visibles, estados vacío/error/carga, importar y buscar, ajuste
+de sincronización, resaltado y desplazamiento. Arrastrar o pausar seguimiento
+permite lectura manual; «Seguir letras» lo reanuda. Seek resta el offset de UI;
+muestreo visual Media3 cada 250 ms, separado del contador de escucha del servicio.
+El panel sin sincronización permite lectura, sin atribuir tiempos falsos.
+LRCLIB codifica parámetros y filtra coincidencias de título/artista/duración
+(tolerancia 5 s); sin coincidencia se informa ausencia/fallo, no se toma otro tema.
+Los permisos de contenido siguen siendo responsabilidad del proveedor/usuario;
+la licencia de servidor no concede derechos sobre cualquier letra.

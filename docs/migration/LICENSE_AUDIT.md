@@ -118,3 +118,24 @@ LICENSE/NOTICE. Sigue pendiente «Formato de licencias.csv» para cabeceras defi
 Aportes nuevos propios sobre almacenamiento privado, servicio y UI existentes.
 Sin código ni recursos nuevos de BitChord, nuevas dependencias o cambios en avisos
 y LICENSE/NOTICE. Cabeceras definitivas pendientes del CSV, preservando las existentes.
+
+## Registro B09
+
+Se reutilizan y amplían parser, panel y cliente LRCLIB ya incluidos en Aurelis;
+LocalLyricsRepository y pruebas son aportes propios. No se copian nuevos archivos
+de BitChord ni recursos/SDK de terceros, ni se añaden dependencias. Avisos y
+LICENSE/NOTICE conservados; CSV de cabeceras sigue pendiente.
+
+Se consultó en lectura el README público de
+https://github.com/tranxuanthang/lrclib (raw master/README.md), que describe LRCLIB
+como servicio libre con API para buscar/aportar letras sincronizadas. No se copia
+código del servidor. Esto no constituye autorización general sobre el contenido
+de las letras ni certificación jurídica de todos los proveedores legacy.
+Se conserva el endpoint público de búsqueda existente, con User-Agent del proyecto,
+TLS, límites de timeout y sin credenciales. La búsqueda B09 requiere acción explícita
+y LRCLIB habilitado; envía metadatos de la canción. Otros proveedores no se activan
+automáticamente en esta ruta. Caché privada no se redistribuye en el repositorio.
+
+Fixtures y captura usan texto original de pruebas, no letras atribuidas a artistas
+reales ni traducciones simuladas. La consulta de LRCLIB en vivo permanece sin verificar
+por la política de red del entorno; no se afirma haber descargado letras reales.

@@ -18,19 +18,13 @@ data class LrcLibTrack(
 )
 
 object LrcLib {
-    private const val BASE_URL = "https://lrclib.net/api"
-
     suspend fun searchLyrics(title: String, artist: String, duration: Int?): LrcLibTrack? = withContext(Dispatchers.IO) {
         try {
-            val query = title.replace(" ", "%20")
-            val artistQ = if (artist.isBlank()) "" else artist.replace(" ", "%20")
-            val url = StringBuilder("$BASE_URL/search?track_name=$query")
-            if (artist.isNotBlank()) url.append("&artist_name=$artistQ")
-            if (duration != null && duration > 0) url.append("&duration=$duration")
-            val response = Http.get(url.toString())
+            val url = searchUrl(title, artist)
+            val response = lyricsGet(url.toString()) ?: return@withContext null
             val arr = JSONArray(response)
             if (arr.length() == 0) return@withContext null
-            val best = arr.getJSONObject(0)
+            val best = selectTrack(arr, title, artist, duration) ?: return@withContext null
             LrcLibTrack(
                 id = best.optLong("id"),
                 name = best.optString("name"),
@@ -41,9 +35,26 @@ object LrcLib {
                 plainLyrics = best.optString("plainLyrics").takeIf { it.isNotEmpty() && it != "null" },
                 syncedLyrics = best.optString("syncedLyrics").takeIf { it.isNotEmpty() && it != "null" },
             )
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
         } catch (e: Exception) {
             null
         }
+    }
+
+    internal fun searchUrl(title: String, artist: String): okhttp3.HttpUrl {
+        return okhttp3.HttpUrl.Builder().scheme("https").host("lrclib.net")
+            .addPathSegment("api").addPathSegment("search")
+            .addQueryParameter("track_name", title).apply {
+                if (artist.isNotBlank()) addQueryParameter("artist_name", artist)
+            }.build()
+    }
+    internal fun selectTrack(arr: JSONArray, title: String, artist: String, duration: Int?): org.json.JSONObject? {
+        val candidates = (0 until arr.length()).map { arr.getJSONObject(it) }.filter {
+                com.music.aurelis.data.LocalSearch.normalize(it.optString("trackName")) == com.music.aurelis.data.LocalSearch.normalize(title) &&
+                (artist.isBlank() || com.music.aurelis.data.LocalSearch.normalize(it.optString("artistName")) == com.music.aurelis.data.LocalSearch.normalize(artist)) &&
+                (duration == null || duration <= 0 || (!it.isNull("duration") && kotlin.math.abs(it.optDouble("duration") - duration) <= 5))
+            }
+        return candidates.minByOrNull { if (duration != null) kotlin.math.abs(it.optDouble("duration") - duration) else 0.0 }
     }
 
     suspend fun getLyrics(song: Song): LyricsResult {
@@ -70,27 +81,5 @@ object LrcLib {
         return if (lines.isEmpty()) null else lines
     }
 
-    fun parseLrc(lrc: String): List<LyricLine> {
-        if (lrc.isBlank()) return emptyList()
-        val result = mutableListOf<LyricLine>()
-        val timeRegex = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{2,3}))?]")
-        lrc.lineSequence().forEach { line ->
-            val matches = timeRegex.findAll(line)
-            if (matches.count() == 0) return@forEach
-            val text = line.replace(timeRegex, "").trim()
-            if (text.isEmpty()) return@forEach
-            matches.forEach { m ->
-                val min = m.groupValues[1].toLongOrNull() ?: 0L
-                val sec = m.groupValues[2].toLongOrNull() ?: 0L
-                val msPart = m.groupValues[3]
-                val ms = when (msPart.length) {
-                    2 -> (msPart.toLongOrNull() ?: 0L) * 10
-                    3 -> (msPart.toLongOrNull() ?: 0L)
-                    else -> 0L
-                }
-                result.add(LyricLine(timeMs = min * 60_000L + sec * 1000L + ms, text = text))
-            }
-        }
-        return result.sortedBy { it.timeMs }
-    }
+    fun parseLrc(lrc: String): List<LyricLine> = Lyrics.parse(lrc)?.takeIf { it.isSynced }?.lines.orEmpty()
 }

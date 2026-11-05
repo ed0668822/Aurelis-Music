@@ -96,6 +96,8 @@ enum class LyricsSource(
         detail = "Plain text fallback, massive web catalogue",
         wordSynced = false,
     ),
+    LOCAL_FILE("Archivo local", "LRC importado por el usuario", false, hidden = true),
+    EMBEDDED("Incrustadas", "Etiquetas del archivo local", false, hidden = true),
     ;
 
     companion object {

@@ -154,3 +154,15 @@ FullScreenPlayerHost y AurelisPlayerPlatform legados no se instalan como motor/h
 | Colecciones | LocalUserLibrary, LocalCollectionScreen, SongActionsDialog | Favoritos, membresía y orden persistentes |
 | Historial | ReplayScreen y MainActivity | Agregados reales, resolver temas actuales y confirmar borrado |
 | Pruebas | ServiceCollectionsTest, PlayerIntegrationTest | Persistencia, tiempo real frente a seek, orden, opciones y borrado |
+
+## Letras activas B09
+
+| Área | Archivos | Resultado |
+|---|---|---|
+| LRC | Lyrics, LrcLib.parseLrc | Marcas/offset/gaps y texto plano sin tiempos ficticios |
+| Audio local | EmbeddedLyricsExtractor | USLT ID3v2.3/2.4 y comentarios FLAC, lectura acotada |
+| Prioridad/persistencia | LocalLyricsRepository | Importado, incrustado, caché y búsqueda explícita; archivos privados/versionados |
+| Consulta | LrcLib, LyricsHttp, LyricsRepository existente | LRCLIB con metadatos codificados y coincidencia conservadora, sin claves |
+| Estado/acciones | PlaybackViewModel, NowPlayingScreen | Importación SAF, estado real y protección contra cambios de canción |
+| Sincronización | SyncedLyricsPanel, PlaybackPosition existente | Resaltado, seguimiento manual/automático y seek con offset |
+| Pruebas | LocalLyricsTest, LyricsPanelTest, PlayerIntegrationTest | Fixtures propios de metadatos/letras y grafo Compose; sin consultas remotas |

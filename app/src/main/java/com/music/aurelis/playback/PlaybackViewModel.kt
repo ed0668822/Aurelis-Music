@@ -15,6 +15,8 @@ import kotlinx.coroutines.CancellationException
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.lyrics.LyricLine
 import com.music.aurelis.data.lyrics.LyricsRepository
+import com.music.aurelis.data.lyrics.LocalLyricsRepository
+import android.net.Uri
 import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.data.lyrics.LyricsTranslation
 import com.music.aurelis.data.model.LocalSong
@@ -34,8 +36,11 @@ sealed interface LyricsState {
         val lines: List<LyricLine>,
         val source: LyricsSource,
         val translation: TranslationState = TranslationState.None,
+        val isSynced: Boolean = lines.any { it.timeMs > 0 || it.isWordSynced },
+        val cached: Boolean = false,
     ) : LyricsState
     data object Missing : LyricsState
+    data class Failed(val message: String) : LyricsState
 }
 
 sealed interface TranslationState {
@@ -79,6 +84,8 @@ class PlaybackViewModel internal constructor(
     private var lyricsJob: Job? = null
     private var translationJob: Job? = null
     private var lastLyricsSongId: String? = null
+    private var lyricsGeneration = 0L
+    private val localLyrics = LocalLyricsRepository(application)
 
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -268,6 +275,7 @@ class PlaybackViewModel internal constructor(
         if (song != null && song.id != lastLyricsSongId) loadLyrics(song)
         else if (song == null) {
             lastLyricsSongId = null
+            lyricsGeneration++
             lyricsJob?.cancel()
             translationJob?.cancel()
             _state.update { it.copy(lyrics = LyricsState.None) }
@@ -288,30 +296,52 @@ class PlaybackViewModel internal constructor(
         _state.update { it.copy(durationMs = duration(ctrl)) }
     }
 
-    private fun loadLyrics(song: LocalSong) {
+    fun searchLyrics() {
+        val song = _state.value.currentSong ?: return
+        if (LyricsSource.LRCLIB !in SettingsRepository.lyricsSources.value) {
+            _state.update { it.copy(lyrics = LyricsState.Failed("Activa LRCLIB en Fuentes de letras para buscar en Internet.")) }
+            return
+        }
+        loadLyrics(song, true)
+    }
+
+    fun importLyrics(uri: Uri, requestedSongId: String? = _state.value.currentSong?.id) {
+        val song = _state.value.currentSong ?: return
+        if (song.id != requestedSongId || controller?.currentMediaItem?.mediaId != song.id) {
+            _state.update { it.copy(lyrics = LyricsState.Failed("La canción cambió mientras elegías el archivo. Importa las letras para la canción actual.")) }
+            return
+        }
+        val generation = ++lyricsGeneration
+        lyricsJob?.cancel(); translationJob?.cancel()
+        _state.update { it.copy(lyrics = LyricsState.Loading(LyricsSource.LOCAL_FILE)) }
+        lyricsJob = viewModelScope.launch {
+            try {
+                val result = localLyrics.import(song, uri)
+                if (generation == lyricsGeneration && _state.value.currentSong?.id == song.id)
+                    _state.update { it.copy(lyrics = LyricsState.Loaded(result.lines, result.source, isSynced = result.isSynced)) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { if (generation == lyricsGeneration) _state.update {
+                it.copy(lyrics = LyricsState.Failed("No se pudieron importar las letras. Usa LRC o texto UTF-8/UTF-16 de hasta 1 MiB."))
+            } }
+        }
+    }
+
+    private fun loadLyrics(song: LocalSong, allowRemote: Boolean = false) {
         lastLyricsSongId = song.id
-        lyricsJob?.cancel()
-        translationJob?.cancel()
+        val generation = ++lyricsGeneration
+        lyricsJob?.cancel(); translationJob?.cancel()
         _state.update { it.copy(lyrics = LyricsState.Loading()) }
         lyricsJob = viewModelScope.launch {
-            val result = runCatching {
-                LyricsRepository.lyrics(
-                    title = song.title,
-                    artist = song.artist,
-                    durationMs = song.durationMs,
-                    album = song.album,
-                    sources = SettingsRepository.lyricsSources.value,
-                    order = SettingsRepository.lyricsSourceOrder.value,
-                    prioritizeSyllableSync = SettingsRepository.prioritizeSyllableSync.value,
-                )
-            }.getOrNull()
-            if (lastLyricsSongId != song.id) return@launch
-            _state.update {
-                when {
-                    result == null || result.lines.isEmpty() -> it.copy(lyrics = LyricsState.Missing)
-                    else -> it.copy(lyrics = LyricsState.Loaded(result.lines, result.source))
-                }
-            }
+            try {
+                val result = localLyrics.find(song, allowRemote)
+                if (generation != lyricsGeneration || _state.value.currentSong?.id != song.id) return@launch
+                _state.update { current -> current.copy(lyrics = if (result == null && allowRemote) LyricsState.Failed("LRCLIB no devolvió letras. Comprueba la conexión o importa un LRC.")
+                    else if (result == null) LyricsState.Missing else
+                    LyricsState.Loaded(result.lines, result.source, isSynced = result.isSynced, cached = result.cached)) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { if (generation == lyricsGeneration) _state.update {
+                it.copy(lyrics = LyricsState.Failed("No se pudieron consultar las letras. Puedes reintentar o importar un archivo local."))
+            } }
         }
     }
 
@@ -327,7 +357,7 @@ class PlaybackViewModel internal constructor(
                         durationMs = duration(ctrl),
                     )
                 }
-                delay(1000L)
+                delay(250L)
             }
         }
     }

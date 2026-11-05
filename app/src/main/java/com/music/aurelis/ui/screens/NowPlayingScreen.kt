@@ -2,6 +2,11 @@
 package com.music.aurelis.ui.screens
 
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.ui.platform.LocalContext
 import com.music.aurelis.AurelisApplication
 import com.music.aurelis.ui.components.SongActionsDialog
@@ -22,9 +27,12 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.key
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.media3.common.Player
 import com.music.aurelis.ui.components.PlayerSlider
 import androidx.compose.foundation.layout.Arrangement
@@ -95,6 +103,10 @@ fun NowPlayingScreen(
     onOpenQueue: () -> Unit,
 ) {
     val state by playbackViewModel.state.collectAsState()
+    var importSongId by rememberSaveable { mutableStateOf<String?>(null) }
+    val importLyrics = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) playbackViewModel.importLyrics(uri, importSongId)
+    }
     val song = state.currentSong
     val userStore = (LocalContext.current.applicationContext as AurelisApplication).userLibrary
     var showSongActions by remember { mutableStateOf(false) }
@@ -170,6 +182,7 @@ fun NowPlayingScreen(
                         .fillMaxSize()
                         .statusBarsPadding()
                         .navigationBarsPadding()
+                        .then(if (showLyrics) Modifier.clearAndSetSemantics { } else Modifier)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -337,13 +350,12 @@ fun NowPlayingScreen(
                         else -> emptyList()
                     }
 
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
-                            .statusBarsPadding(),
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier.fillMaxSize().testTag("lyrics-overlay"),
+                        color = MaterialTheme.colorScheme.background,
+                        contentColor = MaterialTheme.colorScheme.onBackground,
                     ) {
-                        Column(Modifier.fillMaxSize()) {
+                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -352,25 +364,35 @@ fun NowPlayingScreen(
                                     Icon(Icons.Rounded.KeyboardArrowDown, "Cerrar letras", tint = Color.White)
                                 }
                                 Spacer(Modifier.weight(1f))
+                                IconButton(onClick = { showLyricsOffset = true }) { Icon(Icons.Rounded.Timer, "Ajustar sincronización") }
                                 IconButton(onClick = { showTranslationLanguages = true }) {
                                     Icon(Icons.Rounded.Translate, "Traducir", tint = Color.White)
                                 }
                             }
 
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                TextButton(onClick = { importSongId = s.id; importLyrics.launch(arrayOf("text/*", "application/octet-stream", "application/x-subrip")) }) { Text("Importar LRC") }
+                                TextButton(onClick = playbackViewModel::searchLyrics, enabled = state.lyrics !is LyricsState.Loading) { Text("Buscar en LRCLIB") }
+                            }
+                            val loaded = state.lyrics as? LyricsState.Loaded
+                            if (loaded != null) Text(loaded.source.label + if (loaded.cached) " · Caché" else "",
+                                modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelMedium)
                             if (lines.isEmpty()) {
                                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                                     Text(
+                                        modifier = Modifier.padding(16.dp),
                                         text = when (lyricsState) {
                                             is LyricsState.Loading -> "Buscando letras..."
-                                            is LyricsState.Missing -> "No se encontraron letras."
+                                            is LyricsState.Missing -> "No hay letras locales o guardadas. Importa un LRC o busca en LRCLIB (envía título y artista)."
+                                            is LyricsState.Failed -> lyricsState.message
                                             else -> "Cargando..."
                                         },
                                         color = Color.White.copy(alpha = 0.7f),
                                     )
                                 }
                             } else {
-                                val position = remember { com.music.aurelis.playback.PlaybackPosition() }
-                                LaunchedEffect(state.positionMs, lyricsOffset) {
+                                val position = remember(s.id) { com.music.aurelis.playback.PlaybackPosition() }
+                                LaunchedEffect(state.positionMs, lyricsOffset, state.isPlaying) {
                                     position.report(state.positionMs + lyricsOffset)
                                     position.advancing = state.isPlaying
                                 }
@@ -381,7 +403,8 @@ fun NowPlayingScreen(
                                     position = position,
                                     looking = true,
                                     isPlaying = state.isPlaying,
-                                    onSeekToLine = { playbackViewModel.seekTo(it) },
+                                    onSeekToLine = { playbackViewModel.seekTo((it - lyricsOffset).coerceAtLeast(0)) },
+                                    isSynced = loaded?.isSynced == true,
                                     modifier = Modifier.weight(1f),
                                 )
                             }

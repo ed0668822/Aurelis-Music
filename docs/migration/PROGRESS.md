@@ -316,7 +316,7 @@ bloque por separado. B07 requerirá nueva autorización.
 
 - Autorización: B08/B09 concedidos juntos, se cierra B08 antes de implementar B09.
 - Base: `697b2b8be6aa04ccc9cefe958a23b838bc606cca`; misma rama/PR #1.
-- Estado: implementación y doble revisión completadas; publicando B08.
+- Estado: implementación, doble revisión y publicación completadas.
 - Nuevos: LocalQueueStore, ServicePlaybackRecorder, SongActionsDialog y
   ServiceCollectionsTest. Modificados: ProfileStorage, LocalUserLibrary, servicio,
   PlaybackViewModel, MainActivity, NowPlayingScreen, ReplayScreen, QueueScreen,
@@ -335,3 +335,33 @@ bloque por separado. B07 requerirá nueva autorización.
   recuperación depende de IDs MediaStore. Registro de segundo plano conectado al
   servicio y probado con eventos controlados, sin prueba física de larga duración.
 - Siguiente bloque: B09 ya autorizado; B10 no autorizado.
+
+- Publicación B08 confirmada: `75d2d6bc3faf00dd0c79f46128f9af30438889f9`,
+  push desde `697b2b8` a la rama del PR #1; identidad local del usuario.
+
+## B09 — Letras sincronizadas
+
+- Autorización: concedida junto a B08; base `75d2d6bc3faf00dd0c79f46128f9af30438889f9`.
+- Estado: implementación y doble revisión completadas; publicando B09, sin iniciar B10.
+- Nuevos: LocalLyricsRepository, LocalLyricsTest y LyricsPanelTest. Modificados:
+  parser Lyrics/LrcLib, lector EmbeddedLyrics, LyricsSource/LyricsHttp,
+  PlaybackViewModel, NowPlayingScreen, SyncedLyricsPanel, PlayerIntegrationTest
+  y documentación. Captura de prueba local prevista al cierre.
+- Revisión 1: pasada separada del mismo agente; prioridad local, ámbitos de archivos,
+  tamaño/formatos, metadatos frente a versión de canción, red explícita, cancelación
+  y generación de solicitudes, escrituras atómicas serializadas, offsets y ausencia
+  de tiempos ficticios para texto plano. Sin nuevas dependencias ni motor musical.
+- Revisión 2: segunda pasada del mismo agente, completada. Parser/repositorio/panel
+  y grafo de importación/seek con offset correctos tras procesar el looper Android en el test.
+  Se conserva la comprobación sobre el estado real, sin sustituirlo por un mock.
+  Captura detectó contraste y aislamiento de overlay, corregidos y revisados visualmente.
+  No se afirman dos revisores humanos independientes.
+- Validación final: 85 casos, 0 fallos/errores/omitidos; exit 0 en 1m 43s, APK debug
+  y firma verificados, lint 0 errores y 210 advertencias; XML/diff correctos.
+- Actions: API bloqueada por proxy CONNECT 403; estado remoto no verificable.
+- Límites: importación explícita SAF por restricciones de almacenamiento Android;
+  no se promete lectura automática de LRC arbitrarios junto al audio sin permiso.
+  ID3v2.3/2.4 USLT y comentarios FLAC compatibles; SYLT, etiquetas comprimidas/
+  unsynchronized y otros contenedores pendientes. LRCLIB no probado en vivo por
+  política de red; no se descargaron ni inventaron letras reales en verificaciones.
+- Próximo bloque B10 requiere autorización nueva.

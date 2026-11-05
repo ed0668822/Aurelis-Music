@@ -131,6 +131,25 @@ class PlayerIntegrationTest {
             assertEquals(1, store.state.value.playlists.size)
         }
     }
+    @Test fun importedLyricsHighlightAndSeekWithOffsetInTheRealPlayer() {
+        start()
+        SettingsRepository.setLyricsOffsetMs(500)
+        val lrc = File(app.cacheDir, "import-test.lrc").apply { writeText("[00:00.000]Primera frase propia\n[00:01.000]Segunda frase propia") }
+        compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc)) }
+        compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.lyrics !is LyricsState.Loading } }
+        compose.runOnIdle { assertTrue("Expected imported lyrics, got ${vm.state.value.lyrics}", vm.state.value.lyrics is LyricsState.Loaded) }
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
+        compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertIsDisplayed()
+        compose.onNodeWithText("Primera frase propia").assertIsSelected()
+        compose.onNodeWithText("Segunda frase propia").performClick()
+        compose.runOnIdle { assertEquals(500L, vm.state.value.positionMs) }
+        compose.onNodeWithText("Segunda frase propia").assertIsSelected()
+        capture("synced-lyrics")
+        compose.runOnIdle { vm.next() }
+        compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc), "1") }
+        compose.runOnIdle { assertFalse(vm.state.value.lyrics is LyricsState.Loaded) }
+    }
     private fun capture(name: String) {
         val bitmap = compose.runOnIdle {
             val view = compose.activity.window.decorView

@@ -276,3 +276,27 @@ comparación de tipos numéricos incorrecta en una aserción; corregida sin camb
 el comportamiento esperado. Pruebas de servicio usan eventos Media3 controlados,
 no decodifican audio ni verifican ejecución física prolongada. Actions bloqueado
 por proxy CONNECT 403; comprobaciones remotas pendientes.
+
+## B09 — Verificación final
+
+- Base: `75d2d6bc3faf00dd0c79f46128f9af30438889f9`.
+- `testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4`: exit 0
+  en 1m 43s, 57 tareas (18 ejecutadas). XML: **85 pruebas**, 0 fallos/errores/omitidas.
+- Lint: **0 errores y 210 advertencias**, sin desactivar comprobaciones.
+- APK debug y `apksigner verify` correctos; XML de strings válido y sin duplicados,
+  git diff --check correcto. Sin firma/build release ni publicación de APK.
+- Log local: `/workspace/toolchains/b09-validation-final.log`; XML de pruebas/lint
+  en app/build. Captura `docs/migration/screenshots/synced-lyrics.png`, inspeccionada.
+- Suite inicial: 85 casos, un timeout de prueba esperando callback IO sin procesar
+  el looper Android. Se aisló y corrigió el test para drenar el looper y comprobar
+  el estado real. La captura detectó etiqueta con contraste incorrecto y contenido
+  subyacente accesible; overlay convertido en Surface opaca con color de contenido
+  y semántica aislada. Suite completa repetida tras esa corrección y aprobada.
+- Se comprueban LRC (marcas, offset, huecos, texto plano), ID3/FLAC con fixtures,
+  UTF-16, prioridad local/caché, cancelación, parámetros Unicode y selección de
+  grabación remota, resaltado/seguimiento y seek con offset en el grafo real.
+- No hay peticiones de letras reales en pruebas. Fixtures propios solo en tests.
+  LRCLIB en vivo pendiente por política de red; API Actions bloqueada por proxy
+  CONNECT 403. No afirmar que una búsqueda real ni CI remoto hayan sido aprobados.
+- Pendiente dispositivo físico: SAF/proveedores OEM, etiquetas en formatos no
+  cubiertos, sincronización percibida y continuidad de audio/controles del sistema.
