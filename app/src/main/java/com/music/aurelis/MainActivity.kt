@@ -312,6 +312,8 @@ internal fun AurelisNavigationContent(
                     isVisible = true,
                     onDismiss = { navigator.pop() },
                     onOpenEqualizer = { navigator.push(AppRoute.Equalizer) },
+                    localSongs = allSongs,
+                    onOpenFolder = { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDER, it)) },
                 )
                 AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
                 AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() }, store = userStore,

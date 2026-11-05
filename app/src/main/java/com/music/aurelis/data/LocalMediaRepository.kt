@@ -42,7 +42,16 @@ object LocalMediaRepository {
     suspend fun getAllSongs(context: Context, filterNonMusic: Boolean): List<LocalSong> =
         getAllSongs(context, filterNonMusic, metadataReader(context))
 
-    internal suspend fun getAllSongs(context: Context, filterNonMusic: Boolean, tags: LocalMetadataReader): List<LocalSong> = withContext(Dispatchers.IO) {
+    suspend fun getLibrarySongs(context: Context, filterNonMusic: Boolean): List<LocalSong> =
+        if (SettingsRepository.useAllAudioFolders.value) getAllSongs(context, filterNonMusic)
+        else scanLocalFolders(context, SettingsRepository.localMusicFolders.value, filterNonMusic)
+
+    suspend fun scanLocalFolders(context: Context, folders: Set<String>, filterNonMusic: Boolean): List<LocalSong> =
+        LocalFolderRepository.songs(context, folders, filterNonMusic)
+
+    internal suspend fun getAllSongs(context: Context, filterNonMusic: Boolean, tags: LocalMetadataReader,
+        requireFolderMetadata: Boolean = false,
+        includeFolder: (String?, String?) -> Boolean = { _, _ -> true }): List<LocalSong> = withContext(Dispatchers.IO) {
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val selection = buildString {
             append("(${MediaStore.Audio.Media.DURATION} >= ? OR ${MediaStore.Audio.Media.DURATION} IS NULL) AND ${MediaStore.Audio.Media.IS_PENDING} = 0 AND ${MediaStore.Audio.Media.IS_TRASHED} = 0")
@@ -57,6 +66,8 @@ object LocalMediaRepository {
                 MediaStore.Audio.Media.RELATIVE_PATH, MediaStore.Audio.Media.DATE_MODIFIED, MediaStore.Audio.Media.MIME_TYPE) }.toTypedArray())
         } ?: throw IOException(context.getString(R.string.library_read_error))
         cursor.use { c ->
+            if (requireFolderMetadata && (c.getColumnIndex(MediaStore.Audio.Media.VOLUME_NAME) < 0 || c.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH) < 0))
+                throw IOException("El dispositivo no proporciona carpetas en su índice de audio. Activa todas las carpetas en Ajustes.")
             val songs = linkedMapOf<String, LocalSong>()
             while (c.moveToNext()) {
                 currentCoroutineContext().ensureActive()
@@ -66,6 +77,7 @@ object LocalMediaRepository {
                     c.number(MediaStore.Audio.Media.IS_TRASHED) == 1L ||
                     (filterNonMusic && c.number(MediaStore.Audio.Media.IS_MUSIC) == 0L)) continue
                 val volume = c.metadata(MediaStore.Audio.Media.VOLUME_NAME)?.takeIf { it.matches(Regex("[a-zA-Z0-9_-]+")) }
+                if (!includeFolder(volume, c.metadata(MediaStore.Audio.Media.RELATIVE_PATH))) continue
                 val contentUri = ContentUris.withAppendedId(uri, id)
                 val size = c.number(MediaStore.Audio.Media.SIZE)?.takeIf { it >= 0 }
                 val modified = seconds(c.number(MediaStore.Audio.Media.DATE_MODIFIED))

@@ -32,6 +32,16 @@ class ProfilesIntegrationTest {
         compose.runOnIdle { assertEquals(id, ProfileRepository.profileId); assertEquals("Mi nombre", ProfileRepository.userName) }
         compose.onNodeWithText("Eliminar perfil Mi nombre").assertDoesNotExist()
     }
+    @Test fun foldersCanBeBrowsedAndOpenedFromSettingsWithoutASecondCatalogue() {
+        var opened: String? = null
+        val song = com.music.aurelis.data.model.LocalSong("1","One","Artist",null,"content://media/1",null,60000,null,null,null,
+            volumeName="external_primary",relativePath="Music/Jazz/")
+        compose.setContent { AurelisTheme { SettingsScreen(true, {}, localSongs = listOf(song), onOpenFolder = { opened = it }) } }
+        compose.onNodeWithText("Ver carpetas de la biblioteca").performScrollTo().performClick()
+        compose.onNodeWithText("Music/Jazz · 1").performClick()
+        compose.runOnIdle { assertEquals(com.music.aurelis.data.LocalFolderRepository.groups(listOf(song)).single().key, opened) }
+    }
+
     @Test fun removingPhotoDoesNotRemoveProfileOrItsName() {
         compose.runOnIdle { ProfileRepository.userPhotoUri = "content://legacy/photo"; ProfileRepository.rename("Mi perfil") }
         compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }

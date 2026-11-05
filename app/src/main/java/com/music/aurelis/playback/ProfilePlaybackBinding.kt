@@ -14,7 +14,7 @@ internal class ProfilePlaybackBinding(
     private val scope: CoroutineScope,
     private val library: () -> LocalUserLibrary = { (context.applicationContext as AurelisApplication).userLibrary },
     private val songs: suspend () -> List<LocalSong> = {
-        if (AudioPermission.isGranted(context)) LocalMediaRepository.getAllSongs(context, SettingsRepository.filterNonMusicAudio.value)
+        if (AudioPermission.isGranted(context)) LocalMediaRepository.getLibrarySongs(context, SettingsRepository.filterNonMusicAudio.value)
         else emptyList()
     },
 ) {

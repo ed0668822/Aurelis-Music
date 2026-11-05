@@ -7,7 +7,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | Bloque | Dependencias | Complejidad | Estado nuevo plan |
 |---|---|---|---|
 | B00 | Aprobación recibida | Media | Completado y publicado |
-| B01 | B00 | Alta | B01.1 completado localmente; B01.2/3 pendientes |
+| B01 | B00 | Alta | B01.1/.2/.3 completados localmente; publicado al cierre |
 | B02 | B01 | Alta | Pendiente de autorización/previas |
 | B03 | B02 | Media-alta | Pendiente de autorización/previas |
 | B04 | B03 | Alta | Pendiente de autorización/previas |
@@ -128,3 +128,13 @@ Autorizado junto con B01.3/B02. Base0de7f2a; MediaStore/metadatos implementados,
 144 tests debug correctos y U completo (BUILD SUCCESSFUL in 1m 50s); lint0 errores.
 Dos revisiones separadas del mismo agente; ver B01_2_METADATA/EVIDENCE.
 Release/dispositivo pendientes del cierre de alcance. Siguiente B01.3 autorizado.
+
+
+## B01.2 y B01.3 — cierre de B01
+
+- B01.2 código: `de8c1afe5614814593865d268e4e72ffaadaf6ef` (de8c1af),144 casos debug correctos.
+- B01.3:154 casos debug correctos; assemble/lint debug correctos.
+- Dos revisiones en pasadas separadas del mismo agente. Alcance indexado por
+  MediaStore explícito; SAF real/SD físico pendientes. No escáner ficticio.
+- B01 completo localmente; B02.1/.2/.3 autorizados por «continúa hasta B02».
+- Release completo se comprobará al cerrar B02; no iniciar B03.

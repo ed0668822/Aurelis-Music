@@ -118,6 +118,21 @@ class LibraryUpdatesTest {
         model.onBackground()
     }
 
+    @Test fun folderPolicyChangesAreObservedAndTriggerAFreshCatalogue() = runTest(dispatcher) {
+        val mediaSource = MediaStoreLibrarySource(app)
+        var events = 0
+        val job = backgroundScope.launch(kotlinx.coroutines.Dispatchers.Unconfined) { mediaSource.changes.collect { events++ } }
+        runCurrent(); val before = events
+        SettingsRepository.setLocalFolderSelection(emptySet(), false)
+        runCurrent()
+        assertTrue(events > before)
+        val refreshed = events
+        SettingsRepository.setLocalFolderSelection(emptySet(), false)
+        runCurrent()
+        assertTrue("Regranting the same scope must still invalidate the catalogue", events > refreshed)
+        job.cancel()
+    }
+
     @Test fun localSearchAndSortAreConsistentForAccentsAndAlbumMetadata() = runTest(dispatcher) {
         val source = LocalLibrarySource { listOf(song("1", "Árbol"), song("2", "Barco").copy(durationMs = 90_000)) }
         val model = LibraryViewModel(app, source)

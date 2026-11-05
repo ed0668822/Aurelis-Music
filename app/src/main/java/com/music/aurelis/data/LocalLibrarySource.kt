@@ -8,6 +8,9 @@ import android.os.Looper
 import android.provider.MediaStore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.callbackFlow
@@ -24,7 +27,9 @@ fun interface LocalLibrarySource {
 class MediaStoreLibrarySource(context: Context) : LocalLibrarySource {
     private val appContext = context.applicationContext
 
-    override val changes: Flow<Unit> get() = callbackFlow {
+    override val changes: Flow<Unit> get() = merge(
+        SettingsRepository.libraryFolderRevision.drop(1).map { Unit },
+        callbackFlow {
         val resolver = appContext.contentResolver
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) { trySend(Unit) }
@@ -32,8 +37,8 @@ class MediaStoreLibrarySource(context: Context) : LocalLibrarySource {
         resolver.registerContentObserver(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, true, observer)
         trySend(Unit) // Register before the first read so changes during it are not lost.
         awaitClose { resolver.unregisterContentObserver(observer) }
-    }.buffer(Channel.CONFLATED)
+    }.buffer(Channel.CONFLATED))
 
     override suspend fun songs(filterNonMusic: Boolean): List<LocalSong> =
-        LocalMediaRepository.getAllSongs(appContext, filterNonMusic)
+        LocalMediaRepository.getLibrarySongs(appContext, filterNonMusic)
 }

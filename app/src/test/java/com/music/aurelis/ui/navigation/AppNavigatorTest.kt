@@ -10,7 +10,8 @@ class AppNavigatorTest {
             AppRoute.Collection(LocalCollectionKind.PLAYLISTS),
             AppRoute.Collection(LocalCollectionKind.PLAYLIST, "list-1"),
             AppRoute.Collection(LocalCollectionKind.ALBUM, "Álbum: A + B / 100%"),
-            AppRoute.Collection(LocalCollectionKind.ARTIST, "Artista & banda"))) {
+            AppRoute.Collection(LocalCollectionKind.ARTIST, "Artista & banda"),
+            AppRoute.Collection(LocalCollectionKind.FOLDER, "16:external_primary:Music/Jazz/" ))) {
             val navigator = AppNavigator().apply { push(route) }
             assertEquals(route, AppNavigator.restoreState(requireNotNull(navigator.saveState()))?.visibleRoute())
         }

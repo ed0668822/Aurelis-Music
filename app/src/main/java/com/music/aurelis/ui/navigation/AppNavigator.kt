@@ -34,7 +34,7 @@ sealed interface AppRoute {
 data class RouteEntry(val id: Long, val route: AppRoute, val detailDepth: Int)
 
 enum class AppTab { HOME, EXPLORE, LIBRARY, SEARCH }
-enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST }
+enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST, FOLDER }
 
 /** Only implemented, parameter-free destinations are restored in the current graph. */
 internal val AppRoute.navigationKey: String?

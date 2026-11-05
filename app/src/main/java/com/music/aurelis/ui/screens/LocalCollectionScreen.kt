@@ -53,9 +53,11 @@ fun LocalCollectionScreen(
         LocalCollectionKind.PLAYLIST -> playlist?.songIds?.mapNotNull(byId::get).orEmpty()
         LocalCollectionKind.ALBUM -> album?.songs.orEmpty()
         LocalCollectionKind.ARTIST -> artist?.songs.orEmpty()
+        LocalCollectionKind.FOLDER -> com.music.aurelis.data.LocalFolderRepository.groups(allSongs).firstOrNull { it.key == route.key }?.songs.orEmpty()
         LocalCollectionKind.PLAYLISTS -> emptyList()
     }
     val title = when (route.kind) {
+        LocalCollectionKind.FOLDER -> com.music.aurelis.data.LocalFolderRepository.groups(allSongs).firstOrNull { it.key == route.key }?.label.orEmpty()
         LocalCollectionKind.FAVORITES -> stringResource(R.string.home_favorites)
         LocalCollectionKind.PLAYLISTS -> stringResource(R.string.home_playlists)
         LocalCollectionKind.PLAYLIST -> playlist?.name.orEmpty()

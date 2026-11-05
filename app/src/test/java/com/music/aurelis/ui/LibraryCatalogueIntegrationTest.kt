@@ -33,6 +33,33 @@ class LibraryCatalogueIntegrationTest {
         "content://media/external/audio/media/$id", null, 60_000, null, 1, 2026,
         albumId = "14", artistId = if (id == "1") "11" else "22")
 
+    @androidx.media3.common.util.UnstableApi
+    @Test fun folderBrowserNavigatesToItsRealSongsAndPlaysThroughExistingController() {
+        shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
+        val rows = listOf(song("1", "Árbol", "Uno").copy(volumeName="external_primary",relativePath="Music/Jazz/"),
+            song("2", "Mar", "Dos").copy(volumeName="external_primary",relativePath="Music/Rock/"))
+        val library = LibraryViewModel(app, LocalLibrarySource { rows })
+        val recording = com.music.aurelis.playback.RecordingPlayer()
+        val player = PlaybackViewModel(app) { recording }
+        val models = androidx.lifecycle.ViewModelStore().apply { put("library", library); put("player", player) }
+        lateinit var navigator: AppNavigator
+        try {
+            compose.setContent { AurelisTheme {
+                navigator = rememberAppNavigator()
+                AurelisNavigationContent(navigator, player, library)
+            } }
+            compose.runOnIdle { library.loadLibrary(); navigator.push(AppRoute.Settings) }
+            compose.onNodeWithText("Ver carpetas de la biblioteca").performScrollTo().performClick()
+            compose.onNodeWithText("Music/Jazz · 1").performClick()
+            compose.onNodeWithText("Árbol").assertIsDisplayed().performClick()
+            compose.onNodeWithText("Mar").assertDoesNotExist()
+            compose.runOnIdle {
+                assertEquals(LocalCollectionKind.FOLDER, (navigator.visibleRoute() as AppRoute.Collection).kind)
+                assertEquals("1", recording.currentMediaItem?.mediaId)
+            }
+        } finally { compose.runOnIdle { models.clear() } }
+    }
+
     @Test fun librarySearchFiltersArtistGroupsAndRestoresMediaIdRoutes() {
         shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
         val rows = listOf(song("1", "Árbol", "Artista Uno"), song("2", "Mar", "Artista Dos"))

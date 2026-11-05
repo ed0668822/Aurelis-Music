@@ -66,9 +66,15 @@ object SettingsRepository {
     val prioritizeSyllableSync = MutableStateFlow(false)
     val paxSenixApiKey = MutableStateFlow("")
 
+    internal val libraryFolderRevision = MutableStateFlow(0L)
+    val useAllAudioFolders = MutableStateFlow(true)
+    val localMusicFolders = MutableStateFlow<Set<String>>(emptySet())
+
     fun init(context: Context, profileId: ProfileId = ProfileRepository.profileId) {
         prefs = ProfileStorage(context).open(profileId, ProfileDataArea.PREFERENCES)
 
+        useAllAudioFolders.value = readBoolean("all_audio_folders", true)
+        localMusicFolders.value = readStringSet("local_music_folders", emptySet()).orEmpty().toSet()
         themeMode.value = readInt("theme_mode", 0).takeIf { it in 0..2 } ?: 0
         dolbyAtmos.value = readBoolean("dolby_atmos", true)
         liquidGlass.value = readBoolean("liquid_glass", true)
@@ -125,6 +131,16 @@ object SettingsRepository {
             LyricsSource.offered
         }
         prioritizeSyllableSync.value = readBoolean("prioritize_syllable_sync", false)
+    }
+
+    fun setLocalFolderSelection(folders: Set<String>, allFolders: Boolean) {
+        writable(); require(folders.size <= 16) { "Puedes seleccionar hasta 16 carpetas." }
+        (folders - localMusicFolders.value).forEach { LocalFolderRepository.scope(android.net.Uri.parse(it)) }
+        check(prefs.edit().putStringSet("local_music_folders", folders.toSet()).putBoolean("all_audio_folders", allFolders).commit()) {
+            "No se pudo guardar la selección de carpetas."
+        }
+        localMusicFolders.value = folders.toSet(); useAllAudioFolders.value = allFolders
+        libraryFolderRevision.value += 1
     }
 
     // ── Existing setters ──────────────────────────────────────────────────────

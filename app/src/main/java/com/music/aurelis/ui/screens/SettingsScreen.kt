@@ -37,7 +37,8 @@ import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.ui.components.*
 
 @Composable
-fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: () -> Unit = {}) {
+fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: () -> Unit = {},
+    localSongs: List<com.music.aurelis.data.model.LocalSong> = emptyList(), onOpenFolder: (String) -> Unit = {}) {
     if (!isVisible) return
     val context = LocalContext.current
     val profileState by ProfileRepository.state.collectAsState()
@@ -69,6 +70,14 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             TextButton(onClick = onDismiss) { Text("Atrás") }
         }
         return
+    }
+    var libraryError by remember { mutableStateOf<String?>(null) }
+    var browsingFolders by remember { mutableStateOf(false) }
+    val allFolders by SettingsRepository.useAllAudioFolders.collectAsState()
+    val chosenFolders by SettingsRepository.localMusicFolders.collectAsState()
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) try { com.music.aurelis.data.LocalFolderRepository.add(context, uri); libraryError = null }
+        catch (error: Exception) { libraryError = error.message ?: "No se pudo seleccionar la carpeta." }
     }
     val mode by SettingsRepository.themeMode.collectAsState()
     val glass by SettingsRepository.liquidGlass.collectAsState()
@@ -121,6 +130,22 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             SettingsRow(Icons.Rounded.Translate, "Traducción", "Configura servidor e idiomas. Guardar aquí no envía letras.", onClick = { translation = true })
         }
         SettingsGroup(header = "Biblioteca") {
+            SettingsToggle("Usar todas las carpetas de audio", "Biblioteca de audio indexada por Android.", allFolders) {
+                try { SettingsRepository.setLocalFolderSelection(chosenFolders, it); libraryError = null }
+                catch (error: Exception) { libraryError = error.message }
+            }
+            SettingsRow(Icons.Rounded.Folder, "Elegir carpeta local", "Solo música indexada por Android en el dispositivo o tarjeta SD.", onClick = { folderPicker.launch(null) })
+            chosenFolders.sorted().forEach { uri ->
+                val label = com.music.aurelis.data.LocalFolderRepository.label(uri)
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, Modifier.weight(1f))
+                    IconButton(onClick = { try { com.music.aurelis.data.LocalFolderRepository.remove(context, uri); libraryError = null }
+                        catch (error: Exception) { libraryError = error.message } }) { Icon(Icons.Rounded.Close, "Dejar de usar $label") }
+                }
+            }
+            if (!allFolders && chosenFolders.isEmpty()) Text("No hay carpetas seleccionadas.", Modifier.padding(16.dp))
+            libraryError?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
+            SettingsRow(Icons.Rounded.FolderOpen, "Ver carpetas de la biblioteca", onClick = { browsingFolders = true })
             SettingsToggle("Filtrar audio no musical", "Oculta clips, notas de voz y sonidos del sistema.", filter, SettingsRepository::setFilterNonMusicAudio)
         }
         SettingsGroup(header = "Acerca de") {
@@ -147,6 +172,13 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             }) { Text("Guardar") } },
             dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancelar") } })
     }
+    if (browsingFolders) AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
+        onDismissRequest = { browsingFolders = false }, title = { Text("Carpetas de la biblioteca") },
+        text = { Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+            val folders = com.music.aurelis.data.LocalFolderRepository.groups(localSongs)
+            if (folders.isEmpty()) Text("No hay canciones indexadas en la biblioteca seleccionada.")
+            folders.forEach { folder -> TextButton(onClick = { browsingFolders = false; onOpenFolder(folder.key) }) { Text("${folder.label} · ${folder.songs.size}") } }
+        } }, confirmButton = { TextButton(onClick = { browsingFolders = false }) { Text("Cerrar") } })
     if (translation) TranslationLanguageDialog(onDismiss = { translation = false }, onTranslate = { translation = false }, sendOnConfirm = false)
 }
 
