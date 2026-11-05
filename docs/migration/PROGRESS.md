@@ -342,7 +342,7 @@ bloque por separado. B07 requerirá nueva autorización.
 ## B09 — Letras sincronizadas
 
 - Autorización: concedida junto a B08; base `75d2d6bc3faf00dd0c79f46128f9af30438889f9`.
-- Estado: implementación y doble revisión completadas; publicando B09, sin iniciar B10.
+- Estado: implementación, doble revisión y publicación completadas; B10 no iniciado.
 - Nuevos: LocalLyricsRepository, LocalLyricsTest y LyricsPanelTest. Modificados:
   parser Lyrics/LrcLib, lector EmbeddedLyrics, LyricsSource/LyricsHttp,
   PlaybackViewModel, NowPlayingScreen, SyncedLyricsPanel, PlayerIntegrationTest
@@ -365,3 +365,12 @@ bloque por separado. B07 requerirá nueva autorización.
   unsynchronized y otros contenedores pendientes. LRCLIB no probado en vivo por
   política de red; no se descargaron ni inventaron letras reales en verificaciones.
 - Próximo bloque B10 requiere autorización nueva.
+
+- Commit B09: `cb4ba329a2146bc007b8670c9c2d54d86a01a916`; push confirmado
+  desde B08 `75d2d6b` a la misma rama. Autor/committer del usuario verificados.
+- PR #1 confirmado OPEN por HTML público con 17 commits y B08/B09 presentes;
+  título «Aurelis Music Beta UI and components» conservado. Rama remota coincide
+  con el commit B09. No se crea otro PR, no se renombra, no se hace merge.
+- Este cierre se publica como commit documental posterior sin reescribir historial.
+  B08 y B09 cerrados; detener y esperar autorización para B10. Mantener pendientes
+  pruebas físicas y verificación de LRCLIB/Actions en vivo, sin repetir la auditoría.
