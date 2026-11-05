@@ -93,3 +93,7 @@ bash gradlew testDebugUnitTest lintDebug --no-daemon --max-workers=4
   no se simula un reinicio real de proceso/dispositivo ni ejecución física de MediaStore.
   Perfil activo múltiple, listas/historial funcionales, reproducción en dispositivo,
   release y CI remoto permanecen fuera de estos resultados.
+- Entrega: commit de implementación `2a10e63fd89db9993ebfd1ef21920cc761aec886`
+  publicado; firma APK verificada de nuevo tras la validación. PR y consulta de
+  Actions siguen bloqueados por Forbidden en GraphQL/REST de GitHub. No se modifica
+  el workflow para eludir errores. Consultar PROGRESS para enlace de creación manual.

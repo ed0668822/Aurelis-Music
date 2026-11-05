@@ -76,7 +76,7 @@ y cierre de B02. No iniciar automáticamente.
 ## B02 — Arquitectura base
 
 - Autorización: concedida expresamente por el usuario tras configurar su identidad Git local.
-- Estado: implementación y revisiones completadas; entrega en curso.
+- Estado: implementación y revisiones completadas; rama publicada; PR bloqueado por API.
 - Base: `e6f58f937a1f84166236705c7f8b9a3a2947f571`; misma rama de migración.
 - Añadidos: ProfileId, ProfileStorage, LocalLibrarySource; ProfileStorageTest y
   LibraryViewModelTest en los paquetes correspondientes de `app/src/test/`.
@@ -97,6 +97,20 @@ y cierre de B02. No iniciar automáticamente.
   No equivale a una revisión de otro humano ni a pruebas en dispositivo.
 - Compilación: assembleDebug correcto. Unitarias finales: 11 correctas, 0 fallos,
   0 errores, 0 omitidas. Lint sin errores y 209 advertencias; no se deshabilitan checks.
-- Actions, commit y PR: pendientes de entrega; el bloqueo API de B01 sigue registrado.
+- Commit de implementación: `2a10e63fd89db9993ebfd1ef21920cc761aec886`.
+  Autor/committer: `ed0668822 <ed0668822@gmail.com>`, verificados antes del commit.
+  El commit posterior de documentación registra la entrega; consultar `git log -2`.
+- Publicación: push confirmado de `e6f58f9` a `2a10e63` en
+  `feature/bitchord-local-migration`; registro de entrega se publica en otro commit.
+- Pull Request: intento de creación B01–B02 falló con
+  `Post https://api.github.com/graphql: Forbidden`. No hay URL de PR confirmada.
+  Se conserva la rama y todo el trabajo. Enlace de creación previamente devuelto
+  por GitHub: https://github.com/ed0668822/Aurelis-Music/pull/new/feature/bitchord-local-migration
+  Título: `B01–B02: auditoría y arquitectura local por perfil`.
+- GitHub Actions: consulta de runs de esta rama falló con Forbidden en api.github.com;
+  estado remoto desconocido, sin afirmar checks exitosos ni modificar workflows.
+- Revisión documental final: enlaces relativos y `git diff --check` correctos;
+  manifiesto confirma AurelisApplication como punto de inicio y APK con firma válida.
 - Límites: sin UI de perfiles ni funcionalidades de B08; sin nuevo motor Media3.
 - Cabeceras definitivas pendientes del CSV; no se alteran atribuciones de terceros.
+- Próximo bloque: B03, pendiente de autorización. Ningún cambio visual implementado.
