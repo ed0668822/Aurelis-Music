@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.buffer
 
-/** Device library shared across profiles. Implementations propagate cancellation. */
+/** Device catalogue for the sole local profile. Implementations propagate cancellation. */
 fun interface LocalLibrarySource {
     suspend fun songs(filterNonMusic: Boolean): List<LocalSong>
     /** Initial event after subscription, followed by catalogue changes. */

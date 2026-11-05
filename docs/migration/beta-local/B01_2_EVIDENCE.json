@@ -1,0 +1,20 @@
+{
+  "unit": "B01.2",
+  "base": "0de7f2ae802379d295b4c1de979204e9ccc23677",
+  "command": "bash gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --no-daemon --max-workers=4",
+  "tests": {
+    "tests": 144,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Fatal": 0,
+    "Warning": 217
+  },
+  "build": "BUILD SUCCESSFUL in 1m 50s",
+  "log_external": "/workspace/toolchains/beta-b01-2-final.log",
+  "apk_debug_sha256": "e18f48ec661172c68d37e0599740580a86a2edbfc0bebd3d715dc1aa3c167e91",
+  "release_and_device": "Not executed for this unit; final integration later in authorized scope."
+}

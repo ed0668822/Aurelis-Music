@@ -10,6 +10,8 @@ import android.os.Looper
 import android.provider.MediaStore
 import com.music.aurelis.AurelisApplication
 import java.io.IOException
+import com.music.aurelis.playback.toMediaItem
+import com.music.aurelis.playback.toLocalSong
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import org.junit.Assert.*
@@ -131,17 +133,55 @@ class MediaStoreLibraryTest {
         assertTrue(shadowOf(resolver).getContentObservers(uri).isEmpty())
     }
 
+    @Test fun volumeFoldersAndTagFallbackKeepLegacyIdsAndRoundTripThroughMedia3() = runBlocking {
+        provider.rows = listOf(row(7, mapOf(MediaStore.Audio.Media.VOLUME_NAME to "external_primary",
+            MediaStore.Audio.Media.RELATIVE_PATH to "Music/Rock/", MediaStore.Audio.Media.SIZE to 42L,
+            MediaStore.Audio.Media.DATE_MODIFIED to 456L, MediaStore.Audio.Media.MIME_TYPE to "audio/flac")))
+        val reader = LocalMetadataReader { LocalFileMetadata(genre = "Rock", track = 2, disc = 1, year = 2020) }
+        val song = LocalMediaRepository.getAllSongs(context, true, reader).single()
+        assertEquals("7", song.id); assertEquals("content://media/external/audio/media/7", song.contentUri)
+        assertEquals("Music/Rock/", song.relativePath); assertEquals(456_000L, song.dateModifiedMs)
+        assertEquals(com.music.aurelis.data.model.MetadataOrigin.FILE_TAG, song.genreOrigin)
+        assertTrue(song.sizeBytesKnown)
+        assertEquals(song, song.toMediaItem().toLocalSong())
+    }
+    @Test fun metadataIsAuthoritativeAndUnknownGenreIsNotInferred() = runBlocking {
+        provider.rows = listOf(row(1, mapOf(MediaStore.Audio.Media.GENRE to "Jazz")))
+        var reads = 0
+        val reader = LocalMetadataReader { reads++; LocalFileMetadata(genre = "Pop") }
+        assertEquals("Jazz", LocalMediaRepository.getAllSongs(context, true, reader).single().genre)
+        assertEquals(0, reads)
+        provider.rows = listOf(row(1))
+        val unknown = LocalMediaRepository.getAllSongs(context, true, LocalMetadataReader { null }).single()
+        assertNull(unknown.genre); assertNull(unknown.genreOrigin); assertFalse(unknown.sizeBytesKnown)
+    }
+    @Test fun missingDurationUsesFileTagsAndUnsupportedColumnsFallBack() = runBlocking {
+        provider.rejectOptional = true
+        provider.rows = listOf(row(1, mapOf(MediaStore.Audio.Media.DURATION to null)))
+        val song = LocalMediaRepository.getAllSongs(context, true, LocalMetadataReader { LocalFileMetadata(genre = "Blues", durationMs = 1234) }).single()
+        assertEquals(1234L, song.durationMs); assertEquals("Blues", song.genre)
+        assertTrue(provider.cursors.all { it.isClosed })
+    }
+    @Test fun conflictingIdsAcrossVolumesFailRatherThanDroppingOneTrack() = runBlocking {
+        provider.rows = listOf(row(1, mapOf(MediaStore.Audio.Media.VOLUME_NAME to "external_primary")),
+            row(1, mapOf(MediaStore.Audio.Media.VOLUME_NAME to "1234-abcd")))
+        assertTrue(runCatching { LocalMediaRepository.getAllSongs(context, true, LocalMetadataReader { null }) }.exceptionOrNull() is IOException)
+        assertTrue(provider.cursors.all { it.isClosed })
+    }
+
     class CatalogueProvider : ContentProvider() {
         var rows: List<Map<String, Any?>> = emptyList()
         var columns: Array<String>? = null
         var returnNull = false
         var denied = false
+        var rejectOptional = false
         var selection: String? = null
         var arguments: Array<out String>? = null
         val cursors = mutableListOf<MatrixCursor>()
         override fun onCreate() = true
         override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? {
             this.selection = selection; arguments = selectionArgs
+            if (rejectOptional && projection?.contains(MediaStore.Audio.Media.VOLUME_NAME) == true) throw IllegalArgumentException("Optional column")
             if (denied) throw SecurityException("Denied")
             if (returnNull) return null
             val names = columns ?: requireNotNull(projection).map { it }.toTypedArray()

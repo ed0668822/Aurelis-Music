@@ -48,6 +48,10 @@ fun LocalSong.toMediaItem(): MediaItem {
                     putString("artistId", artistId)
                     putInt("discNumber", discNumber ?: -1)
                     putString("genre", genre)
+                    putString("genreOrigin", genreOrigin?.name)
+                    putString("volumeName", volumeName); putString("relativePath", relativePath)
+                    putString("displayName", displayName); putString("mimeType", mimeType)
+                    putLong("dateModifiedMs", dateModifiedMs); putBoolean("sizeBytesKnown", sizeBytesKnown)
                 })
                 .build()
         )
@@ -70,6 +74,11 @@ internal fun MediaItem.toLocalSong(): LocalSong {
         albumId = extras?.getString("albumId"), artistId = extras?.getString("artistId"),
         discNumber = extras?.getInt("discNumber", -1)?.takeIf { it > 0 },
         genre = extras?.getString("genre"),
+        genreOrigin = extras?.getString("genreOrigin")?.let { value -> runCatching { com.music.aurelis.data.model.MetadataOrigin.valueOf(value) }.getOrNull() },
+        volumeName = extras?.getString("volumeName"), relativePath = extras?.getString("relativePath"),
+        displayName = extras?.getString("displayName"), mimeType = extras?.getString("mimeType"),
+        dateModifiedMs = extras?.getLong("dateModifiedMs", 0) ?: 0,
+        sizeBytesKnown = extras?.getBoolean("sizeBytesKnown", false) ?: false,
         queueTier = queueTier, queueEntryId = queueEntryId,
     )
 }

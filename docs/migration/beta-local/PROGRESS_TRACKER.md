@@ -120,3 +120,11 @@ ya acreditadas; leer solo filas/archivos de la unidad al reanudar.
   entrega; B01_1_EVIDENCE registra ambas referencias para no confundir metadatos.
 - Estado: B01.1 completado localmente y publicado. B01.2 MediaStore/metadatos y
   B01.3 carpetas siguen sin implementar y requieren autorización.
+
+
+## B01.2 — completado localmente
+
+Autorizado junto con B01.3/B02. Base0de7f2a; MediaStore/metadatos implementados,
+144 tests debug correctos y U completo (BUILD SUCCESSFUL in 1m 50s); lint0 errores.
+Dos revisiones separadas del mismo agente; ver B01_2_METADATA/EVIDENCE.
+Release/dispositivo pendientes del cierre de alcance. Siguiente B01.3 autorizado.
