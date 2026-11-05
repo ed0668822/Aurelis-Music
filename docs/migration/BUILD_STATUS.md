@@ -97,3 +97,42 @@ bash gradlew testDebugUnitTest lintDebug --no-daemon --max-workers=4
   publicado; firma APK verificada de nuevo tras la validación. PR y consulta de
   Actions siguen bloqueados por Forbidden en GraphQL/REST de GitHub. No se modifica
   el workflow para eludir errores. Consultar PROGRESS para enlace de creación manual.
+
+## B03 — Sistema visual
+
+Base `d1006710aa1b300a3e6aa862a0bdca26a13884a8`; commits finales en PROGRESS.
+Verificación final:
+
+```bash
+cd /workspace/Aurelis-Music
+source /workspace/toolchains/activate.sh
+bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4
+```
+
+- Exit 0, BUILD SUCCESSFUL en 36s; 57 tareas (8 ejecutadas, 49 up-to-date).
+- 16 pruebas, 0 fallos, 0 errores y 0 omitidas. Se mantienen las 11 de B02;
+  ThemeContrastTest añade 2 y VisualSystemTest añade 3.
+- Lint sin errores y 208 advertencias; no se deshabilitan comprobaciones.
+- Debug generado para los cambios de producción; firma comprobada con apksigner.
+- Contraste >=4.5:1 para los pares semánticos de texto probados; opacidad correcta.
+  No equivale a una auditoría de todas las pantallas o de cada color dinámico de artwork.
+- Compose/Robolectric API 33 comprueba cambios persistidos de tema/movimiento,
+  selección, switch único, controles deshabilitados, buscar/borrar con áreas >=48 dp
+  y texto de switch completo al escalar. No usa un motor de UI paralelo ni mocks
+  de los componentes visuales.
+- Capturas reales de una galería de componentes de prueba (360×800, escala 1/1.5),
+  generadas por dibujo de la vista Android con gráficos nativos de Robolectric:
+  [claro](screenshots/light.png), [oscuro](screenshots/dark.png),
+  [claro ampliado](screenshots/light-large.png), [oscuro ampliado](screenshots/dark-large.png).
+  Se revisaron visualmente y contienen contenido renderizado, no superficies vacías.
+  Son evidencia de componentes, no capturas de toda la aplicación ni de un dispositivo físico.
+- Al inicio, PixelCopy no recibía el callback de forceRedraw bajo Robolectric;
+  se diagnosticó y se cambió a dibujo nativo de la vista. La revisión visual encontró
+  truncación en texto ampliado; se corrigió y se repitieron las comprobaciones.
+- Log final local: `/workspace/toolchains/b03-validation-final.log`.
+  XML: `app/build/test-results/testDebugUnitTest/TEST-*.xml`.
+  Los PNG también se regeneran en `app/build/reports/b03-visual/`.
+- PR #1 existente confirmado por referencia Git; su título lo comunicó el usuario.
+  La consulta API sigue denegada; estado de Actions pendiente de comprobación remota.
+- Pendientes: revisión en dispositivo (incluidos efectos GPU/barras de sistema y
+  reproducción), comparación visual completa y cobertura de animaciones de B13.

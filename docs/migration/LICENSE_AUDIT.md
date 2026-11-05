@@ -59,3 +59,21 @@ Las dependencias añadidas son solo de pruebas: JUnit 4.13.2 (EPL-1.0), Robolect
 upstream, contrastadas con los POM descargados por Gradle. No se incorporan estas
 herramientas al APK de producción. No se resuelven
 en B02 los pendientes jurídicos de componentes ya incluidos.
+
+## Registro B03
+
+Se conserva el aviso previo de los archivos modificados y las atribuciones en NOTICE.
+La escala/estilo de Theme.kt ya estaba adaptada en Aurelis; se conecta al tema activo
+y se añade interlineado/fuente del sistema. Se consultó el tema de BitChord en el SHA
+fijo de B01 para comparar la paleta neutra. No se importa código de otros módulos,
+iconos, imágenes, modelos ni archivos de fuente de BitChord. No se redistribuye SF Pro;
+la constante de compatibilidad previa apunta a la familia sans del sistema.
+
+Las nuevas herramientas Compose UI de pruebas se distribuyen bajo Apache-2.0,
+contrastado con los POM resueltos en Gradle. ui-test-manifest se limita a debug y
+ui-test-junit4 a tests; ninguna se añade a release. Las pruebas y ajustes nuevos
+son aportes propios. Sigue faltando el CSV para las cabeceras definitivas; no se
+eliminan atribuciones ni se declara resuelta la auditoría de recursos pendientes.
+Las cuatro capturas documentales se generan con componentes reales, texto de ejemplo
+de la prueba y gráficos nativos de Robolectric; no contienen carátulas ni material
+gráfico copiado de BitChord. No son pantallas de una biblioteca real de usuario.

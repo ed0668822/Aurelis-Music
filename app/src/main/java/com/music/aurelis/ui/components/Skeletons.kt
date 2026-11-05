@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.music.aurelis.ui.theme.LocalReduceMotion
 
 private const val SHIMMER_PERIOD_MS = 1400
 private val BlockShape = RoundedCornerShape(6.dp)
@@ -46,6 +48,10 @@ private val SubtitleWidths = listOf(0.34f, 0.44f, 0.27f, 0.38f, 0.31f)
 @Composable
 fun ShimmerBox(modifier: Modifier = Modifier, shape: Shape = BlockShape) {
     val base = MaterialTheme.colorScheme.surfaceVariant
+    if (LocalReduceMotion.current) {
+        Box(modifier.clip(shape).background(base))
+        return
+    }
     val highlight = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.16f).compositeOver(base)
     val sweep = rememberInfiniteTransition(label = "skeleton").animateFloat(
         initialValue = 0f,

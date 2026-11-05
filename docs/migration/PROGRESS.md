@@ -5,7 +5,13 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B02 fue autorizado expresamente; B03 y siguientes no están autorizados.
+autorizado. B03 fue autorizado expresamente; B04 y siguientes no están autorizados.
+
+PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
+Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
+rama publicada `feature/bitchord-local-migration`, comprobada al iniciar B03.
+Los errores de creación API de B01/B02 registrados abajo son históricos y no
+significan que actualmente no exista el PR.
 
 ## B01 — Auditoría y planificación
 
@@ -60,8 +66,8 @@ autorizado. B02 fue autorizado expresamente; B03 y siguientes no están autoriza
 
 ## Próximo bloque
 
-B03 — Sistema visual, únicamente tras nueva autorización explícita del usuario
-y cierre de B02. No iniciar automáticamente.
+B04 — Navegación, únicamente tras nueva autorización explícita del usuario
+y cierre de B03. No iniciar automáticamente.
 
 ## Verificaciones documentales B01
 
@@ -114,3 +120,32 @@ y cierre de B02. No iniciar automáticamente.
 - Límites: sin UI de perfiles ni funcionalidades de B08; sin nuevo motor Media3.
 - Cabeceras definitivas pendientes del CSV; no se alteran atribuciones de terceros.
 - Próximo bloque: B03, pendiente de autorización. Ningún cambio visual implementado.
+
+## B03 — Sistema visual
+
+- Autorización: concedida expresamente; PR existente nombrado por el usuario.
+- Base: `d1006710aa1b300a3e6aa862a0bdca26a13884a8`; misma rama y PR #1.
+- Estado: implementación y dos revisiones completadas; publicación en curso.
+- Modificados: temas raíz/dinámico, ColorSchemes y Theme; SearchField, SearchBar,
+  SettingsComponents, Skeletons y configuración/dependencias de pruebas Compose.
+- Añadidos: ThemeContrastTest y VisualSystemTest; documentación y cuatro PNG en
+  `docs/migration/screenshots/` (claro/oscuro, escala de texto 1 y 1.5).
+- Revisión 1 (arquitectura/recursos/licencias): completada como pasada separada
+  del mismo agente. Se contrastaron preferencia persistida, llamadas del tema,
+  formas, fuente de sistema, alias compatibles, semántica de controles y POM de
+  dependencias. No hay nuevas fuentes, iconos o imágenes de terceros importados.
+- Revisión 2 (funcionamiento/integración): completada como segunda pasada del
+  mismo agente. Interacción real Compose, contraste y las 11 pruebas previas
+  correctas. Las capturas iniciales mostraron una etiqueta recortada al ampliar
+  texto: se corrigió a dos líneas y se comprobó ausencia de elipsis/recorte vertical
+  y presencia de todos los caracteres, además de revisión visual de los PNG finales.
+- Compilación: assembleDebug correcto, firma APK verificada. Suite final: 16 pruebas,
+  0 fallos, 0 errores, 0 omitidas. Lint sin errores y 208 advertencias.
+  Se corrigió una llamada de test a la API de Robolectric; la captura PixelCopy
+  no recibía callback y se sustituyó por dibujo real de la vista con gráficos
+  nativos. Se afinó la comprobación de texto para no confundir redondeo de ancho
+  subpíxel con truncación. No se deshabilitaron pruebas ni se cambiaron workflows.
+- Commit/publicación/Actions: pendientes de entrega. No crear otro PR ni renombrar el actual.
+- Límites: sin cambios de navegación, Home, motor musical ni diseño de reproductor.
+  SF Pro no se copia; validación física y cabeceras definitivas siguen pendientes.
+- Próximo bloque B04 requiere autorización nueva.

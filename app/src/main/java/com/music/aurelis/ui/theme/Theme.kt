@@ -2,11 +2,7 @@
 package com.music.aurelis.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
@@ -19,58 +15,24 @@ import androidx.core.view.WindowCompat
 
 val AccentRed = Color(0xFFFA2D48)
 
-private val DarkColors = darkColorScheme(
-    primary = Color.White,
-    onPrimary = Color.Black,
-    background = Color.Black,
-    onBackground = Color.White,
-    surface = Color(0xFF0D0D0F),
-    onSurface = Color.White,
-    surfaceVariant = Color(0xFF1C1C1E),
-    onSurfaceVariant = Color(0xFF8E8E93),
-    outline = Color(0xFF2C2C2E),
-)
+/** Platform font: no SF Pro files or external font downloads are bundled. */
+val AurelisFontFamily: FontFamily = FontFamily.SansSerif
 
-private val LightColors = lightColorScheme(
-    primary = Color.Black,
-    onPrimary = Color.White,
-    background = Color.White,
-    onBackground = Color.Black,
-    surface = Color(0xFFF7F7F9),
-    onSurface = Color.Black,
-    surfaceVariant = Color(0xFFF2F2F7),
-    onSurfaceVariant = Color(0xFF6E6E73),
-    outline = Color(0xFFE5E5EA),
-)
+/** Compatibility name for existing integrations; the actual font is the system sans. */
+@Deprecated("Use AurelisFontFamily; SF Pro is not bundled")
+val SFProDisplay: FontFamily = AurelisFontFamily
 
-/**
- * Si dispones de los .otf de SF Pro Display (W400–W800), colócalos en
- * `app/src/main/res/font/sf_pro_display_{regular,medium,semibold,bold}.otf`
- * y restaura:
- *
- *   val SFProDisplay = FontFamily(
- *       Font(R.font.sf_pro_display_regular,  FontWeight.W400),
- *       Font(R.font.sf_pro_display_regular,  FontWeight.W500),
- *       Font(R.font.sf_pro_display_medium,   FontWeight.W600),
- *       Font(R.font.sf_pro_display_semibold, FontWeight.W700),
- *       Font(R.font.sf_pro_display_bold,     FontWeight.W800),
- *   )
- *
- * Mientras tanto se usa la familia por defecto del sistema.
- */
-val SFProDisplay: FontFamily = FontFamily.Default
-
-private val AurelisTypography = Typography(
-    displayLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 34.sp, letterSpacing = (-0.5).sp),
-    headlineLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 30.sp, letterSpacing = (-0.4).sp),
-    headlineMedium = TextStyle(fontWeight = FontWeight.W700, fontSize = 22.sp, letterSpacing = (-0.25).sp),
-    titleLarge = TextStyle(fontWeight = FontWeight.W700, fontSize = 20.sp, letterSpacing = (-0.2).sp),
-    titleMedium = TextStyle(fontWeight = FontWeight.W600, fontSize = 16.sp, letterSpacing = 0.05.sp),
-    bodyLarge = TextStyle(fontWeight = FontWeight.W400, fontSize = 16.sp, letterSpacing = 0.2.sp),
-    bodyMedium = TextStyle(fontWeight = FontWeight.W400, fontSize = 14.sp, letterSpacing = 0.3.sp),
-    labelMedium = TextStyle(fontWeight = FontWeight.W600, fontSize = 12.sp, letterSpacing = 0.25.sp),
-    labelSmall = TextStyle(fontWeight = FontWeight.W600, fontSize = 11.sp, letterSpacing = 0.3.sp),
-).withFamily(SFProDisplay)
+internal val AurelisTypography = Typography(
+    displayLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 34.sp, lineHeight = 40.sp, letterSpacing = (-0.5).sp),
+    headlineLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = (-0.4).sp),
+    headlineMedium = TextStyle(fontWeight = FontWeight.W700, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = (-0.25).sp),
+    titleLarge = TextStyle(fontWeight = FontWeight.W700, fontSize = 20.sp, lineHeight = 26.sp, letterSpacing = (-0.2).sp),
+    titleMedium = TextStyle(fontWeight = FontWeight.W600, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.05.sp),
+    bodyLarge = TextStyle(fontWeight = FontWeight.W400, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.2.sp),
+    bodyMedium = TextStyle(fontWeight = FontWeight.W400, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.3.sp),
+    labelMedium = TextStyle(fontWeight = FontWeight.W600, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.25.sp),
+    labelSmall = TextStyle(fontWeight = FontWeight.W600, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
+).withFamily(AurelisFontFamily)
 
 private fun Typography.withFamily(family: FontFamily) = Typography(
     displayLarge = displayLarge.copy(fontFamily = family),

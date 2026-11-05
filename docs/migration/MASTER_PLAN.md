@@ -2,8 +2,8 @@
 
 ## Alcance y referencias
 
-Documento iniciado en B01 (auditoría y planificación). B02 fue autorizado después
-e incorpora exclusivamente la base descrita al final. B03 y siguientes no están autorizados.
+Documento iniciado en B01 (auditoría y planificación). B02 y B03 fueron autorizados
+después e incorporan únicamente sus secciones específicas. B04 y siguientes no están autorizados.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -148,3 +148,41 @@ IDs; inicialización desde Application. Probar el contrato de biblioteca, permis
 denegado, caché/reescaneo forzado, error recuperable, cancelación y constructor Android.
 Ejecutar unitarias, assembleDebug y lintDebug. Las simulaciones no acreditan reinicio
 real de proceso, MediaStore físico ni audio en dispositivo; esas pruebas siguen pendientes.
+
+## B03 — Sistema visual
+
+Autorizado tras B02. Se utiliza la misma rama y el PR existente comunicado por el
+usuario, «Aurelis Music Beta UI and components». Se confirmó `refs/pull/1/head`
+apuntando al HEAD publicado de la rama; la API sigue devolviendo Forbidden.
+
+- Una paleta semántica clara/oscura en ColorSchemes, con superficies neutras de la
+  adaptación existente, textos opacos y roles completos de Material 3. Se elimina
+  la paleta privada inactiva de Theme para evitar dos fuentes divergentes.
+- AurelisTheme aplica la preferencia persistida 0=Sistema, 1=Claro, 2=Oscuro.
+  Valores desconocidos siguen el sistema; un override explícito sigue disponible.
+  Se aplica el contraste de iconos del sistema correspondiente al tema raíz.
+- Se activa la jerarquía tipográfica adaptada que ya existía, con interlineados
+  explícitos y fuente sans del sistema. Sin archivos SF Pro ni descargas de fuentes.
+  El alias previo SFProDisplay se conserva como compatibilidad deprecada, sin
+  implicar que esa fuente se distribuya. AccentRed permanece para usos existentes.
+- Formas compartidas de 5/11/14/20/28 dp. El tema de artwork conserva sus colores
+  y su comportamiento oscuro; comparte tipografía y formas, sin sustituir el motor
+  de extracción de carátulas ni el diseño del reproductor.
+- SettingsGroup y SearchField consumen formas/colores del tema. SearchBar conserva
+  su API y delega al mismo campo para evitar mantenimiento de dos implementaciones.
+  Se amplían las acciones de búsqueda/borrado a 48 dp y se evita altura fija del campo.
+- Las filas de ajustes permiten dos líneas en títulos; el control segmentado expone
+  selección y grupos accesibles. Cada ajuste binario tiene una sola acción semántica
+  de switch; filas deshabilitadas comunican su estado.
+- El tema distribuye reducción de movimiento a barras de reproducción y esqueletos
+  compartidos. No se promete aún cobertura de todas las animaciones (B13).
+- Solo nuevas dependencias de prueba Compose: ui-test-junit4 y ui-test-manifest
+  (este último en debug), versiones del BOM existente; recursos Android habilitados
+  para pruebas JVM. Sin cambios de dependencias release, SDK, Kotlin o firmas.
+
+Aceptación: contraste de texto >=4.5:1 en roles comprobados, modos de tema y cambios
+de preferencias observados en composición, acciones únicas de switch, selección y
+áreas táctiles de búsqueda. Capturas de componentes reales mediante Robolectric
+con gráficos nativos en claro/oscuro y escala 1/1.5; no equivalen a validación física
+del dispositivo ni a una comparación visual exacta con BitChord. Sin nuevos botones
+de producto, rutas ni contenido simulado de streaming.

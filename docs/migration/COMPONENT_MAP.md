@@ -52,3 +52,25 @@ anteriores se mantienen para próximos bloques.
 
 No se modifican los stubs de playlists/historial ni la UI. Los ámbitos de almacenamiento
 permiten implementarlos después sin mezclar datos de perfiles.
+
+## Sistema visual B03
+
+Referencia consultada: A:`ui/theme/Theme.kt` en el mismo SHA fijo de BitChord.
+Se reaprovechan valores y jerarquía ya adaptados en Theme.kt de Aurelis, sin importar
+fuentes ni módulos compartidos del origen. Texto secundario se ajusta para contraste.
+
+| Área | Destino | Decisión B03 |
+|---|---|---|
+| Color | `ui/theme/ColorSchemes.kt` | Una paleta clara/oscura con roles opacos y superficies neutras; se corrige alfa secundario |
+| Tipografía | `ui/theme/Theme.kt` | Activar escala existente con sans del sistema e interlineados; retirar paletas privadas inactivas |
+| Tema raíz | `ui/theme/AurelisTheme.kt` | Preferencias de tema/movimiento, formas comunes e iconos de barras del sistema |
+| Tema de carátula | `ui/theme/DynamicAurelisTheme.kt` | Conservar colores dinámicos y compartir tipografía/formas |
+| Búsqueda | `ui/components/SearchField.kt`, `SearchBar.kt` | Campo único, áreas táctiles, altura adaptable y semántica existente de buscar/borrar |
+| Ajustes | `ui/components/SettingsComponents.kt` | Superficies, títulos extensibles, selección, estado deshabilitado y switch único |
+| Carga | `ui/components/Skeletons.kt` | Superficie estática cuando se reduce movimiento |
+| Verificación | `app/src/test/java/com/music/aurelis/ui/theme/` desde raíz | Contraste y composición/interacción real de componentes, más capturas nativas |
+
+No se reemplaza la biblioteca de iconos ya existente ni se copia una familia de
+fuentes del origen. Home, navegación y reproductor mantienen su estructura para
+sus bloques posteriores. El PR se identifica como #1 por referencia Git coincidente;
+su título fue proporcionado por el usuario y no leído mediante API.
