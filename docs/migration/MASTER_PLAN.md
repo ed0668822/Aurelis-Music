@@ -609,3 +609,10 @@ Dos revisiones en pasadas separadas del mismo agente: código/arquitectura y lue
 funcionamiento/integración, con evidencia final en BUILD_STATUS. No equivalen a dos
 revisores humanos independientes. Cabeceras definitivas pendientes del CSV, como
 antes; no se retiran avisos originales ni se copia código de BitChord en B12.
+
+
+## Nuevo plan beta-local (B00–B13)
+
+La planificación vigente aprobada está en [beta-local/MASTER_PLAN.md](beta-local/MASTER_PLAN.md).
+Esta numeración no reinterpreta los bloques históricos anteriores. B00 documenta
+la auditoría; B01 (perfil único) espera autorización. Este archivo conserva el historial.

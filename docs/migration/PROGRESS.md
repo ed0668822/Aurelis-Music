@@ -568,3 +568,12 @@ bloque por separado. B07 requerirá nueva autorización.
 - Este checkpoint documental registra el commit real después de su publicación;
   no cambia el código validado ni inicia otro bloque. Próximo: pendientes B14
   de RELEASE_READINESS (CSV, procedencia/fuentes, hardware, servicios y CI).
+
+
+## Nuevo plan beta-local — B00
+
+Plan aprobado y B00 ejecutado sin cambios de código de app. Ver
+[progreso vigente](beta-local/PROGRESS_TRACKER.md) y [auditoría](beta-local/B00_AUDIT.md).
+126 pruebas debug +126 release ejecutadas nuevamente con --rerun; build/lint correctos.
+Hallazgo: dos ELF de ONNX con LOAD4KB, pendiente B09/B10/B13 aunque ZIP16KB pase.
+La numeración B00–B13 nueva no equivale a los bloques históricos. B01 no iniciado.

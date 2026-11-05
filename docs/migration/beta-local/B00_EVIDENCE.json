@@ -1,0 +1,329 @@
+{
+  "validated_at_utc": "2026-11-05T22:42:23.820134+00:00",
+  "base_commit": "01c1ba511b9eb8ecb3eb40c98afb46d8d17a017a",
+  "branch": "feature/bitchord-local-migration",
+  "source_reference": {
+    "reference": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+    "archive_url": "https://codeload.github.com/kushagrasinghx/BitChord/tar.gz/b690dc146009d4815825fa4a20815ef2e4ee8898",
+    "archive_sha256": "640ee4662cab58b02d4d6a7a0759f841a87f3047c94c233c5ac49632984bd493",
+    "regular_files": 1396,
+    "module_counts": {
+      ".gitattributes": 1,
+      ".github": 10,
+      ".gitignore": 1,
+      "ADDITIONAL.md": 1,
+      "Banner.png": 1,
+      "CODE_OF_CONDUCT.md": 1,
+      "CONTRIBUTING.md": 1,
+      "LICENSE": 1,
+      "Logo.png": 1,
+      "MAINTAINERS.md": 1,
+      "README.md": 1,
+      "app": 670,
+      "backend": 25,
+      "build.gradle.kts": 1,
+      "docs": 2,
+      "gradle": 2,
+      "gradle.properties": 1,
+      "gradlew": 1,
+      "gradlew.bat": 1,
+      "keystore.properties.example": 1,
+      "native": 33,
+      "settings.gradle.kts": 1,
+      "shared": 136,
+      "sharedUi": 118,
+      "tv": 55,
+      "upi_support.jpg": 1,
+      "wearos": 51,
+      "web": 277
+    },
+    "classification": "Agrupación por ruta para navegación; no demuestra revisión semántica de cada archivo ni autorización de copia.",
+    "review_scope": "lectura_selectiva significa lectura y evaluación de secciones relevantes, no ejecución completa del componente."
+  },
+  "command": "source /workspace/toolchains/activate.sh; bash gradlew :app:testDebugUnitTest --rerun :app:testReleaseUnitTest --rerun :app:assembleDebug :app:assembleRelease :app:lintDebug :app:lintRelease :app:dependencies --configuration releaseRuntimeClasspath --no-daemon --max-workers=4",
+  "result": "BUILD SUCCESSFUL in 58s",
+  "tasks": "120 actionable tasks: 11 executed, 109 up-to-date",
+  "log_sha256": "4026fb40de700a30b9433883660847722311a902ac9c7e1d38c25539dbeff6ad",
+  "log_path_external": "/workspace/toolchains/beta-b00-validation.log",
+  "tests_forced": true,
+  "actionlint": "1.7.7 exit0; no workflow changes",
+  "resolved_metadata_modules": 175,
+  "version_differences_vs_previous_inventory": 0,
+  "variants": {
+    "debug": {
+      "tests": {
+        "tests": 126,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 218
+      },
+      "apk_sha256": "5959bc0231e2f5f336058058b553b3f5a1820c8216de5e67358927d8c374d8fe",
+      "apk_bytes": 121108010,
+      "signature_verified": true,
+      "signature_output": "Verifies\nVerified using v1 scheme (JAR signing): false\nVerified using v2 scheme (APK Signature Scheme v2): true\nVerified using v3 scheme (APK Signature Scheme v3): false\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\nVerified using v4 scheme (APK Signature Scheme v4): false\nVerified for SourceStamp: false\nNumber of signers: 1",
+      "zip_16k_alignment_pass": true,
+      "zip_16k_output": "",
+      "elf": [
+        {
+          "path": "lib/arm64-v8a/libandroidx.graphics.path.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libaurelis_analysis.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libaurelis_dsd.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libaurelis_dst.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libavcodec.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libavutil.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libffmpegJNI.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libmedia3ext.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libonnxruntime.so",
+          "load_alignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "supports_16k_alignment": false
+        },
+        {
+          "path": "lib/arm64-v8a/libonnxruntime4j_jni.so",
+          "load_alignments": [
+            4096,
+            4096
+          ],
+          "supports_16k_alignment": false
+        },
+        {
+          "path": "lib/arm64-v8a/libswresample.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libswscale.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        }
+      ]
+    },
+    "release": {
+      "tests": {
+        "tests": 126,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 217
+      },
+      "apk_sha256": "5f0b7858f89be179f76d0ce2302a3fa362772ef1bdaafa786c730dce4b887710",
+      "apk_bytes": 56835537,
+      "signature_verified": true,
+      "signature_output": "Verifies\nVerified using v1 scheme (JAR signing): false\nVerified using v2 scheme (APK Signature Scheme v2): true\nVerified using v3 scheme (APK Signature Scheme v3): false\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\nVerified using v4 scheme (APK Signature Scheme v4): false\nVerified for SourceStamp: false\nNumber of signers: 1",
+      "zip_16k_alignment_pass": true,
+      "zip_16k_output": "",
+      "elf": [
+        {
+          "path": "lib/arm64-v8a/libandroidx.graphics.path.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libaurelis_analysis.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libaurelis_dsd.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libaurelis_dst.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libavcodec.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libavutil.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libffmpegJNI.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libmedia3ext.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libonnxruntime.so",
+          "load_alignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "supports_16k_alignment": false
+        },
+        {
+          "path": "lib/arm64-v8a/libonnxruntime4j_jni.so",
+          "load_alignments": [
+            4096,
+            4096
+          ],
+          "supports_16k_alignment": false
+        },
+        {
+          "path": "lib/arm64-v8a/libswresample.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        },
+        {
+          "path": "lib/arm64-v8a/libswscale.so",
+          "load_alignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "supports_16k_alignment": true
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "No device, DAC, Bluetooth, AutoMix transitions or visual parity tested by this B00.",
+    "Prior LGPL/AGPL/models/API/CSV obligations remain unresolved.",
+    "Two ONNX libraries have LOAD alignment4096; ZIP alignment16384 alone does not establish native16KB compatibility.",
+    "Two review passes by same agent, not independent human reviewers.",
+    "Current remote CI result must be tied to delivery SHA separately."
+  ]
+}
