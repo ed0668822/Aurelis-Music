@@ -94,3 +94,12 @@ de selección usa QueueBuilder existente, sin copiar análisis ni transiciones A
 adicionales. No hay fuentes, carátulas, datos musicales o traducciones descargadas
 para simular bibliotecas. Los fixtures de pruebas solo existen bajo `app/src/test`.
 No se añaden dependencias; las cabeceras definitivas siguen pendientes del CSV.
+
+## Registro B06
+
+Se modifica el catálogo MediaStore y la integración local existentes, conservando
+avisos originales. LocalSearch y las pruebas nuevas son aportes propios. No se
+importan componentes de BitChord, recursos, fuentes, servicios ni dependencias
+adicionales. Fixtures exclusivamente en pruebas. LICENSE/NOTICE se conservan.
+El archivo «Formato de licencias.csv» sigue ausente; las cabeceras definitivas de
+archivos nuevos quedan pendientes, sin eliminar avisos de archivos modificados.

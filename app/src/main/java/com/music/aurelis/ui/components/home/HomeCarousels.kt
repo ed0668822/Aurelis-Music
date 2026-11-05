@@ -164,7 +164,7 @@ fun ArtistCarousel(title: String, artists: List<LocalArtist>, onArtistClick: (Lo
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(artists.size, key = { artists[it].name }) { index ->
+            items(artists.size, key = { artists[it].key }) { index ->
                 ArtistCard(artist = artists[index], onClick = { onArtistClick(artists[index]) })
             }
         }

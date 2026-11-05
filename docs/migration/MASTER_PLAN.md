@@ -280,3 +280,36 @@ No se considera B08 terminado por estos prerrequisitos. Su integración avanzada
 la pantalla Replay siguen pendientes. B06 mejorará el catálogo y su actualización;
 B07 mantendrá la validación de reproducción/controles. No se afirman pruebas físicas
 ni todas las sesiones en segundo plano a partir de las pruebas de Home.
+
+## B06 — Biblioteca MediaStore reactiva
+
+Se mantiene un único catálogo MediaStore y el motor Media3 existente. La lectura
+usa Dispatchers.IO, cierra cursores, propaga cancelación y distingue fallos de
+lectura, permisos y catálogo vacío. Filtra entradas pendientes, papelera y duración
+menor de 500 ms; el filtro de contenido no musical sigue siendo configurable.
+Metadatos incompletos usan nombre de archivo/etiquetas locales, sin consultas remotas.
+TRACK empaquetado se separa en disco y pista. Álbumes y artistas se agrupan por
+ID MediaStore cuando existe, incluyendo recopilaciones; las rutas previas siguen
+resolviéndose. Se conservan IDs numéricos y URIs de canciones para no migrar favoritos.
+
+Actualización: observador registrado antes de la primera consulta, avisos conflados
+y debounce de 350 ms. Si llega un aviso durante la lectura queda una actualización
+pendiente. Al detener la actividad se liberan observador y trabajos; al volver se
+consulta de nuevo, incluyendo cambios de permisos. Las respuestas obsoletas no se
+publican. Se consulta una instantánea completa de metadatos y se reconcilia por ID,
+reutilizando objetos/grupos sin cambios: no se afirma lectura SQL incremental por
+generación ni rendimiento medido en catálogos masivos.
+
+Búsqueda común sin distinción de acentos/mayúsculas, ocho ordenamientos existentes
+y navegación real de álbum/artista. Se conservan referencias privadas de archivos
+ausentes para soportar medios desmontables; esos temas no se reproducen. Mover un
+archivo manteniendo su ID conserva su vínculo. Si MediaStore recrea IDs, no se
+promete recuperación por nombre ni entre dispositivos. No se recorren carpetas
+fuera de MediaStore. La carátula utiliza la URI local del álbum; invalidación de
+caché cuando solo cambia su imagen y pruebas de proveedores OEM quedan pendientes.
+
+Permisos: sin acceso general a archivos; se verifica antes/después de leer y al
+regresar a primer plano. Denegación permanente ofrece Ajustes del sistema. El
+chequeo remoto de actualizaciones ya no retrasa el arranque de biblioteca sin red.
+El paso LocalSong ↔ MediaItem conserva duración y metadatos locales; no se añade
+un reproductor ni se declara B07 realizado. B08 mantiene historial/cola avanzados.

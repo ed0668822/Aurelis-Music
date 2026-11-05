@@ -191,8 +191,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         val ctrl = controller ?: return
         val currentIndex = ctrl.currentMediaItemIndex
         val mediaItem = ctrl.currentMediaItem
-        val song = mediaItem?.let { mediaItemToLocalSong(it) }
-        val queueSongs = (0 until ctrl.mediaItemCount).map { mediaItemToLocalSong(ctrl.getMediaItemAt(it)) }
+        val song = mediaItem?.toLocalSong()
+        val queueSongs = (0 until ctrl.mediaItemCount).map { ctrl.getMediaItemAt(it).toLocalSong() }
 
         _state.update {
             it.copy(
@@ -241,24 +241,6 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 }
             }
         }
-    }
-
-    private fun mediaItemToLocalSong(item: MediaItem): LocalSong {
-        val metadata = item.mediaMetadata
-        val extras = metadata.extras
-        return LocalSong(
-            id = item.mediaId,
-            title = metadata.title?.toString() ?: "Unknown",
-            artist = metadata.artist?.toString() ?: "Unknown Artist",
-            album = metadata.albumTitle?.toString(),
-            contentUri = item.localConfiguration?.uri?.toString() ?: "",
-            artworkUri = metadata.artworkUri?.toString(),
-            durationMs = extras?.getLong("durationMs", 0L) ?: 0L,
-            filePath = extras?.getString("filePath"),
-            trackNumber = extras?.getInt("trackNumber", -1)?.takeIf { it > 0 },
-            year = extras?.getInt("year", -1)?.takeIf { it > 0 },
-            dateAddedMs = extras?.getLong("dateAddedMs", 0L) ?: 0L,
-        )
     }
 
     private fun startPositionPolling() {

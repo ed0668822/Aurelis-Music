@@ -234,3 +234,32 @@ bloque por separado. B07 requerirá nueva autorización.
 - Límites: seguimiento actual desde ViewModel, no servicio íntegro; Replay e integración
   avanzada de B08 siguen pendientes, sin afirmar estadísticas de fondo completas.
 - Después de cerrar B05 se continuará B06, ya autorizado; no se pide permiso otra vez.
+
+## B06 — Biblioteca local
+
+- Autorización: concedida junto con B05; base `7426157e00bc0187c7068fc6eda08aad7c531636`.
+- Estado: implementación y validación final completadas; publicación en curso.
+- Modificados: LocalMediaRepository, LocalLibrarySource, LibraryViewModel, modelos
+  LocalSong/Album/Artist, permisos, MainActivity, LocalMusicScreen, colecciones,
+  carrusel de artistas, puente Media3 y strings. Nuevos: LocalSearch y cuatro suites
+  de pruebas (MediaStoreLibraryTest, LibraryUpdatesTest, LocalMetadataTest,
+  LibraryCatalogueIntegrationTest). Actualizados los cinco documentos de migración.
+- Revisión 1 (código/arquitectura): pasada separada del mismo agente; revisados
+  cierre de cursor, IO/cancelación, observador y ciclo de vida, permisos, claves,
+  recopilaciones y compatibilidad de referencias privadas/Media3. Sin nuevas
+  dependencias, motor, permisos amplios ni cambios de firma/applicationId.
+- Revisión 2 (funcionamiento/integración): segunda pasada del mismo agente, con
+  proveedor MediaStore de prueba y grafo Compose real. Se ejercitan ráfagas,
+  cambios durante lectura, primer plano, revocación, archivos movidos/eliminados,
+  persistencia y rutas restauradas. Detectado y corregido estado sin resultados
+  en álbumes/artistas. No equivale a dos revisores humanos independientes.
+- Primera ejecución: 51 casos, un fallo por expectativa contradictoria con búsqueda
+  sin acentos; expectativa corregida. Suite ampliada a 53 casos y aprobada;
+  validación final tras corregir los estados vacíos: exit 0 en 1m 37s,
+  53 pruebas, 0 fallos/errores/omitidas; APK debug y firma verificados.
+  Lint: 209 advertencias y 0 errores. Actions no verificable: proxy CONNECT 403.
+- Entrega: mismo PR #1 «Aurelis Music Beta UI and components», sin renombrarlo.
+- Límites: instantánea completa + reconciliación, no SQL delta; rendimiento masivo,
+  caché de carátula tras cambiar solo imagen y reproducción física no verificados.
+  Referencias ausentes conservadas; reconstrucción de IDs no recuperada por nombre.
+- Próximo bloque: B07, requiere autorización nueva. No comenzar automáticamente.

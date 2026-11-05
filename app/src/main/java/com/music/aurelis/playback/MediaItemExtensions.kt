@@ -35,7 +35,37 @@ fun LocalSong.toMediaItem(): MediaItem {
                 .setArtist(artist)
                 .setAlbumTitle(album)
                 .setArtworkUri(artworkUri?.let { android.net.Uri.parse(it) })
+                .setExtras(android.os.Bundle().apply {
+                    putLong("durationMs", durationMs)
+                    putString("filePath", filePath)
+                    putInt("trackNumber", trackNumber ?: -1)
+                    putInt("year", year ?: -1)
+                    putLong("dateAddedMs", dateAddedMs)
+                    putLong("sizeBytes", sizeBytes)
+                    putString("albumId", albumId)
+                    putString("artistId", artistId)
+                    putInt("discNumber", discNumber ?: -1)
+                })
                 .build()
         )
         .build()
+}
+
+internal fun MediaItem.toLocalSong(): LocalSong {
+    val metadata = mediaMetadata
+    val extras = metadata.extras
+    return LocalSong(
+        id = mediaId, title = metadata.title?.toString() ?: "Unknown",
+        artist = metadata.artist?.toString() ?: "Unknown Artist", album = metadata.albumTitle?.toString(),
+        contentUri = localConfiguration?.uri?.toString().orEmpty(), artworkUri = metadata.artworkUri?.toString(),
+        durationMs = extras?.getLong("durationMs", 0) ?: 0,
+        filePath = extras?.getString("filePath"),
+        trackNumber = extras?.getInt("trackNumber", -1)?.takeIf { it > 0 },
+        year = extras?.getInt("year", -1)?.takeIf { it > 0 },
+        dateAddedMs = extras?.getLong("dateAddedMs", 0) ?: 0,
+        sizeBytes = extras?.getLong("sizeBytes", 0) ?: 0,
+        albumId = extras?.getString("albumId"), artistId = extras?.getString("artistId"),
+        discNumber = extras?.getInt("discNumber", -1)?.takeIf { it > 0 },
+        queueTier = queueTier, queueEntryId = queueEntryId,
+    )
 }

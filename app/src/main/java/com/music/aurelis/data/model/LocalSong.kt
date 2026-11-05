@@ -27,6 +27,9 @@ data class LocalSong(
     val sourceQuality: String? = null,
     val sourceHiRes: Boolean = false,
     val isExplicit: Boolean? = null,
+    val albumId: String? = null,
+    val artistId: String? = null,
+    val discNumber: Int? = null,
 ) {
     val videoId: String get() = id
     val thumbnailUrl: String? get() = artworkUri

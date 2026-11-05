@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="library_read_error">No se pudo leer la biblioteca del dispositivo. Inténtalo de nuevo.</string>
+    <string name="library_unknown_title">Canción sin título</string>
+    <string name="library_unknown_artist">Artista desconocido</string>
+    <string name="library_various_artists">Varios artistas</string>
     <string name="home_loading">Cargando tu biblioteca…</string>
     <string name="home_empty">Tu biblioteca está vacía. Añade música al dispositivo para empezar.</string>
     <string name="home_refresh">Actualizar biblioteca</string>

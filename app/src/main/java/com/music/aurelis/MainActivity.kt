@@ -43,6 +43,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.AppUpdateChecker
 import com.music.aurelis.data.AudioPermission
+import com.music.aurelis.data.LocalSearch
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.provider.Settings
 import com.music.aurelis.data.LocalHomeData
 import com.music.aurelis.ui.navigation.LocalCollectionKind
 import com.music.aurelis.ui.screens.LocalCollectionScreen
@@ -100,28 +106,46 @@ private fun AurelisApp() {
     val libraryViewModel: LibraryViewModel = viewModel()
     val navigator = rememberAppNavigator()
     val hazeState = remember { HazeState() }
-    var hasPermission by remember { mutableStateOf(AudioPermission.isGranted(context)) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { granted -> hasPermission = granted }
+    ) { libraryViewModel.onForeground() }
     var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
     val updateInfo by AppUpdateChecker.available.collectAsState()
     val downloadState by AppUpdateChecker.download.collectAsState()
 
+    val meta = remember(context) { context.getSharedPreferences("app_meta", android.content.Context.MODE_PRIVATE) }
+    val requestAudioAccess = {
+        if (AudioPermission.needsSettings(context, meta.getBoolean("audio_permission_requested", false))) {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+        } else {
+            meta.edit().putBoolean("audio_permission_requested", true).apply()
+            permissionLauncher.launch(AudioPermission.requiredPermission())
+        }
+    }
     LaunchedEffect(Unit) {
         playbackViewModel.connect()
-        AppUpdateChecker.check()
-        if (!hasPermission) permissionLauncher.launch(AudioPermission.requiredPermission())
+        if (!AudioPermission.isGranted(context) && !meta.getBoolean("audio_permission_requested", false)) requestAudioAccess()
     }
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) libraryViewModel.loadLibrary()
+    // An offline/slow update server must not delay audio permission or catalogue loading.
+    LaunchedEffect(Unit) { AppUpdateChecker.check() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, libraryViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) libraryViewModel.onForeground()
+            if (event == Lifecycle.Event.ON_STOP) {
+                libraryViewModel.onBackground()
+                com.music.aurelis.data.stats.ListeningStats.flush()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer); libraryViewModel.onBackground() }
     }
     LaunchedEffect(updateInfo) {
         if (updateInfo != null) showUpdateDialog = true
     }
     Box(Modifier.fillMaxSize()) {
         AurelisNavigationContent(navigator, playbackViewModel, libraryViewModel, hazeState,
-            onRequestAudioPermission = { permissionLauncher.launch(AudioPermission.requiredPermission()) })
+            onRequestAudioPermission = requestAudioAccess)
         if (showUpdateDialog && updateInfo != null) {
             UpdateAvailableDialog(
                 version = updateInfo!!.version,
@@ -202,7 +226,7 @@ internal fun AurelisNavigationContent(
                     },
                     onSongLongPress = { },
                     onAlbumClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
-                    onArtistClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.name)) },
+                    onArtistClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
                     contentPadding = PaddingValues(bottom = 180.dp),
@@ -241,12 +265,15 @@ internal fun AurelisNavigationContent(
             AppTab.SEARCH -> {
                 var searchQuery by rememberSaveable { mutableStateOf("") }
                 val searchListState = rememberLazyListState()
-                val results: List<LocalSong>? = if (searchQuery.isBlank()) null else allSongs.filter {
-                    it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.artist.contains(searchQuery, ignoreCase = true) ||
-                        it.album?.contains(searchQuery, ignoreCase = true) == true
+                val results = remember(searchQuery, allSongs, libraryUiState.sortOption) {
+                    if (searchQuery.isBlank()) null else {
+                        val key = LocalSearch.normalize(searchQuery)
+                        LocalSearch.sort(allSongs.filter { LocalSearch.matchesNormalized(it, key) }, libraryUiState.sortOption)
+                    }
                 }
                 SearchScreen(
+                    filter = libraryUiState.sortOption,
+                    onFilterChange = libraryViewModel::onSortOptionChanged,
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
                     results = results,
@@ -274,6 +301,9 @@ internal fun AurelisNavigationContent(
                     playbackViewModel = playbackViewModel,
                     libraryViewModel = libraryViewModel,
                     onBackClick = { navigator.pop() },
+                    onAlbumOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
+                    onArtistOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) },
+                    onRequestPermission = onRequestAudioPermission,
                 )
                 AppRoute.Settings -> SettingsScreen(
                     isVisible = true,

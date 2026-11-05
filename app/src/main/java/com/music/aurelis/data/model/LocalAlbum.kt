@@ -11,7 +11,8 @@ data class LocalAlbum(
     val artworkUri: String?,
     val songCount: Int,
     val songs: List<LocalSong>,
+    val mediaId: String? = null,
 ) {
     /** Clave única dentro de la biblioteca. */
-    val key: String get() = "${name.length}:$name$artist"
+    val key: String get() = mediaId?.let { "media:$it" } ?: "${name.length}:$name$artist"
 }

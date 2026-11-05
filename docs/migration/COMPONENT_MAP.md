@@ -113,3 +113,18 @@ OfflinePlaylists y ListeningRecorder legados no forman una segunda persistencia 
 se mantiene un único LocalUserLibrary para estos datos. Su compatibilidad/integración
 avanzada se revisará en B08; no se declaran esos stubs como funciones completas.
 No se importó nuevo código de BitChord ni DSP/recursos externos en B05.
+
+## Catálogo y actualización B06
+
+| Área | Destino | Resultado |
+|---|---|---|
+| MediaStore | `data/LocalMediaRepository.kt` | Consulta IO, cursor seguro, filtros, metadatos y URIs locales |
+| Observación | `data/LocalLibrarySource.kt`, `LibraryViewModel.kt` | Ciclo de vida, debounce, reconciliación por ID y refresco pendiente |
+| Modelos | `data/model/LocalSong.kt`, `LocalAlbum.kt`, `LocalArtist.kt` | IDs MediaStore de grupos y disco/pista; referencias de canciones compatibles |
+| Permisos/arranque | `data/AudioPermission.kt`, `MainActivity.kt` | Revocación/restauración, Ajustes del sistema y arranque local independiente de red |
+| Búsqueda | `data/LocalSearch.kt`, LocalMusicScreen y MainActivity | Acentos, ordenamiento compartido y estados sin resultados |
+| Detalles | LocalCollectionScreen y HomeCarousels | Rutas con ID de grupo y compatibilidad con claves previas |
+| Puente Media3 | MediaItemExtensions y PlaybackViewModel | Metadatos completos sin duplicar motor |
+| Pruebas | MediaStoreLibraryTest, LibraryUpdatesTest, LocalMetadataTest, LibraryCatalogueIntegrationTest | Proveedor/cursor, concurrencia, permisos, roundtrip y grafo real Compose |
+
+Sin código adicional copiado de BitChord; se amplía la infraestructura local de Aurelis.

@@ -42,8 +42,10 @@ fun LocalCollectionScreen(
     val snapshot = library as? LibraryState.Success
     val allSongs = snapshot?.songs.orEmpty()
     val playlist = user.playlists.firstOrNull { it.id == route.key }
-    val album = snapshot?.albums?.firstOrNull { it.key == route.key }
-    val artist = snapshot?.artists?.firstOrNull { it.name == route.key }
+    val album = snapshot?.albums?.firstOrNull { item -> item.key == route.key || item.songs.any {
+        "${item.name.length}:${item.name}${it.artist}" == route.key
+    } }
+    val artist = snapshot?.artists?.firstOrNull { it.key == route.key || it.name == route.key }
     val byId = remember(allSongs) { allSongs.associateBy { it.id } }
     val songs = when (route.kind) {
         LocalCollectionKind.FAVORITES -> allSongs.filter { it.id in user.favorites }

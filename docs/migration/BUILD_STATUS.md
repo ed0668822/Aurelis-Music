@@ -219,3 +219,25 @@ bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers
 - Log local: `/workspace/toolchains/b05-validation-final.log`; informes XML habituales.
 - No se acredita reproducción/segundo plano en dispositivo, rendimiento de grandes
   catálogos ni análisis/transiciones avanzados de AutoMix. B08/B11/B14 conservan esos trabajos.
+
+## B06 — Verificación final
+
+- Base B05: `7426157e00bc0187c7068fc6eda08aad7c531636`; JDK/SDK existentes, sin nuevas dependencias.
+- Comando: `bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4`.
+- Resultado final: exit 0, BUILD SUCCESSFUL en 1m 37s; 57 tareas, 17 ejecutadas.
+- Pruebas XML: **53**, 0 fallos, 0 errores, 0 omitidas. Incluye las 38 de B05
+  y 15 de catálogo, concurrencia, permisos, metadatos e integración Compose.
+- Lint: **0 errores, 209 advertencias**. No se deshabilitan comprobaciones;
+  recomendaciones KTX y advertencias del proyecto siguen visibles.
+- APK debug: generado y `apksigner verify` exit 0. Sin firma/publicación release.
+- Recursos: XML de strings válido y sin claves duplicadas; `git diff --check` correcto.
+- Evidencia local: `/workspace/toolchains/b06-validation-final.log`, XML de pruebas
+  y lint en `app/build`; no son requisitos de una futura clonación.
+- Primera suite de 51 casos detectó expectativa errónea de búsqueda acentuada;
+  corregida para respetar la función prevista. Posteriormente 53 correctas.
+  Revisión final añadió aserciones del mensaje sin resultados en grupos y volvió
+  a ejecutar las tres tareas completas correctamente.
+- Actions: consulta de runs bloqueada por proxy (CONNECT 403); estado remoto pendiente.
+- Robolectric SDK33 usa proveedor controlado y Compose real; no demuestra reproducción
+  física, comportamiento de proveedores OEM, invalidación de imagen sin cambios de
+  metadatos ni rendimiento en catálogos masivos. B07 sigue sin autorización.
