@@ -17,6 +17,8 @@ commit documental B01 ni a GitHub Actions.
 | Release | No ejecutado en onboarding | No afirmar publicación/firma release verificadas |
 | BitChord | No compilado ni ejecutado | Solo inspección de referencia en lectura |
 | Actions / permisos API | Bloqueado: `Forbidden` | Lectura Git funciona; acceso API no confirmado |
+| Entrega Git B01 | Rama publicada | Push confirmado; consultar PROGRESS para commit |
+| Creación PR B01 | Bloqueada | `gh pr create` recibió Forbidden de api.github.com/graphql; no hay PR confirmado |
 
 Comando final del onboarding (exit 0, `BUILD SUCCESSFUL in 13s`, 52 tareas):
 

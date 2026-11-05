@@ -9,7 +9,7 @@ autorizado. B02 no está autorizado.
 
 ## B01 — Auditoría y planificación
 
-- Estado: auditoría y documentación completadas; entrega remota pendiente.
+- Estado: auditoría y documentación completadas; rama publicada; creación de PR bloqueada por acceso API.
 - Rama: `feature/bitchord-local-migration`.
 - Base Aurelis: `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
 - Origen BitChord: `b690dc146009d4815825fa4a20815ef2e4ee8898`.
@@ -28,8 +28,21 @@ autorizado. B02 no está autorizado.
 - Compilación: línea base debug/lint correcta; unitarias NO-SOURCE. No nuevo build
   por documentación; ejecución funcional y release pendientes.
 - GitHub Actions: consulta API denegada (`Forbidden`); estado remoto desconocido.
-- Commit de documentos: pendiente.
-- Pull Request: pendiente de publicación; no hay enlace confirmado.
+- Commit de documentos: `04c28c90a07c3dcc668d232fe2c2dbb8d24779cc`.
+  Este registro se completa en un commit posterior de trazabilidad; consultar
+  `git log -2 --oneline` para ambos commits, sin referencias circulares a su propio SHA.
+- Publicación: `git push --set-upstream origin feature/bitchord-local-migration`
+  terminó con exit 0 y confirmó la nueva rama remota. El commit posterior de
+  trazabilidad requiere su propio push y verificación remota.
+- Pull Request: no creado. `gh pr create --base main --head
+  feature/bitchord-local-migration` falló con
+  `Post https://api.github.com/graphql: Forbidden`. No se recibió número ni URL de PR.
+- Enlace de creación devuelto por GitHub (no es un PR existente):
+  https://github.com/ed0668822/Aurelis-Music/pull/new/feature/bitchord-local-migration
+- Título sugerido: `B01: auditoría y plan de migración local de BitChord`.
+  Descripción: cinco documentos de auditoría/planificación; sin cambios de aplicación;
+  dos revisiones documentales; línea base debug/lint correcta, unitarias NO-SOURCE;
+  CSV, dispositivo y consulta de Actions pendientes.
 
 ## Hallazgos y bloqueos
 
@@ -39,8 +52,11 @@ autorizado. B02 no está autorizado.
 - Origen multiplataforma y versiones distintas requieren adaptaciones selectivas.
 - AutoMix incluye procedencia AGPL/Orchard; nuevas copias requieren revisar condiciones.
 - Falta `Formato de licencias.csv`: incorporarlo antes de cabeceras definitivas.
-- La lectura Git HTTPS funciona, pero GitHub API devuelve Forbidden. No se han
-  establecido permisos de escritura, creación de PR ni consulta de Actions.
+- Lectura y escritura Git HTTPS confirmadas en Aurelis. GitHub API devuelve
+  Forbidden tanto al consultar permisos como al crear el PR; acceso de creación
+  de PR y consulta de Actions no disponible. No se deduce que falte un token.
+  Se necesita acceso autorizado a la API de GitHub o crear el PR con el enlace
+  anterior. No solicitar credenciales en chat ni cambiar secretos para resolverlo.
 
 ## Próximo bloque
 
