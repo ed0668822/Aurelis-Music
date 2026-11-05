@@ -5,6 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,8 +32,7 @@ fun AnimatedArtwork(
     progressFraction: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val resolvedSize = if (progressFraction > 0.5f) 200.dp else size
+    val resolvedSize = size
     val gradientColors = if (progressFraction > 0.5f) {
         listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.primary)
     } else {
@@ -44,7 +47,7 @@ fun AnimatedArtwork(
     Box(
         modifier = modifier
             .size(resolvedSize)
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(24.dp))
             .background(Brush.verticalGradient(colors = gradientColors)),
         contentAlignment = Alignment.Center,
     ) {
@@ -56,6 +59,8 @@ fun AnimatedArtwork(
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.12f)),
         )
+        AsyncImage(model = artworkUri, contentDescription = null,
+            contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
     }
 }
 

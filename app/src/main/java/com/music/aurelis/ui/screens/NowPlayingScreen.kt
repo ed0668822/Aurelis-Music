@@ -2,6 +2,7 @@
 package com.music.aurelis.ui.screens
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -10,6 +11,18 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.runtime.key
+import androidx.media3.common.Player
+import com.music.aurelis.ui.components.PlayerSlider
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +65,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.music.aurelis.data.AudioQuality
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.playback.LyricsState
 import com.music.aurelis.playback.PlaybackViewModel
@@ -60,7 +72,6 @@ import com.music.aurelis.playback.TranslationState
 import com.music.aurelis.ui.components.AnimatedArtwork
 import com.music.aurelis.ui.components.LyricsSourcesDialog
 import com.music.aurelis.ui.components.PlayerControls
-import com.music.aurelis.ui.components.ThinSlider
 import com.music.aurelis.ui.components.TranslationLanguageDialog
 import com.music.aurelis.ui.player.LyricsOffsetSheet
 import com.music.aurelis.ui.player.MeshGradientBackground
@@ -99,17 +110,19 @@ fun NowPlayingScreen(
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
 
+    BackHandler(enabled = isVisible && showLyrics) { showLyrics = false }
+
     val lyricsOffset by SettingsRepository.lyricsOffsetMs.collectAsState()
-    val audioQuality by SettingsRepository.audioQuality.collectAsState()
+    val reduceAnimation by SettingsRepository.reduceAnimation.collectAsState()
     val hazeState = remember { HazeState() }
 
     AnimatedVisibility(
         visible = isVisible && song != null,
-        enter = slideInVertically(
+        enter = if (reduceAnimation) androidx.compose.animation.EnterTransition.None else slideInVertically(
             animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
             initialOffsetY = { it },
         ) + fadeIn(animationSpec = tween(280)),
-        exit = slideOutVertically(
+        exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else slideOutVertically(
             animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
             targetOffsetY = { it },
         ) + fadeOut(animationSpec = tween(220)),
@@ -127,7 +140,8 @@ fun NowPlayingScreen(
                 MeshGradientBackground(
                     palette = meshPalette,
                     trackKey = s.id,
-                    continuous = state.isPlaying,
+                    continuous = state.isPlaying && !reduceAnimation,
+                    reduceAnimation = reduceAnimation,
                     modifier = Modifier.fillMaxSize(),
                 )
 
@@ -149,6 +163,8 @@ fun NowPlayingScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .verticalScroll(rememberScrollState())
                         .padding(horizontal = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -193,7 +209,7 @@ fun NowPlayingScreen(
                         songKey = s.id,
                         artworkUri = s.artworkUri,
                         title = s.title,
-                        size = 320.dp,
+                        size = (LocalConfiguration.current.screenWidthDp - 48).coerceIn(160, 320).dp,
                         progressFraction = progressFraction,
                     )
 
@@ -205,6 +221,7 @@ fun NowPlayingScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
+                            modifier = Modifier.weight(1f),
                             text = s.title,
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -213,11 +230,7 @@ fun NowPlayingScreen(
                             textAlign = TextAlign.Center,
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        val qualityLabel = when (audioQuality) {
-                            AudioQuality.LOSSLESS -> "Lossless"
-                            AudioQuality.HIGH -> "Alta calidad"
-                            AudioQuality.STANDARD -> "Estándar"
-                        }
+                        val qualityLabel = "Archivo local"
                         // FIX: Chip cambió de firma en Material3 — usamos Box+Text
                         Box(
                             modifier = Modifier
@@ -264,27 +277,45 @@ fun NowPlayingScreen(
                         Text("Ver Letras")
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    ThinSlider(
-                        value = progressFraction,
-                        onValueChange = { fraction ->
-                            val newPos = (fraction * state.durationMs).toLong()
-                            playbackViewModel.seekTo(newPos)
-                        },
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    state.errorMessage?.let { message ->
+                        Text(message, color = MaterialTheme.colorScheme.error)
+                        androidx.compose.material3.TextButton(onClick = playbackViewModel::retry) { Text("Reintentar") }
+                    }
+                    key(s.id) {
+                        PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
+                            enabled = state.isConnected && state.canSeek)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        IconButton(onClick = playbackViewModel::toggleShuffle, enabled = state.isConnected,
+                            modifier = Modifier.semantics { stateDescription = if (state.shuffleEnabled) "Activado" else "Desactivado" }) {
+                            Icon(Icons.Rounded.Shuffle, "Aleatorio",
+                                tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        }
+                        val repeatDescription = when (state.repeatMode) {
+                            Player.REPEAT_MODE_ALL -> "Repetir todas"
+                            Player.REPEAT_MODE_ONE -> "Repetir una"
+                            else -> "Repetición desactivada"
+                        }
+                        IconButton(onClick = playbackViewModel::cycleRepeat, enabled = state.isConnected,
+                            modifier = Modifier.semantics { stateDescription = repeatDescription }) {
+                            Icon(if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                                "Repetición", tint = if (state.repeatMode != Player.REPEAT_MODE_OFF)
+                                    MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
 
                     PlayerControls(
-                        isPlaying = state.isPlaying,
+                        isPlaying = state.isPlayRequested,
                         isLoading = state.isLoading,
                         onPlayPause = { playbackViewModel.togglePlayPause() },
                         onNext = { playbackViewModel.next() },
                         onPrevious = { playbackViewModel.previous() },
+                        enabled = state.isConnected, canNext = state.canNext, canPrevious = state.canPrevious,
+                        reduceAnimation = reduceAnimation,
                     )
 
-                    Spacer(modifier = Modifier.height(48.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 if (showLyrics) {

@@ -2,8 +2,8 @@
 
 ## Alcance y referencias
 
-Documento iniciado en B01 (auditoría y planificación). B02–B06 fueron autorizados
-después e incorporan únicamente sus secciones específicas. B07 y siguientes no están autorizados.
+Documento iniciado en B01 (auditoría y planificación). B02–B07 fueron autorizados
+después e incorporan únicamente sus secciones específicas. B08 y siguientes no están autorizados.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -313,3 +313,40 @@ regresar a primer plano. Denegación permanente ofrece Ajustes del sistema. El
 chequeo remoto de actualizaciones ya no retrasa el arranque de biblioteca sin red.
 El paso LocalSong ↔ MediaItem conserva duración y metadatos locales; no se añade
 un reproductor ni se declara B07 realizado. B08 mantiene historial/cola avanzados.
+
+## B07 — Reproductor y sesión local
+
+Autorización expresa tras B06; base `15582e8139173802bc01ba7046a38d461e7ae03c`.
+Se adapta la pantalla activa NowPlayingScreen y el MiniPlayer integrado en
+GlassNavBar, reutilizando temas, mesh, carátulas y controles presentes en Aurelis.
+No se instala otro host ni motor. PlayerHost/FullScreenPlayerHost de referencia
+no sustituyen a la pantalla activa y no se declaran completados sus stubs.
+
+- Mini reproductor único con carátula local, título truncado, progreso, transporte
+  y apertura accesible; el texto ocupa solo el espacio disponible y no oculta abrir.
+- Reproductor completo con carátula real/fallback, tiempos, seek confirmado,
+  repetición off→all→one, aleatorio, controles habilitados según estado y cola.
+  Layout desplazable en pantallas pequeñas; reducción de movimiento respetada.
+- No se deduce «Lossless» del ajuste global: se identifica archivo local sin
+  afirmar un formato no medido. No se reduce arbitrariamente la carátula al 50%.
+- Conexión idempotente; el primer toque espera al controlador y gana la última
+  selección pendiente. Cancelación y desconexión liberan el controlador.
+  Eventos de Media3 actualizan modos, posición, errores y cambios externos.
+- La pausa sigue disponible durante buffering. Fin de cola permite reiniciar;
+  seek se acota y no reinicia la cola; errores muestran mensaje y reintento.
+- Cola: saltar y quitar canciones no actuales mediante comandos existentes.
+  Se elimina el indicador de arrastre inoperante; reordenación avanzada sigue B08.
+- Se retira el conversor privado duplicado de PlayerConnection y se utiliza
+  el puente B06 para conservar IDs, duración, disco y demás metadatos locales.
+
+AurelisPlaybackService sigue siendo el propietario único de ExoPlayer, MediaSession,
+DSP, foco de audio y manejo de auriculares desconectados. MediaSessionService
+conserva notificación y controles del sistema; la actividad de sesión abre Aurelis.
+Cerrar la UI libera su MediaController y no el reproductor de la sesión. No se
+cambian permisos de servicio, firmas, workflows, DSP ni dependencias de producción.
+
+Validación: pruebas de comandos/eventos sobre SimpleBasePlayer real con estado
+de audio controlado, puente real MediaSession↔MediaController y grafo Compose.
+Las pruebas no decodifican audio ni validan hardware, notificación visible o
+pantalla de bloqueo física. Esas comprobaciones deben hacerse en dispositivo
+antes de afirmar aceptación física completa; B08 no queda autorizado por B07.

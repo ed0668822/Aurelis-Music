@@ -15,6 +15,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 
 /**
@@ -27,6 +29,7 @@ fun PlayerSlider(
     durationMs: Long,
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     var isDragging by remember { mutableStateOf(false) }
     var dragValue by remember { mutableFloatStateOf(0f) }
@@ -44,9 +47,10 @@ fun PlayerSlider(
             },
             onValueChangeFinished = {
                 isDragging = false
-                onSeek(dragValue.toLong())
+                onSeek(dragValue.toLong().coerceIn(0, durationMs.coerceAtLeast(0)))
             },
-            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled && durationMs > 0,
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Posición de reproducción" },
             colors = SliderDefaults.colors(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -76,7 +80,7 @@ fun PlayerSlider(
 
 /** Formatea milisegundos como "M:SS". */
 private fun formatTime(ms: Long): String {
-    val totalSeconds = ms / 1000
+    val totalSeconds = ms.coerceAtLeast(0) / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)

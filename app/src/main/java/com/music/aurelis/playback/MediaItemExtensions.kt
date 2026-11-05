@@ -34,6 +34,8 @@ fun LocalSong.toMediaItem(): MediaItem {
                 .setTitle(title)
                 .setArtist(artist)
                 .setAlbumTitle(album)
+                .setIsPlayable(true)
+                .setIsBrowsable(false)
                 .setArtworkUri(artworkUri?.let { android.net.Uri.parse(it) })
                 .setExtras(android.os.Bundle().apply {
                     putLong("durationMs", durationMs)

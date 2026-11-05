@@ -1,7 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -18,20 +17,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +60,8 @@ fun GlassNavBar(
     controlsLocked: Boolean = false,
     onBlockedControl: () -> Unit = {},
     dock: PlayerDock? = null,
+    canNext: Boolean = true,
+    progress: Float = 0f,
 ) {
     val contentColor = glassContentColor()
     val selectedColor = contentColor
@@ -140,76 +132,14 @@ fun GlassNavBar(
         }
 
         song?.let { current ->
-            GlassNowPlaying(
-                song = current,
-                isPlaying = isPlaying,
-                isLoading = isLoading,
-                contentColor = contentColor,
-                onPlayPause = onPlayPause,
-                onNext = onNext,
-                onPrevious = onPrevious,
-                onExpand = onExpand,
-                controlsLocked = controlsLocked,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+            MiniPlayer(
+                title = current.title, artist = current.artist, artworkUri = current.artworkUri,
+                isPlaying = isPlaying, isLoading = isLoading,
+                onPlayPauseClick = onPlayPause, onNext = onNext,
+                onClick = onExpand, enabled = !controlsLocked,
+                canNext = canNext, progress = progress,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
-        }
-    }
-}
-
-@Composable
-private fun GlassNowPlaying(
-    song: LocalSong,
-    isPlaying: Boolean,
-    isLoading: Boolean,
-    contentColor: Color,
-    onPlayPause: () -> Unit,
-    onNext: () -> Unit,
-    onPrevious: () -> Unit,
-    onExpand: () -> Unit,
-    controlsLocked: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onPrevious, enabled = !controlsLocked) {
-            Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = null, tint = contentColor)
-        }
-        IconButton(onClick = onPlayPause, enabled = !controlsLocked) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp))
-            } else {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = contentColor,
-                )
-            }
-        }
-        IconButton(onClick = onNext, enabled = !controlsLocked) {
-            Icon(imageVector = Icons.Default.SkipNext, contentDescription = null, tint = contentColor)
-        }
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = contentColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.bodyMedium,
-                color = contentColor.copy(alpha = 0.7f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        IconButton(onClick = onExpand) {
-            Icon(imageVector = Icons.Default.ExpandLess, contentDescription = null, tint = contentColor)
         }
     }
 }

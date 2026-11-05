@@ -128,3 +128,18 @@ No se importó nuevo código de BitChord ni DSP/recursos externos en B05.
 | Pruebas | MediaStoreLibraryTest, LibraryUpdatesTest, LocalMetadataTest, LibraryCatalogueIntegrationTest | Proveedor/cursor, concurrencia, permisos, roundtrip y grafo real Compose |
 
 Sin código adicional copiado de BitChord; se amplía la infraestructura local de Aurelis.
+
+## Reproductor activo B07
+
+| Área | Archivos de destino | Resultado |
+|---|---|---|
+| Controlador | PlaybackViewModel, PlayerConnection | Conexión única/cancelable, estado desde eventos, repeat/shuffle/seek y errores |
+| Metadatos | MediaItemExtensions | Conversor único también para selección inicial; no se pierden IDs ni duración |
+| Mini | GlassNavBar, MiniPlayer, MainActivity | Una sola barra con carátula/progreso y apertura visible |
+| Completo | NowPlayingScreen, AnimatedArtwork, PlayerControls, PlayerSlider | Arte local real, tiempos, controles, modos, accesibilidad y scroll |
+| Cola básica | QueueScreen | Saltar/quitar tema no actual; sin arrastre decorativo |
+| Sesión/fondo | AurelisPlaybackService existente, sin cambios | Propietario único ExoPlayer/DSP/MediaSessionService y controles Android |
+| Verificación | PlaybackIntegrationTest, MediaSessionBridgeTest, PlayerIntegrationTest | Eventos y sesión reales con audio controlado, grafo Compose y capturas |
+
+Se reutiliza código ya presente en Aurelis; no se copia otro host ni código de BitChord.
+FullScreenPlayerHost y AurelisPlayerPlatform legados no se instalan como motor/host activos.

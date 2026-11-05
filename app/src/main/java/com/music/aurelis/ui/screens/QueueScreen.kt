@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -56,6 +57,7 @@ fun QueueScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .navigationBarsPadding()
                         .padding(16.dp)
                 ) {
                     Row(
@@ -75,20 +77,16 @@ fun QueueScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     LazyColumn(modifier = Modifier.weight(1f)) {
+                        if (state.queue.isEmpty()) item { Text("La cola está vacía.") }
                         itemsIndexed(state.queue) { index, song ->
                             val isCurrent = index == state.currentIndex
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clickable(enabled = state.isConnected) { playbackViewModel.seekToIndex(index) }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Rounded.DragHandle,
-                                    contentDescription = "Mover",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
                                 AsyncImage(
                                     model = song.artworkUri,
                                     contentDescription = null,
@@ -113,6 +111,10 @@ fun QueueScreen(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                }
+                                IconButton(onClick = { playbackViewModel.removeFromQueue(index) },
+                                    enabled = state.isConnected && !isCurrent) {
+                                    Icon(Icons.Rounded.Close, "Quitar de la cola")
                                 }
                             }
                         }

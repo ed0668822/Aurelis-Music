@@ -5,7 +5,7 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B05 y B06 fueron autorizados expresamente juntos; B07 y siguientes no están autorizados.
+autorizado. B05 y B06 fueron autorizados juntos; B07 autorizado después. B08 y siguientes no están autorizados.
 
 PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
 Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
@@ -270,3 +270,35 @@ bloque por separado. B07 requerirá nueva autorización.
   «Aurelis Music Beta UI and components» conservado. Este cierre se publica como
   commit documental posterior, sin reescribir historial. Actions sigue pendiente.
 - B05/B06 cerrados. Detener aquí y esperar autorización expresa para B07.
+
+## B07 — Reproductor
+
+- Autorización: concedida expresamente después de entregar B05/B06.
+- Base: `15582e8139173802bc01ba7046a38d461e7ae03c`; misma rama y PR #1.
+- Estado: implementación, doble revisión y validación completadas; publicación en curso.
+- Modificados: PlaybackViewModel, PlayerConnection, MediaItemExtensions,
+  MiniPlayer, GlassNavBar, AnimatedArtwork, PlayerControls, PlayerSlider,
+  NowPlayingScreen, QueueScreen, MainActivity y strings. Nuevos tests:
+  RecordingPlayer (solo fixture), PlaybackIntegrationTest, PlayerIntegrationTest
+  y MediaSessionBridgeTest; documentación/capturas actualizadas al cierre.
+- Revisión 1 (código/arquitectura): pasada separada del mismo agente, revisando
+  propiedad única del motor/servicio, cancelación/conexión, eventos externos,
+  conservación de metadatos, rangos de seek, callbacks y preservación de DSP,
+  letras, identidad y licencias. Se retiró el conversor duplicado y la mutación
+  doble de cola tras callbacks sincrónicos. No se añaden dependencias.
+- Revisión 2 (funcionamiento/integración): completada como otra pasada del mismo
+  agente; 66 pruebas correctas, incluidas 9 de eventos Media3, 1 de transporte real
+  MediaSession/MediaController y 3 de grafo Compose (vertical/horizontal). Capturas
+  inspeccionadas y guardadas. Son pasadas del mismo agente; no se presentan como
+  dos revisores humanos independientes.
+- Primera suite completa: 65 casos y una aserción ambigua por título repetido en
+  Home/barra. Se acotó al mini reproductor, conservando la comprobación. Suite final
+  ampliada: 66 casos, 0 fallos/errores/omisiones; build exit 0 en 1m 51s.
+- APK debug y firma verificados; lint sin errores y 208 advertencias. XML válido
+  sin recursos duplicados; git diff --check correcto. Sin pruebas release.
+- Actions: consulta de runs bloqueada por proxy CONNECT 403, estado remoto pendiente.
+- PR: https://github.com/ed0668822/Aurelis-Music/pull/1, mismo título del usuario.
+- Límites: no pruebas físicas de decodificación/DSP, notificación, bloqueo,
+  Bluetooth/foco ni sesiones de larga duración. Integración avanzada de B08,
+  letras B09 y AutoMix B11 conservan su alcance; ningún bloque siguiente autorizado.
+- Próximo bloque: B08, esperar autorización expresa.

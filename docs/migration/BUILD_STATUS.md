@@ -241,3 +241,27 @@ bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers
 - Robolectric SDK33 usa proveedor controlado y Compose real; no demuestra reproducción
   física, comportamiento de proveedores OEM, invalidación de imagen sin cambios de
   metadatos ni rendimiento en catálogos masivos. B07 sigue sin autorización.
+
+## B07 — Verificación final
+
+- Base: `15582e8139173802bc01ba7046a38d461e7ae03c`; toolchain existente.
+- `bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4`:
+  **exit 0, BUILD SUCCESSFUL en 1m 51s**, 57 tareas (18 ejecutadas).
+- XML: **66 pruebas**, 0 fallos, 0 errores, 0 omitidas. Incluye las 53 de B06
+  más 9 de comandos/conexión/eventos, 1 de sesión/controlador y 3 de UI.
+- Lint: **0 errores y 208 advertencias**, sin deshabilitar verificaciones.
+- APK debug generado; `apksigner verify` exit 0. Sin firma/publicación release.
+- XML de strings válido sin claves duplicadas; `git diff --check` correcto.
+- Evidencia local: `/workspace/toolchains/b07-validation-final.log`, XML de tests
+  y lint en `app/build`; capturas conservadas en `docs/migration/screenshots/`
+  (`mini-player.png`, `now-playing.png`) e inspeccionadas visualmente.
+- Primera suite completa: 65 casos, aserción ambigua por texto repetido en Home
+  y barra; selector acotado a la barra. La suite final completa de 66 pasó.
+- Media3 usa SimpleBasePlayer con estado de audio controlado en pruebas; el puente
+  MediaSession↔MediaController es real en proceso. Se verifican comandos externos,
+  metadatos locales y que liberar el controlador no libera al reproductor de sesión.
+- UI real Compose bajo Robolectric SDK33, gráficos nativos, 360×800 y 640×360.
+  Se prueban apertura/cierre, seek accesible, modos y acciones de cola. No se
+  reproduce audio ni se validan DSP, auriculares, foco, notificación visible o
+  pantalla de bloqueo física. Mantener comprobaciones en dispositivo pendientes.
+- Actions: API bloqueada por proxy CONNECT 403; no se afirma CI verde.

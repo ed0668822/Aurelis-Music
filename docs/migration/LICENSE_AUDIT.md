@@ -103,3 +103,12 @@ importan componentes de BitChord, recursos, fuentes, servicios ni dependencias
 adicionales. Fixtures exclusivamente en pruebas. LICENSE/NOTICE se conservan.
 El archivo «Formato de licencias.csv» sigue ausente; las cabeceras definitivas de
 archivos nuevos quedan pendientes, sin eliminar avisos de archivos modificados.
+
+## Registro B07
+
+Se adaptan el reproductor, componentes visuales y puente Media3 existentes en
+Aurelis, conservando avisos. No se importan nuevos archivos ni recursos de BitChord,
+Orchard u otros proyectos. Iconos y carátulas usan dependencias existentes y URIs
+locales; capturas de prueba con texto ficticio y fallback propio, sin portadas
+de terceros. Pruebas nuevas originales; sin nuevas dependencias ni cambios de
+LICENSE/NOTICE. Sigue pendiente «Formato de licencias.csv» para cabeceras definitivas.

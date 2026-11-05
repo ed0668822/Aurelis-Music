@@ -327,14 +327,26 @@ internal fun AurelisNavigationContent(
                     .navigationBarsPadding().padding(bottom = 16.dp, start = 12.dp, end = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                if (!playbackState.isConnected && playbackState.errorMessage != null) {
+                    Surface(shape = MaterialTheme.shapes.medium) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                            Text(playbackState.errorMessage.orEmpty())
+                            TextButton(onClick = playbackViewModel::retry) { Text("Reintentar") }
+                        }
+                    }
+                }
                 // GlassNavBar already includes the current-track entry point and controls.
                 GlassNavBar(
                     tabs = tabs,
                     selectedIndex = navigator.selectedTab.ordinal,
                     onTabSelected = { index -> AppTab.entries.getOrNull(index)?.let(navigator::selectTab) },
                     song = playbackState.currentSong,
-                    isPlaying = playbackState.isPlaying,
+                    isPlaying = playbackState.isPlayRequested,
                     isLoading = playbackState.isLoading,
+                    controlsLocked = !playbackState.isConnected,
+                    canNext = playbackState.canNext,
+                    progress = if (playbackState.durationMs > 0)
+                        playbackState.positionMs.toFloat() / playbackState.durationMs else 0f,
                     onPlayPause = { playbackViewModel.togglePlayPause() },
                     onNext = { playbackViewModel.next() },
                     onPrevious = { playbackViewModel.previous() },

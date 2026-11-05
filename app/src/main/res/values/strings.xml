@@ -329,4 +329,8 @@
         <item quantity="one">Añadir a %d lista</item>
         <item quantity="other">Añadir a %d listas</item>
     </plurals>
+    <string name="playback_connection_error">No se pudo conectar al reproductor.</string>
+    <string name="playback_permission_error">La app ya no tiene acceso a este audio. Revisa los permisos.</string>
+    <string name="playback_file_missing">Este archivo ya no está disponible. Actualiza la biblioteca o elige otra canción.</string>
+    <string name="playback_file_error">No se pudo reproducir este archivo. Puedes reintentar o elegir otra canción.</string>
 </resources>
