@@ -85,3 +85,12 @@ AppNavigationHost, Saver, integración y pruebas nuevas son aportes propios; no 
 incorpora nuevo código, recursos ni dependencias de BitChord u otros proyectos.
 Se mantiene el alcance legal ya documentado para la adaptación previa. Nuevos archivos
 siguen sin cabeceras definitivas hasta recibir el CSV; no se borran avisos existentes.
+
+## Registro B05
+
+HomeHero/carruseles se reutilizan desde Aurelis, conservando avisos y NOTICE. Nuevos
+datos de Home, persistencia y pantallas de colecciones son aportes propios. La cola
+de selección usa QueueBuilder existente, sin copiar análisis ni transiciones AGPL
+adicionales. No hay fuentes, carátulas, datos musicales o traducciones descargadas
+para simular bibliotecas. Los fixtures de pruebas solo existen bajo `app/src/test`.
+No se añaden dependencias; las cabeceras definitivas siguen pendientes del CSV.

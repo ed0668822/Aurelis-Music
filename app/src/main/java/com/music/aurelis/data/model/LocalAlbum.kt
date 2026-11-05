@@ -13,5 +13,5 @@ data class LocalAlbum(
     val songs: List<LocalSong>,
 ) {
     /** Clave única dentro de la biblioteca. */
-    val key: String get() = "$name|$artist"
+    val key: String get() = "${name.length}:$name$artist"
 }

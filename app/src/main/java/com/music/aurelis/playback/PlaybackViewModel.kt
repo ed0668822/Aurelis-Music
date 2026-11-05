@@ -71,6 +71,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             lastTickPositionMs = 0L
             syncState()
+            ListeningStats.onTrackChanged(_state.value.currentSong?.id)
         }
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _state.update { it.copy(isPlaying = isPlaying) }
@@ -111,6 +112,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             PlayerConnection.playSongs(ctrl, songs, startIndex)
         }
     }
+
+    fun resume() { controller?.play() }
 
     fun togglePlayPause() {
         val ctrl = controller ?: return

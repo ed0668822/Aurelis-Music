@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
@@ -28,7 +29,7 @@ fun AppNavigationHost(
     BackHandler(enabled = navigator.canGoBack) { navigator.back() }
 
     Box(modifier.fillMaxSize()) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize()) {
                 if (route == null) {
                     stateHolder.SaveableStateProvider("tab.${navigator.selectedTab.name}") {

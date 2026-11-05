@@ -63,6 +63,7 @@ class LibraryViewModel @JvmOverloads constructor(
                         libraryState = LibraryState.Error(
                             "Permiso de acceso a música no concedido. " +
                                 "Concédelo en Ajustes para escanear el dispositivo.",
+                            permissionRequired = true,
                         ),
                     )
                 }

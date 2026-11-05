@@ -189,3 +189,33 @@ bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers
   corrección `462ecb25294694ff685aa31f2b0fa05ab550482a` publicadas en la rama
   del PR #1. La consulta REST de Actions volvió a responder Forbidden; no se conoce
   su resultado remoto. El registro de entrega se conserva en otro commit documental.
+
+## B05 — Home local
+
+Base `2e82e1a2d87fc8f11452da2e5f0b0a31f597da09`; misma rama y PR #1.
+
+```bash
+cd /workspace/Aurelis-Music
+source /workspace/toolchains/activate.sh
+bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4
+```
+
+- Ejecución final: exit 0, BUILD SUCCESSFUL en 1m 34s, 57 tareas (17 ejecutadas).
+- 38 pruebas: 0 fallos, 0 errores, 0 omitidas. Se mantienen las anteriores y se añaden
+  casos de datos privados, Home, rutas de colecciones y flujo real favoritos/playlists.
+- Debug compilado, firma válida; lint sin errores y 207 advertencias.
+- Se prueban datos conservados al reabrir, aislamiento por perfil, formatos corruptos
+  sin sobrescritura, deltas/umbrales reales, repetición de sesiones y colas sin IDs ausentes.
+- UI nativa Robolectric/API 33: carga/permiso/error/vacío, continuar sin reemplazar cola,
+  callbacks de selección local, crear/añadir playlist, favorito y eliminación cancelada/
+  confirmada. Se recorren Home→álbum→acciones con catálogo de prueba inyectado; no se
+  simula un motor de audio ni se afirma reproducción física a partir del fixture.
+- Se corrigió el bucle de medida del diálogo con ancho explícito y contenido acotado;
+  las mismas aserciones se ejecutan con gráficos nativos, sin saltar ni omitir la prueba.
+- Capturas de componentes reales con datos solo de prueba:
+  [Home clara](screenshots/home-light.png), [Home oscura](screenshots/home-dark.png).
+  Se revisó el fondo semántico del host y de la captura para evitar muestras de tema
+  claro sobre el fondo negro por defecto de la Activity de prueba.
+- Log local: `/workspace/toolchains/b05-validation-final.log`; informes XML habituales.
+- No se acredita reproducción/segundo plano en dispositivo, rendimiento de grandes
+  catálogos ni análisis/transiciones avanzados de AutoMix. B08/B11/B14 conservan esos trabajos.

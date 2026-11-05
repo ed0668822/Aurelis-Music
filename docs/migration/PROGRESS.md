@@ -5,7 +5,7 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B04 fue autorizado expresamente; B05 y siguientes no están autorizados.
+autorizado. B05 y B06 fueron autorizados expresamente juntos; B07 y siguientes no están autorizados.
 
 PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
 Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
@@ -69,8 +69,8 @@ significan que actualmente no exista el PR.
 
 ## Próximo bloque
 
-B05 — Home local, únicamente tras nueva autorización explícita del usuario
-y cierre de B04. No iniciar automáticamente.
+B05 y después B06, ambos autorizados en esta sesión. Cerrar/revisar/publicar cada
+bloque por separado. B07 requerirá nueva autorización.
 
 ## Verificaciones documentales B01
 
@@ -202,3 +202,32 @@ y cierre de B04. No iniciar automáticamente.
 - Límites: sin Home nueva, detalles álbum/artista, estadísticas ni controles EQ nuevos.
   Replay/Equalizer se exponen como estructuras existentes incompletas; no funciones simuladas.
 - Próximo bloque: B05, pendiente de nueva autorización.
+
+## B05 — Home local
+
+- Autorización: B05 y B06 concedidos juntos; se ejecuta primero B05.
+- Base: `2e82e1a2d87fc8f11452da2e5f0b0a31f597da09`; misma rama/PR #1.
+- Estado: implementación y dos revisiones completadas; entrega B05 en curso.
+- Cambios: LocalUserLibrary y LocalHomeData nuevos; Home/hero con datos/estados reales;
+  rutas y pantalla de colecciones nuevas, wiring en Application/MainActivity,
+  hook ListeningStats existente implementado y transición de sesión en PlaybackViewModel.
+  LocalAlbum tiene clave derivada sin colisiones; LibraryState.Error diferencia permiso.
+- Secciones sin registros no muestran resultados inventados. Playlists/favoritos tienen
+  persistencia privada y operaciones básicas necesarias para Home y Biblioteca.
+- AutoMix en Home es selección de cola local con QueueBuilder; análisis/transiciones B11 pendientes.
+- Revisión 1 (arquitectura/preservación): completada como pasada separada del mismo
+  agente. Se comprobaron claves/versiones privadas, aislamiento, corrupción sin
+  sobrescritura, resolución de IDs, callbacks reales de Home y cola local existente.
+  Sin nuevas dependencias ni cambios de firma/identidad; alcance avanzado de B08/B11 preservado.
+- Revisión 2 (integración/visual): completada como otra pasada del mismo agente.
+  38 pruebas correctas, 0 fallos/errores/omitidas; debug y firma verificados; lint
+  sin errores y 207 advertencias. Capturas clara/oscura revisadas y copiadas a docs.
+  Se verifican creación, membresía, favorito, eliminación cancelada/confirmada y
+  conservación de favoritos al borrar una lista en el grafo real.
+- El caso de diálogo detectó bucle de medida; se aisló renderer y
+  se corrigió fijando ancho del diálogo y acotando/desplazando su contenido, sin retirar aserciones.
+- Las capturas usan el fondo de aplicación explícito, también aplicado en el host.
+- Build final: exit 0, 1m 34s. Commit, Actions y publicación: pendientes de entrega.
+- Límites: seguimiento actual desde ViewModel, no servicio íntegro; Replay e integración
+  avanzada de B08 siguen pendientes, sin afirmar estadísticas de fondo completas.
+- Después de cerrar B05 se continuará B06, ya autorizado; no se pide permiso otra vez.

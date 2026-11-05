@@ -12,13 +12,17 @@ import coil3.memory.MemoryCache
 import coil3.request.crossfade
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.ProfileRepository
+import com.music.aurelis.data.LocalUserLibrary
+import com.music.aurelis.data.stats.ListeningStats
 
 class AurelisApplication : Application(), SingletonImageLoader.Factory {
+    val userLibrary by lazy { LocalUserLibrary(this) }
 
     override fun onCreate() {
         super.onCreate()
         ProfileRepository.init(this)
         SettingsRepository.init(this)
+        ListeningStats.init(userLibrary)
 
         val meta = getSharedPreferences("app_meta", MODE_PRIVATE)
         val lastVersion = meta.getInt("last_version_code", 0)

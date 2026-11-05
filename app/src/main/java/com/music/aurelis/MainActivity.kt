@@ -43,6 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.AppUpdateChecker
 import com.music.aurelis.data.AudioPermission
+import com.music.aurelis.data.LocalHomeData
+import com.music.aurelis.ui.navigation.LocalCollectionKind
+import com.music.aurelis.ui.screens.LocalCollectionScreen
 import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.playback.PlaybackViewModel
@@ -117,7 +120,8 @@ private fun AurelisApp() {
         if (updateInfo != null) showUpdateDialog = true
     }
     Box(Modifier.fillMaxSize()) {
-        AurelisNavigationContent(navigator, playbackViewModel, libraryViewModel, hazeState)
+        AurelisNavigationContent(navigator, playbackViewModel, libraryViewModel, hazeState,
+            onRequestAudioPermission = { permissionLauncher.launch(AudioPermission.requiredPermission()) })
         if (showUpdateDialog && updateInfo != null) {
             UpdateAvailableDialog(
                 version = updateInfo!!.version,
@@ -155,9 +159,12 @@ internal fun AurelisNavigationContent(
     playbackViewModel: PlaybackViewModel,
     libraryViewModel: LibraryViewModel,
     hazeState: HazeState = remember { HazeState() },
+    onRequestAudioPermission: () -> Unit = {},
 ) {
     val playbackState by playbackViewModel.state.collectAsState()
     val libraryUiState by libraryViewModel.uiState.collectAsState()
+    val userStore = (LocalContext.current.applicationContext as AurelisApplication).userLibrary
+    val userState by userStore.state.collectAsState()
     val route = navigator.visibleRoute()
     LaunchedEffect(route) {
         // Let the existing ViewModel report missing permission instead of leaving Loading forever.
@@ -171,6 +178,9 @@ internal fun AurelisNavigationContent(
     )
     val librarySuccess = libraryUiState.libraryState as? LibraryState.Success
     val allSongs = librarySuccess?.songs ?: emptyList()
+    val home = remember(allSongs, userState, playbackState.currentSong?.id) {
+        LocalHomeData.build(allSongs, userState, playbackState.currentSong?.id)
+    }
 
     AppNavigationHost(
         navigator = navigator,
@@ -180,8 +190,8 @@ internal fun AurelisNavigationContent(
             AppTab.HOME -> {
                 val listState = rememberLazyListState()
                 HomeScreen(
-                    recentlyPlayed = emptyList(),
-                    mostPlayed = emptyList(),
+                    recentlyPlayed = home.recent,
+                    mostPlayed = home.mostPlayed,
                     recentlyAdded = librarySuccess?.recentlyAdded ?: emptyList(),
                     albums = librarySuccess?.albums ?: emptyList(),
                     artists = librarySuccess?.artists ?: emptyList(),
@@ -191,11 +201,23 @@ internal fun AurelisNavigationContent(
                         if (idx >= 0) playbackViewModel.playSongs(allSongs, idx)
                     },
                     onSongLongPress = { },
-                    onAlbumClick = { },
-                    onArtistClick = { },
+                    onAlbumClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
+                    onArtistClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.name)) },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
                     contentPadding = PaddingValues(bottom = 180.dp),
+                    libraryState = libraryUiState.libraryState,
+                    favorites = home.favorites,
+                    recommendations = home.recommendations,
+                    playlists = userState.playlists,
+                    collectionsReadOnly = userState.readOnly,
+                    onRetry = { libraryViewModel.refresh() },
+                    onRequestPermission = onRequestAudioPermission,
+                    onOpenPlayer = { playbackViewModel.resume(); navigator.push(AppRoute.NowPlaying) },
+                    onAutoMix = { if (home.mix.isNotEmpty()) playbackViewModel.playSongs(home.mix, 0) },
+                    onOpenFavorites = { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
+                    onOpenPlaylists = { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
+                    onOpenPlaylist = { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it)) },
                 )
             }
 
@@ -204,6 +226,8 @@ internal fun AurelisNavigationContent(
                 val listState = rememberLazyListState()
                 val links = listOf(
                     LibraryLink(stringResource(R.string.songs), AurelisIcons.MusicNote) { navigator.push(AppRoute.LocalMusic) },
+                    LibraryLink(stringResource(R.string.home_favorites), AurelisIcons.Heart) { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
+                    LibraryLink(stringResource(R.string.home_playlists), AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
                     LibraryLink(stringResource(R.string.replay), AurelisIcons.Clock) { navigator.push(AppRoute.Replay) },
                     LibraryLink(stringResource(R.string.navigation_settings), AurelisIcons.Home) { navigator.push(AppRoute.Settings) },
                 )
@@ -258,6 +282,12 @@ internal fun AurelisNavigationContent(
                 )
                 AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
                 AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() })
+                is AppRoute.Collection -> LocalCollectionScreen(
+                    page, libraryUiState.libraryState, userStore,
+                    playbackState.currentSong?.id, playbackState.isPlaying,
+                    onBack = { navigator.pop() }, onOpen = { navigator.push(it) },
+                    onPlay = playbackViewModel::playSongs,
+                )
                 else -> error("Destination is not wired in the local graph: $page")
             }
         },

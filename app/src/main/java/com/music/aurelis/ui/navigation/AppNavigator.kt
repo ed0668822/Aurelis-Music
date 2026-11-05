@@ -10,6 +10,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.music.aurelis.data.model.LocalShelf
+import java.net.URLEncoder
+import java.net.URLDecoder
 
 sealed interface AppRoute {
     data object Settings : AppRoute
@@ -20,6 +22,7 @@ sealed interface AppRoute {
     data object LocalMusic : AppRoute
     data object NowPlaying : AppRoute
     data object Queue : AppRoute
+    data class Collection(val kind: LocalCollectionKind, val key: String = "") : AppRoute
 
     data class LibraryShowAll(val shelf: LocalShelf) : AppRoute
     data class ArtistShelf(val artistId: String, val shelf: LocalShelf) : AppRoute
@@ -31,6 +34,7 @@ sealed interface AppRoute {
 data class RouteEntry(val id: Long, val route: AppRoute, val detailDepth: Int)
 
 enum class AppTab { HOME, EXPLORE, LIBRARY, SEARCH }
+enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST }
 
 /** Only implemented, parameter-free destinations are restored in the current graph. */
 internal val AppRoute.navigationKey: String?
@@ -41,6 +45,7 @@ internal val AppRoute.navigationKey: String?
         AppRoute.LocalMusic -> "local-music"
         AppRoute.NowPlaying -> "now-playing"
         AppRoute.Queue -> "queue"
+        is AppRoute.Collection -> "collection:${kind.name}:${URLEncoder.encode(key, "UTF-8")}"
         else -> null
     }
 
@@ -51,7 +56,13 @@ private fun routeForKey(key: String): AppRoute? = when (key) {
     "local-music" -> AppRoute.LocalMusic
     "now-playing" -> AppRoute.NowPlaying
     "queue" -> AppRoute.Queue
-    else -> null
+    else -> if (key.startsWith("collection:")) runCatching {
+        val parts = key.split(':', limit = 3)
+        val kind = LocalCollectionKind.valueOf(parts[1])
+        val id = URLDecoder.decode(parts[2], "UTF-8")
+        require(id.isNotBlank() || kind in listOf(LocalCollectionKind.FAVORITES, LocalCollectionKind.PLAYLISTS))
+        AppRoute.Collection(kind, id)
+    }.getOrNull() else null
 }
 
 @Composable

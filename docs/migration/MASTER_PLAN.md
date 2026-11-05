@@ -2,8 +2,8 @@
 
 ## Alcance y referencias
 
-Documento iniciado en B01 (auditoría y planificación). B02, B03 y B04 fueron autorizados
-después e incorporan únicamente sus secciones específicas. B05 y siguientes no están autorizados.
+Documento iniciado en B01 (auditoría y planificación). B02–B06 fueron autorizados
+después e incorporan únicamente sus secciones específicas. B07 y siguientes no están autorizados.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -236,3 +236,47 @@ duplicadas consecutivas, retorno cola→reproductor→origen, raíz Inicio no in
 validación/restauración del Saver y pruebas Compose del grafo real con enlaces de
 Biblioteca/Ajustes, Atrás Android, estado de búsqueda, scroll de Ajustes y recreación
 de estado guardado. Ver BUILD_STATUS para resultados y límites de la simulación.
+
+## B05 — Home de música local
+
+Autorizado junto a B06, ejecutado primero como bloque separado. Se reutilizan Hero,
+carruseles, temas, formas y controles existentes; sin nuevo contenido remoto ni fuentes.
+Home recibe biblioteca, estado de reproducción y datos privados reales, no listas
+ficticias: continuar (reanuda sin cambiar posición/cola), recientes, más escuchadas,
+álbumes, artistas, favoritas, playlists, añadidas y recomendaciones locales. Apartados
+sin datos no inventan resultados; carga, permiso, error y biblioteca vacía tienen
+estados propios y acciones conectadas. Álbum/artista abren sus canciones actuales.
+
+LocalHomeData resuelve únicamente IDs presentes en el catálogo. AutoMix de Home
+es una **selección de cola local** con QueueBuilder existente: semilla actual/reciente/
+favorita, prioridad de favoritas y diversidad/deduplicación ya implementada. No es
+el análisis ni las transiciones avanzadas de B11 y no se presenta como tal.
+
+Prerrequisito compartido de B05/B06: LocalUserLibrary ofrece colecciones privadas
+por ProfileId sobre los ámbitos B02. Favoritos usan `song_ids`; playlists usan JSON
+`playlists_v1` (version=1, items con id/nombre/IDs ordenados y sin duplicados); escucha
+usa `listening_v1` (version=1, tracks con ms/plays/last). No se copian canciones ni
+se borran archivos. IDs que faltan se conservan para almacenamiento desmontable y
+se excluyen de reproducción/presentación mientras no se resuelven en MediaStore.
+Versiones desconocidas/JSON corrupto se preservan y bloquean escrituras, con aviso UI.
+No se cambian claves de perfil, preferencias, firmas ni applicationId.
+
+La UI básica permite crear/renombrar listas, añadir/quitar temas y eliminar una lista
+con confirmación. Eliminar una lista no elimina favoritos ni archivos musicales.
+Las rutas de colecciones serializan tipo/clave codificada, nunca modelos o bibliotecas.
+La clave derivada de álbum incluye longitud para evitar colisiones de separadores.
+
+ListeningStats sustituye su stub utilizando el hook de reproducción ya existente.
+Solo suma deltas positivos de 1–5000 ms (no saltos de seek); cuenta una reproducción
+al escuchar 30s o la mitad de una canción más corta, una vez por sesión. La transición
+de Media3 inicia sesión incluso en repetición del mismo tema. Se publica/guarda al
+primer registro, al calificar, cada 30s y al pausar/cambiar/limpiar mediante los hooks
+existentes. SharedPreferences.apply conserva el patrón asíncrono de ajustes; forzar
+el cierre puede perder el último intervalo. El registro depende del polling del
+ViewModel actual: la integración íntegra en servicio y gestión avanzada de historial/
+cola siguen en B08, junto con revisión de almacenamiento para catálogos muy grandes.
+
+No se considera B08 terminado por estos prerrequisitos. Su integración avanzada y
+la pantalla Replay siguen pendientes. B06 mejorará el catálogo y su actualización;
+B07 mantendrá la validación de reproducción/controles. No se afirman pruebas físicas
+ni todas las sesiones en segundo plano a partir de las pruebas de Home.

@@ -96,3 +96,20 @@ de detalle, mientras las rutas de datos complejos quedan diferidas.
 NavigationController y sus referencias estáticas de auditoría permanecen como legado
 sin uso en el grafo activo; no se usa navigateBack por decremento de índices.
 Home y callbacks de detalles de álbum/artista permanecen pendientes de B05/B06.
+
+## Home y datos reales B05
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Selección local | `data/LocalHomeData.kt` | Resuelve recientes/frecuentes/favoritas y recomendaciones contra el catálogo; QueueBuilder existente para cola local |
+| Persistencia básica | `data/LocalUserLibrary.kt` | Ámbitos B02, favoritos, playlists e indicadores de escucha por ID; versiones desconocidas conservadas sin escribir |
+| Registro real | `data/stats/ListeningStats.kt`, `playback/PlaybackViewModel.kt` | Se conecta el hook existente de deltas y transiciones; no motor nuevo |
+| Home | `ui/screens/HomeScreen.kt`, `ui/components/home/HomeHero.kt` | Estados de biblioteca y secciones reales; continuar sin reiniciar cola; no datos simulados |
+| Colecciones | `ui/screens/LocalCollectionScreen.kt` | Álbum/artista/favoritos y listas actuales, reproducción, favoritos y edición básica de listas con confirmación |
+| Rutas/integración | AppNavigator, MainActivity, AurelisApplication | Claves pequeñas de colecciones, estado reactivo privado y acciones reales de Home/Biblioteca |
+| Estado/modelo | LibraryState, LibraryViewModel, LocalAlbum | Error de permiso diferenciable y clave de álbum sin colisiones de separador |
+
+OfflinePlaylists y ListeningRecorder legados no forman una segunda persistencia activa;
+se mantiene un único LocalUserLibrary para estos datos. Su compatibilidad/integración
+avanzada se revisará en B08; no se declaran esos stubs como funciones completas.
+No se importó nuevo código de BitChord ni DSP/recursos externos en B05.

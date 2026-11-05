@@ -5,6 +5,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AppNavigatorTest {
+    @Test fun collectionRoutesRestoreSmallIdsIncludingUnicodeAndSeparators() {
+        for (route in listOf(AppRoute.Collection(LocalCollectionKind.FAVORITES),
+            AppRoute.Collection(LocalCollectionKind.PLAYLISTS),
+            AppRoute.Collection(LocalCollectionKind.PLAYLIST, "list-1"),
+            AppRoute.Collection(LocalCollectionKind.ALBUM, "Álbum: A + B / 100%"),
+            AppRoute.Collection(LocalCollectionKind.ARTIST, "Artista & banda"))) {
+            val navigator = AppNavigator().apply { push(route) }
+            assertEquals(route, AppNavigator.restoreState(requireNotNull(navigator.saveState()))?.visibleRoute())
+        }
+    }
     @Test fun nestedPagesReturnToTheSourceTabBeforeHome() {
         val navigator = AppNavigator()
         navigator.selectTab(AppTab.LIBRARY)

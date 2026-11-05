@@ -1,9 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="home_loading">Cargando tu biblioteca…</string>
+    <string name="home_empty">Tu biblioteca está vacía. Añade música al dispositivo para empezar.</string>
+    <string name="home_refresh">Actualizar biblioteca</string>
+    <string name="home_retry">Reintentar</string>
+    <string name="home_grant_permission">Conceder acceso a música</string>
+    <string name="home_favorites">Favoritos</string>
+    <string name="home_playlists">Playlists</string>
+    <string name="home_continue">CONTINUAR ESCUCHANDO</string>
+    <string name="home_listen">ESCUCHA AHORA</string>
+    <string name="home_automix">AutoMix · Selección local</string>
+    <string name="home_recommendations">Para escuchar en tu dispositivo</string>
+    <string name="collections_unavailable">No se pudieron cargar tus datos locales. Se conservarán sin modificar.</string>
+    <string name="collection_unavailable">Colección no disponible</string>
+    <string name="collection_empty">No hay canciones disponibles en esta colección.</string>
+    <string name="collection_missing_tracks">Algunas canciones ya no están disponibles en el dispositivo.</string>
+    <string name="collection_play">Reproducir</string>
+    <string name="collection_save">Guardar</string>
+    <string name="collection_cancel">Cancelar</string>
+    <string name="playlist_create">Crear playlist</string>
+    <string name="playlist_rename">Cambiar nombre</string>
+    <string name="playlist_delete">Eliminar playlist</string>
+    <string name="playlist_delete_confirm">¿Eliminar «%1$s»? Los archivos musicales se conservarán.</string>
+    <string name="playlists_empty">Todavía no tienes playlists.</string>
+    <string name="favorite_action">Cambiar favorito: %1$s</string>
+    <string name="playlist_add_track">Añadir a playlist: %1$s</string>
+    <string name="playlist_remove_track">Quitar de playlist: %1$s</string>
     <string name="navigation_settings">Ajustes</string>
     <string name="navigation_no_song">No hay ninguna canción seleccionada.</string>
     <string name="navigation_explore_pending">Explorar aún no está disponible.</string>
-    <string name="navigation_replay_empty">Todavía no hay estadísticas de escucha disponibles.</string>
+    <string name="navigation_replay_empty">El resumen de Replay aún no está disponible.</string>
     <string name="navigation_equalizer_pending">Los controles de esta pantalla de ecualización aún no están disponibles.</string>
     <string name="app_name">Aurelis Music</string>
 
