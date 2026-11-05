@@ -1,7 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -15,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.music.aurelis.BuildConfig
+import com.music.aurelis.data.ProfileAvatars
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import com.music.aurelis.data.model.ProfileId
 import com.music.aurelis.data.ProfileRepository
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.lyrics.LyricsSource
@@ -36,16 +40,37 @@ import com.music.aurelis.ui.components.*
 fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: () -> Unit = {}) {
     if (!isVisible) return
     val context = LocalContext.current
-    var name by remember { mutableStateOf(ProfileRepository.userName) }
-    var photo by remember { mutableStateOf(ProfileRepository.userPhotoUri) }
+    val profiles by ProfileRepository.state.collectAsState()
+    val active = profiles.profiles.firstOrNull { it.id == profiles.activeId }
+    val name = active?.name ?: "Aurelis User"
+    val photo = active?.avatar
+    val scope = rememberCoroutineScope()
     var editing by remember { mutableStateOf(false) }
+    var creating by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf<ProfileId?>(null) }
     var translation by remember { mutableStateOf(false) }
-    var photoError by remember { mutableStateOf(false) }
+    var profileError by remember { mutableStateOf<String?>(null) }
+    var importing by remember { mutableStateOf(false) }
+    var photoProfile by rememberSaveable { mutableStateOf(profiles.activeId.value) }
+    fun change(action: () -> Unit) {
+        try { action(); profileError = null } catch (error: Exception) { profileError = error.message ?: "No se pudo guardar el perfil." }
+    }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) try {
-            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            photo = uri.toString(); ProfileRepository.userPhotoUri = photo; photoError = false
-        } catch (_: Exception) { photoError = true }
+        if (uri != null) scope.launch {
+            importing = true
+            try { ProfileAvatars.import(context, ProfileId(photoProfile), uri); profileError = null }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { profileError = error.message ?: "No se pudo guardar la imagen." }
+            finally { importing = false }
+        }
+    }
+    if (profiles.readOnly) {
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
+            Text("Perfiles en modo de solo lectura", style = MaterialTheme.typography.titleLarge)
+            Text(profiles.error ?: "Reinicia la app para volver a intentarlo. Los datos se han conservado.")
+            TextButton(onClick = onDismiss) { Text("Atrás") }
+        }
+        return
     }
     val mode by SettingsRepository.themeMode.collectAsState()
     val glass by SettingsRepository.liquidGlass.collectAsState()
@@ -63,15 +88,31 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             Text("Ajustes", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         }
         SettingsGroup(header = "Perfil del dispositivo", topSpacing = 0.dp) {
-            Row(Modifier.fillMaxWidth().clickable { picker.launch(arrayOf("image/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clickable(enabled = !importing) { photoProfile = profiles.activeId.value; picker.launch(arrayOf("image/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Person, null)
                     if (photo != null) AsyncImage(photo, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 Column(Modifier.padding(start = 16.dp)) { Text(name, style = MaterialTheme.typography.titleLarge); Text("Toca para cambiar foto", style = MaterialTheme.typography.bodySmall) }
             }
-            if (photoError) Text("No se pudo conservar el acceso a esa imagen. Elige otra foto.", Modifier.padding(16.dp))
+            if (importing) Text("Guardando imagen…", Modifier.padding(16.dp))
+            if (photo != null) SettingsRow(Icons.Rounded.Delete, "Quitar foto", onClick = { change { ProfileAvatars.remove(profiles.activeId) } })
+            (profileError ?: profiles.error)?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
             SettingsRow(Icons.Rounded.Edit, "Nombre", value = name, onClick = { editing = true })
+        }
+        SettingsGroup(header = "Perfiles locales") {
+            Text("La música del dispositivo es compartida. Cada perfil conserva sus favoritos, playlists, historial, cola y ajustes.", Modifier.padding(16.dp))
+            profiles.profiles.forEach { profile ->
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(modifier = Modifier.weight(1f), enabled = profile.id != profiles.activeId, onClick = { change { ProfileRepository.switchTo(profile.id) } }) {
+                        Text(profile.name + if (profile.id == profiles.activeId) " · Activo" else " · Cambiar")
+                    }
+                    IconButton(enabled = profiles.profiles.size > 1, onClick = { deleting = profile.id }) {
+                        Icon(Icons.Rounded.Delete, "Eliminar perfil ${profile.name}")
+                    }
+                }
+            }
+            SettingsRow(Icons.Rounded.PersonAdd, "Crear perfil", "Sin correo, contraseña ni conexión.", onClick = { creating = true })
         }
         SettingsGroup(header = "Audio local") {
             SettingsRow(Icons.Rounded.Tune, "Equalizer", "Ecualizador, balance y amplitud estéreo", onClick = onOpenEqualizer)
@@ -108,13 +149,27 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         Spacer(Modifier.height(24.dp))
     }
     }
-    if (editing) {
-        var draft by remember { mutableStateOf(name) }
+    if (editing || creating) {
+        var draft by remember { mutableStateOf(if (creating) "" else name) }
+        var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
-            onDismissRequest = { editing = false }, title = { Text("Editar nombre") },
-            text = { OutlinedTextField(draft, { draft = it.take(60) }, singleLine = true) },
-            confirmButton = { TextButton(enabled = draft.isNotBlank(), onClick = { name = draft.trim(); ProfileRepository.userName = name; editing = false }) { Text("Guardar") } },
-            dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancelar") } })
+            onDismissRequest = { editing = false; creating = false }, title = { Text(if (creating) "Crear perfil" else "Editar nombre") },
+            text = { Column { OutlinedTextField(draft, { draft = it.take(60) }, singleLine = true, label = { Text("Nombre del perfil") }); error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
+            confirmButton = { TextButton(enabled = draft.isNotBlank(), onClick = {
+                try {
+                    if (creating) ProfileRepository.create(draft) else ProfileRepository.rename(profiles.activeId, draft)
+                    editing = false; creating = false
+                } catch (failure: Exception) { error = failure.message ?: "No se pudo guardar." }
+            }) { Text("Guardar") } },
+            dismissButton = { TextButton(onClick = { editing = false; creating = false }) { Text("Cancelar") } })
+    }
+    deleting?.let { id ->
+        val profile = profiles.profiles.firstOrNull { it.id == id }
+        if (profile != null) AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
+            onDismissRequest = { deleting = null }, title = { Text("¿Eliminar ${profile.name}?") },
+            text = { Text("Se eliminarán su avatar, favoritos, playlists, historial, cola y ajustes. Tus archivos musicales se conservarán. Esta acción no se puede deshacer.") },
+            confirmButton = { TextButton(onClick = { change { ProfileRepository.delete(id) }; deleting = null }) { Text("Eliminar") } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancelar") } })
     }
     if (translation) TranslationLanguageDialog(onDismiss = { translation = false }, onTranslate = { translation = false }, sendOnConfirm = false)
 }

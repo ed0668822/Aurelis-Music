@@ -20,7 +20,7 @@ enum class ProfileDataArea(internal val legacyFile: String, internal val key: St
  * so profile and area boundaries cannot collide. Device-wide stores (widget,
  * app metadata), MediaStore and shared media caches do not belong here.
  *
- * This provides storage scopes, not profile creation, switching or deletion.
+ * ProfileRepository owns creation, switching and deletion of these scopes.
  */
 class ProfileStorage(context: Context) {
     private val appContext = context.applicationContext

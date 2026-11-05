@@ -25,7 +25,7 @@ Cada fila identifica una referencia leída/listada, no una copia autorizada auto
 | AutoMix B11 | C:`playback/smart/TransitionPolicy.kt`; S:`playback/smart/TrackFeatures.kt` | mismos nombres bajo `playback/smart/` y DSP nativo | Auditar antes de copiar: origen declara Orchard/AGPL. Contratos destino difieren; no sustituir por nombre. Separar análisis/transiciones de recomendación local |
 | AutoMix remoto | C:`playback/smart/AutomixAnalysisSource.kt` | `playback/smart/AutomixAnalysisSource.kt` | Origen contiene resolución YouTube/Opus; excluir esa dependencia del flujo local |
 | Playlists B08 | No se seleccionó implementación origen | `data/OfflinePlaylists.kt` | Método observado devuelve lista vacía. Especificar persistencia en B02; no afirmar que otras rutas de playlists no existen sin trazarlas |
-| Perfiles B12 | No se seleccionó implementación origen | `data/ProfileRepository.kt` | Perfil único con nombre/foto en SharedPreferences privadas. Preparar aislamiento en B02; gestión múltiple en B12 |
+| Perfiles B12 | Implementación propia local; sin autenticación del origen | ProfileRepository, ProfileStorage, ProfileAvatars, ProfilePlaybackBinding y SettingsScreen | Crear/renombrar/cambiar/eliminar confirmado; seis áreas privadas, avatar y restauración de cola pausada; legado conservado |
 
 ## Límites y próximos detalles
 
@@ -219,3 +219,18 @@ YouTube/Opus y transiciones Orchard quedan fuera de esta selección local.
 | Cierre | RELEASE_READINESS.md | Distingue éxito local de producto completo/dispositivo/CI/licencias |
 
 Ningún cambio en B12 ni nueva integración de streaming/segundo motor.
+
+
+## Perfiles B12 y continuidad de B13
+
+- Aplicación: `libraries` reactivo reemplaza ámbito único; el repositorio saliente
+  queda cerrado y se recargan ajustes. MediaStore y cachés de letras son compartidos.
+- Servicio: ProfilePlaybackBinding usa el único ExoPlayer/MediaSession existente,
+  guarda antes de vaciar, restaura sin autoplay y cancela consultas obsoletas.
+- UI: SettingsScreen administra perfiles/avatares privados; MainActivity reinicia
+  páginas al cambiar; NowPlaying observa colecciones nuevas. B13 conserva DSP,
+  apariencia y letras, ahora con preferencias independientes por perfil.
+- Persistencia: registro privado v1 con borrados reintentables; `default` usa las
+  seis áreas legacy sin migración destructiva. Sin nuevas dependencias externas.
+- Pruebas añadidas: perfiles, corrupción/tombstones, copia de avatar nativa,
+  cambio/restore Media3, acciones pendientes, navegación y confirmación UI.

@@ -53,6 +53,28 @@ class PlayerIntegrationTest {
         compose.waitForIdle()
         compose.runOnIdle { player.pause() }
     }
+    @Test fun profileSwitchClearsPrivateNavigationAndBindsHomeToTheNewLibrary() {
+        start()
+        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate)
+        lateinit var profiles: ProfilePlaybackBinding
+        compose.runOnIdle {
+            profiles = ProfilePlaybackBinding(app, player, scope, songs = { listOf(song("1")) })
+            app.userLibrary.toggleFavorite("1")
+        }
+        try {
+            compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+            compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
+            compose.runOnIdle { ProfileRepository.switchTo(ProfileRepository.create("Nuevo")) }
+            compose.onNodeWithContentDescription("Cerrar reproductor").assertDoesNotExist()
+            compose.onNodeWithTag("mini-player").assertDoesNotExist()
+            compose.runOnIdle {
+                assertTrue(app.userLibrary.state.value.favorites.isEmpty())
+                assertNull(vm.state.value.currentSong)
+                assertFalse(player.playWhenReady)
+            }
+        } finally { compose.runOnIdle { profiles.close(); scope.coroutineContext[kotlinx.coroutines.Job]?.cancel() } }
+    }
+
     @Test fun miniPlayerOpensRealControlsAndQueueActionsStaySynchronized() {
         start()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()

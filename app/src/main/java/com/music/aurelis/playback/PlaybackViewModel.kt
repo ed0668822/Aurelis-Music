@@ -104,6 +104,20 @@ class PlaybackViewModel internal constructor(
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
+    private val profileListener = object : com.music.aurelis.data.ProfileSessionListener {
+        override fun beforeProfileChange(previous: com.music.aurelis.data.model.ProfileId, next: com.music.aurelis.data.model.ProfileId) {
+            playRequestJob?.cancel(); cancelMix()
+            if (controller == null) { connectionJob?.cancel(); connectionJob = null }
+            stopPositionPolling()
+            lyricsJob?.cancel(); translationJob?.cancel()
+            lyricsGeneration++; translationGeneration++; lastLyricsSongId = null
+            // The service alone clears its player after saving the outgoing snapshot.
+            _state.value = PlaybackState(isConnected = controller != null)
+        }
+        override fun afterProfileChange(active: com.music.aurelis.data.model.ProfileId) { syncState() }
+    }
+    init { com.music.aurelis.data.ProfileRepository.addListener(profileListener) }
+
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             syncState()
@@ -415,6 +429,7 @@ class PlaybackViewModel internal constructor(
     }
 
     override fun onCleared() {
+        com.music.aurelis.data.ProfileRepository.removeListener(profileListener)
         connectionJob?.cancel()
         playRequestJob?.cancel()
         mixJob?.cancel()

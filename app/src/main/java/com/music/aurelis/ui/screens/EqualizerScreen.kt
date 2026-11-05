@@ -17,6 +17,14 @@ import com.music.aurelis.ui.components.SegmentedControl
 
 @Composable
 fun EqualizerScreen(onBack: () -> Unit) {
+    val profiles by com.music.aurelis.data.ProfileRepository.state.collectAsState()
+    if (profiles.readOnly) {
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
+            Text("Los ajustes están en modo de solo lectura.")
+            TextButton(onClick = onBack) { Text("Atrás") }
+        }
+        return
+    }
     val enabled by SettingsRepository.equalizerEnabled.collectAsState()
     val mode by SettingsRepository.equalizerMode.collectAsState()
     val bands by SettingsRepository.equalizerBands.collectAsState()

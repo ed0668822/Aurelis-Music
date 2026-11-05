@@ -516,3 +516,39 @@ bloque por separado. B07 requerirá nueva autorización.
 - B13 completado; B14 verificado localmente y pendiente de cierre global según
   RELEASE_READINESS. Incorporar «Formato de licencias.csv» y autorizar B12 antes
   de completar esos pendientes. No se inicia B12 automáticamente.
+
+
+## B12 — Perfiles locales / B13 — integración por perfil (2026-11-05)
+
+- Autorización: B12 y B13 concedidos expresamente. B13 ya estaba completado;
+  solo se adapta su integración con los perfiles, sin repetir el bloque visual.
+- Base: `2ecce6e96d15f6e033a9ee407fa9f0958504c911`, misma rama y PR #1
+  «Aurelis Music Beta UI and components», sin modificar el título.
+- Cambios: registro persistente privado y metadata; creación/renombrado/cambio,
+  avatar privado y eliminación confirmada/reintentable. Ámbitos independientes
+  para preferencias, favoritos, playlists, historial y cola. Perfil legacy intacto.
+- Nuevos: ProfileAvatars, ProfilePlaybackBinding; LocalProfilesTest,
+  ProfileAvatarsTest, ProfilePlaybackTest y ProfilesIntegrationTest.
+- Modificados: Application, MainActivity, ProfileRepository/Storage,
+  LocalUserLibrary/QueueStore, SettingsRepository, PlaybackViewModel/Service,
+  Settings/NowPlaying/EqualizerScreen, fixture RecordingPlayer y pruebas de
+  playback/UI; MASTER_PLAN, COMPONENT_MAP, BUILD_STATUS, LICENSE_AUDIT,
+  RELEASE_READINESS y APK_EVIDENCE.
+- Revisión 1: pasada de código/arquitectura completada. Revisados callbacks del
+  servicio, orden guardar/cerrar/cambiar, cancelación de operaciones anteriores,
+  scopes de UI, almacenamiento, corrupción, limpieza limitada y licencias.
+  No se cambia identidad técnica, firma, secretos, dependencias ni motor de audio.
+- Estado: B12 implementado y B13 integrado por perfil, validación local completada.
+- Revisión 2: 126 casos debug y 126 release, sin fallos/errores/omitidos;
+  assemble y lint de ambas variantes correctos. ZIP, firma y avisos verificados.
+  Ambas revisiones son pasadas separadas del mismo agente, no dos revisores humanos.
+- Primera selección: 31 pruebas correctas, sin omisiones. Se corrigieron imports
+  de tests y el fixture Media3 al vaciar cola; avatares se prueban con decodificador
+  nativo para no aceptar imágenes inválidas por simulación. No se excluyeron casos.
+- Compilación: debug/release correctas, R8 y lint sin errores; evidencia en
+  BUILD_STATUS y APK_EVIDENCE. Commit y Actions se registran tras publicar.
+- Pendientes globales: CSV de licencias, procedencia/fuentes de binarios, Android
+  físico y servicios externos/CI del commit exacto. B12 ya tiene autorización;
+  no se debe seguir listando «B12 sin autorización» como bloqueo actual.
+- Siguiente trabajo: cierre de pendientes B14 según RELEASE_READINESS; no se inicia
+  automáticamente otro bloque con esta entrega B12/B13.

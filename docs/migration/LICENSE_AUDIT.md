@@ -226,3 +226,13 @@ v1.19.2/LICENSE, jhy/jsoup jsoup-1.18.1/LICENSE, checker-qual 3.48.3
 META-INF/LICENSE.txt del JAR y SPDX license-list-data AGPL-3.0-or-later.
 Son avisos íntegros, no componentes de ejecución nuevos; no se cambian modelos,
 dependencias ni copyright de contribuciones anteriores.
+
+
+## B12 / seguimiento B13 (2026-11-05)
+
+Implementación propia de ámbitos locales, gestión de perfiles y avatar; no se copia
+código adicional de BitChord ni se agregan dependencias. Se reutilizan Android,
+Media3, Compose, kotlinx y persistencia ya presentes. Avisos de archivos existentes
+conservados. Archivos nuevos sin cabecera Aurelis definitiva mientras falta
+«Formato de licencias.csv»; no se pretende cerrar la revisión legal de B14.
+No se modifican firmas, secretos, identificadores ni licencias de terceros.

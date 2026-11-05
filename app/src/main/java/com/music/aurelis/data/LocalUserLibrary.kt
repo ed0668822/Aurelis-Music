@@ -21,14 +21,15 @@ data class LocalUserLibraryState(
 /** Small, profile-private collections. Missing media IDs remain saved for removable storage. */
 class LocalUserLibrary(
     context: Context,
-    profileId: ProfileId = ProfileId.DEFAULT,
+    val profileId: ProfileId = ProfileRepository.profileId,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val storage = ProfileStorage(context)
     private val favorites = storage.open(profileId, ProfileDataArea.FAVORITES)
     private val playlists = storage.open(profileId, ProfileDataArea.PLAYLISTS)
     private val history = storage.open(profileId, ProfileDataArea.HISTORY)
-    private val mutableState = MutableStateFlow(read())
+    private var closed = false
+    private val mutableState = MutableStateFlow(read().let { if (ProfileRepository.state.value.readOnly) it.copy(readOnly = true) else it })
     val state = mutableState.asStateFlow()
     private val pendingListening = mutableState.value.listening.toMutableMap()
     private var sessionId: String? = null
@@ -64,7 +65,7 @@ class LocalUserLibrary(
         LocalUserLibraryState(readOnly = true)
     }
 
-    private fun writable() { check(!state.value.readOnly) { "Local collections could not be read" } }
+    private fun writable() { check(!closed && !state.value.readOnly && !ProfileRepository.state.value.readOnly) { "Local collections could not be read" } }
 
     @Synchronized fun toggleFavorite(songId: String) {
         writable(); require(songId.isNotBlank())
@@ -122,12 +123,13 @@ class LocalUserLibrary(
     }
 
     @Synchronized fun startListeningSession(songId: String?) {
+        if (closed) return
         flush()
         sessionId = songId; sessionMs = 0; counted = false
     }
 
     @Synchronized fun recordListening(song: LocalSong, deltaMs: Long, completed: Boolean) {
-        if (state.value.readOnly || song.id.isBlank() || deltaMs !in 1..5000) return
+        if (closed || state.value.readOnly || ProfileRepository.state.value.readOnly || song.id.isBlank() || deltaMs !in 1..5000) return
         if (sessionId != song.id) startListeningSession(song.id)
         sessionMs = (sessionMs.coerceAtMost(Long.MAX_VALUE - deltaMs) + deltaMs)
         val previous = pendingListening[song.id] ?: LocalListening()
@@ -144,8 +146,10 @@ class LocalUserLibrary(
         if (previous.lastPlayedAt == 0L || qualifies || now - lastFlush >= 30_000 || now < lastFlush) flush()
     }
 
+    @Synchronized fun close() { flush(); closed = true; mutableState.value = state.value.copy(readOnly = true) }
+
     @Synchronized fun flush() {
-        if (!dirty || state.value.readOnly) return
+        if (closed || !dirty || state.value.readOnly || ProfileRepository.state.value.readOnly) return
         val tracks = JSONObject()
         pendingListening.forEach { (id, value) -> tracks.put(id, JSONObject()
             .put("ms", value.listenedMs).put("plays", value.playCount).put("last", value.lastPlayedAt)) }

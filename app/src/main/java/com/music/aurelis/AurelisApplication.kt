@@ -12,16 +12,34 @@ import coil3.memory.MemoryCache
 import coil3.request.crossfade
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.ProfileRepository
+import com.music.aurelis.data.ProfileSessionListener
+import com.music.aurelis.data.model.ProfileId
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.stats.ListeningStats
 
 class AurelisApplication : Application(), SingletonImageLoader.Factory {
-    val userLibrary by lazy { LocalUserLibrary(this) }
+    private lateinit var mutableLibraries: MutableStateFlow<LocalUserLibrary>
+    val libraries: StateFlow<LocalUserLibrary> get() = mutableLibraries.asStateFlow()
+    val userLibrary: LocalUserLibrary get() = mutableLibraries.value
+    private val profileListener = object : ProfileSessionListener {
+        override fun beforeProfileChange(previous: ProfileId, next: ProfileId) { userLibrary.flush() }
+        override fun afterProfileChange(active: ProfileId) {
+            userLibrary.close()
+            SettingsRepository.init(this@AurelisApplication, active)
+            mutableLibraries.value = LocalUserLibrary(this@AurelisApplication, active)
+            ListeningStats.init(userLibrary)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         ProfileRepository.init(this)
         SettingsRepository.init(this)
+        mutableLibraries = MutableStateFlow(LocalUserLibrary(this, ProfileRepository.profileId))
+        ProfileRepository.addListener(profileListener)
         com.music.aurelis.data.lyrics.LyricsTranslation.cacheDir = cacheDir
         ListeningStats.init(userLibrary)
 

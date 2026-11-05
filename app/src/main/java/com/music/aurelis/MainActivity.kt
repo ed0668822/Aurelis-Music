@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.AppUpdateChecker
 import com.music.aurelis.data.AudioPermission
 import com.music.aurelis.data.LocalSearch
+import androidx.compose.runtime.key
 import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -188,9 +189,20 @@ internal fun AurelisNavigationContent(
 ) {
     val playbackState by playbackViewModel.state.collectAsState()
     val libraryUiState by libraryViewModel.uiState.collectAsState()
-    val userStore = (LocalContext.current.applicationContext as AurelisApplication).userLibrary
+    val userStore by (LocalContext.current.applicationContext as AurelisApplication).libraries.collectAsState()
     val userState by userStore.state.collectAsState()
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
+    val profiles by com.music.aurelis.data.ProfileRepository.state.collectAsState()
+    DisposableEffect(navigator) {
+        val listener = object : com.music.aurelis.data.ProfileSessionListener {
+            override fun beforeProfileChange(previous: com.music.aurelis.data.model.ProfileId, next: com.music.aurelis.data.model.ProfileId) {
+                actionSong = null
+                navigator.selectTab(AppTab.HOME)
+            }
+        }
+        com.music.aurelis.data.ProfileRepository.addListener(listener)
+        onDispose { com.music.aurelis.data.ProfileRepository.removeListener(listener) }
+    }
     val route = navigator.visibleRoute()
     LaunchedEffect(route) {
         // Let the existing ViewModel report missing permission instead of leaving Loading forever.
@@ -208,6 +220,7 @@ internal fun AurelisNavigationContent(
         LocalHomeData.build(allSongs, userState, playbackState.currentSong?.id)
     }
 
+    key(profiles.activeId) {
     AppNavigationHost(
         navigator = navigator,
         modifier = Modifier.background(MaterialTheme.colorScheme.background).hazeSource(hazeState),
@@ -386,6 +399,7 @@ internal fun AurelisNavigationContent(
             }
         },
     )
+    }
     actionSong?.let { song -> SongActionsDialog(song, userStore,
         onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null }) }
 

@@ -14,12 +14,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.music.aurelis.MainActivity
-import com.music.aurelis.AurelisApplication
-import com.music.aurelis.data.LocalQueueStore
-import com.music.aurelis.data.LocalMediaRepository
-import com.music.aurelis.data.AudioPermission
 import kotlinx.coroutines.*
-import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.playback.audio.DspChain
 import com.music.aurelis.playback.dsd.DsdExtractorsFactory
 
@@ -29,7 +24,7 @@ class AurelisPlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var dspChain: DspChain? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var recorder: ServicePlaybackRecorder? = null
+    private var profiles: ProfilePlaybackBinding? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -66,25 +61,7 @@ class AurelisPlaybackService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivity)
             .build()
-        val savedQueue = LocalQueueStore(this)
-        val snapshot = savedQueue.read()
-        recorder = ServicePlaybackRecorder(player, (application as AurelisApplication).userLibrary, savedQueue, serviceScope)
-        serviceScope.launch {
-            if (snapshot != null && AudioPermission.isGranted(this@AurelisPlaybackService)) {
-                try {
-                    val songs = LocalMediaRepository.getAllSongs(this@AurelisPlaybackService, SettingsRepository.filterNonMusicAudio.value)
-                    val (available, index) = snapshot.resolve(songs)
-                    if (player.mediaItemCount == 0 && available.isNotEmpty()) {
-                        val position = if (available[index].id == snapshot.ids.getOrNull(snapshot.index))
-                            snapshot.positionMs.coerceAtMost(available[index].durationMs.coerceAtLeast(0)) else 0L
-                        player.setMediaItems(available.map { it.toMediaItem() }, index, position)
-                        player.repeatMode = snapshot.repeat; player.shuffleModeEnabled = snapshot.shuffle
-                        // Idle/paused: only an explicit user command prepares and starts playback.
-                    }
-                } catch (cancelled: CancellationException) { throw cancelled }
-                catch (_: Exception) { /* Permission/provider unavailable: preserve the stored snapshot. */ }
-            }
-        }
+        profiles = ProfilePlaybackBinding(this, player, serviceScope)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
@@ -95,7 +72,7 @@ class AurelisPlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        recorder?.close(); recorder = null
+        profiles?.close(); profiles = null
         serviceScope.cancel()
         mediaSession?.run { player.release(); release() }
         mediaSession = null

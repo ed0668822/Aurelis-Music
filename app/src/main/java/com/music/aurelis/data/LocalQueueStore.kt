@@ -15,7 +15,7 @@ data class SavedLocalQueue(val ids: List<String>, val index: Int, val positionMs
         return available.map { it.second } to target
     }
 }
-class LocalQueueStore(context: Context, profileId: ProfileId = ProfileId.DEFAULT) {
+class LocalQueueStore(context: Context, profileId: ProfileId = ProfileRepository.profileId) {
     private val prefs = ProfileStorage(context).open(profileId, ProfileDataArea.QUEUE)
     var readOnly = false; private set
     fun read(): SavedLocalQueue? = try {
@@ -30,7 +30,7 @@ class LocalQueueStore(context: Context, profileId: ProfileId = ProfileId.DEFAULT
     } catch (_: Exception) { readOnly = true; null }
     init { read() }
     fun save(queue: SavedLocalQueue) {
-        if (readOnly) return
+        if (readOnly || ProfileRepository.state.value.readOnly) return
         require(queue.repeat in 0..2 && queue.positionMs >= 0 && (queue.ids.isEmpty() || queue.index in queue.ids.indices))
         prefs.edit().putString("queue_v1", JSONObject().put("version", 1).put("ids", JSONArray(queue.ids))
             .put("index", queue.index).put("position", queue.positionMs).put("repeat", queue.repeat)

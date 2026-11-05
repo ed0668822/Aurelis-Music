@@ -66,47 +66,47 @@ object SettingsRepository {
     val prioritizeSyllableSync = MutableStateFlow(false)
     val paxSenixApiKey = MutableStateFlow("")
 
-    fun init(context: Context) {
-        prefs = ProfileStorage(context).open(ProfileId.DEFAULT, ProfileDataArea.PREFERENCES)
+    fun init(context: Context, profileId: ProfileId = ProfileRepository.profileId) {
+        prefs = ProfileStorage(context).open(profileId, ProfileDataArea.PREFERENCES)
 
-        themeMode.value = prefs.getInt("theme_mode", 0).takeIf { it in 0..2 } ?: 0
-        dolbyAtmos.value = prefs.getBoolean("dolby_atmos", true)
-        liquidGlass.value = prefs.getBoolean("liquid_glass", true)
-        reduceAnimation.value = prefs.getBoolean("reduce_animation", false)
-        reduceDynamicBlur.value = prefs.getBoolean("reduce_dynamic_blur", false)
-        syncedLyrics.value = prefs.getBoolean("synced_lyrics", true)
-        blurUnfocusedLyrics.value = prefs.getBoolean("blur_lyrics", true)
-        filterNonMusicAudio.value = prefs.getBoolean("filter_non_music", true)
-        autoplay.value = prefs.getBoolean("autoplay", true)
-        crossfadeSeconds.value = prefs.getInt("crossfade", 0)
+        themeMode.value = readInt("theme_mode", 0).takeIf { it in 0..2 } ?: 0
+        dolbyAtmos.value = readBoolean("dolby_atmos", true)
+        liquidGlass.value = readBoolean("liquid_glass", true)
+        reduceAnimation.value = readBoolean("reduce_animation", false)
+        reduceDynamicBlur.value = readBoolean("reduce_dynamic_blur", false)
+        syncedLyrics.value = readBoolean("synced_lyrics", true)
+        blurUnfocusedLyrics.value = readBoolean("blur_lyrics", true)
+        filterNonMusicAudio.value = readBoolean("filter_non_music", true)
+        autoplay.value = readBoolean("autoplay", true)
+        crossfadeSeconds.value = readInt("crossfade", 0)
 
-        equalizerEnabled.value = prefs.getBoolean("eq_enabled", false)
-        equalizerMode.value = EqualizerMode.entries.getOrElse(prefs.getInt("eq_mode", 0)) { EqualizerMode.DYNAMIC }
-        equalizerToneX.value = prefs.getInt("eq_tone_x", 0)
-        equalizerToneY.value = prefs.getInt("eq_tone_y", 0)
-        equalizerFocused.value = prefs.getBoolean("eq_focused", false)
-        equalizerBalance.value = safeFloat(prefs.getFloat("eq_balance", 0f), -1f, 1f)
-        equalizerBands.value = (0 until 7).map { safeFloat(prefs.getFloat("eq_band_$it", 0f), -12f, 12f) }
+        equalizerEnabled.value = readBoolean("eq_enabled", false)
+        equalizerMode.value = EqualizerMode.entries.getOrElse(readInt("eq_mode", 0)) { EqualizerMode.DYNAMIC }
+        equalizerToneX.value = readInt("eq_tone_x", 0)
+        equalizerToneY.value = readInt("eq_tone_y", 0)
+        equalizerFocused.value = readBoolean("eq_focused", false)
+        equalizerBalance.value = safeFloat(readFloat("eq_balance", 0f), -1f, 1f)
+        equalizerBands.value = (0 until 7).map { safeFloat(readFloat("eq_band_$it", 0f), -12f, 12f) }
         equalizerPreset.value = runCatching {
-            EqualizerPreset.valueOf(prefs.getString("eq_preset", "FLAT") ?: "FLAT")
+            EqualizerPreset.valueOf(readString("eq_preset", "FLAT") ?: "FLAT")
         }.getOrDefault(EqualizerPreset.FLAT)
 
-        spatialAudio.value = prefs.getBoolean("spatial_audio", false)
-        loudnessNormalization.value = prefs.getBoolean("loudness_norm", false)
-        audioQuality.value = AudioQuality.entries.getOrElse(prefs.getInt("audio_quality", 2)) { AudioQuality.LOSSLESS }
-        hideVolumeBar.value = prefs.getBoolean("hide_volume_bar", false)
-        showNerdStats.value = prefs.getBoolean("show_nerd_stats", false)
-        lyricsOffsetMs.value = prefs.getInt("lyrics_offset_ms", 0)
-        showQueueHistory.value = prefs.getBoolean("show_queue_history", false)
+        spatialAudio.value = readBoolean("spatial_audio", false)
+        loudnessNormalization.value = readBoolean("loudness_norm", false)
+        audioQuality.value = AudioQuality.entries.getOrElse(readInt("audio_quality", 2)) { AudioQuality.LOSSLESS }
+        hideVolumeBar.value = readBoolean("hide_volume_bar", false)
+        showNerdStats.value = readBoolean("show_nerd_stats", false)
+        lyricsOffsetMs.value = readInt("lyrics_offset_ms", 0)
+        showQueueHistory.value = readBoolean("show_queue_history", false)
 
         // Lyrics / translation: the two collections need rebuilding from names
         // so a build that renames or removes a source does not deserialize into
         // an unreachable one.
-        translationLanguage.value = prefs.getString("translation_language", "") ?: ""
-        translationEndpoint.value = prefs.getString("translation_endpoint", "") ?: ""
-        translationSourceLanguage.value = prefs.getString("translation_source", "auto") ?: "auto"
-        paxSenixApiKey.value = prefs.getString("paxsenix_api_key", "") ?: ""
-        val savedSources = prefs.getStringSet("lyrics_sources", null)
+        translationLanguage.value = readString("translation_language", "") ?: ""
+        translationEndpoint.value = readString("translation_endpoint", "") ?: ""
+        translationSourceLanguage.value = readString("translation_source", "auto") ?: "auto"
+        paxSenixApiKey.value = readString("paxsenix_api_key", "") ?: ""
+        val savedSources = readStringSet("lyrics_sources", null)
         lyricsSources.value = if (savedSources != null) {
             LyricsSource.entries
                 .filter { it.name in savedSources && !it.hidden }
@@ -114,7 +114,7 @@ object SettingsRepository {
         } else {
             LyricsSource.offered.toSet()
         }
-        val savedOrder = prefs.getString("lyrics_source_order", null)
+        val savedOrder = readString("lyrics_source_order", null)
         lyricsSourceOrder.value = if (savedOrder != null) {
             LyricsSource.ordered(
                 savedOrder.split(',').mapNotNull { name ->
@@ -124,33 +124,42 @@ object SettingsRepository {
         } else {
             LyricsSource.offered
         }
-        prioritizeSyllableSync.value = prefs.getBoolean("prioritize_syllable_sync", false)
+        prioritizeSyllableSync.value = readBoolean("prioritize_syllable_sync", false)
     }
 
     // ── Existing setters ──────────────────────────────────────────────────────
-    fun setThemeMode(value: Int) { themeMode.value = value.takeIf { it in 0..2 } ?: 0; prefs.edit { putInt("theme_mode", themeMode.value) } }
-    fun setDolbyAtmos(value: Boolean) { dolbyAtmos.value = value; prefs.edit { putBoolean("dolby_atmos", value) } }
-    fun setLiquidGlass(value: Boolean) { liquidGlass.value = value; prefs.edit { putBoolean("liquid_glass", value) } }
-    fun setReduceAnimation(value: Boolean) { reduceAnimation.value = value; prefs.edit { putBoolean("reduce_animation", value) } }
-    fun setReduceDynamicBlur(value: Boolean) { reduceDynamicBlur.value = value; prefs.edit { putBoolean("reduce_dynamic_blur", value) } }
-    fun setSyncedLyrics(value: Boolean) { syncedLyrics.value = value; prefs.edit { putBoolean("synced_lyrics", value) } }
-    fun setBlurUnfocusedLyrics(value: Boolean) { blurUnfocusedLyrics.value = value; prefs.edit { putBoolean("blur_lyrics", value) } }
-    fun setFilterNonMusicAudio(value: Boolean) { filterNonMusicAudio.value = value; prefs.edit { putBoolean("filter_non_music", value) } }
-    fun setAutoplay(value: Boolean) { autoplay.value = value; prefs.edit { putBoolean("autoplay", value) } }
-    fun setCrossfadeSeconds(value: Int) { crossfadeSeconds.value = value; prefs.edit { putInt("crossfade", value) } }
+    fun setThemeMode(value: Int) { writable(); themeMode.value = value.takeIf { it in 0..2 } ?: 0; prefs.edit { putInt("theme_mode", themeMode.value) } }
+    fun setDolbyAtmos(value: Boolean) { writable(); dolbyAtmos.value = value; prefs.edit { putBoolean("dolby_atmos", value) } }
+    fun setLiquidGlass(value: Boolean) { writable(); liquidGlass.value = value; prefs.edit { putBoolean("liquid_glass", value) } }
+    fun setReduceAnimation(value: Boolean) { writable(); reduceAnimation.value = value; prefs.edit { putBoolean("reduce_animation", value) } }
+    fun setReduceDynamicBlur(value: Boolean) { writable(); reduceDynamicBlur.value = value; prefs.edit { putBoolean("reduce_dynamic_blur", value) } }
+    fun setSyncedLyrics(value: Boolean) { writable(); syncedLyrics.value = value; prefs.edit { putBoolean("synced_lyrics", value) } }
+    fun setBlurUnfocusedLyrics(value: Boolean) { writable(); blurUnfocusedLyrics.value = value; prefs.edit { putBoolean("blur_lyrics", value) } }
+    fun setFilterNonMusicAudio(value: Boolean) { writable(); filterNonMusicAudio.value = value; prefs.edit { putBoolean("filter_non_music", value) } }
+    fun setAutoplay(value: Boolean) { writable(); autoplay.value = value; prefs.edit { putBoolean("autoplay", value) } }
+    fun setCrossfadeSeconds(value: Int) { writable(); crossfadeSeconds.value = value; prefs.edit { putInt("crossfade", value) } }
+
+    // Malformed individual preferences keep their original bytes and fall back safely.
+    private fun readInt(key: String, fallback: Int) = runCatching { prefs.getInt(key, fallback) }.getOrDefault(fallback)
+    private fun readBoolean(key: String, fallback: Boolean) = runCatching { prefs.getBoolean(key, fallback) }.getOrDefault(fallback)
+    private fun readFloat(key: String, fallback: Float) = runCatching { prefs.getFloat(key, fallback) }.getOrDefault(fallback)
+    private fun readString(key: String, fallback: String?) = runCatching { prefs.getString(key, fallback) }.getOrDefault(fallback)
+    private fun readStringSet(key: String, fallback: Set<String>?) = runCatching { prefs.getStringSet(key, fallback) }.getOrDefault(fallback)
+
+    private fun writable() { check(!ProfileRepository.state.value.readOnly) { "Los perfiles están en modo de solo lectura." } }
 
     private fun safeFloat(value: Float, min: Float, max: Float): Float = if (value.isFinite()) value.coerceIn(min, max) else 0f
 
     // ── Equalizer setters ─────────────────────────────────────────────────────
-    fun setEqualizerEnabled(value: Boolean) { equalizerEnabled.value = value; prefs.edit { putBoolean("eq_enabled", value) } }
-    fun setEqualizerMode(value: EqualizerMode) { equalizerMode.value = value; prefs.edit { putInt("eq_mode", value.ordinal) } }
-    fun setEqualizerTone(x: Int, y: Int) {
+    fun setEqualizerEnabled(value: Boolean) { writable(); equalizerEnabled.value = value; prefs.edit { putBoolean("eq_enabled", value) } }
+    fun setEqualizerMode(value: EqualizerMode) { writable(); equalizerMode.value = value; prefs.edit { putInt("eq_mode", value.ordinal) } }
+    fun setEqualizerTone(x: Int, y: Int) { writable();
         equalizerToneX.value = x; equalizerToneY.value = y
         prefs.edit { putInt("eq_tone_x", x); putInt("eq_tone_y", y) }
     }
-    fun setEqualizerFocused(value: Boolean) { equalizerFocused.value = value; prefs.edit { putBoolean("eq_focused", value) } }
-    fun setEqualizerBalance(value: Float) { equalizerBalance.value = safeFloat(value, -1f, 1f); prefs.edit { putFloat("eq_balance", equalizerBalance.value) } }
-    fun setEqualizerBands(bands: List<Float>) {
+    fun setEqualizerFocused(value: Boolean) { writable(); equalizerFocused.value = value; prefs.edit { putBoolean("eq_focused", value) } }
+    fun setEqualizerBalance(value: Float) { writable(); equalizerBalance.value = safeFloat(value, -1f, 1f); prefs.edit { putFloat("eq_balance", equalizerBalance.value) } }
+    fun setEqualizerBands(bands: List<Float>) { writable();
         equalizerBands.value = List(7) { safeFloat(bands.getOrElse(it) { 0f }, -12f, 12f) }
         equalizerPreset.value = EqualizerPreset.matching(equalizerBands.value)
         prefs.edit {
@@ -158,7 +167,7 @@ object SettingsRepository {
             equalizerBands.value.forEachIndexed { i, v -> putFloat("eq_band_$i", v) }
         }
     }
-    fun setEqualizerPreset(value: EqualizerPreset) {
+    fun setEqualizerPreset(value: EqualizerPreset) { writable();
         equalizerPreset.value = value
         prefs.edit { putString("eq_preset", value.name) }
         if (value != EqualizerPreset.CUSTOM) {
@@ -167,25 +176,25 @@ object SettingsRepository {
     }
 
     // ── Spatial / Loudness setters ────────────────────────────────────────────
-    fun setSpatialAudio(value: Boolean) { spatialAudio.value = value; prefs.edit { putBoolean("spatial_audio", value) } }
-    fun setLoudnessNormalization(value: Boolean) { loudnessNormalization.value = value; prefs.edit { putBoolean("loudness_norm", value) } }
+    fun setSpatialAudio(value: Boolean) { writable(); spatialAudio.value = value; prefs.edit { putBoolean("spatial_audio", value) } }
+    fun setLoudnessNormalization(value: Boolean) { writable(); loudnessNormalization.value = value; prefs.edit { putBoolean("loudness_norm", value) } }
 
-    fun setAudioQuality(value: AudioQuality) {
+    fun setAudioQuality(value: AudioQuality) { writable();
         audioQuality.value = value
         prefs.edit { putInt("audio_quality", value.ordinal) }
     }
 
     // ── Player setters ────────────────────────────────────────────────────────
-    fun setHideVolumeBar(value: Boolean) { hideVolumeBar.value = value; prefs.edit { putBoolean("hide_volume_bar", value) } }
-    fun setShowNerdStats(value: Boolean) { showNerdStats.value = value; prefs.edit { putBoolean("show_nerd_stats", value) } }
-    fun setLyricsOffsetMs(value: Int) { lyricsOffsetMs.value = value; prefs.edit { putInt("lyrics_offset_ms", value) } }
-    fun setShowQueueHistory(value: Boolean) {
+    fun setHideVolumeBar(value: Boolean) { writable(); hideVolumeBar.value = value; prefs.edit { putBoolean("hide_volume_bar", value) } }
+    fun setShowNerdStats(value: Boolean) { writable(); showNerdStats.value = value; prefs.edit { putBoolean("show_nerd_stats", value) } }
+    fun setLyricsOffsetMs(value: Int) { writable(); lyricsOffsetMs.value = value; prefs.edit { putInt("lyrics_offset_ms", value) } }
+    fun setShowQueueHistory(value: Boolean) { writable();
         showQueueHistory.value = value
         prefs.edit { putBoolean("show_queue_history", value) }
     }
 
     // ── Lyrics / translation setters ──────────────────────────────────────────
-    fun setTranslationService(endpoint: String, source: String) {
+    fun setTranslationService(endpoint: String, source: String) { writable();
         val normalised = com.music.aurelis.data.lyrics.LyricsTranslation.normaliseEndpoint(endpoint)
         require(normalised != null)
         require(source == "auto" || source in com.music.aurelis.data.lyrics.TranslationLanguages.supportedLanguages)
@@ -193,33 +202,34 @@ object SettingsRepository {
         prefs.edit { putString("translation_endpoint", normalised); putString("translation_source", source) }
     }
 
-    fun setTranslationLanguage(value: String) {
+    fun setTranslationLanguage(value: String) { writable();
         translationLanguage.value = value
         prefs.edit { putString("translation_language", value) }
     }
 
-    fun setLyricsSources(value: Set<LyricsSource>) {
+    fun setLyricsSources(value: Set<LyricsSource>) { writable();
         lyricsSources.value = value
         prefs.edit { putStringSet("lyrics_sources", value.map { it.name }.toSet()) }
     }
 
-    fun setLyricsSourceOrder(value: List<LyricsSource>) {
+    fun setLyricsSourceOrder(value: List<LyricsSource>) { writable();
         lyricsSourceOrder.value = value
         prefs.edit { putString("lyrics_source_order", value.joinToString(",") { it.name }) }
     }
 
-    fun setPrioritizeSyllableSync(value: Boolean) {
+    fun setPrioritizeSyllableSync(value: Boolean) { writable();
         prioritizeSyllableSync.value = value
         prefs.edit { putBoolean("prioritize_syllable_sync", value) }
     }
 
-    fun setPaxSenixApiKey(value: String) {
+    fun setPaxSenixApiKey(value: String) { writable();
         paxSenixApiKey.value = value
         prefs.edit { putString("paxsenix_api_key", value) }
     }
 
     /** Back to the enum's own default order and to "every visible source on". */
     fun resetLyricsSourceSettings() {
+        writable()
         lyricsSources.value = LyricsSource.offered.toSet()
         lyricsSourceOrder.value = LyricsSource.offered
         prioritizeSyllableSync.value = false

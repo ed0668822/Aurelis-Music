@@ -383,3 +383,32 @@ al cambiar curvas; no afirma medición de consumo físico. B12 continúa pendien
 Consulta web tras publicar B14: run #116 en curso, #115 histórico figura exitoso.
 No se acreditó el SHA exacto desde la página específica y no se afirma CI verde
 del commit final/documental; consultar PROGRESS/Actions al retomar.
+
+
+## B12 y continuidad B13 — 2026-11-05
+
+Base `2ecce6e96d15f6e033a9ee407fa9f0958504c911` más cambios de perfiles.
+Compilación real debug/release, R8, pruebas y lint de ambas variantes: exit 0,
+`BUILD SUCCESSFUL in 5m 39s`.
+
+```bash
+source /workspace/toolchains/activate.sh
+bash gradlew :app:testDebugUnitTest :app:testReleaseUnitTest :app:assembleDebug :app:assembleRelease :app:lintDebug :app:lintRelease --no-daemon --max-workers=4
+```
+
+- Debug: 126 casos, 0 fallos/errores/omitidos; lint 0 errores,
+  218 advertencias.
+- Release: 126 casos, 0 fallos/errores/omitidos; lint 0 errores,
+  217 advertencias.
+- Selección inicial: 31 casos correctos. Errores de imports y fixtures corregidos
+  antes de la validación completa; imágenes inválidas usan decoder nativo real.
+- Dos pasadas separadas del mismo agente: código/arquitectura y funcionamiento/
+  integración; UI Compose nativa, persistencia, corrupción/borrado, restore Media3,
+  navegación y acciones pendientes, además de toda la suite existente.
+- ZIP íntegro, nueve avisos legales idénticos y doce .so ARM64 en cada APK.
+  Firma verificada por apksigner; mismo fallback original de desarrollo.
+- APK_EVIDENCE.json actualizado para estos artefactos; no reutilizar hashes B14.
+- Logs locales: /workspace/toolchains/b12-targeted.log, b12-final.log y
+  b12-debug-signature.log / b12-release-signature.log. No son archivos del repo.
+- No se han probado dispositivos físicos; servicios elegidos y CI del commit
+  publicado se registran aparte. Sin cambios de secretos, firma ni applicationId.

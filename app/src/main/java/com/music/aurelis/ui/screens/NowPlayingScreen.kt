@@ -109,7 +109,7 @@ fun NowPlayingScreen(
         if (uri != null) playbackViewModel.importLyrics(uri, importSongId)
     }
     val song = state.currentSong
-    val userStore = (LocalContext.current.applicationContext as AurelisApplication).userLibrary
+    val userStore by (LocalContext.current.applicationContext as AurelisApplication).libraries.collectAsState()
     var showSongActions by remember { mutableStateOf(false) }
     val themeViewModel: DynamicThemeViewModel = viewModel()
 

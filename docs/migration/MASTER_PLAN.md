@@ -3,7 +3,7 @@
 ## Alcance y referencias
 
 Documento iniciado en B01 (auditoría y planificación). B02–B11 fueron autorizados
-después e incorporan únicamente sus secciones específicas. B13/B14 autorizados después de B11; B12 no está autorizado y sigue pendiente.
+después e incorporan únicamente sus secciones específicas. B13/B14 autorizados después de B11. El 5 de noviembre B12 y el seguimiento de B13 fueron autorizados; se integran en la sección final sin repetir los bloques anteriores.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -556,3 +556,56 @@ en release y nueve textos legales iguales a sus fuentes. Hashes/tamaños quedan
 en APK_EVIDENCE.json. Autorizaciones y pendientes se reflejan en PROGRESS.
 No se hace merge ni se publica APK como versión final. B12, CSV, hardware y cierre
 legal/CI deben resolverse antes de cerrar globalmente B14.
+
+
+## B12 y seguimiento B13 — Perfiles locales (2026-11-05)
+
+Base: `2ecce6e96d15f6e033a9ee407fa9f0958504c911`. Autorización explícita para
+B12/B13; B13 ya estaba implementado. Este trabajo añade perfiles e integra sus
+ajustes con la personalización existente, sin reimplementar B13 ni cerrar B14.
+
+Arquitectura/archivos: ProfileRepository mantiene un registro privado JSON v1
+(`aurelis_profiles_registry/profiles_v1`) de IDs UUID estables, perfil activo y
+eliminaciones pendientes. ProfileStorage conserva los archivos legacy del perfil
+`default`; los nuevos usan un archivo privado por área. No se copia ni borra el
+perfil original al crear otro. Nombre único de 1–60 caracteres; máximo 20 perfiles.
+SettingsRepository vuelve a cargar los ajustes al cambiar de perfil. Aplicación
+expone StateFlow de LocalUserLibrary y revoca el repositorio saliente. MainActivity,
+NowPlaying y SettingsScreen observan el ámbito activo; se restablecen Home,
+navegación guardada, acciones y páginas privadas al cambiar de perfil.
+
+ProfilePlaybackBinding pertenece al servicio. Guarda cola/historial salientes,
+pausa y vacía el mismo ExoPlayer antes de enlazar el siguiente perfil; restaura
+posición, repetición y shuffle sin iniciar reproducción. Cancela restauraciones
+obsoletas. PlaybackViewModel cancela taps pendientes, AutoMix, letras y traducción.
+No se crean otro motor ni sesiones multimedia. Los ajustes de B13 siguen llegando
+al DSP del servicio y al tema por sus flujos existentes.
+
+ProfileAvatars copia URI content de SAF a filesDir/profiles/ID, fuera del hilo UI,
+con límite de 2 MB, decodificación muestreada hasta 512px y PNG privado. Importación
+fallida/cancelada conserva la foto anterior y limpia el archivo nuevo. No necesita
+permiso persistente del proveedor. Quitar foto solo elimina archivos propios de
+ese directorio; las referencias legacy externas se conservan sin borrar su origen.
+
+Eliminar requiere confirmación explícita de la UI. El último perfil no se puede
+borrar; al borrar el activo se cambia antes a otro. El registro conserva una
+marca de borrado antes de limpiar las seis áreas y avatar; si se interrumpe se
+reintenta al iniciar. No se tocan audio, MediaStore ni cachés compartidas de letras.
+Datos desconocidos/corruptos del registro se conservan en modo de solo lectura;
+ajustes individuales mal tipados usan valores seguros sin reescribirlos al leer.
+Los perfiles son ámbitos locales, no autenticación ni aislamiento entre usuarios
+Android. No usan correo, contraseña, API ni dependencia nueva.
+
+Riesgos/dificultad: alta por ciclo de vida de servicio, callbacks y preservación de
+datos. Validación de aceptación: reinicio mantiene perfil/nombre/datos; favoritos,
+playlists, historial, cola y ajustes aislados; no se pierde legacy; una restauración
+vieja no reemplaza otra cola; referencias antiguas no escriben; eliminación no
+borra canciones; UI requiere confirmación. LocalProfilesTest, ProfileAvatarsTest,
+ProfilePlaybackTest, ProfilesIntegrationTest y extensiones de pruebas de playback/UI
+cubren esos límites; suites completas debug/release y lint comprueban regresiones.
+Prueba física sigue pendiente en B14 (servicio real, notificación, SAF y audio).
+
+Dos revisiones en pasadas separadas del mismo agente: código/arquitectura y luego
+funcionamiento/integración, con evidencia final en BUILD_STATUS. No equivalen a dos
+revisores humanos independientes. Cabeceras definitivas pendientes del CSV, como
+antes; no se retiran avisos originales ni se copia código de BitChord en B12.

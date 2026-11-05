@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import com.music.aurelis.AurelisApplication
+import com.music.aurelis.data.ProfileRepository
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.model.LocalSong
 import kotlinx.coroutines.*
@@ -39,6 +40,19 @@ class PlaybackIntegrationTest {
     @After fun cleanup() { store.clear(); Dispatchers.resetMain() }
     private fun settle() { dispatcher.scheduler.runCurrent(); shadowOf(Looper.getMainLooper()).idle(); dispatcher.scheduler.runCurrent() }
     private fun play() { vm.playSongs(listOf(song("1"), song("2"), song("3"))); settle() }
+
+    @Test fun switchingProfileCancelsTapWaitingForControllerAndNewTapCanConnect() {
+        val gate = CompletableDeferred<Unit>()
+        vm = PlaybackViewModel(app) { gate.await(); player }; store.put("player", vm)
+        vm.playSongs(listOf(song("1"))); settle()
+        val second = ProfileRepository.create("Segundo")
+        ProfileRepository.switchTo(second)
+        gate.complete(Unit); settle()
+        assertEquals(0, player.mediaItemCount)
+        assertNull(vm.state.value.currentSong)
+        vm.playSongs(listOf(song("2"))); settle()
+        assertEquals("2", vm.state.value.currentSong?.id)
+    }
 
     @Test fun immediateTapWaitsForConnectionClampsIndexAndUsesCompleteMetadata() {
         val gate = CompletableDeferred<Unit>()

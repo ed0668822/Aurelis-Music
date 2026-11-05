@@ -35,8 +35,11 @@ internal class RecordingPlayer : SimpleBasePlayer(Looper.getMainLooper()) {
     override fun handleSetShuffleModeEnabled(value: Boolean) = done(snapshot.buildUpon().setShuffleModeEnabled(value).build())
     override fun handleRemoveMediaItems(from: Int, to: Int): com.google.common.util.concurrent.ListenableFuture<*> {
         val remaining = snapshot.playlist.toMutableList().apply { subList(from, to).clear() }
-        return done(snapshot.buildUpon().setPlaylist(remaining).setCurrentMediaItemIndex(
-            if (from < snapshot.currentMediaItemIndex) snapshot.currentMediaItemIndex - (to - from) else snapshot.currentMediaItemIndex).build())
+        val index = if (remaining.isEmpty()) C.INDEX_UNSET else
+            (if (from < snapshot.currentMediaItemIndex) snapshot.currentMediaItemIndex - (to - from) else snapshot.currentMediaItemIndex).coerceIn(0, remaining.lastIndex)
+        val builder = snapshot.buildUpon().setPlaylist(remaining).setCurrentMediaItemIndex(index)
+        if (remaining.isEmpty()) builder.setPlaybackState(Player.STATE_IDLE).setContentPositionMs(0L)
+        return done(builder.build())
     }
     override fun handleMoveMediaItems(from: Int, to: Int, newIndex: Int): com.google.common.util.concurrent.ListenableFuture<*> {
         val current = snapshot.playlist.getOrNull(snapshot.currentMediaItemIndex)?.uid
