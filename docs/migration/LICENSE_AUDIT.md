@@ -139,3 +139,20 @@ automáticamente en esta ruta. Caché privada no se redistribuye en el repositor
 Fixtures y captura usan texto original de pruebas, no letras atribuidas a artistas
 reales ni traducciones simuladas. La consulta de LRCLIB en vivo permanece sin verificar
 por la política de red del entorno; no se afirma haber descargado letras reales.
+
+## Registro B10
+
+Se amplía el cliente existente y sus componentes, preservando avisos; sin nuevas
+dependencias ni código de servidor copiado. Se leyeron README y ruta /translate
+de https://github.com/LibreTranslate/LibreTranslate (main) como documentación del
+protocolo: servicio autoalojable, q array y translatedText; README declara AGPLv3.
+No se incorpora ni distribuye ese servidor. No se afirma una certificación legal
+de servidores ajenos ni que la licencia del programa conceda derechos sobre letras.
+
+Los endpoints Google/Input Tools heredados no acreditaban condiciones de uso en
+B01; quedan fuera del flujo de traducción activo. No se inventa un endpoint público
+ni se redistribuyen modelos propietarios. El usuario debe configurar un servicio
+autorizado compatible sin clave, aceptar su privacidad/condiciones y confirmar
+cada traducción. No se despliega servicio ni se envían letras durante las pruebas.
+Datos y traducciones de fixtures son propios y solo de pruebas; captura identificada
+como fixture. LICENSE/NOTICE conservados; CSV de cabeceras sigue pendiente.

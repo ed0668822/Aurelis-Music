@@ -5,7 +5,7 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B05 y B06 fueron autorizados juntos; B07 autorizado después; B08/B09 autorizados juntos. B10 y siguientes no están autorizados.
+autorizado. B05 y B06 fueron autorizados juntos; B07 autorizado después; B08/B09 autorizados juntos; B10/B11 autorizados después. B12 y siguientes no están autorizados.
 
 PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
 Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
@@ -374,3 +374,28 @@ bloque por separado. B07 requerirá nueva autorización.
 - Este cierre se publica como commit documental posterior sin reescribir historial.
   B08 y B09 cerrados; detener y esperar autorización para B10. Mantener pendientes
   pruebas físicas y verificación de LRCLIB/Actions en vivo, sin repetir la auditoría.
+
+## B10 — Traducción
+
+- Autorización: B10 y B11 concedidos juntos; ejecutar primero B10.
+- Base: `3eb1867a812c6b9ba2b2ebcf42b80fbc4fe3dde2`; misma rama y PR #1.
+- Estado: implementación y doble revisión completadas; publicando B10.
+- Modificados: LyricsTranslation, TranslationLanguages, SettingsRepository,
+  AurelisApplication, PlaybackViewModel, TranslationLanguageDialog,
+  SyncedLyricsPanel y NowPlayingScreen; nuevo TranslationTest y ampliación de
+  PlayerIntegrationTest. Cinco documentos y captura bilingüe al cierre.
+- Revisión 1: pasada separada del mismo agente sobre consentimiento explícito,
+  configuración HTTPS sin secretos, protocolo/lotes, aislamiento de caché v4,
+  límites/escritura atómica, cancelación, generación y preservación del original.
+  No se usan endpoints Google/Input Tools en la ruta activa de traducción.
+- Revisión 2: segunda pasada del mismo agente completada. 93 pruebas correctas,
+  0 fallos/errores/omitidas, incluidas protocolo, caché tras expulsión de memoria,
+  aislamiento por contenido/idioma/servidor, errores y cancelación; diálogo cancelado
+  no envía, original bilingüe intacto y traducción atrasada descartada.
+  Captura bilingüe inspeccionada; no se afirman revisores humanos independientes.
+- Build final: exit 0 en 1m 55s, APK debug y firma verificados; lint 0 errores y
+  210 advertencias. Actions bloqueado por proxy CONNECT 403, estado pendiente.
+- Límite operativo: necesita servidor LibreTranslate-compatible autorizado, sin
+  clave, configurado por el usuario. No hay servidor desplegado ni traducción
+  remota en vivo verificada. Fixtures solo bajo tests, nunca letras de producción.
+- Próximo bloque B11 ya autorizado; B12 no autorizado.

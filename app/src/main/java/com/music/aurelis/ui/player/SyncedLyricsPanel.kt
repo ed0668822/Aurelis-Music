@@ -43,6 +43,7 @@ fun SyncedLyricsPanel(
     modifier: Modifier = Modifier,
     centerFocus: Boolean = false,
     isSynced: Boolean = true,
+    translatedLines: List<LyricLine>? = null,
 ) {
     if (lines.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -76,6 +77,11 @@ fun SyncedLyricsPanel(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 16.dp)
                         .semantics { selected = isActive }
                         .clickable(enabled = isSynced) { onSeekToLine(line.timeMs) })
+                translatedLines?.getOrNull(index)?.takeIf { it.text.isNotBlank() && it.text != line.text }?.let { translated ->
+                    Text(translated.text, style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp))
+                }
             }
         }
     }

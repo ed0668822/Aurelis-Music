@@ -2,8 +2,8 @@
 
 ## Alcance y referencias
 
-Documento iniciado en B01 (auditoría y planificación). B02–B09 fueron autorizados
-después e incorporan únicamente sus secciones específicas. B08 y B09 autorizados juntos; B10 y siguientes no están autorizados.
+Documento iniciado en B01 (auditoría y planificación). B02–B11 fueron autorizados
+después e incorporan únicamente sus secciones específicas. B10 y B11 autorizados juntos; B12 y siguientes no están autorizados.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -419,3 +419,32 @@ LRCLIB codifica parámetros y filtra coincidencias de título/artista/duración
 (tolerancia 5 s); sin coincidencia se informa ausencia/fallo, no se toma otro tema.
 Los permisos de contenido siguen siendo responsabilidad del proveedor/usuario;
 la licencia de servidor no concede derechos sobre cualquier letra.
+
+## B10 — Traducción y vista bilingüe
+
+Base `3eb1867a812c6b9ba2b2ebcf42b80fbc4fe3dde2`. El selector anterior solo
+contenía Close; ahora ofrece idioma original/auto, destino y servidor HTTPS
+compatible con LibreTranslate sin clave. No se inventa un servidor público ni
+se presume permiso para endpoints no documentados. **Requiere configurar un
+servidor autorizado y disponible**; no se distribuye ni despliega uno en este bloque.
+Solo confirmar «Traducir» permite enviar texto. Cancelar/cerrar no solicita nada.
+Se informa del envío de letras; se rechazan HTTP, credenciales en URL, query y
+fragmentos, y el cliente de producción no sigue redirecciones. No se añaden claves.
+
+Se reutiliza LyricsTranslation: slots, lotes, reconstrucción y límites de caché.
+Ruta activa usa POST /translate con q array/source/target/format=text según la API
+pública oficial LibreTranslate. Máximo dos lotes concurrentes; respuestas vacías,
+parciales o inválidas no se muestran como traducciones. Original, tiempos y huecos
+se mantienen; traducción aparece debajo de cada línea. No se afirma sincronización
+por palabra de la traducción. Estados carga/error/mismo idioma/caché y ocultar.
+Las respuestas de otra petición/canción/versión de letra se descartan; cancelación
+cancela la llamada OkHttp. No se habilitan romanización ni endpoints legacy.
+
+Caché v4 privada configurada en Application, separada de v3: clave SHA-256 de
+servidor, idiomas, ID y contenido original; memoria LRU 12, disco gzip 2 MiB
+acotado, lectura limitada y escritura atómica. Permite traducido guardado sin red
+con el mismo servidor/idiomas/texto configurados. Si la caché falta y el servidor
+no responde, se conserva el original y se informa el error, sin resultados simulados.
+Límites de entrada: 500 slots/30 000 caracteres, 3500 por slot; respuestas hasta
+512 KiB por lote. Cinco idiomas del catálogo existente; modelos reales dependen
+del servidor. Condiciones, privacidad y cuotas de cada servidor deben ser respetadas.

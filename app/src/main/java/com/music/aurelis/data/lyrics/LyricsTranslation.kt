@@ -3,6 +3,12 @@ package com.music.aurelis.data.lyrics
 
 import com.music.aurelis.data.model.LocalSong
 import java.io.File
+import com.music.aurelis.data.SettingsRepository
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import org.json.JSONArray
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.MessageDigest
@@ -34,17 +40,8 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 
-/**
- * Lightweight, on-demand lyric translation.
- *
- * Translation models are deliberately not installed on the device. A model for
- * every app language would cost tens of megabytes each; translated lyric text
- * is normally only a few kilobytes. Requests are batched and the compact result
- * is kept in a bounded cache under [Context.getCacheDir], so Android may reclaim
- * it and the feature can never grow without limit.
- *
- * Only endpoint reached: https://translate.googleapis.com/translate_a/single
- * (Google Translate) — one of the network calls the port allows.
+/** Explicit translation through a configured LibreTranslate-compatible HTTPS server.
+ * Legacy romanization helpers are retained but are not called by the active translator.
  */
 object LyricsTranslation {
     sealed interface Result {
@@ -71,11 +68,9 @@ object LyricsTranslation {
 
     private const val ENDPOINT = "https://translate.googleapis.com/translate_a/single"
     private const val INPUT_TOOLS_ENDPOINT = "https://inputtools.google.com/request"
-    // Version 3 invalidates answers cached before the Latin-script retry existed;
-    // otherwise a song that once came back untranslated would never take the
-    // repaired path after the app is updated.
-    private const val CACHE_VERSION = 3
-    private const val CACHE_DIRECTORY = "lyrics_translation_v3"
+    // v4 separates explicitly configured services from the legacy endpoint cache.
+    private const val CACHE_VERSION = 4
+    private const val CACHE_DIRECTORY = "lyrics_translation_v4"
     private const val MAX_CACHE_BYTES = 2L * 1024L * 1024L
     private const val MAX_BATCH_CHARS = 3_500
     private const val MAX_PARALLEL_REQUESTS = 2
@@ -104,6 +99,8 @@ object LyricsTranslation {
     var cacheDir: File? = null
     private val client by lazy {
         okhttp3.OkHttpClient.Builder()
+            .followRedirects(false)
+            .followSslRedirects(false)
             .callTimeout(12, TimeUnit.SECONDS)
             .connectTimeout(5, TimeUnit.SECONDS)
             .build()
@@ -135,96 +132,81 @@ object LyricsTranslation {
         val sourceWeight: Int,
     )
 
+    internal fun normaliseEndpoint(value: String): String? {
+        val url = value.trim().toHttpUrlOrNull() ?: return null
+        if (!url.isHttps || url.username.isNotEmpty() || url.password.isNotEmpty() || url.query != null || url.fragment != null) return null
+        return url.toString().trimEnd('/')
+    }
+
     suspend fun translate(
         trackId: String,
         lines: List<LyricLine>,
         targetLanguageTag: String,
+        endpoint: String = SettingsRepository.translationEndpoint.value,
+        sourceLanguageTag: String = SettingsRepository.translationSourceLanguage.value,
+        allowNetwork: Boolean = true,
+        httpClient: okhttp3.OkHttpClient = client,
     ): Result {
-        // Sent as given rather than reduced to a base language: zh-CN and
-        // zh-TW are the same language in two scripts, and canonicalising either
-        // to "zh" hands back Simplified whichever one was asked for. The
-        // narrowing is still done, but only where it belongs — in
-        // [sameLanguage], which is asking a different question.
         val target = targetLanguageTag.trim()
-        if (target.isBlank() || lines.isEmpty()) return Result.Unavailable
-
+        val sourceTag = sourceLanguageTag.trim()
+        if (target !in TranslationLanguages.supportedLanguages ||
+            (sourceTag != "auto" && sourceTag !in TranslationLanguages.supportedLanguages) || lines.isEmpty()) return Result.Unavailable
+        if (sourceTag != "auto" && sameLanguage(sourceTag, target)) return Result.SameLanguage(sourceTag)
+        val server = normaliseEndpoint(endpoint) ?: return Result.Unavailable
         val slots = flatten(lines)
-        if (slots.isEmpty()) return Result.Unavailable
-        val cacheKey = cacheKey(trackId, target, slots)
-        val cached = memory.get(cacheKey) ?: readCache(cacheKey)?.also {
-            memory.put(cacheKey, it)
+        if (slots.isEmpty() || slots.size > 500 || slots.sumOf { it.text.length } > 30_000 || slots.any { it.text.length > MAX_BATCH_CHARS }) return Result.Unavailable
+        val key = cacheKey(trackId, "libre:$server:$sourceTag:$target", slots)
+        val cached = memory.get(key) ?: readCache(key)?.also { memory.put(key, it) }
+        if (cached != null && cached.version == CACHE_VERSION && cached.targetLanguage == target && cached.texts.size == slots.size && cached.texts.all { it.isNotBlank() }) {
+            return if (sameLanguage(cached.sourceLanguage, target)) Result.SameLanguage(cached.sourceLanguage)
+                else Result.Translated(rebuild(lines, slots, cached.texts), cached.sourceLanguage, true)
         }
-        if (cached != null && cached.version == CACHE_VERSION && cached.texts.size == slots.size) {
-            return if (sameLanguage(cached.sourceLanguage, target)) {
-                Result.SameLanguage(cached.sourceLanguage)
-            } else {
-                Result.Translated(
-                    lines = rebuild(lines, slots, cached.texts),
-                    sourceLanguage = cached.sourceLanguage,
-                    fromCache = true,
-                )
-            }
-        }
-
-        val batches = batches(slots)
+        if (!allowNetwork) return Result.Unavailable
         val answers = coroutineScope {
-            // Two short requests at a time keeps a long lyric fast without
-            // competing with playback for every connection in the pool.
-            batches.chunked(MAX_PARALLEL_REQUESTS).flatMap { group ->
-                group.map { batch -> async { requestBatch(batch, target) } }.awaitAll()
+            batches(slots).chunked(MAX_PARALLEL_REQUESTS).flatMap { group ->
+                group.map { batch -> async { requestConfiguredBatch(batch, target, sourceTag, server, httpClient) } }.awaitAll()
             }
         }
         if (answers.any { it == null }) return Result.Unavailable
         val complete = answers.filterNotNull()
-        val source = complete
-            .groupBy { canonicalLanguage(it.sourceLanguage) }
-            .maxByOrNull { (_, values) -> values.sumOf { it.sourceWeight } }
-            ?.key
-            .orEmpty()
-        if (source.isBlank()) return Result.Unavailable
+        val texts = complete.flatMap { it.translations }
+        if (texts.size != slots.size || texts.sumOf { it.length } > 100_000) return Result.Unavailable
+        val source = complete.groupBy { it.sourceLanguage }.maxByOrNull { (_, values) -> values.sumOf { it.sourceWeight } }?.key ?: "und"
+        val entry = CachedTranslation(sourceLanguage = source, targetLanguage = target, texts = texts)
+        memory.put(key, entry)
+        writeCache(key, entry)
+        return if (sameLanguage(source, target)) Result.SameLanguage(source)
+            else Result.Translated(rebuild(lines, slots, texts), source, false)
+    }
 
-        var translated = complete.flatMap { it.translations }
-        if (translated.size != slots.size) return Result.Unavailable
-
-        // Google's ordinary auto-detection understands many Latin-script
-        // Hindi/Urdu/Punjabi lyrics, but its NMT occasionally returns whole
-        // phrases unchanged ("tera hone laga hoon" is a common example). If a
-        // sizeable part of a Latin-script source survived untouched, use
-        // Google's Input Tools to restore the detected language's native script
-        // and translate that. Keep the first answer unless the retry actually
-        // transforms more of the song, so names and genuinely bilingual lyrics
-        // do not get worse merely because they contain Latin text.
-        if (
-            !sameLanguage(source, target) &&
-            predominantlyLatin(slots) &&
-            unchangedWeight(slots, translated) * 3 >= slots.sumOf { it.text.length }
-        ) {
-            val retried = retryRomanizedTranslation(batches, source, target)
-            if (
-                retried != null &&
-                retried.size == slots.size &&
-                unchangedWeight(slots, retried) < unchangedWeight(slots, translated)
-            ) {
-                translated = retried
+    private suspend fun requestConfiguredBatch(batch: Batch, target: String, source: String, endpoint: String, httpClient: okhttp3.OkHttpClient): BatchAnswer? {
+        val url = endpoint.toHttpUrlOrNull()!!.newBuilder().addPathSegment("translate").build()
+        val body = JSONObject().put("q", JSONArray(batch.slots.map { it.text })).put("source", source)
+            .put("target", target).put("format", "text").toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+        val request = Request.Builder().url(url).header("User-Agent", LYRICS_AGENT).post(body).build()
+        val raw = try { httpClient.newCall(request).awaitBody() }
+            catch (cancelled: CancellationException) { throw cancelled } catch (_: IOException) { return null }
+        return runCatching {
+            val response = JSONObject(raw)
+            val value = response.get("translatedText")
+            val texts = when (value) {
+                is JSONArray -> (0 until value.length()).map { value.getString(it) }
+                is String -> listOf(value)
+                else -> return@runCatching null
             }
-        }
-        val entry = CachedTranslation(
-            sourceLanguage = source,
-            targetLanguage = target,
-            texts = translated,
-        )
-        memory.put(cacheKey, entry)
-        writeCache(cacheKey, entry)
-
-        return if (sameLanguage(source, target)) {
-            Result.SameLanguage(source)
-        } else {
-            Result.Translated(
-                lines = rebuild(lines, slots, translated),
-                sourceLanguage = source,
-                fromCache = false,
-            )
-        }
+            if (texts.size != batch.slots.size || texts.any { it.isBlank() }) return@runCatching null
+            val detected = response.opt("detectedLanguage")
+            val language = if (source != "auto") source else when (detected) {
+                is JSONObject -> detected.optString("language").ifBlank { "und" }
+                is JSONArray -> when (val first = detected.opt(0)) {
+                    is String -> first
+                    is JSONObject -> first.optString("language").ifBlank { "und" }
+                    else -> "und"
+                }
+                else -> "und"
+            }
+            BatchAnswer(texts, language, batch.payload.length)
+        }.getOrNull()
     }
 
     suspend fun romanize(
@@ -495,16 +477,23 @@ object LyricsTranslation {
     private suspend fun Call.awaitBody(): String = suspendCancellableCoroutine { continuation ->
         continuation.invokeOnCancellation { cancel() }
         enqueue(object : Callback {
-            override fun onFailure(call: Call, error: IOException) {
-                if (continuation.isActive) continuation.resumeWithException(error)
+            override fun onFailure(call: Call, e: IOException) {
+                if (continuation.isActive) continuation.resumeWithException(e)
             }
 
             override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    val body = if (it.isSuccessful) it.body?.string() else null
-                    if (!continuation.isActive) return
-                    if (body != null) continuation.resume(body)
-                    else continuation.resumeWithException(IOException("Translation HTTP ${it.code}"))
+                try {
+                    response.use {
+                        val body = if (it.isSuccessful) it.body?.byteStream()?.use { stream ->
+                            val bytes = stream.readNBytes(524_289)
+                            if (bytes.size <= 524_288) bytes.toString(Charsets.UTF_8) else null
+                        } else null
+                        if (!continuation.isActive) return
+                        if (body != null) continuation.resume(body)
+                        else continuation.resumeWithException(IOException("Translation HTTP ${it.code} or oversized response"))
+                    }
+                } catch (error: IOException) {
+                    if (continuation.isActive) continuation.resumeWithException(error)
                 }
             }
         })
@@ -572,6 +561,13 @@ object LyricsTranslation {
             .joinToString("") { "%02x".format(it) }
     }
 
+    private fun java.io.Reader.readTextBounded(): String {
+        val out = StringBuilder(); val buffer = CharArray(4096)
+        while (true) { val count = read(buffer); if (count < 0) break
+            require(out.length + count <= 524_288); out.append(buffer, 0, count) }
+        return out.toString()
+    }
+
     private suspend fun readCache(key: String): CachedTranslation? =
         withContext(Dispatchers.IO) {
             diskMutex.withLock {
@@ -580,7 +576,8 @@ object LyricsTranslation {
                 if (!file.isFile) return@withLock null
                 runCatching {
                     val value = GZIPInputStream(FileInputStream(file)).bufferedReader().use {
-                        json.decodeFromString<CachedTranslation>(it.readText())
+                        val bytes = it.readTextBounded()
+                        json.decodeFromString<CachedTranslation>(bytes)
                     }
                     file.setLastModified(System.currentTimeMillis())
                     value.takeIf { it.version == CACHE_VERSION }
@@ -595,17 +592,19 @@ object LyricsTranslation {
                 val directory = File(root, CACHE_DIRECTORY)
                 if (!directory.exists() && !directory.mkdirs()) return@withLock
                 val destination = File(directory, "$key.json.gz")
-                val temporary = File(directory, "$key.tmp")
                 runCatching {
-                    GZIPOutputStream(FileOutputStream(temporary)).bufferedWriter().use {
-                        it.write(json.encodeToString(value))
-                    }
-                    if (!temporary.renameTo(destination)) {
-                        temporary.copyTo(destination, overwrite = true)
-                        temporary.delete()
-                    }
+                    val text = json.encodeToString(value)
+                    require(text.length <= 524_288)
+                    val bytes = java.io.ByteArrayOutputStream().apply {
+                        GZIPOutputStream(this).bufferedWriter().use { it.write(text) }
+                    }.toByteArray()
+                    val atomic = android.util.AtomicFile(destination)
+                    val output = atomic.startWrite()
+                    try { output.write(bytes); atomic.finishWrite(output) }
+                    catch (error: Exception) { atomic.failWrite(output); throw error }
                     trimCache(directory)
-                }.onFailure { temporary.delete() }
+                }
+
             }
         }
 

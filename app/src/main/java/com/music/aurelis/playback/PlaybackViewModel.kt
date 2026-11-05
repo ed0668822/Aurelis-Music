@@ -46,7 +46,8 @@ sealed interface LyricsState {
 sealed interface TranslationState {
     data object None : TranslationState
     data object Loading : TranslationState
-    data class Done(val lines: List<LyricLine>) : TranslationState
+    data class Done(val lines: List<LyricLine>, val language: String = "", val cached: Boolean = false) : TranslationState
+    data class SameLanguage(val language: String) : TranslationState
     data object Failed : TranslationState
 }
 
@@ -83,6 +84,10 @@ class PlaybackViewModel internal constructor(
     private var positionJob: Job? = null
     private var lyricsJob: Job? = null
     private var translationJob: Job? = null
+    private var translationGeneration = 0L
+    internal var translateRequest: suspend (String, List<LyricLine>, String) -> LyricsTranslation.Result = { id, lines, target ->
+        LyricsTranslation.translate(id, lines, target)
+    }
     private var lastLyricsSongId: String? = null
     private var lyricsGeneration = 0L
     private val localLyrics = LocalLyricsRepository(application)
@@ -215,33 +220,29 @@ class PlaybackViewModel internal constructor(
     fun translateLyrics(targetLanguageTag: String) {
         val loaded = _state.value.lyrics as? LyricsState.Loaded ?: return
         val song = _state.value.currentSong ?: return
+        val version = ++translationGeneration
+        val lyricsVersion = lyricsGeneration
         translationJob?.cancel()
         _state.update { it.copy(lyrics = loaded.copy(translation = TranslationState.Loading)) }
         translationJob = viewModelScope.launch {
-            when (val res = LyricsTranslation.translate(song.id, loaded.lines, targetLanguageTag)) {
-                is LyricsTranslation.Result.Translated -> {
-                    _state.update { current ->
-                        val now = current.lyrics as? LyricsState.Loaded ?: return@update current
-                        current.copy(lyrics = now.copy(translation = TranslationState.Done(res.lines)))
-                    }
+            val result = try { translateRequest(song.id, loaded.lines, targetLanguageTag) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { LyricsTranslation.Result.Unavailable }
+            if (version != translationGeneration || lyricsVersion != lyricsGeneration || _state.value.currentSong?.id != song.id) return@launch
+            _state.update { current ->
+                val now = current.lyrics as? LyricsState.Loaded ?: return@update current
+                val translated = when (result) {
+                    is LyricsTranslation.Result.Translated -> TranslationState.Done(result.lines, targetLanguageTag, result.fromCache)
+                    is LyricsTranslation.Result.SameLanguage -> TranslationState.SameLanguage(result.language)
+                    LyricsTranslation.Result.Unavailable -> TranslationState.Failed
                 }
-                is LyricsTranslation.Result.SameLanguage -> {
-                    _state.update { current ->
-                        val now = current.lyrics as? LyricsState.Loaded ?: return@update current
-                        current.copy(lyrics = now.copy(translation = TranslationState.None))
-                    }
-                }
-                is LyricsTranslation.Result.Unavailable -> {
-                    _state.update { current ->
-                        val now = current.lyrics as? LyricsState.Loaded ?: return@update current
-                        current.copy(lyrics = now.copy(translation = TranslationState.Failed))
-                    }
-                }
+                current.copy(lyrics = now.copy(translation = translated))
             }
         }
     }
 
     fun clearTranslation() {
+        translationGeneration++
         translationJob?.cancel()
         _state.update { current ->
             val now = current.lyrics as? LyricsState.Loaded ?: return@update current

@@ -3,10 +3,10 @@ package com.music.aurelis.data.lyrics
 
 object TranslationLanguages {
     val supportedLanguages = mapOf(
-        "es" to "Spanish",
-        "en" to "English",
-        "fr" to "French",
-        "de" to "German",
-        "ja" to "Japanese"
+        "es" to "Español",
+        "en" to "Inglés",
+        "fr" to "Francés",
+        "de" to "Alemán",
+        "ja" to "Japonés"
     )
 }

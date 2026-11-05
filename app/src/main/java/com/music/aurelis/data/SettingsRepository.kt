@@ -59,6 +59,8 @@ object SettingsRepository {
     /** Empty means "follow the app's own language", which is not the same
      *  as naming today's app language and pinning it. */
     val translationLanguage = MutableStateFlow("")
+    val translationEndpoint = MutableStateFlow("")
+    val translationSourceLanguage = MutableStateFlow("auto")
     val lyricsSources = MutableStateFlow(LyricsSource.offered.toSet())
     val lyricsSourceOrder = MutableStateFlow(LyricsSource.offered)
     val prioritizeSyllableSync = MutableStateFlow(false)
@@ -101,6 +103,8 @@ object SettingsRepository {
         // so a build that renames or removes a source does not deserialize into
         // an unreachable one.
         translationLanguage.value = prefs.getString("translation_language", "") ?: ""
+        translationEndpoint.value = prefs.getString("translation_endpoint", "") ?: ""
+        translationSourceLanguage.value = prefs.getString("translation_source", "auto") ?: "auto"
         paxSenixApiKey.value = prefs.getString("paxsenix_api_key", "") ?: ""
         val savedSources = prefs.getStringSet("lyrics_sources", null)
         lyricsSources.value = if (savedSources != null) {
@@ -177,6 +181,14 @@ object SettingsRepository {
     }
 
     // ── Lyrics / translation setters ──────────────────────────────────────────
+    fun setTranslationService(endpoint: String, source: String) {
+        val normalised = com.music.aurelis.data.lyrics.LyricsTranslation.normaliseEndpoint(endpoint)
+        require(normalised != null)
+        require(source == "auto" || source in com.music.aurelis.data.lyrics.TranslationLanguages.supportedLanguages)
+        translationEndpoint.value = normalised; translationSourceLanguage.value = source
+        prefs.edit { putString("translation_endpoint", normalised); putString("translation_source", source) }
+    }
+
     fun setTranslationLanguage(value: String) {
         translationLanguage.value = value
         prefs.edit { putString("translation_language", value) }

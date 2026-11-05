@@ -166,3 +166,16 @@ FullScreenPlayerHost y AurelisPlayerPlatform legados no se instalan como motor/h
 | Estado/acciones | PlaybackViewModel, NowPlayingScreen | Importación SAF, estado real y protección contra cambios de canción |
 | Sincronización | SyncedLyricsPanel, PlaybackPosition existente | Resaltado, seguimiento manual/automático y seek con offset |
 | Pruebas | LocalLyricsTest, LyricsPanelTest, PlayerIntegrationTest | Fixtures propios de metadatos/letras y grafo Compose; sin consultas remotas |
+
+## Traducción activa B10
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Servicio | LyricsTranslation | POST HTTPS compatible LibreTranslate, lotes/errores/cancelación y caché v4 |
+| Configuración | SettingsRepository, TranslationLanguageDialog | Servidor e idiomas privados; confirmar permite petición, cerrar no |
+| Integración | AurelisApplication, PlaybackViewModel | Directorio de caché real y protección de canción/versión/petición |
+| Bilingüe | SyncedLyricsPanel, NowPlayingScreen | Original y traducción juntos, fuente/idioma/caché/estados y ocultar |
+| Pruebas | TranslationTest, PlayerIntegrationTest | Protocolo controlado sin red, caché en disco, errores y respuesta atrasada |
+
+No se copian implementaciones del servidor. Helpers de romanización legacy se
+conservan sin conectarlos al flujo activo ni afirmar revisión de sus servicios.

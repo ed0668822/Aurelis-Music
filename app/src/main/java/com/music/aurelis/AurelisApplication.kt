@@ -22,6 +22,7 @@ class AurelisApplication : Application(), SingletonImageLoader.Factory {
         super.onCreate()
         ProfileRepository.init(this)
         SettingsRepository.init(this)
+        com.music.aurelis.data.lyrics.LyricsTranslation.cacheDir = cacheDir
         ListeningStats.init(userLibrary)
 
         val meta = getSharedPreferences("app_meta", MODE_PRIVATE)

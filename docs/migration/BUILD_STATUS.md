@@ -300,3 +300,16 @@ por proxy CONNECT 403; comprobaciones remotas pendientes.
   CONNECT 403. No afirmar que una búsqueda real ni CI remoto hayan sido aprobados.
 - Pendiente dispositivo físico: SAF/proveedores OEM, etiquetas en formatos no
   cubiertos, sincronización percibida y continuidad de audio/controles del sistema.
+
+## B10 — Verificación final
+
+`testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4`: exit 0
+en 1m 55s, 57 tareas (15 ejecutadas). XML: 93 pruebas, sin fallos, errores u
+omisiones. Lint: 0 errores, 210 advertencias. APK debug y apksigner verify correctos.
+Log local `/workspace/toolchains/b10-validation.log`; captura documental
+`bilingual-lyrics.png`, con originales/traducciones de fixture, inspeccionada.
+Se usa interceptor OkHttp de pruebas, sin DNS/red, para validar contrato real
+de petición/respuesta, caché y errores; no representa traducción remota en vivo.
+La operación requiere configurar un servidor compatible autorizado; ninguno
+se despliega ni se presupone disponible. Actions bloqueado por proxy CONNECT 403.
+Pruebas físicas, accesibilidad con lector real y servicio remoto siguen pendientes.

@@ -150,6 +150,54 @@ class PlayerIntegrationTest {
         compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc), "1") }
         compose.runOnIdle { assertFalse(vm.state.value.lyrics is LyricsState.Loaded) }
     }
+    @Test fun translationDialogCancelNeverSendsAndBilingualViewKeepsOriginal() {
+        start(); importTranslationFixture()
+        var requests = 0
+        vm.translateRequest = { _, original, _ -> requests++
+            com.music.aurelis.data.lyrics.LyricsTranslation.Result.Translated(original.mapIndexed { index, line -> line.copy(text = "Traducción de prueba $index") }, "en", false) }
+        SettingsRepository.setTranslationService("https://translation.example", "en")
+        SettingsRepository.setTranslationLanguage("es")
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Traducir").performClick()
+        compose.onNodeWithText("Cancelar").performClick()
+        compose.runOnIdle { assertEquals(0, requests) }
+        compose.onNodeWithContentDescription("Traducir").performClick()
+        compose.onNodeWithText("Traducir").performClick()
+        compose.onNodeWithText("Source line A").assertIsDisplayed()
+        compose.onNodeWithText("Traducción de prueba 0").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(1, requests) }
+        capture("bilingual-lyrics")
+        compose.onNodeWithText("Ocultar traducción").performClick()
+        compose.onNodeWithText("Traducción de prueba 0").assertDoesNotExist()
+        compose.onNodeWithText("Source line A").assertIsDisplayed()
+    }
+    @Test fun aLateTranslationCannotOverwriteLyricsOfAnotherTrack() {
+        start(); importTranslationFixture()
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        vm.translateRequest = { _, lines, _ ->
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) { gate.await() }
+            com.music.aurelis.data.lyrics.LyricsTranslation.Result.Translated(lines.map { it.copy(text = "Late fixture") }, "en", false)
+        }
+        try {
+            compose.runOnIdle { vm.translateLyrics("es") }
+            compose.runOnIdle { vm.next() }
+            importTranslationFixture()
+            compose.runOnIdle { gate.complete(Unit) }
+            compose.runOnIdle {
+                assertEquals("2", vm.state.value.currentSong?.id)
+                val loaded = vm.state.value.lyrics as LyricsState.Loaded
+                assertEquals(TranslationState.None, loaded.translation)
+                assertEquals("Source line A", loaded.lines.first().text)
+            }
+        } finally { gate.complete(Unit) }
+    }
+    private fun importTranslationFixture() {
+        val file = File(app.cacheDir, "translation-source.lrc").apply { writeText("[00:00.000]Source line A\n[00:01.000]Source line B") }
+        compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(file)) }
+        compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.lyrics !is LyricsState.Loading } }
+        compose.runOnIdle { assertTrue(vm.state.value.lyrics is LyricsState.Loaded) }
+    }
     private fun capture(name: String) {
         val bitmap = compose.runOnIdle {
             val view = compose.activity.window.decorView
