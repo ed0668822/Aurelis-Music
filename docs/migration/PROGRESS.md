@@ -238,7 +238,7 @@ bloque por separado. B07 requerirá nueva autorización.
 ## B06 — Biblioteca local
 
 - Autorización: concedida junto con B05; base `7426157e00bc0187c7068fc6eda08aad7c531636`.
-- Estado: implementación y validación final completadas; publicación en curso.
+- Estado: implementación, doble revisión y validación final completadas; publicado.
 - Modificados: LocalMediaRepository, LocalLibrarySource, LibraryViewModel, modelos
   LocalSong/Album/Artist, permisos, MainActivity, LocalMusicScreen, colecciones,
   carrusel de artistas, puente Media3 y strings. Nuevos: LocalSearch y cuatro suites
@@ -263,3 +263,10 @@ bloque por separado. B07 requerirá nueva autorización.
   caché de carátula tras cambiar solo imagen y reproducción física no verificados.
   Referencias ausentes conservadas; reconstrucción de IDs no recuperada por nombre.
 - Próximo bloque: B07, requiere autorización nueva. No comenzar automáticamente.
+
+- Commit B06: `f917b59cc18a758716b0b55a9346d44f2f530a36`. Push confirmado
+  desde `7426157`. Autor y committer locales: `ed0668822 <ed0668822@gmail.com>`.
+- PR #1 confirmado OPEN por HTML público, 12 commits, B06 presente y título
+  «Aurelis Music Beta UI and components» conservado. Este cierre se publica como
+  commit documental posterior, sin reescribir historial. Actions sigue pendiente.
+- B05/B06 cerrados. Detener aquí y esperar autorización expresa para B07.
