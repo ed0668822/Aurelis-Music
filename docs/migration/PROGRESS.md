@@ -407,7 +407,7 @@ bloque por separado. B07 requerirá nueva autorización.
 
 - Autorización: concedida junto con B10; misma rama y PR #1.
 - Base: `248461abf63ef4ad83c15640dcf7c54f97718a5f`.
-- Estado: implementación y doble revisión completadas; publicando B11.
+- Estado: implementación, doble revisión y publicación completadas.
 - Nuevo: LocalAutoMix y LocalAutoMixTest. Modificados: modelo LocalSong, scanner
   MediaStore, puente MediaItem, QueueBuilder, PlaybackViewModel, HomeScreen,
   MainActivity, MediaStoreLibraryTest, LocalMetadataTest y PlayerIntegrationTest;
@@ -427,3 +427,13 @@ bloque por separado. B07 requerirá nueva autorización.
   ni beatmatching activados. Sin perfiles múltiples todavía (B12). Rendimiento en
   catálogo masivo y reproducción/consumo físicos no medidos.
 - Próximo bloque: B12 requiere autorización nueva.
+
+- Commit B11: `75b885786628d8cb012d2b667ffea4d2c3056040`, push confirmado
+  desde B10 `248461a`. Autor y committer locales verificados como
+  `ed0668822 <ed0668822@gmail.com>`, sin cambios globales ni historial reescrito.
+- PR #1 confirmado OPEN por HTML público con 20 commits y B10/B11 presentes;
+  título «Aurelis Music Beta UI and components» conservado. SHA remoto coincide
+  con B11. No se crea otro PR, no se cambia descripción ni se hace merge.
+- Este cierre se publica en un commit documental posterior. B10 y B11 cerrados;
+  detener antes de B12. Recordar requisitos de servidor de traducción y límites
+  de AutoMix por metadatos, y pendientes de hardware/Actions/licencias previas.
