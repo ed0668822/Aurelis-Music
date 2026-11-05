@@ -3,7 +3,7 @@
 ## Alcance y referencias
 
 Documento iniciado en B01 (auditoría y planificación). B02–B11 fueron autorizados
-después e incorporan únicamente sus secciones específicas. B10 y B11 autorizados juntos; B12 y siguientes no están autorizados.
+después e incorporan únicamente sus secciones específicas. B13/B14 autorizados después de B11; B12 no está autorizado y sigue pendiente.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -491,3 +491,36 @@ Coste: normalización de metadatos una vez y selección acotada, sin decodificar
 analizar archivos y sin modelos. No se afirma medición en bibliotecas masivas,
 consumo físico ni transiciones DSP probadas. Un trabajo posterior de audio debe
 revisar licencias/avisos y probar en hardware antes de activar esas transiciones.
+
+## B13 — Ajustes y efectos conectados
+
+Autorización explícita para B13/B14, sin autorización de B12. Se conserva el perfil
+único legado (nombre/foto) y su almacenamiento; no se crean perfiles múltiples.
+Pantalla de ajustes agrupa audio local, apariencia, letras, biblioteca y versión
+BuildConfig real. Preferencias de Dolby/calidad/autoplay/crossfade se conservan en
+almacenamiento pero no se muestran como controles activos: no modificaban audio.
+Se explica calidad del archivo y el alcance finito de AutoMix local.
+
+Tema, reducción de movimiento y cristal se propagan por CompositionLocal al árbol
+activo; reducir desenfoque fuerza superficies sólidas y evita blur de letras/Haze.
+Barra ligera usa borde de gradiente y translucidez, sin shaders/reflexión de fondo;
+se detectó incompatibilidad AGSL al activar el shader legado en la prueba visual,
+y se corrigió el camino activo sin excluir pruebas ni tocar código vendorizado.
+Cola y reproductor respetan movimiento reducido. Ajustes de letras activan/desactivan
+resaltado/seguimiento y blur de líneas inactivas, conservando texto/timestamps;
+pausar seguimiento permite leer sin blur. Configurar traducción guarda sin enviar.
+
+Se encontró que EqualizerProcessor ignoraba las ganancias de EqCurve. Se implementan
+secciones IIR (campana y estantes según EqLayout) sobre el PCM de la cadena actual,
+sin segundo motor. Ajuste publicado como snapshot inmutable; historia de filtros
+solo en hilo de audio, sin asignaciones de objetos en el bucle estable. Frecuencias
+por encima del margen de Nyquist se omiten con headroom acorde. Balance atenúa el
+canal opuesto, sin aumentar ambos como antes. Actualizar solo balance conserva la
+historia. Flush/cambio de formato reinician filtros. Curvas no finitas y valores
+fuera de rango se normalizan; preferencias desconocidas ajenas se preservan.
+
+Ecualizador UI ofrece tono/7 bandas, presets existentes, balance y amplitud estéreo
+real en dos canales (sin llamarla Dolby Atmos). Suscripciones propiedad del servicio
+aplican cambios sin recrear ExoPlayer; cancelan con su scope. No se habilita una
+normalización de loudness que el helper legado no implementa. No se promete ausencia
+de transitorios al cambiar curvas ni resultado audible en hardware sin probarlo.

@@ -328,3 +328,19 @@ No se ejecuta red, decodificación/PCM ni crossfade en estas pruebas. Catálogo
 masivo, batería y audio físico siguen pendientes; no se atribuyen BPM al catálogo.
 Actions consultado: proxy CONNECT 403, estado remoto pendiente. No se alteran CI
 ni sus verificaciones para aparentar éxito.
+
+## B13 — Verificación final
+
+`testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4`: exit 0
+en 2m 3s, 57 tareas (17 ejecutadas). XML: **114 casos, 0 fallos/errores/omitidos**.
+Lint: 0 errores y 211 advertencias. APK debug y apksigner verify correctos.
+Log local `/workspace/toolchains/b13-validation-final.log`; capturas settings-light,
+settings-dark y equalizer en docs/migration/screenshots, inspeccionadas.
+Pruebas DSP procesan PCM real generado (campana, estantes, bypass, balance, memoria
+entre bloques, flush y baja frecuencia de muestreo). Wiring de preferencias al
+procesador probado sin recrear reproductor; pantallas reales Compose y persistencia.
+Suite inicial: 114 casos, fallo de shader AGSL al dibujar cristal habilitado.
+Se reemplazó el reflejo activo por borde de gradiente, conservando la prueba nativa.
+Tras corregir también contraste oscuro, suite completa repetida y aprobada.
+No prueba hardware, escucha subjetiva, latencia real ni ausencia de transitorios
+al cambiar curvas; no afirma medición de consumo físico. B12 continúa pendiente.

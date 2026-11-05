@@ -53,8 +53,7 @@ class AurelisPlaybackService : MediaSessionService() {
             .setMediaSourceFactory(mediaSourceFactory)
             .build()
 
-        applyEqSettings()
-        applySpatialSettings()
+        bindAudioSettings(serviceScope, chain.equalizer) { chain.spatial.enabled = it }
 
         val sessionActivityIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -86,27 +85,6 @@ class AurelisPlaybackService : MediaSessionService() {
                 catch (_: Exception) { /* Permission/provider unavailable: preserve the stored snapshot. */ }
             }
         }
-    }
-
-    private fun applyEqSettings() {
-        val chain = dspChain ?: return
-        chain.equalizer.setTuning(
-            enabled = SettingsRepository.equalizerEnabled.value,
-            curve = if (SettingsRepository.equalizerMode.value == com.music.aurelis.data.EqualizerMode.MANUAL) {
-                manualCurve(SettingsRepository.equalizerBands.value)
-            } else {
-                toneCurve(
-                    SettingsRepository.equalizerToneX.value,
-                    SettingsRepository.equalizerToneY.value,
-                    SettingsRepository.equalizerFocused.value,
-                )
-            },
-            balance = SettingsRepository.equalizerBalance.value,
-        ) ?: Unit
-    }
-
-    private fun applySpatialSettings() {
-        dspChain?.spatial?.enabled = SettingsRepository.spatialAudio.value
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession

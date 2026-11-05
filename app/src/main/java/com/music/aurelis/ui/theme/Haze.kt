@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.music.aurelis.data.SettingsRepository
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -54,6 +57,8 @@ fun Modifier.aurelisHazeEffect(
     style: AurelisHazeStyle = AurelisHazeStyle.Regular,
     tint: Color? = null,
 ): Modifier {
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
+    if (reduceBlur) return this.background(tint ?: MaterialTheme.colorScheme.surface)
     val themeTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
         Color(0xFFFAFAFA)
     } else {

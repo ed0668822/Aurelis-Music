@@ -37,10 +37,14 @@ fun AurelisTheme(
 ) {
     val mode by SettingsRepository.themeMode.collectAsStateWithLifecycle()
     val reduceMotion by SettingsRepository.reduceAnimation.collectAsStateWithLifecycle()
+    val glass by SettingsRepository.liquidGlass.collectAsStateWithLifecycle()
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
     val resolvedDark = darkTheme ?: isAurelisDarkTheme(mode, isSystemInDarkTheme())
     SystemBarIcons(dark = !resolvedDark)
     CompositionLocalProvider(
         LocalReduceMotion provides reduceMotion,
+        LocalLiquidGlassEnabled provides (glass && !reduceBlur),
+        com.music.aurelis.ui.components.LocalLiquidGlassEnabled provides (glass && !reduceBlur),
         LocalPlayingBarsMotion provides !reduceMotion,
     ) {
         MaterialTheme(

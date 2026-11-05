@@ -21,6 +21,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -113,7 +114,8 @@ private const val DARK_INDICATOR_OPACITY = 0.14f
  *
  * This keeps the same translucent tint, directional highlight and hairline as
  * [liquidGlass], but intentionally performs no backdrop capture, blur, lens
- * refraction or shadow rendering. When Liquid Glass is disabled or unsupported,
+ * refraction, runtime-shader compilation or shadow rendering. Its rim is a gradient
+ * stroke. When Liquid Glass is disabled or unsupported,
  * [fallbackColor] preserves the control's existing filled appearance.
  */
 @Composable
@@ -127,23 +129,11 @@ fun Modifier.lightweightLiquidGlass(
     } else {
         Color(0xFF121212)
     }
-    val shapeProvider = ShapeProvider { shape }
-
     return clip(shape)
-        .background(
-            color = if (useGlass) glassTint.copy(alpha = SURFACE_OPACITY) else fallbackColor,
-            shape = shape,
-        )
-        .then(
-            if (useGlass) {
-                HighlightElement(
-                    shapeProvider = shapeProvider,
-                    highlight = { Highlight.Default },
-                )
-            } else {
-                Modifier
-            },
-        )
+        .background(if (useGlass) glassTint.copy(alpha = SURFACE_OPACITY) else fallbackColor, shape)
+        .then(if (useGlass) Modifier.border(0.75.dp,
+            Brush.linearGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.02f), Color.Black.copy(alpha = 0.12f))), shape)
+            else Modifier)
         .border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
 }
 

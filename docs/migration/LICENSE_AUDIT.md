@@ -171,3 +171,13 @@ no se añaden bibliotecas, recursos, modelos ni código DSP de terceros. Se cons
 LICENSE/NOTICE. Pendientes previos sobre distribución de DSP ya incluido y CSV
 no se declaran resueltos por implementar recomendaciones. Captura usa fixtures
 de catálogo propios; no contiene canciones ni portadas copiadas.
+
+## Registro B13
+
+Ajustes y wiring se amplían desde Aurelis conservando avisos y NOTICE. Filtros
+y snapshot nuevos son implementación propia de secciones IIR matemáticas, sin
+importar código DSP de BitChord/Orchard ni nuevas dependencias. El borde activo
+ligero evita shaders y no cambia avisos ni fuentes vendorizadas de backdrop.
+Fixtures son señales sinusoidales propias; las capturas no incluyen recursos
+de terceros. B12 no implementado ni atribuido como terminado. CSV aún ausente;
+no se aplican cabeceras definitivas nuevas ni se eliminan avisos existentes.

@@ -132,6 +132,9 @@ fun NowPlayingScreen(
     BackHandler(enabled = isVisible && showLyrics) { showLyrics = false }
 
     val lyricsOffset by SettingsRepository.lyricsOffsetMs.collectAsState()
+    val syncEnabled by SettingsRepository.syncedLyrics.collectAsState()
+    val blurLyrics by SettingsRepository.blurUnfocusedLyrics.collectAsState()
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsState()
     val reduceAnimation by SettingsRepository.reduceAnimation.collectAsState()
     val hazeState = remember { HazeState() }
 
@@ -414,6 +417,7 @@ fun NowPlayingScreen(
                                     onSeekToLine = { playbackViewModel.seekTo((it - lyricsOffset).coerceAtLeast(0)) },
                                     isSynced = loaded?.isSynced == true,
                                     translatedLines = translated,
+                                    syncEnabled = syncEnabled, blurUnfocused = blurLyrics && !reduceBlur,
                                     modifier = Modifier.weight(1f),
                                 )
                             }

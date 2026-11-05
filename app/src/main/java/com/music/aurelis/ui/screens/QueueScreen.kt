@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.aurelis.playback.PlaybackViewModel
+import com.music.aurelis.ui.theme.LocalReduceMotion
 
 @Composable
 fun QueueScreen(
@@ -36,11 +37,12 @@ fun QueueScreen(
     onDismiss: () -> Unit,
 ) {
     val state by playbackViewModel.state.collectAsState()
+    val reduceMotion = LocalReduceMotion.current
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(300)),
-        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
+        enter = if (reduceMotion) androidx.compose.animation.EnterTransition.None else slideInVertically(initialOffsetY = { it }) + fadeIn(tween(300)),
+        exit = if (reduceMotion) androidx.compose.animation.ExitTransition.None else slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(200))
     ) {
         Box(
             modifier = Modifier

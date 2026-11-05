@@ -69,7 +69,7 @@ object SettingsRepository {
     fun init(context: Context) {
         prefs = ProfileStorage(context).open(ProfileId.DEFAULT, ProfileDataArea.PREFERENCES)
 
-        themeMode.value = prefs.getInt("theme_mode", 0)
+        themeMode.value = prefs.getInt("theme_mode", 0).takeIf { it in 0..2 } ?: 0
         dolbyAtmos.value = prefs.getBoolean("dolby_atmos", true)
         liquidGlass.value = prefs.getBoolean("liquid_glass", true)
         reduceAnimation.value = prefs.getBoolean("reduce_animation", false)
@@ -85,8 +85,8 @@ object SettingsRepository {
         equalizerToneX.value = prefs.getInt("eq_tone_x", 0)
         equalizerToneY.value = prefs.getInt("eq_tone_y", 0)
         equalizerFocused.value = prefs.getBoolean("eq_focused", false)
-        equalizerBalance.value = prefs.getFloat("eq_balance", 0f)
-        equalizerBands.value = (0 until 7).map { prefs.getFloat("eq_band_$it", 0f) }
+        equalizerBalance.value = safeFloat(prefs.getFloat("eq_balance", 0f), -1f, 1f)
+        equalizerBands.value = (0 until 7).map { safeFloat(prefs.getFloat("eq_band_$it", 0f), -12f, 12f) }
         equalizerPreset.value = runCatching {
             EqualizerPreset.valueOf(prefs.getString("eq_preset", "FLAT") ?: "FLAT")
         }.getOrDefault(EqualizerPreset.FLAT)
@@ -128,7 +128,7 @@ object SettingsRepository {
     }
 
     // ── Existing setters ──────────────────────────────────────────────────────
-    fun setThemeMode(value: Int) { themeMode.value = value; prefs.edit { putInt("theme_mode", value) } }
+    fun setThemeMode(value: Int) { themeMode.value = value.takeIf { it in 0..2 } ?: 0; prefs.edit { putInt("theme_mode", themeMode.value) } }
     fun setDolbyAtmos(value: Boolean) { dolbyAtmos.value = value; prefs.edit { putBoolean("dolby_atmos", value) } }
     fun setLiquidGlass(value: Boolean) { liquidGlass.value = value; prefs.edit { putBoolean("liquid_glass", value) } }
     fun setReduceAnimation(value: Boolean) { reduceAnimation.value = value; prefs.edit { putBoolean("reduce_animation", value) } }
@@ -139,6 +139,8 @@ object SettingsRepository {
     fun setAutoplay(value: Boolean) { autoplay.value = value; prefs.edit { putBoolean("autoplay", value) } }
     fun setCrossfadeSeconds(value: Int) { crossfadeSeconds.value = value; prefs.edit { putInt("crossfade", value) } }
 
+    private fun safeFloat(value: Float, min: Float, max: Float): Float = if (value.isFinite()) value.coerceIn(min, max) else 0f
+
     // ── Equalizer setters ─────────────────────────────────────────────────────
     fun setEqualizerEnabled(value: Boolean) { equalizerEnabled.value = value; prefs.edit { putBoolean("eq_enabled", value) } }
     fun setEqualizerMode(value: EqualizerMode) { equalizerMode.value = value; prefs.edit { putInt("eq_mode", value.ordinal) } }
@@ -147,11 +149,13 @@ object SettingsRepository {
         prefs.edit { putInt("eq_tone_x", x); putInt("eq_tone_y", y) }
     }
     fun setEqualizerFocused(value: Boolean) { equalizerFocused.value = value; prefs.edit { putBoolean("eq_focused", value) } }
-    fun setEqualizerBalance(value: Float) { equalizerBalance.value = value; prefs.edit { putFloat("eq_balance", value) } }
+    fun setEqualizerBalance(value: Float) { equalizerBalance.value = safeFloat(value, -1f, 1f); prefs.edit { putFloat("eq_balance", equalizerBalance.value) } }
     fun setEqualizerBands(bands: List<Float>) {
-        equalizerBands.value = bands
+        equalizerBands.value = List(7) { safeFloat(bands.getOrElse(it) { 0f }, -12f, 12f) }
+        equalizerPreset.value = EqualizerPreset.matching(equalizerBands.value)
         prefs.edit {
-            bands.forEachIndexed { i, v -> putFloat("eq_band_$i", v) }
+            putString("eq_preset", equalizerPreset.value.name)
+            equalizerBands.value.forEachIndexed { i, v -> putFloat("eq_band_$i", v) }
         }
     }
     fun setEqualizerPreset(value: EqualizerPreset) {

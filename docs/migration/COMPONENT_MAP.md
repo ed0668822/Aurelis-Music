@@ -194,3 +194,15 @@ conservan sin conectarlos al flujo activo ni afirmar revisión de sus servicios.
 Referencia leída BitChord: shared/jvmSharedMain QueueBuilder; shared/commonMain
 TransitionPolicy y AutomixAnalysisSource. No se copia nueva implementación;
 YouTube/Opus y transiciones Orchard quedan fuera de esta selección local.
+
+## Ajustes activos B13
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Ajustes | SettingsScreen/Repository | Grupos locales, valores persistentes y límites honestos; perfil legado conservado |
+| Audio | EqualizerProcessor, EqualizerScreen | Bandas/tono reales, balance y amplitud estéreo existente |
+| Ciclo de vida | AudioSettingsBinding, AurelisPlaybackService | Suscripciones del servicio, sin reiniciar ni duplicar motor |
+| Apariencia | AurelisTheme, LiquidGlass, Haze | Proveedores conectados, bordes ligeros y fondo sólido al reducir blur |
+| Letras/movimiento | SyncedLyricsPanel, NowPlayingScreen, QueueScreen | Ajustes respetados sin inventar marcas ni desactivar lectura |
+| Traducción | TranslationLanguageDialog | Guardar desde ajustes no traduce ni envía letras |
+| Pruebas | EqualizerProcessorTest, SettingsPersistenceTest, SettingsIntegrationTest | PCM espectral, pipeline/estado vivo y UI/capturas |

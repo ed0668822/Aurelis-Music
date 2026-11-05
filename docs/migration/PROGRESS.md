@@ -5,7 +5,7 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B05 y B06 fueron autorizados juntos; B07 autorizado después; B08/B09 autorizados juntos; B10/B11 autorizados después. B12 y siguientes no están autorizados.
+autorizado. B05 y B06 fueron autorizados juntos; B07 autorizado después; B08/B09 autorizados juntos; B10/B11 autorizados después; B13/B14 autorizados expresamente. B12 sigue pendiente y no autorizado.
 
 PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
 Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
@@ -437,3 +437,31 @@ bloque por separado. B07 requerirá nueva autorización.
 - Este cierre se publica en un commit documental posterior. B10 y B11 cerrados;
   detener antes de B12. Recordar requisitos de servidor de traducción y límites
   de AutoMix por metadatos, y pendientes de hardware/Actions/licencias previas.
+
+## B13 — Ajustes y animaciones
+
+- Autorización: B13 y B14 concedidos juntos; B12 no autorizado, no implementado.
+- Base: `c115b1bdc2eb32383ef69071c7007969271b1739`; misma rama/PR #1.
+- Estado: implementación y doble revisión completadas; publicando B13.
+- Modificados: SettingsScreen/Repository, EqualizerScreen/Processor, servicio,
+  tema/Haze/LiquidGlass, panel/NowPlaying/Queue, diálogo traducción y tests de letras.
+  Nuevos: AudioSettingsBinding, EqualizerProcessorTest, SettingsPersistenceTest
+  y SettingsIntegrationTest; documentos/capturas actualizados al cierre.
+- Revisión 1: pasada separada del mismo agente; se detectaron controles sin efecto
+  y bandas ignoradas. Revisados propiedad de filtros, snapshot/coeficientes, estados,
+  persistencia, Nyquist, ciclo de vida y ausencia de motor duplicado. Preferencias
+  legacy no se borran; no se anuncian Dolby/crossfade/loudness inexistentes.
+- Revisión 2: segunda pasada del mismo agente completada; 114 casos sin fallos,
+  errores ni omisiones. Señales PCM confirman respuesta espectral, bypass,
+  balance, continuidad y límites. Configuración servicio/UI/persistencia y efectos
+  probados. Fallo AGSL de captura corregido usando borde ligero portable; no se
+  desactivó el renderer nativo ni se retiraron aserciones. Mismo agente en ambas
+  pasadas, no revisores humanos independientes.
+- B14 autorizado a continuación; no permite declarar completa la migración sin
+  B12, CSV de licencias, pruebas físicas y verificaciones remotas pendientes.
+
+- B13 validación final: exit 0 en 2m 3s, 57 tareas (17 ejecutadas), APK debug y
+  firma verificados; lint 0 errores y 211 advertencias. Capturas clara/oscura/EQ
+  inspeccionadas. También se corrigió contraste de etiquetas sobre fondo oscuro
+  usando Surface con color de contenido explícito; se repitió la suite completa.
+- Actions: API bloqueada previamente por proxy; consultar entrega del bloque.

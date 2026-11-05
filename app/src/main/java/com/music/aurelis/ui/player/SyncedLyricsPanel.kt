@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,8 @@ fun SyncedLyricsPanel(
     centerFocus: Boolean = false,
     isSynced: Boolean = true,
     translatedLines: List<LyricLine>? = null,
+    syncEnabled: Boolean = true,
+    blurUnfocused: Boolean = false,
 ) {
     if (lines.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -60,21 +63,23 @@ fun SyncedLyricsPanel(
     var following by remember(trackKey) { mutableStateOf(true) }
     val dragging by listState.interactionSource.collectIsDraggedAsState()
     LaunchedEffect(dragging) { if (dragging) following = false }
-    val lyrics = remember(lines, isSynced) { Lyrics(lines, isSynced) }
+    val synchronise = isSynced && syncEnabled
+    val lyrics = remember(lines, synchronise) { Lyrics(lines, synchronise) }
     val activeIndex = lyrics.activeIndexAt(position.positionMs)
     LaunchedEffect(trackKey, activeIndex, following, looking) {
-        if (isSynced && looking && following && !dragging && activeIndex >= 0) listState.animateScrollToItem(activeIndex)
+        if (synchronise && looking && following && !dragging && activeIndex >= 0) listState.animateScrollToItem(activeIndex)
     }
     Column(modifier.fillMaxSize()) {
-        if (isSynced) TextButton(onClick = { following = !following }) { Text(if (following) "Pausar seguimiento" else "Seguir letras") }
-        else Text("Letra sin sincronización", style = MaterialTheme.typography.labelMedium)
+        if (synchronise) TextButton(onClick = { following = !following }) { Text(if (following) "Pausar seguimiento" else "Seguir letras") }
+        else Text(if (isSynced) "Sincronización desactivada en ajustes" else "Letra sin sincronización", style = MaterialTheme.typography.labelMedium)
         LazyColumn(state = listState, modifier = Modifier.weight(1f).fillMaxWidth()) {
             itemsIndexed(lines) { index, line ->
-                val isActive = isSynced && index == activeIndex
+                val isActive = synchronise && index == activeIndex
                 Text(text = line.text, style = MaterialTheme.typography.bodyLarge,
                     color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
                     fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 16.dp)
+                        .blur(if (blurUnfocused && synchronise && following && activeIndex >= 0 && !isActive) 1.dp else 0.dp)
                         .semantics { selected = isActive }
                         .clickable(enabled = isSynced) { onSeekToLine(line.timeMs) })
                 translatedLines?.getOrNull(index)?.takeIf { it.text.isNotBlank() && it.text != line.text }?.let { translated ->

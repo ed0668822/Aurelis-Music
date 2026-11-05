@@ -43,4 +43,12 @@ class LyricsPanelTest {
         compose.onNodeWithText("Texto B").assertIsNotSelected().assertIsDisplayed()
         compose.onNodeWithText("Pausar seguimiento").assertDoesNotExist()
     }
+    @Test fun disablingSyncKeepsTimestampedLyricsReadableWithoutHighlighting() {
+        compose.setContent { AurelisTheme { Surface { SyncedLyricsPanel(
+            listOf(LyricLine(0, "Línea con tiempo")), "disabled", PlaybackPosition(), true, false, {}, syncEnabled = false) } } }
+        compose.onNodeWithText("Línea con tiempo").assertIsDisplayed().assertIsNotSelected()
+        compose.onNodeWithText("Sincronización desactivada en ajustes").assertIsDisplayed()
+        compose.onNodeWithText("Pausar seguimiento").assertDoesNotExist()
+    }
+
 }
