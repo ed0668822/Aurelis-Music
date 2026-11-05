@@ -73,4 +73,5 @@ fuentes ni módulos compartidos del origen. Texto secundario se ajusta para cont
 No se reemplaza la biblioteca de iconos ya existente ni se copia una familia de
 fuentes del origen. Home, navegación y reproductor mantienen su estructura para
 sus bloques posteriores. El PR se identifica como #1 por referencia Git coincidente;
-su título fue proporcionado por el usuario y no leído mediante API.
+su título fue proporcionado por el usuario y después confirmado en la página HTML
+de GitHub, junto al estado OPEN. La API sigue sin estar disponible.

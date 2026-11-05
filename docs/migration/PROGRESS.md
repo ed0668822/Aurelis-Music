@@ -10,6 +10,9 @@ autorizado. B03 fue autorizado expresamente; B04 y siguientes no están autoriza
 PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
 Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
 rama publicada `feature/bitchord-local-migration`, comprobada al iniciar B03.
+Después del push B03, la página HTML de GitHub confirmó título y estado OPEN
+(5 commits en ese momento), aunque la referencia de lectura del PR aún mostraba
+el SHA anterior. La rama remota sí confirmó el SHA nuevo; no se reescribió ninguna referencia.
 Los errores de creación API de B01/B02 registrados abajo son históricos y no
 significan que actualmente no exista el PR.
 
@@ -125,7 +128,7 @@ y cierre de B03. No iniciar automáticamente.
 
 - Autorización: concedida expresamente; PR existente nombrado por el usuario.
 - Base: `d1006710aa1b300a3e6aa862a0bdca26a13884a8`; misma rama y PR #1.
-- Estado: implementación y dos revisiones completadas; publicación en curso.
+- Estado: implementación y dos revisiones completadas; rama publicada para el PR #1.
 - Modificados: temas raíz/dinámico, ColorSchemes y Theme; SearchField, SearchBar,
   SettingsComponents, Skeletons y configuración/dependencias de pruebas Compose.
 - Añadidos: ThemeContrastTest y VisualSystemTest; documentación y cuatro PNG en
@@ -145,7 +148,15 @@ y cierre de B03. No iniciar automáticamente.
   no recibía callback y se sustituyó por dibujo real de la vista con gráficos
   nativos. Se afinó la comprobación de texto para no confundir redondeo de ancho
   subpíxel con truncación. No se deshabilitaron pruebas ni se cambiaron workflows.
-- Commit/publicación/Actions: pendientes de entrega. No crear otro PR ni renombrar el actual.
+- Commit de implementación: `7f747a32e920940b25e7a3ea3553ccf9949021dd`.
+  Autor/committer `ed0668822 <ed0668822@gmail.com>`, verificados antes del commit.
+- Publicación: push de `d100671` a `7f747a3` confirmado en la rama existente;
+  el registro final se publica en otro commit documental (consultar `git log -2`).
+- PR: https://github.com/ed0668822/Aurelis-Music/pull/1,
+  «Aurelis Music Beta UI and components», confirmado OPEN por la página de GitHub.
+  Se conserva su título y no se crea otro PR ni se sobrescribe una descripción de usuario desconocida.
+- Actions: la consulta de runs de la rama devuelve Forbidden en api.github.com;
+  estado remoto sin verificar. No se afirma CI verde ni se modifican workflows.
 - Límites: sin cambios de navegación, Home, motor musical ni diseño de reproductor.
   SF Pro no se copia; validación física y cabeceras definitivas siguen pendientes.
 - Próximo bloque B04 requiere autorización nueva.

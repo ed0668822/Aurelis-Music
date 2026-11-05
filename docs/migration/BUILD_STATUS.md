@@ -132,7 +132,10 @@ bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers
 - Log final local: `/workspace/toolchains/b03-validation-final.log`.
   XML: `app/build/test-results/testDebugUnitTest/TEST-*.xml`.
   Los PNG también se regeneran en `app/build/reports/b03-visual/`.
-- PR #1 existente confirmado por referencia Git; su título lo comunicó el usuario.
+- Entrega: implementación `7f747a32e920940b25e7a3ea3553ccf9949021dd` publicada.
+  PR #1 identificado por referencia Git y confirmado OPEN por HTML de GitHub,
+  con el título «Aurelis Music Beta UI and components». La rama remota confirmó
+  el SHA nuevo; la referencia de lectura del PR aún mostraba el anterior al consultar.
   La consulta API sigue denegada; estado de Actions pendiente de comprobación remota.
 - Pendientes: revisión en dispositivo (incluidos efectos GPU/barras de sistema y
   reproducción), comparación visual completa y cobertura de animaciones de B13.
