@@ -47,6 +47,7 @@ fun LocalSong.toMediaItem(): MediaItem {
                     putString("albumId", albumId)
                     putString("artistId", artistId)
                     putInt("discNumber", discNumber ?: -1)
+                    putString("genre", genre)
                 })
                 .build()
         )
@@ -68,6 +69,7 @@ internal fun MediaItem.toLocalSong(): LocalSong {
         sizeBytes = extras?.getLong("sizeBytes", 0) ?: 0,
         albumId = extras?.getString("albumId"), artistId = extras?.getString("artistId"),
         discNumber = extras?.getInt("discNumber", -1)?.takeIf { it > 0 },
+        genre = extras?.getString("genre"),
         queueTier = queueTier, queueEntryId = queueEntryId,
     )
 }

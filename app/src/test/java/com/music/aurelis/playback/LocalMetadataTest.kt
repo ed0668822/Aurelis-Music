@@ -21,7 +21,7 @@ class LocalMetadataTest {
     @Test fun media3RoundtripPreservesScannedMetadataAndDoesNotReplaceLocalUris() {
         val song = LocalSong("42", "Local", "Artist", "Album", "content://media/external/audio/media/42",
             "content://media/external/audio/albumart/9", 500, "/Music/moved.flac", 2, 2026,
-            dateAddedMs = 123_000, sizeBytes = 456_789, albumId = "9", artistId = "7", discNumber = 1)
+            dateAddedMs = 123_000, sizeBytes = 456_789, albumId = "9", artistId = "7", discNumber = 1, genre = "Pop")
         assertEquals(song, song.toMediaItem().toLocalSong())
     }
 

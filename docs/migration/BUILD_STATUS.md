@@ -313,3 +313,18 @@ de petición/respuesta, caché y errores; no representa traducción remota en vi
 La operación requiere configurar un servidor compatible autorizado; ninguno
 se despliega ni se presupone disponible. Actions bloqueado por proxy CONNECT 403.
 Pruebas físicas, accesibilidad con lector real y servicio remoto siguen pendientes.
+
+## B11 — Verificación final
+
+`testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4`: exit 0
+en 1m 53s, 57 tareas (15 ejecutadas). **101 pruebas**, 0 fallos/errores/omitidas.
+Lint: **0 errores y 210 advertencias**. APK debug y apksigner verify correctos;
+git diff --check correcto. Sin build/firma release ni publicación de APK.
+Log local `/workspace/toolchains/b11-validation.log`; captura `automix-queue.png`
+inspeccionada. Selección pura con metadatos controlados y flujo Compose real con
+Media3 controlado: semilla y posición conservadas, cola vacía no borra la actual.
+Incluye todos los casos anteriores de traducción, letras, colecciones y navegación.
+No se ejecuta red, decodificación/PCM ni crossfade en estas pruebas. Catálogo
+masivo, batería y audio físico siguen pendientes; no se atribuyen BPM al catálogo.
+Actions consultado: proxy CONNECT 403, estado remoto pendiente. No se alteran CI
+ni sus verificaciones para aparentar éxito.

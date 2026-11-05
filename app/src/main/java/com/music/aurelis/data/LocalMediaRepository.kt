@@ -25,7 +25,7 @@ object LocalMediaRepository {
         MediaStore.Audio.Media.ALBUM_ID, MediaStore.Audio.Media.DATA,
         MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.TRACK,
         MediaStore.Audio.Media.YEAR, MediaStore.Audio.Media.DATE_ADDED,
-        MediaStore.Audio.Media.SIZE, MediaStore.Audio.Media.IS_MUSIC,
+        MediaStore.Audio.Media.SIZE, MediaStore.Audio.Media.GENRE, MediaStore.Audio.Media.IS_MUSIC,
         MediaStore.Audio.Media.IS_PENDING, MediaStore.Audio.Media.IS_TRASHED,
     )
 
@@ -69,6 +69,7 @@ object LocalMediaRepository {
                     dateAddedMs = (c.number(MediaStore.Audio.Media.DATE_ADDED) ?: 0).coerceIn(0, Long.MAX_VALUE / 1000) * 1000,
                     sizeBytes = (c.number(MediaStore.Audio.Media.SIZE) ?: 0).coerceAtLeast(0),
                     albumId = albumId?.toString(), artistId = artistId?.toString(),
+                    genre = c.metadata(MediaStore.Audio.Media.GENRE),
                 )
             }
             songs.values.toList()

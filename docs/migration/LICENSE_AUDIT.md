@@ -156,3 +156,18 @@ autorizado compatible sin clave, aceptar su privacidad/condiciones y confirmar
 cada traducción. No se despliega servicio ni se envían letras durante las pruebas.
 Datos y traducciones de fixtures son propios y solo de pruebas; captura identificada
 como fixture. LICENSE/NOTICE conservados; CSV de cabeceras sigue pendiente.
+
+## Registro B11
+
+Revisados en lectura, mismo SHA de B01: QueueBuilder jvmSharedMain y
+TransitionPolicy/AutomixAnalysisSource commonMain de BitChord. QueueBuilder
+aporta deduplicación/caps ya adaptados en Aurelis; se preservan avisos existentes.
+TransitionPolicy atribuye SFG545/Orchard y Kushagra Singh bajo AGPLv3 o posterior;
+no se copia ni relabela esa política. AutomixAnalysisSource está ligada a
+YouTube Opus, excluida de la ruta local. No se modifica ni publica el origen.
+
+LocalAutoMix es aporte propio basado en metadatos y almacenamiento existentes;
+no se añaden bibliotecas, recursos, modelos ni código DSP de terceros. Se conservan
+LICENSE/NOTICE. Pendientes previos sobre distribución de DSP ya incluido y CSV
+no se declaran resueltos por implementar recomendaciones. Captura usa fixtures
+de catálogo propios; no contiene canciones ni portadas copiadas.

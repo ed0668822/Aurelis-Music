@@ -379,7 +379,7 @@ bloque por separado. B07 requerirá nueva autorización.
 
 - Autorización: B10 y B11 concedidos juntos; ejecutar primero B10.
 - Base: `3eb1867a812c6b9ba2b2ebcf42b80fbc4fe3dde2`; misma rama y PR #1.
-- Estado: implementación y doble revisión completadas; publicando B10.
+- Estado: implementación, doble revisión y publicación completadas.
 - Modificados: LyricsTranslation, TranslationLanguages, SettingsRepository,
   AurelisApplication, PlaybackViewModel, TranslationLanguageDialog,
   SyncedLyricsPanel y NowPlayingScreen; nuevo TranslationTest y ampliación de
@@ -399,3 +399,31 @@ bloque por separado. B07 requerirá nueva autorización.
   clave, configurado por el usuario. No hay servidor desplegado ni traducción
   remota en vivo verificada. Fixtures solo bajo tests, nunca letras de producción.
 - Próximo bloque B11 ya autorizado; B12 no autorizado.
+
+- Publicación B10 confirmada: `248461abf63ef4ad83c15640dcf7c54f97718a5f`,
+  push desde `3eb1867` a la rama del PR #1, identidad local del usuario.
+
+## B11 — AutoMix local
+
+- Autorización: concedida junto con B10; misma rama y PR #1.
+- Base: `248461abf63ef4ad83c15640dcf7c54f97718a5f`.
+- Estado: implementación y doble revisión completadas; publicando B11.
+- Nuevo: LocalAutoMix y LocalAutoMixTest. Modificados: modelo LocalSong, scanner
+  MediaStore, puente MediaItem, QueueBuilder, PlaybackViewModel, HomeScreen,
+  MainActivity, MediaStoreLibraryTest, LocalMetadataTest y PlayerIntegrationTest;
+  cinco documentos y captura de cola al cierre.
+- Revisión 1: pasada separada del mismo agente; fuente real BitChord leída antes
+  de implementar, límites/licencias separados de selección local, ausencia de red
+  y BPM inventado, ID/grabación, artistas/colaboraciones, reloj/recencia, semilla,
+  cancelación y preservación de la instancia/posición del tema actual.
+- Revisión 2: segunda pasada del mismo agente completada: 101 casos, sin fallos,
+  errores u omisiones. Selección, género leído/roundtrip, duplicados/caps/recencia,
+  determinismo/variación, Home→cola preservando instancia/posición y error sin borrar.
+  Captura de cola inspeccionada. Sin afirmar revisores humanos independientes.
+- Validación final: exit 0 en 1m 53s, 57 tareas (15 ejecutadas), APK debug y firma
+  verificados; lint 0 errores y 210 advertencias, diff correcto. Actions bloqueado
+  por proxy CONNECT 403; estado remoto pendiente.
+- Límites: mezcla finita por metadatos, sin radio infinita, análisis PCM, crossfade
+  ni beatmatching activados. Sin perfiles múltiples todavía (B12). Rendimiento en
+  catálogo masivo y reproducción/consumo físicos no medidos.
+- Próximo bloque: B12 requiere autorización nueva.

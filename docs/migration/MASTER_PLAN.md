@@ -448,3 +448,46 @@ no responde, se conserva el original y se informa el error, sin resultados simul
 Límites de entrada: 500 slots/30 000 caracteres, 3500 por slot; respuestas hasta
 512 KiB por lote. Cinco idiomas del catálogo existente; modelos reales dependen
 del servidor. Condiciones, privacidad y cuotas de cada servidor deben ser respetadas.
+
+## B11 — AutoMix local por metadatos
+
+Base: commit B10 `248461abf63ef4ad83c15640dcf7c54f97718a5f`. Antes de implementar
+se volvieron a leer en BitChord SHA fijo QueueBuilder (jvmSharedMain),
+TransitionPolicy y AutomixAnalysisSource (commonMain). La primera limita artistas/
+grabaciones; la política de transición tiene procedencia Orchard AGPL y contratos
+distintos; la fuente de análisis exige la versión canónica YouTube/Opus. No se
+copia esa resolución remota ni nuevo DSP/algoritmo de transición AGPL.
+
+LocalAutoMix es selección propia sobre el catálogo real: URI local, ID válido,
+duración >=500 ms y sin IDs/grabaciones duplicadas. Semilla actual disponible,
+último tema disponible del historial, favoritas o catálogo. Usa género MediaStore
+cuando existe, artistas, favoritos, frecuencia, historial, duración y año.
+No inventa géneros/tempo/energía ni usa el fallback ficticio de 120 BPM del helper
+legacy de análisis. Sin metadatos musicales, recurre al resto de datos reales.
+
+Los cinco temas más recientes dentro de dos horas quedan detrás de alternativas
+no recientes. Si el catálogo es pequeño, pueden entrar después; no se inventan
+resultados para completar tamaño. Artista semilla máximo 4, demás 2, incluyendo
+colaboraciones; evita artistas de los dos últimos temas cuando hay alternativas.
+Artistas desconocidos sin ID no bloquean toda la mezcla. Límite 20 por defecto,
+50 máximo. Regenerar varía desempates; mismas entradas/variación son deterministas.
+No es radio infinita ni crossfade/beatmatching. El final sigue los controles de
+repetición elegidos por el usuario; puede solicitar otra mezcla explícitamente.
+
+La lectura de género usa la columna de MediaStore de API33+ y se conserva en
+MediaItem. El botón Home genera en Dispatchers.Default con estado/errores reales.
+Una selección o append nuevo cancela la petición previa; cambios de pista durante
+la generación no son sobrescritos. Si la semilla sigue activa, modifica solo
+antes/después de ella sin reemplazarla ni reiniciar posición. Desactiva shuffle
+al aplicar el orden recomendado; conserva repeat. Se usa el mismo controlador,
+servicio y persistencia de cola B08, sin reproductor duplicado ni tráfico de red.
+
+Se conserva LocalHomeData para sus secciones y recomendaciones básicas existentes;
+su snapshot mix no es la acción AutoMix activa. QueueBuilder cuenta ahora artistas
+ya presentes y colaboraciones, manteniendo su API. No se activan AutoMixPanel ni
+helpers legacy con controles/valores que no estén integrados.
+
+Coste: normalización de metadatos una vez y selección acotada, sin decodificar ni
+analizar archivos y sin modelos. No se afirma medición en bibliotecas masivas,
+consumo físico ni transiciones DSP probadas. Un trabajo posterior de audio debe
+revisar licencias/avisos y probar en hardware antes de activar esas transiciones.

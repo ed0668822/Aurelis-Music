@@ -44,7 +44,7 @@ class MediaStoreLibraryTest {
     ) + extra
 
     @Test fun metadataFallbacksFlagsAndUrisAreReadWithoutPathsOrInventedIds() = runBlocking {
-        provider.rows = listOf(row(1L, mapOf(MediaStore.Audio.Media.TRACK to 1002)), row(2L, mapOf(
+        provider.rows = listOf(row(1L, mapOf(MediaStore.Audio.Media.TRACK to 1002, MediaStore.Audio.Media.GENRE to "Pop")), row(2L, mapOf(
             MediaStore.Audio.Media.TITLE to "", MediaStore.Audio.Media.ARTIST to "<unknown>",
             MediaStore.Audio.Media.ALBUM to null, MediaStore.Audio.Media.ALBUM_ID to null,
         )), row("invalid"), row(3, mapOf(MediaStore.Audio.Media.DURATION to 0)),
@@ -60,6 +60,7 @@ class MediaStoreLibraryTest {
         assertEquals(1, songs[0].discNumber)
         assertEquals("content://media/external/audio/albumart/10", songs[0].artworkUri)
         assertEquals(123_000, songs[0].dateAddedMs)
+        assertEquals("Pop", songs[0].genre)
         assertEquals("file-2", songs[1].title)
         assertEquals("Artista desconocido", songs[1].artist)
         assertNull(songs[1].filePath)

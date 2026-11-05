@@ -179,3 +179,18 @@ FullScreenPlayerHost y AurelisPlayerPlatform legados no se instalan como motor/h
 
 No se copian implementaciones del servidor. Helpers de romanización legacy se
 conservan sin conectarlos al flujo activo ni afirmar revisión de sus servicios.
+
+## AutoMix activo B11
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Selección | LocalAutoMix | Semilla, afinidad, género, favorito/historial/frecuencia y diversidad local |
+| Compatibilidad | QueueBuilder | Caps incluyen cola previa y participantes de colaboraciones |
+| Género | LocalSong, LocalMediaRepository, MediaItemExtensions | Metadato real opcional y roundtrip Media3 |
+| Acción | PlaybackViewModel, HomeScreen, MainActivity | Generar fuera de UI, estados/errores y aplicar sin reiniciar semilla |
+| Continuidad | Servicio y LocalQueueStore B08 sin duplicar | La cola recomendada se guarda/restaura por el flujo existente |
+| Pruebas | LocalAutoMixTest, metadata/scanner y PlayerIntegrationTest | Solo local, ranking, caps, duplicados, cola/posición y error sin borrar |
+
+Referencia leída BitChord: shared/jvmSharedMain QueueBuilder; shared/commonMain
+TransitionPolicy y AutomixAnalysisSource. No se copia nueva implementación;
+YouTube/Opus y transiciones Orchard quedan fuera de esta selección local.

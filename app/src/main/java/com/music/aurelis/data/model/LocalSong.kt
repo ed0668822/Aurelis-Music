@@ -30,6 +30,7 @@ data class LocalSong(
     val albumId: String? = null,
     val artistId: String? = null,
     val discNumber: Int? = null,
+    val genre: String? = null,
 ) {
     val videoId: String get() = id
     val thumbnailUrl: String? get() = artworkUri

@@ -65,6 +65,8 @@ fun HomeScreen(
     onRequestPermission: () -> Unit = {},
     onOpenPlayer: () -> Unit = {},
     onAutoMix: () -> Unit = {},
+    isCreatingMix: Boolean = false,
+    mixError: String? = null,
     onOpenFavorites: () -> Unit = {},
     onOpenPlaylists: () -> Unit = {},
     onOpenPlaylist: (String) -> Unit = {},
@@ -122,10 +124,11 @@ fun HomeScreen(
         }
 
         item(key = "automix") {
-            Button(onClick = onAutoMix, modifier = Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER)) {
-                Text(stringResource(R.string.home_automix))
+            Button(onClick = onAutoMix, enabled = !isCreatingMix, modifier = Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER)) {
+                Text(if (isCreatingMix) "Creando mezcla…" else stringResource(R.string.home_automix))
             }
         }
+        if (mixError != null) item(key = "mix-error") { Text(mixError, modifier = Modifier.padding(horizontal = PAGE_GUTTER), color = MaterialTheme.colorScheme.error) }
         if (favorites.isNotEmpty()) item(key = "favorites") {
             SongCarousel(stringResource(R.string.home_favorites), favorites.take(20), currentSong?.id, isPlaying) { onSongClick(favorites[it]) }
         }

@@ -198,6 +198,31 @@ class PlayerIntegrationTest {
         compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.lyrics !is LyricsState.Loading } }
         compose.runOnIdle { assertTrue(vm.state.value.lyrics is LyricsState.Loaded) }
     }
+    @Test fun homeAutoMixKeepsCurrentItemAndPositionWhileReplacingUpcomingSongs() {
+        start()
+        val original = compose.runOnIdle { player.seekTo(12_345); player.shuffleModeEnabled = true; player.currentMediaItem }
+        compose.onNodeWithText("AutoMix · Selección local").performClick()
+        compose.waitUntil(5000) { compose.runOnIdle { !vm.state.value.isCreatingMix } }
+        compose.runOnIdle {
+            assertNull(vm.state.value.mixError)
+            assertSame(original, player.currentMediaItem)
+            assertEquals("1", vm.state.value.currentSong?.id)
+            assertEquals(12_345L, vm.state.value.positionMs)
+            assertEquals(setOf("1", "2", "3"), vm.state.value.queue.map { it.id }.toSet())
+            assertFalse(player.shuffleModeEnabled); assertTrue(player.playWhenReady)
+        }
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithText("Canción local 2").assertIsDisplayed()
+        capture("automix-queue")
+    }
+    @Test fun emptyAutoMixShowsAnErrorAndDoesNotClearTheCurrentQueue() {
+        start()
+        compose.runOnIdle { vm.startAutoMix(emptyList(), app.userLibrary.state.value) }
+        compose.waitUntil(5000) { compose.runOnIdle { !vm.state.value.isCreatingMix } }
+        compose.onNodeWithText("No hay canciones locales disponibles para crear una mezcla.").performScrollTo().assertIsDisplayed()
+        compose.runOnIdle { assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id }) }
+    }
     private fun capture(name: String) {
         val bitmap = compose.runOnIdle {
             val view = compose.activity.window.decorView

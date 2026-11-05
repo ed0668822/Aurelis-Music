@@ -21,6 +21,11 @@ import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.data.lyrics.LyricsTranslation
 import com.music.aurelis.data.model.LocalSong
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.currentCoroutineContext
+import com.music.aurelis.data.LocalUserLibraryState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +73,8 @@ data class PlaybackState(
     val canNext: Boolean = false,
     val canPrevious: Boolean = false,
     val errorMessage: String? = null,
+    val isCreatingMix: Boolean = false,
+    val mixError: String? = null,
 )
 
 class PlaybackViewModel internal constructor(
@@ -81,6 +88,8 @@ class PlaybackViewModel internal constructor(
     private var controller: Player? = null
     private var connectionJob: Job? = null
     private var playRequestJob: Job? = null
+    private var mixJob: Job? = null
+    private var mixVersion = 0L
     private var positionJob: Job? = null
     private var lyricsJob: Job? = null
     private var translationJob: Job? = null
@@ -141,6 +150,7 @@ class PlaybackViewModel internal constructor(
 
     fun playSongs(songs: List<LocalSong>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
+        cancelMix()
         playRequestJob?.cancel()
         playRequestJob = viewModelScope.launch {
             connect()
@@ -210,10 +220,46 @@ class PlaybackViewModel internal constructor(
 
     fun enqueue(songs: List<LocalSong>) {
         if (songs.isEmpty()) return
+        cancelMix()
         playRequestJob = viewModelScope.launch {
             connect(); connectionJob?.join()
             controller?.addMediaItems(songs.map { it.toMediaItem() })
             syncState()
+        }
+    }
+
+    private fun cancelMix() {
+        mixVersion++; mixJob?.cancel()
+        _state.update { it.copy(isCreatingMix = false, mixError = null) }
+    }
+
+    fun startAutoMix(songs: List<LocalSong>, user: LocalUserLibraryState) {
+        cancelMix(); playRequestJob?.cancel()
+        val version = mixVersion
+        val seedId = _state.value.currentSong?.id
+        _state.update { it.copy(isCreatingMix = true) }
+        mixJob = viewModelScope.launch {
+            try {
+                val mix = withContext(Dispatchers.Default) { LocalAutoMix.build(songs, user, seedId, variation = version) }
+                currentCoroutineContext().ensureActive()
+                if (mix.isEmpty()) { _state.update { it.copy(mixError = "No hay canciones locales disponibles para crear una mezcla.") }; return@launch }
+                connect(); connectionJob?.join()
+                val player = controller ?: return@launch
+                if (seedId != player.currentMediaItem?.mediaId) {
+                    _state.update { it.copy(mixError = "La canción cambió mientras se creaba la mezcla. Vuelve a intentarlo.") }; return@launch
+                }
+                player.shuffleModeEnabled = false // The recommender has already ordered this queue.
+                if (player.currentMediaItem?.mediaId == mix.first().id && player.currentMediaItem?.localConfiguration?.uri.toString() == mix.first().contentUri) {
+                    val index = player.currentMediaItemIndex
+                    if (index + 1 < player.mediaItemCount) player.removeMediaItems(index + 1, player.mediaItemCount)
+                    if (index > 0) player.removeMediaItems(0, index)
+                    player.addMediaItems(mix.drop(1).map { it.toMediaItem() })
+                    resume()
+                } else PlayerConnection.playSongs(player, mix)
+                syncState()
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { if (version == mixVersion) _state.update { it.copy(mixError = "No se pudo crear la mezcla local. Vuelve a intentarlo.") } }
+            finally { if (version == mixVersion) _state.update { it.copy(isCreatingMix = false) } }
         }
     }
 
@@ -371,6 +417,7 @@ class PlaybackViewModel internal constructor(
     override fun onCleared() {
         connectionJob?.cancel()
         playRequestJob?.cancel()
+        mixJob?.cancel()
         positionJob?.cancel()
         lyricsJob?.cancel()
         translationJob?.cancel()
