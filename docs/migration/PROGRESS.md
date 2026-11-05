@@ -275,7 +275,7 @@ bloque por separado. B07 requerirá nueva autorización.
 
 - Autorización: concedida expresamente después de entregar B05/B06.
 - Base: `15582e8139173802bc01ba7046a38d461e7ae03c`; misma rama y PR #1.
-- Estado: implementación, doble revisión y validación completadas; publicación en curso.
+- Estado: implementación, doble revisión y validación completadas; publicado.
 - Modificados: PlaybackViewModel, PlayerConnection, MediaItemExtensions,
   MiniPlayer, GlassNavBar, AnimatedArtwork, PlayerControls, PlayerSlider,
   NowPlayingScreen, QueueScreen, MainActivity y strings. Nuevos tests:
@@ -302,3 +302,12 @@ bloque por separado. B07 requerirá nueva autorización.
   Bluetooth/foco ni sesiones de larga duración. Integración avanzada de B08,
   letras B09 y AutoMix B11 conservan su alcance; ningún bloque siguiente autorizado.
 - Próximo bloque: B08, esperar autorización expresa.
+
+- Commit B07: `26b50820291b8e9d92e8469e8cb292b6eb4d8ec1`; push confirmado
+  desde `15582e8` a la rama existente. Autor/committer verificados:
+  `ed0668822 <ed0668822@gmail.com>`; configuración únicamente local al repositorio.
+- PR #1 confirmado OPEN por HTML público, 14 commits y B07 presente; título
+  «Aurelis Music Beta UI and components» conservado. No se cambia descripción,
+  no se crea otro PR y no se hace merge. Este cierre se publica como otro commit
+  documental, sin reescribir historial. Actions no verificable por proxy 403.
+- B07 cerrado con comprobaciones físicas pendientes; detener antes de B08.
