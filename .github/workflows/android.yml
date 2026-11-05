@@ -50,49 +50,18 @@ jobs:
           fi
 
       # ──────────────────────────────────────────────────────────────
-      # Instalar Platform SDK android-37 + NDK con reintentos.
-      # El runner Ubuntu trae hasta android-36; AGP no instala platforms
-      # automáticamente, así que compileSdk = 37 falla sin esto.
+      # Preinstalar NDK con reintentos (evita el fallo de zip corrupto
+      # y el "Broken pipe" del comando `yes`)
       # ──────────────────────────────────────────────────────────────
-      - name: Install Android SDK Platform 37 + NDK (robust, with retries)
+      - name: Install NDK (robust, with retries)
         shell: bash
         run: |
           set -e
-          PLATFORM="platforms;android-37"
           NDK_VERSION="26.1.10909125"
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          PLATFORM_DIR="${SDK_DIR}/platforms/android-37"
           NDK_DIR="${SDK_DIR}/ndk/${NDK_VERSION}"
           SDKMANAGER="${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager"
 
-          echo "── Accepting SDK licenses ──"
-          ( set +o pipefail; yes 2>/dev/null | "$SDKMANAGER" --licenses >/dev/null 2>&1 ) || true
-
-          # ── Platform SDK android-37 ──
-          if [ -d "$PLATFORM_DIR" ] && [ -f "$PLATFORM_DIR/source.properties" ]; then
-            echo "✅ Platform SDK android-37 already installed at ${PLATFORM_DIR}"
-          else
-            echo "📦 Installing ${PLATFORM} (with retries)…"
-            for attempt in 1 2 3; do
-              echo "── Platform attempt ${attempt}/3 ──"
-              rm -rf "${SDK_DIR}/.temp" "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
-              "$SDKMANAGER" --install "$PLATFORM" > /tmp/sdkmanager-platform.log 2>&1 || true
-              if [ -d "$PLATFORM_DIR" ] && [ -f "$PLATFORM_DIR/source.properties" ]; then
-                echo "✅ Platform SDK android-37 installed on attempt ${attempt}"
-                break
-              fi
-              echo "⚠️  Platform attempt ${attempt} failed, retrying in 10s…"
-              tail -n 30 /tmp/sdkmanager-platform.log 2>/dev/null || true
-              sleep 10
-            done
-            if [ ! -d "$PLATFORM_DIR" ] || [ ! -f "$PLATFORM_DIR/source.properties" ]; then
-              echo "::error::Failed to install ${PLATFORM} after 3 attempts."
-              cat /tmp/sdkmanager-platform.log 2>/dev/null || true
-              exit 1
-            fi
-          fi
-
-          # ── NDK ──
           if [ -d "$NDK_DIR" ] && [ -f "$NDK_DIR/source.properties" ]; then
             echo "✅ NDK ${NDK_VERSION} already installed at ${NDK_DIR}"
             ls -la "$NDK_DIR" | head -20
@@ -101,8 +70,11 @@ jobs:
 
           echo "📦 Installing NDK ${NDK_VERSION} (with retries)…"
 
+          echo "── Accepting SDK licenses ──"
+          ( set +o pipefail; yes 2>/dev/null | "$SDKMANAGER" --licenses >/dev/null 2>&1 ) || true
+
           for attempt in 1 2 3; do
-            echo "── NDK attempt ${attempt}/3 ──"
+            echo "── Attempt ${attempt}/3 ──"
             rm -rf "${SDK_DIR}/.temp" "${SDK_DIR}/.downloadIntermediates" 2>/dev/null || true
 
             "$SDKMANAGER" --install "ndk;${NDK_VERSION}" > /tmp/sdkmanager-ndk.log 2>&1 || true
@@ -118,7 +90,7 @@ jobs:
               fi
             fi
 
-            echo "⚠️  NDK attempt ${attempt} failed, retrying in 10s…"
+            echo "⚠️  Attempt ${attempt} failed, retrying in 10s…"
             tail -n 30 /tmp/sdkmanager-ndk.log 2>/dev/null || true
             sleep 10
           done
