@@ -43,7 +43,7 @@ enum class AurelisHazeStyle {
 /**
  * Aplica un efecto de haze a un elemento, usando el material de haze (blur + tint).
  *
- * @param modifier El modifier del elemento.
+ * @receiver El modifier del elemento.
  * @param hazeState El HazeState creado con [rememberHazeState].
  * @param style El estilo de haze (thin, regular, thick).
  * @param tint El color de tint para el haze (se adapta automáticamente al tema).
@@ -62,11 +62,11 @@ fun Modifier.aurelisHazeEffect(
     val finalTint = tint ?: themeTint
 
     return when (style) {
-        AurelisHazeStyle.Thin -> Modifier.hazeSource(hazeState)
+        AurelisHazeStyle.Thin -> this.hazeSource(hazeState)
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint)))
-        AurelisHazeStyle.Regular -> Modifier.hazeSource(hazeState)
+        AurelisHazeStyle.Regular -> this.hazeSource(hazeState)
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint)))
-        AurelisHazeStyle.Thick -> Modifier.hazeSource(hazeState)
+        AurelisHazeStyle.Thick -> this.hazeSource(hazeState)
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint)))
     }
 }
