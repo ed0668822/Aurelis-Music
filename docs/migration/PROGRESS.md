@@ -5,7 +5,7 @@
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
 Comprobar rama, HEAD, cambios locales y último commit antes de actuar. No repetir
 la auditoría completa; verificar solo referencias cambiadas y componentes del bloque
-autorizado. B03 fue autorizado expresamente; B04 y siguientes no están autorizados.
+autorizado. B04 fue autorizado expresamente; B05 y siguientes no están autorizados.
 
 PR actual: [Aurelis Music Beta UI and components](https://github.com/ed0668822/Aurelis-Music/pull/1).
 Creado y nombrado por el usuario. Referencia `refs/pull/1/head` coincidente con la
@@ -69,8 +69,8 @@ significan que actualmente no exista el PR.
 
 ## Próximo bloque
 
-B04 — Navegación, únicamente tras nueva autorización explícita del usuario
-y cierre de B03. No iniciar automáticamente.
+B05 — Home local, únicamente tras nueva autorización explícita del usuario
+y cierre de B04. No iniciar automáticamente.
 
 ## Verificaciones documentales B01
 
@@ -160,3 +160,31 @@ y cierre de B03. No iniciar automáticamente.
 - Límites: sin cambios de navegación, Home, motor musical ni diseño de reproductor.
   SF Pro no se copia; validación física y cabeceras definitivas siguen pendientes.
 - Próximo bloque B04 requiere autorización nueva.
+
+## B04 — Navegación
+
+- Autorización: concedida expresamente por el usuario tras B03.
+- Base: `309c732e5051f80f198e533ac6752c3902678f64`; misma rama y PR #1.
+- Estado: implementación y dos revisiones completadas; entrega en curso.
+- Modificados: MainActivity, AppNavigator, GlassNavBar, LocalMusicScreen,
+  ReplayScreen, EqualizerScreen, strings y documentación.
+- Añadidos: AppNavigationHost, AppNavigatorTest, NavigationIntegrationTest.
+- Integración: pila única y pestañas tipadas; enlaces de Biblioteca y Ajustes;
+  regreso cola→reproductor→origen, Back Android y estado por pestaña/página guardable.
+  Se mantiene el motor Media3 y se evita el mini reproductor duplicado.
+- Revisión 1 (arquitectura/preservación): completada como pasada separada del mismo
+  agente. Se revisaron rutas/callbacks, constructor del navegador, orden de detalles,
+  estados guardables pequeños, ausencia de doble controlador activo y preservación
+  del arranque/Media3. Se verificaron XML y enlaces documentales; sin dependencias nuevas.
+- Revisión 2 (funcionamiento/integración): completada como segunda pasada del mismo
+  agente. Se ejercitó el grafo real Compose con enlaces y pantallas existentes, Atrás,
+  scroll y consultas restauradas, selección accesible y retorno de cola. Se amplió el
+  caso de búsqueda local para incluir texto y restauración antes de cerrar con Atrás.
+  No equivale a una revisión humana independiente ni a una prueba física del servicio.
+- Compilación incremental: compileDebugKotlin correcto en 26s.
+- Debug: correcto; firma APK verificada. Suite final: 28 pruebas correctas,
+  0 fallos, 0 errores y 0 omitidas. Lint sin errores y 205 advertencias.
+- Commit, publicación y Actions: pendientes de entrega.
+- Límites: sin Home nueva, detalles álbum/artista, estadísticas ni controles EQ nuevos.
+  Replay/Equalizer se exponen como estructuras existentes incompletas; no funciones simuladas.
+- Próximo bloque: B05, pendiente de nueva autorización.

@@ -3,7 +3,8 @@ package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.Role
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
@@ -97,6 +100,7 @@ fun GlassNavBar(
         ) {
             Row(
                 modifier = Modifier
+                    .selectableGroup()
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -111,13 +115,14 @@ fun GlassNavBar(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable(onClick = onClick)
+                            .selectable(selected = isSelected, role = Role.Tab, onClick = onClick)
+                            .heightIn(min = 48.dp)
                             .padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Icon(
                             imageVector = tab.icon,
-                            contentDescription = tab.label,
+                            contentDescription = null,
                             tint = tint,
                             modifier = Modifier.size(TAB_ICON_SIZE),
                         )

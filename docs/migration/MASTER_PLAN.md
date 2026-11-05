@@ -2,8 +2,8 @@
 
 ## Alcance y referencias
 
-Documento iniciado en B01 (auditoría y planificación). B02 y B03 fueron autorizados
-después e incorporan únicamente sus secciones específicas. B04 y siguientes no están autorizados.
+Documento iniciado en B01 (auditoría y planificación). B02, B03 y B04 fueron autorizados
+después e incorporan únicamente sus secciones específicas. B05 y siguientes no están autorizados.
 Documentación redactada el 4 de noviembre de 2026 (America/El_Salvador).
 
 - Destino: `ed0668822/Aurelis-Music`, base `9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
@@ -186,3 +186,49 @@ de preferencias observados en composición, acciones únicas de switch, selecci�
 con gráficos nativos en claro/oscuro y escala 1/1.5; no equivalen a validación física
 del dispositivo ni a una comparación visual exacta con BitChord. Sin nuevos botones
 de producto, rutas ni contenido simulado de streaming.
+
+## B04 — Navegación local
+
+Autorizado tras B03; misma rama y PR #1, sin migrar Home ni reorganizar Ajustes por
+categorías todavía. Se integra AppNavigator existente, conservando sus operaciones
+de pila/detalles para usos posteriores. El NavigationController legado no se conecta
+al grafo ni se crea una segunda instancia de navegación de producción.
+
+- Cuatro pestañas tipadas: HOME, EXPLORE, LIBRARY, SEARCH. La barra usa recursos de
+  texto existentes y semántica de selección accesible; no acumula pestañas en la pila.
+- Una sola pila sustituye booleanos independientes de pantallas. Biblioteca abre
+  LocalMusic, Replay y Settings; Settings abre Equalizer. Son las pantallas existentes;
+  Replay/Equalizer siguen siendo estructuras incompletas, con mensajes honestos sobre
+  estadísticas/controles no disponibles. No se implementa historial ni DSP nuevo en B04.
+- NowPlaying y Queue son destinos de esa pila: abrir cola conserva el reproductor
+  debajo; Atrás/descartar vuelve a él y después a la pestaña original. El servicio y
+  los modelos de reproducción no se modifican. Los overlays existentes permanecen
+  compuestos para sus animaciones, con visibilidad derivada de la ruta actual.
+- Un único acceso al reproductor en GlassNavBar, sin el segundo MiniPlayer simultáneo.
+  El componente MiniPlayer no se borra; su adaptación visual continúa en B07.
+- AppNavigationHost muestra solo la página activa, sin controles de páginas ocultas
+  accesibles detrás. La barra inferior solo aparece en la raíz de una pestaña.
+  Los diálogos locales conservan prioridad; la búsqueda interna de música local
+  consume Atrás antes de abandonar su página y el aviso de actualización lo consume
+  antes de cerrar una ruta. No se modifica la lógica del actualizador.
+- Atrás: primero página/detalle, después Inicio desde otra pestaña raíz. En Inicio
+  raíz no se intercepta: el cierre/retorno corresponde a Android, sin cambiar audio.
+- rememberSaveable + Saver versionado conservan pestaña y rutas implementadas por
+  claves estables, nunca canciones, carátulas, callbacks o listas de biblioteca.
+  Estado incompatible/desconocido se descarta completo y se inicia en Inicio.
+  Las rutas diferidas con LocalShelf/detalles externos no se serializan en B04;
+  requerirán IDs pequeños y una política de carga al integrarse en otro bloque.
+- SaveableStateHolder guarda estado por pestaña/página finita (consulta, scroll y
+  selección local). Restaurar vuelve a la ruta superior y mantiene sus padres.
+  Sin canción disponible al restaurar el reproductor se muestra un estado vacío con
+  regreso, en lugar de dejar pantalla vacía o descartar prematuramente la ruta mientras
+  el servicio conecta. La disponibilidad de audio no se serializa como navegación.
+- Se separa AurelisNavigationContent de los efectos de arranque en AurelisApp para
+  probar el mismo grafo sin conectar Media3, solicitar permisos ni consultar redes.
+  Arranque, permisos y conexión reales se mantienen en MainActivity.
+
+Aceptación: pruebas de orden de pila y compatibilidad de detalles, ausencia de rutas
+duplicadas consecutivas, retorno cola→reproductor→origen, raíz Inicio no interceptada,
+validación/restauración del Saver y pruebas Compose del grafo real con enlaces de
+Biblioteca/Ajustes, Atrás Android, estado de búsqueda, scroll de Ajustes y recreación
+de estado guardado. Ver BUILD_STATUS para resultados y límites de la simulación.

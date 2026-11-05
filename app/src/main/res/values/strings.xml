@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="navigation_settings">Ajustes</string>
+    <string name="navigation_no_song">No hay ninguna canción seleccionada.</string>
+    <string name="navigation_explore_pending">Explorar aún no está disponible.</string>
+    <string name="navigation_replay_empty">Todavía no hay estadísticas de escucha disponibles.</string>
+    <string name="navigation_equalizer_pending">Los controles de esta pantalla de ecualización aún no están disponibles.</string>
     <string name="app_name">Aurelis Music</string>
 
     <!-- Search -->

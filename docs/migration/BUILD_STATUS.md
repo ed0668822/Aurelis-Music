@@ -139,3 +139,43 @@ bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers
   La consulta API sigue denegada; estado de Actions pendiente de comprobación remota.
 - Pendientes: revisión en dispositivo (incluidos efectos GPU/barras de sistema y
   reproducción), comparación visual completa y cobertura de animaciones de B13.
+
+## B04 — Navegación
+
+Base `309c732e5051f80f198e533ac6752c3902678f64`; commits de entrega en PROGRESS.
+
+```bash
+cd /workspace/Aurelis-Music
+source /workspace/toolchains/activate.sh
+bash gradlew compileDebugKotlin --no-daemon --max-workers=4
+bash gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon --max-workers=4
+# Tras ampliar solo el caso de prueba de restauración de búsqueda local:
+bash gradlew testDebugUnitTest lintDebug --no-daemon --max-workers=4
+```
+
+- Compilación incremental inicial: exit 0 en 26s.
+- Primera suite/debug/lint: exit 0 en 1m 42s; APK generado.
+- Ejecución final: exit 0 en 32s; 38 tareas (5 ejecutadas, 33 up-to-date).
+- 28 pruebas, 0 fallos, 0 errores, 0 omitidas. Se mantienen las 16 previas;
+  AppNavigatorTest añade 8 y NavigationIntegrationTest añade 4.
+- Lint sin errores, 205 advertencias; firma APK comprobada con apksigner.
+- Pruebas de pila: rutas consecutivas sin duplicación, pestaña de origen, retorno a
+  Inicio raíz, cola→reproductor, claves/versiones de estado y orden de detalles previo.
+- Integración Robolectric/API 33: barra real con selección, Biblioteca→Ajustes→Equalizer
+  y vuelta mediante dispatcher Android; Settings conserva scroll al restaurar; Replay
+  vuelve a Biblioteca; consulta de búsqueda sobrevive a pestañas/rutas/restauración;
+  búsqueda local restaurada consume Atrás antes que su padre; cola restaurada vuelve
+  al estado de reproductor sin canción y permite regresar a la pestaña original.
+- Se ejecuta AurelisNavigationContent, la misma composición usada por MainActivity,
+  con sus pantallas y ViewModels reales; no se inician actualizador, conexiones Media3
+  ni solicitudes de permisos. No se prueban acciones de audio o estadísticas mediante
+  una implementación simulada que sustituya servicios.
+- StateRestorationTester emula guardado/restauración de estado Compose; no se afirma
+  reinicio real de proceso/dispositivo ni restauración de la sesión multimedia.
+- El modal de actualización y los diálogos nativos se revisaron en código; su
+  interacción de prioridad/ventanas con Atrás en dispositivo sigue pendiente.
+- Logs locales: `/workspace/toolchains/b04-compile.log`,
+  `/workspace/toolchains/b04-validation.log`, `/workspace/toolchains/b04-validation-final.log`.
+  Informes XML actuales en `app/build/test-results/testDebugUnitTest/`.
+- Release, dispositivo físico y Actions remoto quedan fuera de estos resultados;
+  no se deshabilitan comprobaciones ni se alteran workflows.

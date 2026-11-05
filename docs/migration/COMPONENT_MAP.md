@@ -75,3 +75,24 @@ fuentes del origen. Home, navegación y reproductor mantienen su estructura para
 sus bloques posteriores. El PR se identifica como #1 por referencia Git coincidente;
 su título fue proporcionado por el usuario y después confirmado en la página HTML
 de GitHub, junto al estado OPEN. La API sigue sin estar disponible.
+
+## Navegación B04
+
+Se integra la adaptación AppNavigator existente en Aurelis; no se vuelve a copiar
+el navegador del origen ni se crean servicios de audio. Se conservan sus callbacks
+de detalle, mientras las rutas de datos complejos quedan diferidas.
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Pila y estado | `ui/navigation/AppNavigator.kt` | AppTab tipada, rutas NowPlaying/Queue, retorno a Inicio y Saver pequeño/versionado |
+| Host activo | `ui/navigation/AppNavigationHost.kt` | BackHandler único, SaveableStateHolder, página activa y overlays existentes |
+| Integración real | `MainActivity.kt` | AurelisNavigationContent separado de arranque; enlaces Biblioteca y Ajustes conectados; sin booleanos de rutas |
+| Barra inferior | `ui/components/GlassNavBar.kt` | Selección accesible y entrada única al reproductor; MiniPlayer independiente conservado como componente |
+| Música local | `ui/screens/LocalMusicScreen.kt` | Estado UI guardable y búsqueda interna con prioridad de Atrás |
+| Páginas existentes | `ui/screens/ReplayScreen.kt`, `EqualizerScreen.kt` | Se explicita que métricas/controles de estas estructuras no están disponibles |
+| Textos | `app/src/main/res/values/strings.xml` desde raíz | Etiquetas de navegación y estados incompletos sin referencias a bloques técnicos |
+| Pruebas | `app/src/test/java/com/music/aurelis/ui/navigation/` desde raíz | Pila pura y grafo Compose real, sin efectos de arranque/red/audio |
+
+NavigationController y sus referencias estáticas de auditoría permanecen como legado
+sin uso en el grafo activo; no se usa navigateBack por decremento de índices.
+Home y callbacks de detalles de álbum/artista permanecen pendientes de B05/B06.

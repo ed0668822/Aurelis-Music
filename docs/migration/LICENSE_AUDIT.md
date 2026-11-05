@@ -77,3 +77,11 @@ eliminan atribuciones ni se declara resuelta la auditoría de recursos pendiente
 Las cuatro capturas documentales se generan con componentes reales, texto de ejemplo
 de la prueba y gráficos nativos de Robolectric; no contienen carátulas ni material
 gráfico copiado de BitChord. No son pantallas de una biblioteca real de usuario.
+
+## Registro B04
+
+Se extiende AppNavigator ya adaptado en el destino y se conservan avisos y NOTICE.
+AppNavigationHost, Saver, integración y pruebas nuevas son aportes propios; no se
+incorpora nuevo código, recursos ni dependencias de BitChord u otros proyectos.
+Se mantiene el alcance legal ya documentado para la adaptación previa. Nuevos archivos
+siguen sin cabeceras definitivas hasta recibir el CSV; no se borran avisos existentes.

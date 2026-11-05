@@ -6,6 +6,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.music.aurelis.R
 
 @Composable
 fun ReplayScreen(
@@ -14,7 +16,7 @@ fun ReplayScreen(
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(text = "Replay & Statistics", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Your local playback history and replay metrics.", style = MaterialTheme.typography.bodyMedium)
+        Text(text = stringResource(R.string.navigation_replay_empty), style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = onBack) {
             Text("Back")
