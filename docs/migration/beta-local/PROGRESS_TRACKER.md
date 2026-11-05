@@ -104,3 +104,19 @@ ya acreditadas; leer solo filas/archivos de la unidad al reanudar.
   único, preservación de datos y reproducción; no se excluyen pruebas por fallar.
 - No dispositivos físicos/SAF real; no importación/exportación UI ni B01.2/3.
   B01_1_MIGRATION y B01_1_EVIDENCE documentan formato, privacidad y limitaciones.
+
+
+## B01.1 — entrega publicada
+
+- Commit: `bfbc81fdaeee5d9cb2086f27ae156ce75ca5c58b`; autor/committer ed0668822 <ed0668822@gmail.com>,
+  identidad solo local. Push confirmado desdeb2bf434 a la misma rama.
+- PR1 abierto: https://github.com/ed0668822/Aurelis-Music/pull/1; título intacto
+  «Aurelis Music Beta UI and components». No merge ni force push.
+- Actions: el listado público tras push todavía mostraba el run121 anterior
+  exitoso (42123993004); no acredita el nuevo SHA. CI del código/checkpoint
+  pendiente; no se traslada un verde histórico a B01.1.
+- Este checkpoint documental registra el SHA real después de publicar y no
+  cambia código validado. APK construido desdeb2bf434 más los cambios de esta
+  entrega; B01_1_EVIDENCE registra ambas referencias para no confundir metadatos.
+- Estado: B01.1 completado localmente y publicado. B01.2 MediaStore/metadatos y
+  B01.3 carpetas siguen sin implementar y requieren autorización.

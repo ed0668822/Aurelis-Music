@@ -52,5 +52,6 @@
     "No guarantee of measured startup cost on physical devices; snapshot is bounded to64MiB.",
     "B00 ELF4KB ONNX issue and legal/API/model provenance blockers remain.",
     "CI by delivery SHA checked separately after publication."
-  ]
+  ],
+  "source_delivery_commit": "bfbc81fdaeee5d9cb2086f27ae156ce75ca5c58b"
 }

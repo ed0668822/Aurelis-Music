@@ -102,3 +102,7 @@ no se cambian bibliotecas nativas en esta unidad.
 Validación final: BUILD SUCCESSFUL in 5m 12s;137 pruebas por variante sin fallos/errores/omitidos;
 assemble/lint debug y release correctos, R8/firma/ZIP/avisos verificados.
 B01_1_EVIDENCE.json fija hashes y advertencias de estos artefactos, no los de B00.
+
+
+Código entregado: `bfbc81fdaeee5d9cb2086f27ae156ce75ca5c58b`. Misma rama/PR1, identidad Git local autorizada.
+CI del nuevo SHA pendiente; run121 observado exitoso es anterior a esta entrega.
