@@ -30,6 +30,23 @@ import org.robolectric.annotation.GraphicsMode
 class SettingsIntegrationTest {
     @get:org.junit.Rule(order = 0) val registerActivity = com.music.aurelis.ui.RobolectricActivityRule()
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
+    @Test fun fontSelectorChangesTheActualThemeAndSurvivesReinitialization() {
+        var family: androidx.compose.ui.text.font.FontFamily? = null
+        compose.setContent { AurelisTheme {
+            val selected = androidx.compose.material3.MaterialTheme.typography.bodyLarge.fontFamily
+            SideEffect { family = selected }
+            SettingsScreen(true, {})
+        } }
+        compose.onNode(isSelectable() and hasText("Vazirmatn")).performScrollTo().performClick()
+        compose.runOnIdle {
+            assertEquals(com.music.aurelis.ui.theme.VazirmatnFamily, family)
+            SettingsRepository.init(RuntimeEnvironment.getApplication())
+            assertEquals(com.music.aurelis.data.AppFont.VAZIRMATN, SettingsRepository.appFont.value)
+        }
+        compose.onAllNodes(isSelectable() and hasText("Sistema")).onFirst().performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(com.music.aurelis.ui.theme.AurelisFontFamily, family) }
+    }
+
     @Test fun appearanceSettingsDriveThemeProvidersAndPersist() {
         var glass = false; var motion = false
         compose.setContent { AurelisTheme {

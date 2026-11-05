@@ -138,3 +138,11 @@ Release/dispositivo pendientes del cierre de alcance. Siguiente B01.3 autorizado
   MediaStore explícito; SAF real/SD físico pendientes. No escáner ficticio.
 - B01 completo localmente; B02.1/.2/.3 autorizados por «continúa hasta B02».
 - Release completo se comprobará al cerrar B02; no iniciar B03.
+
+
+## B02.1 — completado localmente
+
+156 tests debug correctos, assemble/lint correctos. Fuente del sistema y Vazirmatn
+con selector real, persistencia y OFL/NOTICE/bundle. Dos revisiones separadas del
+mismo agente; fuente y texto íntegros con SHA de origen. ADB sin dispositivos.
+B01.3 publicado en4c8d529; B02.2/.3 autorizados, B03 no iniciado.

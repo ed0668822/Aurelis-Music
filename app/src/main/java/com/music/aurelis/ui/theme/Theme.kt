@@ -22,6 +22,13 @@ val AurelisFontFamily: FontFamily = FontFamily.SansSerif
 @Deprecated("Use AurelisFontFamily; SF Pro is not bundled")
 val SFProDisplay: FontFamily = AurelisFontFamily
 
+internal val VazirmatnFamily = FontFamily(androidx.compose.ui.text.font.Font(com.music.aurelis.R.font.vazirmatn_regular))
+
+internal fun typographyFor(font: com.music.aurelis.data.AppFont): Typography = when (font) {
+    com.music.aurelis.data.AppFont.SYSTEM -> AurelisTypography
+    com.music.aurelis.data.AppFont.VAZIRMATN -> AurelisTypography.withFamily(VazirmatnFamily)
+}
+
 internal val AurelisTypography = Typography(
     displayLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 34.sp, lineHeight = 40.sp, letterSpacing = (-0.5).sp),
     headlineLarge = TextStyle(fontWeight = FontWeight.W800, fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = (-0.4).sp),

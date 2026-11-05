@@ -79,6 +79,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         if (uri != null) try { com.music.aurelis.data.LocalFolderRepository.add(context, uri); libraryError = null }
         catch (error: Exception) { libraryError = error.message ?: "No se pudo seleccionar la carpeta." }
     }
+    val appFont by SettingsRepository.appFont.collectAsState()
     val mode by SettingsRepository.themeMode.collectAsState()
     val glass by SettingsRepository.liquidGlass.collectAsState()
     val motion by SettingsRepository.reduceAnimation.collectAsState()
@@ -114,6 +115,8 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         }
         SettingsGroup(header = "Apariencia") {
             Column(Modifier.padding(16.dp)) {
+                Text("Tipografía", style = MaterialTheme.typography.bodyLarge)
+                SegmentedControl(listOf("Sistema", "Vazirmatn"), appFont.ordinal, onSelect = { SettingsRepository.setAppFont(com.music.aurelis.data.AppFont.entries[it]) })
                 Text("Tema", style = MaterialTheme.typography.bodyLarge)
                 SegmentedControl(listOf("Sistema", "Claro", "Oscuro"), mode, SettingsRepository::setThemeMode)
             }

@@ -15,6 +15,8 @@ enum class EqualizerMode { DYNAMIC, MANUAL }
 /** Calidad de audio preferida para reproducción local. */
 enum class AudioQuality { STANDARD, HIGH, LOSSLESS }
 
+enum class AppFont { SYSTEM, VAZIRMATN }
+
 object SettingsRepository {
     private lateinit var prefs: SharedPreferences
 
@@ -67,12 +69,14 @@ object SettingsRepository {
     val paxSenixApiKey = MutableStateFlow("")
 
     internal val libraryFolderRevision = MutableStateFlow(0L)
+    val appFont = MutableStateFlow(AppFont.SYSTEM)
     val useAllAudioFolders = MutableStateFlow(true)
     val localMusicFolders = MutableStateFlow<Set<String>>(emptySet())
 
     fun init(context: Context, profileId: ProfileId = ProfileRepository.profileId) {
         prefs = ProfileStorage(context).open(profileId, ProfileDataArea.PREFERENCES)
 
+        appFont.value = AppFont.entries.firstOrNull { it.name == readString("app_font", "SYSTEM") } ?: AppFont.SYSTEM
         useAllAudioFolders.value = readBoolean("all_audio_folders", true)
         localMusicFolders.value = readStringSet("local_music_folders", emptySet()).orEmpty().toSet()
         themeMode.value = readInt("theme_mode", 0).takeIf { it in 0..2 } ?: 0
@@ -131,6 +135,12 @@ object SettingsRepository {
             LyricsSource.offered
         }
         prioritizeSyllableSync.value = readBoolean("prioritize_syllable_sync", false)
+    }
+
+    fun setAppFont(value: AppFont) {
+        writable()
+        check(prefs.edit().putString("app_font", value.name).commit()) { "No se pudo guardar la tipografía." }
+        appFont.value = value
     }
 
     fun setLocalFolderSelection(folders: Set<String>, allFolders: Boolean) {

@@ -16,6 +16,15 @@ import org.robolectric.annotation.Config
 @Config(sdk = [33], manifest = Config.NONE, application = AurelisApplication::class)
 class SettingsPersistenceTest {
     private val app get() = RuntimeEnvironment.getApplication()
+    @Test fun unknownFontKeepsStoredValueAndUsesSystemFallback() {
+        val app = org.robolectric.RuntimeEnvironment.getApplication()
+        val prefs = ProfileStorage(app).open(ProfileRepository.profileId, ProfileDataArea.PREFERENCES)
+        prefs.edit().putString("app_font", "future-font").commit()
+        SettingsRepository.init(app)
+        assertEquals(AppFont.SYSTEM, SettingsRepository.appFont.value)
+        assertEquals("future-font", prefs.getString("app_font", null))
+    }
+
     @Test fun invalidAudioValuesAreBoundedWithoutOverwritingUnknownPreferences() {
         val prefs = app.getSharedPreferences("aurelis_settings", 0)
         prefs.edit().putString("unknown-setting", "keep").commit()

@@ -168,3 +168,13 @@ Their original notices are preserved below.
    AGPL-governed source remains subject to AGPL-3.0-or-later; the full
    text is LICENSES/AGPL-3.0-or-later.txt. These references do not replace
    the obligation to supply corresponding source for distributed binaries.
+
+────────────────────────────────────────────────────────────────────
+
+Vazirmatn font
+Copyright 2015 The Vazirmatn Project Authors
+https://github.com/rastikerdar/vazirmatn
+SIL Open Font License, Version 1.1.
+Unmodified font referenced from BitChord commit
+b690dc146009d4815825fa4a20815ef2e4ee8898.
+Full notice and license: LICENSES/Vazirmatn-OFL.txt.

@@ -35,6 +35,8 @@ fun AurelisTheme(
     darkTheme: Boolean? = null,
     content: @Composable () -> Unit
 ) {
+    val appFont by SettingsRepository.appFont.collectAsStateWithLifecycle()
+    val typography = androidx.compose.runtime.remember(appFont) { typographyFor(appFont) }
     val mode by SettingsRepository.themeMode.collectAsStateWithLifecycle()
     val reduceMotion by SettingsRepository.reduceAnimation.collectAsStateWithLifecycle()
     val glass by SettingsRepository.liquidGlass.collectAsStateWithLifecycle()
@@ -49,7 +51,7 @@ fun AurelisTheme(
     ) {
         MaterialTheme(
             colorScheme = if (resolvedDark) DarkColorScheme else LightColorScheme,
-            typography = AurelisTypography,
+            typography = typography,
             shapes = AurelisShapes,
             content = content,
         )
