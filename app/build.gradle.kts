@@ -64,13 +64,13 @@ val autoVersionName = if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
 
 android {
     namespace = "com.music.aurelis"
-    compileSdk = 36
+    compileSdk = 35                                    // ← cambio: 37 → 35
     ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.music.aurelis"
         minSdk = 33
-        targetSdk = 36
+        targetSdk = 35                                 // ← cambio: 37 → 35
         versionCode = autoVersionCode
         versionName = autoVersionName
 
@@ -179,12 +179,12 @@ dependencies {
     implementation("org.json:json:20240303")
 
     implementation("androidx.palette:palette-ktx:1.1.0")
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.navigation:navigation-compose:2.10.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-    implementation("androidx.core:core-ktx:1.19.1")
-    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.activity:activity-compose:1.9.3")              // ← cambio: 1.13.0 → 1.9.3
+    implementation("androidx.navigation:navigation-compose:2.7.7")           // ← cambio: 2.10.2 → 2.7.7
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")         // ← cambio: 2.11.0 → 2.8.7
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")   // ← cambio: 2.11.0 → 2.8.7
+    implementation("androidx.core:core-ktx:1.13.1")                          // ← cambio: 1.19.1 → 1.13.1
+    implementation("androidx.appcompat:appcompat:1.7.0")                     // ← cambio: 1.8.0 → 1.7.0
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 
