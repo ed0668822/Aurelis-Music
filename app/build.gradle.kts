@@ -29,29 +29,34 @@ val signingProps = Properties().apply {
 fun readValue(key: String, default: String = ""): String {
     val local = localProps.getProperty(key)?.trim()
     if (!local.isNullOrEmpty()) return local
+
     val env = System.getenv(key)?.trim()
     if (!env.isNullOrEmpty()) return env
+
     return default
 }
 
 fun readSigning(key: String): String? {
     val local = signingProps.getProperty(key)?.trim()
     if (!local.isNullOrEmpty()) return local
+
     return System.getenv(key)?.trim()?.takeIf { it.isNotEmpty() }
 }
 
 fun escapeForBuildConfig(value: String): String {
     val sb = StringBuilder("\"")
+
     for (ch in value) {
         when (ch) {
             '\\' -> sb.append("\\\\")
-            '"'  -> sb.append("\\\"")
+            '"' -> sb.append("\\\"")
             '\n' -> sb.append("\\n")
             '\r' -> sb.append("\\r")
             '\t' -> sb.append("\\t")
             else -> sb.append(ch)
         }
     }
+
     sb.append('"')
     return sb.toString()
 }
@@ -64,20 +69,27 @@ val autoVersionName = if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
 
 android {
     namespace = "com.music.aurelis"
-    compileSdk = 35                                    // ← cambio: 37 → 35
+
+    compileSdk = 35
     ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.music.aurelis"
+
         minSdk = 33
-        targetSdk = 35                                 // ← cambio: 37 → 35
+        targetSdk = 35
+
         versionCode = autoVersionCode
         versionName = autoVersionName
 
         buildConfigField("String", "UPDATE_APK_PREFIX", "\"app-\"")
         buildConfigField("String", "LASTFM_API_KEY", "\"\"")
         buildConfigField("String", "LASTFM_SECRET", "\"\"")
-        buildConfigField("String", "LISTEN_TOGETHER_SERVER", escapeForBuildConfig(listenTogetherServer))
+        buildConfigField(
+            "String",
+            "LISTEN_TOGETHER_SERVER",
+            escapeForBuildConfig(listenTogetherServer)
+        )
 
         ndk {
             abiFilters += listOf("arm64-v8a")
@@ -98,22 +110,25 @@ android {
     }
 
     signingConfigs {
-        val storePath     = readSigning("storeFile")     ?: readSigning("STORE_FILE")
+        val storePath = readSigning("storeFile") ?: readSigning("STORE_FILE")
         val storePassword = readSigning("storePassword") ?: readSigning("STORE_PASSWORD")
-        val keyAlias      = readSigning("keyAlias")      ?: readSigning("KEY_ALIAS")
-        val keyPassword   = readSigning("keyPassword")   ?: readSigning("KEY_PASSWORD")
-        val store         = storePath?.let { rootProject.file(it) }
+        val keyAlias = readSigning("keyAlias") ?: readSigning("KEY_ALIAS")
+        val keyPassword = readSigning("keyPassword") ?: readSigning("KEY_PASSWORD")
 
-        if (store != null && store.exists() &&
+        val store = storePath?.let { rootProject.file(it) }
+
+        if (
+            store != null &&
+            store.exists() &&
             !storePassword.isNullOrEmpty() &&
             !keyAlias.isNullOrEmpty() &&
             !keyPassword.isNullOrEmpty()
         ) {
             create("release") {
-                storeFile          = store
+                storeFile = store
                 this.storePassword = storePassword
-                this.keyAlias      = keyAlias
-                this.keyPassword   = keyPassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
             }
         }
     }
@@ -136,14 +151,18 @@ android {
 
     buildTypes {
         debug {
-            signingConfigs.findByName("release")?.let { signingConfig = it }
+            signingConfigs.findByName("release")?.let {
+                signingConfig = it
+            }
         }
 
         release {
             isMinifyEnabled = true
             isShrinkResources = false
+
             signingConfig = signingConfigs.findByName("release")
                 ?: signingConfigs.getByName("debug")
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -165,6 +184,7 @@ kotlin {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
+
     implementation(composeBom)
 
     implementation("androidx.compose.ui:ui")
@@ -179,12 +199,12 @@ dependencies {
     implementation("org.json:json:20240303")
 
     implementation("androidx.palette:palette-ktx:1.1.0")
-    implementation("androidx.activity:activity-compose:1.9.3")              // ← cambio: 1.13.0 → 1.9.3
-    implementation("androidx.navigation:navigation-compose:2.7.7")           // ← cambio: 2.10.2 → 2.7.7
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")         // ← cambio: 2.11.0 → 2.8.7
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")   // ← cambio: 2.11.0 → 2.8.7
-    implementation("androidx.core:core-ktx:1.13.1")                          // ← cambio: 1.19.1 → 1.13.1
-    implementation("androidx.appcompat:appcompat:1.7.0")                     // ← cambio: 1.8.0 → 1.7.0
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 
@@ -197,8 +217,10 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("dev.chrisbanes.haze:haze:1.3.1")
     implementation("dev.chrisbanes.haze:haze-materials:1.3.1")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")
@@ -206,5 +228,6 @@ dependencies {
     implementation("com.google.guava:guava:33.3.1-android")
     implementation("org.checkerframework:checker-qual:3.48.3")
     implementation("org.jsoup:jsoup:1.18.1")
+
     compileOnly("org.jspecify:jspecify:1.0.0")
 }
