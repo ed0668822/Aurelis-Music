@@ -489,3 +489,8 @@ docs/qa/B08_PROVIDERS.json según la raíz del repositorio. No se alteran plan
 principal, Glass, servicio, comandos de cola, DSP, NDK, ABI, SDK, modelos o CI.
 B07 visual/compartir y B06 restante siguen abiertos; esta entrega no los cierra.
 Misma rama/PR1. Avisar tras publicar y esperar resultado del usuario; no B09.
+
+Entrega B08 — implementación `524e964a4f595412f1dc5611436cef2bf88c5468`.
+PR: https://github.com/ed0668822/Aurelis-Music/pull/1.
+Checkpoint documental posterior; GitHub y Android pendientes para esta entrega.
+Esperar resultado del usuario antes de continuar; no B09.

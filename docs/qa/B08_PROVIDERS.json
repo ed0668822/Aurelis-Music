@@ -233,5 +233,6 @@
     "Providers without verified service/content conditions remain disabled",
     "No physical Android validation or claim of complete visual parity"
   ],
-  "next": "Publish same PR, notify user, wait for user-reported GitHub outcome; no B09"
+  "next": "Publish same PR, notify user, wait for user-reported GitHub outcome; no B09",
+  "implementation_commit": "524e964a4f595412f1dc5611436cef2bf88c5468"
 }
