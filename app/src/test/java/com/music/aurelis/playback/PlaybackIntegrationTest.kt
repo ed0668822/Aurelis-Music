@@ -2,6 +2,8 @@ package com.music.aurelis.playback
 
 import android.os.Looper
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewModelScope
+import kotlin.time.Duration.Companion.seconds
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import com.music.aurelis.AurelisApplication
@@ -25,6 +27,7 @@ import org.robolectric.annotation.Config
 class PlaybackIntegrationTest {
     private val dispatcher = StandardTestDispatcher()
     private val store = ViewModelStore()
+    private val ownedScopes = mutableListOf<Job>()
     private lateinit var player: RecordingPlayer
     private lateinit var vm: PlaybackViewModel
     private val app get() = RuntimeEnvironment.getApplication() as AurelisApplication
@@ -34,16 +37,57 @@ class PlaybackIntegrationTest {
         Dispatchers.setMain(dispatcher)
         SettingsRepository.lyricsSources.value = emptySet()
         player = RecordingPlayer()
-        vm = PlaybackViewModel(app) { player }
+        vm = newViewModel { player }
         store.put("player", vm)
     }
-    @After fun cleanup() { store.clear(); Dispatchers.resetMain() }
+    private fun newViewModel(connector: suspend (() -> Unit) -> Player): PlaybackViewModel =
+        PlaybackViewModel(app, connector).also { model ->
+            ownedScopes += requireNotNull(model.viewModelScope.coroutineContext[Job])
+        }
+
+    @After fun cleanup() {
+        store.clear()
+        try {
+            // clear() requests cancellation; IO continuations may still read Main.
+            // Pump the same scheduler while joining current AND replaced models.
+            runTest(dispatcher, timeout = 10.seconds) { ownedScopes.joinAll() }
+            assertTrue("All owned ViewModel scopes must finish before Main is reset", ownedScopes.all { it.isCompleted })
+        } finally {
+            // Never swap the global dispatcher while an owned scope is still alive.
+            if (ownedScopes.all { it.isCompleted }) Dispatchers.resetMain()
+        }
+    }
     private fun settle() { dispatcher.scheduler.runCurrent(); shadowOf(Looper.getMainLooper()).idle(); dispatcher.scheduler.runCurrent() }
     private fun play() { vm.playSongs(listOf(song("1"), song("2"), song("3"))); settle() }
 
+    @Test fun replacedModelIoFinalizerFinishesBeforeMainCanBeReset() {
+        val entered = CompletableDeferred<Unit>()
+        val finished = CompletableDeferred<Unit>()
+        val blockIo = CompletableDeferred<Unit>()
+        vm = newViewModel {
+            withContext(Dispatchers.IO) {
+                entered.complete(Unit)
+                try { blockIo.await() }
+                finally {
+                    withContext(NonCancellable + Dispatchers.Main) { finished.complete(Unit) }
+                }
+            }
+            player
+        }
+        store.put("player", vm)
+        val replacedScope = ownedScopes.last()
+        vm.connect(); settle()
+        runTest(dispatcher, timeout = 10.seconds) { entered.await() }
+        vm = newViewModel { player }; store.put("player", vm)
+        runTest(dispatcher, timeout = 10.seconds) { replacedScope.join() }
+        assertTrue(finished.isCompleted)
+        assertTrue(replacedScope.isCompleted)
+        assertEquals(3, ownedScopes.size)
+    }
+
     @Test fun editingSingleProfileDoesNotCancelPendingPlaybackOrChangeTheQueue() {
         val gate = CompletableDeferred<Unit>()
-        vm = PlaybackViewModel(app) { gate.await(); player }; store.put("player", vm)
+        vm = newViewModel { gate.await(); player }; store.put("player", vm)
         vm.playSongs(listOf(song("1"))); settle()
         ProfileRepository.rename("Nombre local")
         gate.complete(Unit); settle()
@@ -54,7 +98,7 @@ class PlaybackIntegrationTest {
     @Test fun immediateTapWaitsForConnectionClampsIndexAndUsesCompleteMetadata() {
         val gate = CompletableDeferred<Unit>()
         var connections = 0
-        vm = PlaybackViewModel(app) { connections++; gate.await(); player }
+        vm = newViewModel { connections++; gate.await(); player }
         store.put("player", vm)
         vm.connect(); vm.connect(); vm.playSongs(listOf(song("1"), song("2")), 999)
         settle(); assertEquals(1, connections); assertEquals(0, player.mediaItemCount)
@@ -67,7 +111,7 @@ class PlaybackIntegrationTest {
     }
     @Test fun latestTapWinsAndEmptySelectionDoesNotClearTheQueue() {
         val gate = CompletableDeferred<Unit>()
-        vm = PlaybackViewModel(app) { gate.await(); player }; store.put("player", vm)
+        vm = newViewModel { gate.await(); player }; store.put("player", vm)
         vm.playSongs(listOf(song("1"))); settle()
         vm.playSongs(listOf(song("2"))); settle(); gate.complete(Unit); settle()
         vm.playSongs(emptyList()); settle()
@@ -100,7 +144,7 @@ class PlaybackIntegrationTest {
         var disconnected: () -> Unit = {}
         var attempts = 0
         val replacement = RecordingPlayer()
-        vm = PlaybackViewModel(app) { callback -> disconnected = callback; if (++attempts == 1) player else replacement }
+        vm = newViewModel { callback -> disconnected = callback; if (++attempts == 1) player else replacement }
         store.put("player", vm)
         play(); disconnected(); settle()
         assertFalse(vm.state.value.isConnected); assertFalse(vm.state.value.canSeek)
@@ -110,7 +154,7 @@ class PlaybackIntegrationTest {
     @Test fun clearingWhileConnectingCancelsPendingPlaybackRequest() {
         val gate = CompletableDeferred<Unit>()
         var supplied = false
-        vm = PlaybackViewModel(app) { gate.await(); supplied = true; player }; store.put("player", vm)
+        vm = newViewModel { gate.await(); supplied = true; player }; store.put("player", vm)
         vm.playSongs(listOf(song("1"))); settle(); store.clear(); gate.complete(Unit); settle()
         assertFalse(supplied); assertEquals(0, player.mediaItemCount)
     }
@@ -131,7 +175,7 @@ class PlaybackIntegrationTest {
     }
     @Test fun connectionFailureCanRetryAndClearingReleasesOnlyController() {
         var attempts = 0
-        vm = PlaybackViewModel(app) { if (++attempts == 1) error("test connection") else player }; store.put("player", vm)
+        vm = newViewModel { if (++attempts == 1) error("test connection") else player }; store.put("player", vm)
         vm.connect(); settle(); assertFalse(vm.state.value.isConnected); assertNotNull(vm.state.value.errorMessage)
         vm.retry(); settle(); assertTrue(vm.state.value.isConnected)
         store.clear(); assertTrue(player.released)

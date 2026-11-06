@@ -1,0 +1,46 @@
+{
+  "baseline": "3128d9c89d2f4c9d4a991f43129a413d546ad1bd",
+  "failed_run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42239098568",
+  "failed_head": "3128d9c89d2f4c9d4a991f43129a413d546ad1bd",
+  "annotations": [
+    "JUnit release com.music.aurelis.playback.PlaybackIntegrationTest.latestTapWinsAndEmptySelectionDoesNotClearTheQueue [java.lang.IllegalStateException]: java.lang.IllegalStateException: Dispatchers.Main is used concurrently with setting it Show more Show less",
+    "JUnit release com.music.aurelis.playback.PlaybackIntegrationTest.editingSingleProfileDoesNotCancelPendingPlaybackOrChangeTheQueue [java.lang.IllegalStateException]: java.lang.IllegalStateException: Dispatchers.Main is used concurrently with setting it Show more Show less"
+  ],
+  "api_access": "gh run list Forbidden; public HTML annotations available",
+  "observed_exception": "Dispatchers.Main is used concurrently with setting it",
+  "identified_unsafe_path": "store.clear immediately followed by resetMain; cancelled IO work and replaced scopes not joined",
+  "fix": "test-only tracking of all owned ViewModel jobs; join via same test dispatcher before Main reset; no production change",
+  "existing_tests_preserved": [
+    "editingSingleProfileDoesNotCancelPendingPlaybackOrChangeTheQueue",
+    "immediateTapWaitsForConnectionClampsIndexAndUsesCompleteMetadata",
+    "latestTapWinsAndEmptySelectionDoesNotClearTheQueue",
+    "externalCommandsSynchronizeRepeatShuffleSeekAndPause",
+    "queueRemovalIsAppliedOnceAndInvalidIndexesDoNothing",
+    "disconnectDisablesControlsAndReconnectsWithoutAnExtraEngine",
+    "clearingWhileConnectingCancelsPendingPlaybackRequest",
+    "bufferingCanBePausedAndEndedCanResumeFromStart",
+    "failedFileIsVisibleAndRetryPreparesSameQueue",
+    "connectionFailureCanRetryAndClearingReleasesOnlyController"
+  ],
+  "new_test": [
+    "replacedModelIoFinalizerFinishesBeforeMainCanBeReset"
+  ],
+  "source_sha256": "756830f4ce5029ad47b06b87aeacc19fb9b2a59b730243a98a02c88f837d5840",
+  "protected_unchanged": [
+    "app/src/main",
+    ".github",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "app/build.gradle.kts",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "reviews": "two static passes, same agent; assertion preservation and diff check passed; coroutine guard inspected using javap",
+  "android_tests_and_build": "NOT_EXECUTED locally; new GitHub run pending",
+  "main_plan": "intact; B06/QA02 not started"
+}

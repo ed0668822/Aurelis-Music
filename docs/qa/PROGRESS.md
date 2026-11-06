@@ -203,3 +203,15 @@ Mismo PR1, sin workflow/gates/servicio/Glass/plan alterados. No B06/QA02.
 
 Commit de corrección CI04: `6a57325f45a3c4f1e044c3d44a2ed05dc0b5fc80`. Misma rama/PR1; nueva
 verificación Android pendiente en GitHub. No B06/QA02 ni compilación local.
+
+
+## CI05 — concurrencia de Main en pruebas de playback
+
+Run138 del commit3128d9c: dos casos release fallan con Dispatchers.Main is used
+concurrently with setting it. Las anotaciones públicas de CI04 permitieron conocer
+la causa sin descargar el artefacto; API REST aún Forbidden. Cleanup del harness
+espera scopes actuales y reemplazados antes de resetMain, usando mismo scheduler.
+Diez casos/aserciones conservados, una regresión IO→Main añadida. No retries/skips
+ni cambios de producción/CI. Doble revisión estática; no Gradle/Android local.
+Evidencia y límites en CI05_MAIN_DISPATCHER.md/.json. Validación nueva pendiente de
+GitHub, no se declara eliminado el fallo intermitente. Mismo PR; no B06/QA02.

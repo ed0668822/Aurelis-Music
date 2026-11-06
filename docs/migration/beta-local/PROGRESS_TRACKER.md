@@ -312,3 +312,14 @@ JUnit se publica como anotación además del artefacto.23 pruebas Python correct
 prueba UI y nueva compilación pendientes de GitHub, no ejecutadas localmente.
 Ver ../../qa/CI04_INVESTIGATION.md/.json. Doble revisión estática, sin cierre Android
 ni avance B06/QA02. Publicar y esperar resultado comunicado por el usuario.
+
+
+## CI05 — aislamiento de PlaybackIntegrationTest
+
+Reintento autorizado de registros: API Forbidden, páginas públicas/anotaciones
+JUnit disponibles. Run138: carrera entre uso de Main y su sustitución en pruebas.
+Se registra/espera el Job de cada ViewModel creado y reemplazado antes de resetMain.
+Los diez casos existentes y sus asserts permanecen; regresión IO/finalizador Main
+preparada. Detalles en ../../qa/CI05_MAIN_DISPATCHER.md/.json. Revisión doble estática,
+sin ejecución Android local ni cambio de app/workflow/plan. Nuevo CI pendiente.
+B06/QA02 detenidos; publicar/avisar y esperar resultado que comunique el usuario.
