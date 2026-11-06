@@ -238,7 +238,7 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     implementation("com.google.guava:guava:33.3.1-android")
     implementation("org.checkerframework:checker-qual:3.48.3")

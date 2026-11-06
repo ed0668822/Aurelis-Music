@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import struct
 import tempfile
 import types
 import unittest
@@ -232,8 +233,10 @@ class ReportsTest(unittest.TestCase):
 
 class ApkAndSigningTest(unittest.TestCase):
     @staticmethod
-    def elf(machine=183):
-        header=bytearray(20);header[:4]=b'\x7fELF';header[4]=2;header[5]=1;header[18:20]=machine.to_bytes(2,'little')
+    def elf(machine=183, alignment=16384):
+        header=bytearray(120);header[:7]=b'\x7fELF\x02\x01\x01'
+        struct.pack_into('<HHIQQQIHHHHHH',header,16,3,machine,1,0,64,0,0,64,56,1,0,0,0)
+        struct.pack_into('<IIQQQQQQ',header,64,1,5,0,0,0,120,120,alignment)
         return bytes(header)
 
     def test_actual_elf_machine_is_checked_not_only_arm_directory_name(self):
@@ -246,6 +249,44 @@ class ApkAndSigningTest(unittest.TestCase):
                     else:
                         with self.assertRaises(ValueError):ci.native_libraries(z)
 
+    def test_all_load_segments_require_16kb_alignment(self):
+        data=bytearray(self.elf());data.extend(bytes(56))
+        struct.pack_into('<H',data,56,2)
+        struct.pack_into('<IIQQQQQQ',data,120,1,4,0,0,0,176,176,4096)
+        with self.assertRaisesRegex(ValueError,'not 16KB compatible'):ci.elf_load_segments(bytes(data),'two-loads.so')
+
+    def test_4kb_loads_are_rejected_even_in_the_correct_abi_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/'libs.zip'
+            with zipfile.ZipFile(p,'w') as z:z.writestr('lib/arm64-v8a/libonnxruntime.so',self.elf(alignment=4096))
+            with zipfile.ZipFile(p) as z:
+                with self.assertRaisesRegex(ValueError,'not 16KB compatible'):ci.native_libraries(z)
+
+    def test_16kb_and_64kb_load_alignment_are_accepted_and_reported(self):
+        for alignment in (16384,65536):
+            with self.subTest(alignment=alignment):
+                segments=ci.elf_load_segments(self.elf(alignment=alignment),'compatible.so')
+                self.assertEqual([s['alignment'] for s in segments],[alignment])
+
+    def test_missing_or_truncated_program_headers_cannot_pass(self):
+        for change in ('truncated','offset','entry-size','count','no-load','bounds'):
+            data=bytearray(self.elf())
+            if change=='truncated':data=data[:30]
+            elif change=='offset':struct.pack_into('<Q',data,32,4096)
+            elif change=='entry-size':struct.pack_into('<H',data,54,8)
+            elif change=='count':struct.pack_into('<H',data,56,0)
+            elif change=='no-load':struct.pack_into('<I',data,64,0)
+            else:struct.pack_into('<Q',data,96,121)
+            with self.subTest(change=change),self.assertRaises(ValueError):ci.elf_load_segments(bytes(data),'invalid.so')
+
+    def test_misaligned_offset_and_non_power_of_two_alignment_cannot_pass(self):
+        for change in ('offset','alignment'):
+            data=bytearray(self.elf())
+            if change=='offset':struct.pack_into('<Q',data,80,1)
+            else:struct.pack_into('<Q',data,112,24576)
+            with self.subTest(change=change),self.assertRaisesRegex(ValueError,'not 16KB compatible'):
+                ci.elf_load_segments(bytes(data),'invalid-alignment.so')
+
     def fixture(self,root):
         out=root/'reports';out.mkdir()
         ci.save(out/'metadata.json',{'source_sha':'a'*40})
@@ -254,6 +295,8 @@ class ApkAndSigningTest(unittest.TestCase):
             p=root/f'app/build/outputs/apk/{variant}/app-{variant}.apk';p.parent.mkdir(parents=True)
             with zipfile.ZipFile(p,'w') as z:
                 z.writestr('lib/arm64-v8a/libtest.so',self.elf())
+                z.writestr('lib/arm64-v8a/libonnxruntime.so',self.elf())
+                z.writestr('lib/arm64-v8a/libonnxruntime4j_jni.so',self.elf())
                 for name in ('LICENSE','NOTICE'):
                     (root/name).write_text(name);z.writestr('assets/licenses/'+name,name)
         return out
@@ -270,8 +313,45 @@ class ApkAndSigningTest(unittest.TestCase):
             with patch.object(ci.subprocess,'run',side_effect=self.tool):ci.verify_apks(root,out,root/'sdk')
             manifest=json.loads((out/'apk-verification.json').read_text())
             self.assertEqual(manifest['status'],'success');self.assertEqual(len(manifest['apks']),2)
+            for apk in manifest['apks']:
+                self.assertTrue(apk['zip_16kb_alignment_verified']);self.assertTrue(apk['native_16kb_alignment_verified'])
+                self.assertEqual(apk['native_elf']['lib/arm64-v8a/libtest.so']['load_segments'][0]['alignment'],16384)
             self.assertTrue((root/'ci-approved-apks/source-metadata.json').is_file())
             self.assertEqual(len((root/'ci-approved-apks/SHA256SUMS.txt').read_text().splitlines()),2)
+
+    def test_missing_onnx_jni_library_blocks_publication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=self.fixture(root)
+            p=root/'app/build/outputs/apk/debug/app-debug.apk'
+            with zipfile.ZipFile(p) as z:entries={n:z.read(n) for n in z.namelist() if not n.endswith('libonnxruntime4j_jni.so')}
+            with zipfile.ZipFile(p,'w') as z:
+                for name,data in entries.items():z.writestr(name,data)
+            with patch.object(ci.subprocess,'run',side_effect=self.tool):
+                with self.assertRaisesRegex(ValueError,'Missing ONNX Runtime native libraries'):ci.verify_apks(root,out,root/'sdk')
+            self.assertFalse((root/'ci-approved-apks').exists())
+
+    def test_zip_alignment_failure_blocks_publication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=self.fixture(root)
+            def tool(args,**kwargs):
+                if str(args[0]).endswith('zipalign'):return types.SimpleNamespace(returncode=1,stdout='',stderr='bad ZIP alignment')
+                return self.tool(args,**kwargs)
+            with patch.object(ci.subprocess,'run',side_effect=tool):
+                with self.assertRaisesRegex(ValueError,'ZIP is not 16KB aligned'):ci.verify_apks(root,out,root/'sdk')
+            self.assertFalse((root/'ci-approved-apks').exists())
+            self.assertEqual(json.loads((out/'apk-verification.json').read_text())['status'],'failure')
+
+    def test_elf_alignment_failure_cannot_publish_partial_or_stale_apks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=self.fixture(root)
+            p=root/'app/build/outputs/apk/release/app-release.apk'
+            with zipfile.ZipFile(p,'w') as z:z.writestr('lib/arm64-v8a/libonnxruntime.so',self.elf(alignment=4096))
+            target=root/'ci-approved-apks';target.mkdir();(target/'stale.apk').write_text('old')
+            with patch.object(ci.subprocess,'run',side_effect=self.tool):
+                with self.assertRaisesRegex(ValueError,'not 16KB compatible'):ci.verify_apks(root,out,root/'sdk')
+            self.assertFalse(target.exists())
+            result=json.loads((out/'apk-verification.json').read_text())
+            self.assertEqual(result['status'],'failure');self.assertEqual(len(result['verified_before_failure']),1)
 
     def test_wrong_signer_cannot_publish_partial_or_stale_apks(self):
         with tempfile.TemporaryDirectory() as tmp:

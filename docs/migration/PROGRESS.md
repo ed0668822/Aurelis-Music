@@ -648,3 +648,14 @@ No cambios de dependencias/SDK/ABI ni plan principal. Doble revisión estática;
 compilación/lint/tests exclusivamente GitHub, pendientes. Evidencias y límites en
 ../qa/CI08_WARNING_CLEANUP.md/.json. ONNX16KB/actualizaciones pendientes de siguientes
 entregas; publicar mismo PR y esperar aviso del usuario, sin iniciar B07.
+
+
+## CI09 — corrección nativa ONNX antes de B07
+
+Segunda entrega autorizada: runtime1.22.0 con dos ELF ARM64 de16KB comprobados
+en AAR, regla JNI/R8 corregida, checks ZIP/ELF/presencia nativa y avisos upstream.
+31 pruebas Python correctas; modelos CPU comparados con baseline: voces carga y
+Beat This conserva error previo ConvInteger10, pendiente de B09/B10. No modelos
+modificados ni análisis ONNX/AutoMix completo declarado. Evidencias/revisiones en
+../qa/CI09_ONNX_16KB.md/.json. Gradle/APK/tests Android exclusivamente GitHub,
+pendientes del aviso del usuario; sin Android real verificado ni avance a B07.

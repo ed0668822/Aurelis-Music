@@ -20,7 +20,7 @@ NOTICE sí deberá actualizarse cuando cada componente se adapte de verdad.
 | libusb | Origen1.0.27 LGPL2.1-or-later | Fuentes, textos y enlace/distribución verificables |
 | Oboe | Origen1.11.0 Apache2.0 | Pin/checksum, licencia y avisos aplicables |
 | Signalsmith | stretch1.3.2/linear0.6.6, MIT | Textos íntegros y copyright |
-| ONNX Runtime | Actual1.19.2/origen1.28.0, avisos MIT | Comprobar runtime/modelos y avisos de terceros |
+| ONNX Runtime | Actual1.22.0 desde CI09 (B00:1.19.2); origen1.28.0, MIT | ELF16KB del AAR comprobado; APK/Android y modelos pendientes; avisos upstream añadidos |
 | Modelos ONNX | SHA previos y archivos existentes; exportación exacta pendiente | Bloquea declarar análisis/redistribución final completos; nombre no certifica permiso |
 | SF Pro y otras fuentes restringidas | No hay autorización de redistribución acreditada | No copiar; conservar fuentes autorizadas |
 | Vazirmatn | OFL-Vazirmatn.txt presente en origen | Mantener OFL/autoría al incorporar |
@@ -148,3 +148,14 @@ QueueCoordinator y SongActionsMenu en NOTICE y B06_1_QUEUE. Conservada atribuci�
 BitChord GPLv3; integración/test de Aurelis no reetiqueta derechos de terceros.
 Sin dependencias/recursos/binarios nuevos ni cambio a LICENSE. Pendientes de
 redistribución nativa/modelos/CSV anteriores siguen abiertos.
+
+
+## CI09 — runtime1.22.0 y avisos upstream
+
+Actualización limitada al runtime nativo16KB autorizada antes de B07. Microsoft
+MIT coincide con texto conservado; ThirdPartyNotices v1.22.0 íntegro añadido
+a LICENSES y referenciado en NOTICE/índice. POM/AAR oficial y hashes en
+../../qa/CI09_ONNX_16KB.json. No sustitución de LICENSE ni autoría de terceros.
+AAR nativo alineado no cierra redistribución/modelos ni prueba hardware. Beat This
+falla al cargar ConvInteger en CPU host en runtime previo y nuevo; voces carga
+en ambos. Modelos intactos, procedencia/exportación y validación ARM64 pendientes.

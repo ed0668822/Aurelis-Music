@@ -205,7 +205,12 @@ Their original notices are preserved below.
      (as declared by its published POM; not Apache-2.0). Sources:
      https://github.com/anilbeesetti/nextlib. FFmpeg binary/source
      distribution obligations must also be retained.
-   • ONNX Runtime Android (com.microsoft.onnxruntime) — MIT
+   • ONNX Runtime Android 1.22.0 (com.microsoft.onnxruntime) — MIT
+     Source tag: https://github.com/microsoft/onnxruntime/tree/v1.22.0
+     Original Microsoft MIT text retained; upstream ThirdPartyNotices.txt is
+     included unchanged as LICENSES/onnxruntime-ThirdPartyNotices.txt.
+     This aggregate notice also covers components for other upstream platforms;
+     inclusion does not assert that every listed component is linked in Android.
    • Guava (com.google.guava) — Apache-2.0
    • checker-qual 3.48.3 (org.checkerframework) — MIT (artifact POM)
    • org.json:json 20240303 — Public Domain (artifact POM)

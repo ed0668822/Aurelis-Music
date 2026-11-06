@@ -265,3 +265,16 @@ de tests, dependencias/SDK/ABI, motores, shaders/QA01, workflow/gates o plan.
 Compilación/lint/tests nuevos PENDIENTES DE GITHUB, no ejecutados localmente.
 ONNX16KB y otras11 entradas pendientes; no se ocultan. Publicar mismo PR y esperar
 resultado del usuario antes de siguiente entrega/autorización. No B07 ni QA02.
+
+
+## CI09 — ONNX16KB, segunda entrega autorizada
+
+Base a3229f0. Runtime1.19.2→1.22.0 y regla R8 ai.onnxruntime corregida. AAR oficial:
+ambas bibliotecas ARM64 aceptadas con LOAD16384; las antiguas LOAD4096 rechazadas.
+Verify CI ahora exige ELF16KB, ZIP16KB y ambos componentes; publica segmentos/hashes,
+sin APK parcial.31 pruebas Python correctas; no Gradle/Android local. Modelos CPU
+comparados antes/después: voces carga, Beat This mismo ConvInteger no implementado.
+No activación de modelos/AutoMix ni prueba Android inferida. Modelos/licencias
+previos intactos; avisos terceros upstream añadidos. Doble revisión del mismo agente,
+evidencia en CI09_ONNX_16KB.md/.json. APK/build/tests/Android16KB pendientes de GitHub
+y dispositivo. Publicar mismo PR y esperar resultado; no entrega3/B07/QA02.

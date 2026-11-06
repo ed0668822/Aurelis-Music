@@ -394,3 +394,16 @@ Entrega CI08.1 — corrección `606eea71e8a831a3b134686dec3a392744982d57`; misma
 Checkpoint documental posterior sin cambiar código de aplicación. Compilación,
 lint y pruebas pendientes exclusivamente de GitHub. Esperar resultado del usuario;
 entrega2 ONNX/entrega3 actualizaciones y B07 permanecen pendientes.
+
+
+## CI09 — entrega2 ONNX antes de B07, autorizada
+
+Base a3229f0; dependencia1.22.0 verificada en AAR real, dos ELF ARM64 LOAD16384.
+Regla keep ai.onnxruntime corregida y checks ZIP/ELF16KB/presencia ONNX añadidos
+al verify existente.31 tests Python correctos,8 nuevos; dos revisiones del mismo
+agente. Modelos intactos: voces carga en CPU1.19.2/1.22.0; Beat This falla igual
+con ConvInteger10 en ambos. Caso pendiente específico B09/B10, no éxito simulado
+ni cambio de modelos sin procedencia. Ver ../../qa/CI09_ONNX_16KB.md/.json.
+Sin compilación/Android local; APK final/lint/suites/ZIP/ELF pendientes de GitHub.
+Plan/Glass/servicio/ABI/SDK/Gradle/AndroidX conservados. Publicar mismo PR y esperar
+resultado del usuario. Entrega3 y B07/B06.2/.3/.4/QA02 no iniciados.

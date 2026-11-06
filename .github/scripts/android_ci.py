@@ -15,6 +15,7 @@ import platform
 import re
 import shutil
 import subprocess
+import struct
 import sys
 from urllib.parse import unquote, urlparse
 import xml.etree.ElementTree as ET
@@ -199,17 +200,44 @@ def approval(states: dict, publishing: bool = False) -> bool:
     return all(states.get(k) == 'success' for k in required)
 
 
-def native_libraries(archive: zipfile.ZipFile) -> list[str]:
+def elf_load_segments(data: bytes, name: str) -> list[dict]:
+    """Validate actual AArch64 ELF PT_LOAD alignment, independent of ZIP layout."""
+    if len(data) < 64 or data[:7] != b'\x7fELF\x02\x01\x01':
+        raise ValueError('Invalid ELF64 little-endian header: ' + name)
+    elf_type, machine, version = struct.unpack_from('<HHI', data, 16)
+    if machine != 183:
+        raise ValueError('Native library is not AArch64: ' + name)
+    if elf_type != 3 or version != 1:
+        raise ValueError('Invalid shared-library ELF type/version: ' + name)
+    phoff = struct.unpack_from('<Q', data, 32)[0]
+    ehsize, phentsize, phnum = struct.unpack_from('<HHH', data, 52)
+    if ehsize != 64 or phentsize != 56 or phnum == 0 or phoff < 64 or phoff + phentsize * phnum > len(data):
+        raise ValueError('Invalid ELF program-header table: ' + name)
+    segments = []
+    for index in range(phnum):
+        kind, _, offset, vaddr, _, filesz, memsz, alignment = struct.unpack_from('<IIQQQQQQ', data, phoff + index * phentsize)
+        if kind != 1:  # PT_LOAD, not a section or an unrelated program header.
+            continue
+        if filesz > memsz or offset + filesz > len(data):
+            raise ValueError('Invalid ELF LOAD bounds: ' + name)
+        if alignment < 16384 or alignment & (alignment - 1) or offset % alignment != vaddr % alignment:
+            raise ValueError(f'ELF LOAD segment {index} is not 16KB compatible: {name} (alignment={alignment})')
+        segments.append({'index': index, 'offset': offset, 'virtual_address': vaddr,
+                         'file_size': filesz, 'memory_size': memsz, 'alignment': alignment})
+    if not segments:
+        raise ValueError('ELF has no LOAD segments: ' + name)
+    return segments
+
+
+def native_libraries(archive: zipfile.ZipFile, details: dict | None = None) -> list[str]:
     libs = [n for n in archive.namelist() if n.startswith('lib/') and n.endswith('.so')]
     if not libs or {n.split('/')[1] for n in libs} != {'arm64-v8a'}:
         raise ValueError('Unexpected/missing native ABI')
     for name in libs:
-        with archive.open(name) as handle:
-            header = handle.read(20)
-        if len(header) < 20 or header[:4] != b'\x7fELF' or header[4] != 2 or header[5] != 1:
-            raise ValueError('Invalid ELF64 header: ' + name)
-        if int.from_bytes(header[18:20], 'little' if header[5] == 1 else 'big') != 183:
-            raise ValueError('Native library is not AArch64: ' + name)
+        data = archive.read(name)
+        segments = elf_load_segments(data, name)
+        if details is not None:
+            details[name] = {'sha256': hashlib.sha256(data).hexdigest(), 'load_segments': segments}
     return libs
 
 
@@ -229,6 +257,9 @@ def verify_apks(root: Path, out: Path, sdk: Path) -> None:
                 signature = subprocess.run([str(tool / 'apksigner'), 'verify', '--verbose', '--print-certs', str(apk)], capture_output=True, text=True)
                 if signature.returncode:
                     raise ValueError(f'Invalid signature: {apk.name}')
+                alignment = subprocess.run([str(tool / 'zipalign'), '-c', '-P', '16', '-v', '4', str(apk)], capture_output=True, text=True)
+                if alignment.returncode:
+                    raise ValueError(f'APK ZIP is not 16KB aligned: {apk.name}')
                 manifest = subprocess.run([str(tool / 'aapt2'), 'dump', 'badging', str(apk)], capture_output=True, text=True, check=True).stdout
                 package = re.search(r"package: name='([^']+)' versionCode='([^']+)' versionName='([^']*)'", manifest)
                 if not package or package[1] != 'com.music.aurelis':
@@ -237,7 +268,11 @@ def verify_apks(root: Path, out: Path, sdk: Path) -> None:
                 with zipfile.ZipFile(apk) as archive:
                     if archive.testzip() is not None:
                         raise ValueError(f'Corrupt ZIP: {apk.name}')
-                    libs = native_libraries(archive)
+                    native_details = {}
+                    libs = native_libraries(archive, native_details)
+                    required_onnx = {'lib/arm64-v8a/libonnxruntime.so', 'lib/arm64-v8a/libonnxruntime4j_jni.so'}
+                    if not required_onnx.issubset(libs):
+                        raise ValueError('Missing ONNX Runtime native libraries: ' + apk.name)
                     legal = {'LICENSE': root / 'LICENSE', 'NOTICE': root / 'NOTICE'}
                     legal.update({str(p.relative_to(root / 'LICENSES')): p for p in (root / 'LICENSES').rglob('*') if p.is_file()})
                     for name, source in legal.items():
@@ -254,7 +289,8 @@ def verify_apks(root: Path, out: Path, sdk: Path) -> None:
                 results.append({'variant': variant, 'file': apk.name, 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
                     'bytes': apk.stat().st_size, 'package': package[1], 'version_code': package[2], 'version_name': package[3],
                     'signature_verified': True, 'signer_certificate_sha256': certs, 'zip_verified': True,
-                    'abis': ['arm64-v8a'], 'native_libraries': len(libs), 'legal_texts_verified': len(legal)})
+                    'zip_16kb_alignment_verified': True, 'native_16kb_alignment_verified': True,
+                    'native_elf': native_details, 'abis': ['arm64-v8a'], 'native_libraries': len(libs), 'legal_texts_verified': len(legal)})
         if len(versions) != 1:
             raise ValueError('APK variant versions do not match')
         # No partial set is offered for publication after any failed check.

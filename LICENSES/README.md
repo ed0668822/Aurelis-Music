@@ -24,6 +24,7 @@ Las siguientes copias conservan los textos y avisos de sus respectivos titulares
 | [beat_this-MIT.txt](beat_this-MIT.txt) | Aviso MIT de Beat This!; procedencia de exportación pendiente |
 | [open-unmix-MIT.txt](open-unmix-MIT.txt) | Aviso MIT de Open-Unmix; no acredita modelos con otros términos |
 | [onnxruntime-MIT.txt](onnxruntime-MIT.txt) | ONNX Runtime |
+| [onnxruntime-ThirdPartyNotices.txt](onnxruntime-ThirdPartyNotices.txt) | Avisos íntegros de ONNX Runtime v1.22.0; conservar condiciones de los componentes aplicables |
 | [jsoup-MIT.txt](jsoup-MIT.txt) | Jsoup |
 | [checker-qual-MIT.txt](checker-qual-MIT.txt) | Checker Framework, artefacto checker-qual |
 
