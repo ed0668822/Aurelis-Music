@@ -111,3 +111,22 @@ No cambios de aplicación, Gradle, ABI, firma, workflow o plan principal.
 Sin compilación local; empaquetado del próximo APK pendiente de GitHub.
 Publicación en la misma rama/PR; esperar el resultado comunicado por el usuario.
 B04 y QA02 no iniciados. Pendientes legales históricos siguen abiertos.
+
+
+## GLASS01 — material BitChord antes de B04
+
+Autorización expresa tras pedir el mismo Liquid Glass que BitChord.
+Comparación real en b690dc1; parámetros y programas AGSL conservados.
+Barra activa usa liquidGlass completo explícitamente, sin recorte/sobreborde adicional;
+MiniPlayer deja visible el material en vez de taparlo con fondo opaco.
+Captura de página opaca como referencia; página, fila y lente respetan la misma
+política de desactivación/reducción de desenfoque. Ruta ligera restaurada para
+fondos estables. Protecciones QA01 y regresiones de tamaño/attach intactas.
+
+Dos pruebas añadidas para preferencias y controles: NO EJECUTADAS localmente.
+Dos revisiones estáticas del mismo agente; Gradle/compilación/pruebas de Android
+pendientes exclusivamente en GitHub. Evidencia en GLASS01_MATERIAL_PARITY.md/.json.
+Sin dispositivo/GPU Redmi: paridad visual y arranque real pendientes, no declarados
+verificados. El plegado/separación de Search y el diseño completo del MiniPlayer
+siguen pendientes en los bloques principales; no se afirma paridad total.
+Misma rama/PR1; esperar resultado del usuario. B04 y QA02 no iniciados.

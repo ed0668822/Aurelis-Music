@@ -4,7 +4,9 @@
  * [com.music.aurelis.ui.components.backdrop] — see that package for the
  * upstream attribution. This file is the integration glue, adapted from
  * BitChord's LiquidGlass.kt, cut down to the single on/off switch Aurelis
- * exposes in Settings. It is used by the floating nav bar and, while enabled,
+ * exposes in Settings. Original integration: EchoMusicApp/Echo-Music (GPL-3.0),
+ * via BitChord b690dc146009d4815825fa4a20815ef2e4ee8898. It is used by the
+ * floating nav bar and, while enabled,
  * the app-wide floating top controls.
  */
 package com.music.aurelis.ui.components
@@ -14,14 +16,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -111,15 +111,29 @@ fun glassIndicatorColor(): Color =
 /** The selected tab's pill in dark theme, a step whiter than the bar. */
 private const val DARK_INDICATOR_OPACITY = 0.14f
 
-/** Compatibility entry point; uses the shared backdrop pipeline when enabled. */
+/**
+ * BitChord's lightweight material for stable backgrounds: tint, rim and hairline,
+ * without backdrop sampling. Full glass surfaces must use [liquidGlass].
+ */
 @Composable
 fun Modifier.lightweightLiquidGlass(
     shape: CornerBasedShape,
     fallbackColor: Color,
 ): Modifier {
-    return if (!LocalLiquidGlassEnabled.current) clip(shape).background(fallbackColor, shape)
-    else liquidGlass(shape, fallbackColor = fallbackColor)
-
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val hardware = LocalGlassHardware.current
+    val useGlass = shouldSampleGlass(LocalLiquidGlassEnabled.current, reduceBlur, hardware)
+    val tint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
+        Color(0xFFFAFAFA)
+    } else {
+        Color(0xFF121212)
+    }
+    val shapeProvider = remember(shape) { ShapeProvider { shape } }
+    val shaders = remember(hardware) { hardware && glassShadersAvailable() }
+    return clip(shape)
+        .background(if (useGlass) tint.copy(alpha = SURFACE_OPACITY) else fallbackColor, shape)
+        .then(if (useGlass && shaders) HighlightElement(shapeProvider, { Highlight.Default }) else Modifier)
+        .border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
 }
 
 /**

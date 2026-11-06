@@ -70,6 +70,13 @@ Their original notices are preserved below.
    This attribution identifies adapted areas, not verified feature
    completeness or runtime availability. Original per-file notices,
    including separate third-party licenses, remain applicable.
+   Liquid Glass material integration also retains the provenance declared
+   by BitChord's LiquidGlass.kt: EchoMusicApp/Echo-Music's
+   GlassEffectConfig/Modifier.liquidGlass (GPL-3.0).
+   Reference: https://github.com/EchoMusicApp/Echo-Music
+   Aurelis changes: material applied to the active tab bar and MiniPlayer,
+   opaque page recording, and shared disabled/reduced-effect sampling policy.
+   Kyant0/backdrop and liquid_glass_easy notices below remain applicable.
    See https://www.gnu.org/licenses/gpl-3.0.html.
 
 ────────────────────────────────────────────────────────────────────

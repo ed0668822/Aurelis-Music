@@ -94,3 +94,17 @@ fuentes FFmpeg/NextLib y exportaciones ONNX no se declaran resueltos.
 Doble revisión documental y evidencia: docs/qa/LEGAL_TEXT_REVIEW.md.
 No se ejecuta Gradle localmente: la compilación y verificación de los textos en
 los nuevos APK corresponden a GitHub. B04 no iniciado; plan principal intacto.
+
+
+## GLASS01 — adaptación del material antes de B04
+
+Referencia leída del archivo local BitChord-b690dc1.tar.gz, commit completo
+b690dc146009d4815825fa4a20815ef2e4ee8898: LiquidGlass.kt, GlassNavBar.kt,
+GlassSelectionPill.kt, Shaders.kt y fragmento de MainActivity.kt (paintBackdrop).
+Se restaura la procedencia declarada EchoMusicApp/Echo-Music (GPL-3.0) del
+pegamento Liquid Glass, vía BitChord, en comentario existente y NOTICE.
+No se inventa copyright individual ni permiso «o posterior» del código upstream.
+Los avisos Kyant0/Apache y Ahmed Gamil/MIT permanecen intactos. No se importan
+binarios, fuentes, iconos, modelos ni dependencias nuevos. LICENSE y LICENSES/
+sin cambios. Persisten los pendientes legales y el CSV para cabeceras definitivas.
+Comparación y límites en docs/qa/GLASS01_MATERIAL_PARITY.md y evidencia JSON.

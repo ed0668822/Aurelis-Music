@@ -1,0 +1,47 @@
+{
+  "baseline": "1c9e8435474ac3ef00841ba4bea06af72d9bf84e",
+  "reference_commit": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "reference_files_sha256": {
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/app/src/main/java/com/music/bitchord/MainActivity.kt": "90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/app/src/main/java/com/music/bitchord/ui/components/GlassNavBar.kt": "73e76c658ad723955b6ab2ec6c2a55ee7e01371896de801d4cf6b4546a7fe191",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/app/src/main/java/com/music/bitchord/ui/components/LiquidGlass.kt": "a6b8e1665c3585aaa5c8fe1e3ee057d3bc3e98156fb4c1897a602e4dfc20e4db",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/app/src/main/java/com/music/bitchord/ui/components/backdrop/internal/Shaders.kt": "03a3d9faf54da426bb82461315bbc59fe80927d10e23ba14f339cc77912c44f3",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/app/src/main/java/com/music/bitchord/ui/components/floatingtabbar/GlassSelectionPill.kt": "cfa3f88b6435260aab3440ea14e6c476ed66505261fede9d0845d0543678e64e"
+  },
+  "upstream_material_constants_equal": {
+    "VIBRANCY": "1f",
+    "BLUR_RADIUS_DP": "8f",
+    "LENS_HEIGHT": "0.5f",
+    "LENS_AMOUNT": "0.5f",
+    "LENS_MAX_DP": "48f",
+    "SURFACE_OPACITY": "0.4f",
+    "GLASS_RESOLUTION_SCALE": "0.33f",
+    "DARK_INDICATOR_OPACITY": "0.14f"
+  },
+  "all_agsl_string_literals_identical": true,
+  "agsl_string_literals_count": 5,
+  "protected_unchanged_sha256": {
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/effects/Lens.kt": "097ed024d43550f30be1b0b973b0d4e5bb823163d3457b86e0dc7af9e12a2e16",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/BackdropEffectScope.kt": "cb2487704ae769285d8353da14fa8ac199db94fced9048aa2f6b9992890d39cb",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/DrawBackdropModifier.kt": "774f17fe54c0a54e961d15e12f772f5139228f4e2187c5c4ed725ea74b858029",
+    "app/src/test/java/com/music/aurelis/ui/components/backdrop/BackdropAttachRegressionTest.kt": "64bccd17564ff20a152e7f162a486bb26773cc9ed7b2f139f8b9963c11981803",
+    "app/src/test/java/com/music/aurelis/ui/components/backdrop/BackdropSizeRegressionTest.kt": "3a545d36c98e319a51a4029f4e272f800e07b9586ad6d55669f4c8126dbbe8ea",
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "modified_source_sha256": {
+    "app/src/main/java/com/music/aurelis/MainActivity.kt": "cbfc6e0c6a7c78a24056ddd5c461f3b48d5a5d60262f60392019e463de68fe70",
+    "app/src/main/java/com/music/aurelis/ui/components/GlassNavBar.kt": "cc1525e8784c455fb5272d2f18de39ef1c692ae071e643f7a7b830d9a0a5285d",
+    "app/src/main/java/com/music/aurelis/ui/components/GlassRendering.kt": "090987e00e0e2003fa039804042a1564b703a69baacb778e9243a5b3a8594e42",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt": "d1f943293c7e46249fbf2161ad39c673dcb0ae4f756da4b13cbabc746247ab73",
+    "app/src/main/java/com/music/aurelis/ui/components/MiniPlayer.kt": "1e1a893d5b712e09e12e7d08d49317955f4c41641db8ec1be5ecf8335cd8a1cf",
+    "app/src/main/java/com/music/aurelis/ui/components/floatingtabbar/GlassSelectionPill.kt": "03d731bf670af188d5958a8389c3b547b67bec077e0ae2717c3a3957a7f4acdd",
+    "app/src/test/java/com/music/aurelis/ui/navigation/GlassNavigationTest.kt": "aaf14ab0d01220e836aa553e7dd8c018c1a3f8e5c92729742db415773e3e7452",
+    "app/src/test/java/com/music/aurelis/ui/theme/GlassRenderingTest.kt": "253ec147d675699b8363003cc1fab9fe0c6094089bf97fd10a5075bfcbf75aca"
+  },
+  "review_1": "static source/provenance comparison passed",
+  "review_2": "static integration, fallbacks, callbacks, QA01 preservation reviewed by same agent",
+  "android_build": "NOT_EXECUTED_LOCALLY; GitHub pending",
+  "new_tests": "2 authored, NOT_EXECUTED; GitHub pending",
+  "device_startup_and_gpu_visual_parity": "NOT_EXECUTED; no Android device",
+  "main_plan": "unchanged; B04 and QA02 not started"
+}

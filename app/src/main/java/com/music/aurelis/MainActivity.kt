@@ -209,8 +209,18 @@ internal fun AurelisNavigationContent(
         LocalHomeData.build(allSongs, userState, playbackState.currentSong?.id)
     }
 
-    val appBackdrop = com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop()
-    val captureGlass = com.music.aurelis.ui.components.LocalGlassHardware.current && com.music.aurelis.ui.components.LocalLiquidGlassEnabled.current
+    // Match BitChord's opaque recording: transparent page pixels must not reveal
+    // an unblurred second copy of the page through the refracting surface.
+    val windowBackground = MaterialTheme.colorScheme.background
+    val paintBackdrop: androidx.compose.ui.graphics.drawscope.ContentDrawScope.() -> Unit = remember(windowBackground) {
+        { drawRect(windowBackground); drawContent() }
+    }
+    val appBackdrop = com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop(onDraw = paintBackdrop)
+    val reduceBlur by com.music.aurelis.data.SettingsRepository.reduceDynamicBlur.collectAsState()
+    val captureGlass = com.music.aurelis.ui.components.shouldSampleGlass(
+        com.music.aurelis.ui.components.LocalLiquidGlassEnabled.current, reduceBlur,
+        com.music.aurelis.ui.components.LocalGlassHardware.current,
+    )
     androidx.compose.runtime.CompositionLocalProvider(
         com.music.aurelis.ui.components.LocalAppBackdrop provides appBackdrop,
         com.music.aurelis.ui.components.LocalAppHazeState provides hazeState,

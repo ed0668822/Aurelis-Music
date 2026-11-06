@@ -15,9 +15,13 @@ private val compatibleRuntimeShaders: Boolean by lazy {
     glassShaderPrograms.all { source -> runCatching { android.graphics.RuntimeShader(source) }.isSuccess }
 }
 internal fun glassShadersAvailable(): Boolean = compatibleRuntimeShaders
+/** One sampling policy for the page, tab recording and selection lens. */
+internal fun shouldSampleGlass(enabled: Boolean, reduceBlur: Boolean, hardware: Boolean): Boolean =
+    enabled && !reduceBlur && hardware
+
 internal fun glassRenderMode(enabled: Boolean, reduceBlur: Boolean, hardware: Boolean,
     backdrop: Boolean, shaders: Boolean, haze: Boolean): GlassRenderMode = when {
-    !enabled || reduceBlur || !hardware -> GlassRenderMode.SOLID
+    !shouldSampleGlass(enabled, reduceBlur, hardware) -> GlassRenderMode.SOLID
     backdrop && shaders -> GlassRenderMode.REFRACTION
     haze -> GlassRenderMode.BLUR
     else -> GlassRenderMode.SOLID

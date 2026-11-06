@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,9 +34,13 @@ fun MiniPlayer(
     onNext: () -> Unit = {},
     progress: Float = 0f,
 ) {
-    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player"),
-        shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 4.dp, onClick = onClick) {
+    val glass = LocalLiquidGlassEnabled.current
+    val shape = RoundedCornerShape(20.dp)
+    val surface = if (glass) Modifier.liquidGlass(shape,
+        fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh) else Modifier
+    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").then(surface),
+        shape = shape, color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (glass) 0.dp else 4.dp, onClick = onClick) {
         Column {
             Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 8.dp),
                 verticalAlignment = Alignment.CenterVertically) {

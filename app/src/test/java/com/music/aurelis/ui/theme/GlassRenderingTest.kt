@@ -33,4 +33,13 @@ class GlassRenderingTest {
         assertEquals(GlassRenderMode.SOLID, glassRenderMode(true,false,true,false,false,false))
         assertEquals(GlassRenderMode.REFRACTION, glassRenderMode(true,false,true,true,true,true))
     }
+    @Test fun pageAndLensSamplingStopsWhenEffectsAreDisabledOrReduced() {
+        assertTrue(shouldSampleGlass(true, false, true))
+        assertFalse(shouldSampleGlass(false, false, true))
+        assertFalse(shouldSampleGlass(true, true, true))
+        assertFalse(shouldSampleGlass(true, false, false))
+        // Retained backdrop/shader availability must not override the user's toggle.
+        assertEquals(GlassRenderMode.SOLID, glassRenderMode(false, false, true, true, true, false))
+        assertEquals(GlassRenderMode.SOLID, glassRenderMode(true, true, true, true, true, false))
+    }
 }

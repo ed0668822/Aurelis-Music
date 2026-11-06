@@ -1,7 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -16,18 +15,17 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.music.aurelis.data.SettingsRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.Role
@@ -97,7 +95,8 @@ fun GlassNavBar(
     }
     val barGlass = rememberLayerBackdrop()
     val tabRow = rememberLayerBackdrop()
-    val capture = LocalGlassHardware.current && LocalLiquidGlassEnabled.current
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val capture = shouldSampleGlass(LocalLiquidGlassEnabled.current, reduceBlur, LocalGlassHardware.current)
 
 
     Column(
@@ -110,15 +109,9 @@ fun GlassNavBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .clip(CircleShape)
-                    .lightweightLiquidGlass(
+                    .liquidGlass(
                         shape = RoundedCornerShape(percent = 50),
                         fallbackColor = MaterialTheme.colorScheme.surface,
-                    )
-                    .border(
-                        width = 0.5.dp,
-                        color = Color.White.copy(alpha = 0.10f),
-                        shape = RoundedCornerShape(percent = 50),
                     ),
             ) {
                 val density = LocalDensity.current
