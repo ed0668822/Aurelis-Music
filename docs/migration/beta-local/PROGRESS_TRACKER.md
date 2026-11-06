@@ -467,3 +467,7 @@ Ver ../../qa/CI10_LYRICS_OFFSET.md/.json. Doble revisión estática; app/Glass/p
 workflow intactos. Gradle/tests Android exclusivamente GitHub, nueva validación
 pendiente del aviso del usuario. Autorización hasta B08 permanece, con corrección
 y resultado CI antes de nuevas entregas. No avance de bloques/B09 por esta reparación.
+
+Entrega CI10 — corrección `ec3b4b780a83576bfda2c1bfd0a52ffff9503f56`; mismo PR1.
+Checkpoint documental posterior; compilación y pruebas nuevas pendientes en
+GitHub. Esperar resultado comunicado por el usuario antes de continuar B07/B08.

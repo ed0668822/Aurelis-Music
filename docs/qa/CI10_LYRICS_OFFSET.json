@@ -55,5 +55,6 @@
     "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
   ],
   "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
-  "authorization": "Continuation toward B08 remains granted; repair CI first, wait for user new outcome; no new migration block or B09 started"
+  "authorization": "Continuation toward B08 remains granted; repair CI first, wait for user new outcome; no new migration block or B09 started",
+  "fix_commit": "ec3b4b780a83576bfda2c1bfd0a52ffff9503f56"
 }
