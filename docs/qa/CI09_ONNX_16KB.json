@@ -279,5 +279,6 @@
         "error": "ELF LOAD segment 1 is not 16KB compatible: lib/arm64-v8a/libonnxruntime4j_jni.so (alignment=4096)"
       }
     ]
-  }
+  },
+  "fix_commit": "da938b44c94dd72eaf008c0df1bdb06adfcea8b5"
 }

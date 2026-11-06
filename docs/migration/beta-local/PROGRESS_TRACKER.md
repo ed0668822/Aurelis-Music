@@ -407,3 +407,9 @@ ni cambio de modelos sin procedencia. Ver ../../qa/CI09_ONNX_16KB.md/.json.
 Sin compilación/Android local; APK final/lint/suites/ZIP/ELF pendientes de GitHub.
 Plan/Glass/servicio/ABI/SDK/Gradle/AndroidX conservados. Publicar mismo PR y esperar
 resultado del usuario. Entrega3 y B07/B06.2/.3/.4/QA02 no iniciados.
+
+Entrega CI09 — corrección `da938b44c94dd72eaf008c0df1bdb06adfcea8b5`; misma rama y PR1.
+Checkpoint documental posterior sin cambiar runtime/verificador.31 tests Python
+correctos; APK final/CI/Android16KB pendientes. Beat This CPU conserva fallo previo
+ConvInteger; no exportación ni inferencia Android verificadas. Esperar resultado
+del usuario antes de entrega3 o cualquier avance del plan; no B07 automático.
