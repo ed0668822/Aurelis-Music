@@ -389,3 +389,8 @@ estática. Glass/motion/servicio/plan/pruebas/firmas/SDK/ABI intactos. Sin Andro
 local; compilación/lint/tests exclusivamente GitHub. Publicar mismo PR1 y esperar
 resultado del usuario. Entrega2 ONNX y entrega3 actualizaciones pendientes; no B07
 ni B06.2/.3/.4/QA02 en esta corrección complementaria.
+
+Entrega CI08.1 — corrección `606eea71e8a831a3b134686dec3a392744982d57`; misma rama y PR1.
+Checkpoint documental posterior sin cambiar código de aplicación. Compilación,
+lint y pruebas pendientes exclusivamente de GitHub. Esperar resultado del usuario;
+entrega2 ONNX/entrega3 actualizaciones y B07 permanecen pendientes.

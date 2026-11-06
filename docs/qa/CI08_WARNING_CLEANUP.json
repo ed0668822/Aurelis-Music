@@ -103,5 +103,6 @@
     "docs/migration/beta-local/MASTER_PLAN.md",
     "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
   ],
-  "next": "Publish same PR; notify user; wait for user GitHub result before requesting/starting delivery2. No B07 or B06.2/.3/.4/QA02."
+  "next": "Publish same PR; notify user; wait for user GitHub result before requesting/starting delivery2. No B07 or B06.2/.3/.4/QA02.",
+  "fix_commit": "606eea71e8a831a3b134686dec3a392744982d57"
 }
