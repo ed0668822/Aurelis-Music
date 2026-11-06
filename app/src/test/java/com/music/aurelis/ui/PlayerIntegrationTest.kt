@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.ViewModelStore
 import androidx.media3.common.Player
@@ -199,7 +200,10 @@ class PlayerIntegrationTest {
         compose.onNodeWithText("Añadir a la cola").performClick()
         compose.runOnIdle { assertEquals(listOf("1", "2", "3", "1"), vm.state.value.queue.map { it.id }) }
         compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
-        compose.onAllNodesWithContentDescription("Bajar en la cola")[0].performClick()
+        val playingEntry = vm.state.value.currentSong!!.queueEntryId
+        compose.onNodeWithTag("queue-entry-$playingEntry").performSemanticsAction(SemanticsActions.CustomActions) { actions ->
+            assertTrue(actions.single { it.label == "Bajar en la cola" }.action())
+        }
         compose.runOnIdle {
             assertEquals(listOf("2", "1", "3", "1"), vm.state.value.queue.map { it.id })
             assertEquals("1", vm.state.value.currentSong?.id); assertEquals(1, vm.state.value.currentIndex)
@@ -324,4 +328,67 @@ class PlayerIntegrationTest {
         file.parentFile!!.mkdirs()
         file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
     }
+    @Test fun songMenuPlayNextInsertsADuplicateAndKeepsThePausedPlayerAndQueueInSync() {
+        start()
+        compose.runOnIdle { player.seekTo(12_345) }
+        val originalEntry = vm.state.value.currentSong!!.queueEntryId
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithText("Reproducir después").performScrollTo().performClick()
+        compose.onNode(isPopup()).assertDoesNotExist()
+        compose.runOnIdle {
+            assertEquals(listOf("1", "1", "2", "3"), vm.state.value.queue.map { it.id })
+            assertEquals(originalEntry, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(12_345L, vm.state.value.positionMs)
+            assertFalse(player.playWhenReady)
+        }
+        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithTag("playback-queue").assertIsDisplayed()
+        compose.onAllNodesWithContentDescription(app.getString(R.string.drag_to_reorder)).assertCountEquals(3)
+        val duplicateEntry = vm.state.value.queue[1].queueEntryId
+        compose.onNode(hasContentDescription(app.getString(R.string.remove_from_queue)) and
+            hasAnyAncestor(hasTestTag("queue-entry-$duplicateEntry")), useUnmergedTree = true).performClick()
+        compose.runOnIdle {
+            assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id })
+            assertEquals(originalEntry, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(12_345L, vm.state.value.positionMs)
+        }
+    }
+
+    @Test fun draggingAQueueOccurrenceUsesTheExistingPlayerWithoutSeekingOrRestartingIt() {
+        start()
+        compose.runOnIdle { player.seekTo(12_345) }
+        val current = vm.state.value.currentSong!!.queueEntryId
+        val dragged = vm.state.value.queue[1].queueEntryId
+        val target = vm.state.value.queue[2].queueEntryId
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithTag("queue-drag-$dragged").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("queue-drag-$target").performScrollTo().assertIsDisplayed()
+        val from = compose.onNodeWithTag("queue-drag-$dragged").fetchSemanticsNode().boundsInRoot.center
+        val to = compose.onNodeWithTag("queue-drag-$target").fetchSemanticsNode().boundsInRoot.center
+        val queueBounds = compose.onNodeWithTag("playback-queue").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("playback-queue").performTouchInput {
+            swipe(from - queueBounds.topLeft, to - queueBounds.topLeft, durationMillis = 600)
+        }
+        compose.runOnIdle {
+            assertEquals(listOf("1", "3", "2"), vm.state.value.queue.map { it.id })
+            assertEquals(current, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(12_345L, vm.state.value.positionMs)
+            assertFalse(player.playWhenReady)
+            assertEquals(1, player.replacements)
+        }
+    }
+
+    @Test fun shuffleExplainsWhyPlayNextIsUnavailableAndAppendRemainsAvailable() {
+        start()
+        compose.runOnIdle { player.shuffleModeEnabled = true }
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithText("Reproducir después").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Desactiva el modo aleatorio para elegir la siguiente canción.").assertExists()
+        compose.onNodeWithText("Añadir a la cola").performScrollTo().assertIsEnabled().performClick()
+        compose.runOnIdle { assertTrue(player.shuffleModeEnabled); assertEquals(4, player.mediaItemCount) }
+    }
+
 }

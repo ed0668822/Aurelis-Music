@@ -7,28 +7,22 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.ui.theme.LocalReduceMotion
+import com.music.aurelis.ui.player.InlineQueue
+import androidx.compose.ui.platform.testTag
 
 @Composable
 fun QueueScreen(
@@ -53,9 +47,10 @@ fun QueueScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
+                    .testTag("playback-queue")
                     .align(Alignment.BottomCenter),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                color = MaterialTheme.colorScheme.surface
+                color = Color(0xFF141414)
             ) {
                 Column(
                     modifier = Modifier
@@ -70,63 +65,32 @@ fun QueueScreen(
                         Text(
                             text = "Cola de reproducción",
                             style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Cerrar")
+                            Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = Color.White)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        if (state.queue.isEmpty()) item { Text("La cola está vacía.") }
-                        itemsIndexed(state.queue) { index, song ->
-                            val isCurrent = index == state.currentIndex
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(enabled = state.isConnected) { playbackViewModel.seekToIndex(index) }
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                AsyncImage(
-                                    model = song.artworkUri,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = song.title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = song.artist,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                                IconButton(onClick = { playbackViewModel.moveQueueItem(index, index - 1) }, enabled = state.isConnected && index > 0) {
-                                    Icon(Icons.Rounded.KeyboardArrowUp, "Subir en la cola")
-                                }
-                                IconButton(onClick = { playbackViewModel.moveQueueItem(index, index + 1) }, enabled = state.isConnected && index < state.queue.lastIndex) {
-                                    Icon(Icons.Rounded.KeyboardArrowDown, "Bajar en la cola")
-                                }
-                                IconButton(onClick = { playbackViewModel.removeFromQueue(index) },
-                                    enabled = state.isConnected && !isCurrent) {
-                                    Icon(Icons.Rounded.Close, "Quitar de la cola")
-                                }
-                            }
-                        }
+                    if (state.queue.isEmpty()) {
+                        Text("La cola está vacía.", color = Color.White)
+                    } else {
+                        InlineQueue(
+                            queue = state.queue,
+                            currentIndex = state.currentIndex,
+                            autoplayEnabled = false,
+                            controlsLocked = !state.isConnected || !state.canEditQueue,
+                            onJumpTo = playbackViewModel::seekToIndex,
+                            onRemove = playbackViewModel::removeFromQueue,
+                            onMove = playbackViewModel::moveQueueItem,
+                            onClear = playbackViewModel::clearUserQueue,
+                            modifier = Modifier.weight(1f),
+                            showHeader = false,
+                            groupByTier = false, // Display the actual Media3 playback order.
+                        )
                     }
                 }
             }

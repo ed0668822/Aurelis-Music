@@ -105,7 +105,8 @@ class PlaybackIntegrationTest {
         gate.complete(Unit); settle()
         assertTrue(vm.state.value.isConnected)
         assertEquals(1, vm.state.value.currentIndex)
-        assertEquals(song("2"), vm.state.value.currentSong)
+        assertEquals(song("2"), vm.state.value.currentSong?.copy(queueEntryId = null))
+        assertNotNull(vm.state.value.currentSong?.queueEntryId)
         assertEquals(60_000, vm.state.value.durationMs)
         assertFalse(vm.state.value.canNext)
     }
@@ -180,4 +181,51 @@ class PlaybackIntegrationTest {
         vm.retry(); settle(); assertTrue(vm.state.value.isConnected)
         store.clear(); assertTrue(player.released)
     }
+    @Test fun queueEditsWaitForConnectionWithoutReplacingTheLatestPlayRequest() {
+        val gate = CompletableDeferred<Unit>()
+        vm = newViewModel { gate.await(); player }; store.put("player", vm)
+        vm.playSongs(listOf(song("1"))); settle()
+        vm.enqueue(listOf(song("4"))); settle()
+        vm.playSongs(listOf(song("2"), song("3"))); settle()
+        vm.enqueue(listOf(song("5"))); vm.enqueue(listOf(song("6"))); settle()
+        gate.complete(Unit); settle()
+        assertEquals(listOf("2", "3", "5", "6"), vm.state.value.queue.map { it.id })
+        assertEquals("2", vm.state.value.currentSong?.id)
+        assertEquals(1, player.replacements)
+    }
+
+    @Test fun realQueueStateAndPlayNextStayConsistentAcrossRepeatedEdits() {
+        play(); player.pause(); player.seekTo(12_345); settle()
+        val current = vm.state.value.currentSong?.queueEntryId
+        vm.playNext(listOf(song("2"), song("2"))); settle()
+        assertEquals(listOf("1", "2", "2", "2", "3"), vm.state.value.queue.map { it.id })
+        assertEquals(5, vm.state.value.queue.map { it.queueEntryId }.toSet().size)
+        vm.moveQueueItem(1, 2); settle()
+        vm.removeFromQueue(1); settle()
+        assertEquals(current, vm.state.value.currentSong?.queueEntryId)
+        assertEquals(12_345L, vm.state.value.positionMs)
+        assertFalse(vm.state.value.isPlayRequested)
+        assertTrue(vm.state.value.canEditQueue)
+        assertEquals(1, player.replacements)
+    }
+
+    @Test fun clearingWhileConnectingAlsoCancelsPendingQueueEdits() {
+        val gate = CompletableDeferred<Unit>()
+        vm = newViewModel { gate.await(); player }; store.put("player", vm)
+        vm.enqueue(listOf(song("1"))); vm.playNext(listOf(song("2"))); settle()
+        store.clear(); gate.complete(Unit); settle()
+        assertEquals(0, player.mediaItemCount)
+    }
+
+    @Test fun queueCapabilityRevocationDisablesFurtherEditsAndUpdatesUiState() {
+        play()
+        player.publish(player.snapshot.buildUpon().setAvailableCommands(
+            Player.Commands.Builder().addAllCommands().remove(Player.COMMAND_CHANGE_MEDIA_ITEMS).build()).build())
+        settle()
+        assertFalse(vm.state.value.canEditQueue)
+        vm.enqueue(listOf(song("4"))); vm.playNext(listOf(song("5")))
+        vm.moveQueueItem(0, 2); vm.removeFromQueue(2); settle()
+        assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id })
+    }
+
 }

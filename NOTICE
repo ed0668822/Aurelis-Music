@@ -265,6 +265,20 @@ Changes: inline Aurelis host, measured host/panel coordinates, cancellation and
 finite-size guards, same-track artwork overlay and accessibility isolation.
 The existing spring constants and third-party glass notices are retained.
 
+B06.1 — Local queue integration
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/playback/QueueCoordinator.kt,
+app/src/main/java/com/music/bitchord/ui/components/SongActionsMenu.kt,
+and sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerQueue.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE; upstream notices retained.
+Changes: activate the existing Aurelis queue renderer, serialize per-occurrence
+identity and tiers, use Media3 in-place edits, add local Play Next callbacks,
+accessible reorder actions and reduced-motion behavior. The active queue displays
+the canonical physical timeline; no remote/party queue logic is imported.
+Play Next while shuffle is enabled remains unavailable with an explanation until
+the session owns an explicit shuffled-successor policy. Aurelis integration and
+tests do not replace third-party authorship or change their licence terms.
+
 9. Código fuente, distribución y verificaciones pendientes
 
 Repositorio de Aurelis Music:

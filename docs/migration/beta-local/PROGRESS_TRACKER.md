@@ -12,7 +12,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | B03 | B02 | Media-alta | B03.1/.2/.3 implementados y verificados localmente; GPU/CI entrega pendientes |
 | B04 | B03 | Alta | Pendiente de autorización/previas |
 | B05 | B04 | Alta | Pendiente de autorización/previas |
-| B06 | B05 | Muy alta | Pendiente de autorización/previas |
+| B06 | B05 | Muy alta | Autorizado; B06.1 implementado pendiente CI/Android; .2/.3/.4 pendientes |
 | B07 | B06 | Alta | Pendiente de autorización/previas |
 | B08 | B07 | Media-alta | Pendiente de autorización/previas |
 | B09 | B06 y B08 | Muy alta | Pendiente de autorización/previas |
@@ -323,3 +323,18 @@ Los diez casos existentes y sus asserts permanecen; regresión IO/finalizador Ma
 preparada. Detalles en ../../qa/CI05_MAIN_DISPATCHER.md/.json. Revisión doble estática,
 sin ejecución Android local ni cambio de app/workflow/plan. Nuevo CI pendiente.
 B06/QA02 detenidos; publicar/avisar y esperar resultado que comunique el usuario.
+
+
+## B06.1 — coordinador y cola, autorizado
+
+Base cefe533 (SHA completo en B06_1_QUEUE.json). CI05 anterior: run139 SUCCESS
+del HEAD cefe533dd1e256c67a720a97a241e95789c1fa9d, confirmado mediante páginas
+públicas de GitHub; no acredita Android real. QueueCoordinator existente deja
+de ser stub; menús → Play Next/adición, QueueScreen → InlineQueue/arrastre/acciones
+accesibles. UUID por ocurrencia y edición Media3 en sitio; misma sesión/motor.
+Adiciones FIFO separadas del último playSongs. Detalles/archivos/21 tests nuevos
+en B06_1_QUEUE.md/.json; preparados, NO EJECUTADOS localmente. Dos revisiones
+estáticas del mismo agente; compilación/lint/tests exclusivamente en GitHub.
+Play Next con shuffle deshabilitado y explicado, política de sucesor pendiente.
+B06.2/.3/.4 y validación real/paridad pendientes. Plan/QA01/Glass/ABI/servicio
+preservados. Publicar en mismo PR1, avisar y esperar resultado del usuario.

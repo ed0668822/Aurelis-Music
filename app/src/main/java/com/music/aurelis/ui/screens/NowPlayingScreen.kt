@@ -471,7 +471,10 @@ fun NowPlayingScreen(
                 }
 
                 if (showSongActions) SongActionsDialog(s, userStore,
-                    onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false })
+                    onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false },
+                    onPlayNext = { playbackViewModel.playNext(listOf(s)) },
+                    queueActionsEnabled = state.isConnected && state.canEditQueue,
+                    playNextEnabled = !state.shuffleEnabled)
                 if (showLyricsSources) {
                     LyricsSourcesDialog(onDismiss = { showLyricsSources = false })
                 }

@@ -83,3 +83,16 @@ LocalHomeData se reutiliza sin reescribir sus algoritmos. Cambios de strings/NOT
 y suites nuevas HomeShelvesIntegration/GlassNavigation/LocalAppHost documentados
 en B03_1/2/3. B04 conserva Explore/Search/Library pendientes; no se importan
 AppUi remoto ni clientes streaming por conectar este host.
+
+
+## F08/F09 — B06.1 activo
+
+Se completa `D:playback/QueueCoordinator.kt` existente en vez de crear otro
+coordinador/motor. Ruta efectiva de cola: `D:ui/screens/QueueScreen.kt` →
+`D:ui/player/PlayerQueue.kt` (InlineQueue), antes sin conexión activa.
+`D:playback/MediaItemExtensions.kt` serializa UUID de ocurrencia/tier;
+PlayerConnection/ProfilePlaybackBinding y adiciones del ViewModel los generan
+en creación/restauración. Los dos SongActionsDialog reales conectan Play Next.
+El timeline Media3 sigue siendo canónico; formato persistido sin cambios.
+No LocalSessionPlayer nuevo, lógica remota ni sesiones adicionales en esta unidad.
+Referencia/licencias y límites en B06_1_QUEUE; sucesor shuffle pendiente.

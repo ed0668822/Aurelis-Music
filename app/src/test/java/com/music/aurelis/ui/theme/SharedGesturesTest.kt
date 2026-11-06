@@ -54,7 +54,7 @@ class SharedGesturesTest {
         compose.setContent { AurelisTheme {
             var open by remember { mutableStateOf(false) }
             SongRow(song, { played++ }, { open = true }, false, false)
-            if (open) SongActionsDialog(song, store, { enqueued++ }, { open = false })
+            if (open) SongActionsDialog(song, store, { enqueued++ }, { open = false }, onPlayNext = {})
         } }
         compose.onNodeWithText(song.title).performTouchInput { click() }
         compose.runOnIdle { assertEquals(1, played) }
@@ -69,11 +69,33 @@ class SharedGesturesTest {
         compose.runOnIdle { assertEquals(1, enqueued); assertEquals(1, played) }
     }
 
+    @Test fun playNextDispatchesOnceAndDismissesTheRealMenu() {
+        val store = LocalUserLibrary(RuntimeEnvironment.getApplication())
+        var next = 0; var enqueued = 0
+        compose.setContent { AurelisTheme {
+            var open by remember { mutableStateOf(true) }
+            if (open) SongActionsDialog(song, store, { enqueued++ }, { open = false }, onPlayNext = { next++ })
+        } }
+        compose.onNodeWithText("Reproducir después").performScrollTo().performClick()
+        compose.onNode(isPopup()).assertDoesNotExist()
+        compose.runOnIdle { assertEquals(1, next); assertEquals(0, enqueued) }
+    }
+
+    @Test fun disconnectedQueueActionsAreDisabledWithoutDisablingLocalFavorites() {
+        val store = LocalUserLibrary(RuntimeEnvironment.getApplication())
+        compose.setContent { AurelisTheme {
+            SongActionsDialog(song, store, {}, {}, onPlayNext = {}, queueActionsEnabled = false)
+        } }
+        compose.onNodeWithText("Reproducir después").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Añadir a la cola").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Añadir a favoritos").performScrollTo().assertIsEnabled()
+    }
+
     @Test fun menuCreatesPersistentPlaylistAndDismisses() {
         val store = LocalUserLibrary(RuntimeEnvironment.getApplication())
         compose.setContent { AurelisTheme {
             var open by remember { mutableStateOf(true) }
-            if (open) SongActionsDialog(song, store, {}, { open = false })
+            if (open) SongActionsDialog(song, store, {}, { open = false }, onPlayNext = {})
         } }
         compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("Local compartida")
         compose.onNodeWithText("Crear playlist con esta canción").performScrollTo().performClick()
@@ -90,7 +112,7 @@ class SharedGesturesTest {
             CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides
                 androidx.compose.ui.unit.Density(density.density, 1.5f)) {
                 var open by remember { mutableStateOf(true) }
-                if (open) SongActionsDialog(song, LocalUserLibrary(RuntimeEnvironment.getApplication()), {}, { open = false })
+                if (open) SongActionsDialog(song, LocalUserLibrary(RuntimeEnvironment.getApplication()), {}, { open = false }, onPlayNext = {})
             }
         } }
         compose.onNodeWithText("Cerrar").performScrollTo().assertIsDisplayed().performClick()

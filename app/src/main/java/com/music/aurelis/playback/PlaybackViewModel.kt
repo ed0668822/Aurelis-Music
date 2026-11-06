@@ -67,6 +67,7 @@ data class PlaybackState(
     val queue: List<LocalSong> = emptyList(),
     val currentIndex: Int = -1,
     val isConnected: Boolean = false,
+    val canEditQueue: Boolean = false,
     val lyrics: LyricsState = LyricsState.None,
     val repeatMode: Int = Player.REPEAT_MODE_OFF,
     val shuffleEnabled: Boolean = false,
@@ -87,6 +88,9 @@ class PlaybackViewModel internal constructor(
     })
 
     private var controller: Player? = null
+    private val queueCoordinator = QueueCoordinator { controller }
+    private var queueEditJob: Job? = null
+    private var queueEditGeneration = 0L
     private var connectionJob: Job? = null
     private var playRequestJob: Job? = null
     private var mixJob: Job? = null
@@ -131,7 +135,7 @@ class PlaybackViewModel internal constructor(
                     controller?.release()
                     controller = null
                     stopPositionPolling()
-                    _state.update { it.copy(isConnected = false, isPlaying = false, isPlayRequested = false,
+                    _state.update { it.copy(isConnected = false, canEditQueue = false, isPlaying = false, isPlayRequested = false,
                         isLoading = false, canSeek = false, canNext = false, canPrevious = false,
                         errorMessage = getApplication<Application>().getString(R.string.playback_connection_error)) }
                 }
@@ -152,6 +156,7 @@ class PlaybackViewModel internal constructor(
     fun playSongs(songs: List<LocalSong>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
         cancelMix()
+        invalidateQueueEdits()
         playRequestJob?.cancel()
         playRequestJob = viewModelScope.launch {
             connect()
@@ -206,27 +211,38 @@ class PlaybackViewModel internal constructor(
     }
 
     fun removeFromQueue(index: Int) {
-        val player = controller ?: return
-        if (index !in 0 until player.mediaItemCount || index == player.currentMediaItemIndex) return
-        player.removeMediaItem(index)
-        syncState() // Timeline callbacks may already have updated the queue; never remove twice.
+        if (queueCoordinator.removeItem(index)) syncState()
     }
 
     fun moveQueueItem(from: Int, to: Int) {
-        val player = controller ?: return
-        if (from !in 0 until player.mediaItemCount || to !in 0 until player.mediaItemCount) return
-        player.moveMediaItem(from, to)
-        syncState()
+        if (queueCoordinator.moveItem(from, to)) syncState()
     }
 
-    fun enqueue(songs: List<LocalSong>) {
+    fun clearUserQueue() {
+        if (queueCoordinator.clearUserQueue()) syncState()
+    }
+
+    fun enqueue(songs: List<LocalSong>) = editQueue(songs, next = false)
+    fun playNext(songs: List<LocalSong>) = editQueue(songs, next = true)
+
+    private fun editQueue(songs: List<LocalSong>, next: Boolean) {
         if (songs.isEmpty()) return
         cancelMix()
-        playRequestJob = viewModelScope.launch {
+        val selection = songs.toList()
+        val generation = queueEditGeneration
+        val previous = queueEditJob
+        queueEditJob = viewModelScope.launch {
+            previous?.join()
             connect(); connectionJob?.join()
-            controller?.addMediaItems(songs.map { it.toMediaItem() })
+            if (generation != queueEditGeneration) return@launch
+            if (next) queueCoordinator.playNext(selection) else queueCoordinator.append(selection)
             syncState()
         }
+    }
+
+    private fun invalidateQueueEdits() {
+        queueEditGeneration++
+        queueEditJob?.cancel()
     }
 
     private fun cancelMix() {
@@ -235,7 +251,7 @@ class PlaybackViewModel internal constructor(
     }
 
     fun startAutoMix(songs: List<LocalSong>, user: LocalUserLibraryState) {
-        cancelMix(); playRequestJob?.cancel()
+        cancelMix(); invalidateQueueEdits(); playRequestJob?.cancel()
         val version = mixVersion
         val seedId = _state.value.currentSong?.id
         _state.update { it.copy(isCreatingMix = true) }
@@ -254,7 +270,7 @@ class PlaybackViewModel internal constructor(
                     val index = player.currentMediaItemIndex
                     if (index + 1 < player.mediaItemCount) player.removeMediaItems(index + 1, player.mediaItemCount)
                     if (index > 0) player.removeMediaItems(0, index)
-                    player.addMediaItems(mix.drop(1).map { it.toMediaItem() })
+                    player.addMediaItems(mix.drop(1).map { it.toQueueMediaItem() })
                     resume()
                 } else PlayerConnection.playSongs(player, mix)
                 syncState()
@@ -309,6 +325,7 @@ class PlaybackViewModel internal constructor(
                 sourceQuality = AudioQualityInfo.selected(song, if (ctrl.isCommandAvailable(Player.COMMAND_GET_TRACKS))
                     ctrl.currentTracks else androidx.media3.common.Tracks.EMPTY),
                 currentSong = song, currentIndex = currentIndex, isPlaying = ctrl.isPlaying,
+                canEditQueue = queueCoordinator.canEdit,
                 isPlayRequested = ctrl.playWhenReady && ctrl.playbackState != Player.STATE_ENDED && ctrl.playerError == null,
                 isLoading = ctrl.playbackState == Player.STATE_BUFFERING,
                 positionMs = ctrl.currentPosition.coerceAtLeast(0L),

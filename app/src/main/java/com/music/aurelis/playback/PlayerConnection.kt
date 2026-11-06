@@ -25,7 +25,7 @@ object PlayerConnection {
 
     fun playSongs(controller: androidx.media3.common.Player, songs: List<LocalSong>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
-        val mediaItems = songs.map { it.toMediaItem() }
+        val mediaItems = songs.map { it.toQueueMediaItem() }
         controller.setMediaItems(mediaItems, startIndex.coerceIn(0, mediaItems.size - 1), 0L)
         controller.prepare()
         controller.play()

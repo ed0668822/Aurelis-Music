@@ -218,3 +218,14 @@ GitHub, no se declara eliminado el fallo intermitente. Mismo PR; no B06/QA02.
 
 Commit de corrección CI05: `9d053c082958558683a9b169737ed4fb2769a190`. Mismo PR1/rama; suite nueva
 pendiente de GitHub. Sin compilación local ni avance B06/QA02.
+
+
+## Cierre CI05 observado al iniciar B06 autorizado
+
+Run139 https://github.com/ed0668822/Aurelis-Music/actions/runs/42244895407
+SUCCESS; job127984422069 enlaza el HEAD cefe533dd1e256c67a720a97a241e95789c1fa9d.
+Evidencia: páginas públicas, estado «completed successfully» y enlace de commit.
+No descarga REST de logs ni prueba física. El bloqueo CI anterior queda superado
+para continuar B06 autorizado; QA02 no iniciado. B06.1 aporta21 casos preparados,
+sin ejecución local; su CI nuevo pendiente del resultado comunicado por usuario.
+Ver ../migration/beta-local/B06_1_QUEUE.md/.json para mantener separado el alcance.

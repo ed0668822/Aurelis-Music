@@ -35,7 +35,7 @@ internal class ProfilePlaybackBinding(
                 if (active != ProfileRepository.profileId || player.mediaItemCount != 0 || available.isEmpty()) return@launch
                 val position = if (available[index].id == snapshot.ids.getOrNull(snapshot.index))
                     snapshot.positionMs.coerceAtMost(available[index].durationMs.coerceAtLeast(0)) else 0L
-                player.setMediaItems(available.map { it.toMediaItem() }, index, position)
+                player.setMediaItems(available.map { it.toQueueMediaItem() }, index, position)
                 player.repeatMode = snapshot.repeat
                 player.shuffleModeEnabled = snapshot.shuffle
                 // Restored queues remain paused until an explicit playback command.

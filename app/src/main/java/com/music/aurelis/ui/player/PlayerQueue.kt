@@ -1,4 +1,5 @@
 // Aurelis © 2026. GPL-3.0-or-later.
+// Adapted from BitChord contributors under GPLv3; source and changes in NOTICE.
 package com.music.aurelis.ui.player
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -61,6 +62,11 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import com.music.aurelis.ui.theme.LocalReduceMotion
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -115,7 +121,7 @@ internal class QueueTracks(
     companion object { val EMPTY = QueueTracks(null, emptyList(), emptyList(), emptyList()) }
 }
 
-internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: Boolean = false): QueueTracks {
+internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: Boolean = false, groupByTier: Boolean = true): QueueTracks {
     if (currentIndex !in queue.indices) return QueueTracks.EMPTY
     val seen = HashMap<String, Int>()
     val occurrence = IntArray(queue.size) { i -> val id = queue[i].id; seen.getOrDefault(id, 0).also { seen[id] = it + 1 } }
@@ -132,7 +138,7 @@ internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: 
     val context = ArrayList<QueueTrack>()
     val autoplay = ArrayList<QueueTrack>()
     for (index in currentIndex + 1 until queue.size) {
-        when (queue[index].queueTier) {
+        if (!groupByTier) context += track(index, "context") else when (queue[index].queueTier) {
             QueueTier.USER_QUEUE -> user += track(index, "user")
             QueueTier.CONTEXT -> context += track(index, "context")
             QueueTier.AUTOPLAY -> autoplay += track(index, "autoplay")
@@ -142,8 +148,8 @@ internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: 
     return QueueTracks(track(currentIndex, "np"), user, context, autoplay, history)
 }
 
-private fun LazyItemScope.queueMotion(): Modifier =
-    Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = QUEUE_ROW_MOTION)
+private fun LazyItemScope.queueMotion(reduceMotion: Boolean): Modifier =
+    if (reduceMotion) Modifier else Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = QUEUE_ROW_MOTION)
 
 @Composable
 internal fun InlineQueue(
@@ -161,30 +167,34 @@ internal fun InlineQueue(
     collapsePlayerOnScroll: Boolean = false,
     onRevealPlayer: () -> Unit = {},
     onHidePlayer: () -> Unit = {},
+    showHeader: Boolean = true,
+    groupByTier: Boolean = true,
 ) {
+    val reduceMotion = LocalReduceMotion.current
     val listState = rememberLazyListState()
     LaunchedEffect(listState) { snapshotFlow { listState.isScrollInProgress }.collect(onScrollingChange) }
     val keepScroll = remember(listState) { keepScrollInList(listState) }
 
     val showHistory by SettingsRepository.showQueueHistory.collectAsStateWithLifecycle()
-    val tracks = remember(queue, currentIndex, showHistory) { splitQueue(queue, currentIndex, showHistory) }
+    val tracks = remember(queue, currentIndex, showHistory, groupByTier) { splitQueue(queue, currentIndex, showHistory, groupByTier) }
     val drag = rememberQueueDrag(listState, tracks, onMove, onDragActiveChange)
     val nowPlaying = tracks.nowPlaying
+    LaunchedEffect(controlsLocked) { if (controlsLocked) drag.held?.let { drag.end(it.key) } }
 
     val contextSong = tracks.context.firstOrNull()?.song
-    val contextTitle = contextSong?.albumName?.takeIf { it.isNotBlank() }
+    val contextTitle = contextSong?.albumName?.takeIf { groupByTier && it.isNotBlank() }
 
     var hasScrolledOnce by remember { mutableStateOf(false) }
-    LaunchedEffect(currentIndex, nowPlaying?.key, showHistory) {
+    LaunchedEffect(currentIndex, nowPlaying?.key, showHistory, reduceMotion) {
         val nowPlayingRow = if (tracks.history.isEmpty()) 0 else tracks.history.size + 1
         val scrolledAway = listState.firstVisibleItemIndex != nowPlayingRow || listState.firstVisibleItemScrollOffset != 0
         if (drag.held == null && nowPlaying != null && scrolledAway) {
-            if (hasScrolledOnce) listState.animateScrollToItem(nowPlayingRow) else { listState.scrollToItem(nowPlayingRow); hasScrolledOnce = true }
+            if (hasScrolledOnce && !reduceMotion) listState.animateScrollToItem(nowPlayingRow) else { listState.scrollToItem(nowPlayingRow); hasScrolledOnce = true }
         }
     }
 
     Column(modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (showHeader) Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(text = stringResource(R.string.queue), style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
             if (tracks.user.isNotEmpty()) QueueClearButton(MaterialTheme.typography.titleMedium, controlsLocked, onClear)
         }
@@ -198,32 +208,42 @@ internal fun InlineQueue(
                 if (tracks.history.isNotEmpty()) {
                     item(key = "header-history") { QueueHeading(stringResource(R.string.previously_played), Modifier.padding(top = 12.dp, bottom = 6.dp)) }
                     items(tracks.history, key = { it.key }) { track ->
-                        InlineQueueRow(track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = controlsLocked, modifier = queueMotion())
+                        InlineQueueRow(track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = controlsLocked, modifier = queueMotion(reduceMotion))
                     }
                 }
                 if (nowPlaying != null) {
                     item(key = "header-now-playing") { QueueHeading(stringResource(R.string.now_playing), Modifier.padding(top = 12.dp, bottom = 6.dp)) }
                     item(key = nowPlaying.key) {
-                        InlineQueueRow(nowPlaying.song, true, { onJumpTo(nowPlaying.timelineIndex) }, { onRemove(nowPlaying.timelineIndex) }, locked = controlsLocked, modifier = queueMotion())
+                        InlineQueueRow(nowPlaying.song, true, { onJumpTo(nowPlaying.timelineIndex) }, { onRemove(nowPlaying.timelineIndex) },
+                            locked = controlsLocked, modifier = queueMotion(reduceMotion).semantics {
+                                if (!controlsLocked) customActions = buildList {
+                                    if (currentIndex > 0) add(CustomAccessibilityAction("Subir en la cola") {
+                                        onMove(currentIndex, currentIndex - 1); true
+                                    })
+                                    if (currentIndex < queue.lastIndex) add(CustomAccessibilityAction("Bajar en la cola") {
+                                        onMove(currentIndex, currentIndex + 1); true
+                                    })
+                                }
+                            })
                     }
                 }
                 if (tracks.user.isNotEmpty()) {
                     item(key = "header-user-queue") {
-                        QueueHeading(stringResource(R.string.next_in_queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion())) {
+                        QueueHeading(stringResource(R.string.next_in_queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion(reduceMotion))) {
                             QueueClearButton(MaterialTheme.typography.labelLarge, controlsLocked, onClear)
                         }
                     }
-                    queueSection(tracks.user, QueueSection.USER, drag, controlsLocked, onJumpTo, onRemove)
+                    queueSection(tracks.user, QueueSection.USER, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
                 }
                 if (tracks.context.isNotEmpty()) {
                     item(key = "header-context") {
-                        QueueHeading(if (contextTitle != null) stringResource(R.string.next_from, contextTitle) else stringResource(R.string.queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion()))
+                        QueueHeading(if (contextTitle != null) stringResource(R.string.next_from, contextTitle) else stringResource(R.string.queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion(reduceMotion)))
                     }
-                    queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, onRemove)
+                    queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
                 }
                 if (autoplayEnabled || tracks.autoplay.isNotEmpty()) {
-                    item(key = "autoplay-heading") { AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = queueMotion()) }
-                    queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, onRemove)
+                    item(key = "autoplay-heading") { AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = queueMotion(reduceMotion)) }
+                    queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
                 }
             }
             drag.held?.let { held ->
@@ -236,7 +256,7 @@ internal fun InlineQueue(
 }
 
 private fun LazyListScope.queueSection(
-    rows: List<QueueTrack>, section: QueueSection, drag: QueueDrag, locked: Boolean, onJumpTo: (Int) -> Unit, onRemove: (Int) -> Unit
+    rows: List<QueueTrack>, section: QueueSection, drag: QueueDrag, locked: Boolean, onJumpTo: (Int) -> Unit, onRemove: (Int) -> Unit, reduceMotion: Boolean
 ) {
     items(rows, key = { it.key }) { track ->
         val held = drag.held?.key == track.key
@@ -244,7 +264,19 @@ private fun LazyListScope.queueSection(
         InlineQueueRow(
             track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = locked,
             draggable = !locked, onDragStart = { drag.start(track.key, section) }, onDrag = drag::drag, onDragEnd = { drag.end(track.key) },
-            modifier = if (held) Modifier.alpha(0f) else queueMotion()
+            modifier = (if (held) Modifier.alpha(0f) else queueMotion(reduceMotion)).semantics {
+                if (!locked) {
+                    val rowIndex = rows.indexOfFirst { it.key == track.key }
+                    customActions = buildList {
+                        if (rowIndex > 0) add(CustomAccessibilityAction("Subir en la cola") {
+                            drag.onMove(track.timelineIndex, rows[rowIndex - 1].timelineIndex); true
+                        })
+                        if (rowIndex in 0 until rows.lastIndex) add(CustomAccessibilityAction("Bajar en la cola") {
+                            drag.onMove(track.timelineIndex, rows[rowIndex + 1].timelineIndex); true
+                        })
+                    }
+                }
+            }
         )
     }
 }
@@ -407,17 +439,22 @@ private fun InlineQueueRow(
     draggable: Boolean = false, lifted: Boolean = false, onDragStart: () -> Unit = {}, onDrag: (Float) -> Unit = {}, onDragEnd: () -> Unit = {},
 ) {
     Row(
-        modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(if (lifted) Color.White.copy(alpha = 0.06f) else Color.Transparent)
+        modifier = modifier.testTag("queue-entry-${song.queueEntryId ?: song.id}").fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(if (lifted) Color.White.copy(alpha = 0.06f) else Color.Transparent)
             .clickable(enabled = !locked, onClick = onClick).padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (draggable) {
-            Icon(
-                Icons.Rounded.DragHandle, contentDescription = stringResource(R.string.drag_to_reorder), tint = Color.White.copy(alpha = 0.4f),
-                modifier = Modifier.size(20.dp).offset(x = (-4).dp).pointerInput(Unit) {
-                    detectDragGestures(onDragStart = { onDragStart() }, onDragEnd = { onDragEnd() }, onDragCancel = { onDragEnd() }, onDrag = { change, amount -> change.consume(); onDrag(amount.y) })
-                },
-            )
+            Box(
+                modifier = Modifier.size(48.dp).testTag("queue-drag-${song.queueEntryId ?: song.id}")
+                    .pointerInput(song.queueEntryId) {
+                        detectDragGestures(onDragStart = { onDragStart() }, onDragEnd = { onDragEnd() },
+                            onDragCancel = { onDragEnd() }, onDrag = { change, amount -> change.consume(); onDrag(amount.y) })
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.DragHandle, contentDescription = stringResource(R.string.drag_to_reorder),
+                    tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
+            }
             Spacer(Modifier.width(4.dp))
         }
         AsyncImage(
@@ -438,8 +475,8 @@ private fun InlineQueueRow(
             Icon(Icons.Rounded.GraphicEq, contentDescription = stringResource(R.string.now_playing), tint = Color.White, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(10.dp))
         }
-        if (!locked) {
-            Box(modifier = Modifier.size(32.dp).clip(CircleShape).clickable(onClick = onRemove), contentAlignment = Alignment.Center) {
+        if (!locked && !isCurrent) {
+            Box(modifier = Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onRemove), contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.remove_from_queue), tint = Color.White.copy(alpha = 0.55f), modifier = Modifier.size(18.dp))
             }
         }

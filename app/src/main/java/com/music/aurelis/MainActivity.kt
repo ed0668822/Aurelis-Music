@@ -488,7 +488,10 @@ internal fun AurelisNavigationContent(
         },
     )
     actionSong?.let { song -> SongActionsDialog(song, userStore,
-        onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null }) }
+        onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null },
+        onPlayNext = { playbackViewModel.playNext(listOf(song)) },
+        queueActionsEnabled = playbackState.isConnected && playbackState.canEditQueue,
+        playNextEnabled = !playbackState.shuffleEnabled) }
     }
 
 }

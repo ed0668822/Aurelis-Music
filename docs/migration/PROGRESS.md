@@ -609,3 +609,13 @@ y verificados localmente: host, barra y Home/colas/recuperación.179 casos por
 variante y builds/lint correctos; evidencia en beta-local/B03_EVIDENCE y progreso.
 No QA02 ni B04. Se conservan historial/objetivos y corrección QA01; Android físico
 y paridad GPU pendientes. Commits/PR de entrega se registran en checkpoint B03.
+
+
+## Plan beta-local — B06.1 autorizado
+
+Continuación del plan vigente, sin reiniciar bloques históricos. Puerta CI05
+anterior confirmada por run139 SUCCESS (cefe533). Coordinador/cola local y Play Next
+implementados;21 pruebas nuevas preparadas, sin Gradle/Android local. Documentación
+y estado en beta-local/B06_1_QUEUE.md/.json y PROGRESS_TRACKER. B06 permanece
+abierto: CI nuevo/Android/shuffle y B06.2/.3/.4 pendientes. Misma rama/PR1; conservar
+Liquid Glass, servicio y plan. Publicar, avisar y esperar resultado del usuario.

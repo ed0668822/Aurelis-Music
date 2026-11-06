@@ -139,3 +139,12 @@ Geometría/host inline/overlay nuevos para Aurelis; no atribuyen a Aurelis los
 derechos de terceros ni amplían permiso a versiones futuras no acreditadas.
 Sin nuevas dependencias, fuentes, iconos, modelos ni binarios. LICENSE/LICENSES
 íntegros; pendientes legales y CSV permanecen abiertos. No certificación legal.
+
+
+## B06.1 — cola activa
+
+PlayerQueue existente se conecta al flujo local; referencia exacta de renderer,
+QueueCoordinator y SongActionsMenu en NOTICE y B06_1_QUEUE. Conservada atribución
+BitChord GPLv3; integración/test de Aurelis no reetiqueta derechos de terceros.
+Sin dependencias/recursos/binarios nuevos ni cambio a LICENSE. Pendientes de
+redistribución nativa/modelos/CSV anteriores siguen abiertos.

@@ -11,26 +11,35 @@ internal class RecordingPlayer : SimpleBasePlayer(Looper.getMainLooper()) {
     var snapshot: State = State.Builder().setAvailableCommands(Player.Commands.Builder().addAllCommands().build()).build()
     var released = false
     var prepares = 0
+    var replacements = 0
+    var seeks = 0
+    private var nextUid = 0L
+    private fun entry(item: MediaItem) = MediaItemData.Builder(nextUid++)
+        .setMediaItem(item).setIsSeekable(true)
+        .setDurationUs((item.mediaMetadata.extras?.getLong("durationMs") ?: 60_000) * 1000).build()
     override fun getState() = snapshot
     fun publish(state: State) { snapshot = state; invalidateState() }
     private fun done(state: State): com.google.common.util.concurrent.ListenableFuture<*> {
         snapshot = state
         return Futures.immediateVoidFuture()
     }
-    override fun handleSetMediaItems(items: List<MediaItem>, startIndex: Int, startPositionMs: Long) = done(
-        snapshot.buildUpon().setPlaylist(items.mapIndexed { index, item -> MediaItemData.Builder("$index:${item.mediaId}")
-            .setMediaItem(item).setIsSeekable(true)
-            .setDurationUs((item.mediaMetadata.extras?.getLong("durationMs") ?: 60_000) * 1000).build() })
+    override fun handleSetMediaItems(items: List<MediaItem>, startIndex: Int, startPositionMs: Long): com.google.common.util.concurrent.ListenableFuture<*> {
+        replacements++
+        return done(snapshot.buildUpon().setPlaylist(items.map(::entry))
             .setCurrentMediaItemIndex(startIndex).setContentPositionMs(startPositionMs.coerceAtLeast(0)).build())
+    }
     override fun handleSetPlayWhenReady(value: Boolean) = done(snapshot.buildUpon()
         .setPlayWhenReady(value, Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST).build())
     override fun handlePrepare(): com.google.common.util.concurrent.ListenableFuture<*> {
         prepares++
         return done(snapshot.buildUpon().setPlayerError(null).setPlaybackState(Player.STATE_READY).build())
     }
-    override fun handleSeek(index: Int, positionMs: Long, command: Int) = done(snapshot.buildUpon()
-        .setCurrentMediaItemIndex(index).setContentPositionMs(positionMs.takeIf { it != C.TIME_UNSET } ?: 0)
-        .setPlaybackState(if (snapshot.playbackState == Player.STATE_ENDED) Player.STATE_READY else snapshot.playbackState).build())
+    override fun handleSeek(index: Int, positionMs: Long, command: Int): com.google.common.util.concurrent.ListenableFuture<*> {
+        seeks++
+        return done(snapshot.buildUpon().setCurrentMediaItemIndex(index)
+            .setContentPositionMs(positionMs.takeIf { it != C.TIME_UNSET } ?: 0)
+            .setPlaybackState(if (snapshot.playbackState == Player.STATE_ENDED) Player.STATE_READY else snapshot.playbackState).build())
+    }
     override fun handleSetRepeatMode(value: Int) = done(snapshot.buildUpon().setRepeatMode(value).build())
     override fun handleSetShuffleModeEnabled(value: Boolean) = done(snapshot.buildUpon().setShuffleModeEnabled(value).build())
     override fun handleRemoveMediaItems(from: Int, to: Int): com.google.common.util.concurrent.ListenableFuture<*> {
@@ -48,10 +57,11 @@ internal class RecordingPlayer : SimpleBasePlayer(Looper.getMainLooper()) {
         return done(snapshot.buildUpon().setPlaylist(rows).setCurrentMediaItemIndex(rows.indexOfFirst { it.uid == current }).build())
     }
     override fun handleAddMediaItems(index: Int, items: List<MediaItem>): com.google.common.util.concurrent.ListenableFuture<*> {
+        val currentUid = snapshot.playlist.getOrNull(snapshot.currentMediaItemIndex)?.uid
         val rows = snapshot.playlist.toMutableList()
-        rows.addAll(index, items.mapIndexed { n, item -> MediaItemData.Builder("added:$index:$n:${item.mediaId}")
-            .setMediaItem(item).setIsSeekable(true).setDurationUs(60_000_000).build() })
-        return done(snapshot.buildUpon().setPlaylist(rows).setCurrentMediaItemIndex(snapshot.currentMediaItemIndex.coerceAtLeast(0)).build())
+        rows.addAll(index, items.map(::entry))
+        val currentIndex = if (currentUid == null) 0 else rows.indexOfFirst { it.uid == currentUid }
+        return done(snapshot.buildUpon().setPlaylist(rows).setCurrentMediaItemIndex(currentIndex).build())
     }
     override fun handleRelease(): com.google.common.util.concurrent.ListenableFuture<*> {
         released = true

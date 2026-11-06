@@ -25,6 +25,10 @@ val MediaItem.queueTier: QueueTier
         runCatching { QueueTier.valueOf(it) }.getOrNull() 
     } ?: QueueTier.CONTEXT
 
+/** A new occurrence always gets a new identity, even when the same row is added twice. */
+internal fun LocalSong.toQueueMediaItem(): MediaItem =
+    copy(queueEntryId = java.util.UUID.randomUUID().toString()).toMediaItem()
+
 fun LocalSong.toMediaItem(): MediaItem {
     return MediaItem.Builder()
         .setMediaId(id)
@@ -38,6 +42,8 @@ fun LocalSong.toMediaItem(): MediaItem {
                 .setIsBrowsable(false)
                 .setArtworkUri(artworkUri?.let { android.net.Uri.parse(it) })
                 .setExtras(android.os.Bundle().apply {
+                    putString(EXTRA_QUEUE_ENTRY_ID, queueEntryId)
+                    putString(EXTRA_QUEUE_TIER, queueTier.name)
                     putLong("durationMs", durationMs)
                     putString("filePath", filePath)
                     putInt("trackNumber", trackNumber ?: -1)
