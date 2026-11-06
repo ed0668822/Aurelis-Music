@@ -1,0 +1,46 @@
+{
+  "baseline": "81e12a9afbf0a2a50abb6e1bb78085f665f3fcba",
+  "run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42234180764",
+  "attachment_sha256": "f935f29e7083d0c0972ee7e0356199d640dfbacd25b04f238ace33298eb30462",
+  "confirmed_log_excerpt": [
+    "PlayerIntegrationTest > localSearchOpensAnAlbumAndRecordsTheSubmittedQuery FAILED",
+    "java.lang.AssertionError at PlayerIntegrationTest.kt:75",
+    "200 tests completed, 1 failed",
+    "PlayerIntegrationTest > localSearchOpensAnAlbumAndRecordsTheSubmittedQuery FAILED",
+    "java.lang.AssertionError at PlayerIntegrationTest.kt:75",
+    "200 tests completed, 1 failed"
+  ],
+  "root_cause": "Global assertDoesNotExist matched the persistent MiniPlayer title; test must scope to search result subtree",
+  "correction": "Scoped negative assertion plus positive controls and retained player/history checks; production change only testTag",
+  "source_sha256": {
+    "app/src/main/java/com/music/aurelis/ui/screens/SearchScreen.kt": "1841aac1ad644aeccee5e738d2dcfee20442ddc882ddf0c0d24826ad1122fa5f",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "eaae2ffb4e90e5722f114592457017d0288febcc35312ebde08d800f0d918952",
+    ".github/scripts/android_ci.py": "1d4d65bf5e53578c802d8d6809c2149453588f43df8baeca21630761ff952309",
+    ".github/scripts/tests/test_android_ci.py": "927389420ae0541e28bea8bdaf51952b73b3566c84a42da44b4eaa3095388fe1"
+  },
+  "protected_unchanged": [
+    ".github/workflows",
+    ".github/scripts/task-inputs.gradle",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "app/build.gradle.kts",
+    "app/src/main/cpp",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/java/com/music/aurelis/playback",
+    "app/src/main/java/com/music/aurelis/ui/components",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "utility_tests": {
+    "executed": 23,
+    "failures": 0
+  },
+  "reviews": "two static passes, same agent",
+  "android_tests_build": "NOT_EXECUTED locally; next GitHub validation pending",
+  "main_plan": "intact; B06/QA02 not started"
+}

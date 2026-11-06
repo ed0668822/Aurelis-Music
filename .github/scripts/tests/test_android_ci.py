@@ -79,6 +79,21 @@ class ReportsTest(unittest.TestCase):
             self.assertTrue((out/'file-status.tsv').exists())
             self.assertIn('maxWidth', (out/'summary.md').read_text())
 
+    def test_multi_failure_gradle_summary_is_not_lost(self):
+        _, diagnostics = ci.parse_log('FAILURE: Build completed with 2 failures.', 'tests', Path('/repo'))
+        self.assertEqual(len(diagnostics), 1)
+        self.assertEqual(diagnostics[0]['severity'], 'error')
+        self.assertIsNone(diagnostics[0]['file'])
+
+    def test_junit_annotation_is_identifiable_redacted_and_cannot_inject_commands(self):
+        with patch.dict(os.environ, {'STORE_PASSWORD': 'private-password'}):
+            annotation = ci.junit_annotation({'variant': 'debug', 'class': 'PlayerTest', 'test': 'filters',
+                'type': 'AssertionError', 'message': 'private-password\n::warning::injected 100%'})
+        self.assertTrue(annotation.startswith('::error title=JUnit debug::PlayerTest.filters [AssertionError]:'))
+        self.assertIn('[REDACTED]%0A::warning::injected 100%25', annotation)
+        self.assertNotIn('private-password', annotation)
+        self.assertNotIn('\n', annotation)
+
     def test_task_reuse_and_late_failure_are_not_per_file_success(self):
         text = '\n'.join(['> Task :app:compileDebugKotlin', '> Task :app:compileDebugKotlin FAILED',
             '> Task :app:testDebugUnitTest FROM-CACHE', '> Task :app:mergeResources UP-TO-DATE',
@@ -179,8 +194,10 @@ class ReportsTest(unittest.TestCase):
                 lint=root/f'app/build/reports/lint-results-{variant}.xml';lint.parent.mkdir(parents=True,exist_ok=True);lint.write_text('<issues/>')
                 f=root/f'app/build/test-results/test{variant.title()}UnitTest/TEST-unit.xml';f.parent.mkdir(parents=True)
                 f.write_text('<testsuite tests="1" failures="1"><testcase name="attaches" classname="GlassTest"><failure type="IllegalStateException" message="Size is unspecified">frame1</failure></testcase></testsuite>')
-            with patch.dict(os.environ,{'CI_STEPS_JSON':json.dumps(states),'GITHUB_STEP_SUMMARY':''}),contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(ci.report(root,out),0)
+            with patch.dict(os.environ,{'CI_STEPS_JSON':json.dumps(states),'GITHUB_STEP_SUMMARY':''}),contextlib.redirect_stdout(io.StringIO()) as console:
+                self.assertEqual(ci.report(root,out,annotations=True),0)
+            self.assertIn('::error title=JUnit debug::GlassTest.attaches', console.getvalue())
+            self.assertIn('::error title=JUnit release::GlassTest.attaches', console.getvalue())
             data=json.loads((out/'report.json').read_text())
             self.assertFalse(data['technical_checks_passed'])
             self.assertEqual(data['test_failures'][0]['message'],'Size is unspecified')

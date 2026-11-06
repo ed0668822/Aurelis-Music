@@ -170,7 +170,7 @@ def parse_log(text: str, phase: str, root: Path) -> tuple[list, list]:
                     'file': relative_path(data['path'], root), 'line': int(data['line'] or data['line2']),
                     'column': int(data['col'] or data['col2']) if data['col'] or data['col2'] else None,
                     'message': redact(data['message'])})
-        elif re.match(r'^(e: |error:|fatal error:|FAILURE: Build failed)', line):
+        elif re.match(r'^(e: |error:|fatal error:|FAILURE: Build (?:failed|completed with \d+ failures))', line):
             diagnostics.append({'phase': phase, 'severity': 'error', 'file': None, 'line': None, 'column': None, 'message': redact(line)})
     return list(tasks.values()), diagnostics
 
@@ -438,6 +438,9 @@ def report(root: Path, out: Path, annotations: bool = False) -> int:
                 if v is not None:
                     props.append(f'{k}=' + command_escape(str(v), property_value=True))
             print('::' + item['severity'] + (' ' + ','.join(props) if props else '') + '::' + command_escape(item['message']))
+    if annotations:
+        for failure in test_failures[:10]:
+            print(junit_annotation(failure))
     print('Technical checks passed:', data['technical_checks_passed'])
     return 1 if collector_errors else 0
 
@@ -449,6 +452,12 @@ def md(value: str) -> str:
 def command_escape(text: str, property_value: bool = False) -> str:
     text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
     return text.replace(',', '%2C').replace(':', '%3A') if property_value else text
+
+
+def junit_annotation(failure: dict) -> str:
+    title = command_escape('JUnit ' + str(failure.get('variant', 'unknown')), property_value=True)
+    message = redact(f"{failure.get('class')}.{failure.get('test')} [{failure.get('type')}]: {failure.get('message', '')}")
+    return '::error title=' + title + '::' + command_escape(message[:2000])
 
 
 def main() -> int:

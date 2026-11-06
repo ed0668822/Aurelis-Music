@@ -157,3 +157,13 @@ Pruebas locales de utilidades:21 casos correctos, actionlint sin diagnósticos,
 standalone de las bibliotecas existentes. No se ejecutó Gradle ni compilación,
 APK, prueba Android o emulador. La integración real del init script y la corrección
 Kotlin deben verificarse en GitHub. B06 y QA02 no iniciados.
+
+## CI04 — visibilidad de fallos JUnit
+
+Se añaden anotaciones nativas para hasta10 fallos de pruebas leídos de XML,
+con variante/clase/método/tipo/mensaje. Se mantienen separados de diagnósticos de
+compilador y de los estados por archivo. Mensajes redactados/escapados y límite
+de2000 caracteres; detalle completo en XML/report.json. El parser reconoce también
+el resumen Gradle Build completed with N failures.23 fixtures Python correctos.
+Workflow YAML, gates, retención y permisos no cambian. Las anotaciones ayudan a
+identificar el fallo; no convierten un test fallido en un resultado aprobado.

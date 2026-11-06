@@ -187,3 +187,16 @@ Evidencia en CI03_TEST_RESOURCES.md/.json. No B06 ni QA02; mismo PR1 y rama.
 
 Commit de corrección CI03: `2d7e8632e467d36d75adbd15baa800f9a036eb2a`. Mismo PR1; resultado nuevo de
 GitHub pendiente, sin Gradle/Android local ni avance B06/QA02.
+
+
+## CI04 — aserción de búsqueda con alcance incorrecto
+
+Recibido log completo del paso11:200 pruebas/variante,1 fallo por variante en
+localSearchOpensAnAlbumAndRecordsTheSubmittedQuery:75. La aserción global
+confundía la canción del MiniPlayer con resultados de búsqueda. Matcher acotado
+a la lista etiquetada, con controles positivos Todo/Álbumes y reproducción intacta;
+apertura de álbum e historial siguen exigidos. No se desactiva ninguna prueba.
+Anotaciones JUnit públicas y reconocimiento del resumen Gradle multi-failure.
+23 pruebas de utilidades correctas; UI/Android/Gradle pendientes exclusivamente en
+GitHub. Dos revisiones estáticas del mismo agente. Evidencia en CI04_INVESTIGATION.
+Mismo PR1, sin workflow/gates/servicio/Glass/plan alterados. No B06/QA02.

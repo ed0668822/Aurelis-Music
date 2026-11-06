@@ -299,3 +299,16 @@ explícito del R de Aurelis, sin tocar pruebas/producción/workflow/plan/licenci
 Ver ../../qa/CI03_TEST_RESOURCES.md/.json. Dos revisiones estáticas; compilación y
 pruebas nuevas pendientes de GitHub, no ejecutadas aquí. No B06/QA02. Esperar
 resultado del usuario antes de continuar; B05 no se declara verificado en Android.
+
+
+## CI04 — registro recibido, fallo de aserción localizado
+
+Run137 ejecutó200 pruebas por variante y falló la misma prueba de búsqueda en
+línea75. Se restringe assertDoesNotExist a resultados en lugar de toda la pantalla,
+y se verifica que la canción existe con Todo, desaparece con Álbumes y continúa
+en MiniPlayer/estado. Colección e historial siguen comprobados. No se cambia la
+lógica de búsqueda o reproducción: solo etiqueta de test y matcher reforzado.
+JUnit se publica como anotación además del artefacto.23 pruebas Python correctas;
+prueba UI y nueva compilación pendientes de GitHub, no ejecutadas localmente.
+Ver ../../qa/CI04_INVESTIGATION.md/.json. Doble revisión estática, sin cierre Android
+ni avance B06/QA02. Publicar y esperar resultado comunicado por el usuario.
