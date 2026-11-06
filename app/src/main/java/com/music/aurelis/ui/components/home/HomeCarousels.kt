@@ -248,21 +248,25 @@ fun HeroShelf(
     }
 }
 
+private const val RECENT_TRACKS_PER_COLUMN = 4
+
 /** Four-row recents pages, adapted from BitChord HomeScreen RecentShelf/CompactTrackRow. */
 @Composable
 fun RecentSongShelf(title: String, songs: List<LocalSong>, currentId: String?, isPlaying: Boolean,
     onSongLongPress: (LocalSong) -> Unit, onSongClick: (Int) -> Unit) {
     Column(Modifier.testTag("home-recents").padding(bottom = 26.dp)) {
-        SectionHeader(title)
+        Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = PAGE_GUTTER, vertical = 10.dp))
         BoxWithConstraints {
             val columnWidth = trackColumnWidth(maxWidth)
             LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                itemsIndexed(songs.chunked(4), key = { _, page -> page.first().id }) { pageIndex, page ->
+                itemsIndexed(songs.chunked(RECENT_TRACKS_PER_COLUMN), key = { _, page -> page.first().id }) { pageIndex, page ->
                     Column(Modifier.width(columnWidth)) {
                         page.forEachIndexed { rowIndex, song ->
                             Row(Modifier.fillMaxWidth().heldContextMenuInteractions(
-                                { onSongClick(pageIndex * 4 + rowIndex) }, { onSongLongPress(song) })
+                                { onSongClick(pageIndex * RECENT_TRACKS_PER_COLUMN + rowIndex) }, { onSongLongPress(song) })
                                 .padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(48.dp).clip(RoundedCornerShape(7.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)) {

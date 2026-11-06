@@ -1,6 +1,7 @@
 package com.music.aurelis.ui
 
 import android.Manifest
+import androidx.compose.runtime.*
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -101,6 +102,56 @@ class HomeShelvesIntegrationTest {
         compose.onNode(hasText("Tema 6") and hasAnyAncestor(hasTestTag("home-recents"))).performClick()
         compose.onNodeWithContentDescription("Acciones de Tema 6").performClick()
         compose.runOnIdle { assertEquals(5,index);assertEquals(1,plays);assertEquals("6",held) }
+    }
+
+    @Test fun loadingPermissionEmptyFailureAndRetryRecoverToRealHome() {
+        shadowOf(app).denyPermissions(Manifest.permission.READ_MEDIA_AUDIO)
+        var files = emptyList<LocalSong>()
+        var failure: Exception? = null
+        var requests = 0
+        val library = LibraryViewModel(app, LocalLibrarySource { failure?.let { throw it }; files })
+        val player = PlaybackViewModel(app) { RecordingPlayer() }
+        models.put("library",library);models.put("player",player)
+        var dark by mutableStateOf(false)
+        var fontScale by mutableFloatStateOf(1f)
+        compose.setContent { AurelisTheme(darkTheme = dark) {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides
+                androidx.compose.ui.unit.Density(density.density,fontScale)) {
+                navigator = rememberAppNavigator()
+                AurelisNavigationContent(navigator,player,library,onRequestAudioPermission = {
+                    requests++;shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO);library.refresh()
+                })
+            }
+        } }
+        compose.onNodeWithText("Cargando tu biblioteca…").assertIsDisplayed()
+        compose.runOnIdle { library.onForeground() }
+        compose.onNodeWithText("Conceder acceso a música").performClick()
+        compose.onNodeWithText("Actualizar biblioteca").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(1,requests);files=rows }
+        compose.onNodeWithText("Actualizar biblioteca").performClick()
+        compose.onNodeWithTag("local-home").assertIsDisplayed()
+        compose.onNodeWithTag("home-state").assertDoesNotExist()
+        compose.runOnIdle { failure=java.io.IOException("No se pudo leer el catálogo");library.refresh() }
+        compose.onNodeWithText("No se pudo leer el catálogo").assertIsDisplayed()
+        compose.runOnIdle { failure=null }
+        compose.onNodeWithText("Reintentar").performClick()
+        compose.onNodeWithTag("local-home").assertIsDisplayed()
+        compose.onNodeWithText("No se pudo leer el catálogo").assertDoesNotExist()
+        compose.runOnIdle { assertEquals(rows,(library.uiState.value.libraryState as LibraryState.Success).songs) }
+        for (night in listOf(false,true)) {
+            compose.runOnIdle { dark=night;fontScale=if(night)1.5f else 1f }
+            compose.onNodeWithTag("local-home").performScrollToNode(hasTestTag("home-recommendations"))
+            val bitmap=compose.runOnIdle {
+                val view=compose.activity.window.decorView
+                android.graphics.Bitmap.createBitmap(view.width,view.height,android.graphics.Bitmap.Config.ARGB_8888)
+                    .also { view.draw(android.graphics.Canvas(it)) }
+            }
+            val file=java.io.File("build/reports/b03-local/home-${if(night) "dark-large" else "light"}.png")
+            file.parentFile!!.mkdirs()
+            file.outputStream().use { assertTrue(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)) }
+            bitmap.recycle()
+        }
     }
 
 }

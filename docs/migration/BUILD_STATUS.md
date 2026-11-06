@@ -448,3 +448,11 @@ Build debug/release/R8 y171 casos por variante correctos: 4m 56s.
 Lint:224/223 advertencias,0 errores; firma/ZIP/textos legales verificados.
 Regresión roja/verde del nodo Compose y lente en docs/qa; ejecución Android física
 NO realizada por falta de dispositivo. No declarar arranque del teléfono probado.
+
+
+## B03 — navegación/Home local
+
+BUILD SUCCESSFUL in 5m 6s; debug/release/R8,179 casos por variante y lint correctos.
+Advertencias:224/223,0 errores. Firma/ZIP/textos legales/font/ARM64
+verificados; B03_EVIDENCE guarda hashes. Android real/Logcat/GPU pendientes.
+CI de entrega B03 pendiente, separado del QA127 aprobado.

@@ -71,3 +71,15 @@ SingleProfileMigration es interna; respaldo privado y protocolo en B01_1_MIGRATI
   ui/screens/SettingsScreen.kt, ui/components/{SettingsComponents,SongRow,SongActionsDialog}.kt.
 - Nuevo ui/components/GlassRendering.kt; pruebas de shaders, preferencias,
   tipografía, gestos y superficies reales. B02_1/2/3 documentan límites y tests.
+
+
+## F04 — B03 conectado
+
+AppUiHost local instalado por AurelisApplication y consumido en MainActivity.
+GlassNavBar activa GlassSelectionPill/GlassPillMotion existentes con fuente y RTL.
+HomeScreen/HomeCarousels usan Common para medidas, HeroShelf antes inactivo,
+RecentSongShelf y PlaylistCarousel con IDs/colas reales; sin otro motor/repositorio.
+LocalHomeData se reutiliza sin reescribir sus algoritmos. Cambios de strings/NOTICE
+y suites nuevas HomeShelvesIntegration/GlassNavigation/LocalAppHost documentados
+en B03_1/2/3. B04 conserva Explore/Search/Library pendientes; no se importan
+AppUi remoto ni clientes streaming por conectar este host.

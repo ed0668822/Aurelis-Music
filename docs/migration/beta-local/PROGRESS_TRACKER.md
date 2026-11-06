@@ -9,7 +9,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | B00 | Aprobación recibida | Media | Completado y publicado |
 | B01 | B00 | Alta | B01.1/.2/.3 implementados y publicados |
 | B02 | B01 | Alta | B02.1/.2/.3 comprobados localmente; hardware/CI pendientes |
-| B03 | B02 | Media-alta | Autorizado como siguiente bloque; B03.1 probado, B03.2/.3 en curso |
+| B03 | B02 | Media-alta | B03.1/.2/.3 implementados y verificados localmente; GPU/CI entrega pendientes |
 | B04 | B03 | Alta | Pendiente de autorización/previas |
 | B05 | B04 | Alta | Pendiente de autorización/previas |
 | B06 | B05 | Muy alta | Pendiente de autorización/previas |
@@ -204,3 +204,17 @@ B03.1 código: e79f32a. B03.2: secciones reales y reproducción por sección,
 HeroShelf conectado, recientes en páginas de4 y playlists con IDs disponibles.
 17 casos dirigidos correctos; dos revisiones separadas del mismo agente. Ver
 B03_2_HOME; release/APK/lint y suite completa en R al cierre. B03.3 autorizado.
+
+
+## Cierre local B03
+
+B03.1 e79f32a; B03.2 6b4bded; B03.3 recuperación/capturas verificadas con R.
+BUILD SUCCESSFUL in 5m 6s;179 pruebas debug +179 release,0 fallos/errores/omitidos.
+Lint:224/223 advertencias,0 errores. Ambos APK firmados/ZIP correctos,
+10 textos legales íntegros y12 .so ARM64. Dos revisiones del mismo agente en
+pasadas separadas. B03_1/2/3 y B03_EVIDENCE registran archivos/resultados/límites.
+
+Capturas Robolectric en screenshots/b03; no Android real ni paridad GPU medida.
+Fuente local, estados, colas y navegación conectados, sin contenido de ejemplo
+en producción. Plan maestro/bloques, QA01, identidad, ABI y workflow intactos.
+Explore queda expresamente para B04, no implementado aquí. No iniciar B04 ni QA02.

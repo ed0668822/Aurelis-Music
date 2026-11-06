@@ -600,3 +600,12 @@ componentes/gestos funcionales. R correcto,164 casos por variante; dos revisione
 separadas del mismo agente. B02_1/2/3 y checkpoint guardan archivos, resultados,
 commits y limitaciones. Paridad final/SAF físico/GPU/CI actual pendientes.
 No iniciar B03 sin autorización; LICENSE/identidad/firma/workflows intactos.
+
+
+## Principal beta-local — B03
+
+Reanudado por última instrucción de continuar el plan. B03.1/.2/.3 implementados
+y verificados localmente: host, barra y Home/colas/recuperación.179 casos por
+variante y builds/lint correctos; evidencia en beta-local/B03_EVIDENCE y progreso.
+No QA02 ni B04. Se conservan historial/objetivos y corrección QA01; Android físico
+y paridad GPU pendientes. Commits/PR de entrega se registran en checkpoint B03.

@@ -106,80 +106,80 @@ fun GlassNavBar(
             .padding(bottom = NAV_BAR_LIFT),
     ) {
         CompositionLocalProvider(LocalGlassExport provides barGlass) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(CircleShape)
-                .lightweightLiquidGlass(
-                    shape = RoundedCornerShape(percent = 50),
-                    fallbackColor = MaterialTheme.colorScheme.surface,
-                )
-                .border(
-                    width = 0.5.dp,
-                    color = Color.White.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(percent = 50),
-                ),
-        ) {
-            val density = LocalDensity.current
-            val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-            val tabWidth = (maxWidth - 16.dp - 4.dp * (tabs.size - 1)) / tabs.size
-            val widthPx = with(density) { maxWidth.toPx() }
-            val tabPx = with(density) { tabWidth.toPx() }
-            val gapPx = with(density) { 4.dp.toPx() }
-            val insetPx = with(density) { 8.dp.toPx() }
-            val centerY = with(density) { 28.dp.toPx() }
-            val heightPx = with(density) { 48.dp.toPx() }
-            val growPx = with(density) { 8.dp.toPx() }
-            SideEffect { motion.stepDp = tabWidth.value + 4f }
-            GlassSelectionPill(motion, glassIndicatorColor(), barGlass, tabRow,
-                Modifier.matchParentSize().pillPlacement(
-                    center = {
-                        val x = insetPx + tabPx / 2f + (tabPx + gapPx) * motion.position
-                        Offset(if (rtl) widthPx - x else x, centerY)
-                    }, size = { motion.liveSize(Size(tabPx.coerceAtLeast(1f), heightPx),
-                        Size(tabPx.coerceAtLeast(1f) + growPx, heightPx + growPx)) }))
-            Row(
+            BoxWithConstraints(
                 modifier = Modifier
-                    .then(if (capture) Modifier.layerBackdrop(tabRow) else Modifier)
-                    .selectableGroup()
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(CircleShape)
+                    .lightweightLiquidGlass(
+                        shape = RoundedCornerShape(percent = 50),
+                        fallbackColor = MaterialTheme.colorScheme.surface,
+                    )
+                    .border(
+                        width = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(percent = 50),
+                    ),
             ) {
-                tabs.forEachIndexed { index, tab ->
-                    val isSelected = index == selectedIndex
-                    val tint = if (isSelected) selectedColor else unselectedColor
-                    val onClick = {
-                        if (!isSelected) haptics.play(Haptic.Select)
-                        currentOnTabSelected(index)
+                val density = LocalDensity.current
+                val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                val tabWidth = (maxWidth - 16.dp - 4.dp * (tabs.size - 1)) / tabs.size
+                val widthPx = with(density) { maxWidth.toPx() }
+                val tabPx = with(density) { tabWidth.toPx() }
+                val gapPx = with(density) { 4.dp.toPx() }
+                val insetPx = with(density) { 8.dp.toPx() }
+                val centerY = with(density) { 28.dp.toPx() }
+                val heightPx = with(density) { 48.dp.toPx() }
+                val growPx = with(density) { 8.dp.toPx() }
+                SideEffect { motion.stepDp = tabWidth.value + 4f }
+                GlassSelectionPill(motion, glassIndicatorColor(), barGlass, tabRow,
+                    Modifier.matchParentSize().pillPlacement(
+                        center = {
+                            val x = insetPx + tabPx / 2f + (tabPx + gapPx) * motion.position
+                            Offset(if (rtl) widthPx - x else x, centerY)
+                        }, size = { motion.liveSize(Size(tabPx.coerceAtLeast(1f), heightPx),
+                            Size(tabPx.coerceAtLeast(1f) + growPx, heightPx + growPx)) }))
+                Row(
+                    modifier = Modifier
+                        .then(if (capture) Modifier.layerBackdrop(tabRow) else Modifier)
+                        .selectableGroup()
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        val isSelected = index == selectedIndex
+                        val tint = if (isSelected) selectedColor else unselectedColor
+                        val onClick = {
+                            if (!isSelected) haptics.play(Haptic.Select)
+                            currentOnTabSelected(index)
+                        }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .selectable(selected = isSelected, role = Role.Tab, onClick = onClick)
+                                .heightIn(min = 48.dp)
+                                .padding(vertical = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                imageVector = tab.icon,
+                                contentDescription = null,
+                                tint = tint,
+                                modifier = Modifier.size(TAB_ICON_SIZE),
+                            )
+                            Text(
+                                text = tab.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = tint,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (index < tabs.lastIndex) Spacer(modifier = Modifier.width(4.dp))
                     }
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .selectable(selected = isSelected, role = Role.Tab, onClick = onClick)
-                            .heightIn(min = 48.dp)
-                            .padding(vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(
-                            imageVector = tab.icon,
-                            contentDescription = null,
-                            tint = tint,
-                            modifier = Modifier.size(TAB_ICON_SIZE),
-                        )
-                        Text(
-                            text = tab.label,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = tint,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    if (index < tabs.lastIndex) Spacer(modifier = Modifier.width(4.dp))
                 }
             }
-        }
         }
 
         song?.let { current ->

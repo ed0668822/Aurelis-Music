@@ -39,7 +39,6 @@ import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalPlaylist
 
 private val HOME_TITLE_LIFT = 28.dp
-private const val RECENT_TRACKS_PER_COLUMN = 4
 
 @Composable
 fun HomeScreen(
@@ -79,19 +78,22 @@ fun HomeScreen(
         }
     }
     if (libraryState !is LibraryState.Success || libraryState.songs.isEmpty()) {
-        Column(modifier.fillMaxSize().padding(contentPadding).padding(24.dp),
-            verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            when (libraryState) {
-                LibraryState.Loading -> { CircularProgressIndicator(); Text(stringResource(R.string.home_loading)) }
-                is LibraryState.Error -> {
-                    Text(libraryState.message)
-                    Button(onClick = if (libraryState.permissionRequired) onRequestPermission else onRetry) {
-                        Text(stringResource(if (libraryState.permissionRequired) R.string.home_grant_permission else R.string.home_retry))
+        Column(modifier.fillMaxSize().padding(contentPadding).testTag("home-state")) {
+            HomeTitle(stringResource(R.string.home))
+            Column(Modifier.weight(1f).fillMaxWidth().padding(24.dp),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                when (libraryState) {
+                    LibraryState.Loading -> { CircularProgressIndicator(); Text(stringResource(R.string.home_loading)) }
+                    is LibraryState.Error -> {
+                        Text(libraryState.message)
+                        Button(onClick = if (libraryState.permissionRequired) onRequestPermission else onRetry) {
+                            Text(stringResource(if (libraryState.permissionRequired) R.string.home_grant_permission else R.string.home_retry))
+                        }
                     }
-                }
-                is LibraryState.Success -> {
-                    Text(stringResource(R.string.home_empty))
-                    Button(onClick = onRetry) { Text(stringResource(R.string.home_refresh)) }
+                    is LibraryState.Success -> {
+                        Text(stringResource(R.string.home_empty))
+                        Button(onClick = onRetry) { Text(stringResource(R.string.home_refresh)) }
+                    }
                 }
             }
         }
