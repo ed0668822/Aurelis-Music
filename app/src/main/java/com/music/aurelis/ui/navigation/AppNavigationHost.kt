@@ -22,6 +22,7 @@ fun AppNavigationHost(
     tabContent: @Composable BoxScope.(AppTab) -> Unit,
     routeContent: @Composable (AppRoute) -> Unit,
     bottomBar: @Composable BoxScope.() -> Unit,
+    pageModifier: Modifier = Modifier,
     playbackOverlays: @Composable BoxScope.() -> Unit = {},
 ) {
     val stateHolder = rememberSaveableStateHolder()
@@ -29,7 +30,7 @@ fun AppNavigationHost(
     BackHandler(enabled = navigator.canGoBack) { navigator.back() }
 
     Box(modifier.fillMaxSize()) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().then(pageModifier), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize()) {
                 if (route == null) {
                     stateHolder.SaveableStateProvider("tab.${navigator.selectedTab.name}") {

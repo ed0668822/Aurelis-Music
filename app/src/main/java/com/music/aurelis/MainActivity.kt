@@ -72,6 +72,7 @@ import com.music.aurelis.ui.screens.SettingsScreen
 import com.music.aurelis.ui.theme.AurelisTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import com.music.aurelis.ui.components.backdrop.backdrops.layerBackdrop
 import kotlinx.coroutines.launch
 
 import androidx.compose.ui.res.stringResource
@@ -208,9 +209,16 @@ internal fun AurelisNavigationContent(
         LocalHomeData.build(allSongs, userState, playbackState.currentSong?.id)
     }
 
+    val appBackdrop = com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop()
+    val captureGlass = com.music.aurelis.ui.components.LocalGlassHardware.current && com.music.aurelis.ui.components.LocalLiquidGlassEnabled.current
+    androidx.compose.runtime.CompositionLocalProvider(
+        com.music.aurelis.ui.components.LocalAppBackdrop provides appBackdrop,
+        com.music.aurelis.ui.components.LocalAppHazeState provides hazeState,
+    ) {
     AppNavigationHost(
         navigator = navigator,
-        modifier = Modifier.background(MaterialTheme.colorScheme.background).hazeSource(hazeState),
+        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+        pageModifier = Modifier.hazeSource(hazeState).then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier),
         tabContent = { tab ->
             when (tab) {
             AppTab.HOME -> {
@@ -388,6 +396,7 @@ internal fun AurelisNavigationContent(
             }
         },
     )
+    }
     actionSong?.let { song -> SongActionsDialog(song, userStore,
         onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null }) }
 

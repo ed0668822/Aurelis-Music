@@ -400,6 +400,12 @@ internal fun GlassSelectionPill(
     modifier: Modifier,
 ) {
     val page = LocalAppBackdrop.current
+    val hardware = com.music.aurelis.ui.components.LocalGlassHardware.current
+    val shaders = remember(hardware) { hardware && com.music.aurelis.ui.components.glassShadersAvailable() }
+    if (page == null || !shaders) {
+        FlatSelectionPill(fillColor, modifier)
+        return
+    }
     val shape = remember { RoundedCornerShape(percent = 50) }
     val backdrop = remember(page, barGlass, tabRow, fillColor) {
         SelectionPillBackdrop(page, barGlass, tabRow) {

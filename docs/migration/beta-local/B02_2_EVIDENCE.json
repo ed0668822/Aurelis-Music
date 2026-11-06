@@ -1,0 +1,19 @@
+{
+  "unit": "B02.2",
+  "tests": {
+    "tests": 158,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 223
+  },
+  "build": "BUILD SUCCESSFUL in 1m 55s",
+  "log_external": "/workspace/toolchains/beta-b02-2-final.log",
+  "shader_programs": 4,
+  "shader_runtime": "Robolectric4.14.1 Android V (SDK35), exact production strings",
+  "device": "not available; physical GPU/API33 pending",
+  "reviews": "two separate passes, same agent"
+}

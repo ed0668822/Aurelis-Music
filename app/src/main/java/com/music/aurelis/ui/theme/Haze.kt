@@ -58,7 +58,7 @@ fun Modifier.aurelisHazeEffect(
     tint: Color? = null,
 ): Modifier {
     val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
-    if (reduceBlur) return this.background(tint ?: MaterialTheme.colorScheme.surface)
+    if (reduceBlur || !com.music.aurelis.ui.components.LocalGlassHardware.current) return this.background(tint ?: MaterialTheme.colorScheme.surface)
     val themeTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
         Color(0xFFFAFAFA)
     } else {
@@ -67,11 +67,11 @@ fun Modifier.aurelisHazeEffect(
     val finalTint = tint ?: themeTint
 
     return when (style) {
-        AurelisHazeStyle.Thin -> this.hazeSource(hazeState)
+        AurelisHazeStyle.Thin -> this
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint)))
-        AurelisHazeStyle.Regular -> this.hazeSource(hazeState)
+        AurelisHazeStyle.Regular -> this
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint)))
-        AurelisHazeStyle.Thick -> this.hazeSource(hazeState)
+        AurelisHazeStyle.Thick -> this
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint)))
     }
 }

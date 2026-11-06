@@ -2,6 +2,7 @@
 
 package com.music.aurelis.ui.components.backdrop.shadow
 
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Paint
@@ -73,6 +74,10 @@ internal class ShadowNode(
     private val paint = Paint()
 
     override fun ContentDrawScope.draw() {
+        if (!drawContext.canvas.nativeCanvas.isHardwareAccelerated) {
+            drawContent()
+            return
+        }
         val shadow = shadow() ?: return drawContent()
 
         val shadowLayer = shadowLayer

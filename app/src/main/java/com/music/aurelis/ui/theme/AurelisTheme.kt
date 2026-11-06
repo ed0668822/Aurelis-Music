@@ -35,6 +35,7 @@ fun AurelisTheme(
     darkTheme: Boolean? = null,
     content: @Composable () -> Unit
 ) {
+    val hardware = com.music.aurelis.ui.components.rememberGlassHardware()
     val appFont by SettingsRepository.appFont.collectAsStateWithLifecycle()
     val typography = androidx.compose.runtime.remember(appFont) { typographyFor(appFont) }
     val mode by SettingsRepository.themeMode.collectAsStateWithLifecycle()
@@ -45,8 +46,8 @@ fun AurelisTheme(
     SystemBarIcons(dark = !resolvedDark)
     CompositionLocalProvider(
         LocalReduceMotion provides reduceMotion,
+        com.music.aurelis.ui.components.LocalGlassHardware provides hardware,
         LocalLiquidGlassEnabled provides (glass && !reduceBlur),
-        com.music.aurelis.ui.components.LocalLiquidGlassEnabled provides (glass && !reduceBlur),
         LocalPlayingBarsMotion provides !reduceMotion,
     ) {
         MaterialTheme(

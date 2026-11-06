@@ -2,6 +2,7 @@
 
 package com.music.aurelis.ui.components.backdrop.highlight
 
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Paint
@@ -87,6 +88,10 @@ internal class HighlightNode(
     private var prevStyle: HighlightStyle? = null
 
     override fun ContentDrawScope.draw() {
+        if (!drawContext.canvas.nativeCanvas.isHardwareAccelerated) {
+            drawContent()
+            return
+        }
         val highlight = highlight()
         if (highlight == null || highlight.width.value <= 0f) {
             return drawContent()

@@ -146,3 +146,13 @@ Release/dispositivo pendientes del cierre de alcance. Siguiente B01.3 autorizado
 con selector real, persistencia y OFL/NOTICE/bundle. Dos revisiones separadas del
 mismo agente; fuente y texto íntegros con SHA de origen. ADB sin dispositivos.
 B01.3 publicado en4c8d529; B02.2/.3 autorizados, B03 no iniciado.
+
+
+## B02.2 — completado localmente
+
+158 casos debug, assemble/lint correctos (U:1m55s), cuatro programas AGSL exactos
+compilados en runtime nativo V, sin transformar shaders ni cambiar dependencias.
+Fuente de página conectada, superficies compartidas, preferencias y fallback
+por capacidad; guards de Canvas software. Dos revisiones del mismo agente en
+pasadas separadas; evidencia/limitaciones en B02_2_RENDERING/EVIDENCE.
+Hardware y paridad visual final pendientes; B02.3 autorizado, B03 no iniciado.

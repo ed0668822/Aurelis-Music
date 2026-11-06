@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.GraphicsLayerScope
@@ -352,6 +353,13 @@ private class DrawBackdropNode(
     }
 
     override fun ContentDrawScope.draw() {
+        if (!drawContext.canvas.nativeCanvas.isHardwareAccelerated) {
+            onDrawBehind?.invoke(this)
+            onDrawSurface?.invoke(this)
+            drawContent()
+            onDrawFront?.invoke(this)
+            return
+        }
         if (effectScope.update(this, backdropScale)) {
             updateEffects()
         }

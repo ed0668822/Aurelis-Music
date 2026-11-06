@@ -37,12 +37,14 @@ import com.music.aurelis.ui.components.backdrop.highlight.HighlightElement
 import com.music.aurelis.ui.components.backdrop.internal.ShapeProvider
 import com.music.aurelis.ui.components.backdrop.shadow.Shadow
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.HazeMaterials
 
 /** Whether the liquid glass nav bar is turned on — see [SettingsRepository.liquidGlass]. */
 val LocalLiquidGlassEnabled = staticCompositionLocalOf { false }
 
 /** The backdrop content (app UI) that a liquid glass surface samples from. */
-val LocalAppBackdrop = staticCompositionLocalOf<Backdrop> { error("No AppBackdrop provided") }
+val LocalAppBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 
 /**
  * Where a [liquidGlass] surface composed under it also records the glass it
@@ -109,32 +111,15 @@ fun glassIndicatorColor(): Color =
 /** The selected tab's pill in dark theme, a step whiter than the bar. */
 private const val DARK_INDICATOR_OPACITY = 0.14f
 
-/**
- * A lightweight visual match for liquid glass over a stable background.
- *
- * This keeps the same translucent tint, directional highlight and hairline as
- * [liquidGlass], but intentionally performs no backdrop capture, blur, lens
- * refraction, runtime-shader compilation or shadow rendering. Its rim is a gradient
- * stroke. When Liquid Glass is disabled or unsupported,
- * [fallbackColor] preserves the control's existing filled appearance.
- */
+/** Compatibility entry point; uses the shared backdrop pipeline when enabled. */
 @Composable
 fun Modifier.lightweightLiquidGlass(
     shape: CornerBasedShape,
     fallbackColor: Color,
 ): Modifier {
-    val useGlass = LocalLiquidGlassEnabled.current
-    val glassTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
-        Color(0xFFFAFAFA)
-    } else {
-        Color(0xFF121212)
-    }
-    return clip(shape)
-        .background(if (useGlass) glassTint.copy(alpha = SURFACE_OPACITY) else fallbackColor, shape)
-        .then(if (useGlass) Modifier.border(0.75.dp,
-            Brush.linearGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.02f), Color.Black.copy(alpha = 0.12f))), shape)
-            else Modifier)
-        .border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
+    return if (!LocalLiquidGlassEnabled.current) clip(shape).background(fallbackColor, shape)
+    else liquidGlass(shape, fallbackColor = fallbackColor)
+
 }
 
 /**
@@ -148,7 +133,10 @@ fun Modifier.lightweightLiquidGlass(
  */
 @Composable
 fun Modifier.liquidGlassRim(shape: CornerBasedShape): Modifier {
-    if (!LocalLiquidGlassEnabled.current) return this
+    val hardware = LocalGlassHardware.current
+    val shaders = remember(hardware) { hardware && glassShadersAvailable() }
+    if (!LocalLiquidGlassEnabled.current || !hardware) return this
+    if (!shaders) return border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
     val shapeProvider = remember(shape) { ShapeProvider { shape } }
     return then(
         HighlightElement(
@@ -159,31 +147,26 @@ fun Modifier.liquidGlassRim(shape: CornerBasedShape): Modifier {
 }
 
 /**
- * Renders this composable as a liquid glass surface sampling [LocalAppBackdrop]:
- * vibrancy, blur and lens refraction, then a theme-adaptive surface tint (light
- * glass on light theme, dark on dark). Returns the receiver unchanged on devices
- * without RenderEffect support — callers should still gate on [isGlassSupported]
- * to fall back to the regular Haze treatment there.
- *
- * Under "reduce dynamic blur" the surface is filled solid instead, which is what
- * that setting promises everywhere else in the app. It is checked here rather
- * than at each call site so there is one answer to it.
- *
- * [shape] is restricted to [CornerBasedShape] because the backdrop's lens effect
- * throws for any other shape type.
+ * Samples the page backdrop with blur/refraction where supported. Reduced effects
+ * and software renderers use an opaque surface; Haze is the compatible fallback
+ * when the renderer supports blur but cannot compile the refraction programs.
  */
 @Composable
 fun Modifier.liquidGlass(
     shape: CornerBasedShape,
     /** Drawn over the glass in place of the theme's default tint, when set. */
     surfaceTint: Color? = null,
+    fallbackColor: Color = MaterialTheme.colorScheme.surface,
 ): Modifier {
     val reduceDynamicBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
-    if (reduceDynamicBlur) {
-        return background(MaterialTheme.colorScheme.surface, shape)
-            .border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
-    }
     val backdrop = LocalAppBackdrop.current
+    val hardware = LocalGlassHardware.current
+    val shaders = remember(hardware, backdrop != null) { hardware && backdrop != null && glassShadersAvailable() }
+    val haze = LocalAppHazeState.current
+    val mode = glassRenderMode(LocalLiquidGlassEnabled.current, reduceDynamicBlur, hardware, backdrop != null, shaders, haze != null)
+    if (mode == GlassRenderMode.SOLID) return clip(shape).background(fallbackColor, shape).border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
+    if (mode == GlassRenderMode.BLUR) return clip(shape).then(Modifier.hazeEffect(state = checkNotNull(haze),
+        style = HazeMaterials.regular(fallbackColor))).border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
     val exportedBackdrop = LocalGlassExport.current
     val density = LocalDensity.current
     val blurPx = with(density) { BLUR_RADIUS_DP.dp.toPx() } * GLASS_RESOLUTION_SCALE
@@ -197,7 +180,7 @@ fun Modifier.liquidGlass(
     val surfaceTintColor = surfaceTint ?: themeTint.copy(alpha = SURFACE_OPACITY)
 
     return drawBackdrop(
-        backdrop = backdrop,
+        backdrop = checkNotNull(backdrop),
         shape = { shape },
         effects = {
             colorControls(saturation = 1f + 0.5f * VIBRANCY)
