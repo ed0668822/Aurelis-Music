@@ -71,7 +71,13 @@ fun HomeScreen(
     onOpenPlaylists: () -> Unit = {},
     onOpenPlaylist: (String) -> Unit = {},
     collectionsReadOnly: Boolean = false,
+    onPlayShelf: ((List<LocalSong>, Int) -> Unit)? = null,
 ) {
+    val playShelf: (List<LocalSong>, Int) -> Unit = { songs, index ->
+        songs.getOrNull(index)?.let { song ->
+            if (onPlayShelf != null) onPlayShelf(songs, index) else onSongClick(song)
+        }
+    }
     if (libraryState !is LibraryState.Success || libraryState.songs.isEmpty()) {
         Column(modifier.fillMaxSize().padding(contentPadding).padding(24.dp),
             verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -109,7 +115,8 @@ fun HomeScreen(
             }
         }
 
-        val hero = currentSong ?: recentlyPlayed.firstOrNull() ?: recentlyAdded.firstOrNull()
+        val hero = currentSong?.takeIf { current -> libraryState.songs.any { it.id == current.id } }
+            ?: recentlyPlayed.firstOrNull() ?: recentlyAdded.firstOrNull() ?: libraryState.songs.firstOrNull()
         if (hero != null) {
             item(key = "hero") {
                 HomeHero(
@@ -130,29 +137,26 @@ fun HomeScreen(
         }
         if (mixError != null) item(key = "mix-error") { Text(mixError, modifier = Modifier.padding(horizontal = PAGE_GUTTER), color = MaterialTheme.colorScheme.error) }
         if (favorites.isNotEmpty()) item(key = "favorites") {
-            SongCarousel(stringResource(R.string.home_favorites), favorites.take(20), currentSong?.id, isPlaying) { onSongClick(favorites[it]) }
-        }
-        if (playlists.isNotEmpty()) item(key = "playlists") {
-            Column {
-                SectionHeader(stringResource(R.string.home_playlists))
-                playlists.forEach { playlist -> TextButton(onClick = { onOpenPlaylist(playlist.id) }) { Text(playlist.name) } }
+            Column(Modifier.testTag("home-favorites")) {
+                SongCarousel(stringResource(R.string.home_favorites), favorites.take(20), currentSong?.id, isPlaying,
+                    onSongLongPress = onSongLongPress) { playShelf(favorites, it) }
             }
         }
+        if (playlists.isNotEmpty()) item(key = "playlists") {
+            PlaylistCarousel(playlists, libraryState.songs, onOpenPlaylist)
+        }
         if (recommendations.isNotEmpty()) item(key = "recommendations") {
-            SongCarousel(stringResource(R.string.home_recommendations), recommendations, currentSong?.id, isPlaying) { onSongClick(recommendations[it]) }
+            Column(Modifier.testTag("home-recommendations")) {
+                SectionHeader(stringResource(R.string.home_recommendations))
+                HeroShelf(recommendations, { song -> playShelf(recommendations, recommendations.indexOfFirst { it.id == song.id }) },
+                    currentSong, isPlaying, onSongLongPress)
+            }
         }
 
         if (recentlyPlayed.isNotEmpty()) {
             item(key = "recents") {
-                SongCarousel(
-                    title = stringResource(R.string.recently_played),
-                    songs = recentlyPlayed,
-                    currentSongId = currentSong?.id,
-                    isPlaying = isPlaying,
-                    onSongClick = { index ->
-                        recentlyPlayed.getOrNull(index)?.let { onSongClick(it) }
-                    },
-                )
+                RecentSongShelf(stringResource(R.string.recently_played), recentlyPlayed,
+                    currentSong?.id, isPlaying, onSongLongPress) { playShelf(recentlyPlayed, it) }
             }
         }
 
@@ -163,9 +167,8 @@ fun HomeScreen(
                     songs = mostPlayed,
                     currentSongId = currentSong?.id,
                     isPlaying = isPlaying,
-                    onSongClick = { index ->
-                        mostPlayed.getOrNull(index)?.let { onSongClick(it) }
-                    },
+                    onSongLongPress = onSongLongPress,
+                    onSongClick = { index -> playShelf(mostPlayed, index) },
                 )
             }
         }
@@ -197,9 +200,8 @@ fun HomeScreen(
                     songs = recentlyAdded,
                     currentSongId = currentSong?.id,
                     isPlaying = isPlaying,
-                    onSongClick = { index ->
-                        recentlyAdded.getOrNull(index)?.let { onSongClick(it) }
-                    },
+                    onSongLongPress = onSongLongPress,
+                    onSongClick = { index -> playShelf(recentlyAdded, index) },
                 )
             }
         }

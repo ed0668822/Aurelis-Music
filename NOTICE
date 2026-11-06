@@ -185,3 +185,11 @@ Commit: b690dc146009d4815825fa4a20815ef2e4ee8898
 Original file SHA-256: 1931946478c7c4e0f81cac1f3cb89a3070d38d71366ac446bf327291a2eed9c5
 License: GPLv3 (upstream LICENSE); original BitChord contributors.
 Changes: Aurelis package/haptics, reduced-motion animation, active Settings wiring.
+
+B03 — Home local components
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
+(RecentShelf/CompactTrackRow/HeroShelf) and ui/components/Common.kt metrics.
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Changes: LocalSong/playlist data, local queue/actions, Android accessibility and shared Aurelis tokens.
+Existing Kyant0 and Ahmed Gamil notices remain applicable to the reused glass navigation.

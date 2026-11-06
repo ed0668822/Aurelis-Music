@@ -198,3 +198,9 @@ puedas» se aplica al siguiente B03, sin iniciar QA02 ni B04. QA00/01 conserva
 pruebas/CI de b8b8910 correctas, Android real pendiente.
 B03.1: host local inicializado y píldora real conectados;14 casos dirigidos
 correctos, dos revisiones del mismo agente. Ver B03_1_NAVIGATION. R al cierre.
+
+
+B03.1 código: e79f32a. B03.2: secciones reales y reproducción por sección,
+HeroShelf conectado, recientes en páginas de4 y playlists con IDs disponibles.
+17 casos dirigidos correctos; dos revisiones separadas del mismo agente. Ver
+B03_2_HOME; release/APK/lint y suite completa en R al cierre. B03.3 autorizado.

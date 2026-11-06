@@ -333,4 +333,9 @@
     <string name="playback_permission_error">La app ya no tiene acceso a este audio. Revisa los permisos.</string>
     <string name="playback_file_missing">Este archivo ya no está disponible. Actualiza la biblioteca o elige otra canción.</string>
     <string name="playback_file_error">No se pudo reproducir este archivo. Puedes reintentar o elegir otra canción.</string>
+    <string name="home_song_actions">Acciones de %1$s</string>
+    <plurals name="home_available_song_count">
+        <item quantity="one">%d canción disponible</item>
+        <item quantity="other">%d canciones disponibles</item>
+    </plurals>
 </resources>

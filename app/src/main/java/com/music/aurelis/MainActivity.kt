@@ -245,6 +245,7 @@ internal fun AurelisNavigationContent(
                     recommendations = home.recommendations,
                     playlists = userState.playlists,
                     collectionsReadOnly = userState.readOnly,
+                    onPlayShelf = playbackViewModel::playSongs,
                     onRetry = { libraryViewModel.refresh() },
                     onRequestPermission = onRequestAudioPermission,
                     onOpenPlayer = { playbackViewModel.resume(); navigator.push(AppRoute.NowPlaying) },
@@ -338,7 +339,7 @@ internal fun AurelisNavigationContent(
         bottomBar = {
             Column(
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                    .navigationBarsPadding().padding(bottom = 16.dp, start = 12.dp, end = 12.dp),
+                    .navigationBarsPadding(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (!playbackState.isConnected && playbackState.errorMessage != null) {
