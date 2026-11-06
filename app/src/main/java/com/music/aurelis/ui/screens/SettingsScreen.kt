@@ -187,7 +187,6 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
 
 @Composable
 private fun SettingsToggle(title: String, subtitle: String, checked: Boolean, change: (Boolean) -> Unit) {
-    SettingsRow(title = title, subtitle = subtitle, onClick = { change(!checked) }, trailing = {
-        Switch(checked, change, Modifier.semantics { contentDescription = title })
-    })
+    com.music.aurelis.ui.components.SettingsSubRow(title, checked, change,
+        subtitle = subtitle, modifier = Modifier.semantics { contentDescription = title })
 }

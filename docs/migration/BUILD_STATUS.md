@@ -430,3 +430,13 @@ previos. assemble/lint de ambas variantes correctos y R8 verificado. Evidencia
 actual de APK y resultados en [B01_1_EVIDENCE](beta-local/B01_1_EVIDENCE.json).
 No trasladar hashes históricos a esta entrega. Falta hardware/SAF real y CI por SHA.
 No cambia ORT ni resuelve el hallazgo ELF16KB de B00.
+
+
+## Nuevo plan beta-local — cierre B01/B02
+
+R: BUILD SUCCESSFUL in 5m 32s;164 pruebas debug +164 release correctas.
+Lint debug/release:224/223 advertencias,0 errores.
+Firmas/ZIP y10 textos legales/fuente verificados;12 .so ARM64 existentes.
+Ver beta-local/B02_3_EVIDENCE.json para hashes de APK/archivos y comandos.
+CI actual y hardware pendientes; no implica paridad completa ni beta distribuible.
+ONNX4KB/procedencia de modelos/binarios siguen pendientes de B09/B13.

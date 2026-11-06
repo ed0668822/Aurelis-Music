@@ -59,3 +59,16 @@ Migración/backup propios sobre APIs Android/Java ya presentes. Sin dependencias
 recursos, modelos o código nuevo de terceros. Avisos existentes intactos; archivo
 SingleProfileMigration sin cabecera Aurelis definitiva mientras falta CSV.
 No cambios de LICENSE/NOTICE/firma ni actualización ORT/ABI; mantiene pendientes B00.
+
+
+## B02 — incorporaciones comprobadas
+
+Vazirmatn regular y OFL íntegros del origen fijo: hashes en B02_1_EVIDENCE,
+NOTICE y LICENSES/Vazirmatn-OFL.txt, incluidos en bundle legal. No SF Pro.
+IosSwitch: GPLv3 según README/LICENSE upstream, sin copyright individual añadido
+ficticiamente. Conserva atribución BitChord y SHA/ruta en NOTICE; cambios propios
+de integración/accesibilidad identificados. No se relabela el original or-later.
+El proyecto conserva LICENSE e identificación propia GPL-3.0-or-later; la
+distribución conjunta debe respetar también los términos de cada componente.
+Avisos Kyant0/Apache y Ahmed Gamil/MIT preservados en los efectos existentes.
+Sin dependencias/binarios/modelos nuevos; siguen los pendientes legales B00.

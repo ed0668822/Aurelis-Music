@@ -396,8 +396,8 @@ internal fun AurelisNavigationContent(
             }
         },
     )
-    }
     actionSong?.let { song -> SongActionsDialog(song, userStore,
         onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null }) }
+    }
 
 }

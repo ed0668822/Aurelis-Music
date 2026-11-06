@@ -1,14 +1,14 @@
 # PROGRESS_TRACKER — beta local
 
 Base 01c1ba511b9eb8ecb3eb40c98afb46d8d17a017a; rama existente; autorización recibida
-para ejecutar plan por unidades. Esta entrega comprende B00. B01 aún no iniciado.
+para ejecutar plan por unidades. B01 completado; B02 implementado y comprobado localmente. Ver últimas entradas y evidencias.
 Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescritos.
 
 | Bloque | Dependencias | Complejidad | Estado nuevo plan |
 |---|---|---|---|
 | B00 | Aprobación recibida | Media | Completado y publicado |
-| B01 | B00 | Alta | B01.1/.2/.3 completados localmente; publicado al cierre |
-| B02 | B01 | Alta | Pendiente de autorización/previas |
+| B01 | B00 | Alta | B01.1/.2/.3 implementados y publicados |
+| B02 | B01 | Alta | B02.1/.2/.3 comprobados localmente; hardware/CI pendientes |
 | B03 | B02 | Media-alta | Pendiente de autorización/previas |
 | B04 | B03 | Alta | Pendiente de autorización/previas |
 | B05 | B04 | Alta | Pendiente de autorización/previas |
@@ -156,3 +156,18 @@ Fuente de página conectada, superficies compartidas, preferencias y fallback
 por capacidad; guards de Canvas software. Dos revisiones del mismo agente en
 pasadas separadas; evidencia/limitaciones en B02_2_RENDERING/EVIDENCE.
 Hardware y paridad visual final pendientes; B02.3 autorizado, B03 no iniciado.
+
+
+## B02.3 y cierre acumulado hasta B02
+
+- Fuente/interruptor y componentes/gestos conectados; no mocks de favoritos,
+  playlists ni cola. Diferencias de HeldItem/ancla/retorno documentadas en B02_3.
+-14 casos seleccionados correctos; R:164 debug y164 release,0 fallos/errores/omitidos.
+- Debug/release/R8/lint correctos; dos revisiones del mismo agente en pasadas
+  separadas. Firmas/ZIP válidos,10 textos legales idénticos y fuente íntegra.
+- B02_3_EVIDENCE registra APK/hashes/resultados y base+archivos probados. No hay
+  dispositivo: paridad final/GPU/SAF real pendientes. ONNX4KB/modelos/licencias
+  B00 siguen abiertos para B09/B13; no se modifica el motor nativo.
+- B03 no iniciado; requiere autorización. Entrega misma rama/PR1, sin renombrar,
+  merge ni force push; SHA de código en checkpoint de entrega. Actions pendiente
+  del SHA publicado, no confundir con ejecuciones anteriores.

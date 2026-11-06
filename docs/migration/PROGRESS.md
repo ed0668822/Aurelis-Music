@@ -1,5 +1,9 @@
 # Progreso de migración
 
+Estado vigente: nuevo plan en [beta-local/PROGRESS_TRACKER](beta-local/PROGRESS_TRACKER.md).
+B01/B02 implementados y comprobados localmente; B03 no iniciado. Las secciones
+homónimas antiguas siguientes son historial y no autorizan bloques del nuevo plan.
+
 ## Reanudación
 
 Leer MASTER_PLAN, este registro, COMPONENT_MAP, BUILD_STATUS y LICENSE_AUDIT.
@@ -586,3 +590,13 @@ validado, preservando ámbito activo y datos legacy. Revisiones1/2 completadas,
 137 tests por variante, build/lint debug/release correctos. Ver
 [registro vigente](beta-local/PROGRESS_TRACKER.md) y [migración](beta-local/B01_1_MIGRATION.md).
 B01.2 no iniciado. Entrega/CI se registran en el progreso vigente tras publicar.
+
+
+## Nuevo plan — B01.2/.3 y B02.1/.2/.3
+
+Autorización «continúa hasta B02» atendida en la misma rama y PR1.
+Catálogo/metadatos/carpetas indexadas, fuente autorizada, cristal compartido y
+componentes/gestos funcionales. R correcto,164 casos por variante; dos revisiones
+separadas del mismo agente. B02_1/2/3 y checkpoint guardan archivos, resultados,
+commits y limitaciones. Paridad final/SAF físico/GPU/CI actual pendientes.
+No iniciar B03 sin autorización; LICENSE/identidad/firma/workflows intactos.

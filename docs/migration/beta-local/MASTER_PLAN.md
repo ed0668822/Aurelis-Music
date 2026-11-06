@@ -2,15 +2,15 @@
 
 ## Estado vigente
 
-B01.1 autorizado e implementado; consultar [PROGRESS_TRACKER](PROGRESS_TRACKER.md)
-y [migración](B01_1_MIGRATION.md). Las observaciones siguientes conservan la base
-de auditoría B00; su hallazgo de múltiples perfiles queda resuelto por B01.1.
-B01.2/B01.3 y siguientes esperan autorización.
+B01.1/.2/.3 y B02.1/.2/.3 implementados y comprobados localmente
+con autorización «continúa hasta B02». Consultar PROGRESS_TRACKER y evidencias
+por unidad. B03 y siguientes requieren autorización; no se ha iniciado B03.
+Las observaciones de auditoría que siguen conservan la base B00.
 
 ## Estado y alcance
 
-Plan aprobado mediante «Implement the proposed plan». Esta entrega ejecuta solo
-B00; B01–B13 requieren autorización de su unidad. La numeración pertenece a este
+Plan aprobado mediante «Implement the proposed plan». La ejecución se registra por unidad en PROGRESS_TRACKER;
+cada bloque requiere autorización según IMPLEMENTATION_BLOCKS. La numeración pertenece a este
 nuevo plan: los documentos y bloques anteriores permanecen como historial.
 
 - Rama: `feature/bitchord-local-migration`.

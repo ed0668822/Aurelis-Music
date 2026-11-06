@@ -150,9 +150,10 @@ fun SettingsSubRow(
     onCheckedChange: (Boolean) -> Unit,
     badge: String? = null,
     subtitle: String? = null,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
             .heightIn(min = 48.dp)
@@ -182,14 +183,7 @@ fun SettingsSubRow(
                 )
             }
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = null,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                checkedBorderColor = MaterialTheme.colorScheme.primary,
-            ),
-        )
+        IosSwitch(checked = checked, onCheckedChange = null)
     }
 }
 

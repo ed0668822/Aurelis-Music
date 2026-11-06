@@ -55,3 +55,19 @@ No tolerar pérdida de datos, cambio de identidad, exclusiones activas o defecto
 crítico de reproducción. Hardware/no disponible = pendiente. Dos revisiones separadas:
 1 arquitectura/lógica/integración/build; 2 UI/comportamiento/licencias/regresiones.
 En B00 serán dos pasadas del mismo agente, sin alegar revisores humanos independientes.
+
+
+## B01.2/B01.3 y B02 — evidencia incremental
+
+- Lectura de etiquetas/cache/fallback/volúmenes y MediaStore; SAF indexado,
+  revocación, límites de ruta y revisión de permisos; pruebas sintéticas sin SD real.
+- Selector de fuente sobre MaterialTheme efectivo y persistencia; galería real
+  claro/oscuro/escalas1 y1.5. No SF Pro ni comparación ejecutada con origen.
+- GlassRenderingTest SDK35/nativoV compila cuatro fuentes exactas. El RNG S de
+  Robolectric4.14.1 no acepta child.eval; no traducir shaders ni quitar aserciones.
+- SharedGesturesTest: objetivos48dp, acción única/deshabilitado, tocar/mantener,
+  favorito y playlist persistentes, cola, cierre explícito/Atrás/fuera. Las dos
+  últimas usan eventos reales sobre PopupLayout; no simulan callbacks de éxito.
+-14 casos seleccionados B02.3 correctos. R completo al cierre: resultados en
+  B02_3_EVIDENCE/B02_CLOSEOUT. Hardware, TalkBack, GPU/fps, SAF/SD físicos y audio
+  real permanecen pendientes; compilación no sustituye esas pruebas.

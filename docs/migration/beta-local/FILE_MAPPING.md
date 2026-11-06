@@ -53,3 +53,21 @@ B01.1: F01 incluye las conexiones existentes Application/MainActivity/player par
 retirar listeners de cambio de perfil. No modifica catálogo (F02), DSP ni motor.
 Modelo público nuevo LocalProfileState singular; APIs multiusuario retiradas.
 SingleProfileMigration es interna; respaldo privado y protocolo en B01_1_MIGRATION.
+
+
+## F03 — archivos concretos de B02
+
+- Fuente: sharedUi/src/commonMain/composeResources/font/vazirmatn_regular.ttf y
+  files/OFL-Vazirmatn.txt; destino app/src/main/res/font/vazirmatn_regular.ttf y
+  LICENSES/Vazirmatn-OFL.txt, sin modificar los bytes.
+- Fuente app/src/main/java/com/music/bitchord/ui/components/IosSwitch.kt →
+  app/src/main/java/com/music/aurelis/ui/components/IosSwitch.kt; adaptación GPLv3
+  con procedencia/SHA en NOTICE.
+- Referencias IosMenu.kt y HeldContextMenu.kt en el mismo directorio upstream:
+  componentes locales funcionales del mismo nombre; no son ports completos aún.
+  Snapshot/ancla/retorno pendientes de integración B03/B04/B05.
+- Glue modificado: MainActivity.kt, ui/navigation/AppNavigationHost.kt,
+  ui/theme/{AurelisTheme,Haze,LiquidGlass,Theme}.kt, SettingsRepository.kt,
+  ui/screens/SettingsScreen.kt, ui/components/{SettingsComponents,SongRow,SongActionsDialog}.kt.
+- Nuevo ui/components/GlassRendering.kt; pruebas de shaders, preferencias,
+  tipografía, gestos y superficies reales. B02_1/2/3 documentan límites y tests.

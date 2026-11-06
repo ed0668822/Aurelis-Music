@@ -29,3 +29,12 @@ posiciones y dimensiones respecto al origen. Un control debe ejecutar su acción
 o explicar con precisión una incompatibilidad real. No simplificar por comodidad.
 Las capturas anteriores de ../screenshots son evidencia histórica de Aurelis,
 no sustituyen referencias ejecutables de BitChord ni pruebas de esta beta.
+
+
+## Evidencia incremental B02
+
+Tema/fuente y preferencias conectados; interruptor adaptado con forma original
+y objetivo48dp; galería claro/oscuro y escala1/1.5 comprobada. Shaders exactos
+compilan en nativo V. No marcar pantallas como fieles todavía: GPU real/API33,
+fps/contraste sobre carátulas, comparación con BitChord ejecutable y detalles
+de HeldItem/ancla/retorno permanecen pendientes según B02_2/B02_3 y B03–B05.
