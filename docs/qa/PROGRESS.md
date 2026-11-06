@@ -171,3 +171,6 @@ tareas y estados por archivo, errores y ausencia de evidencia honestamente.
 ni Android local; nueva compilación/integración en GitHub PENDIENTE. Evidencia y
 límites en CI02_BUILD_FAILURE.md/.json y CI_WORKFLOW.md. Dos revisiones del mismo
 agente. Misma rama/PR, sin firma/ABI/servicio/plan alterados. No B06 ni QA02.
+
+Commit de corrección/CI02: `0e36d0f2854be5a79061bc12c7dd73669d3da7a7`. Publicación en PR1; compilación
+GitHub del nuevo código pendiente. No B06 hasta recibir su resultado.
