@@ -115,5 +115,6 @@
     "docs/migration/beta-local/MASTER_PLAN.md",
     "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
   ],
-  "next": "Publish same PR; notify and wait for user CI result before further B07 sub-deliveries. Do not start B08."
+  "next": "Publish same PR; notify and wait for user CI result before further B07 sub-deliveries. Do not start B08.",
+  "implementation_commit": "291db3a9fe7e1d599388a485cc63b7343456b41f"
 }

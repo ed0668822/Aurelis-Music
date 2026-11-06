@@ -427,3 +427,9 @@ Compilación/lint/tests exclusivamente GitHub; publicar mismo PR1 y esperar avis
 Servicio/cola/Glass/ONNX/modelos/ABI/SDK/CI/plan intactos. B07.1 alcance restante,
 B07.2 efectos/gestos, B07.3 compartir y B08 siguen pendientes. No falsa paridad o
 Android real probado; entrega3 de advertencias y ConvInteger continúan registrados.
+
+Entrega B07.1 — implementación `291db3a9fe7e1d599388a485cc63b7343456b41f`; misma rama y PR1.
+Checkpoint documental posterior sin cambiar app/tests.16 pruebas nuevas preparadas
+(NO EJECUTADAS localmente); compilación/lint/suites pendientes exclusivamente de
+GitHub. Esperar resultado del usuario antes de la siguiente entrega; B07 completo,
+B07.2/.3 y B08 no se declaran realizados.
