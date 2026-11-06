@@ -184,3 +184,6 @@ Se añade únicamente import explícito com.music.aurelis.R, sin cambiar asercio
 ni gate/workflow/app. Dos revisiones estáticas; cuatro nombres de referencia
 comprobados contra recursos existentes. No Gradle/Android local. CI nuevo pendiente.
 Evidencia en CI03_TEST_RESOURCES.md/.json. No B06 ni QA02; mismo PR1 y rama.
+
+Commit de corrección CI03: `2d7e8632e467d36d75adbd15baa800f9a036eb2a`. Mismo PR1; resultado nuevo de
+GitHub pendiente, sin Gradle/Android local ni avance B06/QA02.
