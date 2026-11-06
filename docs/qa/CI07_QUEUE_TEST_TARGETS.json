@@ -42,5 +42,6 @@
   "device_runtime": "NOT_EXECUTED",
   "prior_CI06": "Run141 reached execution of UI tests; previous token/action compilation annotations no longer observed. Does not establish successful APK build.",
   "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
-  "next": "Publish same branch/PR and wait for user CI result; no B07, QA02 or other B06 unit started"
+  "next": "Publish same branch/PR and wait for user CI result; no B07, QA02 or other B06 unit started",
+  "fix_commit": "fe43f5b881f3f067aa0e6cb10afb504153f341f6"
 }

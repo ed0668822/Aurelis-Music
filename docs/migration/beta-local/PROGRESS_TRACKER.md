@@ -372,3 +372,7 @@ cuatro accesos al tirador. Expectativas [2,3]/[1,3,2] conservadas; identidad,
 Dos revisiones estáticas del mismo agente; producción/plan/Glass/gate preservados.
 Nueva compilación/tests exclusivamente en GitHub, pendientes del aviso del usuario.
 No cierre de B06 ni inicio de B07/B06.2/.3/.4/QA02 en esta corrección.
+
+Entrega CI07 — corrección `fe43f5b881f3f067aa0e6cb10afb504153f341f6`; mismo PR1 y rama existente.
+Checkpoint documental posterior sin cambiar tests/app. Compilación y ejecución
+pendientes exclusivamente de GitHub; esperar resultado del usuario antes de avanzar.
