@@ -171,3 +171,11 @@ Hardware y paridad visual final pendientes; B02.3 autorizado, B03 no iniciado.
 - B03 no iniciado; requiere autorización. Entrega misma rama/PR1, sin renombrar,
   merge ni force push; SHA de código en checkpoint de entrega. Actions pendiente
   del SHA publicado, no confundir con ejecuciones anteriores.
+
+
+## Checkpoint de entrega hasta B02
+
+Código final: `ccb75126b0b0361212e9c7369265e0f803812ee6`.
+Todos los SHA reales, revisión/compilación, PR y límites en B02_CLOSEOUT.md.
+Entrega conjunta de commits B02 a la misma rama/PR; CI del SHA de entrega pendiente
+de consulta. B01.2/.3 ya publicados; no repetir esas tareas. B03 sin autorización.
