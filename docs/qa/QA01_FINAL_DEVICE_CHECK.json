@@ -1,0 +1,26 @@
+{
+  "host_architecture": "x86_64",
+  "kvm_available": false,
+  "emulator_installed": false,
+  "system_images_installed": false,
+  "device_probe": {
+    "devices": {
+      "exit_code": 0,
+      "stdout": "List of devices attached\n\n",
+      "stderr": ""
+    },
+    "get_state": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "error: no devices/emulators found\n"
+    },
+    "logcat": {
+      "status": "not collected",
+      "reason": "no Android device/emulator; do not interpret absent Logcat as absence of crashes"
+    }
+  },
+  "gpu_device_available": false,
+  "qemu_system_aarch64": null,
+  "qemu_system_x86_64": null,
+  "avd_configs": []
+}

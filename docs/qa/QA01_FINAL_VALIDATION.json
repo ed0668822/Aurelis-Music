@@ -1,0 +1,202 @@
+{
+  "scope": "Final validation QA00/QA01 only; no QA02/B03",
+  "checked_utc": "2026-11-06T03:10:21.277553+00:00",
+  "validated_source_commit": "27429135e6846372087924c11960f7825b479859",
+  "fix_commit": "c52d1ddab21bfb02a0c26368f3080a318fc8f294",
+  "fix_is_ancestor": true,
+  "application_changes_after_fix": [],
+  "ci": {
+    "url": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42152992285",
+    "number": 126,
+    "head_short_sha": "2742913",
+    "conclusion": "success",
+    "duration": "10m23s",
+    "artifacts": [
+      {
+        "id": "13473202916",
+        "name": "Aurelis Music-126",
+        "artifact_archive_sha256": "d6ad65463bc02d005e903e152244c0222a12a4f9f922933e0018d9d006d09cfe"
+      },
+      {
+        "id": "13472973454",
+        "name": "compilation-report-126",
+        "artifact_archive_sha256": "875f5478dd2cb07e9e8b34ef910b274c885c7fbc6ff134682a637511dacc0beb"
+      }
+    ],
+    "evidence": "Public GitHub run HTML: title, Status Success, named artifacts/digests. API request returned Forbidden.",
+    "binary_download": "Public artifact URL returned HTTP404; archive bytes were not downloaded or inspected. Digests above describe artifact archives, not inner APK SHA256.",
+    "snapshot_sha256": "d75b79f463c110ea792bc8ece449960333b78d505e6febd9f57d079c0ee7e4e2",
+    "additional_check": {
+      "name": "CodeQL",
+      "url": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42152988508",
+      "head_short_sha": "2742913",
+      "conclusion": "success",
+      "duration": "1m6s"
+    }
+  },
+  "local_apks": {
+    "debug": {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "081cff2751ab6158012b12c93c211eb8fd925b098348c2e40393c599bbeb90f4",
+      "bytes": 121063257,
+      "signature_verified": true,
+      "signer_public_cert_sha256": "59d8d19f093a742472464b61360965a1b107a1da3475a2871651285ca5081280",
+      "zip_integrity": "OK",
+      "legal_assets_identical": 10,
+      "arm64_shared_libraries": 12,
+      "font_matches_pinned_source": true
+    },
+    "release": {
+      "path": "app/build/outputs/apk/release/app-release.apk",
+      "sha256": "ba55a60feecf8891b627321741ce6ff6010a20dcc512f0b28a6aef9a741215d1",
+      "bytes": 56955252,
+      "signature_verified": true,
+      "signer_public_cert_sha256": "59d8d19f093a742472464b61360965a1b107a1da3475a2871651285ca5081280",
+      "zip_integrity": "OK",
+      "legal_assets_identical": 10,
+      "arm64_shared_libraries": 12,
+      "font_matches_pinned_source": true
+    }
+  },
+  "local_apk_provenance": "Recorded build from b179fde plus tested file hashes, committed as c52d1dd; current code hashes match. Both APK SHA256/ZIP/signatures rechecked, no rebuild needed. CI binaries are not asserted byte-identical to local builds.",
+  "tests": {
+    "command": "bash gradlew :app:testDebugUnitTest --tests *Backdrop*RegressionTest --tests *GlassRenderingTest --tests *NavigationIntegrationTest --tests *PlayerIntegrationTest --tests *LibraryCatalogueIntegrationTest --tests *SettingsIntegrationTest --tests *PlaybackIntegrationTest --tests *MediaStoreLibraryTest --tests *LocalFolderRepositoryTest --no-daemon --max-workers=4",
+    "build": "BUILD SUCCESSFUL in29s",
+    "execution": "test task executed;28 other tasks up-to-date",
+    "totals": {
+      "tests": 58,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "suites": [
+      {
+        "name": "com.music.aurelis.data.LocalFolderRepositoryTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.data.MediaStoreLibraryTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.playback.PlaybackIntegrationTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.ui.LibraryCatalogueIntegrationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.ui.PlayerIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.ui.SettingsIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.ui.components.backdrop.BackdropAttachRegressionTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.ui.components.backdrop.BackdropSizeRegressionTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.ui.navigation.NavigationIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.music.aurelis.ui.theme.GlassRenderingTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "framework": "Robolectric SDK33/35, native graphics where annotated; not device instrumentation",
+    "audio_limit": "RecordingPlayer test double: commands/state/queue, no real decoding or audible playback",
+    "permission_limit": "Shadow permissions and synthetic MediaStore/SAF providers, not Android permission dialogs"
+  },
+  "environment": {
+    "host_architecture": "x86_64",
+    "kvm_available": false,
+    "emulator_installed": false,
+    "system_images_installed": false,
+    "device_probe": {
+      "devices": {
+        "exit_code": 0,
+        "stdout": "List of devices attached\n\n",
+        "stderr": ""
+      },
+      "get_state": {
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "error: no devices/emulators found\n"
+      },
+      "logcat": {
+        "status": "not collected",
+        "reason": "no Android device/emulator; do not interpret absent Logcat as absence of crashes"
+      }
+    },
+    "gpu_device_available": false,
+    "qemu_system_aarch64": null,
+    "qemu_system_x86_64": null,
+    "avd_configs": []
+  },
+  "physical_tests": {
+    "installation": "not executed",
+    "cold_launch_restart_reopen": "not executed",
+    "navigation": "not executed on Android device",
+    "liquid_glass_gpu": "not executed on Android device",
+    "permission_dialogs": "not executed",
+    "local_audio_decoding_playback": "not executed",
+    "logcat": "not collected: no Android device/emulator"
+  },
+  "new_reproducible_failures": [],
+  "production_changes": [],
+  "protected_files_verified_unchanged": {
+    "docs/migration/beta-local/MASTER_PLAN.md": "38ad02b189fd3fbfedb987bab44c38ceb3d0fa927858b5b59b64a98b08d1e87f",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md": "693f45628d56fd3fa9bc648ba81764a140519afa678cf1214ef3e29d461fc30b",
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "NOTICE": "ac9aee1623420a916011eb999e9fbc01e418a9bf90a0fa2df9e934d01a33da59",
+    "app/build.gradle.kts": "2b6c94109480f2348771fd4730949108d905c4f1b04bf31d2e6b6f5515d1864a",
+    ".github/workflows/android.yml": "64a8a50fef82f28f7db8849b3e435224080362f1cd3eac0188df2aac3837f888",
+    "app/src/main/AndroidManifest.xml": "df3c0b91cf033fb46f03335e26990ce0ecd1c06712fb3345759226b96dfac4cd",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt": "57226142baab1c495ad14aa953dbee93e562d49b68b5208d77f1b4cdb488ec80",
+    "app/src/main/java/com/music/aurelis/ui/components/GlassRendering.kt": "837fe2c7d29692343eee75517df260b3526d42a949200dcea6f34272bca7896c",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/Shaders.kt": "32fbbce75fc9671e285baced1e7575a89adb24add63d67aac3f20353cc409ecf"
+  },
+  "reviews": [
+    "1: CI source lineage/APK integrity and58 targeted regression cases",
+    "2: test doubles/device limits, unchanged main plan/ABI/Glass/workflow, evidence consistency; same agent separate pass"
+  ],
+  "remaining": "Physical Android validation pending. QA02/B03 not started. Docs-only delivery CI must be checked separately; run126 is the final result for the source validated here."
+}

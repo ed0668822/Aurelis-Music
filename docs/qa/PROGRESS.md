@@ -61,3 +61,18 @@ histórico. No merge, force push, otra rama, cambios de firma o servicio de pago
 Siguiente: QA02 necesita autorización y Android ARM64 compatible; instalación y
 arranque físico siguen NO EJECUTADOS. Infraestructura completa QA05 no implementada.
 B03 detenido; plan principal y orden de bloques intactos.
+
+
+## Validación final QA00/QA01 — 2026-11-06T03:10:21.277553+00:00
+
+Run126 de2742913 terminó Success,10m23s; incluye c52d1dd y publicó dos artefactos.
+58 pruebas dirigidas nuevas ejecuciones correctas; APK locales/hashes/firmas
+verificados. Ver QA01_FINAL_VALIDATION.md/.json y QA01_FINAL_DEVICE_CHECK.json.
+API GitHub Forbidden y descarga web404: bytes de APK CI no inspeccionados.
+Arranque, navegación/Glass/permisos/audio en Android y Logcat NO EJECUTADOS.
+No hay Android operativo disponible; no confundir RecordingPlayer ni Robolectric
+con audio/arranque real. No nuevos fallos reproducidos ni cambios de producción.
+Plan principal intacto; QA02 y B03 no iniciados. Entrega documental en el mismo PR;
+CI de esa revisión se consulta separadamente sin modificar la app probada.
+
+CodeQL del mismo2742913 también Success (run42152988508,1m6s).
