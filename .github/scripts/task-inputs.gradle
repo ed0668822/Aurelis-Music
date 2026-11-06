@@ -1,0 +1,27 @@
+// Records declared task inputs, never a verdict on individual source compilation.
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject.projectDir.canonicalFile.toPath()
+    def manifest = root.resolve('ci-artifacts/source-inventory.json').toFile()
+    def tracked = manifest.isFile() ? new JsonSlurper().parse(manifest).collect { it.path }.toSet() : [] as Set
+    gradle.taskGraph.beforeTask { task ->
+        if (!(task.name ==~ /(?:compile.*(?:Kotlin|JavaWithJavac|Shaders)|(?:merge|process).*(?:Resources|Assets)|(?:build|configure)CMake.*)/)) return
+        try {
+            task.inputs.files.files.findAll { it.isFile() }.each { file ->
+                def absolute = file.canonicalFile.toPath()
+                if (!absolute.startsWith(root)) return
+                def path = root.relativize(absolute).toString().replace(File.separator, '/')
+                def generated = path.contains('/build/generated/') && path ==~ /.*\.(?:kt|java|xml|c|cc|cpp|h|hpp)$/
+                if (tracked.contains(path) || generated) {
+                    println 'AURELIS_TASK_INPUT ' + JsonOutput.toJson([task: task.path, path: path,
+                        origin: tracked.contains(path) ? 'tracked' : 'generated'])
+                }
+            }
+        } catch (Exception ignored) {
+            // Compilation may still run; reporting marks this evidence gap as a failure.
+            println 'AURELIS_INPUT_ERROR ' + JsonOutput.toJson([task: task.path, message: 'Could not inspect declared task inputs'])
+        }
+    }
+}

@@ -94,3 +94,66 @@ precisión/gates/firma, después fixtures/validación estática/preservación de
 18 pruebas offline de utilidades correctas; actionlint sin diagnósticos y11 bloques
 Bash válidos. Evidencia en CI_WORKFLOW_STATIC_EVIDENCE.json. Instalación, arranque,
 GPU/audio y pruebas instrumentadas Android continúan NO EJECUTADOS.
+
+## CI02 — fallo confirmado y mejoras posteriores a B05.2
+
+Run135 (42228085464), commit0ec482b, falló con diagnóstico Kotlin concreto en
+NowPlayingScreen.kt:384: maxWidth del BoxWithConstraints exterior no es accesible
+implícitamente dentro de Column por el marcador DSL de Compose. El mismo error se
+repitió en debug/release y en las tres fases. La corrección calcula
+portraitArtworkSize en el scope de BoxWithConstraints y pasa un Dp normal a Column.
+Se conservan panel, dock, Liquid Glass y defensas QA01. No se ha compilado Android
+localmente; corrección pendiente de confirmación en la nueva ejecución de GitHub.
+
+Antes de lint/pruebas/APK hay una fase compile obligatoria (Kotlin, Java, recursos,
+debug/release). Si falla, esas etapas quedan skipped y la puerta final falla.
+Si compile pasa, lint y pruebas pueden recopilar sus diagnósticos independientes;
+APK requiere ambos correctos. Evita tres invocaciones repitiendo un fallo de Kotlin
+sin omitir comprobaciones necesarias ni publicar APK incompletos.
+
+Se añade task-inputs.gradle mediante --init-script en las cuatro fases Gradle.
+Lee exclusivamente las entradas declaradas de tareas de Kotlin/Java/recursos/
+assets/shaders/CMake y registra paths del inventario o fuentes generadas locales;
+no imprime contenidos, propiedades de firma, classpath completo ni secretos.
+No se habilita --debug/--info global ni se añaden plugins/dependencias/build scans.
+El callback beforeTask requiere configuración tradicional de Gradle8.11.1; este
+workflow fuerza --no-configuration-cache para garantizar esa compatibilidad. La
+build-cache continúa habilitada.
+
+Nuevos archivos del artefacto compilation-report-N:
+
+| Archivo | Lectura correcta |
+| --- | --- |
+| compile.log | Primera compilación previa y sus errores |
+| task-inputs.json/.tsv | Fase, tarea, path, origen tracked/generated y estado de tarea |
+| file-status.tsv | Archivo, source set, diagnósticos, presencia de evidencia y estados de tareas observadas |
+
+Estas entradas NO son una lista de archivos compilados exitosamente. Java puede
+ser entrada de Kotlin solo para resolver símbolos; headers se incluyen en unidades
+nativas; recursos/assets pueden procesarse o empaquetarse sin compilarse como código.
+Cache/UP-TO-DATE no significan compilación ejecutada otra vez. Fallar una tarea no
+significa que todos sus archivos tengan errores. NO_TASK_INPUT_EVIDENCE significa
+que falta prueba, nunca que el archivo se excluyó o compiló. Todos conservan
+individual_compilation=NOT_ESTABLISHED; los fallos con archivo/línea se identifican
+separadamente. Las fuentes generadas se detallan en task-inputs, aunque no estén en
+el inventario Git. No se obtiene trazabilidad individual universal de compiladores
+con solo el estado de una tarea Gradle.
+
+Se priorizan errores con ubicación en GITHUB_STEP_SUMMARY, se colapsan mensajes
+idénticos por fase y se conservan logs completos y XML. La pérdida/malformación de
+telemetría se registra como error del recolector, no como éxito silencioso.
+
+Se mantienen mecanismos nativos documentados por GitHub: anotaciones, resumen,
+artefactos incluso tras fallo, permisos mínimos, SHA de acciones, secretos efímeros
+y aprobación por outcome. Referencias oficiales:
+https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands
+https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions
+La consulta web de documentación en este entorno devolvió403; no se afirma una
+auditoría/certificación de GitHub ni haber leído una revisión remota inaccesible.
+Las anotaciones públicas del run sí pudieron leerse; la API gh devolvió Forbidden.
+
+Pruebas locales de utilidades:21 casos correctos, actionlint sin diagnósticos,
+12 bloques Bash con sintaxis válida y sintaxis Groovy comprobada con compilador
+standalone de las bibliotecas existentes. No se ejecutó Gradle ni compilación,
+APK, prueba Android o emulador. La integración real del init script y la corrección
+Kotlin deben verificarse en GitHub. B06 y QA02 no iniciados.

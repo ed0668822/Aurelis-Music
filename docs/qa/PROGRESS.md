@@ -159,3 +159,15 @@ estática y lectura de API con javap; no Gradle local, APK ni dispositivo.
 No se hereda verde de B04/B05 anteriores. Rotación/GPU/Logcat/audio/RTL real
 pendientes. QA01/GLASS01/servicio/plan intactos. No B06 ni QA02. Publicar/avisar y
 esperar resultado del usuario antes de seguir con validación/correcciones.
+
+
+## CI02 — fallo run135 antes de B06
+
+Confirmado error Kotlin maxWidth en NowPlayingScreen.kt:384 del commit0ec482b.
+Corrección mínima de scope; no retirada de panel/dock/Glass. Workflow compila primero
+Kotlin/Java/recursos, no repite fases dependientes si falla; reporta entradas de
+tareas y estados por archivo, errores y ausencia de evidencia honestamente.
+21 pruebas Python correctas, actionlint/Bash/Groovy estáticos correctos. No Gradle
+ni Android local; nueva compilación/integración en GitHub PENDIENTE. Evidencia y
+límites en CI02_BUILD_FAILURE.md/.json y CI_WORKFLOW.md. Dos revisiones del mismo
+agente. Misma rama/PR, sin firma/ABI/servicio/plan alterados. No B06 ni QA02.

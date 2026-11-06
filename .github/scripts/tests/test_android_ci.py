@@ -36,6 +36,49 @@ class ReportsTest(unittest.TestCase):
         self.assertEqual((d[4]['line'], d[4]['column']), (7, 3))
         self.assertIsNone(d[5]['file'])
 
+    def test_input_evidence_retains_failed_and_cached_tasks_without_claiming_file_compilation(self):
+        log = '\n'.join([
+            'AURELIS_TASK_INPUT ' + json.dumps({'task': ':app:compileDebugKotlin', 'path': 'app/src/main/One.kt'}),
+            '> Task :app:compileDebugKotlin FAILED',
+            'AURELIS_TASK_INPUT ' + json.dumps({'task': ':app:compileReleaseKotlin', 'path': 'app/src/main/One.kt'}),
+            '> Task :app:compileReleaseKotlin FROM-CACHE'])
+        tasks, _ = ci.parse_log(log, 'compile', Path('/repo'))
+        inputs, errors = ci.parse_inputs(log, 'compile', tasks)
+        self.assertEqual(errors, [])
+        self.assertEqual([v['task_state'] for v in inputs], ['FAILED', 'FROM-CACHE'])
+        self.assertTrue(all('not individual compiler success' in v['evidence'] for v in inputs))
+
+    def test_malformed_or_failed_task_input_inspection_is_reported_not_silently_ignored(self):
+        for line in ['AURELIS_TASK_INPUT invalid-json',
+            'AURELIS_TASK_INPUT ' + json.dumps({'task': ':app:compile', 'path': '../outside.kt'}),
+            'AURELIS_INPUT_ERROR ' + json.dumps({'task': ':app:compile'})]:
+            inputs, errors = ci.parse_inputs(line, 'compile', [])
+            self.assertEqual(inputs, [])
+            self.assertTrue(errors)
+
+    def test_compile_failure_produces_file_evidence_and_does_not_turn_skipped_checks_green(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=root/'reports';out.mkdir()
+            ci.save(out/'source-inventory.json', [
+                {'path': 'app/src/main/One.kt', 'module': 'app', 'language': 'Kotlin', 'kind': 'production', 'source_set': 'main', 'individual_compilation': 'NOT_ESTABLISHED'},
+                {'path': 'app/src/main/Two.kt', 'module': 'app', 'language': 'Kotlin', 'kind': 'production', 'source_set': 'main', 'individual_compilation': 'NOT_ESTABLISHED'}])
+            states={k:{'outcome':'skipped'} for k in ci.TECHNICAL};states['compile']={'outcome':'failure'}
+            diagnostic='e: file:///repo/app/src/main/One.kt:384:48 maxWidth cannot be called with an implicit receiver'
+            log='AURELIS_TASK_INPUT '+json.dumps({'task': ':app:compileDebugKotlin', 'path': 'app/src/main/One.kt'})
+            (out/'compile.log').write_text(log+'\n> Task :app:compileDebugKotlin FAILED\n'+diagnostic+'\n'+diagnostic+'\n')
+            with patch.dict(os.environ, {'CI_STEPS_JSON': json.dumps(states), 'GITHUB_STEP_SUMMARY': ''}), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(ci.report(Path('/repo'), out), 0)
+            sources=json.loads((out/'source-diagnostics.json').read_text())
+            self.assertEqual(sources[0]['diagnostic_state'], 'ERROR_DIAGNOSTICS')
+            self.assertEqual(sources[0]['task_input_evidence'][0]['task_state'], 'FAILED')
+            self.assertEqual(sources[1]['task_input_state'], 'NO_TASK_INPUT_EVIDENCE')
+            self.assertEqual(len(json.loads((out/'diagnostics.json').read_text())), 1)
+            data=json.loads((out/'report.json').read_text())
+            self.assertFalse(data['technical_checks_passed'])
+            self.assertEqual(data['phases']['tests'], 'skipped')
+            self.assertTrue((out/'file-status.tsv').exists())
+            self.assertIn('maxWidth', (out/'summary.md').read_text())
+
     def test_task_reuse_and_late_failure_are_not_per_file_success(self):
         text = '\n'.join(['> Task :app:compileDebugKotlin', '> Task :app:compileDebugKotlin FAILED',
             '> Task :app:testDebugUnitTest FROM-CACHE', '> Task :app:mergeResources UP-TO-DATE',
@@ -78,7 +121,7 @@ class ReportsTest(unittest.TestCase):
             root = Path(tmp);out = root / 'reports';out.mkdir()
             ci.save(out / 'source-inventory.json', [{'path': 'app/src/test/NotInRelease.kt', 'module':'app', 'language':'Kotlin', 'kind':'test', 'individual_compilation': 'NOT_ESTABLISHED'}])
             states = {k: {'outcome': 'success'} for k in ci.TECHNICAL}
-            for phase in ('lint', 'tests', 'build'):(out / f'{phase}.log').write_text('')
+            for phase in ci.BUILD_PHASES:(out / f'{phase}.log').write_text('')
             with patch.dict(os.environ, {'CI_STEPS_JSON': json.dumps(states), 'GITHUB_STEP_SUMMARY': ''}), contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(ci.report(root, out), 1)
             source = json.loads((out / 'source-diagnostics.json').read_text())[0]
@@ -105,7 +148,7 @@ class ReportsTest(unittest.TestCase):
             root=Path(tmp);out=root/'reports';out.mkdir()
             ci.save(out/'source-inventory.json',[{'path':'app/src/main/One.kt','module':'app','language':'Kotlin','kind':'production','individual_compilation':'NOT_ESTABLISHED'}])
             states={k:{'outcome':'success'} for k in ci.TECHNICAL}
-            for phase in ('lint','tests','build'):(out/f'{phase}.log').write_text('')
+            for phase in ci.BUILD_PHASES:(out/f'{phase}.log').write_text('')
             (out/'tests.log').write_text('> Task :app:testDebugUnitTest FROM-CACHE\n> Task :app:testReleaseUnitTest\n')
             for variant in ('debug','release'):
                 lint=root/f'app/build/reports/lint-results-{variant}.xml';lint.parent.mkdir(parents=True,exist_ok=True);lint.write_text('<issues/>')
@@ -131,7 +174,7 @@ class ReportsTest(unittest.TestCase):
             root=Path(tmp);out=root/'reports';out.mkdir()
             ci.save(out/'source-inventory.json',[])
             states={k:{'outcome':'success'} for k in ci.TECHNICAL};states['tests']={'outcome':'failure'}
-            for phase in ('lint','tests','build'):(out/f'{phase}.log').write_text('')
+            for phase in ci.BUILD_PHASES:(out/f'{phase}.log').write_text('')
             for variant in ('debug','release'):
                 lint=root/f'app/build/reports/lint-results-{variant}.xml';lint.parent.mkdir(parents=True,exist_ok=True);lint.write_text('<issues/>')
                 f=root/f'app/build/test-results/test{variant.title()}UnitTest/TEST-unit.xml';f.parent.mkdir(parents=True)

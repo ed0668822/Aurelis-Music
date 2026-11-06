@@ -1,0 +1,48 @@
+{
+  "baseline": "0ec482b93d541629817d71b0f27c5fbaff9fd212",
+  "failed_run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42228085464",
+  "run_number": 135,
+  "failed_head": "0ec482b93d541629817d71b0f27c5fbaff9fd212",
+  "confirmed_annotations": [
+    "build: app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt#L384 'val maxWidth: Dp' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary. Show more Show less",
+    "build: app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt#L384 'val maxWidth: Dp' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary. Show more Show less",
+    "build: app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt#L384 'val maxWidth: Dp' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary. Show more Show less",
+    "build: app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt#L384 'val maxWidth: Dp' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary. Show more Show less",
+    "build: app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt#L384 'val maxWidth: Dp' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary. Show more Show less",
+    "build: app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt#L384 'val maxWidth: Dp' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary. Show more Show less"
+  ],
+  "fix": "Capture portraitArtworkSize in BoxWithConstraints scope before entering Column",
+  "source_sha256": {
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "27a5ab602b27379e656f9bc6f26c509022c28ba92d4f056e9b0e378a95776efc",
+    ".github/workflows/android.yml": "ef814ebaa534b8be2a8e8bd0f90ae609dcf68d67a83725f716df874e7601420c",
+    ".github/scripts/android_ci.py": "1d12bb014b68e66e1e39c4dd52176d63e1b8be0140e2664d7ec6ea867dcc4023",
+    ".github/scripts/task-inputs.gradle": "6ebf20d31bd1f8b9caae341fd9ddd30876d757190c4a71451e068705283d40c7",
+    ".github/scripts/tests/test_android_ci.py": "fd1cfe039b484c8bf89d598c32dd0aa4aa16ace98f5a2825f3d50658ffc49a03"
+  },
+  "utility_tests": {
+    "executed": 21,
+    "failures": 0
+  },
+  "actionlint": "PASS",
+  "bash_syntax_blocks": 12,
+  "groovy_standalone_syntax": "PASS; init script runtime in Gradle not executed here",
+  "protected_unchanged": [
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "app/build.gradle.kts",
+    "app/src/main/cpp",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/java/com/music/aurelis/playback",
+    "app/src/main/java/com/music/aurelis/ui/components",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "android_build_tests": "NOT_EXECUTED_LOCALLY; new GitHub result pending",
+  "access_limits": "gh API Forbidden; public run/job annotations read; docs.github.com HTTP403",
+  "main_plan": "intact; B06 and QA02 not started"
+}

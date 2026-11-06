@@ -362,6 +362,7 @@ fun NowPlayingScreen(
                 }
                 BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { dock?.reportPanel(it) }
                     .then(if (showLyrics) Modifier.clearAndSetSemantics { } else Modifier)) {
+                    val portraitArtworkSize = (maxWidth - 48.dp).coerceIn(160.dp, 320.dp)
                     SideEffect { dock?.attached = isVisible && !reduceAnimation && maxWidth <= maxHeight }
                     if (maxWidth > maxHeight) {
                         LandscapePlayerLayout(
@@ -381,7 +382,7 @@ fun NowPlayingScreen(
                             .testTag("player-portrait"), horizontalAlignment = Alignment.CenterHorizontally) {
                             header()
                             Spacer(Modifier.height(24.dp))
-                            artwork(Modifier, (maxWidth - 48.dp).coerceIn(160.dp, 320.dp))
+                            artwork(Modifier, portraitArtworkSize)
                             Spacer(Modifier.height(32.dp))
                             controls()
                         }

@@ -102,11 +102,29 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: python3 .github/scripts/android_ci.py signing
 
+      - name: Compile Kotlin, Java and resources before downstream checks
+        id: compile
+        if: ${{ !cancelled() && steps.signing.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 15
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:compileDebugKotlin :app:compileReleaseKotlin \
+            :app:compileDebugJavaWithJavac :app:compileReleaseJavaWithJavac \
+            :app:processDebugResources :app:processReleaseResources \
+            --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/compile.log
+
       # Continue only to collect all available diagnostics. Mandatory gate below
       # uses outcome (not the success conclusion of continue-on-error).
       - name: Android Lint (debug and release)
         id: lint
-        if: ${{ !cancelled() && steps.signing.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         continue-on-error: true
         env:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -115,12 +133,12 @@ jobs:
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
-          ./gradlew :app:lintDebug :app:lintRelease --continue --build-cache --console=plain \
-            --stacktrace --no-daemon --max-workers=2 2>&1 | tee ci-artifacts/lint.log
+          ./gradlew :app:lintDebug :app:lintRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/lint.log
 
       - name: Unit tests (debug and release)
         id: tests
-        if: ${{ !cancelled() && steps.signing.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         continue-on-error: true
         env:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -129,12 +147,12 @@ jobs:
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
-          ./gradlew :app:testDebugUnitTest :app:testReleaseUnitTest --continue --build-cache --console=plain \
-            --stacktrace --no-daemon --max-workers=2 2>&1 | tee ci-artifacts/tests.log
+          ./gradlew :app:testDebugUnitTest :app:testReleaseUnitTest --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/tests.log
 
       - name: Build APKs (debug and release)
         id: build
-        if: ${{ !cancelled() && steps.signing.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && steps.lint.outcome == 'success' && steps.tests.outcome == 'success' }}
         continue-on-error: true
         env:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -143,8 +161,8 @@ jobs:
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebug :app:assembleRelease --continue --build-cache --console=plain \
-            --stacktrace --no-daemon --max-workers=2 2>&1 | tee ci-artifacts/build.log
+          ./gradlew :app:assembleDebug :app:assembleRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/build.log
 
       - name: Verify APK signatures, identity, ZIP, native architecture and notices
         id: verify
@@ -181,7 +199,7 @@ jobs:
 
       - name: Publish APKs only after all checks pass
         id: upload_apk
-        if: ${{ !cancelled() && steps.init.outcome == 'success' && steps.helpers.outcome == 'success' && steps.java.outcome == 'success' && steps.gradle.outcome == 'success' && steps.android.outcome == 'success' && steps.signing.outcome == 'success' && steps.lint.outcome == 'success' && steps.tests.outcome == 'success' && steps.build.outcome == 'success' && steps.verify.outcome == 'success' && steps.cleanup.outcome == 'success' && steps.report.outcome == 'success' && steps.upload_report.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.init.outcome == 'success' && steps.helpers.outcome == 'success' && steps.java.outcome == 'success' && steps.gradle.outcome == 'success' && steps.android.outcome == 'success' && steps.signing.outcome == 'success' && steps.compile.outcome == 'success' && steps.lint.outcome == 'success' && steps.tests.outcome == 'success' && steps.build.outcome == 'success' && steps.verify.outcome == 'success' && steps.cleanup.outcome == 'success' && steps.report.outcome == 'success' && steps.upload_report.outcome == 'success' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, Node 24
         with:
           name: Aurelis Music-${{ github.run_number }}

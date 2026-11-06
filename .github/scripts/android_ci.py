@@ -20,7 +20,8 @@ from urllib.parse import unquote, urlparse
 import xml.etree.ElementTree as ET
 import zipfile
 
-TECHNICAL = ('init', 'helpers', 'java', 'gradle', 'android', 'signing', 'lint', 'tests', 'build', 'verify', 'cleanup')
+TECHNICAL = ('init', 'helpers', 'java', 'gradle', 'android', 'signing', 'compile', 'lint', 'tests', 'build', 'verify', 'cleanup')
+BUILD_PHASES = ('compile', 'lint', 'tests', 'build')
 LANGUAGES = {'.kt': 'Kotlin', '.kts': 'Kotlin', '.java': 'Java', '.c': 'C', '.cc': 'C++',
              '.cpp': 'C++', '.cxx': 'C++', '.h': 'Header', '.hpp': 'Header', '.hh': 'Header',
              '.hxx': 'Header', '.xml': 'XML'}
@@ -269,15 +270,42 @@ def verify_apks(root: Path, out: Path, sdk: Path) -> None:
         raise
 
 
+def parse_inputs(text: str, phase: str, tasks: list) -> tuple[list, list]:
+    states = {task['task']: task['state'] for task in tasks}
+    observations, errors = [], []
+    for line in ANSI.sub('', text).splitlines():
+        if not line.startswith(('AURELIS_TASK_INPUT ', 'AURELIS_INPUT_ERROR ')):
+            continue
+        try:
+            kind, payload = line.split(' ', 1)
+            data = json.loads(payload)
+            if not isinstance(data, dict) or not isinstance(data.get('task'), str):
+                raise ValueError('Invalid task observation')
+            if kind == 'AURELIS_INPUT_ERROR':
+                errors.append(f"{phase}/{data['task']}: task input inspection failed")
+                continue
+            path = data.get('path')
+            if not isinstance(path, str) or not path or Path(path).is_absolute() or '..' in Path(path).parts:
+                raise ValueError('Invalid observed input path')
+            observations.append({'phase': phase, 'task': data['task'], 'path': path,
+                'origin': data.get('origin', 'unknown'), 'task_state': states.get(data['task'], 'NOT_OBSERVED'),
+                'evidence': 'DECLARED_TASK_INPUT; not individual compiler success'})
+        except (ValueError, TypeError):
+            errors.append(f'{phase}: malformed task input observation')
+    unique = {json.dumps(value, sort_keys=True): value for value in observations}
+    return list(unique.values()), errors
+
+
 def report(root: Path, out: Path, annotations: bool = False) -> int:
     out.mkdir(exist_ok=True, parents=True)
     state = phases()
-    tasks, diagnostics, collector_errors = [], [], []
-    for phase in ('lint', 'tests', 'build'):
+    tasks, diagnostics, collector_errors, inputs = [], [], [], []
+    for phase in BUILD_PHASES:
         path = out / f'{phase}.log'
         if path.exists():
             text = path.read_text(encoding='utf-8', errors='replace')
             t, d = parse_log(text, phase, root);tasks.extend(t);diagnostics.extend(d)
+            observed, errors = parse_inputs(text, phase, t);inputs.extend(observed);collector_errors.extend(errors)
             path.write_text(redact(text), encoding='utf-8')
         elif state[phase] in ('success', 'failure'):
             collector_errors.append(f'Missing log for {phase}')
@@ -319,33 +347,44 @@ def report(root: Path, out: Path, annotations: bool = False) -> int:
     sources = json.loads(inv_path.read_text()) if inv_path.exists() else []
     if not inv_path.exists():
         collector_errors.append('Missing source inventory')
+    # Keep distinct phase/location/severity while collapsing exact repeated messages.
+    diagnostics = list({json.dumps(d, sort_keys=True): d for d in diagnostics}.values())
+    observed_by_file = collections.defaultdict(list)
+    for item in inputs:
+        observed_by_file[item['path']].append(item)
     by_file = collections.defaultdict(list)
     for d in diagnostics:
         if d['file']:
             by_file[d['file']].append(d)
     for source in sources:
+        source['task_input_evidence'] = observed_by_file[source['path']]
+        source['observed_task_states'] = '; '.join(sorted({f"{item['phase']}/{item['task']}={item['task_state']}" for item in source['task_input_evidence']}))
+        source['task_input_state'] = 'DECLARED_TASK_INPUT_OBSERVED' if source['task_input_evidence'] else 'NO_TASK_INPUT_EVIDENCE'
         source['diagnostics'] = dict(collections.Counter(d['severity'] for d in by_file[source['path']]))
         source['diagnostic_state'] = 'ERROR_DIAGNOSTICS' if source['diagnostics'].get('error') else 'WARNING_DIAGNOSTICS' if source['diagnostics'].get('warning') else 'OTHER_DIAGNOSTICS' if source['diagnostics'] else 'NO_DIAGNOSTICS_CAPTURED'
     save(out / 'source-diagnostics.json', sources)
+    save(out / 'task-inputs.json', inputs)
     save(out / 'task-states.json', tasks)
     save(out / 'diagnostics.json', diagnostics)
     for name, fields, rows in [
         ('source-inventory', ('module', 'source_set', 'kind', 'language', 'path', 'individual_compilation'), sources),
         ('task-states', ('phase', 'task', 'state'), tasks),
+        ('task-inputs', ('phase', 'task', 'path', 'origin', 'task_state', 'evidence'), inputs),
+        ('file-status', ('path', 'source_set', 'diagnostic_state', 'task_input_state', 'observed_task_states', 'individual_compilation'), sources),
         ('diagnostics', ('phase', 'severity', 'file', 'line', 'column', 'message'), diagnostics),
     ]:
         with (out / (name + '.tsv')).open('w', encoding='utf-8', newline='') as handle:
             writer = csv.DictWriter(handle, fieldnames=fields, delimiter='\t', extrasaction='ignore')
             writer.writeheader();writer.writerows(rows)
     (out / 'file-status.txt').write_text(''.join(
-        f"{s['diagnostic_state']} | {s['path']} | individual_compilation=NOT_ESTABLISHED\n" for s in sources), encoding='utf-8')
+        f"{s['diagnostic_state']} | {s['task_input_state']} | {s['path']} | individual_compilation=NOT_ESTABLISHED\n" for s in sources), encoding='utf-8')
     for level in ('error', 'warning'):
         (out / (level + 's.txt')).write_text(''.join(
             f"[{d['phase']}] {d['file'] or '(sin archivo)'}:{d['line'] or ''}:{d['column'] or ''} {d['message']}\n"
             for d in diagnostics if d['severity'] == level), encoding='utf-8')
 
     data = {'phases': {k: state[k] for k in TECHNICAL}, 'technical_checks_passed': approval(state) and not collector_errors,
-            'collector_errors': collector_errors, 'unit_test_results': tests, 'test_failures': test_failures,
+            'task_input_observations': len(inputs), 'collector_errors': collector_errors, 'unit_test_results': tests, 'test_failures': test_failures,
             'individual_file_compilation': 'NOT_ESTABLISHED; no diagnostic is not proof of compilation',
             'android_installation': 'NOT_EXECUTED', 'android_startup': 'NOT_EXECUTED', 'android_instrumentation': 'NOT_EXECUTED'}
     save(out / 'report.json', data)
@@ -355,16 +394,25 @@ def report(root: Path, out: Path, annotations: bool = False) -> int:
               'Los estados EXECUTED/FROM-CACHE/UP-TO-DATE/SKIPPED/NO-SOURCE/FAILED describen tareas por fase.',
               'EXECUTED identifica una tarea observada sin marca de reutilización; no certifica archivos individuales.', '', '## Pruebas unitarias (resultados XML)']
     lines.extend(f"- {t['variant']}: {t['tests']} casos; {t['failures']} fallos; {t['errors']} errores; {t['skipped']} omitidos; tarea {t['task_state']}." for t in tests)
-    lines += ['', f'Inventario: {len(sources)} fuentes. Tareas observadas: {len(tasks)}. Diagnósticos capturados: {len(diagnostics)}.',
+    lines += ['', f'Inventario: {len(sources)} fuentes. Tareas observadas: {len(tasks)}. Diagnósticos únicos capturados: {len(diagnostics)}.',
               'Detalle completo: source-inventory.json, changed-files.json, source-diagnostics.json, task-states.json y diagnostics.json.',
               'APK/SHA-256/firma/ABI: apk-verification.json. Source SHA, checkout/merge SHA y tree: metadata.json.',
               '', '**Android real: instalación, arranque, audio, GPU y pruebas instrumentadas NO EJECUTADOS.**', '',
               'Aprobación técnica: ' + ('APROBADA (publicación separada)' if data['technical_checks_passed'] else 'NO APROBADA; consultar fases y registros.')]
+    causes = [d for d in diagnostics if d['severity'] == 'error' and d.get('file')]
+    lines += ['', '## Errores con ubicación (prioridad)', '']
+    lines += [f"- {md(d['file'])}:{d['line'] or ''}:{d['column'] or ''}: {md(d['message'])} ({md(d['phase'])})" for d in causes[:10]]
+    if not causes:
+        lines += ['No se capturaron errores con ubicación; esto no equivale a éxito. Revisar errores sin archivo, fases y XML.']
+    lines += ['', '## Evidencia por archivo', '',
+        f'{len(inputs)} entradas declaradas observadas de tareas; ver task-inputs.json/.tsv y file-status.tsv.',
+        'El estado de la tarea (incluido cache/failure) se conserva junto a la entrada. No demuestra que cada archivo se compiló.',
+        'NO_TASK_INPUT_EVIDENCE significa desconocido, no excluido ni compilado. Java puede ser entrada de Kotlin solo para resolver símbolos.']
     if test_failures:
         lines += ['', 'Fallos de pruebas (primeros10; detalle XML/JSON completo):']
         lines += [f"- {md(f['variant'])}: {md(str(f['class']))} / {md(str(f['test']))}: {md(f['message'])}" for f in test_failures[:10]]
     if collector_errors:
-        lines += ['', 'Errores de recopilación:', *('- ' + e for e in collector_errors)]
+        lines += ['', 'Errores de recopilación:', *('- ' + md(e) for e in collector_errors)]
     signing_file = out / 'signing.json'
     if signing_file.exists():
         lines += ['', 'Modo de firma: ' + json.loads(signing_file.read_text())['mode']]

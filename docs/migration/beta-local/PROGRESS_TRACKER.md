@@ -277,3 +277,15 @@ No cierre total B05 ni B06/QA02: paridad visual y validación siguen pendientes.
 Entrega de código B05.2: `ed6d44b82e055eeb5ca224bba21e0a766bee93bd`. PR1 existente, misma rama; checkpoint
 documental posterior conserva idéntico árbol de aplicación. CI y Android real
 pendientes; no se consulta Actions automáticamente ni se inicia B06/QA02.
+
+
+## Corrección CI02 — puerta antes de B06
+
+Run135 de0ec482b falló por acceso implícito a maxWidth dentro de Column
+(NowPlayingScreen.kt:384). Se captura la medida en BoxWithConstraints, sin cambiar
+el panel. La revisión estática anterior no equivale a compilación real: validación
+nueva pendiente de GitHub. Ver ../../qa/CI02_BUILD_FAILURE.md/.json y CI_WORKFLOW.md.
+Workflow/reportes mejorados con compile previo, entradas de tareas y estados por
+archivo, sin falsos éxitos ni checks desactivados.21 pruebas de utilidades correctas;
+no Gradle/Android local. No avanzar B06/QA02 hasta resolver CI. Publicar/avisar y
+esperar resultado del usuario; mantener B05 y paridad visual pendientes de validar.
