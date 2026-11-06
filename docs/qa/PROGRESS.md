@@ -299,3 +299,14 @@ preparados sin Gradle/Android local. Dos revisiones estáticas del mismo agente;
 nuevo CI pendiente del resultado del usuario. Ver ../migration/beta-local/B07_2_SWEEP.
 QA02 no iniciado. Continuación autorizada hasta B08 conservada, con puerta de CI
 entre entregas, sin dar por terminados B07/efectos/paridad o pendientes anteriores.
+
+
+## CI10 — fallo de expectativa offset en PlayerIntegrationTest
+
+Run146/ee5c3af ejecuta prueba UI: esperaba500, obtuvo1500 con línea1000/offset+500.
+La expectativa era del signo previo; B07.2 usa positivo=retardo y seek=line+offset.
+Solo esa prueba se actualiza:1500 positivo,500 negativo, selección/cola/canción/pausa
+y contadores verificados, preferencias restauradas. Otros métodos y producción
+intactos. Evidencia en CI10_LYRICS_OFFSET.md/.json; doble revisión estática, nuevo
+CI pendiente exclusivamente GitHub. Publicar mismo PR y esperar aviso del usuario.
+Autorización hacia B08 conservada; ninguna otra unidad/QA02/B09 iniciada.

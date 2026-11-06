@@ -248,22 +248,44 @@ class PlayerIntegrationTest {
     }
     @Test fun importedLyricsHighlightAndSeekWithOffsetInTheRealPlayer() {
         start()
-        SettingsRepository.setLyricsOffsetMs(500)
-        val lrc = File(app.cacheDir, "import-test.lrc").apply { writeText("[00:00.000]Primera frase propia\n[00:01.000]Segunda frase propia") }
-        compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc)) }
-        compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.lyrics !is LyricsState.Loading } }
-        compose.runOnIdle { assertTrue("Expected imported lyrics, got ${vm.state.value.lyrics}", vm.state.value.lyrics is LyricsState.Loaded) }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
-        compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertIsDisplayed()
-        compose.onNodeWithText("Primera frase propia").assertIsSelected()
-        compose.onNodeWithText("Segunda frase propia").performClick()
-        compose.runOnIdle { assertEquals(500L, vm.state.value.positionMs) }
-        compose.onNodeWithText("Segunda frase propia").assertIsSelected()
-        capture("synced-lyrics")
-        compose.runOnIdle { vm.next() }
-        compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc), "1") }
-        compose.runOnIdle { assertFalse(vm.state.value.lyrics is LyricsState.Loaded) }
+        val previousOffset = SettingsRepository.lyricsOffsetMs.value
+        try {
+            compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(500) }
+            val lrc = File(app.cacheDir, "import-test.lrc").apply { writeText("[00:00.000]Primera frase propia\n[00:01.000]Segunda frase propia") }
+            compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc)) }
+            compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.lyrics !is LyricsState.Loading } }
+            compose.runOnIdle { assertTrue("Expected imported lyrics, got ${vm.state.value.lyrics}", vm.state.value.lyrics is LyricsState.Loaded) }
+            val originalQueue = vm.state.value.queue.map { it.id to it.queueEntryId }
+            val playingSong = vm.state.value.currentSong
+            val prepares = player.prepares
+            val replacements = player.replacements
+            compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+            compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
+            compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertIsDisplayed()
+            compose.onNodeWithText("Primera frase propia").assertIsSelected()
+            compose.onNodeWithText("Segunda frase propia").performClick()
+            // Positive delays lyrics: media1500 - offset500 = lyric1000.
+            compose.runOnIdle { assertEquals(1500L, vm.state.value.positionMs) }
+            compose.onNodeWithText("Segunda frase propia").assertIsSelected()
+            capture("synced-lyrics")
+            compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(-500) }
+            compose.onNodeWithText("Segunda frase propia").performClick()
+            // Negative advances lyrics: media500 - offset(-500) = lyric1000.
+            compose.runOnIdle { assertEquals(500L, vm.state.value.positionMs) }
+            compose.onNodeWithText("Segunda frase propia").assertIsSelected()
+            compose.runOnIdle {
+                assertEquals(originalQueue, vm.state.value.queue.map { it.id to it.queueEntryId })
+                assertEquals(playingSong, vm.state.value.currentSong)
+                assertEquals(prepares, player.prepares)
+                assertEquals(replacements, player.replacements)
+                assertFalse(player.playWhenReady)
+            }
+            compose.runOnIdle { vm.next() }
+            compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc), "1") }
+            compose.runOnIdle { assertFalse(vm.state.value.lyrics is LyricsState.Loaded) }
+        } finally {
+            compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(previousOffset) }
+        }
     }
     @Test fun translationDialogCancelNeverSendsAndBilingualViewKeepsOriginal() {
         start(); importTranslationFixture()

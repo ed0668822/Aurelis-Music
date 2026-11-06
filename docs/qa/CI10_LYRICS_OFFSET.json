@@ -1,0 +1,59 @@
+{
+  "unit": "CI10",
+  "base": "ee5c3afd8ca4419fd278dca3a0767e78311bb4db",
+  "failed_head": "ee5c3afd8ca4419fd278dca3a0767e78311bb4db",
+  "failed_run_number": 146,
+  "failed_run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42298701818",
+  "failed_job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42298701818/job/128170546459",
+  "access": "Public run/job/commit and JUnit annotations retrieved; gh --log-failed Forbidden; full logs not downloaded",
+  "gate_outcomes": "tests=failure, build=skipped, verify=skipped, upload_apk=skipped",
+  "observed_failures": [
+    "com.music.aurelis.ui.PlayerIntegrationTest.importedLyricsHighlightAndSeekWithOffsetInTheRealPlayer [java.lang.AssertionError]: java.lang.AssertionError: expected:<500> but was:<1500>",
+    "com.music.aurelis.ui.PlayerIntegrationTest.importedLyricsHighlightAndSeekWithOffsetInTheRealPlayer [java.lang.AssertionError]: java.lang.AssertionError: expected:<500> but was:<1500>"
+  ],
+  "cause": "Existing real-player import UI test retained the prior offset convention after B07.2 changed the active host to the approved BitChord convention. At lyric1000 and offset+500, media seek1500 is correct; stale test expected500.",
+  "contract": {
+    "display": "max(playerMs-offsetMs,0)",
+    "seek": "max(lineMs+offsetMs,0)",
+    "reference": "BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 PlayerLyrics.kt offset helpers; target LyricsPlayback.kt/PlayerSidePanels.kt match"
+  },
+  "fixes": [
+    "Positive+500 case explicitly expects1500 and selected second line",
+    "Negative-500 case explicitly expects500 and the same selected second line",
+    "Assert exact song and queue(id, occurrence identity), prepare/replacement counts and paused state remain unchanged",
+    "Preserve imported-source label, initial highlight, screenshot and stale-song import rejection",
+    "Restore previous offset in finally; no global test fixture/production changes"
+  ],
+  "modified_test": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt",
+  "source_sha256": "d3ce3c115d2d1dd9f9f104db380cff981526204a69da112a4a79cb9f3a1db5f8",
+  "static_checks": [
+    "All test method names retained; every other method/body/import in file byte-identical",
+    "Both signs use independent numeric expected values, not helpers to calculate expectations",
+    "Production, workflow/gates, model/parser/cache/Glass and main plan unchanged",
+    "git diff --check passed"
+  ],
+  "reviews": {
+    "review1": "Static failure/head/source-contract and inverse math review, same agent",
+    "review2": "Separate static test-strength/state-restoration and protected-scope review, same agent"
+  },
+  "local_android_build_and_tests": "NOT_EXECUTED_USER_REQUESTS_GITHUB_ONLY",
+  "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+  "device_runtime": "NOT_EXECUTED",
+  "protected_paths": [
+    "app/src/main",
+    ".github",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "app/build.gradle.kts",
+    "app/proguard-rules.pro",
+    "settings.gradle.kts",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "authorization": "Continuation toward B08 remains granted; repair CI first, wait for user new outcome; no new migration block or B09 started"
+}

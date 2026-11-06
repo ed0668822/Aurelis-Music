@@ -679,3 +679,12 @@ foco/lectura manual.17 pruebas preparadas, doble revisión estática; nuevo CI p
 exclusivamente GitHub. Evidencias en beta-local/B07_2_SWEEP.md/.json. Publicar mismo
 PR y esperar resultado del usuario. Autorización hasta B08 persistente; no pedirla
 otra vez ni avanzar B09. Efectos/paridad completos, B07.3 y B08 aún pendientes.
+
+
+## CI10 — prueba integrada de offset
+
+Run146/ee5c3af falla por expectativa anterior del offset, no por error Kotlin.
+Test actualizado al contrato BitChord positivo=retardo:1500 con+500 y500 con-500
+para línea1000. Se refuerza estado y restaura ajuste; sin cambios en app/Glass/plan.
+Evidencia en ../qa/CI10_LYRICS_OFFSET.md/.json. Nuevo CI pendiente de GitHub, no
+Android local. Publicar mismo PR y esperar resultado; autorización hacia B08 intacta.

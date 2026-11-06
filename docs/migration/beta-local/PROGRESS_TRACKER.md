@@ -455,3 +455,15 @@ Checkpoint documental posterior sin cambiar app/tests.17 pruebas nuevas preparad
 y dos revisiones estáticas; nuevo compile/lint/suites exclusivamente GitHub,
 pendientes del resultado del usuario. Autorización hasta B08 conservada; no pedir
 otra para el alcance vigente. Faltan resto B07/compartir y B08; no B09 automático.
+
+
+## CI10 — reparar prueba de offset antes de continuar
+
+Run146 de ee5c3af falla en PlayerIntegrationTest: expectativa antigua500 frente a
+1500 correcto para línea1000 y offset+500. Se corrige solo ese cuerpo de test y se
+comprueba también offset-500→500, selección, cola/canción, pausa y no reinicio.
+Restaura preferencia en finally; todos los otros métodos permanecen idénticos.
+Ver ../../qa/CI10_LYRICS_OFFSET.md/.json. Doble revisión estática; app/Glass/plan/
+workflow intactos. Gradle/tests Android exclusivamente GitHub, nueva validación
+pendiente del aviso del usuario. Autorización hasta B08 permanece, con corrección
+y resultado CI antes de nuevas entregas. No avance de bloques/B09 por esta reparación.
