@@ -329,6 +329,37 @@ class PlayerIntegrationTest {
             }
         } finally { gate.complete(Unit) }
     }
+    @Test fun lyricsSourceSelectionPersistsWithoutSendingAnyRequest() {
+        start()
+        var requests = 0
+        vm.remoteLyricsRequest = { requests++; error("Selecting a provider must not send metadata") }
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Fuentes de letras").performClick()
+        compose.onNodeWithTag("lyrics-provider-LRCLIB").performScrollTo().assertIsOff().performClick().assertIsOn()
+        compose.onNodeWithTag("lyrics-provider-BETTER_LYRICS-disabled").assertExists()
+        compose.onNodeWithTag("lyrics-provider-BINI_LYRICS-disabled").assertExists()
+        compose.onNodeWithTag("lyrics-provider-LRC_RED-disabled").assertExists()
+        capture("lyrics-source-registry")
+        compose.onNodeWithText("Cerrar").performClick()
+        compose.runOnIdle { SettingsRepository.init(app); assertEquals(setOf(com.music.aurelis.data.lyrics.LyricsSource.LRCLIB), SettingsRepository.lyricsSources.value); assertEquals(0, requests) }
+        compose.onNodeWithContentDescription("Fuentes de letras").performClick()
+        compose.onNodeWithTag("lyrics-provider-LRCLIB").performScrollTo().assertIsOn()
+        compose.onNodeWithText("Cerrar").performClick()
+    }
+    @Test fun disabledOnlineSearchKeepsImportedLyricsAndDoesNotSendMetadata() {
+        start(); importTranslationFixture()
+        var requests = 0
+        vm.remoteLyricsRequest = { requests++; error("Disabled lookup must not send metadata") }
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
+        compose.onNodeWithText("Buscar en LRCLIB").performClick()
+        compose.onNodeWithText("Source line A").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals(0, requests)
+            assertTrue(vm.state.value.lyricsLookup is LyricsLookupState.Failed)
+            assertFalse(player.playWhenReady)
+        }
+    }
     private fun importTranslationFixture() {
         val file = File(app.cacheDir, "translation-source.lrc").apply { writeText("[00:00.000]Source line A\n[00:01.000]Source line B") }
         compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(file)) }

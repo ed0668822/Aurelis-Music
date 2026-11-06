@@ -13,8 +13,8 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | B04 | B03 | Alta | Pendiente de autorización/previas |
 | B05 | B04 | Alta | Pendiente de autorización/previas |
 | B06 | B05 | Muy alta | Autorizado; B06.1 implementado pendiente CI/Android; .2/.3/.4 pendientes |
-| B07 | B06 | Alta | B07.1 primera entrega CI145 SUCCESS; núcleo B07.2 entregado pendiente CI; resto abierto |
-| B08 | B07 | Media-alta | Pendiente de autorización/previas |
+| B07 | B06 | Alta | B07.1 CI145 SUCCESS; núcleo B07.2 + CI10 CI147 SUCCESS; resto abierto |
+| B08 | B07 | Media-alta | B08.1/.2/.3 implementados por autorización; CI y Android pendientes |
 | B09 | B06 y B08 | Muy alta | Pendiente de autorización/previas |
 | B10 | B09 | Muy alta | Pendiente de autorización/previas |
 | B11 | B10 | Alta | Pendiente de autorización/previas |
@@ -471,3 +471,21 @@ y resultado CI antes de nuevas entregas. No avance de bloques/B09 por esta repar
 Entrega CI10 — corrección `ec3b4b780a83576bfda2c1bfd0a52ffff9503f56`; mismo PR1.
 Checkpoint documental posterior; compilación y pruebas nuevas pendientes en
 GitHub. Esperar resultado comunicado por el usuario antes de continuar B07/B08.
+
+
+## B08 — proveedores y traducción, entrega autorizada
+
+Base32a40c935c7b1b05625e40c2527fe8f2cf751a24; run147 SUCCESS confirmado en
+Actions/job128195419590 y enlace al SHA exacto. CI10 validado por ese CI; no Android
+físico. Autorización actual para terminar B08: registro/LRCLIB, evaluación de
+BetterLyrics/BiniLyrics/lrc.red (deshabilitados por condiciones sin acreditar),
+cliente de traducción configurable y caché. Selector persistente conectado,
+red explícita/local primero, errores HTTP/429/timeout/red/tamaño separados,
+cancelación/reintento y protección de cambios de canción. Originales conservados.
+18 pruebas nuevas preparadas, ninguna ejecutada aquí; dos revisiones estáticas
+separadas del mismo agente. XML/recursos/alcance/diff revisados; CI nuevo pendiente
+exclusivamente en GitHub. Evidencias: beta-local/B08_PROVIDERS.md y
+docs/qa/B08_PROVIDERS.json según la raíz del repositorio. No se alteran plan
+principal, Glass, servicio, comandos de cola, DSP, NDK, ABI, SDK, modelos o CI.
+B07 visual/compartir y B06 restante siguen abiertos; esta entrega no los cierra.
+Misma rama/PR1. Avisar tras publicar y esperar resultado del usuario; no B09.

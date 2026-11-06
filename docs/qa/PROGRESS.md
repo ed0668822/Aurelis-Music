@@ -310,3 +310,21 @@ y contadores verificados, preferencias restauradas. Otros métodos y producción
 intactos. Evidencia en CI10_LYRICS_OFFSET.md/.json; doble revisión estática, nuevo
 CI pendiente exclusivamente GitHub. Publicar mismo PR y esperar aviso del usuario.
 Autorización hacia B08 conservada; ninguna otra unidad/QA02/B09 iniciada.
+
+
+## B08 — proveedores y traducción, entrega autorizada
+
+Base32a40c935c7b1b05625e40c2527fe8f2cf751a24; run147 SUCCESS confirmado en
+Actions/job128195419590 y enlace al SHA exacto. CI10 validado por ese CI; no Android
+físico. Autorización actual para terminar B08: registro/LRCLIB, evaluación de
+BetterLyrics/BiniLyrics/lrc.red (deshabilitados por condiciones sin acreditar),
+cliente de traducción configurable y caché. Selector persistente conectado,
+red explícita/local primero, errores HTTP/429/timeout/red/tamaño separados,
+cancelación/reintento y protección de cambios de canción. Originales conservados.
+18 pruebas nuevas preparadas, ninguna ejecutada aquí; dos revisiones estáticas
+separadas del mismo agente. XML/recursos/alcance/diff revisados; CI nuevo pendiente
+exclusivamente en GitHub. Evidencias: beta-local/B08_PROVIDERS.md y
+docs/qa/B08_PROVIDERS.json según la raíz del repositorio. No se alteran plan
+principal, Glass, servicio, comandos de cola, DSP, NDK, ABI, SDK, modelos o CI.
+B07 visual/compartir y B06 restante siguen abiertos; esta entrega no los cierra.
+Misma rama/PR1. Avisar tras publicar y esperar resultado del usuario; no B09.

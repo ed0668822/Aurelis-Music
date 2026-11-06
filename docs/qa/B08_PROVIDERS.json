@@ -1,0 +1,237 @@
+{
+  "block": "B08",
+  "subunits": {
+    "B08.1": "IMPLEMENTED_PENDING_CI_DEVICE",
+    "B08.2": "EVALUATED_THREE_DISABLED_PENDING_TERMS",
+    "B08.3": "IMPLEMENTED_PENDING_CI_DEVICE"
+  },
+  "base": "32a40c935c7b1b05625e40c2527fe8f2cf751a24",
+  "branch": "feature/bitchord-local-migration",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "authorization": "Complete B08; do not advance B09; preserve B07/B06 outstanding work",
+  "previous_ci": {
+    "run_number": 147,
+    "run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42306027891",
+    "job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42306027891/job/128195419590",
+    "result": "SUCCESS",
+    "head": "32a40c935c7b1b05625e40c2527fe8f2cf751a24",
+    "evidence": "Public Actions embedded workflow status SUCCESS; job commit link full SHA matches base; previous delivery only"
+  },
+  "reference": {
+    "commit": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+    "access": "Local read-only tar reference",
+    "files": [
+      {
+        "path": "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/LyricsRepository.kt",
+        "sha256": "644a00624a63cc1bd846931f5aff8a4dbe5696c32537dc66875b762750152de3"
+      },
+      {
+        "path": "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/LrcLib.kt",
+        "sha256": "e8ed3e98e9b3b42448ff69830e8f06c677d98ac956e91a631954a5dff0bfdba9"
+      },
+      {
+        "path": "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/BetterLyrics.kt",
+        "sha256": "b2a69dcc5d49f0a27a4f391ff4a6f2aa2f8f7b5db121da2ffc382225a2f7f2a8"
+      },
+      {
+        "path": "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/BiniLyrics.kt",
+        "sha256": "071f2dbaf55b75c5124dcb4a23ac3219d27083d1fd96346979cb4fdf68a1a137"
+      },
+      {
+        "path": "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/LrcRed.kt",
+        "sha256": "29d2de643c588d42b4950589924db8b744cb78bd245f9707791c4cf070f67ffc"
+      },
+      {
+        "path": "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/LyricsTranslation.kt",
+        "sha256": "a90a3fb999fd26061f8c2fe60fbf0a0f7b5c04d78f8b1d9cdaa136741e89fac9"
+      }
+    ]
+  },
+  "provider_policy": {
+    "active": [
+      "LRCLIB"
+    ],
+    "disabled_pending_terms": [
+      "BETTER_LYRICS",
+      "BINI_LYRICS",
+      "LRC_RED"
+    ],
+    "other_legacy_sources": "Not registered or dispatched",
+    "lrclib_documentation": "https://github.com/tranxuanthang/lrclib/blob/main/README.md",
+    "documentation_sha256": "50d0d84f35de64cb49fd34298036f582a15b6ec16ba9ce1a25956d8987bf14ea",
+    "content_rights": "Client/server code licensing does not grant lyrics redistribution rights"
+  },
+  "flow": [
+    "Local import",
+    "Embedded lyrics",
+    "Existing rich local cache",
+    "Explicit registry LRCLIB lookup"
+  ],
+  "diagnostics": [
+    "NETWORK",
+    "TIMEOUT",
+    "RATE_LIMIT",
+    "HTTP",
+    "INVALID_RESPONSE",
+    "TOO_LARGE",
+    "DISABLED",
+    "NotFound distinct from failures"
+  ],
+  "network_limits": {
+    "lrclib_response_bytes": 1048576,
+    "lrclib_candidates": 500,
+    "translation_response_bytes": 524288,
+    "translation_slots": 500,
+    "translation_characters": 30000,
+    "translation_batch_chars": 3500,
+    "translation_concurrent_requests_per_operation": 2,
+    "redirects": false,
+    "automatic_connection_retry": false,
+    "retry_after_support": "Numeric seconds only; HTTP date yields generic wait text; no automatic retry loop"
+  },
+  "translation": "Existing explicitly configured LibreTranslate-compatible HTTPS client; preserved original, timing source and background voices; bounded versioned cache; no legacy Google endpoint activated",
+  "source_sha256": {
+    "NOTICE": "f1aca76bd6421df80ae286f83d2b9a9ab757a74733ad52587f69e04718f666f0",
+    "app/src/main/java/com/music/aurelis/data/SettingsRepository.kt": "dd3c0e23f292300e27342dbeba8518cd598ee4a96b8f44d9423e9802813c5f6a",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LocalLyricsRepository.kt": "508db887f0c556887707c5f51b868110a957807931912a90299e1d6b2ea618a1",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LrcLib.kt": "89fe65aabf90f6bc4d52af0ab5bd5f345df790f095cea37e9443529c6b13849a",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LyricsProviderRegistry.kt": "807abf7b04c13b10d225397f2b6cf35795dcefd9ddd7ceba617310dacae571a5",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LyricsRepository.kt": "0f59baca09173e02706b772c11c16090bbceb366007b242344693e910a300145",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LyricsRequest.kt": "1293eebdd5d1320d3a5bed55a50675891c074aa8f19a4fa318894f45a11355f5",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LyricsSource.kt": "8eca969614065029ebb0f1b1c75cc87d955a060028bd325b31a66588f5cec041",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LyricsTranslation.kt": "a2ba7dccdbc1c9ecce6f343e3982bb816e12f851fc98a3ce2e8d1cdf2fb35171",
+    "app/src/main/java/com/music/aurelis/playback/PlaybackViewModel.kt": "45005426d221652cc1a7232f787c1c1ca9f9f679daf3b82dc274bdd1047d83db",
+    "app/src/main/java/com/music/aurelis/ui/components/LyricsFailureText.kt": "0d14f7965ce28e35ef0f26de5c74a4b4cd0d8e2f8b34a267a5b13ae01726a207",
+    "app/src/main/java/com/music/aurelis/ui/components/LyricsSourcesDialog.kt": "19d53a48446e453ae8952e0a873a335cbd3ef1815afe7a61bdbd81c8ea0106ec",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "60ea7ca33e80209aee62ab8d7dad5ae5818c5cc37dfafd3aa2ca062ca3e52ad4",
+    "app/src/main/res/values/lyrics_providers.xml": "193e17681c4badaea418cd7f0fa247aa87e5f130fa8ea7779532afd8b73a5946",
+    "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt": "cef72beb08004ebd97f6b7bddf828826e1e6b6709aa64526bc263842d5fbfb70",
+    "app/src/test/java/com/music/aurelis/data/lyrics/TranslationTest.kt": "e186aa6836a84387204f37583bbbf9005c4bcea60422199598b1e18adcfa9b80",
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt": "18d209801c3b18b1bc77eba366f58a535febda85c2d8f639e2a09361147bfa6f",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "743eb128354ef254d704b0572d18c61f04ef198b15b4b45d4fcd9a720acfcdcb"
+  },
+  "new_tests": [
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "cancellationCancelsHttpCallAndNeverBecomesNotFound"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "disabledProvidersAreRejectedEvenWhenExplicitlyRequested"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "explicitLrclibRequestEncodesMetadataAndKeepsSyncAtZero"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "malformedAndOversizedResponsesFailBeforeBeingStored"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "notFoundIsDifferentFromHttpNetworkTimeoutAndRateLimit"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "plainLyricsRemainUntimedAndWrongRecordingIsNotAccepted"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "registryOffersOnlyApprovedSourcesAndSavedPreferencesCannotReactivateOthers"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt",
+      "test": "remoteErrorDoesNotPreventLocalCacheOrOverwriteIt"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/TranslationTest.kt",
+      "test": "aSuccessfulTranslationSurvivesUnwritableDiskCache"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/TranslationTest.kt",
+      "test": "batchesUseAtMostTwoConcurrentRequestsAndKeepOrder"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/TranslationTest.kt",
+      "test": "failingOneBatchDoesNotStoreTheSuccessfulPartialBatch"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/TranslationTest.kt",
+      "test": "inputAndResponseSizeLimitsFailWithoutPartialTranslations"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/TranslationTest.kt",
+      "test": "rateLimitTimeoutAndHttpErrorsAreExplicitAndNeverCached"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/data/lyrics/TranslationTest.kt",
+      "test": "translationKeepsBackgroundVoicesTimingsAndOriginalText"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt",
+      "test": "aLateRemoteLyricResponseCannotReplaceAnotherTrackOrChangePlayback"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt",
+      "test": "cancellingRemoteLookupKeepsQueueAndAllowsExplicitRetry"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt",
+      "test": "disabledOnlineSearchKeepsImportedLyricsAndDoesNotSendMetadata"
+    },
+    {
+      "file": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt",
+      "test": "lyricsSourceSelectionPersistsWithoutSendingAnyRequest"
+    }
+  ],
+  "test_methods_removed": 0,
+  "ci10_test_body": "BYTE_IDENTICAL_TO_BASE",
+  "static_checks": [
+    "git diff --check",
+    "New resource XML parses, identifiers unique and references resolve",
+    "All preexisting test methods retained",
+    "CI10 offset test body unchanged",
+    "Protected paths unchanged; same branch"
+  ],
+  "reviews": {
+    "review1": "Separate static architecture, API, network, generation/cancellation and cache pass by same agent; builds/tests pending GitHub",
+    "review2": "Separate static UI, resource, regression, licenses and scope pass by same agent; runtime/device pending",
+    "independent_reviewers": false
+  },
+  "verification": {
+    "local_gradle": "NOT_EXECUTED_GITHUB_ONLY_USER_INSTRUCTION",
+    "local_android_tests": "NOT_EXECUTED_GITHUB_ONLY_USER_INSTRUCTION",
+    "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+    "installation_and_startup": "NOT_EXECUTED",
+    "live_lyrics_or_translation": "NOT_EXECUTED",
+    "device_audio_gpu_accessibility": "NOT_EXECUTED"
+  },
+  "protected_paths": [
+    ".github",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "app/build.gradle.kts",
+    "app/proguard-rules.pro",
+    "settings.gradle.kts",
+    "LICENSE",
+    "LICENSES",
+    "app/src/main/cpp",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/assets",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt",
+    "app/src/main/java/com/music/aurelis/playback/AurelisPlaybackService.kt",
+    "docs/migration/MASTER_PLAN.md",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "limitations": [
+    "Cloud network policy does not enable LRCLIB or a translation server; no live lookup attempted",
+    "18 new tests are prepared, not executed here",
+    "B07 visual/gestures/share and remaining B06 work remain open",
+    "Providers without verified service/content conditions remain disabled",
+    "No physical Android validation or claim of complete visual parity"
+  ],
+  "next": "Publish same PR, notify user, wait for user-reported GitHub outcome; no B09"
+}

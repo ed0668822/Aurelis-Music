@@ -117,3 +117,16 @@ NowPlayingScreen pasa ocurrencia/offset y PlaybackViewModel publica el token de
 discontinuidad. res/values/strings.xml aclara el signo del ajuste existente.
 Solo núcleo; feather/glow/lift/growth/partículas y gesto completo pendientes.
 Pruebas/referencias/límites exactos en B07_2_SWEEP.md/.json.
+
+## F12 — entrega B08
+
+Referencia fija: S:data/lyrics/{LyricsRepository,LrcLib,BetterLyrics,BiniLyrics,
+LrcRed,LyricsTranslation}.kt. No modificación del origen. Nuevos en destino:
+D:data/lyrics/LyricsProviderRegistry.kt; data/lyrics/LyricsRequest.kt;
+ui/components/LyricsFailureText.kt; app/src/main/res/values/lyrics_providers.xml;
+app/src/test/java/com/music/aurelis/data/lyrics/LyricsProvidersTest.kt.
+Se modifican los contratos existentes F12, SettingsRepository, PlaybackViewModel,
+LyricsSourcesDialog y NowPlayingScreen para conectar selección, diagnósticos,
+cancelación y traducción; se amplían TranslationTest/PlaybackIntegrationTest/
+PlayerIntegrationTest. Véase B08_PROVIDERS.md y ../../qa/B08_PROVIDERS.json para rutas y hashes.
+No se copian clientes adicionales ni se conecta un segundo reproductor/repositorio.

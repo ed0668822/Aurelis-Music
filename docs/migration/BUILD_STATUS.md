@@ -456,3 +456,17 @@ BUILD SUCCESSFUL in 5m 6s; debug/release/R8,179 casos por variante y lint correc
 Advertencias:224/223,0 errores. Firma/ZIP/textos legales/font/ARM64
 verificados; B03_EVIDENCE guarda hashes. Android real/Logcat/GPU pendientes.
 CI de entrega B03 pendiente, separado del QA127 aprobado.
+
+## B08 — proveedores y traducción
+
+Base32a40c935c7b1b05625e40c2527fe8f2cf751a24: GitHub Actions run147 SUCCESS,
+https://github.com/ed0668822/Aurelis-Music/actions/runs/42306027891,
+job128195419590 enlaza el SHA exacto. Este resultado corresponde a CI10/B07.2.
+
+Entrega B08: compilación local NO EJECUTADA por instrucción del usuario; suites
+unitarias/UI-Robolectric locales NO EJECUTADAS; GitHub compile/lint/test debug y
+release/APK nuevos PENDIENTES tras push.18 pruebas nuevas preparadas y dos
+revisiones estáticas, XML/recursos/diff revisados. Sin cambio de tareas o gates.
+Instalación, arranque, audio y consultas a servicios reales NO EJECUTADOS.
+Ver beta-local/B08_PROVIDERS.md y ../qa/B08_PROVIDERS.json.
+Esperar el resultado comunicado por el usuario antes de otra entrega; no B09.

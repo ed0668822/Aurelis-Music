@@ -329,3 +329,22 @@ en cada APK debe verificarse en GitHub; no equivale a validar su ejecución.
 
 Este documento no otorga derechos sobre canciones, letras, carátulas, marcas
 ni servicios externos. Sus respectivos titulares conservan sus derechos.
+
+B08 — local-first lyric providers and configured translation
+----------------------------------------------------------
+Reference reviewed: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/
+LyricsRepository.kt, LrcLib.kt, BetterLyrics.kt, BiniLyrics.kt,
+LrcRed.kt and LyricsTranslation.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE; existing notices
+and the original copyright above remain applicable to adapted code.
+Aurelis additions provide an explicit provider registry, cancellable bounded
+HTTP requests, diagnostics, and integration with the existing local repository,
+player and configured LibreTranslate-compatible client. No new third-party
+library, model, font or native binary is introduced by this block.
+A client code license does not license the lyrics served by a third party.
+Only LRCLIB is enabled for explicit lookup. BetterLyrics, BiniLyrics and lrc.red
+remain disabled pending verified service/content terms. Other legacy provider
+clients and unofficial translation endpoints are not connected to the active
+lookup/translation flow. See docs/migration/beta-local/B08_PROVIDERS.md and
+LICENSE_AUDIT.md for the scope, evidence and outstanding verification.

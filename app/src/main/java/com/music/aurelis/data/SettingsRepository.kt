@@ -119,7 +119,7 @@ object SettingsRepository {
         val savedSources = readStringSet("lyrics_sources", null)
         lyricsSources.value = if (savedSources != null) {
             LyricsSource.entries
-                .filter { it.name in savedSources && !it.hidden }
+                .filter { it.name in savedSources && it in LyricsSource.offered }
                 .toSet()
         } else {
             LyricsSource.offered.toSet()
@@ -234,13 +234,15 @@ object SettingsRepository {
     }
 
     fun setLyricsSources(value: Set<LyricsSource>) { writable();
-        lyricsSources.value = value
-        prefs.edit { putStringSet("lyrics_sources", value.map { it.name }.toSet()) }
+        val allowed = value.intersect(LyricsSource.offered.toSet())
+        lyricsSources.value = allowed
+        prefs.edit { putStringSet("lyrics_sources", allowed.map { it.name }.toSet()) }
     }
 
     fun setLyricsSourceOrder(value: List<LyricsSource>) { writable();
-        lyricsSourceOrder.value = value
-        prefs.edit { putString("lyrics_source_order", value.joinToString(",") { it.name }) }
+        val allowed = LyricsSource.ordered(value)
+        lyricsSourceOrder.value = allowed
+        prefs.edit { putString("lyrics_source_order", allowed.joinToString(",") { it.name }) }
     }
 
     fun setPrioritizeSyllableSync(value: Boolean) { writable();

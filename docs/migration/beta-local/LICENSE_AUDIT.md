@@ -177,3 +177,19 @@ contribuidores preservada en NOTICE y marcadores de los adaptadores. No se impor
 fuentes/recursos/proveedores/modelos ni dependencias nuevas. LICENSE/LICENSES y
 procedencias previas intactas. No se relabela código de terceros ni se afirma port
 completo del renderer; fixtures propios. Ver B07_2_SWEEP para alcance y pendientes.
+
+## B08 — proveedores y traducción
+
+Véase B08_PROVIDERS.md (tabla individual) y ../../qa/B08_PROVIDERS.json.
+Referencia F12 de BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 revisada
+sin escribir en origen. Conservados LICENSE y los avisos originales; NOTICE
+ampliado para identificar alcance de la adaptación y aportaciones Aurelis.
+Sin nueva dependencia, fuente, modelo o binario. No se presume licencia de letras
+por la licencia GPL del cliente. LRCLIB: consulta pública/manual ya aprobada en el
+plan; README público consultado, sin copiar letras o código de su servidor.
+BetterLyrics/Portato, BiniLyrics y lrc.red: condiciones de uso/contenido no
+acreditadas; deshabilitados en flujo activo y preferencias no pueden activarlos.
+BiniLyrics además requiere endurecer coincidencias/destinos antes de habilitarlo.
+Otros proveedores legacy no se despachan. Traducción: solo servidor HTTPS que
+configure el usuario; sin activar endpoints Google legacy ni claves embebidas.
+Disponibilidad real y derechos del contenido no certificados por esta revisión.

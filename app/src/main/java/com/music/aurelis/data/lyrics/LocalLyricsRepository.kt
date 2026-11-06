@@ -19,8 +19,7 @@ internal data class LocalLyricsResult(val lines: List<LyricLine>, val source: Ly
 internal class LocalLyricsRepository(
     context: Context,
     private val remote: suspend (LocalSong) -> LyricsRepository.Result? = { song ->
-        LyricsRepository.lyrics(song.title, song.artist, song.durationMs, song.album,
-            sources = setOf(LyricsSource.LRCLIB), order = listOf(LyricsSource.LRCLIB))
+        LyricsProviderRegistry.lookup(song)
     },
 ) {
     private val app = context.applicationContext
@@ -44,7 +43,7 @@ internal class LocalLyricsRepository(
         val result = remote(song) ?: return@withContext null
         currentCoroutineContext().ensureActive()
         if (result.lines.isEmpty()) return@withContext null
-        val found = LocalLyricsResult(result.lines, result.source, result.lines.any { it.timeMs > 0 || it.isWordSynced })
+        val found = LocalLyricsResult(result.lines, result.source, result.isSynced)
         // A cache write failure must not discard a successful provider response.
         try { writeMutex.withLock { currentCoroutineContext().ensureActive(); writeCache(song, found) } }
         catch (cancelled: CancellationException) { throw cancelled }

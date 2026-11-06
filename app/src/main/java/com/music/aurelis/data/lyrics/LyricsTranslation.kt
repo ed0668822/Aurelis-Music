@@ -18,6 +18,8 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.async
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.awaitAll
@@ -52,6 +54,7 @@ object LyricsTranslation {
         ) : Result
 
         data class SameLanguage(val language: String) : Result
+        data class Failed(val failure: LyricsFailure) : Result
         data object Unavailable : Result
     }
 
@@ -101,6 +104,7 @@ object LyricsTranslation {
         okhttp3.OkHttpClient.Builder()
             .followRedirects(false)
             .followSslRedirects(false)
+            .retryOnConnectionFailure(false)
             .callTimeout(12, TimeUnit.SECONDS)
             .connectTimeout(5, TimeUnit.SECONDS)
             .build()
@@ -147,6 +151,7 @@ object LyricsTranslation {
         allowNetwork: Boolean = true,
         httpClient: okhttp3.OkHttpClient = client,
     ): Result {
+        currentCoroutineContext().ensureActive()
         val target = targetLanguageTag.trim()
         val sourceTag = sourceLanguageTag.trim()
         if (target !in TranslationLanguages.supportedLanguages ||
@@ -154,7 +159,7 @@ object LyricsTranslation {
         if (sourceTag != "auto" && sameLanguage(sourceTag, target)) return Result.SameLanguage(sourceTag)
         val server = normaliseEndpoint(endpoint) ?: return Result.Unavailable
         val slots = flatten(lines)
-        if (slots.isEmpty() || slots.size > 500 || slots.sumOf { it.text.length } > 30_000 || slots.any { it.text.length > MAX_BATCH_CHARS }) return Result.Unavailable
+        if (slots.isEmpty() || slots.size > 500 || slots.sumOf { it.text.length } > 30_000 || slots.any { it.text.length > MAX_BATCH_CHARS }) return Result.Failed(LyricsFailure(LyricsFailureKind.TOO_LARGE))
         val key = cacheKey(trackId, "libre:$server:$sourceTag:$target", slots)
         val cached = memory.get(key) ?: readCache(key)?.also { memory.put(key, it) }
         if (cached != null && cached.version == CACHE_VERSION && cached.targetLanguage == target && cached.texts.size == slots.size && cached.texts.all { it.isNotBlank() }) {
@@ -162,39 +167,43 @@ object LyricsTranslation {
                 else Result.Translated(rebuild(lines, slots, cached.texts), cached.sourceLanguage, true)
         }
         if (!allowNetwork) return Result.Unavailable
-        val answers = coroutineScope {
-            batches(slots).chunked(MAX_PARALLEL_REQUESTS).flatMap { group ->
-                group.map { batch -> async { requestConfiguredBatch(batch, target, sourceTag, server, httpClient) } }.awaitAll()
+        val complete = try {
+            coroutineScope {
+                batches(slots).chunked(MAX_PARALLEL_REQUESTS).flatMap { group ->
+                    group.map { batch -> async { requestConfiguredBatch(batch, target, sourceTag, server, httpClient) } }.awaitAll()
+                }
             }
-        }
-        if (answers.any { it == null }) return Result.Unavailable
-        val complete = answers.filterNotNull()
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (error: LyricsRequestException) { return Result.Failed(error.failure) }
+        currentCoroutineContext().ensureActive()
         val texts = complete.flatMap { it.translations }
-        if (texts.size != slots.size || texts.sumOf { it.length } > 100_000) return Result.Unavailable
+        if (texts.size != slots.size || texts.sumOf { it.length } > 100_000) return Result.Failed(LyricsFailure(LyricsFailureKind.TOO_LARGE))
         val source = complete.groupBy { it.sourceLanguage }.maxByOrNull { (_, values) -> values.sumOf { it.sourceWeight } }?.key ?: "und"
         val entry = CachedTranslation(sourceLanguage = source, targetLanguage = target, texts = texts)
         memory.put(key, entry)
-        writeCache(key, entry)
+        try { writeCache(key, entry) }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { /* A successful translation remains usable without disk cache. */ }
+        currentCoroutineContext().ensureActive()
         return if (sameLanguage(source, target)) Result.SameLanguage(source)
             else Result.Translated(rebuild(lines, slots, texts), source, false)
     }
 
-    private suspend fun requestConfiguredBatch(batch: Batch, target: String, source: String, endpoint: String, httpClient: okhttp3.OkHttpClient): BatchAnswer? {
+    private suspend fun requestConfiguredBatch(batch: Batch, target: String, source: String, endpoint: String, httpClient: okhttp3.OkHttpClient): BatchAnswer {
         val url = endpoint.toHttpUrlOrNull()!!.newBuilder().addPathSegment("translate").build()
         val body = JSONObject().put("q", JSONArray(batch.slots.map { it.text })).put("source", source)
             .put("target", target).put("format", "text").toString().toRequestBody("application/json; charset=utf-8".toMediaType())
         val request = Request.Builder().url(url).header("User-Agent", LYRICS_AGENT).post(body).build()
-        val raw = try { httpClient.newCall(request).awaitBody() }
-            catch (cancelled: CancellationException) { throw cancelled } catch (_: IOException) { return null }
-        return runCatching {
+        val raw = requestLyricsBody(request, httpClient, 524_288)
+        return try {
             val response = JSONObject(raw)
             val value = response.get("translatedText")
             val texts = when (value) {
-                is JSONArray -> (0 until value.length()).map { value.getString(it) }
+                is JSONArray -> (0 until value.length()).map { value.get(it) as? String ?: throw IllegalArgumentException("Translation must be text") }
                 is String -> listOf(value)
-                else -> return@runCatching null
+                else -> throw IllegalArgumentException("Missing translation")
             }
-            if (texts.size != batch.slots.size || texts.any { it.isBlank() }) return@runCatching null
+            require(texts.size == batch.slots.size && texts.none { it.isBlank() })
             val detected = response.opt("detectedLanguage")
             val language = if (source != "auto") source else when (detected) {
                 is JSONObject -> detected.optString("language").ifBlank { "und" }
@@ -206,7 +215,7 @@ object LyricsTranslation {
                 else -> "und"
             }
             BatchAnswer(texts, language, batch.payload.length)
-        }.getOrNull()
+        } catch (_: Exception) { throw LyricsRequestException(LyricsFailure(LyricsFailureKind.INVALID_RESPONSE)) }
     }
 
     suspend fun romanize(
@@ -574,6 +583,7 @@ object LyricsTranslation {
                 val root = cacheDir ?: return@withLock null
                 val file = File(File(root, CACHE_DIRECTORY), "$key.json.gz")
                 if (!file.isFile) return@withLock null
+                currentCoroutineContext().ensureActive()
                 runCatching {
                     val value = GZIPInputStream(FileInputStream(file)).bufferedReader().use {
                         val bytes = it.readTextBounded()
@@ -592,6 +602,7 @@ object LyricsTranslation {
                 val directory = File(root, CACHE_DIRECTORY)
                 if (!directory.exists() && !directory.mkdirs()) return@withLock
                 val destination = File(directory, "$key.json.gz")
+                currentCoroutineContext().ensureActive()
                 runCatching {
                     val text = json.encodeToString(value)
                     require(text.length <= 524_288)

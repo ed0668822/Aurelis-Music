@@ -36,6 +36,7 @@ import com.music.aurelis.ui.player.PlayerPane
 import com.music.aurelis.ui.player.playerSwipeTrigger
 import com.music.aurelis.ui.components.SourceQualityBadge
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.media3.common.Player
@@ -94,10 +95,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.lyrics.TranslationLanguages
+import com.music.aurelis.playback.LyricsLookupState
 import com.music.aurelis.playback.LyricsState
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.playback.TranslationState
 import com.music.aurelis.ui.components.AnimatedArtwork
+import com.music.aurelis.ui.components.lyricsFailureText
 import com.music.aurelis.ui.components.LyricsSourcesDialog
 import com.music.aurelis.ui.components.PlayerControls
 import com.music.aurelis.ui.components.TranslationLanguageDialog
@@ -418,13 +421,32 @@ fun NowPlayingScreen(
 
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 TextButton(onClick = { importSongId = s.id; importLyrics.launch(arrayOf("text/*", "application/ttml+xml", "application/xml", "application/octet-stream", "application/x-subrip")) }) { Text("Importar LRC / TTML") }
-                                TextButton(onClick = playbackViewModel::searchLyrics, enabled = state.lyrics !is LyricsState.Loading) { Text("Buscar en LRCLIB") }
+                                TextButton(onClick = playbackViewModel::searchLyrics,
+                                    enabled = state.lyrics !is LyricsState.Loading && state.lyricsLookup !is LyricsLookupState.Loading) {
+                                    Text(stringResource(R.string.lyrics_search_lrclib))
+                                }
+                            }
+                            when (val lookup = state.lyricsLookup) {
+                                LyricsLookupState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(stringResource(R.string.lyrics_lookup_loading), modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
+                                    TextButton(onClick = playbackViewModel::cancelLyricsLookup) { Text(stringResource(R.string.lyrics_cancel_lookup)) }
+                                }
+                                LyricsLookupState.NotFound -> Text(stringResource(R.string.lyrics_lookup_not_found), modifier = Modifier.padding(16.dp))
+                                is LyricsLookupState.Failed -> Text(lyricsFailureText(lookup.failure), modifier = Modifier.padding(16.dp))
+                                else -> Unit
                             }
                             val loaded = state.lyrics as? LyricsState.Loaded
                             if (loaded != null) Text(loaded.source.label + if (loaded.cached) " · Caché" else "",
                                 modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelMedium)
                             when (translation) {
-                                TranslationState.Loading -> Text("Traduciendo…", modifier = Modifier.padding(16.dp))
+                                TranslationState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Traduciendo…", modifier = Modifier.weight(1f).padding(16.dp))
+                                    TextButton(onClick = playbackViewModel::clearTranslation) { Text(stringResource(R.string.lyrics_cancel_translation)) }
+                                }
+                                is TranslationState.Error -> Column {
+                                    Text(lyricsFailureText(translation.failure), modifier = Modifier.padding(16.dp))
+                                    TextButton(onClick = { showTranslationLanguages = true }) { Text(stringResource(R.string.lyrics_retry_translation)) }
+                                }
                                 TranslationState.Failed -> Text("No se pudo traducir. Revisa el servidor, la conexión o los idiomas y reintenta.", modifier = Modifier.padding(16.dp))
                                 is TranslationState.SameLanguage -> Text("La letra ya está en el idioma elegido.", modifier = Modifier.padding(16.dp))
                                 is TranslationState.Done -> Row {
@@ -480,7 +502,10 @@ fun NowPlayingScreen(
                     queueActionsEnabled = state.isConnected && state.canEditQueue,
                     playNextEnabled = !state.shuffleEnabled)
                 if (showLyricsSources) {
-                    LyricsSourcesDialog(onDismiss = { showLyricsSources = false })
+                    LyricsSourcesDialog(onDismiss = { showLyricsSources = false },
+                        currentSource = (state.lyrics as? LyricsState.Loaded)?.source,
+                        lookupState = state.lyricsLookup,
+                        onSearch = { showLyricsSources = false; playbackViewModel.searchLyrics() })
                 }
                 if (showTranslationLanguages) {
                     TranslationLanguageDialog(onDismiss = { showTranslationLanguages = false },

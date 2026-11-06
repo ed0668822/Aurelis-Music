@@ -229,6 +229,55 @@ class PlaybackIntegrationTest {
         assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id })
     }
 
+    @Test fun aLateRemoteLyricResponseCannotReplaceAnotherTrackOrChangePlayback() = runTest(dispatcher, timeout = 10.seconds) {
+        play(); player.pause(); settle()
+        vm.state.first { it.lyrics !is LyricsState.Loading }
+        val previousSources = SettingsRepository.lyricsSources.value
+        val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>(); val returned = CompletableDeferred<Unit>()
+        val before = player.replacements
+        vm.remoteLyricsRequest = {
+            entered.complete(Unit)
+            withContext(NonCancellable) { release.await() }
+            returned.complete(Unit)
+            com.music.aurelis.data.lyrics.LyricsRepository.Result(com.music.aurelis.data.lyrics.LyricsSource.LRCLIB,
+                listOf(com.music.aurelis.data.lyrics.LyricLine(1000, "Late lookup fixture")))
+        }
+        try {
+            SettingsRepository.lyricsSources.value = setOf(com.music.aurelis.data.lyrics.LyricsSource.LRCLIB)
+            vm.searchLyrics(); entered.await()
+            vm.next(); settle()
+            vm.state.first { it.currentSong?.id == "2" && it.lyrics !is LyricsState.Loading }
+            release.complete(Unit); returned.await(); settle()
+            assertEquals("2", vm.state.value.currentSong?.id)
+            assertEquals(LyricsLookupState.Idle, vm.state.value.lyricsLookup)
+            assertFalse(vm.state.value.lyrics is LyricsState.Loaded)
+            assertEquals(before, player.replacements); assertFalse(player.playWhenReady)
+        } finally { release.complete(Unit); SettingsRepository.lyricsSources.value = previousSources }
+    }
+
+    @Test fun cancellingRemoteLookupKeepsQueueAndAllowsExplicitRetry() = runTest(dispatcher, timeout = 10.seconds) {
+        play(); player.pause(); settle()
+        vm.state.first { it.lyrics !is LyricsState.Loading }
+        val previousSources = SettingsRepository.lyricsSources.value
+        val entered = CompletableDeferred<Unit>()
+        val queue = vm.state.value.queue
+        val before = player.replacements
+        vm.remoteLyricsRequest = { entered.complete(Unit); awaitCancellation() }
+        try {
+            SettingsRepository.lyricsSources.value = setOf(com.music.aurelis.data.lyrics.LyricsSource.LRCLIB)
+            vm.searchLyrics(); entered.await()
+            assertEquals(LyricsLookupState.Loading, vm.state.value.lyricsLookup)
+            vm.cancelLyricsLookup(); settle()
+            assertEquals(LyricsLookupState.Idle, vm.state.value.lyricsLookup)
+            assertEquals(LyricsState.Missing, vm.state.value.lyrics)
+            vm.remoteLyricsRequest = { null }
+            vm.searchLyrics()
+            vm.state.first { it.lyricsLookup is LyricsLookupState.NotFound }
+            assertEquals(queue, vm.state.value.queue); assertEquals(before, player.replacements)
+            assertFalse(player.playWhenReady)
+        } finally { SettingsRepository.lyricsSources.value = previousSources }
+    }
+
     @Test fun importedTtmlUsesTheSamePlayerPositionAcrossPauseAndSeeks() {
         play(); player.pause(); settle()
         val current = vm.state.value.currentSong!!.queueEntryId
