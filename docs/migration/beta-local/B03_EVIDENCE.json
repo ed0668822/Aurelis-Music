@@ -95,5 +95,12 @@
     "Explore and anchored HeldItem integration remain for their original future blocks"
   ],
   "ci": "pending this delivery SHA; QA127 was successful for b8b8910 only",
-  "next": "B04 not started; requires authorization; QA02 not started"
+  "next": "B04 not started; requires authorization; QA02 not started",
+  "implementation_commits": {
+    "B03.1": "e79f32a64cd0c6faf16538ee872132b6db6759e4",
+    "B03.2": "6b4bded2cd53545baea4c207a1bba9121bf209e6",
+    "B03.3": "2e91a09f8c8c4ab621a54ffe4992dd3280ba5eaa"
+  },
+  "code_commit": "2e91a09f8c8c4ab621a54ffe4992dd3280ba5eaa",
+  "pull_request": "https://github.com/ed0668822/Aurelis-Music/pull/1"
 }

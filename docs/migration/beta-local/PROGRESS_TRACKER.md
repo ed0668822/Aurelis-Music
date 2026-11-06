@@ -218,3 +218,9 @@ Capturas Robolectric en screenshots/b03; no Android real ni paridad GPU medida.
 Fuente local, estados, colas y navegación conectados, sin contenido de ejemplo
 en producción. Plan maestro/bloques, QA01, identidad, ABI y workflow intactos.
 Explore queda expresamente para B04, no implementado aquí. No iniciar B04 ni QA02.
+
+
+Entrega B03: código final `2e91a09f8c8c4ab621a54ffe4992dd3280ba5eaa`, commits por unidad y resultados
+en B03_CLOSEOUT.md/B03_EVIDENCE.json. Misma rama/PR1 sin renombrar ni merge.
+CI del SHA publicado pendiente de consulta; no reutilizar QA127. B04 no iniciado,
+requiere autorización. QA02 permanece sin iniciar; Android real pendiente.
