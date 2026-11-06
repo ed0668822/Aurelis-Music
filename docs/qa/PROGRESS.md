@@ -229,3 +229,15 @@ No descarga REST de logs ni prueba física. El bloqueo CI anterior queda superad
 para continuar B06 autorizado; QA02 no iniciado. B06.1 aporta21 casos preparados,
 sin ejecución local; su CI nuevo pendiente del resultado comunicado por usuario.
 Ver ../migration/beta-local/B06_1_QUEUE.md/.json para mantener separado el alcance.
+
+
+## CI06 — compilación de pruebas B06.1
+
+Run140/HEAD85100dd falla al compilar pruebas: token Media3 construido con tipo
+incorrecto y CustomActions tratado como AccessibilityAction en vez de lista.
+Anotaciones públicas recuperadas; REST Forbidden, sin logs completos descargados.
+Dos tests corregidos; métodos/asserts conservados, acción en hilo UI. Doble revisión
+estática del mismo agente, APIs contrastadas con javap y diff correcto. Producción,
+workflow/gates, Glass/QA01 y plan sin cambios. Compilación/tests nuevos PENDIENTES
+DE GITHUB; no Android local ni arranque verificado. Ver CI06_TEST_COMPILATION.md/.json.
+Mismo PR1; publicar, avisar y esperar resultado del usuario. No B07 ni QA02.

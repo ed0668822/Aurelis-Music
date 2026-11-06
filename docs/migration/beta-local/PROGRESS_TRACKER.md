@@ -345,3 +345,14 @@ ed0668822 <ed0668822@gmail.com>. Destino: rama existente y PR1
 https://github.com/ed0668822/Aurelis-Music/pull/1, título conservado.
 Checkpoint documental posterior sin cambiar el árbol de aplicación. CI/21 tests
 y Android real pendientes; siguiente B06.2 espera resultado del usuario.
+
+
+## CI06 — corrección antes de continuar B06/B07
+
+Run140 de85100dd falló al compilar dos tests B06.1; APK/gates posteriores omitidos.
+Corrección mínima: Builder recibe session.token directamente; CustomActions se lee
+como lista tipada y su acción se ejecuta en compose.runOnIdle. Todas las líneas de
+aserción y métodos de prueba conservados. Evidencia en ../../qa/CI06_TEST_COMPILATION.md/.json.
+Dos revisiones estáticas, no compilación/tests Android locales. Validación nueva
+pendiente de GitHub; publicar en misma rama/PR1 y esperar resultado del usuario.
+B06.1 no verificado; B06.2/.3/.4 y B07 pendientes, sin cambio de plan ni producción.

@@ -619,3 +619,12 @@ implementados;21 pruebas nuevas preparadas, sin Gradle/Android local. Documentac
 y estado en beta-local/B06_1_QUEUE.md/.json y PROGRESS_TRACKER. B06 permanece
 abierto: CI nuevo/Android/shuffle y B06.2/.3/.4 pendientes. Misma rama/PR1; conservar
 Liquid Glass, servicio y plan. Publicar, avisar y esperar resultado del usuario.
+
+
+## CI06 — reparación de pruebas B06.1 antes de B07
+
+Run140 (85100dd) identifica errores Kotlin en MediaSessionBridgeTest y
+PlayerIntegrationTest. Corregidos contratos de token y acciones de accesibilidad,
+sin modificar código de aplicación/Glass ni debilitar aserciones. Evidencias
+en ../qa/CI06_TEST_COMPILATION.md/.json. Doble revisión estática; compilación y
+tests pendientes exclusivamente de GitHub. No inicio de B07 ni de otras unidades.

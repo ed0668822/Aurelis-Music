@@ -201,7 +201,9 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertEquals(listOf("1", "2", "3", "1"), vm.state.value.queue.map { it.id }) }
         compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
         val playingEntry = vm.state.value.currentSong!!.queueEntryId
-        compose.onNodeWithTag("queue-entry-$playingEntry").performSemanticsAction(SemanticsActions.CustomActions) { actions ->
+        val actions = compose.onNodeWithTag("queue-entry-$playingEntry")
+            .fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        compose.runOnIdle {
             assertTrue(actions.single { it.label == "Bajar en la cola" }.action())
         }
         compose.runOnIdle {

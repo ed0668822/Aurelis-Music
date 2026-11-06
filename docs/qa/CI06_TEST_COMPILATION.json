@@ -1,0 +1,80 @@
+{
+  "unit": "CI06",
+  "scope": "B06.1 test compilation repair; B07 not started",
+  "base": "85100dd609f703fad08ce944e4f00122a62a0431",
+  "failed_run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42264944266",
+  "failed_run_number": 140,
+  "failed_job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42264944266/job/128054295195",
+  "failed_head": "85100dd609f703fad08ce944e4f00122a62a0431",
+  "observed_gate": "tests=failure, build=skipped, verify=skipped, upload_apk=skipped",
+  "access": "gh run view --log-failed: Forbidden; public job HTML annotations and commit link retrieved",
+  "annotations": [
+    {
+      "location": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L205",
+      "message": "Unresolved reference 'action'."
+    },
+    {
+      "location": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L205",
+      "message": "Unresolved reference 'it'."
+    },
+    {
+      "location": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L204",
+      "message": "Cannot infer type for type parameter 'T'. Specify it explicitly."
+    },
+    {
+      "location": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L204",
+      "message": "Argument type mismatch: actual type is 'SemanticsPropertyKey<List<CustomAccessibilityAction>>', but 'SemanticsPropertyKey<AccessibilityAction<uninferred T (of fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsAction)>>' was expected."
+    },
+    {
+      "location": "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L204",
+      "message": "Cannot infer type for type parameter 'T'. Specify it explicitly."
+    },
+    {
+      "location": "app/src/test/java/com/music/aurelis/playback/MediaSessionBridgeTest.kt#L58",
+      "message": "Unresolved reference 'SessionToken'."
+    }
+  ],
+  "causes": [
+    "MediaSession.token is already a Media3 SessionToken; wrapping it in SessionToken(context, token) uses no valid constructor and the type was not imported.",
+    "SemanticsActions.CustomActions is a property containing List<CustomAccessibilityAction>, not a SemanticsPropertyKey<AccessibilityAction<T>> accepted by performSemanticsAction."
+  ],
+  "changes": [
+    "Pass session.token directly into MediaController.Builder, matching the pre-existing working test.",
+    "Read the typed action list from fetchSemanticsNode().config and invoke the selected action inside compose.runOnIdle; retain assertTrue and queue/item/index assertions."
+  ],
+  "modified_test_files": [
+    "app/src/test/java/com/music/aurelis/playback/MediaSessionBridgeTest.kt",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt"
+  ],
+  "verification": {
+    "api_inspection": "javap: MediaSession.getToken returns SessionToken; MediaController.Builder accepts SessionToken; SemanticsActions.getCustomActions returns list key; SemanticsConfiguration.get is generic; CustomAccessibilityAction.getAction returns Function0<Boolean>",
+    "test_names_and_assertion_lines": "unchanged in both files, checked against baseline",
+    "diff_check": "passed",
+    "protected_paths": "unchanged",
+    "review1": "static root cause, API contract and minimal patch review; same agent",
+    "review2": "static assertion preservation, UI thread and main-plan/production protection review; same agent",
+    "local_android_compilation_and_tests": "NOT_EXECUTED_USER_REQUESTS_GITHUB_ONLY",
+    "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+    "android_runtime": "NOT_EXECUTED"
+  },
+  "protected_paths": [
+    "app/src/main",
+    ".github",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "app/build.gradle.kts",
+    "settings.gradle.kts",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "source_sha256": {
+    "app/src/test/java/com/music/aurelis/playback/MediaSessionBridgeTest.kt": "8e6c39310d64f85eeb420903d5bb11efe55286b162bf2b2a87b336f5bffa31a3",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "f66f637702494d87c762d47851b6982e221866f950258e8d092c2cc872d6cd2f"
+  },
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "next": "Publish on the same branch/PR; wait for user CI result; B06.2/B06.3/B06.4 and B07 not started by this correction"
+}

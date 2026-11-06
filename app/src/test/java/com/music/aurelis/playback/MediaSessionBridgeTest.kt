@@ -55,7 +55,7 @@ class MediaSessionBridgeTest {
         val session = MediaSession.Builder(app, player).build()
         var controller: MediaController? = null
         try {
-            val future = MediaController.Builder(app, SessionToken(app, session.token)).buildAsync()
+            val future = MediaController.Builder(app, session.token).buildAsync()
             await { future.isDone }; val connected = future.get(); controller = connected
             val queue = QueueCoordinator { connected }
             val current = player.currentMediaItem!!.queueEntryId
