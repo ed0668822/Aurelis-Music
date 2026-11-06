@@ -200,3 +200,6 @@ Anotaciones JUnit públicas y reconocimiento del resumen Gradle multi-failure.
 23 pruebas de utilidades correctas; UI/Android/Gradle pendientes exclusivamente en
 GitHub. Dos revisiones estáticas del mismo agente. Evidencia en CI04_INVESTIGATION.
 Mismo PR1, sin workflow/gates/servicio/Glass/plan alterados. No B06/QA02.
+
+Commit de corrección CI04: `6a57325f45a3c4f1e044c3d44a2ed05dc0b5fc80`. Misma rama/PR1; nueva
+verificación Android pendiente en GitHub. No B06/QA02 ni compilación local.
