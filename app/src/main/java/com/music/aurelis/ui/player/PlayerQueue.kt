@@ -148,8 +148,10 @@ internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: 
     return QueueTracks(track(currentIndex, "np"), user, context, autoplay, history)
 }
 
-private fun LazyItemScope.queueMotion(reduceMotion: Boolean): Modifier =
-    if (reduceMotion) Modifier else Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = QUEUE_ROW_MOTION)
+private fun Modifier.queueMotion(itemScope: LazyItemScope, reduceMotion: Boolean): Modifier =
+    if (reduceMotion) this else with(itemScope) {
+        this@queueMotion.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = QUEUE_ROW_MOTION)
+    }
 
 @Composable
 internal fun InlineQueue(
@@ -208,14 +210,14 @@ internal fun InlineQueue(
                 if (tracks.history.isNotEmpty()) {
                     item(key = "header-history") { QueueHeading(stringResource(R.string.previously_played), Modifier.padding(top = 12.dp, bottom = 6.dp)) }
                     items(tracks.history, key = { it.key }) { track ->
-                        InlineQueueRow(track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = controlsLocked, modifier = queueMotion(reduceMotion))
+                        InlineQueueRow(track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = controlsLocked, modifier = Modifier.queueMotion(this, reduceMotion))
                     }
                 }
                 if (nowPlaying != null) {
                     item(key = "header-now-playing") { QueueHeading(stringResource(R.string.now_playing), Modifier.padding(top = 12.dp, bottom = 6.dp)) }
                     item(key = nowPlaying.key) {
                         InlineQueueRow(nowPlaying.song, true, { onJumpTo(nowPlaying.timelineIndex) }, { onRemove(nowPlaying.timelineIndex) },
-                            locked = controlsLocked, modifier = queueMotion(reduceMotion).semantics {
+                            locked = controlsLocked, modifier = Modifier.queueMotion(this, reduceMotion).semantics {
                                 if (!controlsLocked) customActions = buildList {
                                     if (currentIndex > 0) add(CustomAccessibilityAction("Subir en la cola") {
                                         onMove(currentIndex, currentIndex - 1); true
@@ -229,7 +231,7 @@ internal fun InlineQueue(
                 }
                 if (tracks.user.isNotEmpty()) {
                     item(key = "header-user-queue") {
-                        QueueHeading(stringResource(R.string.next_in_queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion(reduceMotion))) {
+                        QueueHeading(stringResource(R.string.next_in_queue), Modifier.padding(top = 16.dp, bottom = 6.dp).queueMotion(this, reduceMotion)) {
                             QueueClearButton(MaterialTheme.typography.labelLarge, controlsLocked, onClear)
                         }
                     }
@@ -237,12 +239,12 @@ internal fun InlineQueue(
                 }
                 if (tracks.context.isNotEmpty()) {
                     item(key = "header-context") {
-                        QueueHeading(if (contextTitle != null) stringResource(R.string.next_from, contextTitle) else stringResource(R.string.queue), Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion(reduceMotion)))
+                        QueueHeading(if (contextTitle != null) stringResource(R.string.next_from, contextTitle) else stringResource(R.string.queue), Modifier.padding(top = 16.dp, bottom = 6.dp).queueMotion(this, reduceMotion))
                     }
                     queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
                 }
                 if (autoplayEnabled || tracks.autoplay.isNotEmpty()) {
-                    item(key = "autoplay-heading") { AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = queueMotion(reduceMotion)) }
+                    item(key = "autoplay-heading") { AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = Modifier.queueMotion(this, reduceMotion)) }
                     queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
                 }
             }
@@ -264,7 +266,7 @@ private fun LazyListScope.queueSection(
         InlineQueueRow(
             track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = locked,
             draggable = !locked, onDragStart = { drag.start(track.key, section) }, onDrag = drag::drag, onDragEnd = { drag.end(track.key) },
-            modifier = (if (held) Modifier.alpha(0f) else queueMotion(reduceMotion)).semantics {
+            modifier = (if (held) Modifier.alpha(0f) else Modifier.queueMotion(this, reduceMotion)).semantics {
                 if (!locked) {
                     val rowIndex = rows.indexOfFirst { it.key == track.key }
                     customActions = buildList {

@@ -1,0 +1,107 @@
+{
+  "unit": "CI08",
+  "delivery": "1 of 3 proposed warning-remediation deliveries",
+  "authorization": "User authorized the first delivery only; do not advance to ONNX/dependency/SDK changes or B07",
+  "base": "c4a627d0b6d91c9ce25d2ab29992a8f93d723cba",
+  "branch": "feature/bitchord-local-migration",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "reference_ci": {
+    "run": 142,
+    "head": "c4a627d0b6d91c9ce25d2ab29992a8f93d723cba",
+    "url": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42271015823",
+    "conclusion": "SUCCESS",
+    "provenance": "Public Actions/job pages inspected in the previous read-only review; user subsequently supplied the first20 diagnostics"
+  },
+  "warning_entries_addressed": 9,
+  "changes": [
+    {
+      "warnings": 4,
+      "change": "Localized @OptIn(ExperimentalHazeMaterialsApi::class) in aurelisHazeEffect and liquidGlass; Haze API contract inspected, no rendering-body or shader change"
+    },
+    {
+      "warnings": 1,
+      "change": "queueMotion is now a Modifier extension with explicit LazyItemScope; retains incoming modifier in both branches and existing animateItem parameters; six call sites adapted"
+    },
+    {
+      "warnings": 2,
+      "change": "modifier is first optional parameter in SettingsSubRow and SongRowSkeleton; all production/test call sites checked, optional arguments already named"
+    },
+    {
+      "warnings": 1,
+      "change": "AudioRouting.formOf uses exhaustive when/else; retains BLE speaker, hearing-aid and name/class/UNKNOWN fallback order"
+    },
+    {
+      "warnings": 1,
+      "change": "Remove redundant @RequiresApi(33) and now-unused imports; update below-API33 comments, leave registration/disposal executable code unchanged; minSdk33 unchanged"
+    }
+  ],
+  "source_files": [
+    "app/src/main/java/com/music/aurelis/playback/AudioRouting.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/SettingsComponents.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/Skeletons.kt",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerPlatformUi.kt",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerQueue.kt",
+    "app/src/main/java/com/music/aurelis/ui/theme/Haze.kt"
+  ],
+  "source_sha256": {
+    "app/src/main/java/com/music/aurelis/playback/AudioRouting.kt": "409eba0c6e0fcdcbf62713a62ef203eee1004ea6d10467e61615bf6d620b5d7f",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt": "41f2f260fb128752888439c3068231168cf03265aa164eee37a132f467ac1367",
+    "app/src/main/java/com/music/aurelis/ui/components/SettingsComponents.kt": "bb8cea6c9a381bc8b87e72fdaee8002f1eb3ef06e6cb4ed799bf72160428a1d8",
+    "app/src/main/java/com/music/aurelis/ui/components/Skeletons.kt": "7c52db63d8cc91a7ceccb24337477435d3782f1959a761653c57cb607c3ebaa8",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerPlatformUi.kt": "c05efabede2a8c3fb95a59a6a607666964a7985eb0a0de4acc04d67d669f1a14",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerQueue.kt": "3b4cd80b70c9afd58a3371f53108814de82d7a36f001c88a27c1723786bddb0b",
+    "app/src/main/java/com/music/aurelis/ui/theme/Haze.kt": "6fdaf0739e1abb6518b3c42c708c8ebf059988df46b1745d7b49410f2419679c"
+  },
+  "reviews": {
+    "review1": "Static API/scoping/call-site/branch-equivalence review, same agent; javap verified Haze opt-in WARNING contract and LazyItemScope.animateItem member extension",
+    "review2": "Separate static preservation pass, same agent: rendering/back executable code and queue changes constrained; tests, licenses, plans and build settings unchanged"
+  },
+  "static_checks": [
+    "git diff --check passed",
+    "Glass/Haze unchanged after excluding opt-in import/declaration",
+    "All six queue modifier call sites updated; drag/semantics/tween/state untouched",
+    "SettingsSubRow/SongRowSkeleton callers inspected; required positionals and named optional arguments remain valid",
+    "Back-handler code unchanged excluding comments/redundant annotation/imports",
+    "Protected paths compared with base; unchanged"
+  ],
+  "android_compilation_and_tests_locally": "NOT_EXECUTED_USER_REQUESTS_GITHUB_ONLY",
+  "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+  "runtime_validation": "NOT_EXECUTED_NO_ANDROID_DEVICE",
+  "existing_regression_coverage_to_run_in_github": [
+    "GlassRenderingTest",
+    "VisualSystemTest",
+    "SharedGesturesTest",
+    "PlayerIntegrationTest",
+    "QueueCoordinatorTest",
+    "SettingsIntegrationTest",
+    "full existing debug/release unit suites and lint"
+  ],
+  "new_tests": "None: declaration/signature/control-flow cleanup; existing regression tests unchanged, no mirrored tests added",
+  "pending_warning_entries": 11,
+  "pending": [
+    "ONNX 16KB alignment: two report entries for same component; native fix/ELF/model validation pending next delivery",
+    "Six AndroidX update notices, Gradle update and targetSdk notice pending compatibility review and later delivery",
+    "x86_64 ChromeOS warning retained as ARM64 scope limitation, no ABI change"
+  ],
+  "protected_paths": [
+    "app/src/test",
+    ".github",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop",
+    "app/src/main/java/com/music/aurelis/playback/AurelisPlaybackService.kt",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/cpp",
+    "app/src/main/jniLibs",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "app/build.gradle.kts",
+    "settings.gradle.kts",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "next": "Publish same PR; notify user; wait for user GitHub result before requesting/starting delivery2. No B07 or B06.2/.3/.4/QA02."
+}

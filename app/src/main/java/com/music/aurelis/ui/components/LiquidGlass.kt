@@ -38,6 +38,7 @@ import com.music.aurelis.ui.components.backdrop.internal.ShapeProvider
 import com.music.aurelis.ui.components.backdrop.shadow.Shadow
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /** Whether the liquid glass nav bar is turned on — see [SettingsRepository.liquidGlass]. */
@@ -165,6 +166,7 @@ fun Modifier.liquidGlassRim(shape: CornerBasedShape): Modifier {
  * and software renderers use an opaque surface; Haze is the compatible fallback
  * when the renderer supports blur but cannot compile the refraction programs.
  */
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun Modifier.liquidGlass(
     shape: CornerBasedShape,

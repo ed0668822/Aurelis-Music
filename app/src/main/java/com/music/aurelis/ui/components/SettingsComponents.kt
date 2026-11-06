@@ -148,9 +148,9 @@ fun SettingsSubRow(
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     badge: String? = null,
     subtitle: String? = null,
-    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier

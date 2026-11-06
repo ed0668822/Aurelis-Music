@@ -376,3 +376,16 @@ No cierre de B06 ni inicio de B07/B06.2/.3/.4/QA02 en esta corrección.
 Entrega CI07 — corrección `fe43f5b881f3f067aa0e6cb10afb504153f341f6`; mismo PR1 y rama existente.
 Checkpoint documental posterior sin cambiar tests/app. Compilación y ejecución
 pendientes exclusivamente de GitHub; esperar resultado del usuario antes de avanzar.
+
+
+## CI08 — entrega1 de advertencias antes de B07
+
+Autorizada la primera entrega propuesta, con base c4a627d/run142 SUCCESS observado
+en revisión anterior. OptIn Haze localizado, helper Modifier con LazyItemScope
+explícito, parámetros Modifier reordenados, fallback audio exhaustivo y anotación
+API33 redundante retirada. Nueve entradas atendidas, pendientes de confirmar en CI.
+Ver ../../qa/CI08_WARNING_CLEANUP.md/.json para archivos/hashes y doble revisión
+estática. Glass/motion/servicio/plan/pruebas/firmas/SDK/ABI intactos. Sin Android
+local; compilación/lint/tests exclusivamente GitHub. Publicar mismo PR1 y esperar
+resultado del usuario. Entrega2 ONNX y entrega3 actualizaciones pendientes; no B07
+ni B06.2/.3/.4/QA02 en esta corrección complementaria.

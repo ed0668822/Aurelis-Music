@@ -88,7 +88,7 @@ fun SectionHeaderSkeleton(index: Int = 0) {
 }
 
 @Composable
-fun SongRowSkeleton(index: Int = 0, modifier: Modifier = Modifier, circular: Boolean = false) {
+fun SongRowSkeleton(modifier: Modifier = Modifier, index: Int = 0, circular: Boolean = false) {
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

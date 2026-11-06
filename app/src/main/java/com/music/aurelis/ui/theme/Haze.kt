@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.BoxScope
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
@@ -51,6 +52,7 @@ enum class AurelisHazeStyle {
  * @param style El estilo de haze (thin, regular, thick).
  * @param tint El color de tint para el haze (se adapta automáticamente al tema).
  */
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun Modifier.aurelisHazeEffect(
     hazeState: HazeState,

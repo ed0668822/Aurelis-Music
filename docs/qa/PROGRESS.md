@@ -253,3 +253,15 @@ reforzado. Solo test/documentación; gate/app/Glass/plan intactos. Evidencias en
 CI07_QUEUE_TEST_TARGETS.md/.json. Doble revisión estática; tests/compilación nuevos
 pendientes exclusivamente de GitHub. Publicar mismo PR y esperar aviso del usuario.
 No Android físico ni inicio de B07/QA02.
+
+
+## CI08 — limpieza de advertencias, entrega1 autorizada
+
+Base c4a627d, cuyo run142 SUCCESS se observó en revisión previa. De las20 entradas
+proporcionadas por el usuario se atienden9:4 Haze,3 convenciones Modifier,1 when
+y1 anotación API33. Siete archivos de producción; detalle/hashes/revisiones en
+CI08_WARNING_CLEANUP.md/.json. Dos pasadas estáticas del mismo agente; sin cambios
+de tests, dependencias/SDK/ABI, motores, shaders/QA01, workflow/gates o plan.
+Compilación/lint/tests nuevos PENDIENTES DE GITHUB, no ejecutados localmente.
+ONNX16KB y otras11 entradas pendientes; no se ocultan. Publicar mismo PR y esperar
+resultado del usuario antes de siguiente entrega/autorización. No B07 ni QA02.

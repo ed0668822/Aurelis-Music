@@ -638,3 +638,13 @@ explícito y objetivos por ocurrencia/unmerged; aserciones preservadas y reforza
 Evidencia y límites en ../qa/CI07_QUEUE_TEST_TARGETS.md/.json. Compilación/tests
 pendientes exclusivamente de GitHub; publicar mismo PR y esperar aviso del usuario.
 B07 y demás unidades nuevas no iniciados.
+
+
+## CI08 — advertencias antes de B07, primera entrega
+
+Autorizada limpieza limitada de código: siete archivos, nueve entradas del
+listado atendidas con preservación de Glass, animaciones, clasificación y callbacks.
+No cambios de dependencias/SDK/ABI ni plan principal. Doble revisión estática;
+compilación/lint/tests exclusivamente GitHub, pendientes. Evidencias y límites en
+../qa/CI08_WARNING_CLEANUP.md/.json. ONNX16KB/actualizaciones pendientes de siguientes
+entregas; publicar mismo PR y esperar aviso del usuario, sin iniciar B07.

@@ -1,13 +1,11 @@
 // Aurelis © 2026. GPL-3.0-or-later.
 package com.music.aurelis.ui.player
 
-import android.os.Build
 import android.os.SystemClock
 import android.view.View
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -47,11 +45,10 @@ internal fun appLanguageTag(): String {
  * and from API 33 the sheet puts its own dismiss straight onto the window's
  * OnBackInvokedDispatcher at PRIORITY_DEFAULT — which is also where the dialog
  * dispatcher that every BackHandler feeds ends up, and at equal priority the
- * platform picks whichever registered last: the sheet's, every time. So on 33+
- * this outranks it with an overlay-priority callback for as long as [enabled]
- * holds, and only that long — otherwise the sheet keeps its own back handling
- * and its predictive-back shrink. Below 33 there is no window dispatcher to
- * outrank and the BackHandler is already the newest callback on the dialog's.
+ * platform picks whichever registered last: the sheet's, every time. All supported
+ * devices are API33+, so this outranks it with an overlay-priority callback for as
+ * long as [enabled] holds. Otherwise the sheet keeps its own back handling and
+ * its predictive-back shrink.
  */
 @Composable
 internal fun PlayerBackHandler(enabled: Boolean, onBack: () -> Unit) {
@@ -67,12 +64,10 @@ internal fun PlayerBackHandler(enabled: Boolean, onBack: () -> Unit) {
  * A back callback that outranks whatever else the window has registered —
  * here, the sheet the player is drawn in.
  *
- * Everything that names an `android.window` type lives in this object so those
- * classes, which don't exist below API 33, are only ever *loaded* on a device
- * that has them: the callback comes back as [Any] rather than as the platform
- * interface for the same reason.
+ * The Android window dispatcher is available on every supported device because
+ * Aurelis has minSdk33. Callback registration and disposal remain scoped to the
+ * player overlay.
  */
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private object OverlayBack {
     fun register(view: View, onBack: () -> Unit): Any? {
         val dispatcher = view.findOnBackInvokedDispatcher() ?: return null
