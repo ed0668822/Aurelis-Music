@@ -67,7 +67,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import com.music.aurelis.ui.player.PlayerDock
+import com.music.aurelis.ui.player.PlayerSheetMotion
+import com.music.aurelis.ui.player.playerDockArtwork
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -107,6 +117,8 @@ fun NowPlayingScreen(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     onOpenQueue: () -> Unit,
+    dock: PlayerDock? = null,
+    panelMotion: PlayerSheetMotion? = null,
 ) {
     val state by playbackViewModel.state.collectAsState()
     var importSongId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -143,6 +155,11 @@ fun NowPlayingScreen(
     val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsState()
     val reduceAnimation by SettingsRepository.reduceAnimation.collectAsState()
     val hazeState = remember { HazeState() }
+    val closePlayer: () -> Unit = { if (panelMotion != null && song != null) panelMotion.close() else onDismiss() }
+    BackHandler(enabled = isVisible && !showLyrics) { closePlayer() }
+    LaunchedEffect(isVisible, song?.id, panelMotion) {
+        if (isVisible && song != null) panelMotion?.reveal()
+    }
 
     if (showQuality && isVisible && song != null) androidx.compose.material3.AlertDialog(
         onDismissRequest = { showQuality = false }, title = { Text("Información de audio") },
@@ -152,21 +169,33 @@ fun NowPlayingScreen(
 
     AnimatedVisibility(
         visible = isVisible && song != null,
-        enter = if (reduceAnimation) androidx.compose.animation.EnterTransition.None else slideInVertically(
+        enter = if (reduceAnimation || panelMotion != null) androidx.compose.animation.EnterTransition.None else slideInVertically(
             animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
             initialOffsetY = { it },
         ) + fadeIn(animationSpec = tween(280)),
-        exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else slideOutVertically(
+        exit = if (reduceAnimation || panelMotion != null) androidx.compose.animation.ExitTransition.None else slideOutVertically(
             animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
             targetOffsetY = { it },
         ) + fadeOut(animationSpec = tween(220)),
     ) {
         val s = song ?: return@AnimatedVisibility
+        DisposableEffect(panelMotion, dock) {
+            onDispose { dock?.attached = false; dock?.releasePanel(); panelMotion?.onSheetGone() }
+        }
 
         DynamicAurelisTheme(colors = artworkColors ?: fallbackColors) {
+            // Intercept new touches outside the moving panel; an existing mini-player
+            // drag retains its original pointer path until release or cancellation.
+            Box(Modifier.fillMaxSize().pointerInput(panelMotion) { detectTapGestures { closePlayer() } })
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .onSizeChanged { if (it.width > 0 && it.height > 0) panelMotion?.laidOut = true }
+                    .graphicsLayer {
+                        translationY = panelMotion?.position()?.takeIf { it.isFinite() } ?: 0f
+                        alpha = if (dock?.coversArtwork(s.id) == true) dock.openFraction() else 1f
+                    }
+                    .pointerInput(Unit) { detectTapGestures { } }
                     .background(MaterialTheme.colorScheme.background)
                     .hazeSource(hazeState),
             ) {
@@ -195,10 +224,10 @@ fun NowPlayingScreen(
 
                 val header: @Composable () -> Unit = {
                     Row(
-                        modifier = Modifier.fillMaxWidth().testTag("player-handle").playerSwipeTrigger(1, onDismiss),
+                        modifier = Modifier.fillMaxWidth().testTag("player-handle").playerSwipeTrigger(1, closePlayer, panelMotion),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = onDismiss) {
+                        IconButton(onClick = closePlayer) {
                             Icon(
                                 imageVector = Icons.Rounded.KeyboardArrowDown,
                                 contentDescription = "Cerrar reproductor",
@@ -239,7 +268,7 @@ fun NowPlayingScreen(
                         artworkUri = s.artworkUri,
                         title = s.title,
                         size = artworkSize,
-                        modifier = artworkModifier,
+                        modifier = artworkModifier.playerDockArtwork(dock, s.id, mini = false),
                         progressFraction = progressFraction,
                     )
 
@@ -331,8 +360,9 @@ fun NowPlayingScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
-                BoxWithConstraints(Modifier.fillMaxSize()
+                BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { dock?.reportPanel(it) }
                     .then(if (showLyrics) Modifier.clearAndSetSemantics { } else Modifier)) {
+                    SideEffect { dock?.attached = isVisible && !reduceAnimation && maxWidth <= maxHeight }
                     if (maxWidth > maxHeight) {
                         LandscapePlayerLayout(
                             pane = PlayerPane.Main, background = {},

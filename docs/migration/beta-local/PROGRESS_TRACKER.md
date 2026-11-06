@@ -258,3 +258,18 @@ GitHub, pendientes. Sin Android físico/sonido/Logcat verificados. Dos revisione
 estáticas del mismo agente. Firma/ABI/servicio/QA01/GLASS01/plan preservados.
 Misma rama/PR1; publicar/avisar y esperar resultado del usuario. No B06 ni QA02.
 No declarar B05 cerrado: siguiente trabajo será completar B05.2 y validaciones.
+
+
+## B05.2 — panel progresivo / dock, continuación autorizada
+
+Base a5e06bc. PlayerSheetMotion existente conectado al host activo, sin segundo
+motor; arrastre/cancelación/velocidad, dock medido del mismo track y carátula
+superpuesta durante movimiento portrait. Fondo y MiniPlayer conservados debajo
+con semántica aislada. Sin medidas/animación reducida/landscape: slide normal.
+Detalles, archivos, revisiones y límites en B05_2_PANEL_DOCK.md/.json.
+Siete pruebas nuevas y regresión de swipe actualizada: NO EJECUTADAS aquí.
+Dos revisiones estáticas separadas del mismo agente; API inspeccionada con javap.
+Compilación/lint/pruebas solo en GitHub, pendientes de resultado del usuario.
+No Android físico, capturas GPU, Logcat ni sonido verificados. Servicio, calidad,
+B04, QA01, GLASS01, firmas/ABI/workflow/licencias íntegras y plan principal intactos.
+No cierre total B05 ni B06/QA02: paridad visual y validación siguen pendientes.

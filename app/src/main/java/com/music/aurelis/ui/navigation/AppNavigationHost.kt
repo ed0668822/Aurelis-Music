@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 
 /**
  * One visible page, saved state per tab/page, and playback overlays kept composed
@@ -27,22 +28,28 @@ fun AppNavigationHost(
 ) {
     val stateHolder = rememberSaveableStateHolder()
     val route = navigator.visibleRoute()
+    val playbackPage = route == AppRoute.NowPlaying || route == AppRoute.Queue
+    val pageRoute = if (playbackPage) navigator.entries.asReversed().firstOrNull {
+        it.route != AppRoute.NowPlaying && it.route != AppRoute.Queue
+    }?.route else route
     BackHandler(enabled = navigator.canGoBack) { navigator.back() }
 
     Box(modifier.fillMaxSize()) {
-        Surface(Modifier.fillMaxSize().then(pageModifier), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().then(pageModifier).then(if (playbackPage) Modifier.clearAndSetSemantics { } else Modifier), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize()) {
-                if (route == null) {
+                if (pageRoute == null) {
                     stateHolder.SaveableStateProvider("tab.${navigator.selectedTab.name}") {
                         tabContent(navigator.selectedTab)
                     }
-                } else if (route != AppRoute.NowPlaying && route != AppRoute.Queue) {
-                    val key = requireNotNull(route.navigationKey) { "Destination is not wired in the local graph" }
-                    stateHolder.SaveableStateProvider("page.$key") { routeContent(route) }
+                } else {
+                    val key = requireNotNull(pageRoute.navigationKey) { "Destination is not wired in the local graph" }
+                    stateHolder.SaveableStateProvider("page.$key") { routeContent(pageRoute) }
                 }
             }
         }
-        if (route == null) bottomBar()
+        if (route == null || (route == AppRoute.NowPlaying && pageRoute == null)) {
+            Box(Modifier.fillMaxSize().then(if (playbackPage) Modifier.clearAndSetSemantics { } else Modifier)) { bottomBar() }
+        }
         playbackOverlays()
     }
 }

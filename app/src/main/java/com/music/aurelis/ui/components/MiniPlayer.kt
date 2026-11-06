@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import com.music.aurelis.ui.player.playerSwipeTrigger
+import com.music.aurelis.ui.player.PlayerDock
+import com.music.aurelis.ui.player.MiniPlayerPull
+import com.music.aurelis.ui.player.playerDockArtwork
 
 @Composable
 fun MiniPlayer(
@@ -36,18 +39,21 @@ fun MiniPlayer(
     onNext: () -> Unit = {},
     progress: Float = 0f,
     qualityLabel: String? = null,
+    songId: String = "",
+    dock: PlayerDock? = null,
+    pull: MiniPlayerPull? = null,
 ) {
     val glass = LocalLiquidGlassEnabled.current
     val shape = RoundedCornerShape(percent = 50)
     val surface = if (glass) Modifier.liquidGlass(shape,
         fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh) else Modifier
-    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").playerSwipeTrigger(-1, onClick).then(surface),
+    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").playerSwipeTrigger(-1, onClick, pull).then(surface),
         shape = shape, color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (glass) 0.dp else 4.dp, onClick = onClick) {
         Column {
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 12.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
+                Box(Modifier.size(40.dp).playerDockArtwork(dock, songId, mini = true).clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.MusicNote, null, Modifier.size(24.dp))
                     AsyncImage(artworkUri, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)

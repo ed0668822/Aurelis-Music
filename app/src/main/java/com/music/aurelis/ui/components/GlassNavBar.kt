@@ -76,6 +76,7 @@ fun GlassNavBar(
     controlsLocked: Boolean = false,
     onBlockedControl: () -> Unit = {},
     dock: PlayerDock? = null,
+    pull: com.music.aurelis.ui.player.MiniPlayerPull? = null,
     canNext: Boolean = true,
     progress: Float = 0f,
     qualityLabel: String? = null,
@@ -183,6 +184,7 @@ fun GlassNavBar(
                 onPlayPauseClick = onPlayPause, onNext = onNext,
                 onClick = onExpand, enabled = !controlsLocked,
                 canNext = canNext, progress = progress, qualityLabel = qualityLabel,
+                songId = current.id, dock = dock, pull = pull,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
         }

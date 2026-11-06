@@ -84,11 +84,11 @@ class PlayerIntegrationTest {
         }
         compose.onNodeWithTag("player-portrait").assertDoesNotExist()
         compose.onNodeWithTag("mini-player").performTouchInput {
-            swipe(center, center + androidx.compose.ui.geometry.Offset(0f, -160f))
+            swipe(center, center + androidx.compose.ui.geometry.Offset(0f, -600f))
         }
         compose.onNodeWithTag("player-portrait").assertIsDisplayed()
         compose.onNodeWithTag("player-handle").performTouchInput {
-            swipe(center, center + androidx.compose.ui.geometry.Offset(0f, 160f))
+            swipe(center, center + androidx.compose.ui.geometry.Offset(0f, 600f))
         }
         compose.onNodeWithTag("player-portrait").assertDoesNotExist()
         compose.runOnIdle { assertEquals(3, player.mediaItemCount); assertEquals("1", vm.state.value.currentSong?.id) }
@@ -106,6 +106,18 @@ class PlayerIntegrationTest {
         compose.onNode(hasText("Salida del dispositivo: no medida", substring = true)).assertIsDisplayed()
         compose.onNodeWithText("Cerrar").performClick()
         compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+        compose.onNodeWithTag("mini-player").assertIsDisplayed()
+    }
+
+    @Test fun cancellingAPartialHeaderDragPreservesTheOpenPlayerAndQueue() {
+        start()
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithTag("player-handle").performTouchInput {
+            down(center); moveBy(androidx.compose.ui.geometry.Offset(0f, 120f)); cancel()
+        }
+        compose.onNodeWithTag("player-portrait").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(3, player.mediaItemCount); assertEquals("1", vm.state.value.currentSong?.id) }
+        compose.onNodeWithContentDescription("Cerrar reproductor").performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
     }
 

@@ -128,3 +128,14 @@ existente y se conectan controles propios. Modelado de calidad y gesto propios
 sobre Media3/Compose existentes. NOTICE amplía procedencia, conserva autores y
 no incorpora símbolos Dolby ni recursos remotos/restringidos. Sin nuevas licencias,
 dependencias o binarios; LICENSE/LICENSES intactos. Pendientes y CSV conservados.
+
+
+## B05.2 — panel/dock
+
+Se consultan PlayerSheetMotion (Android) y PlayerDock (sharedUi) del SHA fijo
+b690dc1. Reutilización/adaptación de infraestructura previamente portada, con
+procedencia GPLv3 y autores originales conservados en NOTICE y comentarios.
+Geometría/host inline/overlay nuevos para Aurelis; no atribuyen a Aurelis los
+derechos de terceros ni amplían permiso a versiones futuras no acreditadas.
+Sin nuevas dependencias, fuentes, iconos, modelos ni binarios. LICENSE/LICENSES
+íntegros; pendientes legales y CSV permanecen abiertos. No certificación legal.

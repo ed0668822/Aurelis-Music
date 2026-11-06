@@ -149,3 +149,13 @@ seis pruebas nuevas preparadas. NO EJECUTADAS; no Gradle local. Referencias de A
 verificadas por lectura de bytecode. CI de B04 y B05 pendientes de confirmación.
 No Android real/rotación/audio/Logcat. Servicio/QA01/GLASS01 intactos. Dock/morph del
 panel y fidelidad visual siguen pendientes de B05; no cierre completo ni B06/QA02.
+
+
+## B05.2 — movimiento/dock, entrega para GitHub
+
+Ver ../migration/beta-local/B05_2_PANEL_DOCK.md/.json. Siete casos nuevos y
+actualización del swipe anterior preparados, NO EJECUTADOS. Doble revisión
+estática y lectura de API con javap; no Gradle local, APK ni dispositivo.
+No se hereda verde de B04/B05 anteriores. Rotación/GPU/Logcat/audio/RTL real
+pendientes. QA01/GLASS01/servicio/plan intactos. No B06 ni QA02. Publicar/avisar y
+esperar resultado del usuario antes de seguir con validación/correcciones.

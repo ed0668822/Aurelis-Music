@@ -257,6 +257,14 @@ Changes: local-file quality provenance, active horizontal layout with shared
 Aurelis playback controls, entry/dismiss gestures and existing glass surfaces.
 No Dolby branding or unverified streaming quality tiers are imported.
 
+B05.2 — Progressive panel and artwork dock
+Reference: the same BitChord commit, app/src/main/java/com/music/bitchord/ui/player/PlayerSheetMotion.kt
+and sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerDock.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Changes: inline Aurelis host, measured host/panel coordinates, cancellation and
+finite-size guards, same-track artwork overlay and accessibility isolation.
+The existing spring constants and third-party glass notices are retained.
+
 9. Código fuente, distribución y verificaciones pendientes
 
 Repositorio de Aurelis Music:

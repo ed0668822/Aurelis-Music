@@ -51,6 +51,13 @@ import com.music.aurelis.ui.screens.LocalSearchCategory
 import com.music.aurelis.ui.screens.LocalSearchDestination
 import com.music.aurelis.data.LocalSearch
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import com.music.aurelis.ui.player.PlayerDock
+import com.music.aurelis.ui.player.PlayerSheetMotion
+import com.music.aurelis.ui.player.DockedArtworkOverlay
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -199,6 +206,21 @@ internal fun AurelisNavigationContent(
     val userState by userStore.state.collectAsState()
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
     val route = navigator.visibleRoute()
+    val dock = remember { PlayerDock() }
+    val panelScope = rememberCoroutineScope()
+    val panelMotion = remember(navigator, dock, panelScope) {
+        PlayerSheetMotion(panelScope, dock,
+            shown = { navigator.visibleRoute() == AppRoute.NowPlaying },
+            setShown = { show ->
+                if (show) navigator.push(AppRoute.NowPlaying)
+                else if (navigator.visibleRoute() == AppRoute.NowPlaying) navigator.pop()
+            }, inlineMode = true,
+            reduceMotion = { com.music.aurelis.data.SettingsRepository.reduceAnimation.value },
+        ).also { dock.motion = it }
+    }
+    DisposableEffect(panelMotion) { onDispose { panelMotion.onSheetGone() } }
+    val flingVelocity = with(LocalDensity.current) { 900.dp.toPx() }
+    SideEffect { panelMotion.flingVelocity = flingVelocity }
     LaunchedEffect(route) {
         // Let the existing ViewModel report missing permission instead of leaving Loading forever.
         if (route == AppRoute.LocalMusic) libraryViewModel.refresh()
@@ -234,7 +256,8 @@ internal fun AurelisNavigationContent(
     ) {
     AppNavigationHost(
         navigator = navigator,
-        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
+            .onSizeChanged { dock.sheetTravel = it.height.toFloat() }.onGloballyPositioned { dock.reportHost(it) },
         pageModifier = Modifier.hazeSource(hazeState).then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier),
         tabContent = { tab ->
             when (tab) {
@@ -429,7 +452,8 @@ internal fun AurelisNavigationContent(
                     onPlayPause = { playbackViewModel.togglePlayPause() },
                     onNext = { playbackViewModel.next() },
                     onPrevious = { playbackViewModel.previous() },
-                    onExpand = { if (playbackState.currentSong != null) navigator.push(AppRoute.NowPlaying) },
+                    onExpand = { if (playbackState.currentSong != null) panelMotion.open() },
+                    dock = dock, pull = panelMotion,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -440,7 +464,9 @@ internal fun AurelisNavigationContent(
                 isVisible = route == AppRoute.NowPlaying,
                 onDismiss = { navigator.pop() },
                 onOpenQueue = { navigator.push(AppRoute.Queue) },
+                dock = dock, panelMotion = panelMotion,
             )
+            DockedArtworkOverlay(dock, playbackState.currentSong)
             QueueScreen(
                 playbackViewModel = playbackViewModel,
                 isVisible = route == AppRoute.Queue,
