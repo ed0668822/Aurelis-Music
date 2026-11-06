@@ -83,3 +83,18 @@ CI de la entrega documental b8b8910: Build127 Success (10m32s) y CodeQL Success
 cambios posteriores de B03. El usuario indicó después «Mejor continúa con el
 plan ... pero si prueba todo lo que puedas»: se retoma el principal por B03,
 sin QA02; se preserva la evidencia y la limitación de Android real.
+
+
+## CI01 — mejoras autorizadas antes de B04
+
+«Aplica los cambios antes de B04»: workflow/reportes modificados, app y plan
+principal intactos. Informe separa inventario/diagnósticos/tareas/cache y etapas
+omitidas; solo publica APK tras todas las validaciones. Firma/ZIP/ABI-ELF/identidad/
+licencias y procedencia por SHA; secretos originales conservados. Acciones Node24
+fijadas por SHA y permisos mínimos. Ver CI_WORKFLOW.md y evidencia estática.
+
+18 pruebas offline Python correctas, actionlint sin diagnósticos y11 pasos Bash
+con sintaxis válida. No se ejecutó Gradle ni se compiló la app localmente.
+Por preferencia vigente, publicar/avisar y esperar el resultado que comunique
+el usuario desde GitHub; no esperar CI ni avanzar automáticamente. El nuevo
+workflow aún no se declara aprobado en GitHub. QA02 y B04 no iniciados.
