@@ -77,5 +77,6 @@
   },
   "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
   "protected": "Main plan, test assertions including CI10/B08, Liquid Glass, player service/queue/DSP, ABI/native/models, Gradle and workflows unchanged",
-  "next": "Push same branch/PR, notify user, wait for reported GitHub result; no B09"
+  "next": "Push same branch/PR, notify user, wait for reported GitHub result; no B09",
+  "fix_commit": "7014468ca711772b209e9076bbdc022385f2d468"
 }

@@ -725,3 +725,6 @@ GitHub; nueva validación pendiente. CodeQL de la base también falla, causa pro
 no confirmada en anotaciones públicas; no se modifica ni desactiva.
 Plan, Glass, pruebas, motor, ABI/modelos/Gradle/workflow intactos. Mismo PR1;
 esperar resultado del usuario, no B09 ni otra unidad.
+
+Entrega CI11 — corrección `7014468ca711772b209e9076bbdc022385f2d468`; PR https://github.com/ed0668822/Aurelis-Music/pull/1.
+Checkpoint documental posterior; nuevo CI pendiente del resultado del usuario.
