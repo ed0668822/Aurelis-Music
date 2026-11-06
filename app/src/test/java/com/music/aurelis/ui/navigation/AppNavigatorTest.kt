@@ -8,6 +8,11 @@ class AppNavigatorTest {
     @Test fun collectionRoutesRestoreSmallIdsIncludingUnicodeAndSeparators() {
         for (route in listOf(AppRoute.Collection(LocalCollectionKind.FAVORITES),
             AppRoute.Collection(LocalCollectionKind.PLAYLISTS),
+            AppRoute.Collection(LocalCollectionKind.ALBUMS),
+            AppRoute.Collection(LocalCollectionKind.ARTISTS),
+            AppRoute.Collection(LocalCollectionKind.FOLDERS),
+            AppRoute.Collection(LocalCollectionKind.HISTORY),
+            AppRoute.Collection(LocalCollectionKind.GENRE, "tag:r&b: clásico"),
             AppRoute.Collection(LocalCollectionKind.PLAYLIST, "list-1"),
             AppRoute.Collection(LocalCollectionKind.ALBUM, "Álbum: A + B / 100%"),
             AppRoute.Collection(LocalCollectionKind.ARTIST, "Artista & banda"),

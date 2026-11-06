@@ -108,3 +108,13 @@ Los avisos Kyant0/Apache y Ahmed Gamil/MIT permanecen intactos. No se importan
 binarios, fuentes, iconos, modelos ni dependencias nuevos. LICENSE y LICENSES/
 sin cambios. Persisten los pendientes legales y el CSV para cabeceras definitivas.
 Comparación y límites en docs/qa/GLASS01_MATERIAL_PARITY.md y evidencia JSON.
+
+
+## B04 — entrega incremental
+
+Nuevos agrupador de géneros/historial y wiring propios sobre catálogo, preferencias
+y pantallas existentes. Referencia consultada: Explore/Search/Library sharedUi de
+b690dc1; no se copian código nuevo de terceros, fuentes, imágenes ni binarios.
+Avisos de los componentes existentes intactos, igual que LICENSE/NOTICE/LICENSES.
+No dependencias nuevas. Pendientes legales y CSV conservados; no cabeceras propias
+definitivas. Esta revisión documental no certifica distribución final.

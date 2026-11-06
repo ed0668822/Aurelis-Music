@@ -224,3 +224,22 @@ Entrega B03: código final `2e91a09f8c8c4ab621a54ffe4992dd3280ba5eaa`, commits p
 en B03_CLOSEOUT.md/B03_EVIDENCE.json. Misma rama/PR1 sin renombrar ni merge.
 CI del SHA publicado pendiente de consulta; no reutilizar QA127. B04 no iniciado,
 requiere autorización. QA02 permanece sin iniciar; Android real pendiente.
+
+
+## B04 — entrega incremental; autorización B04–B05
+
+B04.1: Explore/géneros reales y Sin clasificar conectados, estados de carga/error/
+permisos/vacío; B04.2: búsqueda local de cinco tipos e historial persistente;
+B04.3: directorios/restauración/lista-cuadrícula y selección múltiple de colecciones.
+Cambios, archivos, referencias y límites en B04_EXPLORE_SEARCH_LIBRARY.md.
+Dos revisiones estáticas del mismo agente. Seis pruebas nuevas y cinco rutas de
+restauración adicionales preparadas: ejecución PENDIENTE en GitHub, no aprobadas.
+No compilación local por instrucción del usuario; no Android real/Logcat.
+Sin cambios de Liquid Glass/QA01, firmas, ABI, Gradle, licencias ni plan principal.
+
+Estado: B04 implementado, validación en GitHub y paridad visual en dispositivo
+pendientes. Search incluye filtros explícitos por tipo. No declarar B04 terminado
+solo por publicar.
+B05 autorizado por «Continúa con B04 - B05», pendiente de la puerta de CI y cierre
+de B04. Mantener indicación del usuario: publicar, avisar y esperar resultado de
+GitHub antes de continuar; no pedir de nuevo autorización B05. Misma rama/PR1.

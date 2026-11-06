@@ -53,6 +53,30 @@ class PlayerIntegrationTest {
         compose.waitForIdle()
         compose.runOnIdle { player.pause() }
     }
+    @Test fun exploreUnknownGenreResolvesRealSongsAndBulkFavorites() {
+        start()
+        compose.onNode(hasText(app.getString(R.string.explore)) and isSelectable()).performClick()
+        compose.onNodeWithText("Sin clasificar").performClick()
+        compose.onNodeWithText("Seleccionar").performClick()
+        compose.onNodeWithText("Todas").performClick()
+        compose.onNodeWithText("Favoritos").performClick()
+        compose.runOnIdle { assertEquals(setOf("1", "2", "3"), app.userLibrary.state.value.favorites) }
+        compose.onNodeWithText("Cancelar selección").performClick()
+        compose.onNodeWithText(app.getString(R.string.collection_play)).performClick()
+        compose.runOnIdle { assertEquals(3, player.mediaItemCount); assertEquals("1", vm.state.value.currentSong?.id) }
+    }
+
+    @Test fun localSearchOpensAnAlbumAndRecordsTheSubmittedQuery() {
+        start()
+        compose.onNode(hasText(app.getString(R.string.search)) and isSelectable()).performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("Álbum")
+        compose.onNodeWithText("Álbumes").performClick()
+        compose.onNodeWithText("Canción local 1").assertDoesNotExist()
+        compose.onNode(hasText("Álbum local") and hasClickAction()).performClick()
+        compose.onNodeWithText(app.getString(R.string.collection_play)).assertIsDisplayed()
+        compose.runOnIdle { assertEquals(listOf("Álbum"), LocalSearchHistory(app).entries) }
+    }
+
     @Test fun editingTheSingleProfilePreservesPlayerNavigationAndCollections() {
         start()
         compose.runOnIdle { app.userLibrary.toggleFavorite("1") }

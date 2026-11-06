@@ -34,7 +34,7 @@ sealed interface AppRoute {
 data class RouteEntry(val id: Long, val route: AppRoute, val detailDepth: Int)
 
 enum class AppTab { HOME, EXPLORE, LIBRARY, SEARCH }
-enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST, FOLDER }
+enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST, FOLDER, GENRE, ALBUMS, ARTISTS, FOLDERS, HISTORY }
 
 /** Only implemented, parameter-free destinations are restored in the current graph. */
 internal val AppRoute.navigationKey: String?
@@ -60,7 +60,7 @@ private fun routeForKey(key: String): AppRoute? = when (key) {
         val parts = key.split(':', limit = 3)
         val kind = LocalCollectionKind.valueOf(parts[1])
         val id = URLDecoder.decode(parts[2], "UTF-8")
-        require(id.isNotBlank() || kind in listOf(LocalCollectionKind.FAVORITES, LocalCollectionKind.PLAYLISTS))
+        require(id.isNotBlank() || kind in listOf(LocalCollectionKind.FAVORITES, LocalCollectionKind.PLAYLISTS, LocalCollectionKind.ALBUMS, LocalCollectionKind.ARTISTS, LocalCollectionKind.FOLDERS, LocalCollectionKind.HISTORY))
         AppRoute.Collection(kind, id)
     }.getOrNull() else null
 }

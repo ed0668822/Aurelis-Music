@@ -130,3 +130,13 @@ Sin dispositivo/GPU Redmi: paridad visual y arranque real pendientes, no declara
 verificados. El plegado/separación de Search y el diseño completo del MiniPlayer
 siguen pendientes en los bloques principales; no se afirma paridad total.
 Misma rama/PR1; esperar resultado del usuario. B04 y QA02 no iniciados.
+
+
+## B04 — pruebas preparadas para CI, no ejecutadas localmente
+
+Ver ../migration/beta-local/B04_EXPLORE_SEARCH_LIBRARY.md/.json y PROGRESS_TRACKER.
+Seis casos nuevos más extensión de restauración; ejecución/compilación en GitHub
+pendientes del commit publicado. Sin Android real ni sonido/Logcat verificados.
+GLASS01 y QA01 conservados. No QA02. B05 autorizado, esperando resultado de B04
+comunicado por usuario y cierre de su validación. No confundir preparación con
+pruebas aprobadas ni cambios funcionales con paridad visual completa.

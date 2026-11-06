@@ -43,6 +43,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.AppUpdateChecker
 import com.music.aurelis.data.AudioPermission
+import com.music.aurelis.data.LocalGenres
+import com.music.aurelis.data.LocalSearchHistory
+import com.music.aurelis.ui.screens.ExploreScreen
+import com.music.aurelis.ui.screens.LocalGenre
+import com.music.aurelis.ui.screens.LocalSearchCategory
+import com.music.aurelis.ui.screens.LocalSearchDestination
 import com.music.aurelis.data.LocalSearch
 import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.Lifecycle
@@ -215,6 +221,7 @@ internal fun AurelisNavigationContent(
     val paintBackdrop: androidx.compose.ui.graphics.drawscope.ContentDrawScope.() -> Unit = remember(windowBackground) {
         { drawRect(windowBackground); drawContent() }
     }
+    val genreGroups = remember(allSongs) { LocalGenres.groups(allSongs) }
     val appBackdrop = com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop(onDraw = paintBackdrop)
     val reduceBlur by com.music.aurelis.data.SettingsRepository.reduceDynamicBlur.collectAsState()
     val captureGlass = com.music.aurelis.ui.components.shouldSampleGlass(
@@ -267,11 +274,34 @@ internal fun AurelisNavigationContent(
                 )
             }
 
-            AppTab.EXPLORE -> Text(stringResource(R.string.navigation_explore_pending), modifier = Modifier.align(Alignment.Center))
+            AppTab.EXPLORE -> {
+                val genres = genreGroups
+                if (libraryUiState.libraryState !is LibraryState.Success) {
+                    Column(Modifier.align(Alignment.Center).padding(24.dp)) {
+                        val error = libraryUiState.libraryState as? LibraryState.Error
+                        if (error == null) androidx.compose.material3.CircularProgressIndicator()
+                        else {
+                            Text(error.message)
+                            TextButton(onClick = { if (error.permissionRequired) onRequestAudioPermission() else libraryViewModel.refresh() }) {
+                                Text(if (error.permissionRequired) "Permitir acceso" else "Reintentar")
+                            }
+                        }
+                    }
+                } else ExploreScreen(genres.map { LocalGenre(it.name, it.songs.size, null, it.key) },
+                    rememberLazyListState(), { genre ->
+                        genres.firstOrNull { it.key == genre.key }?.let {
+                            navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key))
+                        }
+                    }, PaddingValues(bottom = 180.dp))
+            }
             AppTab.LIBRARY -> {
                 val listState = rememberLazyListState()
                 val links = listOf(
                     LibraryLink(stringResource(R.string.songs), AurelisIcons.MusicNote) { navigator.push(AppRoute.LocalMusic) },
+                    LibraryLink("Álbumes", AurelisIcons.MusicNote) { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUMS)) },
+                    LibraryLink("Artistas", AurelisIcons.MusicNote) { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTISTS)) },
+                    LibraryLink("Carpetas", AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDERS)) },
+                    LibraryLink("Historial", AurelisIcons.Clock) { navigator.push(AppRoute.Collection(LocalCollectionKind.HISTORY)) },
                     LibraryLink(stringResource(R.string.home_favorites), AurelisIcons.Heart) { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
                     LibraryLink(stringResource(R.string.home_playlists), AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
                     LibraryLink(stringResource(R.string.replay), AurelisIcons.Clock) { navigator.push(AppRoute.Replay) },
@@ -286,7 +316,28 @@ internal fun AurelisNavigationContent(
             }
             AppTab.SEARCH -> {
                 var searchQuery by rememberSaveable { mutableStateOf("") }
+                var searchCategory by rememberSaveable { mutableStateOf(LocalSearchCategory.ALL) }
                 val searchListState = rememberLazyListState()
+                val searchContext = LocalContext.current
+                val searchHistory = remember(userStore) { LocalSearchHistory(searchContext) }
+                var history by remember(searchHistory) { mutableStateOf(searchHistory.entries) }
+                fun saveQuery() { searchHistory.submit(searchQuery); history = searchHistory.entries }
+                val key = LocalSearch.normalize(searchQuery)
+                val destinations = if (key.isBlank()) emptyList() else buildList {
+                    val allTypes = searchCategory == LocalSearchCategory.ALL
+                    if (allTypes || searchCategory == LocalSearchCategory.ALBUMS) librarySuccess?.albums?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
+                        add(LocalSearchDestination(it.name, "Álbum") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) })
+                    }
+                    if (allTypes || searchCategory == LocalSearchCategory.ARTISTS) librarySuccess?.artists?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
+                        add(LocalSearchDestination(it.name, "Artista") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) })
+                    }
+                    if (allTypes || searchCategory == LocalSearchCategory.PLAYLISTS) userState.playlists.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
+                        add(LocalSearchDestination(it.name, "Playlist") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it.id)) })
+                    }
+                    if (allTypes || searchCategory == LocalSearchCategory.GENRES) genreGroups.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
+                        add(LocalSearchDestination(it.name, "Género") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key)) })
+                    }
+                }
                 val results = remember(searchQuery, allSongs, libraryUiState.sortOption) {
                     if (searchQuery.isBlank()) null else {
                         val key = LocalSearch.normalize(searchQuery)
@@ -298,17 +349,19 @@ internal fun AurelisNavigationContent(
                     onFilterChange = libraryViewModel::onSortOptionChanged,
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
-                    results = results,
+                    results = if (results == null || searchCategory in listOf(LocalSearchCategory.ALL, LocalSearchCategory.SONGS)) results else emptyList(),
+                    category = searchCategory, onCategoryChange = { searchCategory = it },
                     listState = searchListState,
                     focusRequested = false,
                     onFocusHandled = { },
-                    onSongClick = { songs, index -> playbackViewModel.playSongs(songs, index) },
+                    onSongClick = { songs, index -> saveQuery(); playbackViewModel.playSongs(songs, index) },
                     onSongLongPress = { actionSong = it },
-                    history = emptyList(),
-                    onSubmit = { },
-                    onHistoryClick = { },
-                    onHistoryRemove = { },
-                    onHistoryClear = { },
+                    history = history,
+                    destinations = destinations,
+                    onSubmit = { saveQuery() },
+                    onHistoryClick = { searchQuery = it },
+                    onHistoryRemove = { searchHistory.remove(it); history = searchHistory.entries },
+                    onHistoryClear = { searchHistory.clear(); history = searchHistory.entries },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
                     contentPadding = PaddingValues(bottom = 180.dp),
