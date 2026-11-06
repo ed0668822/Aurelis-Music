@@ -118,3 +118,13 @@ b690dc1; no se copian código nuevo de terceros, fuentes, imágenes ni binarios.
 Avisos de los componentes existentes intactos, igual que LICENSE/NOTICE/LICENSES.
 No dependencias nuevas. Pendientes legales y CSV conservados; no cabeceras propias
 definitivas. Esta revisión documental no certifica distribución final.
+
+
+## B05 — reproductor local, entrega incremental
+
+Referencia BitChord b690dc1: MiniPlayer y LandscapePlayer (métricas/disposición),
+SourceQualityBadge (auditoría de etiquetas). Se reutiliza el layout vendorizado
+existente y se conectan controles propios. Modelado de calidad y gesto propios
+sobre Media3/Compose existentes. NOTICE amplía procedencia, conserva autores y
+no incorpora símbolos Dolby ni recursos remotos/restringidos. Sin nuevas licencias,
+dependencias o binarios; LICENSE/LICENSES intactos. Pendientes y CSV conservados.

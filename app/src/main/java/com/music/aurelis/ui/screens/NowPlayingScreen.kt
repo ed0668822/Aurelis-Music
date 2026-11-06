@@ -29,7 +29,12 @@ import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.unit.Dp
+import com.music.aurelis.ui.player.LandscapePlayerLayout
+import com.music.aurelis.ui.player.PlayerPane
+import com.music.aurelis.ui.player.playerSwipeTrigger
+import com.music.aurelis.ui.components.SourceQualityBadge
 import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -124,8 +129,9 @@ fun NowPlayingScreen(
         background = Color(0xFF0E0E14),
     )
 
-    var showLyrics by remember { mutableStateOf(false) }
-    var showLyricsSources by remember { mutableStateOf(false) }
+    var showQuality by rememberSaveable { mutableStateOf(false) }
+    var showLyrics by rememberSaveable { mutableStateOf(false) }
+    var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
 
@@ -137,6 +143,12 @@ fun NowPlayingScreen(
     val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsState()
     val reduceAnimation by SettingsRepository.reduceAnimation.collectAsState()
     val hazeState = remember { HazeState() }
+
+    if (showQuality && isVisible && song != null) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { showQuality = false }, title = { Text("Información de audio") },
+        text = { Text("Origen: ${state.sourceQuality.details}\nDatos: ${state.sourceQuality.originLabel}\nSalida del dispositivo: no medida") },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = { showQuality = false }) { Text("Cerrar") } },
+    )
 
     AnimatedVisibility(
         visible = isVisible && song != null,
@@ -159,10 +171,10 @@ fun NowPlayingScreen(
                     .hazeSource(hazeState),
             ) {
                 val meshPalette = rememberArtworkColors(s.artworkUri?.let { Uri.parse(it) })
-                MeshGradientBackground(
+                if (!reduceBlur) MeshGradientBackground(
                     palette = meshPalette,
                     trackKey = s.id,
-                    continuous = state.isPlaying && !reduceAnimation,
+                    continuous = false,
                     reduceAnimation = reduceAnimation,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -181,18 +193,9 @@ fun NowPlayingScreen(
                         ),
                 )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding()
-                        .navigationBarsPadding()
-                        .then(if (showLyrics) Modifier.clearAndSetSemantics { } else Modifier)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
+                val header: @Composable () -> Unit = {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().testTag("player-handle").playerSwipeTrigger(1, onDismiss),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IconButton(onClick = onDismiss) {
@@ -225,8 +228,8 @@ fun NowPlayingScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
+                }
+                val artwork: @Composable (Modifier, Dp) -> Unit = { artworkModifier, artworkSize ->
                     val progressFraction = if (state.durationMs > 0) {
                         (state.positionMs.toFloat() / state.durationMs.toFloat()).coerceIn(0f, 1f)
                     } else 0f
@@ -235,113 +238,124 @@ fun NowPlayingScreen(
                         songKey = s.id,
                         artworkUri = s.artworkUri,
                         title = s.title,
-                        size = (LocalConfiguration.current.screenWidthDp - 48).coerceIn(160, 320).dp,
+                        size = artworkSize,
+                        modifier = artworkModifier,
                         progressFraction = progressFraction,
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
+                }
+                val controls: @Composable () -> Unit = {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                text = s.title,
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            androidx.compose.material3.TextButton(onClick = { showQuality = true }) {
+                                SourceQualityBadge(state.sourceQuality.formatLabel)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            modifier = Modifier.weight(1f),
-                            text = s.title,
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            text = s.artist,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        val qualityLabel = "Archivo local"
-                        // FIX: Chip cambió de firma en Material3 — usamos Box+Text
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { showLyrics = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            shape = CircleShape,
                         ) {
-                            Text(
-                                text = qualityLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            Icon(
+                                Icons.AutoMirrored.Rounded.Subject,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Ver Letras")
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = s.artist,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { showLyrics = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        shape = CircleShape,
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.Subject,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                        Spacer(modifier = Modifier.height(16.dp))
+                        state.errorMessage?.let { message ->
+                            Text(message, color = MaterialTheme.colorScheme.error)
+                            androidx.compose.material3.TextButton(onClick = playbackViewModel::retry) { Text("Reintentar") }
+                        }
+                        key(s.id) {
+                            PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
+                                enabled = state.isConnected && state.canSeek)
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            IconButton(onClick = playbackViewModel::toggleShuffle, enabled = state.isConnected,
+                                modifier = Modifier.semantics { stateDescription = if (state.shuffleEnabled) "Activado" else "Desactivado" }) {
+                                Icon(Icons.Rounded.Shuffle, "Aleatorio",
+                                    tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            }
+                            val repeatDescription = when (state.repeatMode) {
+                                Player.REPEAT_MODE_ALL -> "Repetir todas"
+                                Player.REPEAT_MODE_ONE -> "Repetir una"
+                                else -> "Repetición desactivada"
+                            }
+                            IconButton(onClick = playbackViewModel::cycleRepeat, enabled = state.isConnected,
+                                modifier = Modifier.semantics { stateDescription = repeatDescription }) {
+                                Icon(if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                                    "Repetición", tint = if (state.repeatMode != Player.REPEAT_MODE_OFF)
+                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                        PlayerControls(
+                            isPlaying = state.isPlayRequested,
+                            isLoading = state.isLoading,
+                            onPlayPause = { playbackViewModel.togglePlayPause() },
+                            onNext = { playbackViewModel.next() },
+                            onPrevious = { playbackViewModel.previous() },
+                            enabled = state.isConnected, canNext = state.canNext, canPrevious = state.canPrevious,
+                            reduceAnimation = reduceAnimation,
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Ver Letras")
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    state.errorMessage?.let { message ->
-                        Text(message, color = MaterialTheme.colorScheme.error)
-                        androidx.compose.material3.TextButton(onClick = playbackViewModel::retry) { Text("Reintentar") }
-                    }
-                    key(s.id) {
-                        PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
-                            enabled = state.isConnected && state.canSeek)
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        IconButton(onClick = playbackViewModel::toggleShuffle, enabled = state.isConnected,
-                            modifier = Modifier.semantics { stateDescription = if (state.shuffleEnabled) "Activado" else "Desactivado" }) {
-                            Icon(Icons.Rounded.Shuffle, "Aleatorio",
-                                tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                        }
-                        val repeatDescription = when (state.repeatMode) {
-                            Player.REPEAT_MODE_ALL -> "Repetir todas"
-                            Player.REPEAT_MODE_ONE -> "Repetir una"
-                            else -> "Repetición desactivada"
-                        }
-                        IconButton(onClick = playbackViewModel::cycleRepeat, enabled = state.isConnected,
-                            modifier = Modifier.semantics { stateDescription = repeatDescription }) {
-                            Icon(if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
-                                "Repetición", tint = if (state.repeatMode != Player.REPEAT_MODE_OFF)
-                                    MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                }
+                BoxWithConstraints(Modifier.fillMaxSize()
+                    .then(if (showLyrics) Modifier.clearAndSetSemantics { } else Modifier)) {
+                    if (maxWidth > maxHeight) {
+                        LandscapePlayerLayout(
+                            pane = PlayerPane.Main, background = {},
+                            artwork = { artwork(it, 320.dp) }, actions = {},
+                            mainPane = {
+                                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                                    .testTag("player-landscape"), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    header()
+                                    controls()
+                                }
+                            }, lyricsPane = {}, queuePane = {},
+                        )
+                    } else {
+                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+                            .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)
+                            .testTag("player-portrait"), horizontalAlignment = Alignment.CenterHorizontally) {
+                            header()
+                            Spacer(Modifier.height(24.dp))
+                            artwork(Modifier, (maxWidth - 48.dp).coerceIn(160.dp, 320.dp))
+                            Spacer(Modifier.height(32.dp))
+                            controls()
                         }
                     }
-
-                    PlayerControls(
-                        isPlaying = state.isPlayRequested,
-                        isLoading = state.isLoading,
-                        onPlayPause = { playbackViewModel.togglePlayPause() },
-                        onNext = { playbackViewModel.next() },
-                        onPrevious = { playbackViewModel.previous() },
-                        enabled = state.isConnected, canNext = state.canNext, canPrevious = state.canPrevious,
-                        reduceAnimation = reduceAnimation,
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 if (showLyrics) {

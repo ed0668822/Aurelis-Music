@@ -243,3 +243,18 @@ solo por publicar.
 B05 autorizado por «Continúa con B04 - B05», pendiente de la puerta de CI y cierre
 de B04. Mantener indicación del usuario: publicar, avisar y esperar resultado de
 GitHub antes de continuar; no pedir de nuevo autorización B05. Misma rama/PR1.
+
+
+## B05 — continuación autorizada tras entrega B04
+
+«Autorización concedida» permite iniciar esta entrega, sin dar por aprobado CI de
+B04. B05.1: calidad tipada real de archivo/pista, MiniPlayer cápsula/etiqueta;
+B05.2: entrada/cierre/gestos con cancelación segura, panel/dock/morph pendientes;
+B05.3: layout horizontal existente conectado a controles compartidos y fondo que
+respeta efectos reducidos. Rotación real y fidelidad visual pendientes.
+Ver B05_PLAYER.md/.json para archivos, revisiones, referencias, pruebas y límites.
+Seis pruebas nuevas preparadas, NO EJECUTADAS. Compilación/lint exclusivamente en
+GitHub, pendientes. Sin Android físico/sonido/Logcat verificados. Dos revisiones
+estáticas del mismo agente. Firma/ABI/servicio/QA01/GLASS01/plan preservados.
+Misma rama/PR1; publicar/avisar y esperar resultado del usuario. No B06 ni QA02.
+No declarar B05 cerrado: siguiente trabajo será completar B05.2 y validaciones.

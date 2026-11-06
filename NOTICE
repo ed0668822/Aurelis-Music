@@ -248,6 +248,15 @@ Existing Kyant0 and Ahmed Gamil notices remain applicable to the reused glass na
 
 ────────────────────────────────────────────────────────────────────
 
+B05 — Local player integration
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt
+and sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/LandscapePlayer.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Changes: local-file quality provenance, active horizontal layout with shared
+Aurelis playback controls, entry/dismiss gestures and existing glass surfaces.
+No Dolby branding or unverified streaming quality tiers are imported.
+
 9. Código fuente, distribución y verificaciones pendientes
 
 Repositorio de Aurelis Music:

@@ -140,3 +140,12 @@ pendientes del commit publicado. Sin Android real ni sonido/Logcat verificados.
 GLASS01 y QA01 conservados. No QA02. B05 autorizado, esperando resultado de B04
 comunicado por usuario y cierre de su validación. No confundir preparación con
 pruebas aprobadas ni cambios funcionales con paridad visual completa.
+
+
+## B05 — controles compartidos/calidad; pruebas pendientes
+
+B05_PLAYER.md/.json en migration/beta-local registra dos revisiones estáticas y
+seis pruebas nuevas preparadas. NO EJECUTADAS; no Gradle local. Referencias de API
+verificadas por lectura de bytecode. CI de B04 y B05 pendientes de confirmación.
+No Android real/rotación/audio/Logcat. Servicio/QA01/GLASS01 intactos. Dock/morph del
+panel y fidelidad visual siguen pendientes de B05; no cierre completo ni B06/QA02.

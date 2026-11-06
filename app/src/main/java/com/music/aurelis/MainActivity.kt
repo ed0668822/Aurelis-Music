@@ -423,6 +423,7 @@ internal fun AurelisNavigationContent(
                     isLoading = playbackState.isLoading,
                     controlsLocked = !playbackState.isConnected,
                     canNext = playbackState.canNext,
+                    qualityLabel = playbackState.sourceQuality.takeIf { it.mimeType != null }?.formatLabel,
                     progress = if (playbackState.durationMs > 0)
                         playbackState.positionMs.toFloat() / playbackState.durationMs else 0f,
                     onPlayPause = { playbackViewModel.togglePlayPause() },

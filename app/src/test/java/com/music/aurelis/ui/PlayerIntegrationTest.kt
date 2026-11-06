@@ -77,6 +77,38 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertEquals(listOf("Álbum"), LocalSearchHistory(app).entries) }
     }
 
+    @Test fun miniPlayerSwipeOpensAndHeaderSwipeClosesWithoutChangingTheQueue() {
+        start()
+        compose.onNodeWithTag("mini-player").performTouchInput {
+            down(center); moveBy(androidx.compose.ui.geometry.Offset(0f, -160f)); cancel()
+        }
+        compose.onNodeWithTag("player-portrait").assertDoesNotExist()
+        compose.onNodeWithTag("mini-player").performTouchInput {
+            swipe(center, center + androidx.compose.ui.geometry.Offset(0f, -160f))
+        }
+        compose.onNodeWithTag("player-portrait").assertIsDisplayed()
+        compose.onNodeWithTag("player-handle").performTouchInput {
+            swipe(center, center + androidx.compose.ui.geometry.Offset(0f, 160f))
+        }
+        compose.onNodeWithTag("player-portrait").assertDoesNotExist()
+        compose.runOnIdle { assertEquals(3, player.mediaItemCount); assertEquals("1", vm.state.value.currentSong?.id) }
+    }
+
+    @Test
+    @Config(sdk = [33], qualifiers = "w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
+    fun landscapeControlsUseTheSameQueueAndQualityIsExplicitlyInputOnly() {
+        start()
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithTag("player-landscape").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Siguiente").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); assertEquals(3, player.mediaItemCount) }
+        compose.onNodeWithText("Formato desconocido").performScrollTo().performClick()
+        compose.onNode(hasText("Salida del dispositivo: no medida", substring = true)).assertIsDisplayed()
+        compose.onNodeWithText("Cerrar").performClick()
+        compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+        compose.onNodeWithTag("mini-player").assertIsDisplayed()
+    }
+
     @Test fun editingTheSingleProfilePreservesPlayerNavigationAndCollections() {
         start()
         compose.runOnIdle { app.userLibrary.toggleFavorite("1") }

@@ -18,6 +18,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import com.music.aurelis.ui.player.playerSwipeTrigger
 
 @Composable
 fun MiniPlayer(
@@ -33,24 +35,27 @@ fun MiniPlayer(
     canNext: Boolean = true,
     onNext: () -> Unit = {},
     progress: Float = 0f,
+    qualityLabel: String? = null,
 ) {
     val glass = LocalLiquidGlassEnabled.current
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(percent = 50)
     val surface = if (glass) Modifier.liquidGlass(shape,
         fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh) else Modifier
-    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").then(surface),
+    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").playerSwipeTrigger(-1, onClick).then(surface),
         shape = shape, color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (glass) 0.dp else 4.dp, onClick = onClick) {
         Column {
-            Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 8.dp),
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 12.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.MusicNote, null, Modifier.size(24.dp))
-                    AsyncImage(artworkUri, null, Modifier.fillMaxSize())
+                    AsyncImage(artworkUri, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                     Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleSmall)
+                    qualityLabel?.let { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelSmall) }
                     Text(artist, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
                 }
                 // The full screen exposes previous; keep the compact bar usable at 320dp.

@@ -58,6 +58,7 @@ sealed interface TranslationState {
 
 data class PlaybackState(
     val currentSong: LocalSong? = null,
+    val sourceQuality: AudioQualityInfo = AudioQualityInfo(),
     val isPlaying: Boolean = false,
     val isPlayRequested: Boolean = false,
     val isLoading: Boolean = false,
@@ -305,6 +306,8 @@ class PlaybackViewModel internal constructor(
 
         _state.update {
             it.copy(
+                sourceQuality = AudioQualityInfo.selected(song, if (ctrl.isCommandAvailable(Player.COMMAND_GET_TRACKS))
+                    ctrl.currentTracks else androidx.media3.common.Tracks.EMPTY),
                 currentSong = song, currentIndex = currentIndex, isPlaying = ctrl.isPlaying,
                 isPlayRequested = ctrl.playWhenReady && ctrl.playbackState != Player.STATE_ENDED && ctrl.playerError == null,
                 isLoading = ctrl.playbackState == Player.STATE_BUFFERING,
