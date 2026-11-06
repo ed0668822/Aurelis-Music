@@ -215,3 +215,6 @@ Diez casos/aserciones conservados, una regresión IO→Main añadida. No retries
 ni cambios de producción/CI. Doble revisión estática; no Gradle/Android local.
 Evidencia y límites en CI05_MAIN_DISPATCHER.md/.json. Validación nueva pendiente de
 GitHub, no se declara eliminado el fallo intermitente. Mismo PR; no B06/QA02.
+
+Commit de corrección CI05: `9d053c082958558683a9b169737ed4fb2769a190`. Mismo PR1/rama; suite nueva
+pendiente de GitHub. Sin compilación local ni avance B06/QA02.
