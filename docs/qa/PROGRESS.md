@@ -278,3 +278,13 @@ No activación de modelos/AutoMix ni prueba Android inferida. Modelos/licencias
 previos intactos; avisos terceros upstream añadidos. Doble revisión del mismo agente,
 evidencia en CI09_ONNX_16KB.md/.json. APK/build/tests/Android16KB pendientes de GitHub
 y dispositivo. Publicar mismo PR y esperar resultado; no entrega3/B07/QA02.
+
+
+## Resultado CI09 y B07.1 autorizado
+
+Run144 https://github.com/ed0668822/Aurelis-Music/actions/runs/42285349642 SUCCESS,
+job128124612620 enlaza e499ad4f2f5613864cc34e6e13add077aec30270. Confirmación pública
+de CI previo, no hardware16KB ni resolución del modelo Beat This. B07.1 aporta16
+pruebas nuevas de formatos/caché/posición, preparadas sin ejecución Android local.
+Evidencia/alcance en ../migration/beta-local/B07_1_TIMING.md/.json. Nuevo CI pendiente
+del aviso del usuario. QA02 y demás unidades no se inician por esta entrega.

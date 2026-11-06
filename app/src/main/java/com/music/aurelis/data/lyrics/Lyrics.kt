@@ -16,6 +16,12 @@ data class Lyrics(val lines: List<LyricLine>, val isSynced: Boolean) {
         private val words = Regex("""<\d+:\d{2}(?:\.\d{1,3})?>""")
         fun parse(raw: String): Lyrics? {
             if (raw.isBlank() || raw.length > 1_048_576 || raw.indexOf('\u0000') >= 0) return null
+            if (raw.removePrefix("\uFEFF").trimStart().startsWith("<")) {
+                val lines = TtmlLyrics.parse(raw.removePrefix("\uFEFF"))
+                return lines.takeIf { it.any { line -> line.text.isNotBlank() } }?.let { Lyrics(it, true) }
+            }
+            val enhanced = EnhancedLrc.parse(raw)
+            if (enhanced.any { it.isWordSynced }) return Lyrics(enhanced, true)
             val offset = offsetTag.findAll(raw).lastOrNull()?.groupValues?.get(1)?.toLongOrNull()?.coerceIn(-86_400_000, 86_400_000) ?: 0
             val timed = mutableListOf<LyricLine>(); val plain = mutableListOf<LyricLine>()
             raw.removePrefix("\uFEFF").lineSequence().take(10_000).forEach { value ->

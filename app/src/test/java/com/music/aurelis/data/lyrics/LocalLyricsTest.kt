@@ -95,6 +95,26 @@ class LocalLyricsTest {
         assertEquals(3, LrcLib.selectTrack(rows, "arbol", "ARTISTA", 60)!!.getInt("id"))
         assertNull(LrcLib.selectTrack(rows, "Canción diferente", "ARTISTA", 60))
     }
+    @Test fun importedTtmlKeepsWordTimingAfterRepositoryReopenWithoutNetwork() = runTest {
+        val raw = """<tt><body><p begin="1s"><span begin="1s" end="2s">Luna</span></p></body></tt>"""
+        val local = file("fixture.ttml", raw.toByteArray())
+        val repo = LocalLyricsRepository(app) { error("No network permitted") }
+        val imported = repo.import(song(), Uri.fromFile(local))
+        assertTrue(imported.isSynced); assertTrue(imported.lines.first().isWordSynced)
+        val reopened = LocalLyricsRepository(app) { error("No network permitted") }.find(song(), true)!!
+        assertEquals(imported.lines, reopened.lines)
+        assertEquals(LyricsSource.LOCAL_FILE, reopened.source)
+    }
+
+    @Test fun richRemoteCacheRetainsTimingOfflineInsteadOfFlatteningWords() = runTest {
+        val lines = Lyrics.parse("[00:01]<00:01>Luna <00:02>clara")!!.lines
+        val repo = LocalLyricsRepository(app) { LyricsRepository.Result(LyricsSource.LRCLIB, lines) }
+        assertEquals(lines, repo.find(song(), true)!!.lines)
+        val offline = LocalLyricsRepository(app) { error("No remote access permitted") }.find(song(), true)!!
+        assertTrue(offline.cached); assertEquals(lines, offline.lines)
+        assertTrue(offline.lines.first().isWordSynced)
+    }
+
     private fun le(value: Int) = byteArrayOf(value.toByte(), (value ushr 8).toByte(), (value ushr 16).toByte(), (value ushr 24).toByte())
     private fun id3(text: String): ByteArray {
         val payload = byteArrayOf(3, 'e'.code.toByte(), 'n'.code.toByte(), 'g'.code.toByte(), 0) + text.toByteArray()

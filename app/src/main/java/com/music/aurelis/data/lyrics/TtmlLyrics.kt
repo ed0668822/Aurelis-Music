@@ -7,6 +7,9 @@ import java.io.StringReader
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import org.xml.sax.InputSource
+import org.xml.sax.SAXException
+import org.xml.sax.SAXParseException
+import org.xml.sax.helpers.DefaultHandler
 
 object TtmlLyrics {
 
@@ -14,16 +17,38 @@ object TtmlLyrics {
     private const val BACKGROUND_ROLE = "x-bg"
 
     fun parse(ttml: String): List<LyricLine> = runCatching {
+        require(ttml.isNotBlank() && ttml.length <= 1_048_576 && '\u0000' !in ttml)
+        // Also reject declarations when a platform parser does not implement every feature flag.
+        require(!Regex("""<!\s*(?:DOCTYPE|ENTITY)\b""", RegexOption.IGNORE_CASE).containsMatchIn(ttml))
         val factory = DocumentBuilderFactory.newInstance().apply {
-            isNamespaceAware = false
+            isNamespaceAware = true
             harden("http://apache.org/xml/features/disallow-doctype-decl")
             harden("http://xml.org/sax/features/external-general-entities", false)
             harden("http://xml.org/sax/features/external-parameter-entities", false)
             harden(XMLConstants.FEATURE_SECURE_PROCESSING)
             runCatching { isExpandEntityReferences = false }
         }
-        val document = factory.newDocumentBuilder().parse(InputSource(StringReader(ttml)))
-        val paragraphs = document.getElementsByTagName("p")
+        val builder = factory.newDocumentBuilder().apply {
+            setEntityResolver { _, _ -> throw SAXException("External XML entities are not supported") }
+            setErrorHandler(object : DefaultHandler() {
+                override fun error(error: SAXParseException) { throw error }
+                override fun fatalError(error: SAXParseException) { throw error }
+            })
+        }
+        val document = builder.parse(InputSource(StringReader(ttml)))
+        require(document.documentElement.localName == "tt")
+        require(document.documentElement.namespaceURI.orEmpty() in setOf("", "http://www.w3.org/ns/ttml", "http://www.w3.org/2006/10/ttaf1"))
+        val pending = java.util.ArrayDeque<Pair<Node, Int>>()
+        pending.addLast(document.documentElement to 0)
+        var nodes = 0
+        while (pending.isNotEmpty()) {
+            val (node, depth) = pending.removeLast()
+            require(++nodes <= 50_000 && depth <= 64)
+            val children = node.childNodes
+            for (index in 0 until children.length) pending.addLast(children.item(index) to depth + 1)
+        }
+        val paragraphs = document.getElementsByTagNameNS("*", "p")
+        require(paragraphs.length <= 10_000)
 
         val sung = ArrayList<Pair<LyricLine, String?>>(paragraphs.length)
         for (i in 0 until paragraphs.length) {
@@ -43,9 +68,7 @@ object TtmlLyrics {
     }
 
     private fun agentTypes(document: org.w3c.dom.Document): Map<String, String> {
-        val agents = document.getElementsByTagName("ttm:agent")
-            .takeIf { it.length > 0 }
-            ?: document.getElementsByTagName("agent")
+        val agents = document.getElementsByTagNameNS("*", "agent")
         val types = HashMap<String, String>(agents.length)
         for (i in 0 until agents.length) {
             val agent = agents.item(i) as? Element ?: continue
@@ -73,11 +96,12 @@ object TtmlLyrics {
     }
 
     private fun lineFrom(paragraph: Element): LyricLine? {
+        if (paragraph.qualified("ttm:role") in SKIPPED_ROLES) return null
         val pieces = mutableListOf<Piece>()
         val backingPieces = mutableListOf<Piece>()
         collect(paragraph, pieces, backingPieces)
-        val words = mergeIntoWords(pieces)
-        val backing = mergeIntoWords(backingPieces).takeIf { it.isNotEmpty() }?.let {
+        val words = mergeIntoWords(pieces).takeIf(::ordered) ?: emptyList()
+        val backing = mergeIntoWords(backingPieces).takeIf { it.isNotEmpty() && ordered(it) }?.let {
             LyricLine(
                 timeMs = it.first().startMs,
                 text = it.joinToString(" ") { word -> word.text },
@@ -86,7 +110,10 @@ object TtmlLyrics {
         }
 
         if (words.isEmpty()) {
-            val text = paragraph.textContent?.trim().orEmpty()
+            val text = pieces.joinToString("") { piece -> when (piece) {
+                is Piece.Text -> piece.text
+                is Piece.Timed -> piece.text
+            } }.trim()
             val begin = time(paragraph.getAttribute("begin")) ?: return null
             if (text.isEmpty()) return null
             val end = time(paragraph.getAttribute("end"))?.takeIf { it > begin }
@@ -98,9 +125,16 @@ object TtmlLyrics {
             timeMs = minOf(begin, words.first().startMs),
             text = words.joinToString(" ") { it.text },
             words = words,
+            sungUntilMs = time(paragraph.getAttribute("end"))?.takeIf { it >= minOf(begin, words.first().startMs) },
             background = backing,
         )
     }
+
+    private fun ordered(words: List<LyricWord>): Boolean =
+        words.zipWithNext().all { (a, b) -> a.startMs <= b.startMs } && words.all { word ->
+            word.endMs >= word.startMs && word.syllables.zipWithNext().all { (a, b) -> a.startMs <= b.startMs } &&
+                word.syllables.all { it.startMs >= word.startMs && it.endMs in it.startMs..word.endMs }
+        }
 
     private fun collect(node: Node, out: MutableList<Piece>, backing: MutableList<Piece>) {
         val children = node.childNodes
@@ -112,7 +146,7 @@ object TtmlLyrics {
                     val sink = if (role == BACKGROUND_ROLE) backing else out
                     val begin = time(child.getAttribute("begin"))
                     val end = time(child.getAttribute("end"))
-                    if (begin != null && end != null && !hasTimedChild(child)) {
+                    if (begin != null && end != null && end >= begin && !hasTimedChild(child)) {
                         sink += Piece.Timed(child.textContent.orEmpty(), begin, end)
                     } else {
                         collect(child, sink, backing)
@@ -179,20 +213,21 @@ object TtmlLyrics {
 
     fun time(value: String?): Long? {
         val raw = value?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-        if (raw.endsWith("ms")) return raw.dropLast(2).toDoubleOrNull()?.toLong()
-        val stripped = raw.removeSuffix("s")
-        val parts = stripped.split(':')
-        val seconds = when (parts.size) {
-            1 -> parts[0].toDoubleOrNull()
-            2 -> parts[0].toDoubleOrNull()?.let { m -> parts[1].toDoubleOrNull()?.let { m * 60 + it } }
-            3 -> parts[0].toDoubleOrNull()?.let { h ->
-                parts[1].toDoubleOrNull()?.let { m ->
-                    parts[2].toDoubleOrNull()?.let { h * 3600 + m * 60 + it }
-                }
-            }
-            else -> null
-        } ?: return null
-        return (seconds * 1000).toLong()
+        val unit = Regex("""(\d+(?:\.\d+)?)(ms|h|m|s)?""").matchEntire(raw)
+        val millis = if (unit != null) {
+            val number = unit.groupValues[1].toDoubleOrNull() ?: return null
+            number * when (unit.groupValues[2]) { "ms" -> 1.0; "m" -> 60_000.0; "h" -> 3_600_000.0; else -> 1000.0 }
+        } else {
+            val parts = raw.split(':')
+            if (parts.size !in 2..3 || parts.dropLast(1).any { !it.matches(Regex("""\d+""")) } ||
+                !parts.last().matches(Regex("""\d+(?:\.\d+)?"""))) return null
+            val seconds = parts.last().toDoubleOrNull()?.takeIf { it < 60 } ?: return null
+            val minutes = parts[parts.lastIndex - 1].toDoubleOrNull() ?: return null
+            if (parts.size == 3 && minutes >= 60) return null
+            val hours = if (parts.size == 3) parts[0].toDoubleOrNull() ?: return null else 0.0
+            (hours * 3600 + minutes * 60 + seconds) * 1000
+        }
+        return millis.takeIf { it.isFinite() && it >= 0 && it < Long.MAX_VALUE.toDouble() - 86_400_000 }?.toLong()
     }
 
     private sealed interface Piece {

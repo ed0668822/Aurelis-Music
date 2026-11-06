@@ -659,3 +659,13 @@ Beat This conserva error previo ConvInteger10, pendiente de B09/B10. No modelos
 modificados ni análisis ONNX/AutoMix completo declarado. Evidencias/revisiones en
 ../qa/CI09_ONNX_16KB.md/.json. Gradle/APK/tests Android exclusivamente GitHub,
 pendientes del aviso del usuario; sin Android real verificado ni avance a B07.
+
+
+## B07.1 — inicio autorizado de letras visuales
+
+Run144 SUCCESS de e499ad4 comprobado; el usuario autoriza B07 sin cerrar B06 restante.
+Primera entrega: formatos locales Enhanced/TTML y persistencia de tiempos completos,
+picker conectado, dieciséis pruebas preparadas y doble revisión estática. No Android
+local; compile/lint/tests exclusivamente GitHub y pendientes. Detalles/referencias
+en beta-local/B07_1_TIMING.md/.json. Mismo PR; publicar y esperar resultado del usuario.
+B07 completo, efectos/gestos/compartir y B08 pendientes; plan principal preservado.

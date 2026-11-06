@@ -13,7 +13,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | B04 | B03 | Alta | Pendiente de autorización/previas |
 | B05 | B04 | Alta | Pendiente de autorización/previas |
 | B06 | B05 | Muy alta | Autorizado; B06.1 implementado pendiente CI/Android; .2/.3/.4 pendientes |
-| B07 | B06 | Alta | Pendiente de autorización/previas |
+| B07 | B06 | Alta | Autorizado; primera entrega B07.1 implementada pendiente CI; resto abierto |
 | B08 | B07 | Media-alta | Pendiente de autorización/previas |
 | B09 | B06 y B08 | Muy alta | Pendiente de autorización/previas |
 | B10 | B09 | Muy alta | Pendiente de autorización/previas |
@@ -413,3 +413,17 @@ Checkpoint documental posterior sin cambiar runtime/verificador.31 tests Python
 correctos; APK final/CI/Android16KB pendientes. Beat This CPU conserva fallo previo
 ConvInteger; no exportación ni inferencia Android verificadas. Esperar resultado
 del usuario antes de entrega3 o cualquier avance del plan; no B07 automático.
+
+
+## B07.1 — primera entrega de letras, autorizada
+
+Base e499ad4; run144 SUCCESS confirmado con enlace de commit. Se conserva estado
+pendiente B06.2/.3/.4; autorización explícita permite esta unidad de datos/temporización
+sin dar por completado playback. Parser común activa Enhanced/TTML en importación
+local, conserva palabras/sílabas/fondo y caché2 con lector v1. Picker admite TTML.
+Límites/XML seguro/offset/repeticiones;16 pruebas nuevas preparadas, NO EJECUTADAS
+localmente. Dos revisiones estáticas del mismo agente; evidencia en B07_1_TIMING.md/.json.
+Compilación/lint/tests exclusivamente GitHub; publicar mismo PR1 y esperar aviso.
+Servicio/cola/Glass/ONNX/modelos/ABI/SDK/CI/plan intactos. B07.1 alcance restante,
+B07.2 efectos/gestos, B07.3 compartir y B08 siguen pendientes. No falsa paridad o
+Android real probado; entrega3 de advertencias y ConvInteger continúan registrados.

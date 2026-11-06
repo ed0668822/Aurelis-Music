@@ -159,3 +159,12 @@ a LICENSES y referenciado en NOTICE/índice. POM/AAR oficial y hashes en
 AAR nativo alineado no cierra redistribución/modelos ni prueba hardware. Beat This
 falla al cargar ConvInteger en CPU host en runtime previo y nuevo; voces carga
 en ambos. Modelos intactos, procedencia/exportación y validación ARM64 pendientes.
+
+
+## B07.1 — parsers locales y caché temporal
+
+EnhancedLrc/TtmlLyrics ya adaptados de BitChord, avisos originales conservados y
+procedencia fija/changelog ampliados en NOTICE. Codec/glue/fixtures nuevos propios,
+sin letras comerciales, fuentes/modelos/binarios o dependencias nuevas. LICENSE y
+LICENSES intactos; formato definitivo CSV sigue pendiente, sin relabelar terceros.
+No se habilitan proveedores nuevos ni se presume autorización de sus contenidos.

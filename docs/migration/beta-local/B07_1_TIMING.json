@@ -1,0 +1,119 @@
+{
+  "unit": "B07.1",
+  "delivery": "First bounded B07 delivery: format activation and lossless timing persistence; not all B07 complete",
+  "authorization": "User explicitly authorized B07. Existing B06.2/.3/.4 and warning delivery3 remain pending, not silently completed or implemented.",
+  "base": "e499ad4f2f5613864cc34e6e13add077aec30270",
+  "branch": "feature/bitchord-local-migration",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "prior_ci": {
+    "run": 144,
+    "url": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42285349642",
+    "job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42285349642/job/128124612620",
+    "head": "e499ad4f2f5613864cc34e6e13add077aec30270",
+    "conclusion": "SUCCESS",
+    "provenance": "Public Actions list and job HTML inspected; completed successfully status and exact commit link observed. No new run polled after publishing."
+  },
+  "reference_commit": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "references": [
+    "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/EnhancedLrc.kt",
+    "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/TtmlLyrics.kt",
+    "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerLyrics.kt (targeted position/clock references only, not a full port)"
+  ],
+  "changes": [
+    "Common Lyrics.parse dispatches supported TTML XML or Enhanced LRC before unchanged standard-LRC/plain fallback",
+    "Enhanced LRC retains words/syllables using existing wordsFromRuns, supports repeated leading stamps/fractions/offsets with one shift, bounds expanded runs and safely decodes Unicode entities",
+    "TTML existing parser handles namespace prefixes, bounded documents, supported absolute clock/offset units, word/syllable/background/line-end data; filters translations/romanization and rejects DTD/entities/invalid time values; invalid word ordering falls back to valid declared line timing instead of creating a reverse timeline",
+    "Version2 cache preserves words, syllables, end/alignment/background/timingSource with bounded depth/items/text and validation; version1 remains readable, unknown versions rejected",
+    "Local import accepts TTML MIME types and persists original raw file through existing atomic import mechanism; source priorities/cancellation/online authorization preserved",
+    "Existing PlaybackPosition/line panel integration reused; no new clock, engine or service"
+  ],
+  "source_files": [
+    "app/src/main/java/com/music/aurelis/data/lyrics/EnhancedLrc.kt",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LocalLyricsRepository.kt",
+    "app/src/main/java/com/music/aurelis/data/lyrics/Lyrics.kt",
+    "app/src/main/java/com/music/aurelis/data/lyrics/TtmlLyrics.kt",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+    "app/src/test/java/com/music/aurelis/data/lyrics/LocalLyricsTest.kt",
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LyricsCacheCodec.kt",
+    "app/src/test/java/com/music/aurelis/data/lyrics/RichLyricsTest.kt"
+  ],
+  "source_sha256": {
+    "app/src/main/java/com/music/aurelis/data/lyrics/EnhancedLrc.kt": "28a4f41af446988e5d08e05504cbaee8491c80d40bc4a456630b65881994d98d",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LocalLyricsRepository.kt": "d0466411984cd640d487bad8d4023473b71e3a8d6b5162c0264e36514d356f1a",
+    "app/src/main/java/com/music/aurelis/data/lyrics/Lyrics.kt": "7a6a3eaaa5daa1c7e4c36b41f7a2b722629a4238b13529e37881a2904b06b5d2",
+    "app/src/main/java/com/music/aurelis/data/lyrics/TtmlLyrics.kt": "48abf724a5e4358f3b29c8f090aec75acd8ec2244acfe3493e8cf44d0c0d7a13",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "5612ba55a1197165ae6c5ffce63541e9b4fb223eb8969f1749753986ed2f711a",
+    "app/src/test/java/com/music/aurelis/data/lyrics/LocalLyricsTest.kt": "f6644afd0c88897e50511556713d52794667755e6b9777843c6487472679ac68",
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt": "9abf90dc477bb46c32deb06d4f283d6110db40956e1744616f9951292a745f02",
+    "app/src/main/java/com/music/aurelis/data/lyrics/LyricsCacheCodec.kt": "70ac2496bf6e344a155a584fd117a8843bf18b35233d5a39ad9b1ec28b8bace8",
+    "app/src/test/java/com/music/aurelis/data/lyrics/RichLyricsTest.kt": "300350132b74ba9da4bae451552c709fca55816f43d3675011a9253854fb643b"
+  },
+  "new_tests": {
+    "app/src/test/java/com/music/aurelis/data/lyrics/LocalLyricsTest.kt": [
+      "importedTtmlKeepsWordTimingAfterRepositoryReopenWithoutNetwork",
+      "richRemoteCacheRetainsTimingOfflineInsteadOfFlatteningWords"
+    ],
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt": [
+      "importedTtmlUsesTheSamePlayerPositionAcrossPauseAndSeeks"
+    ],
+    "app/src/test/java/com/music/aurelis/data/lyrics/RichLyricsTest.kt": [
+      "commonEntryPointKeepsEnhancedWordsAndSyllables",
+      "corruptWordIntervalsAndCharacterRangesCannotBecomeCachedLyrics",
+      "deeplyNestedTtmlIsRejectedBeforeRecursiveCollection",
+      "invalidAndUnorderedWordTimesCannotCreateAnInvalidWordTimeline",
+      "legacyCacheRemainsReadableAndFutureVersionsAreRejected",
+      "lineOnlyTtmlKeepsItsExplicitEndAndSkipsTranslatedParagraphs",
+      "nonTtmlXmlMalformedXmlAndExternalEntitiesAreRejected",
+      "numericEntitiesSupportSupplementaryUnicodeAndRejectOverflowSafely",
+      "prefixedTtmlPreservesWordsSyllablesAndBackgroundWithoutTranslationText",
+      "repeatedEnhancedTimestampsShiftEveryWordAndOffsetOnlyOnce",
+      "richCacheRoundTripKeepsAllTimingAndAlignmentData",
+      "ttmlInvalidWordOrderKeepsOnlyTheDeclaredLineTiming",
+      "ttmlTimesAcceptClockAndUnitsButRejectInvalidOrNonFiniteValues"
+    ]
+  },
+  "new_test_count": 16,
+  "reviews": {
+    "review1": "Static data flow, parser/time/namespace/resource bounds, cache migration and cancellation-preservation pass; same agent",
+    "review2": "Separate static active import/player-position integration, regression methods, license and protected-scope review; same agent"
+  },
+  "static_checks": [
+    "git diff --check passed",
+    "All existing LocalLyricsTest and PlaybackIntegrationTest method bodies unchanged; only new cases/import added",
+    "Protected playback/Glass/native/ONNX/model/CI/SDK/ABI/main-plan paths unchanged",
+    "Existing imported/raw/cache priority and atomic write/mutex/cancellation paths retained"
+  ],
+  "android_compilation_and_tests_locally": "NOT_EXECUTED_USER_REQUESTS_GITHUB_ONLY",
+  "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+  "device_runtime": "NOT_EXECUTED",
+  "limitations": [
+    "No word-progress UI/syllable effects/frame clock port yet; B07.2 remains pending",
+    "TTML supported subset uses absolute begin/end in clock or ms/s/m/h units; frame/tick notation and inherited/relative container timing are not implemented",
+    "Enhanced LRC without a terminal word stamp retains existing next-line/end-or800ms fallback; not an audio-derived timing estimate",
+    "Old version1 cache has no word data to recover; remains line-only until replaced by a valid rich result",
+    "Sharing/export B07.3, provider/translation B08, full parity/hardware/accessibility matrix remain pending",
+    "B06.2/.3/.4, warning delivery3 and model ConvInteger limitation remain recorded; B07 authorization does not close them"
+  ],
+  "protected_paths": [
+    ".github",
+    "app/build.gradle.kts",
+    "app/proguard-rules.pro",
+    "app/src/main/java/com/music/aurelis/playback",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt",
+    "app/src/main/cpp",
+    "app/src/main/jniLibs",
+    "app/src/main/assets",
+    "app/src/main/AndroidManifest.xml",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "LICENSE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "next": "Publish same PR; notify and wait for user CI result before further B07 sub-deliveries. Do not start B08."
+}

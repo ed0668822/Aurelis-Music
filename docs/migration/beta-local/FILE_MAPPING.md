@@ -96,3 +96,13 @@ en creación/restauración. Los dos SongActionsDialog reales conectan Play Next.
 El timeline Media3 sigue siendo canónico; formato persistido sin cambios.
 No LocalSessionPlayer nuevo, lógica remota ni sesiones adicionales en esta unidad.
 Referencia/licencias y límites en B06_1_QUEUE; sucesor shuffle pendiente.
+
+
+## F10 — B07.1 primera entrega
+
+Lyrics.parse → EnhancedLrc/TtmlLyrics existentes → LocalLyricsRepository activo.
+Nuevo D:data/lyrics/LyricsCacheCodec.kt para metadatos temporales v2, lector v1.
+D:ui/screens/NowPlayingScreen.kt acepta TTML en el picker ya conectado; estado y
+PlaybackPosition/panel existentes conservados. Fixtures y prueba de seek/importación
+en RichLyricsTest, LocalLyricsTest y PlaybackIntegrationTest. Referencia, límites
+y pendientes en B07_1_TIMING. PlayerLyrics/reloj frame/efectos/compartir aún no portados.

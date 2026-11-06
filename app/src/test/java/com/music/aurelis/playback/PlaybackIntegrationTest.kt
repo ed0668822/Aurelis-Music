@@ -12,6 +12,7 @@ import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.model.LocalSong
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
+import kotlinx.coroutines.flow.first
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
@@ -226,6 +227,30 @@ class PlaybackIntegrationTest {
         vm.enqueue(listOf(song("4"))); vm.playNext(listOf(song("5")))
         vm.moveQueueItem(0, 2); vm.removeFromQueue(2); settle()
         assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id })
+    }
+
+    @Test fun importedTtmlUsesTheSamePlayerPositionAcrossPauseAndSeeks() {
+        play(); player.pause(); settle()
+        val current = vm.state.value.currentSong!!.queueEntryId
+        val before = player.replacements
+        val file = java.io.File(app.cacheDir, "b07-position.ttml").apply { writeText(
+            """<tt><body><p begin="1s"><span begin="1s" end="2s">Primera</span></p><p begin="3s"><span begin="3s" end="4s">Segunda</span></p></body></tt>""") }
+        vm.importLyrics(android.net.Uri.fromFile(file))
+        runTest(dispatcher, timeout = 10.seconds) {
+            val loaded = vm.state.first { it.lyrics is LyricsState.Loaded || it.lyrics is LyricsState.Failed }.lyrics
+            assertTrue(loaded.toString(), loaded is LyricsState.Loaded)
+            assertTrue((loaded as LyricsState.Loaded).isSynced)
+            assertTrue(loaded.lines.all { it.isWordSynced })
+        }
+        player.seekTo(3500); settle()
+        val loaded = vm.state.value.lyrics as LyricsState.Loaded
+        val lyrics = com.music.aurelis.data.lyrics.Lyrics(loaded.lines, loaded.isSynced)
+        assertEquals(1, lyrics.activeIndexAt(vm.state.value.positionMs))
+        player.seekTo(1500); settle()
+        assertEquals(0, lyrics.activeIndexAt(vm.state.value.positionMs))
+        assertEquals(current, vm.state.value.currentSong?.queueEntryId)
+        assertEquals(before, player.replacements)
+        assertFalse(player.playWhenReady)
     }
 
 }

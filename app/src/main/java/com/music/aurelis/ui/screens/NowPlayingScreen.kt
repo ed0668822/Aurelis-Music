@@ -417,7 +417,7 @@ fun NowPlayingScreen(
                             }
 
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                TextButton(onClick = { importSongId = s.id; importLyrics.launch(arrayOf("text/*", "application/octet-stream", "application/x-subrip")) }) { Text("Importar LRC") }
+                                TextButton(onClick = { importSongId = s.id; importLyrics.launch(arrayOf("text/*", "application/ttml+xml", "application/xml", "application/octet-stream", "application/x-subrip")) }) { Text("Importar LRC / TTML") }
                                 TextButton(onClick = playbackViewModel::searchLyrics, enabled = state.lyrics !is LyricsState.Loading) { Text("Buscar en LRCLIB") }
                             }
                             val loaded = state.lyrics as? LyricsState.Loaded

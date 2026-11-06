@@ -7,8 +7,6 @@ import com.music.aurelis.data.model.LocalSong
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -56,7 +54,7 @@ internal class LocalLyricsRepository(
     suspend fun import(song: LocalSong, uri: Uri): LocalLyricsResult = withContext(Dispatchers.IO) {
         val bytes = app.contentResolver.openInputStream(uri)?.use(::readLimited) ?: error("No se pudo abrir el archivo de letras.")
         val text = decode(bytes)
-        val found = parsed(text, LyricsSource.LOCAL_FILE) ?: error("El archivo no contiene letras LRC o texto compatibles.")
+        val found = parsed(text, LyricsSource.LOCAL_FILE) ?: error("El archivo no contiene letras LRC, TTML o texto compatibles.")
         currentCoroutineContext().ensureActive()
         writeMutex.withLock {
             currentCoroutineContext().ensureActive()
@@ -66,18 +64,10 @@ internal class LocalLyricsRepository(
     }
     private fun readCache(song: LocalSong): LocalLyricsResult? = runCatching {
         val file = File(cache, "${key(song)}.json")
-        val json = JSONObject(file.inputStream().use { decode(readLimited(it)) })
-        require(json.getInt("version") == 1)
-        val source = LyricsSource.valueOf(json.getString("source"))
-        val values = json.getJSONArray("lines"); require(values.length() in 1..10_000)
-        val lines = (0 until values.length()).map { index -> val row = values.getJSONObject(index)
-            LyricLine(row.getLong("time").also { require(it >= 0) }, row.getString("text")) }
-        LocalLyricsResult(lines.sortedBy { it.timeMs }, source, json.getBoolean("synced"), true)
+        LyricsCacheCodec.decode(file.inputStream().use { decode(readLimited(it)) })
     }.getOrNull()
     private fun writeCache(song: LocalSong, result: LocalLyricsResult) {
-        val lines = JSONArray(); result.lines.forEach { lines.put(JSONObject().put("time", it.timeMs).put("text", it.text)) }
-        val bytes = JSONObject().put("version", 1).put("source", result.source.name).put("synced", result.isSynced)
-            .put("lines", lines).toString().toByteArray()
+        val bytes = LyricsCacheCodec.encode(result).toByteArray(Charsets.UTF_8)
         require(bytes.size <= MAX_BYTES)
         atomicWrite(File(cache, "${key(song)}.json"), bytes)
         var total = 0L

@@ -284,6 +284,17 @@ Play Next while shuffle is enabled remains unavailable with an explanation until
 the session owns an explicit shuffled-successor policy. Aurelis integration and
 tests do not replace third-party authorship or change their licence terms.
 
+B07.1 — Local rich lyric formats and timing persistence
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/EnhancedLrc.kt
+and shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/TtmlLyrics.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE; existing notices retained.
+Changes: connect the existing parsers to local imports, repeated stamps/offsets,
+namespace and bounded XML handling, safe entities and lossless local cache metadata.
+Existing word/syllable model and helpers reused; no new external lyric service.
+Original short test fixtures and cache integration are Aurelis contributions;
+no commercial lyrics or replacement of third-party authorship is included.
+
 9. Código fuente, distribución y verificaciones pendientes
 
 Repositorio de Aurelis Music:
