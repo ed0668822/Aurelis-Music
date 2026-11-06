@@ -119,5 +119,6 @@
     "docs/migration/beta-local/MASTER_PLAN.md",
     "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
   ],
-  "next": "Publish same PR and wait for user CI result. Continue remaining B07 and reach B08 under current authorization, without repeating completed audits or requesting already-granted approval; no B09."
+  "next": "Publish same PR and wait for user CI result. Continue remaining B07 and reach B08 under current authorization, without repeating completed audits or requesting already-granted approval; no B09.",
+  "implementation_commit": "327caca25ec7433e04a77ce31391a88f1228ecf7"
 }

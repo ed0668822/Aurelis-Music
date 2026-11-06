@@ -449,3 +449,9 @@ Compilación/lint/suites exclusivamente GitHub; publicar mismo PR y esperar avis
 Pendientes: efectos completos/paridad B07.2, compartir B07.3 y B08. No B09.
 B06 restante, avisos entrega3 y ConvInteger siguen registrados. Plan/Glass/servicio/
 ONNX/modelos/ABI/SDK/CI/caché/parsers conservados. No declarar Android real probado.
+
+Entrega B07.2 (núcleo) — implementación `327caca25ec7433e04a77ce31391a88f1228ecf7`; mismo PR1.
+Checkpoint documental posterior sin cambiar app/tests.17 pruebas nuevas preparadas
+y dos revisiones estáticas; nuevo compile/lint/suites exclusivamente GitHub,
+pendientes del resultado del usuario. Autorización hasta B08 conservada; no pedir
+otra para el alcance vigente. Faltan resto B07/compartir y B08; no B09 automático.
