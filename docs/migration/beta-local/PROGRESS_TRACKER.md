@@ -360,3 +360,15 @@ B06.1 no verificado; B06.2/.3/.4 y B07 pendientes, sin cambio de plan ni producc
 Entrega CI06 — commit de corrección `a5d5ce3a1a4111593c56bcd39fa0dc6ae252bc9d`; misma rama y PR1.
 Checkpoint documental posterior, sin alterar el árbol de tests/aplicación. Nuevo
 resultado de GitHub y ejecución de pruebas pendientes del aviso del usuario.
+
+
+## CI07 — corrección de selectores tras resultado del usuario
+
+Run141 de390c759 falla ejecutando dos pruebas de cola. Historial oculto hacía
+que el primer botón quitara canción3; el tag de arrastre está en árbol unmerged.
+Se explicita historial, se selecciona por UUID y se usa árbol correcto en los
+cuatro accesos al tirador. Expectativas [2,3]/[1,3,2] conservadas; identidad,
+índice, posición y pausa comprobados. Ver ../../qa/CI07_QUEUE_TEST_TARGETS.md/.json.
+Dos revisiones estáticas del mismo agente; producción/plan/Glass/gate preservados.
+Nueva compilación/tests exclusivamente en GitHub, pendientes del aviso del usuario.
+No cierre de B06 ni inicio de B07/B06.2/.3/.4/QA02 en esta corrección.

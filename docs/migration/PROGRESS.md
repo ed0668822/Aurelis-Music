@@ -628,3 +628,13 @@ PlayerIntegrationTest. Corregidos contratos de token y acciones de accesibilidad
 sin modificar código de aplicación/Glass ni debilitar aserciones. Evidencias
 en ../qa/CI06_TEST_COMPILATION.md/.json. Doble revisión estática; compilación y
 tests pendientes exclusivamente de GitHub. No inicio de B07 ni de otras unidades.
+
+
+## CI07 — pruebas de cola antes de B07
+
+Run141/390c759 falla en dos selectores de PlayerIntegrationTest; corrección
+limitada al test y documentación, sin tocar gate ni app/Glass. Historial
+explícito y objetivos por ocurrencia/unmerged; aserciones preservadas y reforzadas.
+Evidencia y límites en ../qa/CI07_QUEUE_TEST_TARGETS.md/.json. Compilación/tests
+pendientes exclusivamente de GitHub; publicar mismo PR y esperar aviso del usuario.
+B07 y demás unidades nuevas no iniciados.

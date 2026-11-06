@@ -1,0 +1,46 @@
+{
+  "unit": "CI07",
+  "base": "390c759b2f18c6a47fc2ae0200d4c6e66797c268",
+  "failed_head": "390c759b2f18c6a47fc2ae0200d4c6e66797c268",
+  "failed_run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42268479543",
+  "failed_run_number": 141,
+  "failed_job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42268479543/job/128066550781",
+  "access": "GitHub public job annotations and commit link retrieved; gh --log-failed returned Forbidden, no full logs downloaded",
+  "gate_outcomes": "tests=failure, build=skipped, verify=skipped, upload_apk=skipped",
+  "failure_annotations": [
+    "com.music.aurelis.ui.PlayerIntegrationTest.miniPlayerOpensRealControlsAndQueueActionsStaySynchronized [java.lang.AssertionError]: java.lang.AssertionError: expected:<[2, 3]> but was:<[1, 2]>",
+    "com.music.aurelis.ui.PlayerIntegrationTest.draggingAQueueOccurrenceUsesTheExistingPlayerWithoutSeekingOrRestartingIt [java.lang.AssertionError]: java.lang.AssertionError: Action performScrollTo() failed.",
+    "com.music.aurelis.ui.PlayerIntegrationTest.miniPlayerOpensRealControlsAndQueueActionsStaySynchronized [java.lang.AssertionError]: java.lang.AssertionError: expected:<[2, 3]> but was:<[1, 2]>",
+    "com.music.aurelis.ui.PlayerIntegrationTest.draggingAQueueOccurrenceUsesTheExistingPlayerWithoutSeekingOrRestartingIt [java.lang.AssertionError]: java.lang.AssertionError: Action performScrollTo() failed.",
+    "Reason: Expected exactly '1' node but could not find any node that satisfies: (TestTag = 'queue-drag-5595d66d-40ee-43d4-8276-bb790d960feb')\nHowever, the unmerged tree contains '1' node that matches. Are you missing `useUnmergedNode = true` in your finder?",
+    "Reason: Expected exactly '1' node but could not find any node that satisfies: (TestTag = 'queue-drag-feae2948-ecd5-4868-8c37-96d495ab795c')\nHowever, the unmerged tree contains '1' node that matches. Are you missing `useUnmergedNode = true` in your finder?"
+  ],
+  "diagnosis": {
+    "miniPlayerOpensRealControlsAndQueueActionsStaySynchronized": "The test assumes first visible removal is the prior song1, but queue history is hidden by default. After jumping to song2, the only remove button belongs to song3, explaining [1,2].",
+    "draggingAQueueOccurrenceUsesTheExistingPlayerWithoutSeekingOrRestartingIt": "The queue row merges descendants for accessibility. Compose reports the exact tagged drag handle exists in the unmerged tree, not the default merged finder."
+  },
+  "fixes": [
+    "Set showQueueHistory=false in test fixture; assert song1 row hidden, enable history explicitly and select song1 removal within its unique queue-entry ancestor. Scroll the actual queue list to index0 before locating the historical row, allowing LazyColumn to compose it.",
+    "Retain expected queue [2,3]; additionally require same playing occurrence, current index0, paused position and playWhenReady=false after removal.",
+    "Use useUnmergedTree=true for all four handle lookup/geometry operations; retain real swipe, expected [1,3,2], occurrence/position/pause/replacement checks."
+  ],
+  "source_files": [
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt"
+  ],
+  "source_sha256": {
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "5eabaae595c6a3b18438fecfb509182bea79a8d16743904fff5bbcac6ba3ca00"
+  },
+  "review1": "static annotation/cause/selector/API review; same agent",
+  "review2": "static test method/assertion preservation and protected-scope review; same agent",
+  "static_checks": [
+    "git diff --check passed",
+    "All test methods and assertion expressions retained, selector prefixes allowed to change",
+    "Production, workflows, dependencies, licensing and main plan unchanged"
+  ],
+  "android_build_and_tests_locally": "NOT_EXECUTED_USER_REQUESTS_GITHUB_ONLY",
+  "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+  "device_runtime": "NOT_EXECUTED",
+  "prior_CI06": "Run141 reached execution of UI tests; previous token/action compilation annotations no longer observed. Does not establish successful APK build.",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "next": "Publish same branch/PR and wait for user CI result; no B07, QA02 or other B06 unit started"
+}

@@ -43,6 +43,7 @@ class PlayerIntegrationTest {
     @After fun cleanup() { compose.runOnIdle { store.clear() } }
     private fun start() {
         SettingsRepository.setReduceAnimation(true)
+        SettingsRepository.setShowQueueHistory(false)
         SettingsRepository.lyricsSources.value = emptySet()
         player = RecordingPlayer()
         vm = PlaybackViewModel(app) { player }; store.put("player", vm)
@@ -147,6 +148,7 @@ class PlayerIntegrationTest {
 
     @Test fun miniPlayerOpensRealControlsAndQueueActionsStaySynchronized() {
         start()
+        val previousEntry = vm.state.value.queue.first().queueEntryId
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
         compose.onNodeWithContentDescription("Abrir reproductor").assertIsDisplayed().performClick()
         compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
@@ -160,8 +162,23 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
         compose.onNodeWithText("Canción local 2").performClick()
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); player.pause() }
-        compose.onAllNodesWithContentDescription("Quitar de la cola")[0].performClick()
+        val playingEntry = vm.state.value.currentSong!!.queueEntryId
+        val pausedPosition = vm.state.value.positionMs
+        // History is hidden by default; the first remove button belongs to song3.
+        compose.onNodeWithTag("queue-entry-$previousEntry").assertDoesNotExist()
+        compose.runOnIdle { SettingsRepository.setShowQueueHistory(true) }
+        compose.onNode(hasScrollToIndexAction() and hasAnyAncestor(hasTestTag("playback-queue")))
+            .performScrollToIndex(0)
+        compose.onNodeWithTag("queue-entry-$previousEntry").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasContentDescription(app.getString(R.string.remove_from_queue)) and
+            hasAnyAncestor(hasTestTag("queue-entry-$previousEntry")), useUnmergedTree = true).performClick()
         compose.runOnIdle { assertEquals(listOf("2", "3"), vm.state.value.queue.map { it.id }) }
+        compose.runOnIdle {
+            assertEquals(playingEntry, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(0, vm.state.value.currentIndex)
+            assertEquals(pausedPosition, vm.state.value.positionMs)
+            assertFalse(player.playWhenReady)
+        }
         compose.onNodeWithContentDescription("Cerrar").performClick()
         compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
@@ -365,10 +382,10 @@ class PlayerIntegrationTest {
         val target = vm.state.value.queue[2].queueEntryId
         compose.onNodeWithContentDescription("Abrir reproductor").performClick()
         compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
-        compose.onNodeWithTag("queue-drag-$dragged").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("queue-drag-$target").performScrollTo().assertIsDisplayed()
-        val from = compose.onNodeWithTag("queue-drag-$dragged").fetchSemanticsNode().boundsInRoot.center
-        val to = compose.onNodeWithTag("queue-drag-$target").fetchSemanticsNode().boundsInRoot.center
+        compose.onNodeWithTag("queue-drag-$dragged", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("queue-drag-$target", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        val from = compose.onNodeWithTag("queue-drag-$dragged", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.center
+        val to = compose.onNodeWithTag("queue-drag-$target", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.center
         val queueBounds = compose.onNodeWithTag("playback-queue").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithTag("playback-queue").performTouchInput {
             swipe(from - queueBounds.topLeft, to - queueBounds.topLeft, durationMillis = 600)

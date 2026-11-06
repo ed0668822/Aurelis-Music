@@ -241,3 +241,15 @@ estática del mismo agente, APIs contrastadas con javap y diff correcto. Producc
 workflow/gates, Glass/QA01 y plan sin cambios. Compilación/tests nuevos PENDIENTES
 DE GITHUB; no Android local ni arranque verificado. Ver CI06_TEST_COMPILATION.md/.json.
 Mismo PR1; publicar, avisar y esperar resultado del usuario. No B07 ni QA02.
+
+
+## CI07 — gate causado por pruebas de cola
+
+Run141/390c759 ejecuta pruebas, pero fallan dos casos PlayerIntegrationTest:
+se elimina la fila visible incorrecta al estar oculto el historial; el tirador
+solo existe en árbol unmerged. Test corregido con historial explícito, selector
+por UUID y cuatro búsquedas unmerged. Aserciones originales conservadas y estado
+reforzado. Solo test/documentación; gate/app/Glass/plan intactos. Evidencias en
+CI07_QUEUE_TEST_TARGETS.md/.json. Doble revisión estática; tests/compilación nuevos
+pendientes exclusivamente de GitHub. Publicar mismo PR y esperar aviso del usuario.
+No Android físico ni inicio de B07/QA02.
