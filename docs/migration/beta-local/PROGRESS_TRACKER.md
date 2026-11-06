@@ -273,3 +273,7 @@ Compilación/lint/pruebas solo en GitHub, pendientes de resultado del usuario.
 No Android físico, capturas GPU, Logcat ni sonido verificados. Servicio, calidad,
 B04, QA01, GLASS01, firmas/ABI/workflow/licencias íntegras y plan principal intactos.
 No cierre total B05 ni B06/QA02: paridad visual y validación siguen pendientes.
+
+Entrega de código B05.2: `ed6d44b82e055eeb5ca224bba21e0a766bee93bd`. PR1 existente, misma rama; checkpoint
+documental posterior conserva idéntico árbol de aplicación. CI y Android real
+pendientes; no se consulta Actions automáticamente ni se inicia B06/QA02.
