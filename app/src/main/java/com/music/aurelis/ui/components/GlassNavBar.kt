@@ -6,6 +6,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +35,23 @@ import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
 import com.music.aurelis.ui.player.PlayerDock
+
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import com.music.aurelis.ui.theme.LocalReduceMotion
+import com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop
+import com.music.aurelis.ui.components.backdrop.backdrops.layerBackdrop
+import com.music.aurelis.ui.components.floatingtabbar.GlassPillMotion
+import com.music.aurelis.ui.components.floatingtabbar.GlassSelectionPill
+import com.music.aurelis.ui.components.floatingtabbar.pillPlacement
 
 val NAV_BAR_GUTTER = 16.dp
 val NAV_BAR_LIFT = 8.dp
@@ -69,13 +87,26 @@ fun GlassNavBar(
     val haptics = rememberHaptics()
 
     val currentOnTabSelected by rememberUpdatedState(onTabSelected)
+    require(tabs.isNotEmpty() && selectedIndex in tabs.indices)
+    val scope = rememberCoroutineScope()
+    val motion = remember(scope) { GlassPillMotion(scope, selectedIndex) }
+    val reduced = LocalReduceMotion.current
+    LaunchedEffect(selectedIndex, reduced) {
+        motion.reduceMotion = reduced
+        if (reduced) motion.snapTo(selectedIndex) else motion.animateTo(selectedIndex)
+    }
+    val barGlass = rememberLayerBackdrop()
+    val tabRow = rememberLayerBackdrop()
+    val capture = LocalGlassHardware.current && LocalLiquidGlassEnabled.current
+
 
     Column(
         modifier = modifier
             .padding(horizontal = NAV_BAR_GUTTER)
             .padding(bottom = NAV_BAR_LIFT),
     ) {
-        Box(
+        CompositionLocalProvider(LocalGlassExport provides barGlass) {
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
@@ -90,8 +121,27 @@ fun GlassNavBar(
                     shape = RoundedCornerShape(percent = 50),
                 ),
         ) {
+            val density = LocalDensity.current
+            val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+            val tabWidth = (maxWidth - 16.dp - 4.dp * (tabs.size - 1)) / tabs.size
+            val widthPx = with(density) { maxWidth.toPx() }
+            val tabPx = with(density) { tabWidth.toPx() }
+            val gapPx = with(density) { 4.dp.toPx() }
+            val insetPx = with(density) { 8.dp.toPx() }
+            val centerY = with(density) { 28.dp.toPx() }
+            val heightPx = with(density) { 48.dp.toPx() }
+            val growPx = with(density) { 8.dp.toPx() }
+            SideEffect { motion.stepDp = tabWidth.value + 4f }
+            GlassSelectionPill(motion, glassIndicatorColor(), barGlass, tabRow,
+                Modifier.matchParentSize().pillPlacement(
+                    center = {
+                        val x = insetPx + tabPx / 2f + (tabPx + gapPx) * motion.position
+                        Offset(if (rtl) widthPx - x else x, centerY)
+                    }, size = { motion.liveSize(Size(tabPx.coerceAtLeast(1f), heightPx),
+                        Size(tabPx.coerceAtLeast(1f) + growPx, heightPx + growPx)) }))
             Row(
                 modifier = Modifier
+                    .then(if (capture) Modifier.layerBackdrop(tabRow) else Modifier)
                     .selectableGroup()
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -129,6 +179,7 @@ fun GlassNavBar(
                     if (index < tabs.lastIndex) Spacer(modifier = Modifier.width(4.dp))
                 }
             }
+        }
         }
 
         song?.let { current ->

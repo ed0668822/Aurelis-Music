@@ -28,6 +28,9 @@ class AurelisApplication : Application(), SingletonImageLoader.Factory {
         ProfileRepository.init(this)
         SettingsRepository.init(this)
         mutableLibraries = MutableStateFlow(LocalUserLibrary(this, ProfileRepository.profileId))
+        com.music.aurelis.ui.AppUi.install(object : com.music.aurelis.ui.AppUiHost {
+            override val libraries: StateFlow<LocalUserLibrary> = this@AurelisApplication.libraries
+        })
         com.music.aurelis.data.lyrics.LyricsTranslation.cacheDir = cacheDir
         ListeningStats.init(userLibrary)
 

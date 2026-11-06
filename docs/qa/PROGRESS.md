@@ -76,3 +76,10 @@ Plan principal intacto; QA02 y B03 no iniciados. Entrega documental en el mismo 
 CI de esa revisión se consulta separadamente sin modificar la app probada.
 
 CodeQL del mismo2742913 también Success (run42152988508,1m6s).
+
+
+CI de la entrega documental b8b8910: Build127 Success (10m32s) y CodeQL Success
+(1m11s), URLs/digests en QA01_DELIVERY_CI.json. Este resultado no acredita los
+cambios posteriores de B03. El usuario indicó después «Mejor continúa con el
+plan ... pero si prueba todo lo que puedas»: se retoma el principal por B03,
+sin QA02; se preserva la evidencia y la limitación de Android real.

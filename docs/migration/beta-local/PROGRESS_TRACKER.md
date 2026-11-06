@@ -9,7 +9,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | B00 | Aprobación recibida | Media | Completado y publicado |
 | B01 | B00 | Alta | B01.1/.2/.3 implementados y publicados |
 | B02 | B01 | Alta | B02.1/.2/.3 comprobados localmente; hardware/CI pendientes |
-| B03 | B02 | Media-alta | Pendiente de autorización/previas |
+| B03 | B02 | Media-alta | Autorizado como siguiente bloque; B03.1 probado, B03.2/.3 en curso |
 | B04 | B03 | Alta | Pendiente de autorización/previas |
 | B05 | B04 | Alta | Pendiente de autorización/previas |
 | B06 | B05 | Muy alta | Pendiente de autorización/previas |
@@ -189,3 +189,12 @@ sin eliminar Liquid Glass.171 pruebas por variante y builds/lint correctos.
 Ver [QA](../../qa/PROGRESS.md) y QA01_EVIDENCE/RED/GREEN para evidencia y límites.
 Arranque físico pendiente: no trasladar el éxito automatizado al Redmi. Plan y
 orden B00–B13 intactos; B03 no iniciado. QA02 necesita autorización independiente.
+
+
+## B03 — reanudación del principal
+
+Última instrucción «Mejor continúa con el plan ... pero si prueba todo lo que
+puedas» se aplica al siguiente B03, sin iniciar QA02 ni B04. QA00/01 conserva
+pruebas/CI de b8b8910 correctas, Android real pendiente.
+B03.1: host local inicializado y píldora real conectados;14 casos dirigidos
+correctos, dos revisiones del mismo agente. Ver B03_1_NAVIGATION. R al cierre.

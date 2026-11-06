@@ -189,7 +189,7 @@ internal fun AurelisNavigationContent(
 ) {
     val playbackState by playbackViewModel.state.collectAsState()
     val libraryUiState by libraryViewModel.uiState.collectAsState()
-    val userStore by (LocalContext.current.applicationContext as AurelisApplication).libraries.collectAsState()
+    val userStore by com.music.aurelis.ui.AppUi.host.libraries.collectAsState()
     val userState by userStore.state.collectAsState()
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
     val route = navigator.visibleRoute()
