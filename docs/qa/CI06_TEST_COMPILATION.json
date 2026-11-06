@@ -76,5 +76,6 @@
     "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "f66f637702494d87c762d47851b6982e221866f950258e8d092c2cc872d6cd2f"
   },
   "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
-  "next": "Publish on the same branch/PR; wait for user CI result; B06.2/B06.3/B06.4 and B07 not started by this correction"
+  "next": "Publish on the same branch/PR; wait for user CI result; B06.2/B06.3/B06.4 and B07 not started by this correction",
+  "fix_commit": "a5d5ce3a1a4111593c56bcd39fa0dc6ae252bc9d"
 }

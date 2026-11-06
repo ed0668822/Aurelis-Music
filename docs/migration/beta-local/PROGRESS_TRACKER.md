@@ -356,3 +356,7 @@ aserción y métodos de prueba conservados. Evidencia en ../../qa/CI06_TEST_COMP
 Dos revisiones estáticas, no compilación/tests Android locales. Validación nueva
 pendiente de GitHub; publicar en misma rama/PR1 y esperar resultado del usuario.
 B06.1 no verificado; B06.2/.3/.4 y B07 pendientes, sin cambio de plan ni producción.
+
+Entrega CI06 — commit de corrección `a5d5ce3a1a4111593c56bcd39fa0dc6ae252bc9d`; misma rama y PR1.
+Checkpoint documental posterior, sin alterar el árbol de tests/aplicación. Nuevo
+resultado de GitHub y ejecución de pruebas pendientes del aviso del usuario.
