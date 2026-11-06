@@ -338,3 +338,10 @@ estáticas del mismo agente; compilación/lint/tests exclusivamente en GitHub.
 Play Next con shuffle deshabilitado y explicado, política de sucesor pendiente.
 B06.2/.3/.4 y validación real/paridad pendientes. Plan/QA01/Glass/ABI/servicio
 preservados. Publicar en mismo PR1, avisar y esperar resultado del usuario.
+
+
+Entrega B06.1 — commit de código `4fbb660ec7f0441fe99aa21d8cd517eb86612ba5`, identidad local
+ed0668822 <ed0668822@gmail.com>. Destino: rama existente y PR1
+https://github.com/ed0668822/Aurelis-Music/pull/1, título conservado.
+Checkpoint documental posterior sin cambiar el árbol de aplicación. CI/21 tests
+y Android real pendientes; siguiente B06.2 espera resultado del usuario.

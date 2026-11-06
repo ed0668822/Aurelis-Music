@@ -126,5 +126,5 @@
     "app/src/test/java/com/music/aurelis/ui/theme/SharedGesturesTest.kt": "29881961ca7c724b94c8f5e4f8df407b47c9a0a7ea4ddc51ceddb5b930a17661",
     "app/src/test/java/com/music/aurelis/playback/QueueCoordinatorTest.kt": "5369df2cf34fe7834cdd5b0043dfa246988557cb39a1805f4aa45892e99a9133"
   },
-  "commit": "RECORDED_IN_PROGRESS_TRACKER_AFTER_COMMIT"
+  "commit": "4fbb660ec7f0441fe99aa21d8cd517eb86612ba5"
 }
