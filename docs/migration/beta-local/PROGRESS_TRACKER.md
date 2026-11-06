@@ -179,3 +179,13 @@ Código final: `ccb75126b0b0361212e9c7369265e0f803812ee6`.
 Todos los SHA reales, revisión/compilación, PR y límites en B02_CLOSEOUT.md.
 Entrega conjunta de commits B02 a la misma rama/PR; CI del SHA de entrega pendiente
 de consulta. B01.2/.3 ya publicados; no repetir esas tareas. B03 sin autorización.
+
+
+## Complemento QA00/QA01 — regresión B02
+
+El usuario reportó cierre al abrir en Redmi Note14Pro5G. La prueba nueva reproduce
+Size is unspecified en onAttach/apply/lens; se corrigió el cálculo antes de medida
+sin eliminar Liquid Glass.171 pruebas por variante y builds/lint correctos.
+Ver [QA](../../qa/PROGRESS.md) y QA01_EVIDENCE/RED/GREEN para evidencia y límites.
+Arranque físico pendiente: no trasladar el éxito automatizado al Redmi. Plan y
+orden B00–B13 intactos; B03 no iniciado. QA02 necesita autorización independiente.

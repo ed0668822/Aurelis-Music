@@ -440,3 +440,11 @@ Firmas/ZIP y10 textos legales/fuente verificados;12 .so ARM64 existentes.
 Ver beta-local/B02_3_EVIDENCE.json para hashes de APK/archivos y comandos.
 CI actual y hardware pendientes; no implica paridad completa ni beta distribuible.
 ONNX4KB/procedencia de modelos/binarios siguen pendientes de B09/B13.
+
+
+## QA01 — corrección de inicio en cristal
+
+Build debug/release/R8 y171 casos por variante correctos: 4m 56s.
+Lint:224/223 advertencias,0 errores; firma/ZIP/textos legales verificados.
+Regresión roja/verde del nodo Compose y lente en docs/qa; ejecución Android física
+NO realizada por falta de dispositivo. No declarar arranque del teléfono probado.

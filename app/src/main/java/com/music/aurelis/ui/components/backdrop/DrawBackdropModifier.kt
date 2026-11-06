@@ -361,7 +361,9 @@ private class DrawBackdropNode(
             return
         }
         if (effectScope.update(this, backdropScale)) {
-            updateEffects()
+            // The initial attachment has no measurements or effect-state reads.
+            // Start observing those reads when the first measured draw is ready.
+            observeEffects()
         }
 
         onDrawBehind?.invoke(this)
