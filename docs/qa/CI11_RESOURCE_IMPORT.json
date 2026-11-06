@@ -1,0 +1,81 @@
+{
+  "unit": "CI11",
+  "base": "b927f0a049202b271d2cdfb2ceb63a8fec04710c",
+  "failed_head": "b927f0a049202b271d2cdfb2ceb63a8fec04710c",
+  "run_number": 148,
+  "run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42309855521",
+  "job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42309855521/job/128208313569",
+  "result": "FAILURE",
+  "access": "Public Actions run state, job commit link and annotation messages read; full step logs not fetched",
+  "gate": "compile=failure, lint=skipped, tests=skipped, build=skipped, verify=skipped, upload_apk=skipped",
+  "observed_diagnostics": [
+    {
+      "file": "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+      "line": 426,
+      "message": "Unresolved reference 'R'."
+    },
+    {
+      "file": "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+      "line": 431,
+      "message": "Unresolved reference 'R'."
+    },
+    {
+      "file": "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+      "line": 432,
+      "message": "Unresolved reference 'R'."
+    },
+    {
+      "file": "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+      "line": 434,
+      "message": "Unresolved reference 'R'."
+    },
+    {
+      "file": "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+      "line": 444,
+      "message": "Unresolved reference 'R'."
+    },
+    {
+      "file": "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+      "line": 448,
+      "message": "Unresolved reference 'R'."
+    }
+  ],
+  "annotation_count_explanation": "10 annotations include six unresolved R diagnostics plus compile exit, generic build failure and downstream gate messages; not ten independent Kotlin defects",
+  "cause": "B08 introduced R.string references in NowPlayingScreen and stringResource import but omitted import com.music.aurelis.R. Its package is com.music.aurelis.ui.screens, distinct from generated R namespace com.music.aurelis.",
+  "fix": "Add exactly import com.music.aurelis.R; no behavior, tests, resources, dependencies, workflow or feature changes",
+  "source_sha256": {
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "f3dd119e1ed62c2f5a66b2f4bd16f8d59feee94fca53d865dfacc0d8f526d397"
+  },
+  "static_files_checked": [
+    "app/src/main/java/com/music/aurelis/playback/PlaybackViewModel.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/LyricsFailureText.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/LyricsSourcesDialog.kt",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt"
+  ],
+  "static_checks": [
+    "git diff --check",
+    "Namespace matches import",
+    "R references/imports and default string resources checked in five B08 files",
+    "Removing added import yields byte-identical source to base"
+  ],
+  "reviews": {
+    "review1": "Static namespace/source/annotation cause and minimal-fix review by same agent",
+    "review2": "Separate static B08 imports/resources, regression and protected-scope review by same agent",
+    "independent_reviewers": false
+  },
+  "verification": {
+    "local_gradle": "NOT_EXECUTED_GITHUB_ONLY_USER_INSTRUCTION",
+    "local_tests": "NOT_EXECUTED_GITHUB_ONLY_USER_INSTRUCTION",
+    "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+    "android_startup_audio": "NOT_EXECUTED"
+  },
+  "codeql": {
+    "run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42309849564",
+    "result": "FAILURE",
+    "cause": "Not confirmed from public job annotations; no distinct source diagnostic visible. Recheck new CodeQL result after correction; no suppression or configuration change."
+  },
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "protected": "Main plan, test assertions including CI10/B08, Liquid Glass, player service/queue/DSP, ABI/native/models, Gradle and workflows unchanged",
+  "next": "Push same branch/PR, notify user, wait for reported GitHub result; no B09"
+}

@@ -470,3 +470,17 @@ revisiones estáticas, XML/recursos/diff revisados. Sin cambio de tareas o gates
 Instalación, arranque, audio y consultas a servicios reales NO EJECUTADOS.
 Ver beta-local/B08_PROVIDERS.md y ../qa/B08_PROVIDERS.json.
 Esperar el resultado comunicado por el usuario antes de otra entrega; no B09.
+
+
+## CI11 — corrección del import R antes de continuar
+
+Run148/b927f0a FAILURE, job128208313569: seis diagnósticos Unresolved reference R
+sobre NowPlayingScreen; falta import com.music.aurelis.R tras B08. Corregida solo
+esa línea. Gate bloquea compile y deja lint/tests/build/verify/upload sin ejecutar.
+Dos revisiones estáticas separadas del mismo agente; imports/recursos de cinco
+archivos B08 comprobados, resto de la pantalla idéntico. Evidencias en docs/qa/
+CI11_RESOURCE_IMPORT.md/.json (rutas desde raíz). Compilación/tests exclusivamente
+GitHub; nueva validación pendiente. CodeQL de la base también falla, causa propia
+no confirmada en anotaciones públicas; no se modifica ni desactiva.
+Plan, Glass, pruebas, motor, ABI/modelos/Gradle/workflow intactos. Mismo PR1;
+esperar resultado del usuario, no B09 ni otra unidad.

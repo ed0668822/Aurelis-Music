@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.ui.platform.LocalContext
 import com.music.aurelis.AurelisApplication
+import com.music.aurelis.R
 import com.music.aurelis.ui.components.SongActionsDialog
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.activity.compose.BackHandler
