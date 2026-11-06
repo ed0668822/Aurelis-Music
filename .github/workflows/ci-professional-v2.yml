@@ -1,0 +1,124 @@
+# Aurelis Music CI Professional v2 — isolated from the migration workflow.
+name: Aurelis CI Professional v2
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: aurelis-v2-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    name: Source, lint, tests and APK validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
+      - name: Record source and changed files
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          mkdir -p ci-v2
+          python3 .github/scripts/ci_v2.py inventory
+      - name: Install Android SDK tools
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;26.1.10909125' 'cmake;3.22.1'
+          chmod +x gradlew
+      - name: Lint and unit tests (both variants)
+        id: quality
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./gradlew :app:lintDebug :app:lintRelease :app:testDebugUnitTest :app:testReleaseUnitTest --continue --no-daemon --console=plain --max-workers=2 2>&1 | tee ci-v2/quality.log
+      - name: Build APKs
+        id: build
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleDebug :app:assembleRelease --continue --no-daemon --console=plain --max-workers=2 2>&1 | tee ci-v2/build.log
+      - name: Validate APK identity, ZIP, signature and ABI
+        id: verify
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: python3 .github/scripts/ci_v2.py verify
+      - name: Generate diagnostic report
+        if: always()
+        env:
+          QUALITY_OUTCOME: ${{ steps.quality.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: python3 .github/scripts/ci_v2.py report
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurelis-ci-v2-report-${{ github.run_number }}
+          path: ci-v2/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require all quality gates
+        if: always()
+        env:
+          QUALITY_OUTCOME: ${{ steps.quality.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          test "$QUALITY_OUTCOME" = success
+          test "$BUILD_OUTCOME" = success
+          test "$VERIFY_OUTCOME" = success
+      - name: Upload test APKs (not official releases)
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurelis-v2-test-apks-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+            ci-v2/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+  emulator:
+    name: Emulator smoke test
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
+      - name: Boot emulator, install and launch app
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            chmod +x gradlew
+            ./gradlew :app:assembleDebug --no-daemon --max-workers=2
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -W -n com.music.aurelis/.MainActivity
+            sleep 8
+            adb shell pidof com.music.aurelis
