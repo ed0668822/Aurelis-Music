@@ -174,3 +174,13 @@ agente. Misma rama/PR, sin firma/ABI/servicio/plan alterados. No B06 ni QA02.
 
 Commit de corrección/CI02: `0e36d0f2854be5a79061bc12c7dd73669d3da7a7`. Publicación en PR1; compilación
 GitHub del nuevo código pendiente. No B06 hasta recibir su resultado.
+
+
+## CI03 — import de recursos en PlayerIntegrationTest
+
+Adjunto del usuario y run42232423184 del commit e687ee2: compile/lint success,
+tests failure por R.string en cuatro líneas del archivo de pruebas; APK omitido.
+Se añade únicamente import explícito com.music.aurelis.R, sin cambiar aserciones
+ni gate/workflow/app. Dos revisiones estáticas; cuatro nombres de referencia
+comprobados contra recursos existentes. No Gradle/Android local. CI nuevo pendiente.
+Evidencia en CI03_TEST_RESOURCES.md/.json. No B06 ni QA02; mismo PR1 y rama.

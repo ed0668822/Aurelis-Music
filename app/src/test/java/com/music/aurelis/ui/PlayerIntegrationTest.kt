@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.ViewModelStore
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import com.music.aurelis.R
 import com.music.aurelis.*
 import com.music.aurelis.data.*
 import com.music.aurelis.data.model.LocalSong

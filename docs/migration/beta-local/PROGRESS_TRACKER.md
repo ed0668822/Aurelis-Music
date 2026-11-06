@@ -289,3 +289,13 @@ Workflow/reportes mejorados con compile previo, entradas de tareas y estados por
 archivo, sin falsos éxitos ni checks desactivados.21 pruebas de utilidades correctas;
 no Gradle/Android local. No avanzar B06/QA02 hasta resolver CI. Publicar/avisar y
 esperar resultado del usuario; mantener B05 y paridad visual pendientes de validar.
+
+
+## CI03 — corrección de compilación del archivo de pruebas
+
+Run42232423184: código principal y lint pasaron, falló compilar pruebas por
+R.string en PlayerIntegrationTest. Gate/APK bloqueados correctamente. Import
+explícito del R de Aurelis, sin tocar pruebas/producción/workflow/plan/licencias.
+Ver ../../qa/CI03_TEST_RESOURCES.md/.json. Dos revisiones estáticas; compilación y
+pruebas nuevas pendientes de GitHub, no ejecutadas aquí. No B06/QA02. Esperar
+resultado del usuario antes de continuar; B05 no se declara verificado en Android.
