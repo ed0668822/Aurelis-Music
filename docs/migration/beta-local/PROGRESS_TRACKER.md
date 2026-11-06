@@ -13,7 +13,7 @@ Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescrit
 | B04 | B03 | Alta | Pendiente de autorización/previas |
 | B05 | B04 | Alta | Pendiente de autorización/previas |
 | B06 | B05 | Muy alta | Autorizado; B06.1 implementado pendiente CI/Android; .2/.3/.4 pendientes |
-| B07 | B06 | Alta | Autorizado; primera entrega B07.1 implementada pendiente CI; resto abierto |
+| B07 | B06 | Alta | B07.1 primera entrega CI145 SUCCESS; núcleo B07.2 entregado pendiente CI; resto abierto |
 | B08 | B07 | Media-alta | Pendiente de autorización/previas |
 | B09 | B06 y B08 | Muy alta | Pendiente de autorización/previas |
 | B10 | B09 | Muy alta | Pendiente de autorización/previas |
@@ -433,3 +433,19 @@ Checkpoint documental posterior sin cambiar app/tests.16 pruebas nuevas preparad
 (NO EJECUTADAS localmente); compilación/lint/suites pendientes exclusivamente de
 GitHub. Esperar resultado del usuario antes de la siguiente entrega; B07 completo,
 B07.2/.3 y B08 no se declaran realizados.
+
+
+## Continuación autorizada B07→B08 — primera entrega B07.2
+
+El usuario autoriza continuar hasta B08. Conservar autorización para futuras
+entregas sin pedirla otra vez; esperar el resultado de GitHub entre entregas como
+indicó. Run145 SUCCESS de f81b6a0 confirmado mediante páginas públicas/commit.
+B07.2: reloj existente por frames/foreground, barrido de dos textos con clipping
+de graphemes/bidi, palabras/sílabas/voces, foco medido, lectura manual y offset
+positivo=retardo con seek inverso. VM solo publica discontinuidades con posición,
+sin nuevos comandos/motores.17 tests nuevos preparados, NO EJECUTADOS localmente.
+Dos revisiones estáticas del mismo agente, evidencia en B07_2_SWEEP.md/.json.
+Compilación/lint/suites exclusivamente GitHub; publicar mismo PR y esperar aviso.
+Pendientes: efectos completos/paridad B07.2, compartir B07.3 y B08. No B09.
+B06 restante, avisos entrega3 y ConvInteger siguen registrados. Plan/Glass/servicio/
+ONNX/modelos/ABI/SDK/CI/caché/parsers conservados. No declarar Android real probado.

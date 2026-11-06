@@ -63,6 +63,7 @@ data class PlaybackState(
     val isPlayRequested: Boolean = false,
     val isLoading: Boolean = false,
     val positionMs: Long = 0L,
+    val positionDiscontinuity: Int = 0,
     val durationMs: Long = 0L,
     val queue: List<LocalSong> = emptyList(),
     val currentIndex: Int = -1,
@@ -122,6 +123,7 @@ class PlaybackViewModel internal constructor(
             _state.update { it.copy(isLoading = playbackState == Player.STATE_BUFFERING) }
             if (playbackState == Player.STATE_READY) syncDuration()
         }
+        override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) = syncState(discontinuous = true)
         override fun onTimelineChanged(timeline: Timeline, reason: Int) = syncState()
         override fun onEvents(player: Player, events: Player.Events) = syncState()
     }
@@ -313,7 +315,7 @@ class PlaybackViewModel internal constructor(
         }
     }
 
-    private fun syncState() {
+    private fun syncState(discontinuous: Boolean = false) {
         val ctrl = controller ?: return
         val currentIndex = ctrl.currentMediaItemIndex
         val mediaItem = ctrl.currentMediaItem
@@ -329,6 +331,7 @@ class PlaybackViewModel internal constructor(
                 isPlayRequested = ctrl.playWhenReady && ctrl.playbackState != Player.STATE_ENDED && ctrl.playerError == null,
                 isLoading = ctrl.playbackState == Player.STATE_BUFFERING,
                 positionMs = ctrl.currentPosition.coerceAtLeast(0L),
+                positionDiscontinuity = it.positionDiscontinuity + if (discontinuous) 1 else 0,
                 durationMs = duration(ctrl),
                 queue = queueSongs,
                 repeatMode = ctrl.repeatMode, shuffleEnabled = ctrl.shuffleModeEnabled,

@@ -288,3 +288,14 @@ de CI previo, no hardware16KB ni resolución del modelo Beat This. B07.1 aporta1
 pruebas nuevas de formatos/caché/posición, preparadas sin ejecución Android local.
 Evidencia/alcance en ../migration/beta-local/B07_1_TIMING.md/.json. Nuevo CI pendiente
 del aviso del usuario. QA02 y demás unidades no se inician por esta entrega.
+
+
+## Resultado B07.1 y primera entrega B07.2
+
+Run145 https://github.com/ed0668822/Aurelis-Music/actions/runs/42291757122 SUCCESS,
+job128146677780 enlaza f81b6a03228e3d5e6d03fb04b75cf7de2afa437e. No prueba física.
+B07.2 añade17 casos de temporización/Unicode/RTL/foco/manual y discontinuidad,
+preparados sin Gradle/Android local. Dos revisiones estáticas del mismo agente;
+nuevo CI pendiente del resultado del usuario. Ver ../migration/beta-local/B07_2_SWEEP.
+QA02 no iniciado. Continuación autorizada hasta B08 conservada, con puerta de CI
+entre entregas, sin dar por terminados B07/efectos/paridad o pendientes anteriores.

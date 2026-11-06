@@ -447,19 +447,23 @@ fun NowPlayingScreen(
                                     )
                                 }
                             } else {
-                                val position = remember(s.id) { com.music.aurelis.playback.PlaybackPosition() }
-                                LaunchedEffect(state.positionMs, lyricsOffset, state.isPlaying) {
-                                    position.report(state.positionMs + lyricsOffset)
+                                val lyricsTrackKey = s.queueEntryId ?: s.id
+                                val position = remember(lyricsTrackKey) { com.music.aurelis.playback.PlaybackPosition() }
+                                LaunchedEffect(state.positionMs, state.positionDiscontinuity, state.isPlaying) {
+                                    position.report(state.positionMs)
                                     position.advancing = state.isPlaying
+                                    position.seeks = state.positionDiscontinuity
                                 }
 
                                 SyncedLyricsPanel(
                                     lines = lines,
-                                    trackKey = s.id,
+                                    trackKey = lyricsTrackKey,
                                     position = position,
                                     looking = true,
                                     isPlaying = state.isPlaying,
-                                    onSeekToLine = { playbackViewModel.seekTo((it - lyricsOffset).coerceAtLeast(0)) },
+                                    onSeekToLine = { playbackViewModel.seekTo(com.music.aurelis.ui.player.adjustedLyricsSeekTarget(it, lyricsOffset)) },
+                                    offsetMs = lyricsOffset,
+                                    centerFocus = true,
                                     isSynced = loaded?.isSynced == true,
                                     translatedLines = translated,
                                     syncEnabled = syncEnabled, blurUnfocused = blurLyrics && !reduceBlur,

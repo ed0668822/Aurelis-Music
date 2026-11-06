@@ -669,3 +669,13 @@ picker conectado, dieciséis pruebas preparadas y doble revisión estática. No 
 local; compile/lint/tests exclusivamente GitHub y pendientes. Detalles/referencias
 en beta-local/B07_1_TIMING.md/.json. Mismo PR; publicar y esperar resultado del usuario.
 B07 completo, efectos/gestos/compartir y B08 pendientes; plan principal preservado.
+
+
+## B07.2 — continuación autorizada hasta B08
+
+Run145 SUCCESS de f81b6a0 confirmado; primera entrega B07.1 validada por CI, no
+Android físico. Núcleo B07.2 activo con barrido por clipping, reloj/seek/offset y
+foco/lectura manual.17 pruebas preparadas, doble revisión estática; nuevo CI pendiente
+exclusivamente GitHub. Evidencias en beta-local/B07_2_SWEEP.md/.json. Publicar mismo
+PR y esperar resultado del usuario. Autorización hasta B08 persistente; no pedirla
+otra vez ni avanzar B09. Efectos/paridad completos, B07.3 y B08 aún pendientes.

@@ -106,3 +106,14 @@ D:ui/screens/NowPlayingScreen.kt acepta TTML en el picker ya conectado; estado y
 PlaybackPosition/panel existentes conservados. Fixtures y prueba de seek/importación
 en RichLyricsTest, LocalLyricsTest y PlaybackIntegrationTest. Referencia, límites
 y pendientes en B07_1_TIMING. PlayerLyrics/reloj frame/efectos/compartir aún no portados.
+
+
+## F10/F11 — núcleo B07.2 activo
+
+Nuevos D:ui/player/LyricsPlayback.kt y LyricSweep.kt adaptan partes delimitadas de
+PlayerLyrics upstream, reutilizando LyricClock/LyricFocus/modelos existentes.
+D:ui/player/SyncedLyricsPanel.kt conecta barrido/voz/foco/lectura y posición real;
+NowPlayingScreen pasa ocurrencia/offset y PlaybackViewModel publica el token de
+discontinuidad. res/values/strings.xml aclara el signo del ajuste existente.
+Solo núcleo; feather/glow/lift/growth/partículas y gesto completo pendientes.
+Pruebas/referencias/límites exactos en B07_2_SWEEP.md/.json.

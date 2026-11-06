@@ -1,0 +1,123 @@
+{
+  "unit": "B07.2",
+  "delivery": "First B07.2 core delivery: real frame playhead, swept words/syllables, focus/manual reading and coherent offset",
+  "authorized_continuation": "User granted continuation through B07 toward B08. Preserve this authorization for later deliveries; wait for user-reported GitHub outcome between deliveries; do not start B09.",
+  "base": "f81b6a03228e3d5e6d03fb04b75cf7de2afa437e",
+  "branch": "feature/bitchord-local-migration",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "prior_ci": {
+    "run": 145,
+    "url": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42291757122",
+    "job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42291757122/job/128146677780",
+    "head": "f81b6a03228e3d5e6d03fb04b75cf7de2afa437e",
+    "conclusion": "SUCCESS",
+    "provenance": "Public Actions list and job HTML; completed successfully and exact commit link observed. No Android device claim."
+  },
+  "reference_commit": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "references": [
+    "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerLyrics.kt: offset/playhead adapter, foreground frame loop and two-copy swept-line/draw clipping sections",
+    "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/LyricClock.kt: existing target engine reused; no algorithm rewrite"
+  ],
+  "changes": [
+    "Use existing LyricClock with real sampled timestamps and Media3 discontinuity token; one foreground/visible frame loop, direct reports when stopped/hidden/reduced-motion",
+    "Two identically laid-out Text copies with draw clipping for continuous word/syllable reveal; grapheme boundaries, native bidi direction and wrapping; only one accessibility text",
+    "Connect existing overlapping-voice focus helper and show actual background-vocal data; focus recalculation keyed to start/end events, not full scans every frame",
+    "Measured centered focus with viewport padding; explicit user drag pauses follow until resume or lyric seek; reduced-motion uses direct scroll",
+    "Unify positive delay position=player-offset and seek=line+offset with saturation at0/Long.MAX; describe sign in existing localized resource",
+    "PlaybackViewModel only publishes a discontinuity counter atomically with actual position; no playback command/service changes; new NowPlaying adapter keyed by queue occurrence"
+  ],
+  "source_files": [
+    "app/src/main/java/com/music/aurelis/playback/PlaybackViewModel.kt",
+    "app/src/main/java/com/music/aurelis/ui/player/SyncedLyricsPanel.kt",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+    "app/src/main/res/values/strings.xml",
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt",
+    "app/src/test/java/com/music/aurelis/ui/LyricsPanelTest.kt",
+    "app/src/main/java/com/music/aurelis/ui/player/LyricsPlayback.kt",
+    "app/src/main/java/com/music/aurelis/ui/player/LyricSweep.kt",
+    "app/src/test/java/com/music/aurelis/ui/player/LyricTimingTest.kt"
+  ],
+  "source_sha256": {
+    "app/src/main/java/com/music/aurelis/playback/PlaybackViewModel.kt": "3c2f9e957eae7e5f7445bf5999e628d7c235cc95ad0716efc197d0733fac1be4",
+    "app/src/main/java/com/music/aurelis/ui/player/SyncedLyricsPanel.kt": "a2fa12b162166fd74bb68593c6290c723911828fd938d84d26131375c2c645e2",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "49fcffd3c219b4490e252660dd4343f125b9d701d60296b91968db38b7b7d89f",
+    "app/src/main/res/values/strings.xml": "a98a01de70cd6d6c22a71d78d7d9035f1d585f56fa4c6a4ac7d8245bdeeac9cd",
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt": "62f48a08680fae212119056d6924ae28716f510cf404eeef40b337526520a5f8",
+    "app/src/test/java/com/music/aurelis/ui/LyricsPanelTest.kt": "b018a649875cc494a8af8eb6c16e3e183bdf3044795b76e976e4aed2e89429ac",
+    "app/src/main/java/com/music/aurelis/ui/player/LyricsPlayback.kt": "e5d1875be3be0008254bd3c642a2366a2433b392d1dd4dd8454a4c233d3ec882",
+    "app/src/main/java/com/music/aurelis/ui/player/LyricSweep.kt": "caefa695b08625a3358ceb35a8a63ea71fb407569815db854abc333cc7add4f9",
+    "app/src/test/java/com/music/aurelis/ui/player/LyricTimingTest.kt": "fae7f0e16b1fd947c84215a7ed7586ea876f0e15166b953073868764da00c571"
+  },
+  "new_tests": {
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt": [
+      "externalSeeksPublishDiscontinuitiesWithoutReplacingTheQueue"
+    ],
+    "app/src/test/java/com/music/aurelis/ui/LyricsPanelTest.kt": [
+      "aSweptWordHasOnlyOneAccessibleTextNodeAndRemainsSeekable",
+      "centerFocusUsesMeasuredRowsIncludingWrappedText",
+      "manualScrollStopsFollowingUntilTheUserResumesIt",
+      "overlappingLeadAndBackingVoicesAreVisibleAndFocusedTogether",
+      "positiveOffsetDelaysFocusAndTheSeekUsesTheInverseOffset",
+      "reducedMotionUsesReportedPositionsWithoutAnInterpolatingFrameLoop",
+      "rightToLeftSweptLyricsRemainReadableAndSeekable"
+    ],
+    "app/src/test/java/com/music/aurelis/ui/player/LyricTimingTest.kt": [
+      "anUnannouncedOldReadingDoesNotMoveWordsBackwards",
+      "explicitForwardAndBackwardSeeksCanReanchorTheClock",
+      "frameClockInterpolatesBetweenPlayerSamples",
+      "negativeOffsetAdvancesLyricsWithoutOverflowAtTrackEdges",
+      "overlappingVoicesRemainFocusedUntilTheirActualEnds",
+      "positiveOffsetDelaysLyricsAndSeekingIsItsInverse",
+      "restartingAfterPauseDoesNotExtrapolateAStaleSample",
+      "revealDoesNotSplitSurrogatePairsOrCombiningClusters",
+      "timedSyllablesDriveTheSameRevealUsedByThePainter"
+    ]
+  },
+  "new_test_count": 17,
+  "static_checks": [
+    "git diff --check passed",
+    "Default strings XML parsed successfully",
+    "Existing LyricsPanelTest and PlaybackIntegrationTest method bodies unchanged",
+    "PlaybackViewModel diff restricted to counter field/listener/copy; playback commands unchanged",
+    "TextLayoutResult bidi/path, lifecycle owner and Media3 callback signatures inspected using javap",
+    "Protected parser/cache/CI/native/ONNX/model/SDK/ABI/Glass/service/main-plan paths unchanged"
+  ],
+  "reviews": {
+    "review1": "Static frame/discontinuity/offset, glyph/range bounds and API integration review; same agent",
+    "review2": "Separate static accessibility, drag/manual reading, centering/reduced motion, regression and license/scope review; same agent"
+  },
+  "android_compilation_and_tests_locally": "NOT_EXECUTED_USER_REQUESTS_GITHUB_ONLY",
+  "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+  "device_runtime": "NOT_EXECUTED",
+  "visual_parity": "PARTIAL_IMPLEMENTATION_NOT_VERIFIED_ON_ANDROID_GPU",
+  "limitations": [
+    "No bloom/glow feathering, word lift/growth, lyric particles or full control-reveal gesture port in this delivery; full BitChord visual parity not claimed",
+    "Frame-loop lifecycle and GPU performance need device validation; prepared tests do not prove hardware behavior",
+    "TTML inherited/relative/frame/tick conformance from B07.1 remains open",
+    "B07.3 safe sharing/export still pending; B08 providers/translation not implemented in this delivery",
+    "B06.2/.3/.4, warning delivery3 and Beat This ConvInteger limitation remain in prior records"
+  ],
+  "protected_paths": [
+    ".github",
+    "app/build.gradle.kts",
+    "app/proguard-rules.pro",
+    "app/src/main/java/com/music/aurelis/playback/AurelisPlaybackService.kt",
+    "app/src/main/java/com/music/aurelis/playback/QueueCoordinator.kt",
+    "app/src/main/java/com/music/aurelis/data/lyrics",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt",
+    "app/src/main/cpp",
+    "app/src/main/jniLibs",
+    "app/src/main/assets",
+    "app/src/main/AndroidManifest.xml",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "LICENSE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "next": "Publish same PR and wait for user CI result. Continue remaining B07 and reach B08 under current authorization, without repeating completed audits or requesting already-granted approval; no B09."
+}

@@ -253,4 +253,21 @@ class PlaybackIntegrationTest {
         assertFalse(player.playWhenReady)
     }
 
+    @Test fun externalSeeksPublishDiscontinuitiesWithoutReplacingTheQueue() {
+        play(); player.pause(); settle()
+        val current = vm.state.value.currentSong!!.queueEntryId
+        val before = vm.state.value.positionDiscontinuity
+        val replacements = player.replacements
+        player.seekTo(15_000); settle()
+        assertTrue(vm.state.value.positionDiscontinuity > before)
+        assertEquals(15_000L, vm.state.value.positionMs)
+        val forward = vm.state.value.positionDiscontinuity
+        player.seekTo(1500); settle()
+        assertTrue(vm.state.value.positionDiscontinuity > forward)
+        assertEquals(1500L, vm.state.value.positionMs)
+        assertEquals(current, vm.state.value.currentSong?.queueEntryId)
+        assertEquals(replacements, player.replacements)
+        assertFalse(player.playWhenReady)
+    }
+
 }

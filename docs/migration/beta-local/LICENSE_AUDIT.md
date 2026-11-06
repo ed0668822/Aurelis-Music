@@ -168,3 +168,12 @@ procedencia fija/changelog ampliados en NOTICE. Codec/glue/fixtures nuevos propi
 sin letras comerciales, fuentes/modelos/binarios o dependencias nuevas. LICENSE y
 LICENSES intactos; formato definitivo CSV sigue pendiente, sin relabelar terceros.
 No se habilitan proveedores nuevos ni se presume autorización de sus contenidos.
+
+
+## B07.2 — reloj y texto barrido
+
+Partes dirigidas de PlayerLyrics/LyricClock BitChord fijo, GPLv3; atribución de
+contribuidores preservada en NOTICE y marcadores de los adaptadores. No se importan
+fuentes/recursos/proveedores/modelos ni dependencias nuevas. LICENSE/LICENSES y
+procedencias previas intactas. No se relabela código de terceros ni se afirma port
+completo del renderer; fixtures propios. Ver B07_2_SWEEP para alcance y pendientes.

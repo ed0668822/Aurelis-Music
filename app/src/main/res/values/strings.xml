@@ -129,7 +129,7 @@
 
     <!-- Lyrics -->
     <string name="lyrics_offset">Ajuste de letras</string>
-    <string name="lyrics_offset_description">Desplaza las letras para sincronizarlas con el audio.</string>
+    <string name="lyrics_offset_description">Desplaza las letras para sincronizarlas con el audio. Los valores positivos las retrasan; los negativos las adelantan.</string>
     <string name="lyrics_offset_reset">Restablecer</string>
     <string name="decrease_lyrics_offset">Reducir desplazamiento</string>
     <string name="increase_lyrics_offset">Aumentar desplazamiento</string>
