@@ -1,3 +1,33 @@
+AURELIS MUSIC — AVISOS LEGALES Y ATRIBUCIONES
+===========================================
+
+Identificación del proyecto: Aurelis © 2026. GPL-3.0-or-later.
+Repositorio: https://github.com/ed0668822/Aurelis-Music
+
+Este documento identifica las aportaciones propias, los componentes adaptados
+y las licencias de terceros. La identificación de Aurelis corresponde a sus
+aportaciones propias y no sustituye los derechos ni las condiciones de los
+componentes originales. Los avisos y textos legales originales se conservan
+en su idioma; la guía en español está en LICENSES/README.md.
+
+El texto íntegro de la GNU GPL v3 está en LICENSE. El permiso de Aurelis para
+utilizar la versión 3 o cualquier versión posterior se declara a continuación.
+Cada componente de terceros conserva las condiciones que le correspondan.
+Este aviso no concede permisos adicionales ni certifica el cumplimiento de
+las obligaciones de distribución de todos los binarios y modelos.
+
+Contenido
+---------
+1. BitChord y adaptaciones de su interfaz y componentes
+2. Orchard y componentes de análisis bajo AGPL
+3. Kyant0/backdrop — Apache-2.0
+4. liquid_glass_easy — MIT
+5. Modelos ONNX — atribuciones y procedencia pendiente
+6. Dependencias de terceros
+7. Fuente Vazirmatn — SIL OFL 1.1
+8. Procedencia detallada de adaptaciones B02.3 y B03
+9. Código fuente, distribución y verificaciones pendientes
+
 Aurelis Music
 Copyright (C) 2026 ed0668822 (Aurelis adaptations)
 Licensed under the GNU General Public License, version 3 or later.
@@ -21,11 +51,15 @@ Their original notices are preserved below.
 ────────────────────────────────────────────────────────────────────
 
 1. BitChord
-   https://github.com/kushagrasinghx/bitchord
+   https://github.com/kushagrasinghx/BitChord
    Copyright (C) 2026 Kushagra Singh
-   License: GNU General Public License v3.0 or later (GPL-3.0-or-later)
+   Reference commit: b690dc146009d4815825fa4a20815ef2e4ee8898
+   License: GNU General Public License v3.0 (GPLv3), as declared in
+   the upstream README and LICENSE at the reference commit.
+   Any permission to use a later version must be established from the
+   applicable original notice; it is not inferred from Aurelis's license.
 
-   Adapted modules include: the complete lyrics system (providers,
+   Adapted areas include: lyrics (providers,
    parsers, repository, translation), the DSP audio chain (equalizer,
    spatial audio, transition filter, loudness), the offline audio
    analysis pipeline (envelope, tempo, key, structure), AudioRouting,
@@ -33,8 +67,10 @@ Their original notices are preserved below.
    History), DSD decoding, the synced lyrics panel, LyricFocus, and
    the AndroidPlayerHost / PlayerHost abstractions.
 
-   BitChord's source is licensed under the GNU General Public License
-   version 3 or later. See https://www.gnu.org/licenses/gpl-3.0.html.
+   This attribution identifies adapted areas, not verified feature
+   completeness or runtime availability. Original per-file notices,
+   including separate third-party licenses, remain applicable.
+   See https://www.gnu.org/licenses/gpl-3.0.html.
 
 ────────────────────────────────────────────────────────────────────
 
@@ -44,18 +80,24 @@ Their original notices are preserved below.
    License: GNU Affero General Public License v3.0 or later
             (AGPL-3.0-or-later)
 
-   Adapted modules: native/analyzer/audio_analysis.cpp,
-   native/analyzer/mel_spectrogram.cpp, native/analyzer/resampler.cpp,
-   native/analyzer/tempo_analysis.cpp,
-   native/analyzer/vocal_spectrogram.cpp, and the JNI bridges
-   native/jni/analysis_jni.cpp, native/jni/mel_jni.cpp,
-   native/jni/vocal_jni.cpp.
+   Adapted modules: app/src/main/cpp/analyzer/audio_analysis.cpp,
+   app/src/main/cpp/analyzer/mel_spectrogram.cpp,
+   app/src/main/cpp/analyzer/resampler.cpp,
+   app/src/main/cpp/analyzer/tempo_analysis.cpp,
+   app/src/main/cpp/analyzer/vocal_spectrogram.cpp, and the JNI bridges
+   app/src/main/cpp/jni/analysis_jni.cpp,
+   app/src/main/cpp/jni/mel_jni.cpp,
+   app/src/main/cpp/jni/vocal_jni.cpp.
 
-   Per section 13 of the AGPLv3, these files are combined here into
-   Aurelis -- a work licensed under the GNU General Public License,
-   version 3 or later -- and remain themselves governed by the AGPLv3
-   as part of that combination. The terms of the GPLv3 continue to
-   apply to the combined work.
+   These files remain governed by AGPL-3.0-or-later. Section 13 of
+   GPLv3 and section 13 of AGPLv3 permit the specified combination:
+   GPLv3 continues to apply to the GPL-covered part, while the
+   AGPL-covered part retains its own license. The special AGPLv3
+   section 13 requirements concerning interaction through a network
+   apply to the combination as such. This does not relicense the
+   Orchard-derived files under GPL alone or change Aurelis's LICENSE.
+   Retain the corresponding source and all applicable notices when
+   distributing the combined binaries.
 
    Orchard's original source: https://github.com/SFG5453/Orchard
 
@@ -171,13 +213,15 @@ Their original notices are preserved below.
 
 ────────────────────────────────────────────────────────────────────
 
-Vazirmatn font
+7. Vazirmatn font
 Copyright 2015 The Vazirmatn Project Authors
 https://github.com/rastikerdar/vazirmatn
 SIL Open Font License, Version 1.1.
 Unmodified font referenced from BitChord commit
 b690dc146009d4815825fa4a20815ef2e4ee8898.
 Full notice and license: LICENSES/Vazirmatn-OFL.txt.
+
+8. Adaptation provenance
 
 B02.3 — IosSwitch adapted from BitChord
 Source: app/src/main/java/com/music/bitchord/ui/components/IosSwitch.kt
@@ -193,3 +237,30 @@ sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
 Original BitChord contributors, GPLv3 per upstream LICENSE.
 Changes: LocalSong/playlist data, local queue/actions, Android accessibility and shared Aurelis tokens.
 Existing Kyant0 and Ahmed Gamil notices remain applicable to the reused glass navigation.
+
+
+────────────────────────────────────────────────────────────────────
+
+9. Código fuente, distribución y verificaciones pendientes
+
+Repositorio de Aurelis Music:
+https://github.com/ed0668822/Aurelis-Music
+
+Al distribuir un APK, debe proporcionarse el código fuente correspondiente
+por una vía permitida por las licencias aplicables, incluidas las
+modificaciones y los archivos necesarios para generar los componentes
+cubiertos. Un enlace a un repositorio, por sí solo, no demuestra que se
+cumplan todas esas obligaciones ni que sus fuentes correspondan al binario.
+
+Siguen pendientes de acreditación la configuración y las fuentes exactas de
+los binarios FFmpeg/NextLib y la procedencia de las exportaciones cuantizadas
+de los modelos ONNX. El inventario de dependencias no sustituye esa revisión.
+Consultar docs/migration/beta-local/LICENSE_AUDIT.md y la auditoría histórica
+docs/migration/LICENSE_AUDIT.md para conocer la evidencia y sus límites.
+
+Los textos de LICENSE, NOTICE y LICENSES/ se incorporan mediante la tarea
+Gradle bundleLicenseTexts a assets/licenses/ de los APK. Su inclusión efectiva
+en cada APK debe verificarse en GitHub; no equivale a validar su ejecución.
+
+Este documento no otorga derechos sobre canciones, letras, carátulas, marcas
+ni servicios externos. Sus respectivos titulares conservan sus derechos.

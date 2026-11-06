@@ -98,3 +98,16 @@ con sintaxis válida. No se ejecutó Gradle ni se compiló la app localmente.
 Por preferencia vigente, publicar/avisar y esperar el resultado que comunique
 el usuario desde GitHub; no esperar CI ni avanzar automáticamente. El nuevo
 workflow aún no se declara aprobado en GitHub. QA02 y B04 no iniciados.
+
+
+## LEGAL01 — textos legales antes de B04
+
+Autorización: «Necesito que mejores el texto de notice y licencia antes de B04».
+NOTICE reorganizado y aclarado; guía informativa LICENSES/README.md en español.
+LICENSE oficial y textos íntegros/atribuciones de terceros preservados; se corrigen
+resúmenes no acreditados sin modificar licencias. Auditoría actualizada en
+beta-local/LICENSE_AUDIT.md; dos revisiones documentadas en LEGAL_TEXT_REVIEW.md.
+No cambios de aplicación, Gradle, ABI, firma, workflow o plan principal.
+Sin compilación local; empaquetado del próximo APK pendiente de GitHub.
+Publicación en la misma rama/PR; esperar el resultado comunicado por el usuario.
+B04 y QA02 no iniciados. Pendientes legales históricos siguen abiertos.

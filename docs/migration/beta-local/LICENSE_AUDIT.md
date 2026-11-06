@@ -72,3 +72,25 @@ El proyecto conserva LICENSE e identificación propia GPL-3.0-or-later; la
 distribución conjunta debe respetar también los términos de cada componente.
 Avisos Kyant0/Apache y Ahmed Gamil/MIT preservados en los efectos existentes.
 Sin dependencias/binarios/modelos nuevos; siguen los pendientes legales B00.
+
+
+## Mejora documental autorizada antes de B04
+
+Se reorganiza NOTICE con índice, explicación inicial en español, rutas actuales
+de los analizadores/JNI y una sección de distribución y fuentes pendientes.
+Se conserva la identidad propia GPL-3.0-or-later y se aclara que el README del
+BitChord fijo declara GPLv3, sin presumir permiso «o posterior» para sus archivos.
+Se corrige el resumen GPL/AGPL conforme a las secciones 13 de ambos textos:
+las partes conservan sus términos y las exigencias especiales de interacción
+por red de AGPL se aplican a la combinación. No se cambia ninguna licencia.
+
+LICENSES/README.md añade una guía informativa en español y un índice de textos.
+El empaquetado existente incluye esta guía sin modificar Gradle. Los avisos MIT,
+Apache, OFL, autores, hashes y referencias previas se conservan. LICENSE y todos
+los textos íntegros de terceros permanecen byte por byte iguales a f19fcf6.
+No se aplican cabeceras definitivas; el CSV sigue pendiente. Los pendientes de
+fuentes FFmpeg/NextLib y exportaciones ONNX no se declaran resueltos.
+
+Doble revisión documental y evidencia: docs/qa/LEGAL_TEXT_REVIEW.md.
+No se ejecuta Gradle localmente: la compilación y verificación de los textos en
+los nuevos APK corresponden a GitHub. B04 no iniciado; plan principal intacto.
