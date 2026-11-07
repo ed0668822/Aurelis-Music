@@ -1,0 +1,137 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B01: independent debug APK compilation and diagnostics.
+name: "B01 | Compile Debug APK"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradle.properties"
+      - "gradlew"
+      - ".github/workflows/b01-compile-debug.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b01-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-apk:
+    name: "B01 | APK Debug + report"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Prepare report directory
+        run: mkdir -p ci-b01
+
+      - name: Set up Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Validate Gradle wrapper and cache
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Install required Android SDK tools
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" "ndk;26.1.10909125" "cmake;3.22.1" > ci-b01/sdk-install.log 2>&1 || {
+            cat ci-b01/sdk-install.log
+            exit 1
+          }
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
+
+      - name: Compile and assemble Debug APK
+        id: compile
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b01/gradle-build.log
+
+      - name: Generate independent B01 report
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.compile.outcome }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import pathlib
+          import re
+          import zipfile
+
+          report = pathlib.Path("ci-b01")
+          report.mkdir(exist_ok=True)
+          log = report / "gradle-build.log"
+          contents = log.read_text(errors="replace") if log.exists() else ""
+          tasks = re.findall(r"^> Task (\S+)(.*)$", contents, re.MULTILINE)
+          apks = sorted(pathlib.Path("app/build/outputs/apk/debug").glob("*.apk"))
+          with (report / "gradle-tasks.tsv").open("w") as fp:
+              fp.write("task\tstatus\n")
+              for task, detail in tasks:
+                  fp.write(f"{task}\t{detail.strip() or 'EXECUTED'}\n")
+          with (report / "apk-manifest.tsv").open("w") as fp:
+              fp.write("filename\tbytes\tsha256\tzip_valid\n")
+              for apk in apks:
+                  digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+                  with zipfile.ZipFile(apk) as z:
+                      valid = z.testzip() is None
+                  fp.write(f"{apk.name}\t{apk.stat().st_size}\t{digest}\t{valid}\n")
+          status = os.environ.get("BUILD_OUTCOME", "not_started")
+          summary = [
+              "# B01 — Debug APK compilation",
+              f"- Status: **{status}**",
+              f"- Commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
+              f"- Gradle task lines captured: **{len(tasks)}**",
+              f"- Debug APKs found: **{len(apks)}**",
+              "- Task inventory lists executed/skipped Gradle tasks, not an exact per-source-file compiler list.",
+              "- Detailed diagnostics: `gradle-build.log`.",
+              "- APK metadata: `apk-manifest.tsv`.",
+          ]
+          (report / "summary.md").write_text("\n".join(summary) + "\n")
+          with pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as fp:
+              fp.write("\n".join(summary) + "\n")
+          PY
+
+      - name: Upload B01 diagnostic report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b01-report-${{ github.run_number }}
+          path: ci-b01/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload compiled Debug APK
+        if: ${{ steps.compile.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b01-debug-apk-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
