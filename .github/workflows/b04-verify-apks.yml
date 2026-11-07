@@ -3,22 +3,7 @@
 name: "B04 | Verify APKs"
 
 on:
-  push:
-    branches:
-      - feature/bitchord-local-migration
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle/**"
-      - "gradle.properties"
-      - "gradlew"
-      - "LICENSE"
-      - "LICENSES/**"
-      - "NOTICE"
-      - ".github/scripts/**"
-      - ".github/apk-audit-policy.json"
-      - ".github/workflows/b04-verify-apks.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
