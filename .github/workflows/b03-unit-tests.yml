@@ -3,17 +3,7 @@
 name: "B03 | Android Unit Tests"
 
 on:
-  push:
-    branches:
-      - feature/bitchord-local-migration
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle/**"
-      - "gradle.properties"
-      - "gradlew"
-      - ".github/workflows/b03-unit-tests.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
