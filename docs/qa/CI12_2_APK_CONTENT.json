@@ -137,5 +137,6 @@
     "docs/migration/beta-local/MASTER_PLAN.md",
     "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
   ],
-  "next": "Publish same branch/PR, notify user, wait for result; no CI12.3 or B09 now"
+  "next": "Publish same branch/PR, notify user, wait for result; no CI12.3 or B09 now",
+  "implementation_commit": "29525fa5562a3bcae9feee98acf53feddaf5baf8"
 }

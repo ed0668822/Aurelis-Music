@@ -383,3 +383,8 @@ No Gradle/Android local: auditoría de APK reales y nuevo CI pendientes de GitHu
 Ver docs/qa/CI12_2_APK_CONTENT.md/.json desde raíz. App, plan, workflow, Gradle,
 ABI/firmas/modelos/Glass intactos; mismo PR1. Avisar y esperar resultado; CI12.3
 no iniciado, autorización conservada. No B09.
+
+Entrega CI12.2 — implementación `29525fa5562a3bcae9feee98acf53feddaf5baf8`.
+PR: https://github.com/ed0668822/Aurelis-Music/pull/1.
+Checkpoint documental posterior; nuevo CI/auditoría de APK reales pendientes.
+Esperar resultado comunicado por el usuario; no CI12.3 ni B09 en esta entrega.
