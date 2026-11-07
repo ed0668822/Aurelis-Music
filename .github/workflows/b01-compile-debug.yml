@@ -117,11 +117,4 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Upload compiled Debug APK
-        if: ${{ steps.compile.outcome == 'success' }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: b01-debug-apk-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
+# APK delivery belongs exclusively to B04, after independent verification.
