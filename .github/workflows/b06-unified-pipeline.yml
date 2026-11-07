@@ -88,84 +88,21 @@ jobs:
           path: b06-input/
           merge-multiple: false
 
-      - name: Create machine-readable and human-readable B06 report
+      - name: Consolidate B01-B06 reports into one phase-organized package
         id: summary
         if: always()
         env:
           STAGES_JSON: ${{ toJSON(needs) }}
           DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          output = Path("b06-report")
-          output.mkdir(parents=True, exist_ok=True)
-          needs = json.loads(os.environ["STAGES_JSON"])
-          stages = []
-          for stage_id in ("b01", "b02", "b03", "b04", "b05"):
-              value = needs.get(stage_id, {})
-              state = value.get("result", "not_executed")
-              stages.append({"stage": stage_id.upper(), "outcome": state,
-                             "passed": state == "success"})
-          root = Path("b06-input")
-          artifacts = []
-          for item in sorted(root.glob("*")) if root.exists() else []:
-              if item.is_dir():
-                  files = sorted(str(p.relative_to(item)) for p in item.rglob("*") if p.is_file())
-                  artifacts.append({"artifact": item.name, "files": files})
-          download = os.environ.get("DOWNLOAD_OUTCOME", "unknown")
-          overall_pass = all(s["passed"] for s in stages) and download == "success" and bool(artifacts)
-          report = {
-              "schema_version": 1,
-              "source_sha": os.environ.get("GITHUB_SHA"),
-              "run_id": os.environ.get("GITHUB_RUN_ID"),
-              "branch": os.environ.get("GITHUB_REF_NAME"),
-              "phase_results": stages,
-              "artifact_download": download,
-              "artifact_index": artifacts,
-              "result": "PASS" if overall_pass else "FAIL",
-              "notes": [
-                  "Each stage runs in a separate reusable GitHub Actions job, against the same commit.",
-                  "A skipped downstream stage is not a passing stage.",
-                  "B05 validates installation and launch only, not full music playback or UI.",
-                  "File inventories are not proof of individual-source compilation.",
-              ],
-          }
-          (output / "pipeline-results.json").write_text(json.dumps(report, indent=2) + "\n")
-          lines = [
-              "# Aurelis B06 — Unified CI Results",
-              f"- Commit: `{report['source_sha']}`",
-              f"- Branch: `{report['branch']}`",
-              f"- Overall gate: **{report['result']}**",
-              f"- Artifact collection: **{download}**",
-              "",
-              "| Stage | Result |",
-              "|---|---|",
-          ]
-          for stage in stages:
-              lines.append(f"| {stage['stage']} | {stage['outcome']} |")
-          lines += ["", "## Uploaded evidence", ""]
-          if artifacts:
-              for item in artifacts:
-                  lines.append(f"- `{item['artifact']}`: {len(item['files'])} file(s)")
-          else:
-              lines.append("- No artifact directories collected")
-          lines += ["", "The emulator checks startup, not complete functional behavior."]
-          (output / "summary.md").write_text("\n".join(lines) + "\n")
-          (output / "artifact-index.json").write_text(json.dumps(artifacts, indent=2) + "\n")
-          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
-              summary.write("\n".join(lines) + "\n")
-          PY
+        run: python3 .github/scripts/b06_bundle_reports.py
 
       - name: Upload B06 final report
         id: upload
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: b06-unified-report-${{ github.run_number }}
-          path: b06-report/
+          name: Aurelis-Informes-B01-B06-${{ github.run_number }}
+          path: b06-package/
           if-no-files-found: error
           retention-days: 30
 
@@ -179,12 +116,12 @@ jobs:
           import json
           import os
           from pathlib import Path
-          file = Path("b06-report/pipeline-results.json")
+          file = Path("b06-package/B06/pipeline-results.json")
           if not file.is_file():
               raise SystemExit("B06 FAIL: missing final report")
           result = json.loads(file.read_text())
-          if result["result"] != "PASS" or os.getenv("SUMMARY_OUTCOME") != "success" or os.getenv("UPLOAD_OUTCOME") != "success":
-              bad = ", ".join(s["stage"] + "=" + s["outcome"] for s in result["phase_results"] if not s["passed"])
+          if result["status"] != "PASS" or os.getenv("SUMMARY_OUTCOME") != "success" or os.getenv("UPLOAD_OUTCOME") != "success":
+              bad = ", ".join(k + "=" + v for k, v in result["phases"].items() if v != "success")
               raise SystemExit("B06 FAIL: " + (bad or "missing artifacts or report upload"))
-          print("B06 PASS: all five stages and final evidence collection passed")
+          print("B06 PASS: B01-B05 verified, one organized report artifact published")
           PY
