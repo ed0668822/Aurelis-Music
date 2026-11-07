@@ -2,17 +2,7 @@
 name: "B02 | Android Lint"
 
 on:
-  push:
-    branches:
-      - feature/bitchord-local-migration
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle/**"
-      - "gradle.properties"
-      - "gradlew"
-      - ".github/workflows/b02-android-lint.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
