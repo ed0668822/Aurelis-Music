@@ -14,6 +14,7 @@ on:
       - "gradle.properties"
       - "gradlew"
       - ".github/workflows/b05-android-emulator.yml"
+      - ".github/scripts/b05-emulator-smoke.sh"
   workflow_dispatch:
 
 permissions:
@@ -109,37 +110,7 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: "-no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none"
           disable-animations: true
-          script: |
-            set -euo pipefail
-            APK="app/build/outputs/apk/debug/app-debug.apk"
-            PKG="com.music.aurelis"
-            mkdir -p ci-b05
-            adb devices -l > ci-b05/adb-devices.txt
-            adb shell getprop ro.build.version.sdk | tr -d '\r' > ci-b05/device-api.txt
-            adb shell getprop ro.product.cpu.abilist | tr -d '\r' > ci-b05/device-abis.txt
-            test "$(cat ci-b05/device-api.txt)" = "35"
-            test -s "$APK"
-            adb install -r "$APK" > ci-b05/install.log 2>&1 || {
-              cat ci-b05/install.log
-              exit 1
-            }
-            grep -q "Success" ci-b05/install.log
-            adb shell pm path "$PKG" > ci-b05/package-path.txt
-            grep -q "package:" ci-b05/package-path.txt
-            adb shell am start -W -n "$PKG/.MainActivity" > ci-b05/start.log 2>&1 || {
-              cat ci-b05/start.log
-              exit 1
-            }
-            cat ci-b05/start.log
-            grep -q "Status: ok" ci-b05/start.log
-            sleep 15
-            adb shell pidof "$PKG" | tr -d '\r' > ci-b05/process.txt
-            test -s ci-b05/process.txt
-            adb shell dumpsys activity activities > ci-b05/activity.txt
-            adb logcat -d -s AndroidRuntime:E > ci-b05/android-runtime-errors.log 2>&1 || true
-            adb shell screencap -p /sdcard/ci-b05.png || true
-            adb pull /sdcard/ci-b05.png ci-b05/screen.png || true
-            echo "PASS: Android 15 installation, launcher activity and process survival" > ci-b05/smoke-pass.txt
+          script: bash .github/scripts/b05-emulator-smoke.sh
 
       - name: Generate B05 diagnostic report
         id: report
@@ -162,6 +133,7 @@ jobs:
           statuses = {x: os.environ.get(x.upper() + "_OUTCOME", "not_started") for x in ("sdk", "build", "emulator")}
           checks = {
               "android_api_35": read("device-api.txt") == "35",
+              "arm64_only_apk": read("apk-abi.txt") == "arm64-v8a only",
               "apk_installed": "Success" in read("install.log") and "package:" in read("package-path.txt"),
               "launcher_started": "Status: ok" in read("start.log"),
               "app_process_survived_15s": bool(read("process.txt")),
@@ -175,6 +147,8 @@ jobs:
               "app_package": "com.music.aurelis",
               "app_apk_abi": "arm64-v8a",
               "device_abis": read("device-abis.txt"),
+              "native_bridge": read("native-bridge.txt"),
+              "apk_abi_detected": read("apk-abi.txt"),
               "steps": statuses,
               "checks": checks,
               "pass": all(x == "success" for x in statuses.values()) and all(checks.values()),
