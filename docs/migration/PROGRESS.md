@@ -728,3 +728,18 @@ esperar resultado del usuario, no B09 ni otra unidad.
 
 Entrega CI11 — corrección `7014468ca711772b209e9076bbdc022385f2d468`; PR https://github.com/ed0668822/Aurelis-Music/pull/1.
 Checkpoint documental posterior; nuevo CI pendiente del resultado del usuario.
+
+
+## CI12.1 — auditoría complementaria y nombre de APK, autorizados
+
+Primera de tres entregas complementarias: inventario completo de Git, raíces y
+entradas/resultados terminales de Gradle, estados por variante en modo observación.
+Desconocido no se transforma en éxito ni en faltante. APK release como
+Aurelis-Music-V<versionName>.apk y debug con -debug, versión leída del APK real;
+bytes/firma conservados y manifiesto/checksums actualizados.47 fixtures Python
+PASAN; Gradle/Android nuevos NO EJECUTADOS aquí, validación exclusivamente GitHub.
+Dos revisiones estáticas separadas del mismo agente. Ver docs/qa/CI12_AUDIT_PLAN.md
+y CI12_1_INVENTORY.md/.json (rutas desde raíz). No cambios app/workflow/gates/plan.
+CI12.2 presencia APK y CI12.3 integración UI ya autorizados, pendientes después de
+publicar y recibir resultado CI del usuario. Base CI149 SUCCESS confirmado antes;
+esto no valida esta entrega. Mismo PR1, no B09 ni otro bloque de migración.

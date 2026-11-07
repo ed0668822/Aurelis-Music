@@ -231,6 +231,145 @@ class ReportsTest(unittest.TestCase):
             self.assertEqual(changed['files'],[{'status':'D','path':'app/src/main/cpp/audio.hpp'}])
 
 
+class CompilationAuditTest(unittest.TestCase):
+    def source(self, path='app/src/main/java/Foo.kt'):
+        return {'path': path, **ci.file_policy(Path(path)), 'file_state': 'FILE',
+                'language': ci.LANGUAGES.get(Path(path).suffix, 'Other')}
+
+    def evidence(self, state='SUCCESS', task=':app:compileDebugKotlin', terminal=True):
+        source = self.source()
+        inputs = [{'path': source['path'], 'task': task, 'phase': 'compile', 'task_state': state}]
+        tasks = [{'task': task, 'phase': 'compile', 'state': state, 'terminal_result_observed': terminal}]
+        return source, inputs, tasks
+
+    def test_inventory_covers_all_tracked_files_without_reading_secrets_or_symlinks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            names = ['README.md', 'LICENSE', '.github/workflows/android.yml', 'app/src/main/cpp/CMakeLists.txt',
+                     'app/src/main/jniLibs/arm64-v8a/libfixture.so', 'app/src/main/assets/fixture.onnx',
+                     'keystore.properties', 'dangling.kt', 'gone.kt']
+            for name in names[:-2]:
+                file=root/name;file.parent.mkdir(parents=True,exist_ok=True);file.write_text('fixture-private-text')
+            (root/'dangling.kt').symlink_to(root/'absent')
+            with patch.object(ci, 'git', return_value='\0'.join(names)+'\0'):
+                records=ci.inventory(root)
+            self.assertEqual({r['path'] for r in records},set(names))
+            by={r['path']:r for r in records}
+            self.assertIsNone(by['keystore.properties']['sha256'])
+            self.assertEqual(by['dangling.kt']['file_state'],'SYMLINK_NOT_FOLLOWED')
+            self.assertIsNone(by['dangling.kt']['sha256'])
+            self.assertEqual(by['gone.kt']['file_state'],'DIRECTORY_OR_MISSING')
+            self.assertEqual(by['app/src/main/jniLibs/arm64-v8a/libfixture.so']['role'],'PREBUILT_NATIVE')
+            self.assertNotIn('fixture-private-text',json.dumps(records))
+
+    def test_asset_suffix_does_not_make_it_a_compiler_input(self):
+        for path in ['app/src/main/assets/sample.kt','app/src/main/res/raw/sample.java']:
+            source=self.source(path)
+            self.assertNotEqual(source['role'],'MANAGED_SOURCE')
+            audit=ci.compilation_audit([source],[],[],[])
+            self.assertTrue(all(r['compilation_evidence']=='NOT_A_STANDALONE_MANAGED_COMPILATION' for r in audit))
+
+    def test_path_policies_distinguish_test_header_native_and_configuration(self):
+        cases={'app/src/test/Foo.kt':('MANAGED_SOURCE','test'), 'app/src/main/cpp/audio.hpp':('NATIVE_HEADER','production'),
+               'app/src/main/cpp/audio.cc':('NATIVE_SOURCE','production'), 'app/src/main/cpp/CMakeLists.txt':('NATIVE_BUILD_CONFIGURATION','production'),
+               'gradle/wrapper/gradle-wrapper.properties':('BUILD_CONFIGURATION','support')}
+        for path, expected in cases.items():
+            policy=ci.file_policy(Path(path));self.assertEqual((policy['role'],policy['kind']),expected)
+
+    def test_success_requires_terminal_outcome_and_is_never_individual_file_success(self):
+        source,inputs,tasks=self.evidence()
+        audit=ci.compilation_audit([source],inputs,tasks,[])
+        self.assertEqual(audit[0]['compilation_evidence'],'DECLARED_INPUT_TASK_SUCCEEDED')
+        self.assertEqual(audit[1]['compilation_evidence'],'OTHER_TASK_INPUT_ONLY')
+        self.assertTrue(all(r['individual_compilation']=='NOT_ESTABLISHED' and r['apk_presence']=='NOT_AUDITED' and r['ui_integration']=='NOT_AUDITED' for r in audit))
+        tasks[0]['terminal_result_observed']=False
+        self.assertEqual(ci.compilation_audit([source],inputs,tasks,[])[0]['compilation_evidence'],'INPUT_OBSERVED_WITHOUT_TERMINAL_RESULT')
+
+    def test_cache_failure_skips_and_no_source_remain_distinct(self):
+        for state,expected in [('FROM-CACHE','DECLARED_INPUT_TASK_REUSED'),('UP-TO-DATE','DECLARED_INPUT_TASK_REUSED'),
+                               ('FAILED','DECLARED_INPUT_TASK_FAILED'),('SKIPPED','DECLARED_INPUT_TASK_DID_NOT_COMPILE'),
+                               ('NO-SOURCE','DECLARED_INPUT_TASK_DID_NOT_COMPILE')]:
+            source,inputs,tasks=self.evidence(state)
+            row=ci.compilation_audit([source],inputs,tasks,[])[0]
+            self.assertEqual(row['compilation_evidence'],expected)
+            self.assertEqual(row['individual_compilation'],'NOT_ESTABLISHED')
+
+    def test_no_observation_is_unknown_not_missing_or_compiled(self):
+        audit=ci.compilation_audit([self.source()],[],[],[])
+        self.assertTrue(all(r['compilation_evidence']=='NO_TASK_INPUT_EVIDENCE' for r in audit))
+
+    def test_java_input_to_kotlin_is_only_reference_evidence(self):
+        source,inputs,tasks=self.evidence()
+        source=self.source('app/src/main/java/Foo.java');inputs[0]['path']=source['path']
+        self.assertEqual(ci.compilation_audit([source],inputs,tasks,[])[0]['compilation_evidence'],'OTHER_TASK_INPUT_ONLY')
+
+    def test_test_sources_are_matched_to_test_compiler_not_production(self):
+        source,inputs,tasks=self.evidence(task=':app:compileDebugUnitTestKotlin')
+        source=self.source('app/src/test/Foo.kt');inputs[0]['path']=source['path']
+        self.assertFalse(source['app_packaging_expected'])
+        row=ci.compilation_audit([source],inputs,tasks,[])[0]
+        self.assertEqual(row['compilation_evidence'],'DECLARED_INPUT_TASK_SUCCEEDED')
+        self.assertEqual(row['apk_presence'],'NOT_EXPECTED_IN_APP_BY_POLICY')
+
+    def test_unselected_variant_and_missing_file_never_receive_success(self):
+        source,inputs,tasks=self.evidence()
+        source=self.source('app/src/release/Foo.kt');inputs[0]['path']=source['path']
+        self.assertEqual(ci.compilation_audit([source],[],[],[])[0]['compilation_evidence'],'OTHER_VARIANT_BY_PATH_POLICY')
+        # Actual task evidence wins over path conventions (custom sourceSets can reuse directories).
+        self.assertEqual(ci.compilation_audit([source],inputs,tasks,[])[0]['compilation_evidence'],'DECLARED_INPUT_TASK_SUCCEEDED')
+        source['file_state']='DIRECTORY_OR_MISSING'
+        self.assertEqual(ci.compilation_audit([source],inputs,tasks,[])[0]['compilation_evidence'],'NO_FILE_CONTENT_EVIDENCE')
+
+    def test_source_root_observation_is_configuration_not_compilation(self):
+        value={'project':':app','source_set':'main','kind':'java','path':'app/src/main/java'}
+        roots,errors=ci.parse_source_roots('AURELIS_SOURCE_ROOT '+json.dumps(value),'compile')
+        self.assertEqual(errors,[])
+        row=ci.compilation_audit([self.source()],[],[],roots)[0]
+        self.assertEqual(len(row['source_root_evidence']),1)
+        self.assertEqual(row['compilation_evidence'],'NO_TASK_INPUT_EVIDENCE')
+        for bad in ['[]','{}',json.dumps({**value,'path':'../outside'}),'not json']:
+            self.assertTrue(ci.parse_source_roots('AURELIS_SOURCE_ROOT '+bad,'compile')[1])
+
+    def test_conflicting_task_results_are_collector_errors_not_false_success(self):
+        task=':app:compileDebugKotlin'
+        success='AURELIS_TASK_RESULT '+json.dumps({'task':task,'state':'SUCCESS'})
+        failed='> Task '+task+' FAILED'
+        for log in (success+'\n'+failed,failed+'\n'+success,
+                    success+'\nAURELIS_TASK_RESULT '+json.dumps({'task':task,'state':'FAILED'})):
+            tasks,_=ci.parse_log(log,'compile',Path('/repo'))
+            self.assertEqual(tasks[0]['state'],'CONFLICTING_RESULTS')
+            self.assertFalse(tasks[0]['terminal_result_observed'])
+            self.assertTrue(ci.parse_inputs(log,'compile',tasks)[1])
+
+    def test_report_exports_unknown_and_terminal_evidence_without_changing_skipped_checks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=root/'reports';out.mkdir()
+            ci.save(out/'source-inventory.json',[self.source()])
+            value={'task':':app:compileDebugKotlin','path':'app/src/main/java/Foo.kt'}
+            log='AURELIS_TASK_INPUT '+json.dumps(value)+'\nAURELIS_TASK_RESULT '+json.dumps({'task':value['task'],'state':'FROM-CACHE'})
+            (out/'compile.log').write_text(log)
+            states={k:{'outcome':'skipped'} for k in ci.TECHNICAL}
+            states['compile']={'outcome':'success'}
+            with patch.dict(os.environ,{'CI_STEPS_JSON':json.dumps(states),'GITHUB_STEP_SUMMARY':''}),contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(ci.report(root,out),0)
+            audit=json.loads((out/'compilation-audit.json').read_text())
+            self.assertEqual(audit[0]['compilation_evidence'],'DECLARED_INPUT_TASK_REUSED')
+            self.assertEqual(audit[1]['compilation_evidence'],'OTHER_TASK_INPUT_ONLY')
+            self.assertTrue((out/'compilation-audit.tsv').exists())
+            self.assertTrue((out/'source-roots.json').exists())
+            result=json.loads((out/'report.json').read_text())
+            self.assertFalse(result['technical_checks_passed']);self.assertEqual(result['phases']['build'],'skipped')
+            self.assertIn('OBSERVATION_ONLY',result['compilation_audit_mode'])
+
+    def test_terminal_observations_survive_later_plain_task_markers(self):
+        for state in ci.TERMINAL_STATES:
+            text='AURELIS_TASK_RESULT '+json.dumps({'task':':app:compileDebugKotlin','state':state})+'\n> Task :app:compileDebugKotlin'
+            tasks,_=ci.parse_log(text,'compile',Path('/repo'))
+            self.assertEqual(tasks[0]['state'],state);self.assertTrue(tasks[0]['terminal_result_observed'])
+        for bad in ['[]','{}',json.dumps({'task':':app:compileDebugKotlin','state':'EXECUTED'}),'broken']:
+            self.assertTrue(ci.parse_inputs('AURELIS_TASK_RESULT '+bad,'compile',[])[1])
+
+
 class ApkAndSigningTest(unittest.TestCase):
     @staticmethod
     def elf(machine=183, alignment=16384):
@@ -317,7 +456,44 @@ class ApkAndSigningTest(unittest.TestCase):
                 self.assertTrue(apk['zip_16kb_alignment_verified']);self.assertTrue(apk['native_16kb_alignment_verified'])
                 self.assertEqual(apk['native_elf']['lib/arm64-v8a/libtest.so']['load_segments'][0]['alignment'],16384)
             self.assertTrue((root/'ci-approved-apks/source-metadata.json').is_file())
+            self.assertEqual({a['file'] for a in manifest['apks']},{'Aurelis-Music-V1.9.apk','Aurelis-Music-V1.9-debug.apk'})
+            published=json.loads((root/'ci-approved-apks/apk-manifest.json').read_text())
+            self.assertEqual(published,manifest['apks'])
+            for apk in published:
+                original=root/f"app/build/outputs/apk/{apk['variant']}/{apk['build_file']}"
+                delivered=root/'ci-approved-apks'/apk['file']
+                self.assertEqual(original.read_bytes(),delivered.read_bytes())
+                self.assertIn(apk['file'],(root/'ci-approved-apks/SHA256SUMS.txt').read_text())
             self.assertEqual(len((root/'ci-approved-apks/SHA256SUMS.txt').read_text().splitlines()),2)
+
+    def test_versioned_apk_names_are_distinct_and_unsafe_versions_rejected(self):
+        for version in ('2.1','1.0.150','2.1-beta.1+7'):
+            self.assertEqual(ci.apk_delivery_name(version,'release'),f'Aurelis-Music-V{version}.apk')
+            self.assertEqual(ci.apk_delivery_name(version,'debug'),f'Aurelis-Music-V{version}-debug.apk')
+        for version in ('','../2.1','2/1','2.1\n','2.1\\evil','x'*101):
+            with self.subTest(version=version),self.assertRaises(ValueError):ci.apk_delivery_name(version,'release')
+        with self.assertRaises(ValueError):ci.apk_delivery_name('2.1','unknown')
+
+    def test_duplicate_delivery_names_fail_before_any_apk_is_published(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=self.fixture(root)
+            original=root/'app/build/outputs/apk/debug/app-debug.apk'
+            (original.parent/'another.apk').write_bytes(original.read_bytes())
+            with patch.object(ci.subprocess,'run',side_effect=self.tool):
+                with self.assertRaisesRegex(ValueError,'Duplicate delivery APK name'):ci.verify_apks(root,out,root/'sdk')
+            self.assertFalse((root/'ci-approved-apks').exists())
+
+    def test_copy_failure_does_not_leave_a_partial_publishable_set(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=self.fixture(root)
+            copy=ci.shutil.copyfile
+            def fail_second(source,target):
+                if str(target).endswith('Aurelis-Music-V1.9.apk'):raise OSError('fixture disk error')
+                return copy(source,target)
+            with patch.object(ci.subprocess,'run',side_effect=self.tool),patch.object(ci.shutil,'copyfile',side_effect=fail_second):
+                with self.assertRaises(OSError):ci.verify_apks(root,out,root/'sdk')
+            self.assertFalse((root/'ci-approved-apks').exists())
+            self.assertEqual(json.loads((out/'apk-verification.json').read_text())['status'],'failure')
 
     def test_missing_onnx_jni_library_blocks_publication(self):
         with tempfile.TemporaryDirectory() as tmp:

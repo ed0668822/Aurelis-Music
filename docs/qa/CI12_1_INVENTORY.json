@@ -1,0 +1,106 @@
+{
+  "unit": "CI12.1",
+  "base": "dca9532f58b9f9ab1f9d9a117f3b4211c9d71f36",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "authorization": "Three-stage audit and versioned APK names granted; deliver CI12.1 now, wait for user GitHub result before CI12.2/.3; no B09",
+  "previous_ci": {
+    "run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42310671537",
+    "job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42310671537/job/128211015242",
+    "head": "dca9532f58b9f9ab1f9d9a117f3b4211c9d71f36",
+    "result": "SUCCESS observed in prior read-only audit; not a result for this delivery"
+  },
+  "files_sha256": {
+    ".github/scripts/android_ci.py": "7c10219ba7df87adde33acee8654ff8a181b334914a153812db9b36196f4cfd3",
+    ".github/scripts/task-inputs.gradle": "c6baeb2fac801e81b4afc0e68332a6415092accd2f918669f9f3b55cb2c15628",
+    ".github/scripts/tests/test_android_ci.py": "c6a1eea9de35c3caebfee8bdc81dbc37fe3b36d3f43b103a8a6062ebbfbb8557"
+  },
+  "local_inventory_check": {
+    "tracked_count": 575,
+    "audit_rows": 1150,
+    "role_counts": {
+      "CI_CONFIGURATION": 5,
+      "LEGAL_TEXT": 12,
+      "DOCUMENTATION": 107,
+      "BUILD_CONFIGURATION": 9,
+      "MANIFEST": 1,
+      "ASSET": 2,
+      "NATIVE_BUILD_CONFIGURATION": 1,
+      "NATIVE_SOURCE": 12,
+      "NATIVE_HEADER": 6,
+      "MANAGED_SOURCE": 389,
+      "PREBUILT_NATIVE": 2,
+      "ANDROID_RESOURCE": 29
+    }
+  },
+  "new_test_methods": [
+    "test_asset_suffix_does_not_make_it_a_compiler_input",
+    "test_cache_failure_skips_and_no_source_remain_distinct",
+    "test_conflicting_task_results_are_collector_errors_not_false_success",
+    "test_copy_failure_does_not_leave_a_partial_publishable_set",
+    "test_duplicate_delivery_names_fail_before_any_apk_is_published",
+    "test_inventory_covers_all_tracked_files_without_reading_secrets_or_symlinks",
+    "test_java_input_to_kotlin_is_only_reference_evidence",
+    "test_no_observation_is_unknown_not_missing_or_compiled",
+    "test_path_policies_distinguish_test_header_native_and_configuration",
+    "test_report_exports_unknown_and_terminal_evidence_without_changing_skipped_checks",
+    "test_source_root_observation_is_configuration_not_compilation",
+    "test_success_requires_terminal_outcome_and_is_never_individual_file_success",
+    "test_terminal_observations_survive_later_plain_task_markers",
+    "test_test_sources_are_matched_to_test_compiler_not_production",
+    "test_unselected_variant_and_missing_file_never_receive_success",
+    "test_versioned_apk_names_are_distinct_and_unsafe_versions_rejected"
+  ],
+  "python_fixture_tests": {
+    "status": "PASS",
+    "count": 47,
+    "previous_methods_retained": 31,
+    "new_methods": 16,
+    "evidence_log_sha256": "fdd1cedb1464b17c8d1349a5179c3edd59f5b1e28e5e335f8e08476308ab55f5"
+  },
+  "outputs": [
+    "source-inventory.json/.tsv (full tracked tree)",
+    "source-roots.json",
+    "compilation-audit.json/.tsv (debug/release)",
+    "task-inputs.json/.tsv",
+    "task-states.json/.tsv",
+    "apk-manifest.json and SHA256SUMS referencing delivered filenames"
+  ],
+  "filename_policy": {
+    "release": "Aurelis-Music-V<versionName>.apk",
+    "debug": "Aurelis-Music-V<versionName>-debug.apk",
+    "version_source": "aapt2 badging of verified APK",
+    "allowed_version": "ASCII alphanumeric first, then alphanumeric . _ + -, length 1..100",
+    "collision": "FAIL with no partial publication",
+    "bytes_and_signature": "Unchanged copy, fixture equality tested"
+  },
+  "observation_policy": "Unknown is not a missing component, success, APK presence or UI integration proof. Collectors still fail on malformed/contradictory evidence. Existing gates unchanged.",
+  "reviews": {
+    "review1": "Static source policy, task outcomes, preservation and API review",
+    "review2": "Separate fixtures, regression, naming, byte preservation and scope review by same agent",
+    "independent_reviewers": false
+  },
+  "verification": {
+    "python_fixtures": "PASS_47",
+    "local_gradle_android": "NOT_EXECUTED_GITHUB_ONLY_USER_INSTRUCTION",
+    "gradle_hook_execution": "PENDING_GITHUB",
+    "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+    "actual_apk_presence_audit": "NOT_IMPLEMENTED_CI12_2_PENDING",
+    "ui_integration_audit": "NOT_IMPLEMENTED_CI12_3_PENDING",
+    "android_runtime": "NOT_EXECUTED"
+  },
+  "protected": [
+    "app",
+    "gradle",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "gradle.properties",
+    ".github/workflows",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/MASTER_PLAN.md",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "next": "Publish same PR, notify user, wait for user result; then authorized CI12.2; no migration block change"
+}
