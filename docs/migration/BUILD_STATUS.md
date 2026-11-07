@@ -499,3 +499,19 @@ y CI12_1_INVENTORY.md/.json (rutas desde raíz). No cambios app/workflow/gates/p
 CI12.2 presencia APK y CI12.3 integración UI ya autorizados, pendientes después de
 publicar y recibir resultado CI del usuario. Base CI149 SUCCESS confirmado antes;
 esto no valida esta entrega. Mismo PR1, no B09 ni otro bloque de migración.
+
+
+## CI12.2 — contenido real de APK, autorizado
+
+Base f36d44f/CI150 SUCCESS y CodeQL1319 SUCCESS confirmados; CI12.1 validado por
+ese CI. Nueva política explícita: DEX/manifiesto, recursos esenciales, modelos,
+fuente y nativos ARM64; faltantes obligatorios bloquean publicación. Informes
+apk-content-debug/release JSON/TSV y enlaces desde compilation-audit por variante.
+R8, recursos transformados, homonimia y ausencia de outputs mantienen límites;
+no se convierte presencia en integración UI. Reportes obsoletos rechazados.
+64 fixtures Python PASAN (47 anteriores conservados,17 nuevos). Dos revisiones
+estáticas separadas del mismo agente; formato AAPT contrastado con SDK existente.
+No Gradle/Android local: auditoría de APK reales y nuevo CI pendientes de GitHub.
+Ver docs/qa/CI12_2_APK_CONTENT.md/.json desde raíz. App, plan, workflow, Gradle,
+ABI/firmas/modelos/Glass intactos; mismo PR1. Avisar y esperar resultado; CI12.3
+no iniciado, autorización conservada. No B09.

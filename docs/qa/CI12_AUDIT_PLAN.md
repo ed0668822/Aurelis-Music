@@ -7,8 +7,8 @@ publicar, avisar y esperar el resultado comunicado por el usuario.
 
 | Entrega | Alcance | Estado |
 |---|---|---|
-| CI12.1 | Inventario completo, entradas/raíces/resultados Gradle, reporte por variante y nombres de APK | Implementado; validación GitHub pendiente |
-| CI12.2 | Presencia en APK: clases/DEX/R8, recursos, assets/modelos y bibliotecas nativas | Autorizado, pendiente tras resultado CI12.1 |
+| CI12.1 | Inventario completo, entradas/raíces/resultados Gradle, reporte por variante y nombres de APK | CI150 SUCCESS; no Android real |
+| CI12.2 | Presencia en APK: clases/DEX/R8, recursos, assets/modelos y bibliotecas nativas | Implementado; APK nuevos/GitHub pendientes |
 | CI12.3 | Matriz funcional, conexiones de navegación y pruebas de interacción | Autorizado, pendiente tras CI12.2; Android real según disponibilidad |
 
 ## Reglas de evidencia
@@ -55,7 +55,7 @@ una clase por .kt ni comparación literal de XML compilado. Recursos mediante
 tabla AAPT, assets/modelos por contenido, nativos mediante artefactos/ABI/ELF y
 unidades CMake acreditadas. Distinguir exclusiones previstas (p.ej. ABI x86_64
 fuera de la distribución ARM64 actual) y evidencias incompletas. Guardar metadatos
-por source/checkout SHA y APK SHA256. Esta capacidad NO está implementada en CI12.1.
+por source/checkout SHA y APK SHA256. Esta capacidad se implementa en CI12.2; ver CI12_2_APK_CONTENT.md/.json.
 
 CI12.3 mantendrá matriz función → entrada activa → acción → prueba. Búsqueda
 estática solo como indicio; pruebas de interacción para confirmar comportamiento.

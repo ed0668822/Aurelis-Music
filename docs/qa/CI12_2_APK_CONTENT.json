@@ -1,0 +1,141 @@
+{
+  "unit": "CI12.2",
+  "base": "f36d44f73378240bb8e98a3b04d4651edad26b84",
+  "branch": "feature/bitchord-local-migration",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "authorization": "CI12.2 expressly authorized; no CI12.3/B09 advance before delivery result",
+  "previous_ci": {
+    "run_number": 150,
+    "run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42325372151",
+    "job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42325372151/job/128259289859",
+    "head": "f36d44f73378240bb8e98a3b04d4651edad26b84",
+    "state": "SUCCESS; public job exact commit link confirmed",
+    "codeql": "1319 SUCCESS"
+  },
+  "files_sha256": {
+    ".github/apk-audit-policy.json": "6da276644d6e526bccbdfbef379b3ed357242f54c9cd45146292892de3da92b6",
+    ".github/scripts/apk_audit.py": "6e8e3c79be75aebea3cf7d686c6a9c1ad68df5889403cf24a6209aad2a6a9b6b",
+    ".github/scripts/android_ci.py": "74551e0e245c3efa6a9c65ca2beb19f8dd2d011707b04c6016a7c5dcf9168f30",
+    ".github/scripts/task-inputs.gradle": "fcc78724ae3a56843535c23e74c7680b0260bb1ce2e36827b80ef9b749537401",
+    ".github/scripts/tests/apk_fixture.py": "130df5d163abd8ee096846a2e32b7a247ee66ca6a1d0b14ea40baf023a1d644a",
+    ".github/scripts/tests/test_apk_audit.py": "64d6fd08366f93ab68dc6bcd4f1989d7048f4645f837a8c6ee37d20361c65ea6",
+    ".github/scripts/tests/test_android_ci.py": "9aae569f0c871aa0aca4b51e00ddba54b9b5aa8c49bdb19ccd0a180b134e47e5"
+  },
+  "policy": {
+    "schema_version": 1,
+    "application_id": "com.music.aurelis",
+    "abi": "arm64-v8a",
+    "required_dex_classes": [
+      "com/music/aurelis/AurelisApplication",
+      "com/music/aurelis/MainActivity",
+      "com/music/aurelis/playback/AurelisPlaybackService"
+    ],
+    "required_resources": [
+      "string/app_name",
+      "font/vazirmatn_regular",
+      "mipmap/ic_launcher",
+      "mipmap/ic_launcher_round"
+    ],
+    "required_assets": [
+      "beat_this_int8.onnx",
+      "vocals_umxhq_int8.onnx"
+    ],
+    "byte_exact_resources": [
+      "res/font/vazirmatn_regular.ttf"
+    ],
+    "required_native_libraries": [
+      "libaurelis_analysis.so",
+      "libaurelis_dsd.so",
+      "libaurelis_dst.so",
+      "libffmpegJNI.so",
+      "libonnxruntime.so",
+      "libonnxruntime4j_jni.so"
+    ],
+    "required_manifest_classes": [
+      "com/music/aurelis/AurelisApplication",
+      "com/music/aurelis/MainActivity",
+      "com/music/aurelis/playback/AurelisPlaybackService"
+    ]
+  },
+  "outputs": [
+    "apk-content-debug.json/.tsv",
+    "apk-content-release.json/.tsv",
+    "compilation-audit.json/.tsv APK presence linked by variant",
+    "summary.md and report.json content audit status"
+  ],
+  "guards": [
+    "Required components/classes/resources/assets/font/natives must be present",
+    "R8 removal is not evidence of presence",
+    "Duplicate APK/DEX definitions rejected",
+    "Fresh build identity required for report merge",
+    "Partial publisher cleanup preserved",
+    "No source equivalence or runtime claim from binary presence"
+  ],
+  "python_tests": {
+    "status": "PASS",
+    "count": 64,
+    "prior_methods_retained": 47,
+    "new_methods": [
+      "test_absent_compiler_outputs_and_homonymous_sources_remain_incomplete",
+      "test_binary_bounds_and_class_metadata_never_include_constant_values",
+      "test_jvm_metadata_maps_source_to_present_classes_without_source_equivalence_claim",
+      "test_minimal_required_content_is_verified_without_runtime_claims",
+      "test_missing_required_class_blocks_and_saves_precise_evidence",
+      "test_missing_required_content_blocks_publication_and_clears_stale_reports",
+      "test_missing_resource_and_missing_manifest_component_are_distinct",
+      "test_multidex_including_classes10_is_read_and_duplicate_definitions_rejected",
+      "test_native_units_are_declared_commands_not_execution_claims",
+      "test_other_abis_and_tests_are_excluded_without_missing_flags",
+      "test_r8_rename_is_present_but_usage_is_not_presence",
+      "test_renamed_font_path_is_resolved_through_aapt_not_declared_missing",
+      "test_required_assets_fonts_and_native_libraries_cannot_be_missing_or_corrupted",
+      "test_resource_values_are_checked_as_symbols_not_literal_xml",
+      "test_stale_apk_report_cannot_upgrade_file_presence",
+      "test_unparseable_resource_table_is_evidence_error_not_missing_every_resource",
+      "test_unsupported_or_malformed_evidence_is_an_auditor_error"
+    ],
+    "log_sha256": "31e1a2a1d3ad1af1bc6a3cc80013bc3dc2c41269a58b64d6cb51199841a63143",
+    "fixtures": "Synthetic DEX/JVM/ZIP/ELF metadata, not installed Android apps"
+  },
+  "aapt_format_check": {
+    "tool": "SDK build-tools35.0.0/aapt2",
+    "existing_artifact": "SDK platforms/android-36/android.jar",
+    "performed": "Read-only dump resources; styles retain dots; no compilation",
+    "dump_sha256": "9126ef6e94fc08a368186bf620dac0c37237ab9ba6c7d96d59a04d709326b964"
+  },
+  "reviews": {
+    "first": "Static architecture, metadata, required gates and protection review",
+    "second": "Separate static formats, privacy and regressions pass by same agent",
+    "independent_reviewers": false
+  },
+  "limitations": [
+    "DEX035/037/038/039/040 supported; other versions reported EVIDENCE_ERROR, not application compilation failure",
+    "Class presence does not prove source equivalence, inline coverage or UI integration",
+    "Resource symbol presence does not prove all qualifiers/values",
+    "Native compile commands are declarations, not per-unit execution or source/binary equivalence",
+    "Compiler output gaps/homonyms remain incomplete"
+  ],
+  "verification": {
+    "local_python": "PASS64",
+    "local_gradle_android": "NOT_EXECUTED_USER_GITHUB_ONLY",
+    "actual_aurelis_apk_audit": "PENDING_GITHUB",
+    "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+    "android_runtime": "NOT_EXECUTED",
+    "ci12_3_ui": "NOT_STARTED"
+  },
+  "protected_paths": [
+    "app",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    ".github/workflows",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/MASTER_PLAN.md",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "next": "Publish same branch/PR, notify user, wait for result; no CI12.3 or B09 now"
+}

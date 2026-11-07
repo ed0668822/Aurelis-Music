@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import base64
 import collections
 import csv
@@ -310,9 +311,19 @@ def apk_delivery_name(version: str, variant: str) -> str:
     return f'Aurelis-Music-V{version}{suffix}.apk'
 
 
+def content_auditor():
+    spec = importlib.util.spec_from_file_location('aurelis_apk_audit', Path(__file__).with_name('apk_audit.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def verify_apks(root: Path, out: Path, sdk: Path) -> None:
     tool = sdk / 'build-tools/35.0.0'
     results = []
+    for variant in ('debug', 'release'):
+        for extension in ('json', 'tsv'):
+            (out / f'apk-content-{variant}.{extension}').unlink(missing_ok=True)
     target = root / 'ci-approved-apks'
     if target.exists():
         shutil.rmtree(target)
@@ -347,6 +358,7 @@ def verify_apks(root: Path, out: Path, sdk: Path) -> None:
                     for name, source in legal.items():
                         if archive.read('assets/licenses/' + name) != source.read_bytes():
                             raise ValueError(f'Legal text mismatch: {apk.name}: {name}')
+                content = content_auditor().audit(root, out, sdk, apk, variant)
                 certs = re.findall(r'Signer #\d+ certificate SHA-256 digest: ([a-fA-F0-9]+)', signature.stdout)
                 if not certs:
                     raise ValueError(f'Missing signer metadata: {apk.name}')
@@ -359,6 +371,7 @@ def verify_apks(root: Path, out: Path, sdk: Path) -> None:
                     'bytes': apk.stat().st_size, 'package': package[1], 'version_code': package[2], 'version_name': package[3],
                     'signature_verified': True, 'signer_certificate_sha256': certs, 'zip_verified': True,
                     'zip_16kb_alignment_verified': True, 'native_16kb_alignment_verified': True,
+                    'content_audit_status': content['status'], 'content_audit_report': f'apk-content-{variant}.json',
                     'native_elf': native_details, 'abis': ['arm64-v8a'], 'native_libraries': len(libs), 'legal_texts_verified': len(legal)})
         if len(versions) != 1:
             raise ValueError('APK variant versions do not match')
@@ -551,6 +564,26 @@ def report(root: Path, out: Path, annotations: bool = False) -> int:
         source['diagnostic_state'] = 'ERROR_DIAGNOSTICS' if source['diagnostics'].get('error') else 'WARNING_DIAGNOSTICS' if source['diagnostics'].get('warning') else 'OTHER_DIAGNOSTICS' if source['diagnostics'] else 'NO_DIAGNOSTICS_CAPTURED'
     roots = list({json.dumps(r, sort_keys=True): r for r in roots}.values())
     audit = compilation_audit(sources, inputs, tasks, roots)
+    content_rows = {}
+    content_summaries = []
+    for variant in ('debug', 'release'):
+        file = out / f'apk-content-{variant}.json'
+        if file.is_file():
+            content = json.loads(file.read_text())
+            content_summaries.append({'variant': variant, 'status': content['status'],
+                'required_failures': content['required_failures'], 'evidence_errors': content['evidence_errors']})
+            metadata_file = out / 'metadata.json'
+            expected_metadata = json.loads(metadata_file.read_text()) if metadata_file.is_file() else None
+            if content.get('build_identity') != expected_metadata:
+                collector_errors.append(f'Stale/unidentified APK content evidence: {variant}')
+                continue
+            for row in content['rows']:
+                content_rows[(variant, row['path'])] = row
+    for row in audit:
+        evidence = content_rows.get((row['variant'], row['path']))
+        if evidence:
+            row['apk_presence'] = evidence['state']
+            row['apk_evidence_report'] = f"apk-content-{row['variant']}.json"
     save(out / 'compilation-audit.json', audit)
     save(out / 'source-roots.json', roots)
     save(out / 'source-diagnostics.json', sources)
@@ -576,7 +609,8 @@ def report(root: Path, out: Path, annotations: bool = False) -> int:
             for d in diagnostics if d['severity'] == level), encoding='utf-8')
 
     data = {'phases': {k: state[k] for k in TECHNICAL}, 'technical_checks_passed': approval(state) and not collector_errors,
-            'compilation_audit_mode': 'OBSERVATION_ONLY; no APK or UI coverage claim',
+            'apk_content_audit': content_summaries,
+            'compilation_audit_mode': 'OBSERVATION_ONLY; per-file APK evidence separate, UI not audited',
             'compilation_audit_states': dict(collections.Counter(r['compilation_evidence'] for r in audit)),
             'source_root_observations': len(roots),
             'task_input_observations': len(inputs), 'collector_errors': collector_errors, 'unit_test_results': tests, 'test_failures': test_failures,
@@ -604,12 +638,15 @@ def report(root: Path, out: Path, annotations: bool = False) -> int:
         'El estado de la tarea (incluido cache/failure) se conserva junto a la entrada. No demuestra que cada archivo se compiló.',
         'NO_TASK_INPUT_EVIDENCE significa desconocido, no excluido ni compilado. Java puede ser entrada de Kotlin solo para resolver símbolos.',
         'compilation-audit.json/.tsv separa SUCCESS terminal, reutilización, fallo y resultado desconocido por variante.',
-        'Esta primera entrega observa; los faltantes no demostrados no bloquean como errores de app. APK e integración UI: NOT_AUDITED.',
+        'Compilación individual sigue sin establecerse. APK: ver apk-content-debug/release.json/.tsv; UI sigue NOT_AUDITED.',
         'Las raíces declaradas no prueban selección por variante. Documentación, headers, assets y pruebas no son clases de producción individuales.']
     lines += ['', '## Auditoría de compilación por variante (observación)', '', '| Variante | Evidencia | Archivos |', '|---|---|---:|']
     counts = collections.Counter((row['variant'], row['compilation_evidence']) for row in audit)
     lines += [f'| {variant} | {evidence} | {count} |' for (variant, evidence), count in sorted(counts.items())]
     verification_file = out / 'apk-verification.json'
+    lines += ['', '## Contenido real del APK', '', '| Variante | Auditoría | Faltantes obligatorios | Errores de evidencia |', '|---|---|---:|---:|']
+    lines += [f"| {c['variant']} | {c['status']} | {len(c['required_failures'])} | {len(c['evidence_errors'])} |" for c in content_summaries]
+    if not content_summaries: lines += ['Sin auditoría ejecutada; no equivale a aprobación.']
     if verification_file.exists():
         verification = json.loads(verification_file.read_text())
         if verification.get('status') == 'success':

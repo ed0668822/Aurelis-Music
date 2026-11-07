@@ -748,3 +748,19 @@ Entrega CI12.1 — implementación `c317f4a9f65b025941e5d97e229a0bcf840fb9d9`.
 PR: https://github.com/ed0668822/Aurelis-Music/pull/1.
 Checkpoint documental posterior; GitHub nuevo pendiente. Esperar resultado del
 usuario antes de CI12.2/.3, cuya autorización permanece. No B09.
+
+
+## CI12.2 — contenido real de APK, autorizado
+
+Base f36d44f/CI150 SUCCESS y CodeQL1319 SUCCESS confirmados; CI12.1 validado por
+ese CI. Nueva política explícita: DEX/manifiesto, recursos esenciales, modelos,
+fuente y nativos ARM64; faltantes obligatorios bloquean publicación. Informes
+apk-content-debug/release JSON/TSV y enlaces desde compilation-audit por variante.
+R8, recursos transformados, homonimia y ausencia de outputs mantienen límites;
+no se convierte presencia en integración UI. Reportes obsoletos rechazados.
+64 fixtures Python PASAN (47 anteriores conservados,17 nuevos). Dos revisiones
+estáticas separadas del mismo agente; formato AAPT contrastado con SDK existente.
+No Gradle/Android local: auditoría de APK reales y nuevo CI pendientes de GitHub.
+Ver docs/qa/CI12_2_APK_CONTENT.md/.json desde raíz. App, plan, workflow, Gradle,
+ABI/firmas/modelos/Glass intactos; mismo PR1. Avisar y esperar resultado; CI12.3
+no iniciado, autorización conservada. No B09.

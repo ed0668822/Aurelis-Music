@@ -13,6 +13,7 @@ import types
 import unittest
 from unittest.mock import patch
 import zipfile
+from apk_fixture import dex, write_policy, RESOURCES, MANIFEST
 
 SPEC = importlib.util.spec_from_file_location('android_ci', Path(__file__).resolve().parents[1] / 'android_ci.py')
 ci = importlib.util.module_from_spec(SPEC)
@@ -203,6 +204,19 @@ class ReportsTest(unittest.TestCase):
             self.assertFalse(data['technical_checks_passed'])
             self.assertEqual(data['test_failures'][0]['message'],'Size is unspecified')
             self.assertEqual(json.loads((out/'diagnostics.json').read_text()),[])
+
+    def test_stale_apk_report_cannot_upgrade_file_presence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=root/'reports';out.mkdir()
+            ci.save(out/'metadata.json',{'source_sha':'b'*40})
+            ci.save(out/'source-inventory.json',[{'path':'app/src/main/One.kt','module':'app','kind':'production','language':'Kotlin','source_set':'main','role':'MANAGED_SOURCE'}])
+            ci.save(out/'apk-content-debug.json',{'status':'REQUIRED_CONTENT_VERIFIED_WITH_COVERAGE_LIMITS','build_identity':{'source_sha':'a'*40},
+                'required_failures':[],'evidence_errors':[],'rows':[{'path':'app/src/main/One.kt','state':'COMPILER_CLASSES_MAPPED_TO_DEX'}]})
+            states={k:{'outcome':'skipped'} for k in ci.TECHNICAL}
+            with patch.dict(os.environ,{'CI_STEPS_JSON':json.dumps(states),'GITHUB_STEP_SUMMARY':''}),contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(ci.report(root,out),1)
+            result=json.loads((out/'compilation-audit.json').read_text())
+            self.assertEqual(result[0]['apk_presence'],'NOT_AUDITED')
 
     def test_lint_xml_preserves_location_and_identifier(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -430,9 +444,14 @@ class ApkAndSigningTest(unittest.TestCase):
         out=root/'reports';out.mkdir()
         ci.save(out/'metadata.json',{'source_sha':'a'*40})
         ci.save(out/'signing.json',{'mode':'debug_fallback'})
+        ci.save(out/'source-inventory.json',[])
+        write_policy(root)
         for variant in ('debug','release'):
             p=root/f'app/build/outputs/apk/{variant}/app-{variant}.apk';p.parent.mkdir(parents=True)
             with zipfile.ZipFile(p,'w') as z:
+                z.writestr('classes.dex',dex())
+                z.writestr('resources.arsc',b'fixture table')
+                z.writestr('AndroidManifest.xml',b'fixture manifest')
                 z.writestr('lib/arm64-v8a/libtest.so',self.elf())
                 z.writestr('lib/arm64-v8a/libonnxruntime.so',self.elf())
                 z.writestr('lib/arm64-v8a/libonnxruntime4j_jni.so',self.elf())
@@ -444,6 +463,8 @@ class ApkAndSigningTest(unittest.TestCase):
     def tool(args,**kwargs):
         if str(args[0]).endswith('apksigner'):
             return types.SimpleNamespace(returncode=0,stdout='Signer #1 certificate SHA-256 digest: '+'a'*64,stderr='')
+        if args[1:3]==['dump','resources']:return types.SimpleNamespace(returncode=0,stdout=RESOURCES,stderr='')
+        if args[1:3]==['dump','xmltree']:return types.SimpleNamespace(returncode=0,stdout=MANIFEST,stderr='')
         return types.SimpleNamespace(returncode=0,stdout="package: name='com.music.aurelis' versionCode='1' versionName='1.9'",stderr='')
 
     def test_verified_apks_have_exact_hashes_source_metadata_and_manifest(self):
@@ -494,6 +515,22 @@ class ApkAndSigningTest(unittest.TestCase):
                 with self.assertRaises(OSError):ci.verify_apks(root,out,root/'sdk')
             self.assertFalse((root/'ci-approved-apks').exists())
             self.assertEqual(json.loads((out/'apk-verification.json').read_text())['status'],'failure')
+
+    def test_missing_required_content_blocks_publication_and_clears_stale_reports(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=self.fixture(root)
+            (out/'apk-content-release.json').write_text('stale')
+            apk=root/'app/build/outputs/apk/debug/app-debug.apk'
+            with zipfile.ZipFile(apk) as archive:entries={name:archive.read(name) for name in archive.namelist()}
+            entries['classes.dex']=dex(('fixture/Other',))
+            with zipfile.ZipFile(apk,'w') as archive:
+                for name,value in entries.items():archive.writestr(name,value)
+            with patch.object(ci.subprocess,'run',side_effect=self.tool),self.assertRaisesRegex(ValueError,'REQUIRED_CONTENT_MISSING'):
+                ci.verify_apks(root,out,root/'sdk')
+            self.assertFalse((root/'ci-approved-apks').exists())
+            self.assertFalse((out/'apk-content-release.json').exists())
+            result=json.loads((out/'apk-content-debug.json').read_text())
+            self.assertIn('REQUIRED_CLASS_NOT_PRESENT:fixture/App',result['required_failures'])
 
     def test_missing_onnx_jni_library_blocks_publication(self):
         with tempfile.TemporaryDirectory() as tmp:

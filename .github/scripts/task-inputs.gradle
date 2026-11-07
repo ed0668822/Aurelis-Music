@@ -70,5 +70,17 @@ gradle.projectsEvaluated {
         def outcome = state.failure != null ? 'FAILED' : state.noSource ? 'NO-SOURCE' :
             message == 'FROM-CACHE' ? 'FROM-CACHE' : state.upToDate ? 'UP-TO-DATE' : state.skipped ? 'SKIPPED' : 'SUCCESS'
         emit('AURELIS_TASK_RESULT', [task: task.path, state: outcome])
+        if (outcome in ['SUCCESS', 'FROM-CACHE', 'UP-TO-DATE'] && task.name ==~ /compile(?:Debug|Release)(?:Kotlin|JavaWithJavac)/) {
+            try {
+                task.outputs.files.files.each { file ->
+                    def path = relative(file)
+                    if (path != null && path.contains('/build/') && file.isDirectory()) {
+                        emit('AURELIS_CLASS_OUTPUT', [task: task.path, path: path])
+                    }
+                }
+            } catch (Exception ignored) {
+                emit('AURELIS_INPUT_ERROR', [task: task.path, message: 'Could not inspect compiler outputs'])
+            }
+        }
     }
 }
