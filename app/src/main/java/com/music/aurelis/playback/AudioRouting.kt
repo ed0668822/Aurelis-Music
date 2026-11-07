@@ -81,12 +81,10 @@ object AudioRouting {
         else -> null
     }
 
-    private fun formOf(info: AudioDeviceInfo, name: String): Form {
-        when (info.type) {
-            AudioDeviceInfo.TYPE_BLE_SPEAKER -> return Form.SPEAKER
-            AudioDeviceInfo.TYPE_HEARING_AID -> return Form.BUDS
-        }
-        return formFromName(name) ?: formFromClass(info) ?: Form.UNKNOWN
+    private fun formOf(info: AudioDeviceInfo, name: String): Form = when (info.type) {
+        AudioDeviceInfo.TYPE_BLE_SPEAKER -> Form.SPEAKER
+        AudioDeviceInfo.TYPE_HEARING_AID -> Form.BUDS
+        else -> formFromName(name) ?: formFromClass(info) ?: Form.UNKNOWN
     }
 
     @Suppress("DEPRECATION", "MissingPermission")

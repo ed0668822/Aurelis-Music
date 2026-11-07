@@ -28,11 +28,13 @@ import androidx.compose.ui.unit.dp
 import com.music.aurelis.R
 import com.music.aurelis.ui.components.PAGE_GUTTER
 import com.music.aurelis.ui.components.ShimmerBox
+import com.music.aurelis.ui.components.MessageState
 
 data class LocalGenre(
     val name: String,
     val songCount: Int,
     val stripeColor: Long?,
+    val key: String = name,
 )
 
 @Composable
@@ -64,10 +66,10 @@ fun ExploreScreen(
                 }
             }
             if (genres.isEmpty()) {
-                item { ExploreSkeletonRows(columns) }
+                item { MessageState("No hay música local para explorar") }
             } else {
                 val rows = genres.chunked(columns)
-                items(rows, key = { row -> row.first().name }) { row ->
+                items(rows, key = { row -> row.first().key }) { row ->
                     GenreRow(row = row, columns = columns, onGenreClick = onGenreClick)
                 }
             }
@@ -128,6 +130,9 @@ fun GenreSleeve(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.align(Alignment.TopStart).padding(horizontal = 14.dp, vertical = 12.dp),
         )
+        Text("${item.songCount} canciones", color = Color.White,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.align(Alignment.BottomStart).padding(14.dp))
     }
 }
 

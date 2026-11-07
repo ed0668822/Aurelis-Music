@@ -1,7 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -15,322 +14,179 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
-import com.music.aurelis.data.AudioQuality
+import com.music.aurelis.BuildConfig
+import com.music.aurelis.data.ProfileAvatars
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import com.music.aurelis.data.model.ProfileId
 import com.music.aurelis.data.ProfileRepository
 import com.music.aurelis.data.SettingsRepository
+import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.ui.components.*
 
 @Composable
-fun SettingsScreen(
-    isVisible: Boolean,
-    onDismiss: () -> Unit,
-    onOpenEqualizer: () -> Unit = {},
-) {
+fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: () -> Unit = {},
+    localSongs: List<com.music.aurelis.data.model.LocalSong> = emptyList(), onOpenFolder: (String) -> Unit = {}) {
     if (!isVisible) return
-
     val context = LocalContext.current
-    var userName by remember { mutableStateOf(ProfileRepository.userName) }
-    var userPhoto by remember { mutableStateOf(ProfileRepository.userPhotoUri) }
-    var showNameDialog by remember { mutableStateOf(false) }
-
-    val photoPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        if (uri != null) {
-            try {
-                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (_: Exception) {}
-            userPhoto = uri.toString()
-            ProfileRepository.userPhotoUri = userPhoto
+    val profileState by ProfileRepository.state.collectAsState()
+    val active = profileState.profile
+    val name = active.name
+    val photo = active.avatar
+    val scope = rememberCoroutineScope()
+    var editing by remember { mutableStateOf(false) }
+    var translation by remember { mutableStateOf(false) }
+    var profileError by remember { mutableStateOf<String?>(null) }
+    var importing by remember { mutableStateOf(false) }
+    var photoProfile by rememberSaveable { mutableStateOf(active.id.value) }
+    fun change(action: () -> Unit) {
+        try { action(); profileError = null } catch (error: Exception) { profileError = error.message ?: "No se pudo guardar el perfil." }
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            importing = true
+            try { ProfileAvatars.import(context, ProfileId(photoProfile), uri); profileError = null }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { profileError = error.message ?: "No se pudo guardar la imagen." }
+            finally { importing = false }
         }
     }
-
-    val themeMode by SettingsRepository.themeMode.collectAsState()
-    val dolbyAtmos by SettingsRepository.dolbyAtmos.collectAsState()
-    val liquidGlass by SettingsRepository.liquidGlass.collectAsState()
-    val reduceAnimation by SettingsRepository.reduceAnimation.collectAsState()
-    val reduceDynamicBlur by SettingsRepository.reduceDynamicBlur.collectAsState()
-    val syncedLyrics by SettingsRepository.syncedLyrics.collectAsState()
-    val blurLyrics by SettingsRepository.blurUnfocusedLyrics.collectAsState()
-    val filterNonMusic by SettingsRepository.filterNonMusicAudio.collectAsState()
-    val autoplay by SettingsRepository.autoplay.collectAsState()
-    val crossfade by SettingsRepository.crossfadeSeconds.collectAsState()
-    val audioQuality by SettingsRepository.audioQuality.collectAsState()
-
-    if (showNameDialog) {
-        var tempName by remember { mutableStateOf(userName) }
-        AlertDialog(
-            onDismissRequest = { showNameDialog = false },
-            title = { Text("Editar Nombre") },
-            text = { OutlinedTextField(value = tempName, onValueChange = { tempName = it }, singleLine = true) },
-            confirmButton = {
-                TextButton(onClick = {
-                    userName = tempName
-                    ProfileRepository.userName = tempName
-                    showNameDialog = false
-                }) { Text("Guardar") }
-            },
-            dismissButton = { TextButton(onClick = { showNameDialog = false }) { Text("Cancelar") } },
-        )
+    if (profileState.readOnly) {
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
+            Text("Perfil en modo de solo lectura", style = MaterialTheme.typography.titleLarge)
+            Text(profileState.error ?: "Reinicia la app para volver a intentarlo. Los datos se han conservado.")
+            TextButton(onClick = onDismiss) { Text("Atrás") }
+        }
+        return
     }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp, bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
-            }
-            Text(
-                text = "Settings",
-                fontSize = 34.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(start = 8.dp),
-            )
+    var libraryError by remember { mutableStateOf<String?>(null) }
+    var browsingFolders by remember { mutableStateOf(false) }
+    val allFolders by SettingsRepository.useAllAudioFolders.collectAsState()
+    val chosenFolders by SettingsRepository.localMusicFolders.collectAsState()
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) try { com.music.aurelis.data.LocalFolderRepository.add(context, uri); libraryError = null }
+        catch (error: Exception) { libraryError = error.message ?: "No se pudo seleccionar la carpeta." }
+    }
+    val appFont by SettingsRepository.appFont.collectAsState()
+    val mode by SettingsRepository.themeMode.collectAsState()
+    val glass by SettingsRepository.liquidGlass.collectAsState()
+    val motion by SettingsRepository.reduceAnimation.collectAsState()
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsState()
+    val sync by SettingsRepository.syncedLyrics.collectAsState()
+    val lyricBlur by SettingsRepository.blurUnfocusedLyrics.collectAsState()
+    val filter by SettingsRepository.filterNonMusicAudio.collectAsState()
+    val sources by SettingsRepository.lyricsSources.collectAsState()
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground) {
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding()
+        .navigationBarsPadding().verticalScroll(rememberScrollState())) {
+        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás") }
+            Text("Ajustes", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         }
-
-        SettingsGroup(topSpacing = 0.dp) {
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .clickable { photoPicker.launch(arrayOf("image/*")) }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier.size(60.dp).clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (userPhoto != null) {
-                        AsyncImage(
-                            model = userPhoto,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Icon(
-                            Icons.Rounded.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(30.dp),
-                        )
-                    }
+        SettingsGroup(header = "Perfil del dispositivo", topSpacing = 0.dp) {
+            Row(Modifier.fillMaxWidth().clickable(enabled = !importing) { photoProfile = active.id.value; picker.launch(arrayOf("image/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Person, null)
+                    if (photo != null) AsyncImage(photo, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(text = userName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(
-                        text = "Toca para cambiar foto",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Column(Modifier.padding(start = 16.dp)) { Text(name, style = MaterialTheme.typography.titleLarge); Text("Toca para cambiar foto", style = MaterialTheme.typography.bodySmall) }
+            }
+            if (importing) Text("Guardando imagen…", Modifier.padding(16.dp))
+            if (photo != null) SettingsRow(Icons.Rounded.Delete, "Quitar foto", onClick = { change { ProfileAvatars.remove(active.id) } })
+            (profileError ?: profileState.error)?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
+            SettingsRow(Icons.Rounded.Edit, "Nombre", value = name, onClick = { editing = true })
+        }
+        SettingsGroup(header = "Audio local") {
+            SettingsRow(Icons.Rounded.Tune, "Equalizer", "Ecualizador, balance y amplitud estéreo", onClick = onOpenEqualizer)
+            SettingsRow(Icons.Rounded.AudioFile, "Calidad del archivo", "Se reproduce el archivo disponible. Cambiar una preferencia no convierte su calidad ni garantiza Dolby Atmos.")
+            SettingsRow(Icons.Rounded.Shuffle, "AutoMix local", "Crea una cola desde Inicio con tu biblioteca e historial. Crossfade y reproducción continua automática no están activados.")
+        }
+        SettingsGroup(header = "Apariencia") {
+            Column(Modifier.padding(16.dp)) {
+                Text("Tipografía", style = MaterialTheme.typography.bodyLarge)
+                SegmentedControl(listOf("Sistema", "Vazirmatn"), appFont.ordinal, onSelect = { SettingsRepository.setAppFont(com.music.aurelis.data.AppFont.entries[it]) })
+                Text("Tema", style = MaterialTheme.typography.bodyLarge)
+                SegmentedControl(listOf("Sistema", "Claro", "Oscuro"), mode, SettingsRepository::setThemeMode)
+            }
+            SettingsToggle("Reducir animaciones", "Detiene los efectos continuos y elimina transiciones del reproductor.", motion, SettingsRepository::setReduceAnimation)
+            SettingsToggle("Reducir desenfoque", "Usa superficies sólidas y evita desenfoques dinámicos.", reduceBlur, SettingsRepository::setReduceDynamicBlur)
+            SettingsToggle("Liquid Glass", "Superficies translúcidas y reflejos ligeros; se desactiva al reducir desenfoque.", glass, SettingsRepository::setLiquidGlass)
+        }
+        SettingsGroup(header = "Letras") {
+            SettingsToggle("Letras sincronizadas", "Resalta y sigue las líneas cuando hay marcas de tiempo.", sync, SettingsRepository::setSyncedLyrics)
+            SettingsToggle("Desenfocar líneas inactivas", "Solo durante seguimiento sincronizado y sin reducción de desenfoque.", lyricBlur, SettingsRepository::setBlurUnfocusedLyrics)
+            SettingsToggle("Buscar letras en LRCLIB", "La búsqueda se inicia manualmente desde el reproductor y envía título y artista.", LyricsSource.LRCLIB in sources) {
+                SettingsRepository.setLyricsSources(if (it) sources + LyricsSource.LRCLIB else sources - LyricsSource.LRCLIB)
+            }
+            SettingsRow(Icons.Rounded.Translate, "Traducción", "Configura servidor e idiomas. Guardar aquí no envía letras.", onClick = { translation = true })
+        }
+        SettingsGroup(header = "Biblioteca") {
+            SettingsToggle("Usar todas las carpetas de audio", "Biblioteca de audio indexada por Android.", allFolders) {
+                try { SettingsRepository.setLocalFolderSelection(chosenFolders, it); libraryError = null }
+                catch (error: Exception) { libraryError = error.message }
+            }
+            SettingsRow(Icons.Rounded.Folder, "Elegir carpeta local", "Solo música indexada por Android en el dispositivo o tarjeta SD.", onClick = { folderPicker.launch(null) })
+            chosenFolders.sorted().forEach { uri ->
+                val label = com.music.aurelis.data.LocalFolderRepository.label(uri)
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, Modifier.weight(1f))
+                    IconButton(onClick = { try { com.music.aurelis.data.LocalFolderRepository.remove(context, uri); libraryError = null }
+                        catch (error: Exception) { libraryError = error.message } }) { Icon(Icons.Rounded.Close, "Dejar de usar $label") }
                 }
             }
-            RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.Edit,
-                title = "Nombre",
-                value = userName,
-                onClick = { showNameDialog = true },
-            )
+            if (!allFolders && chosenFolders.isEmpty()) Text("No hay carpetas seleccionadas.", Modifier.padding(16.dp))
+            libraryError?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
+            SettingsRow(Icons.Rounded.FolderOpen, "Ver carpetas de la biblioteca", onClick = { browsingFolders = true })
+            SettingsToggle("Filtrar audio no musical", "Oculta clips, notas de voz y sonidos del sistema.", filter, SettingsRepository::setFilterNonMusicAudio)
         }
-
-        SettingsGroup(header = "Audio Quality") {
-            SettingsRow(
-                icon = Icons.Rounded.Speaker,
-                title = "Dolby Atmos",
-                subtitle = "Reproduce la versión envolvente cuando esté disponible.",
-                trailing = {
-                    Switch(
-                        checked = dolbyAtmos,
-                        onCheckedChange = { SettingsRepository.setDolbyAtmos(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setDolbyAtmos(!dolbyAtmos) },
-            )
-            RowDivider()
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Calidad de audio", style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(8.dp))
-                SegmentedControl(
-                    options = listOf("Estándar", "Alta", "Lossless"),
-                    selectedIndex = when (audioQuality) {
-                        AudioQuality.STANDARD -> 0
-                        AudioQuality.HIGH -> 1
-                        AudioQuality.LOSSLESS -> 2
-                    },
-                    onSelect = { index ->
-                        SettingsRepository.setAudioQuality(
-                            when (index) {
-                                0 -> AudioQuality.STANDARD
-                                1 -> AudioQuality.HIGH
-                                else -> AudioQuality.LOSSLESS
-                            },
-                        )
-                    },
-                )
-            }
-            RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.Tune,
-                title = "Equalizer",
-                subtitle = "Tone, seven bands and balance",
-                onClick = onOpenEqualizer,
-            )
-        }
-
-        SettingsGroup(header = "Playback") {
-            SettingsRow(
-                icon = Icons.Rounded.Autorenew,
-                title = "Autoplay",
-                subtitle = "Sigue reproduciendo canciones similares al terminar la cola.",
-                trailing = {
-                    Switch(
-                        checked = autoplay,
-                        onCheckedChange = { SettingsRepository.setAutoplay(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setAutoplay(!autoplay) },
-            )
-            RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.Shuffle,
-                title = "AutoMix",
-                subtitle = "Transiciones perfectas entre canciones.",
-                value = "$crossfade s",
-                onClick = {},
-            )
-        }
-
-        SettingsGroup(header = "Appearance") {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Theme", style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(8.dp))
-                SegmentedControl(
-                    options = listOf("System", "Light", "Dark"),
-                    selectedIndex = themeMode,
-                    onSelect = { SettingsRepository.setThemeMode(it) },
-                )
-            }
-            RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.MotionPhotosOff,
-                title = "Reduce animation",
-                subtitle = "Congela el gradiente del reproductor.",
-                trailing = {
-                    Switch(
-                        checked = reduceAnimation,
-                        onCheckedChange = { SettingsRepository.setReduceAnimation(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setReduceAnimation(!reduceAnimation) },
-            )
-            RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.BlurOff,
-                title = "Reduce dynamic blur",
-                subtitle = "Cambia el cristal difuminado por fondos sólidos.",
-                trailing = {
-                    Switch(
-                        checked = reduceDynamicBlur,
-                        onCheckedChange = { SettingsRepository.setReduceDynamicBlur(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setReduceDynamicBlur(!reduceDynamicBlur) },
-            )
-            RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.AutoAwesome,
-                title = "Liquid Glass",
-                subtitle = "Cristal real en la barra de navegación.",
-                trailing = {
-                    Switch(
-                        checked = liquidGlass,
-                        onCheckedChange = { SettingsRepository.setLiquidGlass(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setLiquidGlass(!liquidGlass) },
-            )
-        }
-
-        SettingsGroup(header = "Lyrics") {
-            SettingsRow(
-                icon = Icons.Rounded.Lyrics,
-                title = "Synced lyrics",
-                subtitle = "Ilumina las palabras mientras se cantan.",
-                trailing = {
-                    Switch(
-                        checked = syncedLyrics,
-                        onCheckedChange = { SettingsRepository.setSyncedLyrics(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setSyncedLyrics(!syncedLyrics) },
-            )
-            RowDivider()
-            SettingsRow(
-                icon = Icons.Rounded.BlurOn,
-                title = "Blur unfocused lyrics",
-                subtitle = "Mantiene el foco en la línea actual.",
-                trailing = {
-                    Switch(
-                        checked = blurLyrics,
-                        onCheckedChange = { SettingsRepository.setBlurUnfocusedLyrics(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setBlurUnfocusedLyrics(!blurLyrics) },
-            )
-        }
-
-        SettingsGroup(header = "Local Music") {
-            SettingsRow(
-                icon = Icons.Rounded.FilterAlt,
-                title = "Filter non-music audio",
-                subtitle = "Oculta clips, notas de voz y sonidos del sistema.",
-                trailing = {
-                    Switch(
-                        checked = filterNonMusic,
-                        onCheckedChange = { SettingsRepository.setFilterNonMusicAudio(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-                    )
-                },
-                onClick = { SettingsRepository.setFilterNonMusicAudio(!filterNonMusic) },
-            )
-        }
-
-        SettingsGroup(header = "About") {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
+        SettingsGroup(header = "Acerca de") {
+            Column(Modifier.padding(16.dp)) {
                 Text("Aurelis Music", fontWeight = FontWeight.Bold)
-                Text("v1.9.0", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(BuildConfig.VERSION_NAME, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Aurelis © 2026. GPL-3.0-or-later", style = MaterialTheme.typography.bodySmall)
             }
         }
-
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(24.dp))
     }
+    }
+    if (editing) {
+        var draft by remember { mutableStateOf(name) }
+        var error by remember { mutableStateOf<String?>(null) }
+        AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
+            onDismissRequest = { editing = false }, title = { Text("Editar nombre") },
+            text = { Column { OutlinedTextField(draft, { draft = it.take(60) }, singleLine = true, label = { Text("Nombre del perfil") }); error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
+            confirmButton = { TextButton(enabled = draft.isNotBlank(), onClick = {
+                try {
+                    ProfileRepository.rename(draft)
+                    editing = false
+                } catch (failure: Exception) { error = failure.message ?: "No se pudo guardar." }
+            }) { Text("Guardar") } },
+            dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancelar") } })
+    }
+    if (browsingFolders) AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
+        onDismissRequest = { browsingFolders = false }, title = { Text("Carpetas de la biblioteca") },
+        text = { Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+            val folders = com.music.aurelis.data.LocalFolderRepository.groups(localSongs)
+            if (folders.isEmpty()) Text("No hay canciones indexadas en la biblioteca seleccionada.")
+            folders.forEach { folder -> TextButton(onClick = { browsingFolders = false; onOpenFolder(folder.key) }) { Text("${folder.label} · ${folder.songs.size}") } }
+        } }, confirmButton = { TextButton(onClick = { browsingFolders = false }) { Text("Cerrar") } })
+    if (translation) TranslationLanguageDialog(onDismiss = { translation = false }, onTranslate = { translation = false }, sendOnConfirm = false)
+}
+
+@Composable
+private fun SettingsToggle(title: String, subtitle: String, checked: Boolean, change: (Boolean) -> Unit) {
+    com.music.aurelis.ui.components.SettingsSubRow(title, checked, change,
+        subtitle = subtitle, modifier = Modifier.semantics { contentDescription = title })
 }

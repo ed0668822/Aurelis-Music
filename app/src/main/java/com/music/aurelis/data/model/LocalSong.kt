@@ -1,6 +1,8 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.data.model
 
+enum class MetadataOrigin { MEDIA_STORE, FILE_TAG }
+
 data class LocalSong(
     val id: String,
     val title: String,
@@ -27,6 +29,17 @@ data class LocalSong(
     val sourceQuality: String? = null,
     val sourceHiRes: Boolean = false,
     val isExplicit: Boolean? = null,
+    val albumId: String? = null,
+    val artistId: String? = null,
+    val discNumber: Int? = null,
+    val genre: String? = null,
+    val genreOrigin: MetadataOrigin? = null,
+    val volumeName: String? = null,
+    val relativePath: String? = null,
+    val displayName: String? = null,
+    val dateModifiedMs: Long = 0,
+    val mimeType: String? = null,
+    val sizeBytesKnown: Boolean = false,
 ) {
     val videoId: String get() = id
     val thumbnailUrl: String? get() = artworkUri

@@ -2,9 +2,13 @@
 package com.music.aurelis.data.lyrics
 
 import com.music.aurelis.data.model.Song
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 data class LrcLibTrack(
     val id: Long,
@@ -18,79 +22,76 @@ data class LrcLibTrack(
 )
 
 object LrcLib {
-    private const val BASE_URL = "https://lrclib.net/api"
+    private val client by lazy {
+        OkHttpClient.Builder().followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false)
+            .connectTimeout(3, TimeUnit.SECONDS).callTimeout(8, TimeUnit.SECONDS).build()
+    }
 
-    suspend fun searchLyrics(title: String, artist: String, duration: Int?): LrcLibTrack? = withContext(Dispatchers.IO) {
-        try {
-            val query = title.replace(" ", "%20")
-            val artistQ = if (artist.isBlank()) "" else artist.replace(" ", "%20")
-            val url = StringBuilder("$BASE_URL/search?track_name=$query")
-            if (artist.isNotBlank()) url.append("&artist_name=$artistQ")
-            if (duration != null && duration > 0) url.append("&duration=$duration")
-            val response = Http.get(url.toString())
-            val arr = JSONArray(response)
-            if (arr.length() == 0) return@withContext null
-            val best = arr.getJSONObject(0)
-            LrcLibTrack(
-                id = best.optLong("id"),
-                name = best.optString("name"),
-                trackName = best.optString("trackName").takeIf { it != "null" },
-                artistName = best.optString("artistName").takeIf { it != "null" },
-                albumName = best.optString("albumName").takeIf { it != "null" },
-                duration = if (best.isNull("duration")) null else best.optDouble("duration"),
-                plainLyrics = best.optString("plainLyrics").takeIf { it.isNotEmpty() && it != "null" },
-                syncedLyrics = best.optString("syncedLyrics").takeIf { it.isNotEmpty() && it != "null" },
-            )
-        } catch (e: Exception) {
-            null
+    /** Explicit, bounded and cancellable lookup; 404/empty/mismatched recordings are not network errors. */
+    internal suspend fun lookup(
+        title: String, artist: String, durationMs: Long, httpClient: OkHttpClient = client,
+    ): LyricsRepository.Result? {
+        currentCoroutineContext().ensureActive()
+        if (title.isBlank()) return null
+        val request = Request.Builder().url(searchUrl(title, artist))
+            .header("User-Agent", LYRICS_AGENT).header("Accept", "application/json").build()
+        val raw = try { requestLyricsBody(request, httpClient) }
+        catch (error: LyricsRequestException) {
+            if (error.failure.httpCode == 404) return null
+            throw error
         }
+        currentCoroutineContext().ensureActive()
+        try {
+            val rows = JSONArray(raw)
+            if (rows.length() > 500) throw LyricsRequestException(LyricsFailure(LyricsFailureKind.TOO_LARGE))
+            val duration = durationMs.takeIf { it > 0 }?.div(1000)?.coerceAtMost(Int.MAX_VALUE.toLong())?.toInt()
+            val best = selectTrack(rows, title, artist, duration) ?: return null
+            val synced = best.optString("syncedLyrics").takeIf { it.isNotBlank() && it != "null" }
+                ?.let(Lyrics::parse)?.takeIf { it.isSynced }
+            val plain = best.optString("plainLyrics").takeIf { it.isNotBlank() && it != "null" }
+                ?.let(Lyrics::parse)
+            val parsed = synced ?: plain ?: return null
+            return LyricsRepository.Result(LyricsSource.LRCLIB, parsed.lines, parsed.isSynced)
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (error: LyricsRequestException) { throw error }
+        catch (_: Exception) { throw LyricsRequestException(LyricsFailure(LyricsFailureKind.INVALID_RESPONSE)) }
+    }
+
+    suspend fun searchLyrics(title: String, artist: String, duration: Int?): LrcLibTrack? {
+        val request = Request.Builder().url(searchUrl(title, artist))
+            .header("User-Agent", LYRICS_AGENT).header("Accept", "application/json").build()
+        val body = requestLyricsBody(request, client)
+        val best = selectTrack(JSONArray(body), title, artist, duration) ?: return null
+        return LrcLibTrack(best.optLong("id"), best.optString("name"), best.optString("trackName"),
+            best.optString("artistName"), best.optString("albumName"),
+            if (best.isNull("duration")) null else best.optDouble("duration"),
+            best.optString("plainLyrics").takeIf { it.isNotBlank() && it != "null" },
+            best.optString("syncedLyrics").takeIf { it.isNotBlank() && it != "null" })
+    }
+
+    internal fun searchUrl(title: String, artist: String): okhttp3.HttpUrl {
+        return okhttp3.HttpUrl.Builder().scheme("https").host("lrclib.net")
+            .addPathSegment("api").addPathSegment("search")
+            .addQueryParameter("track_name", title).apply {
+                if (artist.isNotBlank()) addQueryParameter("artist_name", artist)
+            }.build()
+    }
+    internal fun selectTrack(arr: JSONArray, title: String, artist: String, duration: Int?): org.json.JSONObject? {
+        val candidates = (0 until arr.length()).mapNotNull { arr.optJSONObject(it) }.filter {
+                com.music.aurelis.data.LocalSearch.normalize(it.optString("trackName")) == com.music.aurelis.data.LocalSearch.normalize(title) &&
+                (artist.isBlank() || com.music.aurelis.data.LocalSearch.normalize(it.optString("artistName")) == com.music.aurelis.data.LocalSearch.normalize(artist)) &&
+                (duration == null || duration <= 0 || (!it.isNull("duration") && it.optDouble("duration").isFinite() && kotlin.math.abs(it.optDouble("duration") - duration) <= 5))
+            }
+        return candidates.minByOrNull { if (duration != null) kotlin.math.abs(it.optDouble("duration") - duration) else 0.0 }
     }
 
     suspend fun getLyrics(song: Song): LyricsResult {
-        val track = searchLyrics(song.title, song.artist, song.duration?.div(1000))
-        val synced = track?.syncedLyrics
-        val plain = track?.plainLyrics
-        val lines = when {
-            !synced.isNullOrBlank() -> parseLrc(synced)
-            !plain.isNullOrBlank() -> plain.lineSequence().filter { it.isNotBlank() }.map { LyricLine(0L, it.trim()) }.toList()
-            else -> emptyList()
-        }
-        return LyricsResult(lines = lines, source = "lrclib", isSynced = !synced.isNullOrBlank())
+        val found = lookup(song.title, song.artist, song.duration?.toLong() ?: 0L)
+        return LyricsResult(found?.lines.orEmpty(), "lrclib", found?.isSynced == true)
     }
 
-    suspend fun lyrics(title: String, artist: String, durationMs: Long): List<LyricLine>? {
-        val track = searchLyrics(title, artist, if (durationMs > 0) (durationMs / 1000).toInt() else null)
-        val synced = track?.syncedLyrics
-        val plain = track?.plainLyrics
-        val lines = when {
-            !synced.isNullOrBlank() -> parseLrc(synced)
-            !plain.isNullOrBlank() -> plain.lineSequence().filter { it.isNotBlank() }.map { LyricLine(0L, it.trim()) }.toList()
-            else -> emptyList()
-        }
-        return if (lines.isEmpty()) null else lines
-    }
+    suspend fun lyrics(title: String, artist: String, durationMs: Long): List<LyricLine>? =
+        lookup(title, artist, durationMs)?.lines
 
-    fun parseLrc(lrc: String): List<LyricLine> {
-        if (lrc.isBlank()) return emptyList()
-        val result = mutableListOf<LyricLine>()
-        val timeRegex = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{2,3}))?]")
-        lrc.lineSequence().forEach { line ->
-            val matches = timeRegex.findAll(line)
-            if (matches.count() == 0) return@forEach
-            val text = line.replace(timeRegex, "").trim()
-            if (text.isEmpty()) return@forEach
-            matches.forEach { m ->
-                val min = m.groupValues[1].toLongOrNull() ?: 0L
-                val sec = m.groupValues[2].toLongOrNull() ?: 0L
-                val msPart = m.groupValues[3]
-                val ms = when (msPart.length) {
-                    2 -> (msPart.toLongOrNull() ?: 0L) * 10
-                    3 -> (msPart.toLongOrNull() ?: 0L)
-                    else -> 0L
-                }
-                result.add(LyricLine(timeMs = min * 60_000L + sec * 1000L + ms, text = text))
-            }
-        }
-        return result.sortedBy { it.timeMs }
-    }
+    fun parseLrc(lrc: String): List<LyricLine> = Lyrics.parse(lrc)?.takeIf { it.isSynced }?.lines.orEmpty()
 }

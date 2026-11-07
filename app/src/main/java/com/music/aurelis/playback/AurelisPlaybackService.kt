@@ -14,7 +14,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.music.aurelis.MainActivity
-import com.music.aurelis.data.SettingsRepository
+import kotlinx.coroutines.*
 import com.music.aurelis.playback.audio.DspChain
 import com.music.aurelis.playback.dsd.DsdExtractorsFactory
 
@@ -23,6 +23,8 @@ class AurelisPlaybackService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
     private var dspChain: DspChain? = null
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var profiles: ProfilePlaybackBinding? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -46,8 +48,7 @@ class AurelisPlaybackService : MediaSessionService() {
             .setMediaSourceFactory(mediaSourceFactory)
             .build()
 
-        applyEqSettings()
-        applySpatialSettings()
+        bindAudioSettings(serviceScope, chain.equalizer) { chain.spatial.enabled = it }
 
         val sessionActivityIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -60,27 +61,7 @@ class AurelisPlaybackService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivity)
             .build()
-    }
-
-    private fun applyEqSettings() {
-        val chain = dspChain ?: return
-        chain.equalizer.setTuning(
-            enabled = SettingsRepository.equalizerEnabled.value,
-            curve = if (SettingsRepository.equalizerMode.value == com.music.aurelis.data.EqualizerMode.MANUAL) {
-                manualCurve(SettingsRepository.equalizerBands.value)
-            } else {
-                toneCurve(
-                    SettingsRepository.equalizerToneX.value,
-                    SettingsRepository.equalizerToneY.value,
-                    SettingsRepository.equalizerFocused.value,
-                )
-            },
-            balance = SettingsRepository.equalizerBalance.value,
-        ) ?: Unit
-    }
-
-    private fun applySpatialSettings() {
-        dspChain?.spatial?.enabled = SettingsRepository.spatialAudio.value
+        profiles = ProfilePlaybackBinding(this, player, serviceScope)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
@@ -91,6 +72,8 @@ class AurelisPlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        profiles?.close(); profiles = null
+        serviceScope.cancel()
         mediaSession?.run { player.release(); release() }
         mediaSession = null
         dspChain = null

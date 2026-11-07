@@ -139,6 +139,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     androidResources {
         noCompress.add("onnx")
     }
@@ -176,6 +180,16 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+// Bundle verbatim project and third-party notices; never edit license text during builds.
+val bundleLicenseTexts by tasks.registering(Sync::class) {
+    from(rootProject.file("LICENSE"))
+    from(rootProject.file("NOTICE"))
+    from(rootProject.file("LICENSES"))
+    into(layout.buildDirectory.dir("generated/legalAssets/licenses"))
+}
+android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/legalAssets"))
+tasks.named("preBuild").configure { dependsOn(bundleLicenseTexts) }
 
 kotlin {
     compilerOptions {
@@ -224,12 +238,18 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     implementation("com.google.guava:guava:33.3.1-android")
     implementation("org.checkerframework:checker-qual:3.48.3")
     implementation("org.jsoup:jsoup:1.18.1")
 
     compileOnly("org.jspecify:jspecify:1.0.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
 

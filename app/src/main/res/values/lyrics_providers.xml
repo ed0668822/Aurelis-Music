@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aurelis © 2026. GPL-3.0-or-later -->
+<resources>
+    <string name="lyrics_sources_title">Fuentes de letras</string>
+    <string name="lyrics_sources_privacy">Primero se usan letras importadas, incrustadas y guardadas. Solo Buscar envía título y artista a LRCLIB; la duración se comprueba en el dispositivo. Activar una fuente no inicia consultas.</string>
+    <string name="lyrics_source_current">Fuente actual: %1$s</string>
+    <string name="lyrics_lrclib_detail">Letras comunitarias, sincronizadas por línea o en texto. Consulta manual, sin cuenta ni clave API.</string>
+    <string name="lyrics_provider_unverified">Deshabilitado: faltan condiciones de uso verificadas para este servicio y su contenido.</string>
+    <string name="lyrics_sources_close">Cerrar</string>
+    <string name="lyrics_search_lrclib">Buscar en LRCLIB</string>
+    <string name="lyrics_lookup_loading">Consultando letras locales, caché y LRCLIB…</string>
+    <string name="lyrics_lookup_not_found">No se encontraron letras para esta grabación. Puedes importar un LRC / TTML o volver a buscar.</string>
+    <string name="lyrics_error_network">No se pudo conectar. Las letras locales y guardadas siguen disponibles. Comprueba la conexión y reintenta.</string>
+    <string name="lyrics_error_timeout">La consulta agotó el tiempo de espera. Puedes reintentar.</string>
+    <string name="lyrics_error_rate">El servicio ha limitado las consultas. Espera antes de reintentar.</string>
+    <string name="lyrics_error_rate_wait">El servicio ha limitado las consultas. Espera %1$d segundos antes de reintentar.</string>
+    <string name="lyrics_error_http">El servicio devolvió HTTP %1$d. Comprueba su disponibilidad antes de reintentar.</string>
+    <string name="lyrics_error_response">El servicio devolvió una respuesta incompleta o incompatible. No se guardó contenido parcial.</string>
+    <string name="lyrics_error_size">El contenido supera los límites permitidos. Usa un archivo o una letra de menor tamaño.</string>
+    <string name="lyrics_error_disabled">Activa LRCLIB en Fuentes de letras para buscar. Las fuentes sin autorización verificada permanecen deshabilitadas.</string>
+    <string name="lyrics_cancel_lookup">Cancelar búsqueda</string>
+    <string name="lyrics_cancel_translation">Cancelar traducción</string>
+    <string name="lyrics_retry_translation">Reintentar traducción</string>
+</resources>

@@ -1,0 +1,24 @@
+{
+  "unit": "B01.3",
+  "base": "de8c1afe5614814593865d268e4e72ffaadaf6ef",
+  "build": "BUILD SUCCESSFUL in 2m 1s",
+  "tests": {
+    "tests": 154,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Fatal": 0,
+    "Warning": 222
+  },
+  "log_external": "/workspace/toolchains/beta-b01-3-final.log",
+  "apk_debug_sha256": "85a00c028b88a5e3ab7839d761b0c9b61b2ab02aae95aca3b43c024b789a00e5",
+  "reviews": "Two separate passes by same agent; scopes/grants/queries/navigation/playback tested.",
+  "limitations": [
+    "Only Android-indexed local audio; no arbitrary DocumentsProvider or unindexed filesystem scan.",
+    "Real SAF picker/SD/device instrumentation not executed.",
+    "Release integration deferred to B02 closure."
+  ]
+}

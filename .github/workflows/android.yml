@@ -1,5 +1,4 @@
 # Aurelis © 2026. GPL-3.0-or-later.
-
 name: Build Release APK
 
 on:
@@ -9,403 +8,207 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Native workflow annotations and summaries require no PR/issue write token.
 permissions:
   contents: read
-  pull-requests: write
-  checks: write
-  issues: write
 
 jobs:
   build:
     runs-on: ubuntu-24.04
-
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, Node 24
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Record source and comparison commits
+        id: init
+        continue-on-error: true
+        env:
+          CI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 .github/scripts/android_ci.py prepare
+
+      - name: Validate CI helpers (no Android compilation)
+        id: helpers
+        if: ${{ !cancelled() && steps.init.outcome == 'success' }}
+        continue-on-error: true
+        run: python3 -m unittest discover -s .github/scripts/tests -v
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        id: java
+        if: ${{ !cancelled() && steps.helpers.outcome == 'success' }}
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5, Node 24
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Validate wrapper and configure Gradle cache
+        id: gradle
+        if: ${{ !cancelled() && steps.java.outcome == 'success' }}
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5, Node 24
         with:
-          gradle-version: "8.11.1"
+          validate-wrappers: true
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-      - name: Ensure gradlew is executable
-        run: chmod +x ./gradlew
-
-      - name: Decode keystore (optional)
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 --decode > aurelis-release.jks
-            echo "Keystore decoded successfully."
-          else
-            echo "::warning::KEYSTORE_BASE64 no configurado. Se utilizará la clave debug."
-          fi
-
-      # ─────────────────────────────────────────────
-      # Android SDK 35 + NDK + CMake
-      # ─────────────────────────────────────────────
-
-      - name: Install Android SDK Platform 35, NDK and CMake
-        shell: bash
+      - name: Verify Android toolchain
+        id: android
+        if: ${{ !cancelled() && steps.gradle.outcome == 'success' }}
+        continue-on-error: true
         run: |
           set -euo pipefail
-
+          java -version 2> ci-artifacts/java-version.log
+          grep -Eq 'version "17[.]' ci-artifacts/java-version.log
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          SDKMANAGER="${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager"
-
-          if [ ! -x "$SDKMANAGER" ]; then
-            echo "::error::No se encontró sdkmanager en $SDKMANAGER"
-            exit 1
-          fi
-
-          echo "Aceptando licencias Android..."
-
-          set +o pipefail
-          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          set -o pipefail
-
-          echo "Instalando Android SDK 35, NDK y CMake..."
-
-          "$SDKMANAGER" --install \
-            "platforms;android-35" \
-            "ndk;26.1.10909125" \
-            "cmake;3.22.1"
-
-          echo "Verificando instalaciones..."
-
-          test -f "$SDK_DIR/platforms/android-35/source.properties"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          set +e
+          yes 2>/dev/null | "$SDKMANAGER" --licenses > ci-artifacts/sdk-licenses.log 2>&1
+          license_status=${PIPESTATUS[1]}
+          set -e
+          test "$license_status" -eq 0
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" \
+            "ndk;26.1.10909125" "cmake;3.22.1" 2>&1 | tee ci-artifacts/sdk-install.log
+          test -f "$SDK_DIR/platforms/android-36/source.properties"
           test -f "$SDK_DIR/ndk/26.1.10909125/source.properties"
           test -d "$SDK_DIR/cmake/3.22.1"
+          test -x "$SDK_DIR/build-tools/35.0.0/apksigner"
+          test -x "$SDK_DIR/build-tools/35.0.0/aapt2"
+          grep -Eq '^AndroidVersion.ApiLevel[[:space:]]*=[[:space:]]*36[[:space:]]*$' "$SDK_DIR/platforms/android-36/source.properties"
+          grep -Eq '^Pkg.Revision[[:space:]]*=[[:space:]]*26[.]1[.]10909125[[:space:]]*$' "$SDK_DIR/ndk/26.1.10909125/source.properties"
+          grep -Eq '^Pkg.Revision[[:space:]]*=[[:space:]]*35[.]0[.]0[[:space:]]*$' "$SDK_DIR/build-tools/35.0.0/source.properties"
+          "$SDK_DIR/cmake/3.22.1/bin/cmake" --version > ci-artifacts/cmake-version.log
+          grep -Eq '^cmake version 3[.]22[.]1([-+][^[:space:]]*)?[[:space:]]*$' ci-artifacts/cmake-version.log
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
 
-          echo "SDK 35, NDK y CMake instalados correctamente."
-
-      # ─────────────────────────────────────────────
-      # 1. Android Lint
-      # ─────────────────────────────────────────────
-
-      - name: Run Android Lint
-        run: ./gradlew lintDebug --no-daemon
-        continue-on-error: true
-
-      - name: Setup Reviewdog
-        uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: latest
-
-      - name: Report Android Lint Results
-        if: hashFiles('app/build/reports/lint-results-debug.xml') != ''
-        uses: ilyagulya/android-lint-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          lint_xml_file: app/build/reports/lint-results-debug.xml
-          reporter: github-pr-check
-          level: warning
-
-      # ─────────────────────────────────────────────
-      # 2. Tests unitarios
-      # ─────────────────────────────────────────────
-
-      - name: Run unit tests
+      - name: Prepare existing signing configuration
+        id: signing
+        if: ${{ !cancelled() && steps.android.outcome == 'success' }}
         continue-on-error: true
         env:
-          STORE_FILE: "aurelis-release.jks"
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: python3 .github/scripts/android_ci.py signing
+
+      - name: Compile Kotlin, Java and resources before downstream checks
+        id: compile
+        if: ${{ !cancelled() && steps.signing.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 15
+        env:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build-tests.log
-
-      # ─────────────────────────────────────────────
-      # 3. Build Release
-      # ─────────────────────────────────────────────
-
-      - name: Build Release APK
-        id: build
-        continue-on-error: true
-        env:
-          STORE_FILE: "aurelis-release.jks"
-          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
-        shell: bash
-        run: |
-          set +e
-          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
-          exit ${PIPESTATUS[0]}
-
-      # ─────────────────────────────────────────────
-      # 4. Inventario de fuentes
-      # ─────────────────────────────────────────────
-
-      - name: Generate Source Inventory
-        if: always()
-        shell: bash
-        run: |
-          kt=$(find app/src -type f -name "*.kt" | wc -l)
-          java=$(find app/src -type f -name "*.java" | wc -l)
-          cpp=$(find app/src -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) | wc -l)
-          xml=$(find app/src/main/res -type f -name "*.xml" | wc -l)
-
-          {
-            echo "## 📦 Inventario de archivos fuente"
-            echo ""
-            echo "| Tipo | Cantidad |"
-            echo "|------|----------|"
-            echo "| Kotlin (.kt) | $kt |"
-            echo "| Java (.java) | $java |"
-            echo "| C/C++ (.c/.cpp/.h/.hpp) | $cpp |"
-            echo "| Recursos XML | $xml |"
-            echo ""
-            echo "**Total fuente (Kotlin+Java+C/C++):** $((kt + java + cpp))"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          find app/src -type f \( -name "*.kt" -o -name "*.java" -o -name "*.c" -o -name "*.cpp" -o -name "*.h" \) | sort > source-inventory.txt
-
-      # ─────────────────────────────────────────────
-      # 5. Reporte por archivo
-      # ─────────────────────────────────────────────
-
-      - name: Generate Per-File Compilation Report
-        if: always()
-        shell: bash
-        run: |
-          grep -E '^e: file://' build-release.log 2>/dev/null \
-            | sed -E 's|^e: file://[^:]*/app/src|app/src|' \
-            | sed -E 's|:[0-9]+:[0-9]+ | |' > errors.txt || true
-
-          grep -E '^w: file://' build-release.log 2>/dev/null \
-            | sed -E 's|^w: file://[^:]*/app/src|app/src|' \
-            | sed -E 's|:[0-9]+:[0-9]+ | |' > warnings.txt || true
-
-          if [ "${{ steps.build.outcome }}" != "success" ]; then
-            grep -A 8 "What went wrong" build-release.log 2>/dev/null | head -n 15 > failure-reason.txt || true
-            grep -A 3 "FAILURE: Build failed" build-release.log 2>/dev/null | head -n 5 >> failure-reason.txt || true
-          fi
-
-          ok_count=0
-          warn_count=0
-          err_count=0
-
-          : > file-status.txt
-
-          while IFS= read -r file; do
-            relpath="${file#./}"
-
-            if grep -qF "${relpath} " errors.txt 2>/dev/null; then
-              msg=$(grep -F "${relpath} " errors.txt | head -n1 | sed "s|^${relpath} ||")
-              echo "❌ ERROR     ${relpath}" >> file-status.txt
-              echo "             ↳ ${msg}" >> file-status.txt
-              err_count=$((err_count + 1))
-
-            elif grep -qF "${relpath} " warnings.txt 2>/dev/null; then
-              msg=$(grep -F "${relpath} " warnings.txt | head -n1 | sed "s|^${relpath} ||")
-              echo "⚠️ WARNING   ${relpath}" >> file-status.txt
-              echo "             ↳ ${msg}" >> file-status.txt
-              warn_count=$((warn_count + 1))
-
-            else
-              echo "✅ OK        ${relpath}" >> file-status.txt
-              ok_count=$((ok_count + 1))
-            fi
-
-          done < <(find app/src -type f \( -name "*.kt" -o -name "*.java" \) | sort)
-
-          {
-            echo ""
-            echo "## 🧪 Estado de compilación por archivo"
-            echo ""
-
-            if [ "${{ steps.build.outcome }}" = "success" ]; then
-              echo "**Resultado:** ✅ Compilación exitosa — APK generado."
-            else
-              echo "**Resultado:** ❌ Compilación fallida — sin APK."
-              echo ""
-              echo "<details><summary>Razón del fallo</summary>"
-              echo ""
-              echo '```'
-              cat failure-reason.txt 2>/dev/null || echo "(sin detalle)"
-              echo '```'
-              echo "</details>"
-            fi
-
-            echo ""
-            echo "| Estado | Archivos |"
-            echo "|--------|---------:|"
-            echo "| ✅ OK | **$ok_count** |"
-            echo "| ⚠️ WARNING | **$warn_count** |"
-            echo "| ❌ ERROR | **$err_count** |"
-            echo ""
-            echo "### Detalle por archivo"
-            echo ""
-            echo '```'
-            head -n 400 file-status.txt
-            echo '```'
-
-            if [ "$(wc -l < file-status.txt)" -gt 400 ]; then
-              echo "_Reporte truncado. Descarga el artefacto para ver el informe completo._"
-            fi
-
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          {
-            echo "# Reporte de compilación — Aurelis Music"
-            echo ""
-            echo "**Run:** #${{ github.run_number }}"
-            echo "**Commit:** ${{ github.sha }}"
-            echo "**Estado:** ${{ steps.build.outcome }}"
-            echo ""
-            echo "## Resumen"
-            echo "- ✅ OK: $ok_count"
-            echo "- ⚠️ WARNING: $warn_count"
-            echo "- ❌ ERROR: $err_count"
-            echo ""
-
-            if [ -s failure-reason.txt ]; then
-              echo "## Razón del fallo"
-              echo ""
-              cat failure-reason.txt
-              echo ""
-            fi
-
-            echo "## Estado por archivo"
-            echo ""
-            cat file-status.txt
-            echo ""
-            echo "## Errores completos"
-            echo ""
-            cat errors.txt
-            echo ""
-            echo "## Warnings completos"
-            echo ""
-            cat warnings.txt
-
-          } > compilation-report.txt
-
-      # ─────────────────────────────────────────────
-      # 6. Verificar APK
-      # ─────────────────────────────────────────────
-
-      - name: Verify APK exists and is not empty
-        if: steps.build.outcome == 'success'
-        shell: bash
         run: |
           set -euo pipefail
+          ./gradlew :app:compileDebugKotlin :app:compileReleaseKotlin \
+            :app:compileDebugJavaWithJavac :app:compileReleaseJavaWithJavac \
+            :app:processDebugResources :app:processReleaseResources \
+            --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/compile.log
 
-          APK_DIR="app/build/outputs/apk/release"
-
-          if [ ! -d "$APK_DIR" ]; then
-            echo "::error::Directorio no existe: $APK_DIR"
-            exit 1
-          fi
-
-          shopt -s nullglob
-          APKS=("$APK_DIR"/*.apk)
-
-          if [ ${#APKS[@]} -eq 0 ]; then
-            echo "::error::No se generó ningún APK"
-            exit 1
-          fi
-
-          for APK in "${APKS[@]}"; do
-            SIZE=$(stat -c%s "$APK")
-
-            echo "APK: $APK ($SIZE bytes)"
-
-            if [ "$SIZE" -lt 1000000 ]; then
-              echo "::error::APK demasiado pequeño: $APK"
-              exit 1
-            fi
-          done
-
-      # ─────────────────────────────────────────────
-      # 7. Inspeccionar APK
-      # ─────────────────────────────────────────────
-
-      - name: Inspect APK Contents (apkanalyzer)
-        if: steps.build.outcome == 'success'
-        shell: bash
+      # Continue only to collect all available diagnostics. Mandatory gate below
+      # uses outcome (not the success conclusion of continue-on-error).
+      - name: Android Lint (debug and release)
+        id: lint
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
         run: |
-          APK_ANALYZER=$(find "$ANDROID_HOME" -name apkanalyzer | head -n1)
+          set -euo pipefail
+          ./gradlew :app:lintDebug :app:lintRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/lint.log
 
-          if [ -z "$APK_ANALYZER" ]; then
-            echo "::warning::apkanalyzer no encontrado"
-            exit 0
-          fi
+      - name: Unit tests (debug and release)
+        id: tests
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:testDebugUnitTest :app:testReleaseUnitTest --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/tests.log
 
-          shopt -s nullglob
-          APKS=(app/build/outputs/apk/release/*.apk)
+      - name: Build APKs (debug and release)
+        id: build
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && steps.lint.outcome == 'success' && steps.tests.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug :app:assembleRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 2>&1 | tee ci-artifacts/build.log
 
-          : > apk-contents.txt
+      - name: Verify APK signatures, identity, ZIP, native architecture and notices
+        id: verify
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        run: python3 .github/scripts/android_ci.py verify
 
-          {
-            echo ""
-            echo "## 📲 APK generado"
-            echo ""
-            echo "| Archivo | Tamaño |"
-            echo "|---------|--------|"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          for APK in "${APKS[@]}"; do
-            NAME=$(basename "$APK")
-            SIZE=$(stat -c%s "$APK")
-
-            echo "| \`$NAME\` | $SIZE bytes |" >> "$GITHUB_STEP_SUMMARY"
-
-            echo "=== $NAME ===" >> apk-contents.txt
-            "$APK_ANALYZER" dex packages "$APK" >> apk-contents.txt 2>&1 || true
-          done
-
-      # ─────────────────────────────────────────────
-      # 8. Subir artefactos
-      # ─────────────────────────────────────────────
-
-      - name: Upload Compilation Report
+      - name: Remove temporary private keystore
+        id: cleanup
         if: always()
-        uses: actions/upload-artifact@v4
+        run: rm -f "$RUNNER_TEMP/aurelis-ci-release.jks"
+
+      - name: Generate honest task/source/diagnostic report
+        id: report
+        if: always()
+        continue-on-error: true
+        env:
+          CI_STEPS_JSON: ${{ toJSON(steps) }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: python3 .github/scripts/android_ci.py report --annotations
+
+      - name: Upload reports and redacted logs
+        id: upload_report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, Node 24
         with:
           name: compilation-report-${{ github.run_number }}
-          path: |
-            compilation-report.txt
-            file-status.txt
-            errors.txt
-            warnings.txt
-            source-inventory.txt
-            build-release.log
-            build-tests.log
-            failure-reason.txt
-            apk-contents.txt
-          if-no-files-found: warn
+          path: ci-artifacts/
+          if-no-files-found: error
           retention-days: 30
 
-      - name: Upload APK
-        if: steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v4
+      - name: Publish APKs only after all checks pass
+        id: upload_apk
+        if: ${{ !cancelled() && steps.init.outcome == 'success' && steps.helpers.outcome == 'success' && steps.java.outcome == 'success' && steps.gradle.outcome == 'success' && steps.android.outcome == 'success' && steps.signing.outcome == 'success' && steps.compile.outcome == 'success' && steps.lint.outcome == 'success' && steps.tests.outcome == 'success' && steps.build.outcome == 'success' && steps.verify.outcome == 'success' && steps.cleanup.outcome == 'success' && steps.report.outcome == 'success' && steps.upload_report.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, Node 24
         with:
           name: Aurelis Music-${{ github.run_number }}
-          path: app/build/outputs/apk/release/*.apk
+          path: ci-approved-apks/
           if-no-files-found: error
           retention-days: 14
 
-      # ─────────────────────────────────────────────
-      # 9. Marcar workflow fallido
-      # ─────────────────────────────────────────────
-
-      - name: Fail workflow if build failed
-        if: steps.build.outcome == 'failure'
-        shell: bash
-        run: |
-          echo "::error::La compilación falló. Descarga el artefacto compilation-report-${{ github.run_number }}."
-          exit 1
+      - name: Enforce required outcomes (failure/skipped is not success)
+        if: always()
+        env:
+          CI_STEPS_JSON: ${{ toJSON(steps) }}
+        run: python3 .github/scripts/android_ci.py gate

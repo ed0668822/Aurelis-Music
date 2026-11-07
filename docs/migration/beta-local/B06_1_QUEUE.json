@@ -1,0 +1,130 @@
+{
+  "unit": "B06.1",
+  "status": "IMPLEMENTED_PENDING_GITHUB_CI_AND_ANDROID",
+  "base": "cefe533dd1e256c67a720a97a241e95789c1fa9d",
+  "branch": "feature/bitchord-local-migration",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "reference_commit": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "references_read": [
+    "app/src/main/java/com/music/bitchord/playback/QueueCoordinator.kt",
+    "app/src/main/java/com/music/bitchord/ui/components/SongActionsMenu.kt",
+    "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerQueue.kt"
+  ],
+  "prior_ci": {
+    "run": 139,
+    "url": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42244895407",
+    "job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42244895407/job/127984422069",
+    "head": "cefe533dd1e256c67a720a97a241e95789c1fa9d",
+    "conclusion": "SUCCESS",
+    "evidence": "Public run list and job HTML; commit link and completed successfully status observed; no REST logs downloaded"
+  },
+  "source_files": [
+    "app/src/main/java/com/music/aurelis/MainActivity.kt",
+    "app/src/main/java/com/music/aurelis/playback/MediaItemExtensions.kt",
+    "app/src/main/java/com/music/aurelis/playback/PlaybackViewModel.kt",
+    "app/src/main/java/com/music/aurelis/playback/PlayerConnection.kt",
+    "app/src/main/java/com/music/aurelis/playback/ProfilePlaybackBinding.kt",
+    "app/src/main/java/com/music/aurelis/playback/QueueCoordinator.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/SongActionsDialog.kt",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerQueue.kt",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+    "app/src/main/java/com/music/aurelis/ui/screens/QueueScreen.kt",
+    "app/src/test/java/com/music/aurelis/playback/MediaSessionBridgeTest.kt",
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt",
+    "app/src/test/java/com/music/aurelis/playback/RecordingPlayer.kt",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt",
+    "app/src/test/java/com/music/aurelis/ui/theme/SharedGesturesTest.kt",
+    "app/src/test/java/com/music/aurelis/playback/QueueCoordinatorTest.kt"
+  ],
+  "new_tests": {
+    "app/src/test/java/com/music/aurelis/playback/MediaSessionBridgeTest.kt": [
+      "queueEditsCrossTheSessionWithoutReplacingOrSeekingTheCurrentOccurrence"
+    ],
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt": [
+      "clearingWhileConnectingAlsoCancelsPendingQueueEdits",
+      "queueCapabilityRevocationDisablesFurtherEditsAndUpdatesUiState",
+      "queueEditsWaitForConnectionWithoutReplacingTheLatestPlayRequest",
+      "realQueueStateAndPlayNextStayConsistentAcrossRepeatedEdits"
+    ],
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": [
+      "draggingAQueueOccurrenceUsesTheExistingPlayerWithoutSeekingOrRestartingIt",
+      "shuffleExplainsWhyPlayNextIsUnavailableAndAppendRemainsAvailable",
+      "songMenuPlayNextInsertsADuplicateAndKeepsThePausedPlayerAndQueueInSync"
+    ],
+    "app/src/test/java/com/music/aurelis/ui/theme/SharedGesturesTest.kt": [
+      "disconnectedQueueActionsAreDisabledWithoutDisablingLocalFavorites",
+      "playNextDispatchesOnceAndDismissesTheRealMenu"
+    ],
+    "app/src/test/java/com/music/aurelis/playback/QueueCoordinatorTest.kt": [
+      "appendToAnEmptyTimelineDoesNotStartPlaybackOrDeduplicateSongs",
+      "clearOnlyRemovesUpcomingUserEntriesAndNeverHistoryOrContext",
+      "disconnectedOrRestrictedControllersCannotEditTheTimeline",
+      "flatQueuePresentationMatchesTheCanonicalTimelineAcrossUserAndContextEntries",
+      "invalidIndexesAndEmptyRequestsAreNoOps",
+      "mediaMetadataRoundTripPreservesExplicitIdentityAndTier",
+      "movingADuplicatePreservesTheExactPlayingOccurrenceAndItsPosition",
+      "movingThePlayingRowKeepsItsIdentityAndPausedPosition",
+      "playNextDoesNotSilentlyChangeShuffleOrPromiseAnUncontrolledSuccessor",
+      "playNextInsertsOrderedOccurrencesWithoutRestartingTheCurrentTrack",
+      "queueKeysFollowDuplicateOccurrencesThroughAReorder"
+    ]
+  },
+  "new_test_count": 21,
+  "local_checks": [
+    "git diff --check",
+    "Media3 Commands.Builder.remove API inspected via javap",
+    "all prior test method names retained",
+    "protected paths compared to base; unchanged"
+  ],
+  "android_build": "NOT_EXECUTED_LOCALLY_USER_REQUESTS_GITHUB_ONLY",
+  "unit_tests": "PREPARED_NOT_EXECUTED",
+  "instrumented_or_device_tests": "NOT_EXECUTED_NO_ANDROID_DEVICE",
+  "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+  "reviews": {
+    "review1": "Static architecture/command/metadata/ordering pass, same agent; compilation pending",
+    "review2": "Static active UI/identity/accessibility/licenses/regression pass, same agent; runtime pending"
+  },
+  "limitations": [
+    "Play Next disabled and explained while shuffle is enabled; service-owned shuffled successor policy pending",
+    "No native ARM64 playback, real drag, GPU visual parity, installation, startup, notification or lock-screen claims",
+    "Existing no-key external entries keep the renderer fallback; all active Aurelis creation/restore/mix paths now create occurrence IDs",
+    "Queue occurrence identities are session-local; saved song order/index/position format unchanged",
+    "Main B06 remains open; B06.2, B06.3 and B06.4 not implemented in this delivery"
+  ],
+  "protected_paths": [
+    "app/src/main/java/com/music/aurelis/playback/AurelisPlaybackService.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/cpp",
+    "app/src/main/jniLibs",
+    ".github",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "app/build.gradle.kts",
+    "settings.gradle.kts",
+    "LICENSE",
+    "LICENSES",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "source_sha256": {
+    "app/src/main/java/com/music/aurelis/MainActivity.kt": "0e40be653270787544037cbb5ba76ddd3e5e71dba73c338b24d73acf28cf7d78",
+    "app/src/main/java/com/music/aurelis/playback/MediaItemExtensions.kt": "12dd0867a16429227cfde69e62b698d687ca7e7d2a78754e73813640b2f57732",
+    "app/src/main/java/com/music/aurelis/playback/PlaybackViewModel.kt": "cd69b8448eec1838726b0f7fee92e20108af40c5deeb4bb7ff3a0edf9887592b",
+    "app/src/main/java/com/music/aurelis/playback/PlayerConnection.kt": "14a375bb2a991f32d1689cc1cfea3b9ec735bb1bd6e73b3e3c43f5f089f4f044",
+    "app/src/main/java/com/music/aurelis/playback/ProfilePlaybackBinding.kt": "faa687ffcb392e64c33cc2002031f373d3b97505fde0e567b731cc5a1f922711",
+    "app/src/main/java/com/music/aurelis/playback/QueueCoordinator.kt": "8d1ed8b2919462a14b6f6d983f2a23247989ff7b29071440ed7e08b7070d2376",
+    "app/src/main/java/com/music/aurelis/ui/components/SongActionsDialog.kt": "acc4b18706b3553e35313910d8d5b629a87ef5ae2112d3bb347b3791a792ac2c",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerQueue.kt": "2271975fd633de6598a7f525f9adc39ceff36466764d6b09374327d1e15b4e5d",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "9846c4b8d43bb67754f9ba7f325772675a7236f4e97971c1532526e3cc624d6f",
+    "app/src/main/java/com/music/aurelis/ui/screens/QueueScreen.kt": "d5088da59204e803dc5b085b6ef77439e0f4b0ef18cf003d8d4337a1f9dd14ca",
+    "app/src/test/java/com/music/aurelis/playback/MediaSessionBridgeTest.kt": "5b768916e09fa1b07df59c305fa8903f040c5ac0091936ee27e729ba1c7d8d25",
+    "app/src/test/java/com/music/aurelis/playback/PlaybackIntegrationTest.kt": "2cebb8cd0ef3c589a502ff921ada3676df9c2ce8b629803615960b0fc6594eff",
+    "app/src/test/java/com/music/aurelis/playback/RecordingPlayer.kt": "763498eefb0e5318a36e4a6c1a4a1fcf74fd29370387d60a2d83e0ab40297a2a",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "7735e7f1b83cbada255c70a25133b0ba85cf6cbba7dc4deeadda9ba7514a0d3a",
+    "app/src/test/java/com/music/aurelis/ui/theme/SharedGesturesTest.kt": "29881961ca7c724b94c8f5e4f8df407b47c9a0a7ea4ddc51ceddb5b930a17661",
+    "app/src/test/java/com/music/aurelis/playback/QueueCoordinatorTest.kt": "5369df2cf34fe7834cdd5b0043dfa246988557cb39a1805f4aa45892e99a9133"
+  },
+  "commit": "4fbb660ec7f0441fe99aa21d8cd517eb86612ba5"
+}

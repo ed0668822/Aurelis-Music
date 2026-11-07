@@ -1,0 +1,14 @@
+{
+  "host_architecture": "x86_64",
+  "kvm_available": false,
+  "emulator_installed": false,
+  "system_images_installed": false,
+  "adb_devices": [],
+  "apk_native_abis": [
+    "arm64-v8a"
+  ],
+  "device_installation": "not executed",
+  "android_launch": "not executed",
+  "checked": "2026-11-06",
+  "baseline_commit": "b179fde1ae59692bdfcd2d9430e03a3ca6fee802"
+}

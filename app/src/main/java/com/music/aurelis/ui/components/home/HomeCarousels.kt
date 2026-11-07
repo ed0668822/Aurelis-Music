@@ -11,9 +11,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -47,6 +53,7 @@ fun SongCarousel(
     songs: List<LocalSong>,
     currentSongId: String?,
     isPlaying: Boolean,
+    onSongLongPress: ((LocalSong) -> Unit)? = null,
     onSongClick: (index: Int) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -61,6 +68,7 @@ fun SongCarousel(
                     song = song,
                     isCurrent = isCurrent,
                     isPlaying = isCurrent && isPlaying,
+                    onLongPress = onSongLongPress?.let { { it(song) } },
                     onClick = { onSongClick(index) },
                 )
             }
@@ -73,11 +81,13 @@ fun SongCard(
     song: LocalSong,
     isCurrent: Boolean,
     isPlaying: Boolean,
+    onLongPress: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    Column(Modifier.width(140.dp).clickable(onClick = onClick)) {
+    Column(Modifier.width(SHELF_CARD_WIDTH).then(if (onLongPress != null)
+        Modifier.heldContextMenuInteractions(onClick, onLongPress) else Modifier.clickable(onClick = onClick))) {
         Box(
-            modifier = Modifier.size(140.dp)
+            modifier = Modifier.size(SHELF_CARD_WIDTH)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
@@ -164,7 +174,7 @@ fun ArtistCarousel(title: String, artists: List<LocalArtist>, onArtistClick: (Lo
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(artists.size, key = { artists[it].name }) { index ->
+            items(artists.size, key = { artists[it].key }) { index ->
                 ArtistCard(artist = artists[index], onClick = { onArtistClick(artists[index]) })
             }
         }
@@ -194,11 +204,6 @@ fun ArtistCard(artist: LocalArtist, onClick: () -> Unit) {
     }
 }
 
-const val HERO_CARD_RATIO = 0.92f
-
-fun heroCardWidth(available: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp =
-    minOf(available * 0.70f, 320.dp)
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HeroShelf(
@@ -206,6 +211,7 @@ fun HeroShelf(
     onSongClick: (LocalSong) -> Unit,
     currentSong: LocalSong?,
     isPlaying: Boolean,
+    onSongLongPress: ((LocalSong) -> Unit)? = null,
 ) {
     BoxWithConstraints {
         val cardWidth = heroCardWidth(maxWidth)
@@ -218,11 +224,14 @@ fun HeroShelf(
                     modifier = Modifier.width(cardWidth).aspectRatio(HERO_CARD_RATIO)
                         .clip(RoundedCornerShape(18.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { onSongClick(song) },
+                        .then(if (onSongLongPress != null) Modifier.heldContextMenuInteractions(
+                            { onSongClick(song) }, { onSongLongPress(song) })
+                            else Modifier.clickable { onSongClick(song) }),
                 ) {
                     if (song.artworkUri != null) {
                         AsyncImage(model = song.artworkUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     }
+                    if (currentSong?.id == song.id && isPlaying) SearchPlayingBars(Modifier.align(Alignment.Center))
                     Column(
                         Modifier.fillMaxWidth().align(Alignment.BottomStart)
                             .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.78f))))
@@ -233,6 +242,73 @@ fun HeroShelf(
                             Text(song.artist, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.72f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+private const val RECENT_TRACKS_PER_COLUMN = 4
+
+/** Four-row recents pages, adapted from BitChord HomeScreen RecentShelf/CompactTrackRow. */
+@Composable
+fun RecentSongShelf(title: String, songs: List<LocalSong>, currentId: String?, isPlaying: Boolean,
+    onSongLongPress: (LocalSong) -> Unit, onSongClick: (Int) -> Unit) {
+    Column(Modifier.testTag("home-recents").padding(bottom = 26.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = PAGE_GUTTER, vertical = 10.dp))
+        BoxWithConstraints {
+            val columnWidth = trackColumnWidth(maxWidth)
+            LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                itemsIndexed(songs.chunked(RECENT_TRACKS_PER_COLUMN), key = { _, page -> page.first().id }) { pageIndex, page ->
+                    Column(Modifier.width(columnWidth)) {
+                        page.forEachIndexed { rowIndex, song ->
+                            Row(Modifier.fillMaxWidth().heldContextMenuInteractions(
+                                { onSongClick(pageIndex * RECENT_TRACKS_PER_COLUMN + rowIndex) }, { onSongLongPress(song) })
+                                .padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(48.dp).clip(RoundedCornerShape(7.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)) {
+                                    AsyncImage(song.artworkUri, null, contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize())
+                                    if (song.id == currentId && isPlaying) SearchPlayingBars(Modifier.align(Alignment.Center))
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(song.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(song.artist, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                                IconButton(onClick = { onSongLongPress(song) }) {
+                                    Icon(Icons.Default.MoreVert, stringResource(com.music.aurelis.R.string.home_song_actions, song.title))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlaylistCarousel(playlists: List<com.music.aurelis.data.LocalPlaylist>, songs: List<LocalSong>, onOpen: (String) -> Unit) {
+    val byId = remember(songs) { songs.associateBy { it.id } }
+    Column(Modifier.testTag("home-playlists")) {
+        SectionHeader(stringResource(com.music.aurelis.R.string.home_playlists))
+        LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(playlists, key = { it.id }) { playlist ->
+                val artwork = playlist.songIds.firstNotNullOfOrNull { byId[it]?.artworkUri }
+                val available = playlist.songIds.count { it in byId }
+                Column(Modifier.width(SHELF_CARD_WIDTH).clickable { onOpen(playlist.id) }) {
+                    Box(Modifier.size(SHELF_CARD_WIDTH).clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                        if (artwork == null) Text("♪", style = MaterialTheme.typography.displaySmall)
+                        else AsyncImage(artwork, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    }
+                    Text(playlist.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(androidx.compose.ui.res.pluralStringResource(com.music.aurelis.R.plurals.home_available_song_count, available, available),
+                        style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

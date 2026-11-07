@@ -19,8 +19,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import java.util.Locale
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 
-internal val GroupShape = RoundedCornerShape(14.dp)
 internal val GROUP_INSET = 16.dp
 internal val ROW_INSET = 16.dp
 internal val ICON_SIZE = 22.dp
@@ -48,7 +51,7 @@ fun SettingsGroup(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = GROUP_INSET)
-            .clip(GroupShape)
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
         content()
@@ -68,7 +71,7 @@ fun RowDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = TEXT_INSET),
         thickness = 0.5.dp,
-        color = MaterialTheme.colorScheme.outline,
+        color = MaterialTheme.colorScheme.outlineVariant,
     )
 }
 
@@ -85,7 +88,7 @@ fun SettingsRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (onClick != null && enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick) else Modifier)
             .alpha(if (enabled) 1f else 0.45f)
             .heightIn(min = 52.dp)
             .padding(horizontal = ROW_INSET, vertical = 12.dp),
@@ -105,7 +108,7 @@ fun SettingsRow(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             if (subtitle != null) {
@@ -145,13 +148,15 @@ fun SettingsSubRow(
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     badge: String? = null,
     subtitle: String? = null,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .heightIn(min = 48.dp)
             .padding(start = ROW_INSET, end = ROW_INSET, top = 0.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -161,7 +166,7 @@ fun SettingsSubRow(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (badge != null) {
@@ -178,14 +183,7 @@ fun SettingsSubRow(
                 )
             }
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                checkedBorderColor = MaterialTheme.colorScheme.primary,
-            ),
-        )
+        IosSwitch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -212,8 +210,9 @@ fun SegmentedControl(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .selectableGroup()
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.outline)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -224,7 +223,8 @@ fun SegmentedControl(
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (chosen) MaterialTheme.colorScheme.primary else Color.Transparent)
-                    .clickable { if (!chosen) onSelect(index) }
+                    .selectable(selected = chosen, role = Role.Tab) { if (!chosen) onSelect(index) }
+                    .heightIn(min = 48.dp)
                     .padding(vertical = 9.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -233,6 +233,7 @@ fun SegmentedControl(
                     style = MaterialTheme.typography.labelMedium,
                     color = if (chosen) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

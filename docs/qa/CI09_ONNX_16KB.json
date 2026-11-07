@@ -1,0 +1,284 @@
+{
+  "unit": "CI09",
+  "delivery": "2 of 3 proposed warning-remediation deliveries; ONNX/16KB only",
+  "base": "a3229f07512f6e98c0a60e7ce284fbbcbfeda651",
+  "branch": "feature/bitchord-local-migration",
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "dependency": {
+    "previous": "com.microsoft.onnxruntime:onnxruntime-android:1.19.2",
+    "selected": "com.microsoft.onnxruntime:onnxruntime-android:1.22.0",
+    "aar_url": "https://repo.maven.apache.org/maven2/com/microsoft/onnxruntime/onnxruntime-android/1.22.0/onnxruntime-android-1.22.0.aar",
+    "aar_sha256": "04a4617a9c797cf49225595e45b5546081cb34c86ac817581141577d3b7dbfe2",
+    "aar_bytes": 28515295,
+    "min_sdk": 24,
+    "app_min_sdk": 33,
+    "selection": "Pinned stable full Android artifact with actual verified16KB LOAD alignment; not an untested latest-version bump"
+  },
+  "binary_alignment_check": {
+    "versions": [
+      {
+        "version": "1.19.2",
+        "aar_sha256": "84737dd1fdb715f0ee695c0a9864f6949b66ecb4c46ca733bc9211bf0c2a7b5f",
+        "libraries": [
+          {
+            "file": "jni/arm64-v8a/libonnxruntime.so",
+            "sha256": "b414d0bab0f1b1fcaf78423c9a8d9b74e15fb44297605861e8eeada325af7bc5",
+            "result": "FAIL",
+            "error": "ELF LOAD segment 1 is not 16KB compatible: jni/arm64-v8a/libonnxruntime.so (alignment=4096)"
+          },
+          {
+            "file": "jni/arm64-v8a/libonnxruntime4j_jni.so",
+            "sha256": "b1cc22660e96a0a2e0617cbb99e7f5dc1dea33853fe9588ee48319984685b89e",
+            "result": "FAIL",
+            "error": "ELF LOAD segment 1 is not 16KB compatible: jni/arm64-v8a/libonnxruntime4j_jni.so (alignment=4096)"
+          }
+        ]
+      },
+      {
+        "version": "1.22.0",
+        "aar_sha256": "04a4617a9c797cf49225595e45b5546081cb34c86ac817581141577d3b7dbfe2",
+        "libraries": [
+          {
+            "file": "jni/arm64-v8a/libonnxruntime.so",
+            "sha256": "999ecfdb5b5a13e4097487773b6d71ce8a075408a237daab072e8f5e817bd78e",
+            "load_segments": [
+              {
+                "index": 1,
+                "offset": 0,
+                "virtual_address": 0,
+                "file_size": 17789488,
+                "memory_size": 17789488,
+                "alignment": 16384
+              },
+              {
+                "index": 2,
+                "offset": 17789488,
+                "virtual_address": 17805872,
+                "file_size": 415416,
+                "memory_size": 417232,
+                "alignment": 16384
+              },
+              {
+                "index": 3,
+                "offset": 18204904,
+                "virtual_address": 18237672,
+                "file_size": 6792,
+                "memory_size": 54072,
+                "alignment": 16384
+              }
+            ],
+            "result": "PASS"
+          },
+          {
+            "file": "jni/arm64-v8a/libonnxruntime4j_jni.so",
+            "sha256": "5614bd018cca9031c4dbcfc2a3bece42fae52861a92ff09c4bd2491bd93ac758",
+            "load_segments": [
+              {
+                "index": 1,
+                "offset": 0,
+                "virtual_address": 0,
+                "file_size": 73056,
+                "memory_size": 73056,
+                "alignment": 16384
+              },
+              {
+                "index": 2,
+                "offset": 73056,
+                "virtual_address": 89440,
+                "file_size": 816,
+                "memory_size": 4768,
+                "alignment": 16384
+              }
+            ],
+            "result": "PASS"
+          }
+        ]
+      }
+    ]
+  },
+  "model_checks": {
+    "baseline": {
+      "runtime": "1.19.2",
+      "platform": "HOST_CPU_NOT_ANDROID",
+      "models": [
+        {
+          "file": "app/src/main/assets/beat_this_int8.onnx",
+          "sha256": "9dc29f1fcd713d18f48a2755109fce01429ba6d1639607af8ae5c7449b47070f",
+          "session_load": "FAIL",
+          "error": "[ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for ConvInteger(10) node with name '/m/frontend/stem/conv2d/Conv_quant'"
+        },
+        {
+          "file": "app/src/main/assets/vocals_umxhq_int8.onnx",
+          "sha256": "a2be987b55a29bc149d3a6ae99b08175d81f85ee292a8ea21f96c3a473bc94cb",
+          "session_load": "PASS"
+        }
+      ]
+    },
+    "candidate": {
+      "runtime": "1.22.0",
+      "onnx_parser": "1.17.0",
+      "platform": "HOST_CPU_NOT_ANDROID",
+      "models": [
+        {
+          "file": "app/src/main/assets/beat_this_int8.onnx",
+          "sha256": "9dc29f1fcd713d18f48a2755109fce01429ba6d1639607af8ae5c7449b47070f",
+          "ir_version": 8,
+          "opsets": [
+            {
+              "domain": "",
+              "version": 17
+            }
+          ],
+          "protobuf_checker": "PASS",
+          "error": "[ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for ConvInteger(10) node with name '/m/frontend/stem/conv2d/Conv_quant'",
+          "session_load": "FAIL",
+          "seconds": 0.24
+        },
+        {
+          "file": "app/src/main/assets/vocals_umxhq_int8.onnx",
+          "sha256": "a2be987b55a29bc149d3a6ae99b08175d81f85ee292a8ea21f96c3a473bc94cb",
+          "ir_version": 8,
+          "opsets": [
+            {
+              "domain": "",
+              "version": 17
+            },
+            {
+              "domain": "com.microsoft",
+              "version": 1
+            }
+          ],
+          "protobuf_checker": "PASS",
+          "session_load": "PASS",
+          "inputs": [
+            {
+              "name": "mix_magnitude",
+              "shape": [
+                1,
+                2,
+                2049,
+                960
+              ],
+              "type": "tensor(float)"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "target_magnitude",
+              "shape": [
+                1,
+                2,
+                2049,
+                960
+              ],
+              "type": "tensor(float)"
+            }
+          ],
+          "seconds": 0.024
+        }
+      ]
+    },
+    "scope": "Linux host CPU session creation and protobuf check, NOT Android execution and NOT inference/audio-quality validation",
+    "conclusion": "Same result before/after: vocal model loads; Beat This raises unsupported ConvInteger(10). Existing host limitation, not newly introduced by runtime update; ARM64 result unknown. Model bytes unchanged; provenance/export work remains in B09/B10."
+  },
+  "source_usage_review": "No OrtEnvironment/OrtSession/OnnxTensor/OrtGetApiBase callers found under app/src; existing local analyzer is separate. This change does not activate an ONNX inference pipeline or claim AutoMix completion.",
+  "r8": "Correct namespace from com.microsoft.onnxruntime to ai.onnxruntime, matching classes.jar. AAR has no consumer ProGuard rules.",
+  "ci_checks_added": [
+    "Validate ELF64 shared-library headers and actual AArch64 machine, bounded program-header table and PT_LOAD segments",
+    "Every LOAD segment: power-of-two alignment>=16384 and offset/virtual-address congruence; reject missing/broken tables",
+    "Both ONNX native components must remain present in final APK",
+    "Check APK ZIP page alignment with existing SDK zipalign -c -P16 -v4",
+    "Record native SHA256/LOAD details and separate ZIP/ELF verification flags in apk-verification.json/apk-manifest.json",
+    "Keep publish fail-closed; clear stale/partial approved APKs on any verification failure"
+  ],
+  "local_tests": {
+    "helper_tests": 31,
+    "helper_status": "PASS",
+    "new_regression_methods": [
+      "test_16kb_and_64kb_load_alignment_are_accepted_and_reported",
+      "test_4kb_loads_are_rejected_even_in_the_correct_abi_directory",
+      "test_all_load_segments_require_16kb_alignment",
+      "test_elf_alignment_failure_cannot_publish_partial_or_stale_apks",
+      "test_misaligned_offset_and_non_power_of_two_alignment_cannot_pass",
+      "test_missing_onnx_jni_library_blocks_publication",
+      "test_missing_or_truncated_program_headers_cannot_pass",
+      "test_zip_alignment_failure_blocks_publication"
+    ],
+    "actual_old_aar": "Both ARM64 libraries rejected for4096 LOAD alignment",
+    "actual_new_aar": "Both ARM64 libraries accepted; segment alignments16384",
+    "models": "Vocal PASS/Beat FAIL with identical error on both host CPU versions"
+  },
+  "android_compilation_and_tests_locally": "NOT_EXECUTED_USER_REQUESTS_GITHUB_ONLY",
+  "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+  "actual_apk_zip_and_elf_verification": "PENDING_GITHUB_BUILD; current local checks inspect published AAR/fixtures, not new APK",
+  "device_runtime": "NOT_EXECUTED_NO_ANDROID_OR_16KB_DEVICE",
+  "licenses": {
+    "mit": "Original Microsoft MIT text is byte-identical to v1.22.0 upstream, unchanged locally",
+    "third_party_notices": {
+      "source": "https://raw.githubusercontent.com/microsoft/onnxruntime/v1.22.0/ThirdPartyNotices.txt",
+      "path": "LICENSES/onnxruntime-ThirdPartyNotices.txt",
+      "bytes": 326866,
+      "sha256": "e9e90971a8e75a9a8ac0c6412e29c1202d079998389915aa485f46c816c3b4cc",
+      "scope": "Full upstream aggregate notices retained unchanged; not a claim every listed component is linked in Android"
+    },
+    "notice_and_license_index": "Updated for selected version and new notice bundle",
+    "model_provenance": "Existing unresolved provenance/export conditions retained; models not replaced"
+  },
+  "reviews": {
+    "review1": "Static dependency/minSdk/API/R8, actual ELF verification and host model baseline comparison; same agent",
+    "review2": "Separate regression/publication/legal/scope review,31 helper tests and two actual AAR checks; same agent; no Android verification claimed"
+  },
+  "source_files": [
+    "app/build.gradle.kts",
+    "app/proguard-rules.pro",
+    ".github/scripts/android_ci.py",
+    ".github/scripts/tests/test_android_ci.py"
+  ],
+  "source_sha256": {
+    "app/build.gradle.kts": "e8a49f669cc4158cb1ddc3d03c5b5558c2476b0fcb4f75343a361eb938d543c2",
+    "app/proguard-rules.pro": "c3713a4d4ab220167fdaf662bb438436da67f8af021155f40678abdf00c19fde",
+    ".github/scripts/android_ci.py": "af73b82acffb69bcd58887ddbd4d4a0153649832e7c55f5bcd8451ad117d90a5",
+    ".github/scripts/tests/test_android_ci.py": "59c29b773561ed82e0d34037d55e335288266a192f76f2b51c975b3a6b47ac01"
+  },
+  "protected_paths": [
+    "app/src/main",
+    "app/src/test",
+    ".github/workflows",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "LICENSE",
+    "LICENSES/onnxruntime-MIT.txt",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "next": "Publish same branch/PR; wait for user GitHub result. No dependency/SDK delivery3, B07 or other main blocks automatically. Model ConvInteger issue remains documented for dedicated analysis/export work.",
+  "historical_apk_static_check": {
+    "apk": "app/build/outputs/apk/release/app-release.apk",
+    "scope": "Historical APK static ELF inspection, not new APK or Android execution",
+    "pass": [
+      "lib/arm64-v8a/libandroidx.graphics.path.so",
+      "lib/arm64-v8a/libaurelis_analysis.so",
+      "lib/arm64-v8a/libaurelis_dsd.so",
+      "lib/arm64-v8a/libaurelis_dst.so",
+      "lib/arm64-v8a/libavcodec.so",
+      "lib/arm64-v8a/libavutil.so",
+      "lib/arm64-v8a/libffmpegJNI.so",
+      "lib/arm64-v8a/libmedia3ext.so",
+      "lib/arm64-v8a/libswresample.so",
+      "lib/arm64-v8a/libswscale.so"
+    ],
+    "fail": [
+      {
+        "file": "lib/arm64-v8a/libonnxruntime.so",
+        "error": "ELF LOAD segment 1 is not 16KB compatible: lib/arm64-v8a/libonnxruntime.so (alignment=4096)"
+      },
+      {
+        "file": "lib/arm64-v8a/libonnxruntime4j_jni.so",
+        "error": "ELF LOAD segment 1 is not 16KB compatible: lib/arm64-v8a/libonnxruntime4j_jni.so (alignment=4096)"
+      }
+    ]
+  },
+  "fix_commit": "da938b44c94dd72eaf008c0df1bdb06adfcea8b5"
+}

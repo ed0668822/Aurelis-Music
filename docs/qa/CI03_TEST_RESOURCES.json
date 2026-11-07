@@ -1,0 +1,46 @@
+{
+  "baseline": "e687ee24829ac6267daa9d59559e07a634d27e75",
+  "failed_run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42232423184",
+  "failed_job": 127941371843,
+  "attachment_sha256": "e9a114a935b71de446d32a411fc39ae5749887c647611db17e2498e4199354f0",
+  "step_outcomes_from_attachment": {
+    "init": "success",
+    "helpers": "success",
+    "java": "success",
+    "gradle": "success",
+    "android": "success",
+    "signing": "success",
+    "compile": "success",
+    "lint": "success",
+    "tests": "failure",
+    "build": "skipped",
+    "verify": "skipped",
+    "cleanup": "success",
+    "report": "success",
+    "upload_report": "success",
+    "upload_apk": "skipped"
+  },
+  "public_annotations": [
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L76 Unresolved reference 'string'. Show more Show less",
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L76 None of the following candidates is applicable: Show more Show less",
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L71 Unresolved reference 'string'. Show more Show less",
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L71 None of the following candidates is applicable: Show more Show less",
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L65 Unresolved reference 'string'. Show more Show less",
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L65 None of the following candidates is applicable: Show more Show less",
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L58 Unresolved reference 'string'. Show more Show less",
+    "build: app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt#L58 None of the following candidates is applicable: Show more Show less"
+  ],
+  "fix": "Explicit import com.music.aurelis.R; no test expectation altered",
+  "source_sha256": "b7227c7857999f3e41297580f5bcae0e0ce9ad0ea87bf675472ac9b604cc9639",
+  "static_resource_references": {
+    "occurrences": 4,
+    "existing_names": [
+      "explore",
+      "search",
+      "collection_play"
+    ]
+  },
+  "reviews": "two separate static passes by same agent; whitespace/scope checks passed",
+  "android_build_tests": "NOT_EXECUTED locally; new GitHub verification pending",
+  "production_workflow_main_plan": "unchanged; B06/QA02 not started"
+}

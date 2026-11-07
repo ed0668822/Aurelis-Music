@@ -1,0 +1,43 @@
+{
+  "scope": "CI workflow improvements only before B04",
+  "base_commit": "8629050aa94442d7bb831204b52a12d391a9ca60",
+  "checked_utc": "2026-11-06T04:42:06.958514+00:00",
+  "helper_unit_tests": {
+    "tests": 18,
+    "failures": 0,
+    "framework": "Python unittest; offline synthetic fixtures; no Gradle/Android compilation"
+  },
+  "actionlint": "exit0; no diagnostics",
+  "bash_syntax_steps": 11,
+  "triggers_and_concurrency_preserved": true,
+  "permissions": {
+    "contents": "read"
+  },
+  "action_pins": [
+    "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+    "actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961",
+    "gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c",
+    "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+    "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f"
+  ],
+  "tool_runtime": "All pinned action manifests inspected: Node24",
+  "android_build_local": "NOT_EXECUTED per user instruction",
+  "android_build_github": "PENDING; user will report result after push",
+  "actual_android_runtime": "NOT_EXECUTED",
+  "application_and_main_plan_changed": false,
+  "static_review": [
+    "1: diagnostics/task/inventory precision, publication gates and signing lifecycle",
+    "2: offline failure/success cases, static YAML/bash, action provenance/runtime, unchanged app and main plan; same agent separate pass"
+  ],
+  "script_sha256": {
+    ".github/workflows/android.yml": "48ad4c91e31c1bcf90fe08500c267dc3065ac7406908266376c6db0c433ba9d4",
+    ".github/scripts/android_ci.py": "ebfb6b76678fa3c5edd9efd9f35dd9c0255b0475eaa4ccc80f2572cd12e815cd",
+    ".github/scripts/tests/test_android_ci.py": "e2c710d7b3ffb97d7cdf4cb940da34874e1a2fcbd80d7901984f0f567abf04f9",
+    ".github/scripts/.gitignore": "6feaded4e28ea86e001a6751b4e3d960e8b7c31b9616ff9936b79297086e809b"
+  },
+  "compatibility_checks": [
+    "CMake3.22.1-g37088a8 accepted;3.22.10 rejected",
+    "aapt2 parser matches pre-existing APK output; no APK was rebuilt"
+  ],
+  "preserved_app_tree": "e56a58f58e705f0a59ef30e8dfcffc86d19b82ad"
+}

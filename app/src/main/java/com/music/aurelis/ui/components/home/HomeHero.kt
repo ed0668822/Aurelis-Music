@@ -35,6 +35,7 @@ fun HomeHero(
     song: LocalSong?,
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
+    eyebrow: String = "ESCUCHA AHORA",
 ) {
     val shape = RoundedCornerShape(24.dp)
 
@@ -74,7 +75,7 @@ fun HomeHero(
                 .fillMaxWidth(0.75f),
         ) {
             Text(
-                text = "ESCUCHA AHORA",
+                text = eyebrow,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.White.copy(alpha = 0.75f),

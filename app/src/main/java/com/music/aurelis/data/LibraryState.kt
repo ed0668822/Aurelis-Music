@@ -29,5 +29,5 @@ sealed interface LibraryState {
     ) : LibraryState
 
     /** Error durante la carga (permiso denegado, fallo de MediaStore, etc.). */
-    data class Error(val message: String) : LibraryState
+    data class Error(val message: String, val permissionRequired: Boolean = false) : LibraryState
 }

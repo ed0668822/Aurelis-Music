@@ -1,0 +1,85 @@
+{
+  "unit": "QA00/QA01",
+  "tested_base": "b179fde1ae59692bdfcd2d9430e03a3ca6fee802",
+  "tested_files_sha256": {
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/BackdropEffectScope.kt": "cb2487704ae769285d8353da14fa8ac199db94fced9048aa2f6b9992890d39cb",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/DrawBackdropModifier.kt": "774f17fe54c0a54e961d15e12f772f5139228f4e2187c5c4ed725ea74b858029",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/effects/Lens.kt": "097ed024d43550f30be1b0b973b0d4e5bb823163d3457b86e0dc7af9e12a2e16",
+    "app/src/test/java/com/music/aurelis/ui/components/backdrop/BackdropAttachRegressionTest.kt": "64bccd17564ff20a152e7f162a486bb26773cc9ed7b2f139f8b9963c11981803",
+    "app/src/test/java/com/music/aurelis/ui/components/backdrop/BackdropSizeRegressionTest.kt": "3a545d36c98e319a51a4029f4e272f800e07b9586ad6d55669f4c8126dbbe8ea"
+  },
+  "protected_files_identical_to_base_sha256": {
+    "docs/migration/beta-local/MASTER_PLAN.md": "38ad02b189fd3fbfedb987bab44c38ceb3d0fa927858b5b59b64a98b08d1e87f",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md": "693f45628d56fd3fa9bc648ba81764a140519afa678cf1214ef3e29d461fc30b",
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "NOTICE": "ac9aee1623420a916011eb999e9fbc01e418a9bf90a0fa2df9e934d01a33da59",
+    "app/build.gradle.kts": "2b6c94109480f2348771fd4730949108d905c4f1b04bf31d2e6b6f5515d1864a",
+    ".github/workflows/android.yml": "64a8a50fef82f28f7db8849b3e435224080362f1cd3eac0188df2aac3837f888",
+    "app/src/main/AndroidManifest.xml": "df3c0b91cf033fb46f03335e26990ce0ecd1c06712fb3345759226b96dfac4cd",
+    "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt": "57226142baab1c495ad14aa953dbee93e562d49b68b5208d77f1b4cdb488ec80",
+    "app/src/main/java/com/music/aurelis/ui/components/GlassRendering.kt": "837fe2c7d29692343eee75517df260b3526d42a949200dcea6f34272bca7896c",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/Shaders.kt": "32fbbce75fc9671e285baced1e7575a89adb24add63d67aac3f20353cc409ecf"
+  },
+  "build": "BUILD SUCCESSFUL in 4m 56s",
+  "command": "bash gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:testReleaseUnitTest :app:lintDebug :app:lintRelease --no-daemon --max-workers=4",
+  "tests": {
+    "debug": {
+      "tests": 171,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "release": {
+      "tests": 171,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "debug": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 224
+    },
+    "release": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 223
+    }
+  },
+  "apks": {
+    "debug": {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "081cff2751ab6158012b12c93c211eb8fd925b098348c2e40393c599bbeb90f4",
+      "bytes": 121063257,
+      "signature_verified": true,
+      "signer_public_cert_sha256": "59d8d19f093a742472464b61360965a1b107a1da3475a2871651285ca5081280",
+      "zip_integrity": "OK",
+      "legal_assets_identical": 10,
+      "arm64_shared_libraries": 12,
+      "font_matches_pinned_source": true
+    },
+    "release": {
+      "path": "app/build/outputs/apk/release/app-release.apk",
+      "sha256": "ba55a60feecf8891b627321741ce6ff6010a20dcc512f0b28a6aef9a741215d1",
+      "bytes": 56955252,
+      "signature_verified": true,
+      "signer_public_cert_sha256": "59d8d19f093a742472464b61360965a1b107a1da3475a2871651285ca5081280",
+      "zip_integrity": "OK",
+      "legal_assets_identical": 10,
+      "arm64_shared_libraries": 12,
+      "font_matches_pinned_source": true
+    }
+  },
+  "installation": "not executed: no Android device",
+  "launch": "not executed: no Android device",
+  "ui_regression": "Robolectric native SDK35 Compose node, not device instrumentation",
+  "red_green": "QA01_RED.json and QA01_GREEN.json",
+  "reviews": [
+    "cause/architecture/targeted regression",
+    "full regression/UI state/licenses/main plan preserved; same agent separate pass"
+  ],
+  "ci": "pending delivery SHA check",
+  "next": "physical/device validation remains pending; QA02 needs authorization; B03 not started"
+}

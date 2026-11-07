@@ -1,0 +1,15 @@
+{
+  "unit": "B02.1",
+  "tests": {
+    "tests": 156,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "build": "BUILD SUCCESSFUL in 2m 25s",
+  "log_external": "/workspace/toolchains/beta-b02-1-final.log",
+  "font_sha256": "b69fd4c680b8f3f225feabcc655a2c585d97627b8f5f5c0f9985e894069f3a56",
+  "license_sha256": "f6921901ea6fa7f2b207223dab17e99c3642309fa1c6506b83c2db17d8e9d09e",
+  "source_ref": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "device": "adb devices -l: empty"
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "application_id": "com.music.aurelis",
+  "abi": "arm64-v8a",
+  "required_dex_classes": [
+    "com/music/aurelis/AurelisApplication",
+    "com/music/aurelis/MainActivity",
+    "com/music/aurelis/playback/AurelisPlaybackService"
+  ],
+  "required_resources": [
+    "string/app_name",
+    "font/vazirmatn_regular",
+    "mipmap/ic_launcher",
+    "mipmap/ic_launcher_round"
+  ],
+  "required_assets": [
+    "beat_this_int8.onnx",
+    "vocals_umxhq_int8.onnx"
+  ],
+  "byte_exact_resources": [
+    "res/font/vazirmatn_regular.ttf"
+  ],
+  "required_native_libraries": [
+    "libaurelis_analysis.so",
+    "libaurelis_dsd.so",
+    "libaurelis_dst.so",
+    "libffmpegJNI.so",
+    "libonnxruntime.so",
+    "libonnxruntime4j_jni.so"
+  ],
+  "required_manifest_classes": [
+    "com/music/aurelis/AurelisApplication",
+    "com/music/aurelis/MainActivity",
+    "com/music/aurelis/playback/AurelisPlaybackService"
+  ]
+}

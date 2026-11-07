@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.music.aurelis.data.SettingsRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -400,9 +402,20 @@ internal fun GlassSelectionPill(
     modifier: Modifier,
 ) {
     val page = LocalAppBackdrop.current
+    val hardware = com.music.aurelis.ui.components.LocalGlassHardware.current
+    val shaders = remember(hardware) { hardware && com.music.aurelis.ui.components.glassShadersAvailable() }
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val mode = com.music.aurelis.ui.components.glassRenderMode(
+        com.music.aurelis.ui.components.LocalLiquidGlassEnabled.current,
+        reduceBlur, hardware, page != null, shaders, false,
+    )
+    if (mode != com.music.aurelis.ui.components.GlassRenderMode.REFRACTION) {
+        FlatSelectionPill(fillColor, modifier)
+        return
+    }
     val shape = remember { RoundedCornerShape(percent = 50) }
     val backdrop = remember(page, barGlass, tabRow, fillColor) {
-        SelectionPillBackdrop(page, barGlass, tabRow) {
+        SelectionPillBackdrop(checkNotNull(page), barGlass, tabRow) {
             fillColor.copy(alpha = fillColor.alpha * (1f - motion.material))
         }
     }

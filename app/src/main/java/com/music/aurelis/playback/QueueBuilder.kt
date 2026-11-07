@@ -12,6 +12,7 @@ object QueueBuilder {
     fun extend(existing: List<LocalSong>, candidates: List<LocalSong>, limit: Int): List<LocalSong> {
         val taken = existing.toMutableList()
         val perArtist = mutableMapOf<String, Int>()
+        existing.forEach { song -> artistSet(song.artist).forEach { artist -> perArtist[artist] = (perArtist[artist] ?: 0) + 1 } }
         val seedArtists = existing.lastOrNull()?.artist?.let(::artistSet).orEmpty()
         val out = mutableListOf<LocalSong>()
         val songsOnly = candidates.filterNot { false }
@@ -23,9 +24,8 @@ object QueueBuilder {
             val key = artists.minOrNull()
             if (key != null) {
                 val cap = if (artists.any { it in seedArtists }) SEED_ARTIST_LIMIT else PER_ARTIST_LIMIT
-                val played = perArtist[key] ?: 0
-                if (played >= cap) continue
-                perArtist[key] = played + 1
+                if (artists.any { (perArtist[it] ?: 0) >= cap }) continue
+                artists.forEach { perArtist[it] = (perArtist[it] ?: 0) + 1 }
             }
             taken += candidate
             out += candidate

@@ -1,0 +1,28 @@
+{
+  "command": "bash gradlew :app:testDebugUnitTest --tests *BackdropSizeRegressionTest --tests *BackdropAttachRegressionTest --tests *GlassRenderingTest --no-daemon --max-workers=4",
+  "build": "BUILD SUCCESSFUL in27s",
+  "suites": [
+    {
+      "suite": "com.music.aurelis.ui.components.backdrop.BackdropAttachRegressionTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.music.aurelis.ui.components.backdrop.BackdropSizeRegressionTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.music.aurelis.ui.theme.GlassRenderingTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "android_device_execution": false
+}

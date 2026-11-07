@@ -46,6 +46,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.LibraryViewModel
 import com.music.aurelis.data.LibraryState
+import com.music.aurelis.data.LocalSearch
 import com.music.aurelis.data.model.LocalAlbum
 import com.music.aurelis.data.model.LocalArtist
 import com.music.aurelis.data.model.LocalSong
@@ -69,13 +72,20 @@ fun LocalMusicScreen(
     playbackViewModel: PlaybackViewModel,
     onBackClick: () -> Unit,
     libraryViewModel: LibraryViewModel = viewModel(),
+    onAlbumOpen: ((LocalAlbum) -> Unit)? = null,
+    onArtistOpen: ((LocalArtist) -> Unit)? = null,
+    onRequestPermission: () -> Unit = {},
 ) {
     val uiState by libraryViewModel.uiState.collectAsState()
     val playbackState by playbackViewModel.state.collectAsState()
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showSortMenu by remember { mutableStateOf(false) }
-    var showSearch by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    BackHandler(enabled = showSearch) {
+        showSearch = false
+        searchQuery = ""
+    }
     val tabs = listOf("Canciones", "Artistas", "Álbumes")
 
     val success = uiState.libraryState as? LibraryState.Success
@@ -86,9 +96,7 @@ fun LocalMusicScreen(
             uiState.filteredSongs
         } else {
             uiState.filteredSongs.filter {
-                it.title.contains(searchQuery, true) ||
-                    it.artist.contains(searchQuery, true) ||
-                    it.album?.contains(searchQuery, true) == true
+                LocalSearch.matches(it, searchQuery)
             }
         }
     }
@@ -237,8 +245,8 @@ fun LocalMusicScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.message, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(12.dp))
-                        Button(onClick = { libraryViewModel.loadLibrary(force = true) }) {
-                            Text("Reintentar")
+                        Button(onClick = { if (state.permissionRequired) onRequestPermission() else libraryViewModel.refresh() }) {
+                            Text(if (state.permissionRequired) "Conceder acceso a música" else "Reintentar")
                         }
                     }
                 }
@@ -273,15 +281,17 @@ fun LocalMusicScreen(
                         }
                     }
                     1 -> {
-                        if (state.artists.isEmpty()) {
+                        val visibleArtists = state.artists.filter { artist -> artist.songs.any { LocalSearch.matches(it, searchQuery) } }
+                        if (visibleArtists.isEmpty()) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("No hay artistas", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(if (searchQuery.isBlank()) "No hay artistas" else "Sin resultados", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         } else {
                             ArtistList(
-                                artists = state.artists,
+                                artists = visibleArtists,
                                 onArtistClick = { artist ->
-                                    if (artist.songs.isNotEmpty()) {
+                                    if (onArtistOpen != null) onArtistOpen(artist)
+                                    else if (artist.songs.isNotEmpty()) {
                                         playbackViewModel.playSongs(artist.songs, 0)
                                     }
                                 },
@@ -289,15 +299,17 @@ fun LocalMusicScreen(
                         }
                     }
                     2 -> {
-                        if (state.albums.isEmpty()) {
+                        val visibleAlbums = state.albums.filter { album -> album.songs.any { LocalSearch.matches(it, searchQuery) } }
+                        if (visibleAlbums.isEmpty()) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("No hay álbumes", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(if (searchQuery.isBlank()) "No hay álbumes" else "Sin resultados", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         } else {
                             AlbumList(
-                                albums = state.albums,
+                                albums = visibleAlbums,
                                 onAlbumClick = { album ->
-                                    if (album.songs.isNotEmpty()) {
+                                    if (onAlbumOpen != null) onAlbumOpen(album)
+                                    else if (album.songs.isNotEmpty()) {
                                         playbackViewModel.playSongs(album.songs, 0)
                                     }
                                 },
@@ -316,7 +328,7 @@ private fun ArtistList(
     onArtistClick: (LocalArtist) -> Unit,
 ) {
     LazyColumn(contentPadding = PaddingValues(bottom = 40.dp)) {
-        items(artists, key = { it.name }) { artist ->
+        items(artists, key = { it.key }) { artist ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -12,6 +12,7 @@ import com.music.aurelis.ui.components.backdrop.internal.RoundedRectRefractionSh
 import com.music.aurelis.ui.components.backdrop.internal.RoundedRectRefractionWithDispersionShaderString
 import com.music.aurelis.ui.components.backdrop.internal.RuntimeShaderEffect
 import com.music.aurelis.ui.components.backdrop.isRuntimeShaderSupported
+import com.music.aurelis.ui.components.backdrop.isUsableForBackdrop
 
 fun BackdropEffectScope.lens(
     @FloatRange(from = 0.0) refractionHeight: Float,
@@ -20,6 +21,8 @@ fun BackdropEffectScope.lens(
     chromaticAberration: Boolean = false
 ) {
     if (!isRuntimeShaderSupported()) return
+    // Also protect callers that invoke the lens outside BackdropEffectScopeImpl.apply.
+    if (!size.isUsableForBackdrop()) return
     if (refractionHeight <= 0f || refractionAmount <= 0f) return
 
     if (padding > 0f) {

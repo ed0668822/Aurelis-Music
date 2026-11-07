@@ -1,0 +1,45 @@
+{
+  "baseline": "7db72d900551424f400d8ed18a737675cf24460a",
+  "source_reference": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "reference_files_read_selected_sections_sha256": {
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt": "175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/ExploreScreen.kt": "75593b43d96c479bac6b5831eab3e36071c15d4b40df5e91b44160040b806ed8",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/LibraryScreen.kt": "d53961bee3b257a40407bf1c552bd90b6f7792ba7306653f4c62daa342f8179a"
+  },
+  "modified_kotlin_sha256": {
+    "app/src/main/java/com/music/aurelis/MainActivity.kt": "8c9bd1dc2f116ed456659d6e0472308f4502c914b85722336a5f98a571251cb9",
+    "app/src/main/java/com/music/aurelis/ui/navigation/AppNavigator.kt": "daedfbee639cd5d4c96f0a5e45300eea2c9e2cc26ab4bf34353f61e96822ce98",
+    "app/src/main/java/com/music/aurelis/ui/screens/ExploreScreen.kt": "18df7befbc318b5aa3d82daeb2a6396812596440929b5c992b8d90df278cce32",
+    "app/src/main/java/com/music/aurelis/ui/screens/LocalCollectionScreen.kt": "01505138f888aabb850b36bb8a0ed66415e727e41708f88f7292b57bc7e97305",
+    "app/src/main/java/com/music/aurelis/ui/screens/SearchScreen.kt": "ba683bc703dea259e683b9a02a0647f7ad9cf4296fdc3485d5765c86c05aa56d",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "f38bf7f8c5a5a4a491126d0e6a3e676c4dcf1551e14a1e6be4e6ebbe06660abc",
+    "app/src/test/java/com/music/aurelis/ui/navigation/AppNavigatorTest.kt": "923fcb9a02076a046310988c3902cdeea9df1aba27d4f92476bc3ba534c8f2a5",
+    "app/src/main/java/com/music/aurelis/data/LocalGenres.kt": "e6636fd57522c4b6c544d7dd7e1d256e9c6aad044af3e0d7b03df0444890da9e",
+    "app/src/main/java/com/music/aurelis/data/LocalSearchHistory.kt": "78b08555dfef18d1abdc8c1c4c6b1a6f85e589abf5c1ffdb20ea0413ea661786",
+    "app/src/test/java/com/music/aurelis/data/LocalGenresTest.kt": "399c8d0d55d7d539debd07c747943554f9487a71f05c904511254ec7f057924f",
+    "app/src/test/java/com/music/aurelis/data/LocalSearchHistoryTest.kt": "704e921eb69274734549d37cfd54581d5977a011d8c33d5422481a448d616198"
+  },
+  "protected_unchanged": [
+    ".github",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "gradle",
+    "app/build.gradle.kts",
+    "app/src/main/cpp",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/java/com/music/aurelis/ui/components",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "reviews": [
+    "static architecture/wiring review",
+    "separate static integration/licensing/regression review; same agent"
+  ],
+  "git_diff_check": "PASS",
+  "gradle_build": "NOT_EXECUTED_LOCALLY; GitHub pending",
+  "new_tests": "6 new, 1 existing expanded; NOT_EXECUTED",
+  "runtime_android": "NOT_EXECUTED",
+  "status": "B04 implemented: GitHub validation and visual parity pending; B05 authorized but not started pending user CI result"
+}

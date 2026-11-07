@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.music.aurelis.data.SettingsRepository
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.BoxScope
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
@@ -48,12 +52,15 @@ enum class AurelisHazeStyle {
  * @param style El estilo de haze (thin, regular, thick).
  * @param tint El color de tint para el haze (se adapta automáticamente al tema).
  */
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun Modifier.aurelisHazeEffect(
     hazeState: HazeState,
     style: AurelisHazeStyle = AurelisHazeStyle.Regular,
     tint: Color? = null,
 ): Modifier {
+    val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
+    if (reduceBlur || !com.music.aurelis.ui.components.LocalGlassHardware.current) return this.background(tint ?: MaterialTheme.colorScheme.surface)
     val themeTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
         Color(0xFFFAFAFA)
     } else {
@@ -62,11 +69,11 @@ fun Modifier.aurelisHazeEffect(
     val finalTint = tint ?: themeTint
 
     return when (style) {
-        AurelisHazeStyle.Thin -> this.hazeSource(hazeState)
+        AurelisHazeStyle.Thin -> this
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thin(finalTint)))
-        AurelisHazeStyle.Regular -> this.hazeSource(hazeState)
+        AurelisHazeStyle.Regular -> this
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.regular(finalTint)))
-        AurelisHazeStyle.Thick -> this.hazeSource(hazeState)
+        AurelisHazeStyle.Thick -> this
             .then(Modifier.hazeEffect(state = hazeState, style = HazeMaterials.thick(finalTint)))
     }
 }
