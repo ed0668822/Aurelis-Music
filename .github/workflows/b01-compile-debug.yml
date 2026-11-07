@@ -3,17 +3,7 @@
 name: "B01 | Compile Debug APK"
 
 on:
-  push:
-    branches:
-      - feature/bitchord-local-migration
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle/**"
-      - "gradle.properties"
-      - "gradlew"
-      - ".github/workflows/b01-compile-debug.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
