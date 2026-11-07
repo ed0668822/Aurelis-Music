@@ -171,6 +171,54 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/aurelis-ci-release.jks"
 
+      - name: Stage individually verified Debug and signed Release APKs
+        id: stage_apks
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.verify.outcome == 'success' && steps.summary.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import shutil
+
+          source = Path("ci-approved-apks")
+          evidence = Path("ci-artifacts")
+          manifest = json.loads((source / "apk-manifest.json").read_text())
+          verification = json.loads((evidence / "apk-verification.json").read_text())
+          signing = json.loads((evidence / "signing.json").read_text())
+          if verification.get("status") != "success":
+              raise SystemExit("APK content/signature verification did not pass")
+          if signing.get("mode") != "configured_release":
+              raise SystemExit("No configured release certificate: do not publish an official Release APK")
+          if len(manifest) != 2 or {r["variant"] for r in manifest} != {"debug", "release"}:
+              raise SystemExit("Exactly one verified APK per variant is required")
+          for record in manifest:
+              variant = record["variant"]
+              if not all(record.get(k) is True for k in
+                         ("signature_verified", "zip_verified",
+                          "zip_16kb_alignment_verified", "native_16kb_alignment_verified")):
+                  raise SystemExit("APK failed mandatory security/integrity checks: " + variant)
+              if record.get("abis") != ["arm64-v8a"] or record.get("package") != "com.music.aurelis":
+                  raise SystemExit("Unexpected APK ABI or package: " + variant)
+              expected_cert = signing.get("configured_certificate_sha256")
+              if variant == "release" and expected_cert not in record.get("signer_certificate_sha256", []):
+                  raise SystemExit("Release signing certificate does not match configured keystore")
+              name = record["file"]
+              file = source / name
+              if file.name != name or not file.is_file():
+                  raise SystemExit("Missing verified APK file: " + name)
+              digest = hashlib.sha256(file.read_bytes()).hexdigest()
+              if digest != record["sha256"] or file.stat().st_size != record["bytes"]:
+                  raise SystemExit("APK digest/size mismatch: " + variant)
+              folder = Path("ci-b04-delivery") / variant
+              folder.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(file, folder / name)
+          shutil.copy2(source / "apk-manifest.json", evidence / "apk-manifest.json")
+          shutil.copy2(source / "SHA256SUMS.txt", evidence / "SHA256SUMS.txt")
+          print("Both ARM64 APKs independently staged; Release certificate verified")
+          PY
+
       - name: Upload B04 diagnostic reports
         id: report
         if: always()
@@ -181,13 +229,23 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      - name: Publish only fully verified APKs
-        id: apk
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.verify.outcome == 'success' && steps.summary.outcome == 'success' && steps.report.outcome == 'success' }}
+      - name: Publish Debug APK separately
+        id: debug_apk
+        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.report.outcome == 'success' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: b04-verified-apks-${{ github.run_number }}
-          path: ci-approved-apks/
+          name: b04-debug-apk-${{ github.run_number }}
+          path: ci-b04-delivery/debug/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Publish signed Release APK separately
+        id: release_apk
+        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b04-release-apk-${{ github.run_number }}
+          path: ci-b04-delivery/release/*.apk
           retention-days: 14
           if-no-files-found: error
 
@@ -200,7 +258,9 @@ jobs:
           VERIFY_OUTCOME: ${{ steps.verify.outcome }}
           SUMMARY_OUTCOME: ${{ steps.summary.outcome }}
           REPORT_OUTCOME: ${{ steps.report.outcome }}
-          APK_OUTCOME: ${{ steps.apk.outcome }}
+          STAGE_OUTCOME: ${{ steps.stage_apks.outcome }}
+          DEBUG_APK_OUTCOME: ${{ steps.debug_apk.outcome }}
+          RELEASE_APK_OUTCOME: ${{ steps.release_apk.outcome }}
         run: |
           python3 - <<'PY'
           import json
@@ -208,7 +268,7 @@ jobs:
           from pathlib import Path
 
           outcomes = {key: os.environ.get(key + "_OUTCOME", "missing")
-                      for key in ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "REPORT", "APK")}
+                      for key in ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "STAGE", "REPORT", "DEBUG_APK", "RELEASE_APK")}
           bad = [key for key, value in outcomes.items() if value != "success"]
           path = Path("ci-artifacts/apk-verification.json")
           manifest = Path("ci-approved-apks/apk-manifest.json")
@@ -224,5 +284,11 @@ jobs:
                   bad.append("debug_release_not_verified")
           if bad:
               raise SystemExit("B04 failed: " + ", ".join(sorted(set(bad))))
-          print("B04 passed: Debug and Release APKs verified and published")
+          for variant in ("debug", "release"):
+              files = list((Path("ci-b04-delivery") / variant).glob("*.apk"))
+              if len(files) != 1:
+                  bad.append("expected_one_" + variant + "_apk")
+          if bad:
+              raise SystemExit("B04 failed: " + ", ".join(sorted(set(bad))))
+          print("B04 passed: Debug and signed Release APKs verified and published separately")
           PY
