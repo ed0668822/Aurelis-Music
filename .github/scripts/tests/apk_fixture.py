@@ -47,4 +47,4 @@ def write_policy(root, value=None):
 
 
 RESOURCES='Package name=fixture id=7f\n resource 0x7f010001 string/app_name\n'
-MANIFEST='E: manifest\n E: application\n  A: android:name(0x01010003)="fixture.App"\n'
+MANIFEST='N: android=http://schemas.android.com/apk/res/android\nE: manifest\n E: application\n  A: http://schemas.android.com/apk/res/android:name(0x01010003)="fixture.App"\n'

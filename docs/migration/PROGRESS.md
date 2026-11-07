@@ -769,3 +769,19 @@ Entrega CI12.2 — implementación `29525fa5562a3bcae9feee98acf53feddaf5baf8`.
 PR: https://github.com/ed0668822/Aurelis-Music/pull/1.
 Checkpoint documental posterior; nuevo CI/auditoría de APK reales pendientes.
 Esperar resultado comunicado por el usuario; no CI12.3 ni B09 en esta entrega.
+
+
+## CI13 — fallo del auditor al leer namespace AAPT2
+
+Run151/e360935: verify=failure, upload_apk=skipped; compilación y pruebas no son
+el fallo mostrado. JSON interno no accesible (descarga API Forbidden). Defecto
+reproducido con SDK35/android36 existente: parser android:name encontraba0
+componentes donde URI Android completa produce84. Parser corregido acepta URI
+completa/alias Android y rechaza otros namespaces; fixture ajustado a formato real.
+Excepción pública incluye causa segura y ruta JSON para próximos diagnósticos.
+66 pruebas Python PASAN,64 anteriores conservadas,2 nuevas; reproducción real
+SDK ahora84 y conjuntos URI/abreviatura idénticos. Dos revisiones estáticas del
+mismo agente. Política/gates/app/plan/workflow intactos. Evidencias desde raíz:
+docs/qa/CI13_AAPT_NAMESPACE.md/.json. No Gradle/Android local; nuevo CI pendiente.
+Sin JSON remoto no se descartan otros fallos; esperar resultado antes de avanzar.
+Mismo PR1; no CI12.3 ni B09.

@@ -145,16 +145,26 @@ def resource_files(text: str) -> dict[str, list[str]]:
 
 
 def manifest_components(text: str, application_id: str) -> set[str]:
+    android_uri = 'http://schemas.android.com/apk/res/android'
+    aliases = {'android': android_uri}
     components, element = set(), ''
     for line in text.splitlines():
+        namespace = re.match(r'\s*N:\s+([^=\s]+)=([^\s]+)', line)
+        if namespace: aliases[namespace[1]] = namespace[2]
         match = re.match(r'\s*E:\s+([\w-]+)', line)
         if match: element = match[1]
-        match = re.search(r'A: android:name(?:\([^)]*\))?="([^"]+)"', line)
-        if match and element in ('application', 'activity', 'service', 'provider', 'receiver'):
-            name = match[1]
-            if name.startswith('.'): name = application_id + name
-            elif '.' not in name: name = application_id + '.' + name
-            components.add(name.replace('.', '/'))
+        match = re.search(r'A:\s+([^\s(=]+)(?:\([^)]*\))?="([^"]+)"', line)
+        if not match or element not in ('application', 'activity', 'service', 'provider', 'receiver'):
+            continue
+        attribute = match[1].rsplit(':', 1)
+        if len(attribute) != 2 or attribute[1] != 'name':
+            continue
+        if attribute[0] != android_uri and aliases.get(attribute[0]) != android_uri:
+            continue
+        name = match[2]
+        if name.startswith('.'): name = application_id + name
+        elif '.' not in name: name = application_id + '.' + name
+        components.add(name.replace('.', '/'))
     return components
 
 
@@ -362,5 +372,6 @@ def audit(root: Path, out: Path, sdk: Path, apk: Path, variant: str) -> dict:
         writer = csv.DictWriter(stream, fieldnames=('path', 'kind', 'state'), delimiter='\t', extrasaction='ignore')
         writer.writeheader(); writer.writerows(rows)
     if report['status'] != 'REQUIRED_CONTENT_VERIFIED_WITH_COVERAGE_LIMITS':
-        raise ValueError('APK content audit ' + report['status'] + '; see apk-content-' + variant + '.json')
+        details = '; '.join(error['type'] + ': ' + error['reason'] for error in report['evidence_errors']) if report['evidence_errors'] else '; '.join(report['required_failures'][:5])
+        raise ValueError('APK content audit ' + report['status'] + ' (' + details + '); see apk-content-' + variant + '.json')
     return report

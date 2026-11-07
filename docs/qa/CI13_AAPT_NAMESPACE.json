@@ -1,0 +1,69 @@
+{
+  "unit": "CI13",
+  "base": "e3609356500a550c11f0acfae48c3b622a755ee8",
+  "failed_run": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42328186956",
+  "failed_run_number": 151,
+  "failed_job": "https://github.com/ed0668822/Aurelis-Music/actions/runs/42328186956/job/128268304312",
+  "failed_head": "e3609356500a550c11f0acfae48c3b622a755ee8",
+  "public_error": "APK content audit EVIDENCE_ERROR; see apk-content-debug.json",
+  "gate": "verify=failure, upload_apk=skipped",
+  "codeql": "1320 SUCCESS",
+  "access": "Public job annotations and exact commit available; gh artifact download compilation-report-151 Forbidden; internal apk-content-debug.json not read",
+  "reproduced_defect": "Parser only matched android:name while actual aapt2 xmltree emits full Android namespace URI",
+  "reproduction": {
+    "old_actual_sdk_components": 0,
+    "equivalent_short_prefix_components": 84,
+    "artifact": "SDK android-36/android.jar",
+    "tool": "build-tools35.0.0/aapt2 dump xmltree",
+    "result": "Parser mismatch reproduced without compilation",
+    "corrected_actual_sdk_components": 84,
+    "corrected_formats_equal": true
+  },
+  "cause_scope": "Confirmed parser defect reproduces this EVIDENCE_ERROR path; without remote JSON, not an exclusive diagnosis of all possible failures in run151",
+  "fix": "Namespace-aware matching of full URI or declared Android alias, same required checks; fixture updated; public exception now includes safe reason/report location",
+  "files_sha256": {
+    ".github/scripts/apk_audit.py": "de1b81fea3fc597c66d1044abe527b1f0e82d80f324e106718dcbfaaef60a904",
+    ".github/scripts/tests/apk_fixture.py": "cc4368ccfb0a020bce5fe30de3ba1fa8cb356229ece0e85e454c40762eed6969",
+    ".github/scripts/tests/test_apk_audit.py": "2337c5d35bbd71e5f78a92f9bfb93207366dc092006c6e203e9c08592ed3c4ad"
+  },
+  "python_tests": {
+    "result": "PASS",
+    "count": 66,
+    "prior_methods_retained": 64,
+    "new_methods": [
+      "test_auditor_exception_exposes_safe_reason_and_report_location",
+      "test_manifest_accepts_actual_aapt_uri_short_prefix_and_declared_alias"
+    ],
+    "log_sha256": "04ae6e9053195d5bc0b1393af59e12eb90b2a602cb074e9c0bb59fec6f445e03"
+  },
+  "actual_sdk_evidence_sha256": "2462c5fee3898c30ccac833d554cac575c60122c195e72c906c024d455a1d243",
+  "reviews": {
+    "first": "Static cause and actual SDK reproduction",
+    "second": "Separate namespace negatives, regression and protected scope pass by same agent",
+    "independent_reviewers": false
+  },
+  "verification": {
+    "actual_sdk_xmltree_parser": "0 BEFORE,84 AFTER; full URI/short prefix sets identical",
+    "local_android_gradle": "NOT_EXECUTED_USER_GITHUB_ONLY",
+    "new_github_actions": "PENDING_USER_RESULT_AFTER_PUSH",
+    "android_runtime": "NOT_EXECUTED"
+  },
+  "protected_paths": [
+    "app",
+    "gradle",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "gradle.properties",
+    ".github/apk-audit-policy.json",
+    ".github/scripts/task-inputs.gradle",
+    ".github/workflows",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES",
+    "docs/migration/MASTER_PLAN.md",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
+  "next": "Publish same branch/PR, wait for user result; do not advance CI12.3/B09"
+}

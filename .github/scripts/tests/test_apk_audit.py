@@ -176,6 +176,23 @@ class ContentAuditTest(unittest.TestCase):
             self.assertNotIn('command',values[0])
             self.assertEqual(audit.native_commands(root,'release'),[])
 
+    def test_manifest_accepts_actual_aapt_uri_short_prefix_and_declared_alias(self):
+        uri='http://schemas.android.com/apk/res/android'
+        for prefix,declaration in [(uri,''),('android',''),('a','N: a='+uri+'\n')]:
+            text=declaration+'E: manifest\n E: application\n  A: '+prefix+':name(0x01010003)=".App" (Raw: ".App")\n'
+            text+=' E: activity\n  A: '+prefix+':name(0x01010003)="fixture.Main"\n'
+            self.assertEqual(audit.manifest_components(text,'fixture'),{'fixture/App','fixture/Main'})
+        for text in ['E: application\n A: tools:name="fixture.Wrong"\n',
+                     'N: android=http://unrelated.example/ns\nE: application\n A: android:name="fixture.Wrong"\n',
+                     'E: uses-permission\n A: '+uri+':name="fixture.Wrong"\n']:
+            self.assertEqual(audit.manifest_components(text,'fixture'),set())
+
+    def test_auditor_exception_exposes_safe_reason_and_report_location(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out,apk=self.fixture(root,files={'classes.dex':b'invalid'})
+            with self.assertRaisesRegex(ValueError,'EVIDENCE_ERROR.*Unsupported or invalid DEX evidence format.*apk-content-debug.json'):
+                self.run_audit(root,out,apk)
+
     def test_binary_bounds_and_class_metadata_never_include_constant_values(self):
         self.assertEqual(audit.class_metadata(jvm(private_text='private-fixture-value')),('fixture/App','App.kt'))
         for data in (b'',jvm()[:14]):

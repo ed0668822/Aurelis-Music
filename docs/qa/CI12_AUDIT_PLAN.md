@@ -8,7 +8,7 @@ publicar, avisar y esperar el resultado comunicado por el usuario.
 | Entrega | Alcance | Estado |
 |---|---|---|
 | CI12.1 | Inventario completo, entradas/raíces/resultados Gradle, reporte por variante y nombres de APK | CI150 SUCCESS; no Android real |
-| CI12.2 | Presencia en APK: clases/DEX/R8, recursos, assets/modelos y bibliotecas nativas | Implementado; APK nuevos/GitHub pendientes |
+| CI12.2 | Presencia en APK: clases/DEX/R8, recursos, assets/modelos y bibliotecas nativas | CI151 fallo auditor; parser corregido en CI13, nuevo CI pendiente |
 | CI12.3 | Matriz funcional, conexiones de navegación y pruebas de interacción | Autorizado, pendiente tras CI12.2; Android real según disponibilidad |
 
 ## Reglas de evidencia
