@@ -526,3 +526,8 @@ y CI12_1_INVENTORY.md/.json (rutas desde raíz). No cambios app/workflow/gates/p
 CI12.2 presencia APK y CI12.3 integración UI ya autorizados, pendientes después de
 publicar y recibir resultado CI del usuario. Base CI149 SUCCESS confirmado antes;
 esto no valida esta entrega. Mismo PR1, no B09 ni otro bloque de migración.
+
+Entrega CI12.1 — implementación `c317f4a9f65b025941e5d97e229a0bcf840fb9d9`.
+PR: https://github.com/ed0668822/Aurelis-Music/pull/1.
+Checkpoint documental posterior; GitHub nuevo pendiente. Esperar resultado del
+usuario antes de CI12.2/.3, cuya autorización permanece. No B09.
