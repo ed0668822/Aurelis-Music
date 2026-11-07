@@ -1,0 +1,235 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B05: an actual Android runtime smoke check. Does not pretend to test music playback.
+name: "B05 | Android Emulator Smoke"
+
+on:
+  push:
+    branches:
+      - feature/bitchord-local-migration
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradle.properties"
+      - "gradlew"
+      - ".github/workflows/b05-android-emulator.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b05-emulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  emulator-smoke:
+    name: "B05 | Android 15 install and launch"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Prepare diagnostic folder
+        run: mkdir -p ci-b05
+
+      - name: Set up Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Prepare app build SDK and native toolchain
+        id: sdk
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" \
+            "ndk;26.1.10909125" "cmake;3.22.1" > ci-b05/sdk-install.log 2>&1 || {
+              cat ci-b05/sdk-install.log
+              exit 1
+            }
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
+
+      - name: Assemble Debug APK for current commit
+        id: build
+        if: ${{ steps.sdk.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug --console=plain --build-cache \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b05/build.log
+          test -s app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Enable KVM when available
+        if: ${{ steps.build.outcome == 'success' }}
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            echo "KVM is available."
+          else
+            echo "::warning::KVM missing. Emulator may be slow or unable to boot."
+          fi
+
+      # Android 15 Google APIs x86_64 may translate ARM64 app code.
+      # Actual installation and launch determine compatibility; do not assume it.
+      - name: Boot Android 15 and exercise real app launch
+        id: emulator
+        if: ${{ steps.build.outcome == 'success' }}
+        continue-on-error: true
+        uses: ReactiveCircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          cores: 2
+          ram-size: 4096M
+          heap-size: 512M
+          emulator-boot-timeout: 900
+          emulator-options: "-no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none"
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            APK="app/build/outputs/apk/debug/app-debug.apk"
+            PKG="com.music.aurelis"
+            mkdir -p ci-b05
+            adb devices -l > ci-b05/adb-devices.txt
+            adb shell getprop ro.build.version.sdk | tr -d '\r' > ci-b05/device-api.txt
+            adb shell getprop ro.product.cpu.abilist | tr -d '\r' > ci-b05/device-abis.txt
+            test "$(cat ci-b05/device-api.txt)" = "35"
+            test -s "$APK"
+            adb install -r "$APK" > ci-b05/install.log 2>&1 || {
+              cat ci-b05/install.log
+              exit 1
+            }
+            grep -q "Success" ci-b05/install.log
+            adb shell pm path "$PKG" > ci-b05/package-path.txt
+            grep -q "package:" ci-b05/package-path.txt
+            adb shell am start -W -n "$PKG/.MainActivity" > ci-b05/start.log 2>&1 || {
+              cat ci-b05/start.log
+              exit 1
+            }
+            cat ci-b05/start.log
+            grep -q "Status: ok" ci-b05/start.log
+            sleep 15
+            adb shell pidof "$PKG" | tr -d '\r' > ci-b05/process.txt
+            test -s ci-b05/process.txt
+            adb shell dumpsys activity activities > ci-b05/activity.txt
+            adb logcat -d -s AndroidRuntime:E > ci-b05/android-runtime-errors.log 2>&1 || true
+            adb shell screencap -p /sdcard/ci-b05.png || true
+            adb pull /sdcard/ci-b05.png ci-b05/screen.png || true
+            echo "PASS: Android 15 installation, launcher activity and process survival" > ci-b05/smoke-pass.txt
+
+      - name: Generate B05 diagnostic report
+        id: report
+        if: always()
+        env:
+          SDK_OUTCOME: ${{ steps.sdk.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          EMULATOR_OUTCOME: ${{ steps.emulator.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          out = Path("ci-b05")
+          out.mkdir(exist_ok=True)
+          def read(name):
+              p = out / name
+              return p.read_text(errors="replace").strip() if p.exists() else ""
+          statuses = {x: os.environ.get(x.upper() + "_OUTCOME", "not_started") for x in ("sdk", "build", "emulator")}
+          checks = {
+              "android_api_35": read("device-api.txt") == "35",
+              "apk_installed": "Success" in read("install.log") and "package:" in read("package-path.txt"),
+              "launcher_started": "Status: ok" in read("start.log"),
+              "app_process_survived_15s": bool(read("process.txt")),
+              "emulator_script_completed": bool(read("smoke-pass.txt")),
+          }
+          result = {
+              "schema_version": 1,
+              "commit": os.environ.get("GITHUB_SHA"),
+              "os": "Android 15 / API 35",
+              "emulator_image": "google_apis x86_64",
+              "app_package": "com.music.aurelis",
+              "app_apk_abi": "arm64-v8a",
+              "device_abis": read("device-abis.txt"),
+              "steps": statuses,
+              "checks": checks,
+              "pass": all(x == "success" for x in statuses.values()) and all(checks.values()),
+              "coverage": "INSTALL_LAUNCH_PROCESS_SMOKE_ONLY",
+              "not_tested": ["music playback", "audio output", "UI interactions", "native feature execution"],
+          }
+          (out / "results.json").write_text(json.dumps(result, indent=2) + "\n")
+          lines = [
+              "# B05 — Android emulator smoke test",
+              f"- Result: **{'PASS' if result['pass'] else 'FAIL / NOT EXECUTED'}**",
+              f"- Commit: `{result['commit']}`",
+              "- Emulator: Android 15 API 35; Google APIs x86_64",
+              "- Application APK: ARM64-only; runtime compatibility is determined by installation and launch",
+              f"- Device ABI list: `{result['device_abis'] or 'not_available'}`",
+              "",
+              "| Check | Result |",
+              "|---|---|",
+          ]
+          for key, state in checks.items():
+              lines.append(f"| {key.replace('_', ' ')} | {'PASS' if state else 'FAIL / unavailable'} |")
+          lines += ["", "- Detailed evidence: installation, launch, process, activity and AndroidRuntime log.",
+                    "- This does NOT validate playback, native audio features, full UI or runtime permissions.",
+                    "- Emulator setup failure is reported separately from app failure."]
+          summary = "\n".join(lines) + "\n"
+          (out / "summary.md").write_text(summary)
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as fp:
+              fp.write(summary)
+          PY
+
+      - name: Upload B05 runtime and diagnostics
+        id: artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b05-android-emulator-${{ github.run_number }}
+          path: ci-b05/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Enforce B05 smoke results
+        if: always()
+        env:
+          REPORT_OUTCOME: ${{ steps.report.outcome }}
+          ARTIFACTS_OUTCOME: ${{ steps.artifacts.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path("ci-b05/results.json")
+          if not path.is_file():
+              raise SystemExit("B05 FAIL: missing report; inspect workflow setup steps")
+          data = json.loads(path.read_text())
+          if not data.get("pass") or os.environ.get("REPORT_OUTCOME") != "success" or os.environ.get("ARTIFACTS_OUTCOME") != "success":
+              failed = [k for k,v in data["checks"].items() if not v]
+              raise SystemExit("B05 FAIL: " + ", ".join(failed or ["step_status_or_upload"]) + "; see B05 artifacts")
+          print("B05 PASS: Android emulator install and startup smoke succeeded")
+          PY
