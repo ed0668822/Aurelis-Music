@@ -77,7 +77,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      actions: read
+      actions: write
     steps:
       - name: Checkout report bundling script
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -130,3 +130,9 @@ jobs:
               raise SystemExit("B06 FAIL: " + (bad or "missing artifacts or report upload"))
           print("B06 PASS: B01-B05 verified, one organized report artifact published")
           PY
+
+      - name: Retain only 3 final artifacts after successful B06 gate
+        if: ${{ success() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/b06_cleanup_artifacts.py
