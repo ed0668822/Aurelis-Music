@@ -65,5 +65,6 @@
     "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
   ],
   "pr": "https://github.com/ed0668822/Aurelis-Music/pull/1",
-  "next": "Publish same branch/PR, wait for user result; do not advance CI12.3/B09"
+  "next": "Publish same branch/PR, wait for user result; do not advance CI12.3/B09",
+  "fix_commit": "e34f70f5a11a6b7282fe9404c3162b5bdcbb4a68"
 }

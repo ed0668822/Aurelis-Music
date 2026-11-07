@@ -568,3 +568,8 @@ mismo agente. Política/gates/app/plan/workflow intactos. Evidencias desde raíz
 docs/qa/CI13_AAPT_NAMESPACE.md/.json. No Gradle/Android local; nuevo CI pendiente.
 Sin JSON remoto no se descartan otros fallos; esperar resultado antes de avanzar.
 Mismo PR1; no CI12.3 ni B09.
+
+Entrega CI13 — corrección `e34f70f5a11a6b7282fe9404c3162b5bdcbb4a68`.
+PR: https://github.com/ed0668822/Aurelis-Music/pull/1.
+Checkpoint documental posterior; nuevo CI pendiente del resultado del usuario.
+No CI12.3 ni B09 en esta corrección.
