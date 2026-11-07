@@ -240,23 +240,23 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      - name: Publish signed Release APK separately
+        id: release_apk
+        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Aurelis-Release-ARM64-${{ github.run_number }}
+          path: ci-b04-delivery/release/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
       - name: Publish Debug APK separately
         id: debug_apk
         if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: b04-debug-apk-${{ github.run_number }}
+          name: Aurelis-Pruebas-ARM64-${{ github.run_number }}
           path: ci-b04-delivery/debug/*.apk
-          retention-days: 14
-          if-no-files-found: error
-
-      - name: Publish signed Release APK separately
-        id: release_apk
-        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.report.outcome == 'success' }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: b04-release-apk-${{ github.run_number }}
-          path: ci-b04-delivery/release/*.apk
           retention-days: 14
           if-no-files-found: error
 
