@@ -1,0 +1,220 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B03: independently test Debug and Release. No APK is published by this workflow.
+name: "B03 | Android Unit Tests"
+
+on:
+  push:
+    branches:
+      - feature/bitchord-local-migration
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradle.properties"
+      - "gradlew"
+      - ".github/workflows/b03-unit-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b03-unit-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: "B03 | Debug + Release unit tests"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Create isolated report directory
+        run: mkdir -p ci-b03/junit/debug ci-b03/junit/release
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Prepare Android SDK
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" "ndk;26.1.10909125" "cmake;3.22.1" > ci-b03/sdk-install.log 2>&1 || {
+            cat ci-b03/sdk-install.log
+            exit 1
+          }
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
+
+      - name: Run Debug unit tests
+        id: debug
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          ./gradlew :app:testDebugUnitTest --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b03/debug.log
+
+      - name: Run Release unit tests independently
+        id: release
+        if: ${{ !cancelled() && steps.debug.outcome != 'skipped' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          ./gradlew :app:testReleaseUnitTest --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b03/release.log
+
+      - name: Summarize JUnit XML results
+        if: always()
+        env:
+          DEBUG_OUTCOME: ${{ steps.debug.outcome }}
+          RELEASE_OUTCOME: ${{ steps.release.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import xml.etree.ElementTree as ET
+
+          output = Path("ci-b03")
+          output.mkdir(exist_ok=True)
+          lines = [
+              "# B03 — Unit tests",
+              f"- Commit: `{os.getenv('GITHUB_SHA', 'unknown')}`",
+              "",
+              "| Variant | Gradle | Tests | Passed | Failed | Errors | Skipped | XML files |",
+              "|---|---|---:|---:|---:|---:|---:|---:|",
+          ]
+          results = {}
+          with (output / "test-cases.tsv").open("w", encoding="utf-8") as tsv:
+              tsv.write("variant\tclass\tname\tresult\ttime_seconds\n")
+              for variant in ("debug", "release"):
+                  name = "test" + variant.title() + "UnitTest"
+                  sources = sorted((Path("app/build/test-results") / name).glob("TEST-*.xml"))
+                  dest = output / "junit" / variant
+                  dest.mkdir(parents=True, exist_ok=True)
+                  totals = {"tests": 0, "failed": 0, "errors": 0, "skipped": 0}
+                  parse_errors = []
+                  for source in sources:
+                      shutil.copy2(source, dest / source.name)
+                      try:
+                          root = ET.parse(source).getroot()
+                          suites = [root] if root.tag == "testsuite" else root.findall(".//testsuite")
+                          if not suites:
+                              raise ValueError("No JUnit testsuite found")
+                          for suite in suites:
+                              for case in suite.findall("testcase"):
+                                  totals["tests"] += 1
+                                  kind = "PASSED"
+                                  if case.find("failure") is not None:
+                                      totals["failed"] += 1
+                                      kind = "FAILED"
+                                  elif case.find("error") is not None:
+                                      totals["errors"] += 1
+                                      kind = "ERROR"
+                                  elif case.find("skipped") is not None:
+                                      totals["skipped"] += 1
+                                      kind = "SKIPPED"
+                                  fields = [variant, case.get("classname", ""), case.get("name", ""),
+                                            kind, case.get("time", "")]
+                                  tsv.write("\t".join(x.replace("\t", " ").replace("\n", " ") for x in fields) + "\n")
+                      except (ET.ParseError, ValueError) as exc:
+                          parse_errors.append(f"{source.name}: {exc}")
+                  outcome = os.getenv(variant.upper() + "_OUTCOME", "skipped")
+                  passed = totals["tests"] - totals["failed"] - totals["errors"] - totals["skipped"]
+                  valid = (outcome == "success" and len(sources) > 0
+                           and totals["tests"] > 0 and passed > 0
+                           and totals["failed"] == 0 and totals["errors"] == 0
+                           and not parse_errors)
+                  results[variant] = {**totals, "passed": passed, "outcome": outcome,
+                                      "xml_files": len(sources), "parse_errors": parse_errors,
+                                      "passed_gate": valid}
+                  lines.append(f"| {variant.title()} | {outcome} | {totals['tests']} | {passed} | "
+                               f"{totals['failed']} | {totals['errors']} | {totals['skipped']} | {len(sources)} |")
+          lines += [
+              "",
+              "- Reports and logs are separated by variant.",
+              "- Missing/empty XML or a variant with no executed passing tests fails B03.",
+              "- Unit tests do not replace emulator or physical-device testing.",
+          ]
+          for variant, result in results.items():
+              if result["parse_errors"]:
+                  lines.append(f"- {variant}: invalid XML ({len(result['parse_errors'])} files).")
+          (output / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          (output / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as fp:
+              fp.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload Debug test evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b03-debug-tests-${{ github.run_number }}
+          path: |
+            ci-b03/debug.log
+            ci-b03/junit/debug/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload Release test evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b03-release-tests-${{ github.run_number }}
+          path: |
+            ci-b03/release.log
+            ci-b03/junit/release/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload B03 aggregate summary
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b03-summary-${{ github.run_number }}
+          path: |
+            ci-b03/summary.md
+            ci-b03/results.json
+            ci-b03/test-cases.tsv
+            ci-b03/sdk-install.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Enforce both test suites
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("ci-b03/results.json")
+          if not path.is_file():
+              raise SystemExit("B03 FAIL: missing test report")
+          results = json.loads(path.read_text(encoding="utf-8"))
+          failed = [variant for variant in ("debug", "release")
+                    if not results.get(variant, {}).get("passed_gate", False)]
+          if failed:
+              raise SystemExit("B03 FAIL: " + ", ".join(failed) + " — inspect variant reports")
+          print("B03 PASS: both Debug and Release unit test suites succeeded")
+          PY
