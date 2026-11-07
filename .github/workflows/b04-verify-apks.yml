@@ -1,0 +1,243 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B04: separate artifact verification using the repository's existing audited checks.
+name: "B04 | Verify APKs"
+
+on:
+  push:
+    branches:
+      - feature/bitchord-local-migration
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradle.properties"
+      - "gradlew"
+      - "LICENSE"
+      - "LICENSES/**"
+      - "NOTICE"
+      - ".github/scripts/**"
+      - ".github/apk-audit-policy.json"
+      - ".github/workflows/b04-verify-apks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b04-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-apks:
+    name: "B04 | Build, signature, identity, ABI, contents"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare evidence folder and source inventory
+        id: prepare
+        run: |
+          set -euo pipefail
+          mkdir -p ci-artifacts
+          python3 .github/scripts/android_ci.py prepare
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Validate wrapper and configure Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Install matching Android SDK tools
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install \
+            "platforms;android-36" \
+            "build-tools;35.0.0" \
+            "ndk;26.1.10909125" \
+            "cmake;3.22.1" > ci-artifacts/sdk-install.log 2>&1 || {
+              cat ci-artifacts/sdk-install.log
+              exit 1
+            }
+          test -x "$SDK_DIR/build-tools/35.0.0/apksigner"
+          test -x "$SDK_DIR/build-tools/35.0.0/aapt2"
+          test -x "$SDK_DIR/build-tools/35.0.0/zipalign"
+          test -f "$SDK_DIR/platforms/android-36/source.properties"
+          test -f "$SDK_DIR/ndk/26.1.10909125/source.properties"
+          test -d "$SDK_DIR/cmake/3.22.1"
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
+
+      - name: Prepare signing mode without exposing private keys
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: python3 .github/scripts/android_ci.py signing
+
+      - name: Build Debug and Release APKs for verification
+        id: build
+        continue-on-error: true
+        timeout-minutes: 50
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug :app:assembleRelease \
+            --init-script .github/scripts/task-inputs.gradle \
+            --continue --build-cache --console=plain --stacktrace \
+            --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-artifacts/build.log
+
+      - name: Verify signatures, APK identity, ZIP alignment, ABI and required contents
+        id: verify
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        run: python3 .github/scripts/android_ci.py verify
+
+      - name: Redact logs and publish verification summary
+        id: summary
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, ".github/scripts")
+          from android_ci import redact
+
+          out = Path("ci-artifacts")
+          out.mkdir(exist_ok=True)
+          for name in ("build.log", "sdk-install.log"):
+              path = out / name
+              if path.is_file():
+                  path.write_text(redact(path.read_text(errors="replace")), encoding="utf-8")
+          verification = out / "apk-verification.json"
+          data = json.loads(verification.read_text()) if verification.exists() else {}
+          signing = out / "signing.json"
+          signing_data = json.loads(signing.read_text()) if signing.exists() else {}
+          records = data.get("apks", [])
+          lines = [
+              "# B04 — APK verification",
+              f"- Source commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
+              f"- Build result: **{os.environ.get('BUILD_OUTCOME', 'unknown')}**",
+              f"- Verification step: **{os.environ.get('VERIFY_OUTCOME', 'unknown')}**",
+              f"- APK audit result: **{data.get('status', 'not_executed')}**",
+              f"- Signing mode: **{signing_data.get('mode', 'not_recorded')}**",
+              f"- Verified APK count: **{len(records)}**",
+              "",
+              "| Variant | Package | Version | Size (bytes) | Signature | 16KB alignment |",
+              "|---|---|---|---:|---|---|",
+          ]
+          for record in records:
+              lines.append(
+                  f"| {record['variant']} | {record['package']} | {record['version_name']} | "
+                  f"{record['bytes']} | {'pass' if record['signature_verified'] else 'fail'} | "
+                  f"{'pass' if record['zip_16kb_alignment_verified'] else 'fail'} |"
+              )
+          if data.get("error"):
+              lines += ["", f"- Verification error: {redact(str(data['error']))}"]
+          lines += [
+              "",
+              "- Verifies Android APK artifacts without launching the app.",
+              "- A debug-fallback signature is valid for testing, not a production release-signing approval.",
+              "- APK content auditing has coverage limits; B05 handles runtime tests separately.",
+              "- Detailed JSON/TSV, build logs and SHA256SUMS (on success) are downloadable as artifacts.",
+          ]
+          summary = "\n".join(lines) + "\n"
+          (out / "b04-summary.md").write_text(summary, encoding="utf-8")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as file:
+              file.write(summary)
+          PY
+
+      - name: Remove private temporary keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/aurelis-ci-release.jks"
+
+      - name: Upload B04 diagnostic reports
+        id: report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b04-verification-report-${{ github.run_number }}
+          path: ci-artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Publish only fully verified APKs
+        id: apk
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.verify.outcome == 'success' && steps.summary.outcome == 'success' && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b04-verified-apks-${{ github.run_number }}
+          path: ci-approved-apks/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Enforce B04 verified artifact gate
+        if: always()
+        env:
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          SIGNING_OUTCOME: ${{ steps.signing.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          SUMMARY_OUTCOME: ${{ steps.summary.outcome }}
+          REPORT_OUTCOME: ${{ steps.report.outcome }}
+          APK_OUTCOME: ${{ steps.apk.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          outcomes = {key: os.environ.get(key + "_OUTCOME", "missing")
+                      for key in ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "REPORT", "APK")}
+          bad = [key for key, value in outcomes.items() if value != "success"]
+          path = Path("ci-artifacts/apk-verification.json")
+          manifest = Path("ci-approved-apks/apk-manifest.json")
+          checksums = Path("ci-approved-apks/SHA256SUMS.txt")
+          if not path.is_file() or not manifest.is_file() or not checksums.is_file():
+              bad.append("verified_artifact_evidence_missing")
+          else:
+              verification = json.loads(path.read_text())
+              records = json.loads(manifest.read_text())
+              if verification.get("status") != "success":
+                  bad.append("verification_report_not_success")
+              if len(records) != 2 or {r.get("variant") for r in records} != {"debug", "release"}:
+                  bad.append("debug_release_not_verified")
+          if bad:
+              raise SystemExit("B04 failed: " + ", ".join(sorted(set(bad))))
+          print("B04 passed: Debug and Release APKs verified and published")
+          PY
