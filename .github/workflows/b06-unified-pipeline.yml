@@ -79,6 +79,11 @@ jobs:
       contents: read
       actions: read
     steps:
+      - name: Checkout report bundling script
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
       - name: Collect all B01-B05 artifacts (if any)
         id: download
         continue-on-error: true
