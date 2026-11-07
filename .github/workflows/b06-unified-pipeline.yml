@@ -1,0 +1,190 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B06: one push -> ordered, independently reported CI stages.
+name: "Aurelis | Unified B01-B06 Pipeline"
+
+on:
+  push:
+    branches:
+      - feature/bitchord-local-migration
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradle.properties"
+      - "gradlew"
+      - "LICENSE"
+      - "LICENSES/**"
+      - "NOTICE"
+      - ".github/scripts/**"
+      - ".github/apk-audit-policy.json"
+      - ".github/workflows/b0*.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: aurelis-unified-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  b01:
+    name: "B01 | Compile Debug APK"
+    uses: ./.github/workflows/b01-compile-debug.yml
+    permissions:
+      contents: read
+
+  b02:
+    name: "B02 | Android Lint"
+    needs: b01
+    if: ${{ needs.b01.result == 'success' }}
+    uses: ./.github/workflows/b02-android-lint.yml
+    permissions:
+      contents: read
+
+  b03:
+    name: "B03 | Unit Tests"
+    needs: b02
+    if: ${{ needs.b02.result == 'success' }}
+    uses: ./.github/workflows/b03-unit-tests.yml
+    permissions:
+      contents: read
+
+  b04:
+    name: "B04 | APK Verification"
+    needs: b03
+    if: ${{ needs.b03.result == 'success' }}
+    uses: ./.github/workflows/b04-verify-apks.yml
+    secrets: inherit
+    permissions:
+      contents: read
+
+  b05:
+    name: "B05 | Android Emulator"
+    needs: b04
+    if: ${{ needs.b04.result == 'success' }}
+    uses: ./.github/workflows/b05-android-emulator.yml
+    permissions:
+      contents: read
+
+  b06:
+    name: "B06 | Reports and final gate"
+    needs: [b01, b02, b03, b04, b05]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Collect all B01-B05 artifacts (if any)
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        with:
+          pattern: "b0*"
+          path: b06-input/
+          merge-multiple: false
+
+      - name: Create machine-readable and human-readable B06 report
+        id: summary
+        if: always()
+        env:
+          STAGES_JSON: ${{ toJSON(needs) }}
+          DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          output = Path("b06-report")
+          output.mkdir(parents=True, exist_ok=True)
+          needs = json.loads(os.environ["STAGES_JSON"])
+          stages = []
+          for stage_id in ("b01", "b02", "b03", "b04", "b05"):
+              value = needs.get(stage_id, {})
+              state = value.get("result", "not_executed")
+              stages.append({"stage": stage_id.upper(), "outcome": state,
+                             "passed": state == "success"})
+          root = Path("b06-input")
+          artifacts = []
+          for item in sorted(root.glob("*")) if root.exists() else []:
+              if item.is_dir():
+                  files = sorted(str(p.relative_to(item)) for p in item.rglob("*") if p.is_file())
+                  artifacts.append({"artifact": item.name, "files": files})
+          download = os.environ.get("DOWNLOAD_OUTCOME", "unknown")
+          overall_pass = all(s["passed"] for s in stages) and download == "success" and bool(artifacts)
+          report = {
+              "schema_version": 1,
+              "source_sha": os.environ.get("GITHUB_SHA"),
+              "run_id": os.environ.get("GITHUB_RUN_ID"),
+              "branch": os.environ.get("GITHUB_REF_NAME"),
+              "phase_results": stages,
+              "artifact_download": download,
+              "artifact_index": artifacts,
+              "result": "PASS" if overall_pass else "FAIL",
+              "notes": [
+                  "Each stage runs in a separate reusable GitHub Actions job, against the same commit.",
+                  "A skipped downstream stage is not a passing stage.",
+                  "B05 validates installation and launch only, not full music playback or UI.",
+                  "File inventories are not proof of individual-source compilation.",
+              ],
+          }
+          (output / "pipeline-results.json").write_text(json.dumps(report, indent=2) + "\n")
+          lines = [
+              "# Aurelis B06 — Unified CI Results",
+              f"- Commit: `{report['source_sha']}`",
+              f"- Branch: `{report['branch']}`",
+              f"- Overall gate: **{report['result']}**",
+              f"- Artifact collection: **{download}**",
+              "",
+              "| Stage | Result |",
+              "|---|---|",
+          ]
+          for stage in stages:
+              lines.append(f"| {stage['stage']} | {stage['outcome']} |")
+          lines += ["", "## Uploaded evidence", ""]
+          if artifacts:
+              for item in artifacts:
+                  lines.append(f"- `{item['artifact']}`: {len(item['files'])} file(s)")
+          else:
+              lines.append("- No artifact directories collected")
+          lines += ["", "The emulator checks startup, not complete functional behavior."]
+          (output / "summary.md").write_text("\n".join(lines) + "\n")
+          (output / "artifact-index.json").write_text(json.dumps(artifacts, indent=2) + "\n")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
+              summary.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload B06 final report
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b06-unified-report-${{ github.run_number }}
+          path: b06-report/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce all phases and report publication
+        if: always()
+        env:
+          SUMMARY_OUTCOME: ${{ steps.summary.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          file = Path("b06-report/pipeline-results.json")
+          if not file.is_file():
+              raise SystemExit("B06 FAIL: missing final report")
+          result = json.loads(file.read_text())
+          if result["result"] != "PASS" or os.getenv("SUMMARY_OUTCOME") != "success" or os.getenv("UPLOAD_OUTCOME") != "success":
+              bad = ", ".join(s["stage"] + "=" + s["outcome"] for s in result["phase_results"] if not s["passed"])
+              raise SystemExit("B06 FAIL: " + (bad or "missing artifacts or report upload"))
+          print("B06 PASS: all five stages and final evidence collection passed")
+          PY
