@@ -110,7 +110,13 @@ def main() -> None:
     b03 = read_json(OUTPUT / "B03" / "Resumen" / "results.json")
     b05 = read_json(OUTPUT / "B05" / "Emulador" / "results.json")
     coverage = source_coverage()
+    trusted_evidence = read_json(OUTPUT / "B04" / "Verificacion" / "source-evidence.json")
+    evidence_file = OUTPUT / "B04" / "Verificacion" / "source-evidence.md"
     checks = {
+        "source_evidence_reconciliation_passed": (
+            trusted_evidence.get("status") == "PASS_VERIFIED_GATES" and
+            trusted_evidence.get("source_sha") == os.environ.get("GITHUB_SHA") and
+            evidence_file.is_file()),
         "stage_jobs_success": all(x == "success" for x in stages.values()),
         "report_artifacts_downloaded": os.environ.get("DOWNLOAD_OUTCOME") == "success",
         "required_report_folders_present": all_present,
@@ -131,6 +137,12 @@ def main() -> None:
         "missing_reports": missing,
         "report_index": index,
         "source_compilation_evidence": coverage,
+        "source_evidence_reconciliation": {
+            "status": trusted_evidence.get("status", "MISSING_EVIDENCE"),
+            "source_coverage_status": trusted_evidence.get("source_coverage_status", "UNKNOWN"),
+            "mandatory_problems": trusted_evidence.get("problems", []),
+            "per_file_compilation_proven": False,
+        },
         "apk_files_in_bundle": False,
         "note": "APK Debug and Release are separate GitHub Actions artifacts.",
     }
@@ -143,6 +155,7 @@ def main() -> None:
              f"- Resultado: **{report['status']}**",
              "- Las APK se entregan aparte (Debug y Release).",
              "- La compilación individual de cada archivo no está totalmente demostrada.",
+             "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
              "",
              "| Fase | Resultado |", "|---|---|"]
     lines.extend(f"| {name} | {state} |" for name, state in stages.items())
@@ -151,7 +164,7 @@ def main() -> None:
         lines.append(f"- {entry['phase']}: {entry['source_artifact']} ({len(entry['files'])} archivos)")
     for issue in missing:
         lines.append(f"- Informe faltante: {issue}")
-    lines += ["", "Véase B06/source-coverage.md para las limitaciones de la evidencia por archivo.",
+    lines += ["", "Véase B04/Verificacion/source-evidence.md y B06/source-coverage.md para las limitaciones de la evidencia por archivo.",
               "El emulador solo valida instalación, apertura y proceso; no la reproducción musical completa."]
     summary = "\n".join(lines) + "\n"
     (OUTPUT / "B06" / "summary.md").write_text(summary, encoding="utf-8")
