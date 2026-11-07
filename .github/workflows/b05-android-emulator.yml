@@ -3,18 +3,7 @@
 name: "B05 | Android Emulator Smoke"
 
 on:
-  push:
-    branches:
-      - feature/bitchord-local-migration
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle/**"
-      - "gradle.properties"
-      - "gradlew"
-      - ".github/workflows/b05-android-emulator.yml"
-      - ".github/scripts/b05-emulator-smoke.sh"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
