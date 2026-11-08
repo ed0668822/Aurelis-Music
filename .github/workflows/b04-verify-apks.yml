@@ -238,6 +238,7 @@ jobs:
           VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
         run: |
           set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_virustotal_scan.py' -v
           python3 .github/scripts/virustotal_scan.py
 
       - name: Upload B04 diagnostic reports
