@@ -65,19 +65,51 @@ class VirusTotalAuditTests(unittest.TestCase):
             path.write_bytes(b"apk")
             with patch.object(vt, "MAX_DIRECT_UPLOAD", 2), \
                  patch.object(vt, "get_api", return_value={"data": "http://www.virustotal.com/_ah/upload/one-time/"}) as get_api, \
-                 patch.object(vt, "urlopen") as open_url:
-                open_url.return_value.__enter__.return_value = io.BytesIO(b'{"data":{"id":"analysis-123"}}')
+                 patch.object(vt, "build_opener") as opener_factory:
+                opener_factory.return_value.open.return_value.__enter__.return_value = io.BytesIO(b'{"data":{"id":"analysis-123"}}')
                 analysis = vt.upload(path, "fake-test-key")
             self.assertEqual(analysis, "analysis-123")
             get_api.assert_called_once_with("/files/upload_url", "fake-test-key")
-            req = open_url.call_args.args[0]
+            req = opener_factory.return_value.open.call_args.args[0]
             self.assertEqual(req.full_url, "https://www.virustotal.com/_ah/upload/one-time/")
             self.assertIn(b"apk", req.data)
+
+    def test_real_bigfiles_host_is_accepted_over_https(self):
+        url = "https://bigfiles.virustotal.com/_ah/upload/one-use-token/?opaque=123"
+        self.assertEqual(vt.large_upload_url({"data": url}), url)
+
+    def test_bigfiles_http_is_not_allowed(self):
+        with self.assertRaises(ValueError):
+            vt.large_upload_url({"data": "http://bigfiles.virustotal.com/_ah/upload/token"})
+
+    def test_upload_redirects_are_denied(self):
+        self.assertIsNone(vt._NoUploadRedirect().redirect_request(
+            None, None, 302, "Found", {}, "https://evil.example/upload"))
+
+    def test_bigfiles_file_upload_uses_only_approved_host(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            file = Path(dirname) / "big.apk"
+            file.write_bytes(b"big-file-test")
+            url = "https://bigfiles.virustotal.com/_ah/upload/one-time/"
+            with patch.object(vt, "MAX_DIRECT_UPLOAD", 2), \
+                 patch.object(vt, "get_api", return_value={"data": url}), \
+                 patch.object(vt, "build_opener") as opener_factory:
+                opener_factory.return_value.open.return_value.__enter__.return_value = io.BytesIO(b'{"data":{"id":"big-analysis"}}')
+                result = vt.upload(file, "fake-key")
+            self.assertEqual(result, "big-analysis")
+            req = opener_factory.return_value.open.call_args.args[0]
+            self.assertEqual(req.full_url, url)
+            self.assertEqual(req.get_header("X-apikey"), "fake-key")
 
     def test_untrusted_upload_urls_are_rejected(self):
         for url in ("https://evil.example/_ah/upload/x",
                     "https://www.virustotal.com.evil.example/_ah/upload/x",
-                    "file:///tmp/escape", "https://user:pass@www.virustotal.com/_ah/upload/x"):
+                    "file:///tmp/escape", "https://user:pass@www.virustotal.com/_ah/upload/x",
+                    "https://bigfiles.virustotal.com.evil.example/_ah/upload/x",
+                    "https://other.virustotal.com/_ah/upload/x",
+                    "https://bigfiles.virustotal.com/api/v3/files/upload_url",
+                    "https://bigfiles.virustotal.com:444/_ah/upload/x",
+                    "https://bigfiles.virustotal.com:invalid/_ah/upload/x"):
             with self.subTest(url=url), self.assertRaises(ValueError):
                 vt.large_upload_url({"data": url})
 

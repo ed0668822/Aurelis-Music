@@ -18,7 +18,7 @@ import secrets
 import sys
 import time
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen, build_opener, HTTPRedirectHandler
 from urllib.parse import urlsplit, urlunsplit
 
 BASE = "https://www.virustotal.com/api/v3"
@@ -78,20 +78,35 @@ def get_api(path: str, apikey: str):
 
 
 def large_upload_url(response: dict) -> str:
-    """Validate a one-time upload URL to avoid sending the API key or APK elsewhere."""
+    """Only allow documented VirusTotal upload endpoints; never trust arbitrary hosts."""
     value = response.get("data") if isinstance(response, dict) else None
     if not isinstance(value, str):
         raise ValueError("INVALID_UPLOAD_URL")
-    parts = urlsplit(value)
-    if (parts.scheme not in ("http", "https")
-            or parts.hostname not in ("www.virustotal.com", "virustotal.com")
-            or parts.username is not None or parts.password is not None
-            or parts.port not in (None, 80, 443)
-            or not parts.path.startswith("/_ah/upload/")
-            or parts.fragment):
-        raise ValueError("INVALID_UPLOAD_URL")
-    # VirusTotal documents http URLs; upgrade to TLS before transmitting APK bytes.
-    return urlunsplit(("https", parts.hostname, parts.path, parts.query, ""))
+    try:
+        parts = urlsplit(value)
+        host = parts.hostname
+        port = parts.port
+        official_hosts = ("www.virustotal.com", "bigfiles.virustotal.com")
+        legacy_http = parts.scheme == "http" and host == "www.virustotal.com"
+        secure = parts.scheme == "https"
+        port_ok = (port in (None, 80) if legacy_http else port in (None, 443))
+        if (host not in official_hosts
+                or not (secure or legacy_http)
+                or not port_ok
+                or parts.username is not None or parts.password is not None
+                or not parts.path.startswith("/_ah/upload/")
+                or parts.fragment):
+            raise ValueError("INVALID_UPLOAD_URL")
+    except ValueError:
+        raise ValueError("INVALID_UPLOAD_URL") from None
+    # Legacy HTTP shown in VT documentation is upgraded before transmitting credentials.
+    return urlunsplit(("https", host, parts.path, parts.query, ""))
+
+
+class _NoUploadRedirect(HTTPRedirectHandler):
+    """Never forward API key or APK bytes to a redirected destination."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def upload(file: Path, apikey: str) -> str:
@@ -115,7 +130,7 @@ def upload(file: Path, apikey: str) -> str:
         "Content-Type": "multipart/form-data; boundary=" + boundary,
         "User-Agent": "aurelis-ci-virustotal-audit",
     }, method="POST")
-    with urlopen(req, timeout=120) as response:
+    with build_opener(_NoUploadRedirect()).open(req, timeout=120) as response:
         result = json.load(response)
     analysis_id = result.get("data", {}).get("id")
     if not isinstance(analysis_id, str) or not analysis_id:
