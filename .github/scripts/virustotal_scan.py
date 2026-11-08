@@ -19,6 +19,7 @@ import sys
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlsplit, urlunsplit
 
 BASE = "https://www.virustotal.com/api/v3"
 VALID_STATES = {
@@ -26,6 +27,7 @@ VALID_STATES = {
     "PENDING", "ERROR",
 }
 MAX_DIRECT_UPLOAD = 32 * 1024 * 1024
+MAX_LARGE_UPLOAD = 650 * 1024 * 1024
 POLL_COUNT = 7
 POLL_INTERVAL_SECONDS = 21
 
@@ -75,9 +77,30 @@ def get_api(path: str, apikey: str):
         return json.load(response)
 
 
+def large_upload_url(response: dict) -> str:
+    """Validate a one-time upload URL to avoid sending the API key or APK elsewhere."""
+    value = response.get("data") if isinstance(response, dict) else None
+    if not isinstance(value, str):
+        raise ValueError("INVALID_UPLOAD_URL")
+    parts = urlsplit(value)
+    if (parts.scheme not in ("http", "https")
+            or parts.hostname not in ("www.virustotal.com", "virustotal.com")
+            or parts.username is not None or parts.password is not None
+            or parts.port not in (None, 80, 443)
+            or not parts.path.startswith("/_ah/upload/")
+            or parts.fragment):
+        raise ValueError("INVALID_UPLOAD_URL")
+    # VirusTotal documents http URLs; upgrade to TLS before transmitting APK bytes.
+    return urlunsplit(("https", parts.hostname, parts.path, parts.query, ""))
+
+
 def upload(file: Path, apikey: str) -> str:
-    if file.stat().st_size >= MAX_DIRECT_UPLOAD:
-        raise ValueError("Release APK too large for direct upload; use approved large-file endpoint")
+    size = file.stat().st_size
+    if size > MAX_LARGE_UPLOAD:
+        raise ValueError("FILE_TOO_LARGE")
+    endpoint = BASE + "/files"
+    if size >= MAX_DIRECT_UPLOAD:
+        endpoint = large_upload_url(get_api("/files/upload_url", apikey))
     boundary = "AurelisBoundary" + secrets.token_hex(18)
     body = (
         ("--" + boundary + "\r\n"
@@ -86,7 +109,7 @@ def upload(file: Path, apikey: str) -> str:
         + file.read_bytes()
         + ("\r\n--" + boundary + "--\r\n").encode()
     )
-    req = Request(BASE + "/files", data=body, headers={
+    req = Request(endpoint, data=body, headers={
         "x-apikey": apikey,
         "Accept": "application/json",
         "Content-Type": "multipart/form-data; boundary=" + boundary,
@@ -199,7 +222,12 @@ def report_for(file: Path, digest: str, key: str) -> dict:
     except (URLError, TimeoutError):
         report.update(status="ERROR", error_code="VT_NETWORK_ERROR")
         return report
-    except (ValueError, TypeError, KeyError, OSError):
+    except ValueError as err:
+        detail = str(err)
+        code = "VT_" + detail if detail in ("FILE_TOO_LARGE", "INVALID_UPLOAD_URL") else "VT_RESPONSE_OR_UPLOAD_ERROR"
+        report.update(status="ERROR", error_code=code)
+        return report
+    except (TypeError, KeyError, OSError):
         report.update(status="ERROR", error_code="VT_RESPONSE_OR_UPLOAD_ERROR")
         return report
 

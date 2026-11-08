@@ -28,6 +28,86 @@ def read_json(path: Path) -> dict:
         return {}
 
 
+
+def create_virustotal_delivery(ci_passed: bool, b04: dict, commit: str, destination: Path = Path("b06-virustotal")) -> dict:
+    """Produce an independent advisory status report tied to the signed Release SHA-256."""
+    import datetime as dt
+    import re
+
+    source_path = OUTPUT / "B04" / "Verificacion" / "virustotal.json"
+    source = read_json(source_path)
+    candidates = [r for r in b04.get("apks", [])
+                  if isinstance(r, dict) and r.get("variant") == "release"]
+    expected = candidates[0].get("sha256") if len(candidates) == 1 else None
+    sha_valid = isinstance(expected, str) and re.fullmatch(r"[0-9a-f]{64}", expected) is not None
+    matches = bool(sha_valid and source.get("sha256") == expected and source.get("source_sha") == commit)
+    allowed = {"NO_DETECTIONS_REPORTED", "REVIEW_REQUIRED", "PENDING", "ERROR", "NOT_CONFIGURED"}
+    status = source.get("status") if matches else "REPORT_UNVERIFIED"
+    if status not in allowed and status != "REPORT_UNVERIFIED":
+        status = "REPORT_UNVERIFIED"
+    stats = source.get("last_analysis_stats") if matches else None
+    stats = stats if isinstance(stats, dict) else {}
+    updated = source.get("analysis_updated_at")
+    recent = False
+    age_days = None
+    if isinstance(updated, str):
+        try:
+            when = dt.datetime.fromisoformat(updated.replace("Z", "+00:00"))
+            if when.tzinfo is not None:
+                age_days = round((dt.datetime.now(dt.timezone.utc) - when).total_seconds() / 86400, 2)
+                recent = -1 <= age_days <= 30
+        except (ValueError, OverflowError):
+            pass
+    clear = status == "NO_DETECTIONS_REPORTED" and recent and ci_passed
+    report = {
+        "schema_version": 1, "source_sha": commit, "ci_passed": ci_passed,
+        "virus_total_status": status, "virus_total_evidence_matches_release": matches,
+        "release_sha256": expected if sha_valid else None,
+        "last_analysis_stats": stats, "detections": source.get("detections", []) if matches else [],
+        "report_origin": source.get("report_origin") if matches else None,
+        "analysis_updated_at": updated if matches else None,
+        "analysis_age_days": age_days if matches else None,
+        "error_code": source.get("error_code") if matches else "MISSING_OR_MISMATCHED_REPORT",
+        "antivirus_review": "NO_DETECTIONS_REPORTED_RECENT" if clear else "NOT_CLEARED",
+        "url": "https://www.virustotal.com/gui/file/" + expected + "/detection" if sha_valid else None,
+        "limitations": "No antivirus scan proves an APK is harmless; human review remains necessary.",
+    }
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / "virustotal.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    safe = lambda x: str(x).replace("\n", " ").replace("|", "\\|").replace("`", "'")
+    lines = [
+        "# Aurelis Music — VirusTotal",
+        "",
+        f"- Pruebas B01–B05: **{'PASS' if ci_passed else 'FAIL'}**",
+        f"- Resultado VirusTotal: **{status}**",
+        f"- Revisión antivirus: **{report['antivirus_review']}**",
+        f"- Correspondencia con APK Release: **{'VERIFICADA' if matches else 'NO VERIFICADA'}**",
+        f"- SHA-256: `{safe(report['release_sha256'] or 'no_disponible')}`",
+        f"- Fecha del análisis: `{safe(report['analysis_updated_at'] or 'no_disponible')}`",
+        f"- Origen del resultado: `{safe(report['report_origin'] or 'no_disponible')}`",
+        f"- Error: `{safe(report['error_code'] or 'ninguno')}`",
+        "",
+        "## Recuento de motores",
+    ]
+    for category, count in sorted(stats.items()):
+        lines.append(f"- {safe(category)}: {safe(count)}")
+    lines += ["", "## Detecciones"]
+    for item in report["detections"] if isinstance(report["detections"], list) else []:
+        if isinstance(item, dict):
+            lines.append(f"- {safe(item.get('engine', 'sin_motor'))}: {safe(item.get('result', 'sin_detalle'))}")
+    if not isinstance(report["detections"], list) or not report["detections"]:
+        lines.append("- No hay detecciones registradas en la evidencia recibida (puede no haberse completado el análisis).")
+    lines += [
+        "", f"- Enlace: {report['url'] or 'no_disponible'}",
+        "- ERROR, PENDING, NOT_CONFIGURED y REPORT_UNVERIFIED nunca equivalen a un análisis sin detecciones.",
+        "- Incluso sin detecciones reportadas, VirusTotal no certifica que el APK sea seguro.",
+        "- Las subidas públicas de APK a VirusTotal pueden compartirse con sus socios de seguridad.",
+        "",
+    ]
+    (destination / "virustotal.md").write_text("\n".join(lines), encoding="utf-8")
+    return report
+
 def source_coverage() -> dict:
     path = OUTPUT / "B04" / "Verificacion"
     raw = read_json(path / "source-inventory.json")
@@ -126,6 +206,7 @@ def main() -> None:
         "emulator_smoke_success": b05.get("pass") is True,
     }
     passed = all(checks.values())
+    virustotal = create_virustotal_delivery(passed, b04, os.environ.get("GITHUB_SHA", ""))
     report = {
         "schema_version": 2,
         "commit": os.environ.get("GITHUB_SHA"),
@@ -144,6 +225,7 @@ def main() -> None:
             "per_file_compilation_proven": False,
         },
         "apk_files_in_bundle": False,
+        "virustotal": virustotal,
         "note": "APK Debug and Release are separate GitHub Actions artifacts.",
     }
     (OUTPUT / "B06" / "pipeline-results.json").write_text(
@@ -156,6 +238,7 @@ def main() -> None:
              "- Las APK se entregan aparte (Debug y Release).",
              "- La compilación individual de cada archivo no está totalmente demostrada.",
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
+             "- VirusTotal: " + virustotal["virus_total_status"] + " (informe independiente; no es prueba definitiva de seguridad)",
              "",
              "| Fase | Resultado |", "|---|---|"]
     lines.extend(f"| {name} | {state} |" for name, state in stages.items())

@@ -2,6 +2,7 @@
 # Aurelis © 2026. GPL-3.0-or-later.
 """Offline regression tests: API credentials are never required or used."""
 import hashlib
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -58,6 +59,36 @@ class VirusTotalAuditTests(unittest.TestCase):
             (root / "ci-artifacts/signing.json").write_text('{"mode":"configured_release"}')
             with self.assertRaises(ValueError):
                 vt.verified_release(root)
+    def test_large_file_uses_one_time_endpoint(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            path = Path(dirname) / "big-release.apk"
+            path.write_bytes(b"apk")
+            with patch.object(vt, "MAX_DIRECT_UPLOAD", 2), \
+                 patch.object(vt, "get_api", return_value={"data": "http://www.virustotal.com/_ah/upload/one-time/"}) as get_api, \
+                 patch.object(vt, "urlopen") as open_url:
+                open_url.return_value.__enter__.return_value = io.BytesIO(b'{"data":{"id":"analysis-123"}}')
+                analysis = vt.upload(path, "fake-test-key")
+            self.assertEqual(analysis, "analysis-123")
+            get_api.assert_called_once_with("/files/upload_url", "fake-test-key")
+            req = open_url.call_args.args[0]
+            self.assertEqual(req.full_url, "https://www.virustotal.com/_ah/upload/one-time/")
+            self.assertIn(b"apk", req.data)
+
+    def test_untrusted_upload_urls_are_rejected(self):
+        for url in ("https://evil.example/_ah/upload/x",
+                    "https://www.virustotal.com.evil.example/_ah/upload/x",
+                    "file:///tmp/escape", "https://user:pass@www.virustotal.com/_ah/upload/x"):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                vt.large_upload_url({"data": url})
+
+    def test_oversize_rejected_without_network(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            path = Path(dirname) / "too-big.apk"
+            path.write_bytes(b"12345678")
+            with patch.object(vt, "MAX_LARGE_UPLOAD", 7), \
+                 patch.object(vt, "get_api", side_effect=AssertionError("network is forbidden")):
+                with self.assertRaisesRegex(ValueError, "FILE_TOO_LARGE"):
+                    vt.upload(path, "fake-test-key")
 
 
 if __name__ == "__main__":
