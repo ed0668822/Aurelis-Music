@@ -230,6 +230,16 @@ jobs:
           python3 .github/scripts/verify_evidence.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
             2>&1 | tee ci-artifacts/evidence-verification.log
 
+      - name: Analyze verified Release APK with VirusTotal (optional advisory)
+        id: virustotal
+        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/virustotal_scan.py
+
       - name: Upload B04 diagnostic reports
         id: report
         if: always()
