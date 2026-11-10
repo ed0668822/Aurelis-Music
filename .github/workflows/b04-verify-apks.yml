@@ -229,6 +229,10 @@ jobs:
             2>&1 | tee ci-artifacts/evidence-tests.log
           python3 .github/scripts/verify_evidence.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
             2>&1 | tee ci-artifacts/evidence-verification.log
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_p2_inventory.py' -v \
+            2>&1 | tee ci-artifacts/p2-inventory-tests.log
+          python3 .github/scripts/p2_inventory.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
+            2>&1 | tee ci-artifacts/p2-inventory-verification.log
 
       - name: Analyze verified Release APK with VirusTotal (optional advisory)
         id: virustotal
