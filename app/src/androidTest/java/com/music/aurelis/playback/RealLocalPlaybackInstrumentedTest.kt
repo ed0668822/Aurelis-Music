@@ -4,6 +4,7 @@ package com.music.aurelis.playback
 
 import android.content.ComponentName
 import android.net.Uri
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -28,6 +29,10 @@ class RealLocalPlaybackInstrumentedTest {
         val context = instrumentation.targetContext
         val fixture = File(context.cacheDir, "p3-original-tone.wav")
         originalWav(fixture)
+        assertTrue(
+            "P3 requires an original readable PCM WAV fixture",
+            fixture.isFile && fixture.canRead() && fixture.length() == 44L + 22_050L * 4L * 2L,
+        )
         val future = MediaController.Builder(
             context, SessionToken(context, ComponentName(context, AurelisPlaybackService::class.java))
         ).buildAsync()
@@ -36,23 +41,54 @@ class RealLocalPlaybackInstrumentedTest {
             fun onMain(action: () -> Unit) {
                 instrumentation.runOnMainSync { action() }
             }
+            fun snapshot(): String {
+                var state = ""
+                onMain {
+                    val error = controller.playerError
+                    state = "state=" + controller.playbackState +
+                        ", isPlaying=" + controller.isPlaying +
+                        ", playWhenReady=" + controller.playWhenReady +
+                        ", suppression=" + controller.playbackSuppressionReason +
+                        ", positionMs=" + controller.currentPosition +
+                        ", durationMs=" + controller.duration +
+                        ", mediaItems=" + controller.mediaItemCount +
+                        ", mediaScheme=" + controller.currentMediaItem?.localConfiguration?.uri?.scheme +
+                        ", error=" + error?.errorCodeName +
+                        ", message=" + error?.message +
+                        ", cause=" + error?.cause?.javaClass?.simpleName +
+                        ": " + error?.cause?.message
+                }
+                return state
+            }
             fun until(timeoutMs: Long, predicate: (MediaController) -> Boolean): Boolean {
                 val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs)
+                var lastReported = 0L
                 while (System.nanoTime() < deadline) {
                     var matched = false
                     onMain { matched = predicate(controller) }
                     if (matched) return true
+                    val now = System.nanoTime()
+                    if (now - lastReported >= TimeUnit.SECONDS.toNanos(2)) {
+                        Log.d("P3Media3Test", snapshot())
+                        lastReported = now
+                    }
                     Thread.sleep(100)
                 }
+                Log.e("P3Media3Test", "Timeout waiting for playback: " + snapshot())
                 return false
             }
             onMain {
-                controller.setMediaItem(MediaItem.fromUri(Uri.fromFile(fixture)))
+                controller.setMediaItem(
+                    MediaItem.Builder()
+                        .setUri(Uri.fromFile(fixture))
+                        .setMimeType("audio/wav")
+                        .build()
+                )
                 controller.prepare()
                 controller.play()
             }
             assertTrue(
-                "P3: local PCM WAV must reach READY and playback position must advance",
+                "P3: local PCM WAV must reach READY and advance (see P3Media3Test logcat)",
                 until(20_000) {
                     it.playbackState == Player.STATE_READY &&
                         it.isPlaying && it.currentPosition > 350

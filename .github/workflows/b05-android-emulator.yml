@@ -1,5 +1,6 @@
 # Aurelis © 2026. GPL-3.0-or-later.
-# B05: an actual Android runtime smoke check. Does not pretend to test music playback.
+# B05: Android runtime smoke plus real generated-WAV playback instrumentation.
+# Physical audio output, native DSP, and gapless remain outside this gate.
 name: "B05 | Android Emulator Smoke"
 
 on:
@@ -109,7 +110,8 @@ jobs:
           ram-size: 4096M
           heap-size: 512M
           emulator-boot-timeout: 900
-          emulator-options: "-no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none"
+          # Do not disable audio: P3 tests the real Media3 sink on Android.
+          emulator-options: "-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none"
           disable-animations: true
           script: bash .github/scripts/b05-emulator-smoke.sh
 
