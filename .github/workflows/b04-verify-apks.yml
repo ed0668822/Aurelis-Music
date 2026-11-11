@@ -237,6 +237,10 @@ jobs:
             2>&1 | tee ci-artifacts/p2-compiler-tests.log
           python3 .github/scripts/p2_compiler_evidence.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
             2>&1 | tee ci-artifacts/p2-compiler-verification.log
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_p2_apk_trace.py' -v \
+            2>&1 | tee ci-artifacts/p2-apk-trace-tests.log
+          python3 .github/scripts/p2_apk_trace.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
+            2>&1 | tee ci-artifacts/p2-apk-trace-verification.log
 
       - name: Analyze verified Release APK with VirusTotal (optional advisory)
         id: virustotal
