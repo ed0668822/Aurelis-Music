@@ -61,5 +61,39 @@ class QualityReadinessTests(unittest.TestCase):
             self.assertEqual(audio["public_release_readiness"],"NOT_APPROVED")
 
 
+    def test_matching_instrumented_wav_proves_only_emulator_audio_scope(self):
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp);self.create(root)
+            put(root/"B05/Emulador/results.json",{
+                "commit": SHA, "pass": True,
+                "coverage":"INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+                "checks":{"p3_local_wav_instrumentation_passed":True},
+                "p3_test":{"passed":True, "instrumentation_class":
+                           "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest"},
+            })
+            ui,audio=quality.report(root,SHA)
+            self.assertTrue(ui["runtime_smoke_observed"])
+            self.assertEqual(audio["local_wav_media3_instrumentation"],
+                             "REAL_MEDIA3_WAV_PLAYBACK_OBSERVED")
+            self.assertEqual(audio["audio_functional_test_status"],
+                             "MEDIA3_LOCAL_WAV_PLAYBACK_VERIFIED_IN_EMULATOR")
+            self.assertFalse(audio["audible_physical_output_verified"])
+            self.assertEqual(audio["audio_scenarios"]["crossfade"],"NOT_VERIFIED")
+            self.assertEqual(audio["public_release_readiness"],"NOT_APPROVED")
+
+    def test_mismatched_emulator_commit_never_qualifies_as_wav_playback(self):
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp);self.create(root)
+            put(root/"B05/Emulador/results.json",{
+                "commit":"b"*40, "pass":True,
+                "coverage":"INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+                "checks":{"p3_local_wav_instrumentation_passed":True},
+                "p3_test":{"passed":True, "instrumentation_class":
+                           "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest"},
+            })
+            _,audio=quality.report(root,SHA)
+            self.assertEqual(audio["local_wav_media3_instrumentation"],"NOT_VERIFIED")
+            self.assertEqual(audio["audio_functional_test_status"],"NOT_VERIFIED")
+
 if __name__=="__main__":
     unittest.main()

@@ -42,7 +42,10 @@ def report(package: Path, sha: str):
     foreground = (
         runtime.get("commit") == sha
         and runtime.get("pass") is True
-        and runtime.get("coverage") == "INSTALL_LAUNCH_PROCESS_SMOKE_ONLY"
+        and runtime.get("coverage") in (
+            "INSTALL_LAUNCH_PROCESS_SMOKE_ONLY",
+            "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+        )
     )
     ui = {
         "schema_version": 1,
@@ -72,7 +75,7 @@ def report(package: Path, sha: str):
             "Signed APK verification does not substitute for audio and UI functional tests."
         ),
         "missing_proof": [
-            "A licensed local audio fixture and automated playback assertions",
+            "Physical-device audible audio capture and output evidence",
             "MediaSession state and audible-output test evidence",
             "Verified Compose navigation and error-state tests",
         ],
@@ -101,7 +104,28 @@ def report(package: Path, sha: str):
             "MOCK_PLAYER_BEHAVIOR_VERIFIED" if value == "ROBOLECTRIC_JUNIT_PASS"
             else "NOT_VERIFIED"
         )
-    # Never claim actual decoding/speaker output solely from mocked player cases.
+    # Only a successful real AndroidJUnitRunner test in the same commit may
+    # establish local-WAV playback through AurelisPlaybackService/Media3.
+    wav = (
+        foreground
+        and runtime.get("coverage") == "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION"
+        and isinstance(runtime.get("checks"), dict)
+        and runtime["checks"].get("p3_local_wav_instrumentation_passed") is True
+        and isinstance(runtime.get("p3_test"), dict)
+        and runtime["p3_test"].get("passed") is True
+        and runtime["p3_test"].get("instrumentation_class")
+        == "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest"
+    )
+    audio["local_wav_media3_instrumentation"] = (
+        "REAL_MEDIA3_WAV_PLAYBACK_OBSERVED" if wav else "NOT_VERIFIED"
+    )
+    if wav:
+        audio["audio_functional_test_status"] = "MEDIA3_LOCAL_WAV_PLAYBACK_VERIFIED_IN_EMULATOR"
+        audio["audio_scenarios"]["load_local_track"] = "EMULATOR_REAL_WAV_DECODE_OBSERVED"
+        audio["audio_scenarios"]["play_pause_resume"] = "EMULATOR_PLAY_PAUSE_SEEK_RESUME_OBSERVED"
+    audio["audible_physical_output_verified"] = False
+    # Real emulated playback cannot prove audible physical output or native DSP.
+
     (output_ui / "ui-functional-coverage.json").write_text(json.dumps(ui, indent=2) + "\n", encoding="utf-8")
     (output_audio / "audio-and-publication-readiness.json").write_text(json.dumps(audio, indent=2) + "\n", encoding="utf-8")
     ui_lines = ["# P2.6 — Evidencia UI Compose", "",
@@ -109,13 +133,14 @@ def report(package: Path, sha: str):
                 "- Captura PNG verificada: " + str(screenshot_verified),
                 "- Navegación Compose bajo Robolectric: **" + ui["functional_test_status"] + "**",
                 "- Funcionalidad UI física: **NOT_VERIFIED**", ""]
-    ui_lines += ["- " + name + ": NOT_VERIFIED" for name in UI]
+    ui_lines += ["- " + name + ": " + ui["functional_scenarios"][name] for name in UI]
     audio_lines = ["# P3 — Audio y publicación", "",
                    "- Verificación de integridad APK: " + str(audio["apk_integrity_verified"]),
                    "- Controles con reproductor simulado: **" + audio["mocked_controller_status"] + "**",
-                   "- Audio real / salida audible: **NOT_VERIFIED**",
+                   "- WAV original a través de Media3 en emulador: **" + audio["local_wav_media3_instrumentation"] + "**",
+                   "- Audio audible en dispositivo físico: **NOT_VERIFIED**",
                    "- Publicación pública aprobada: **NO**", ""]
-    audio_lines += ["- " + name + ": NOT_VERIFIED" for name in AUDIO]
+    audio_lines += ["- " + name + ": " + audio["audio_scenarios"][name] for name in AUDIO]
     (output_ui / "Resumen.md").write_text("\n".join(ui_lines) + "\n", encoding="utf-8")
     (output_audio / "Resumen.md").write_text("\n".join(audio_lines) + "\n", encoding="utf-8")
     return ui, audio
