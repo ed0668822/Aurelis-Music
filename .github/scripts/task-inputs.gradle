@@ -40,7 +40,7 @@ gradle.projectsEvaluated {
             emit('AURELIS_INPUT_ERROR', [task: project.path + ':sourceSets', message: 'Could not inspect declared source roots'])
         }
     }
-    def selected = { task -> task.name ==~ /(?:compile.*(?:Kotlin|JavaWithJavac|Shaders)|(?:merge|process).*(?:Resources|Assets|Manifest)|(?:merge|strip).*NativeLibs|(?:build|configure)CMake.*)/ }
+    def selected = { task -> task.name ==~ /(?:compile.*(?:Kotlin|JavaWithJavac|Shaders)|(?:merge|process).*(?:Resources|Assets|Manifest)|(?:merge|strip).*NativeLibs|(?:build|configure)CMake.*|externalNativeBuild(?:Debug|Release).*)/ }
     gradle.taskGraph.beforeTask { task ->
         if (!selected(task)) return
         try {
