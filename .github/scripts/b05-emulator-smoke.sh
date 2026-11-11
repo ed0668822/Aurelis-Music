@@ -17,7 +17,7 @@ collect_diagnostics() {
   adb logcat -d -s AndroidRuntime:E > "$OUT/android-runtime-errors.log" 2>&1
   # On failure, collect only Media3/audio tags to avoid unrelated private logs.
   adb logcat -d -v threadtime -s \
-    P3Media3Test:D ExoPlayerImplInternal:E AudioTrack:E \
+    P3Media3Test:D P3Media3Service:D ExoPlayerImplInternal:E AudioTrack:E \
     MediaCodecAudioRenderer:E DefaultAudioSink:E AudioFlinger:E \
     AurelisDspChain:D '*:S' > "$OUT/p3-media3-logcat.txt" 2>&1
   adb shell dumpsys activity activities > "$OUT/activity.txt" 2>&1

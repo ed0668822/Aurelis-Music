@@ -4,9 +4,12 @@ package com.music.aurelis.playback
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -14,6 +17,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.music.aurelis.MainActivity
+import com.music.aurelis.BuildConfig
 import kotlinx.coroutines.*
 import com.music.aurelis.playback.audio.DspChain
 import com.music.aurelis.playback.dsd.DsdExtractorsFactory
@@ -47,6 +51,21 @@ class AurelisPlaybackService : MediaSessionService() {
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .setMediaSourceFactory(mediaSourceFactory)
             .build()
+
+        // Debug-only tracking on the underlying ExoPlayer: an attached controller
+        // cannot always distinguish audio-focus loss from a remote pause.
+        if (BuildConfig.DEBUG) {
+            player.addListener(object : Player.Listener {
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    Log.d("P3Media3Service", "playWhenReady=" + playWhenReady +
+                        " reason=" + reason + " state=" + player.playbackState +
+                        " suppression=" + player.playbackSuppressionReason)
+                }
+                override fun onPlayerError(error: PlaybackException) {
+                    Log.e("P3Media3Service", "Media3 player error=" + error.errorCodeName, error)
+                }
+            })
+        }
 
         bindAudioSettings(serviceScope, chain.equalizer) { chain.spatial.enabled = it }
 

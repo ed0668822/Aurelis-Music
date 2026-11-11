@@ -38,6 +38,18 @@ class RealLocalPlaybackInstrumentedTest {
         ).buildAsync()
         try {
             val controller = future.get(30, TimeUnit.SECONDS)
+            val listener = object : Player.Listener {
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    Log.d("P3Media3Test", "onPlayWhenReadyChanged=" + playWhenReady +
+                        " reason=" + reason + " (user=1 focus=2 noisy=3 remote=4 end=5)")
+                }
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    Log.d("P3Media3Test", "onPlaybackStateChanged=" + playbackState)
+                }
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    Log.e("P3Media3Test", "onPlayerError=" + error.errorCodeName, error)
+                }
+            }
             fun onMain(action: () -> Unit) {
                 instrumentation.runOnMainSync { action() }
             }
@@ -78,6 +90,7 @@ class RealLocalPlaybackInstrumentedTest {
                 return false
             }
             onMain {
+                controller.addListener(listener)
                 controller.setMediaItem(
                     MediaItem.Builder()
                         .setUri(Uri.fromFile(fixture))
@@ -85,11 +98,19 @@ class RealLocalPlaybackInstrumentedTest {
                         .build()
                 )
                 controller.prepare()
-                controller.play()
             }
+            // Wait for Media3 to prepare before issuing play through the remote controller.
             assertTrue(
-                "P3: local PCM WAV must reach READY and advance (see P3Media3Test logcat)",
-                until(20_000) {
+                "P3: WAV decoder did not reach READY (see P3Media3Test logcat)",
+                until(15_000) {
+                    it.playbackState == Player.STATE_READY &&
+                        it.duration in 3_500L..4_500L && it.playerError == null
+                },
+            )
+            onMain { controller.play() }
+            assertTrue(
+                "P3: Media3 READY but play command did not advance (see reason logs)",
+                until(15_000) {
                     it.playbackState == Player.STATE_READY &&
                         it.isPlaying && it.currentPosition > 350
                 },
