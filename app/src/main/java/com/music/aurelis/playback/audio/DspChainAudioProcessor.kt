@@ -59,6 +59,13 @@ class DspChainAudioProcessor(
     }
 
     override fun queueInput(inputBuffer: ByteBuffer) {
+        // Media3 may call queueInput with its shared EMPTY_BUFFER even during
+        // normal playback. BaseAudioProcessor.replaceOutputBuffer(0) returns
+        // the same singleton, and put(inputBuffer) would throw
+        // IllegalArgumentException("The source buffer is this buffer").
+        // Empty input contains no PCM frame and must not manufacture output.
+        if (!inputBuffer.hasRemaining()) return
+
         val bytesPerFrame = inputEncoding.bytesPerFrame(block.channelCount)
         if (bytesPerFrame <= 0) {
             replaceOutputBuffer(inputBuffer.remaining()).put(inputBuffer).flip()
