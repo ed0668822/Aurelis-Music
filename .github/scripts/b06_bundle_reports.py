@@ -201,6 +201,14 @@ def main() -> None:
     coverage = source_coverage()
     from b06_file_matrix import build_matrix
     matrix = build_matrix(OUTPUT, os.environ.get("GITHUB_SHA", ""))
+    from b06_quality_readiness import report as quality_report
+    p26, p3 = quality_report(OUTPUT, os.environ.get("GITHUB_SHA", ""))
+    index.extend([
+        {"source_artifact": "runtime-derived", "phase": "P2.6",
+         "files": ["P2.6/ui-functional-coverage.json", "P2.6/Resumen.md"]},
+        {"source_artifact": "runtime-derived", "phase": "P3",
+         "files": ["P3/audio-and-publication-readiness.json", "P3/Resumen.md"]},
+    ])
     trusted_evidence = read_json(OUTPUT / "B04" / "Verificacion" / "source-evidence.json")
     evidence_file = OUTPUT / "B04" / "Verificacion" / "source-evidence.md"
     checks = {
@@ -234,6 +242,9 @@ def main() -> None:
         "report_index": index,
         "source_compilation_evidence": coverage,
         "p2_file_matrix": {"status": matrix["status"], "tracked_files": matrix["tracked_files"], "rows": matrix["rows"], "issues": matrix["consistency_issues"]},
+        "p2_6_ui_functional_status": p26["functional_test_status"],
+        "p3_audio_status": p3["audio_functional_test_status"],
+        "p3_public_release_readiness": p3["public_release_readiness"],
         "source_evidence_reconciliation": {
             "status": trusted_evidence.get("status", "MISSING_EVIDENCE"),
             "source_coverage_status": trusted_evidence.get("source_coverage_status", "UNKNOWN"),
@@ -255,6 +266,8 @@ def main() -> None:
              "- La compilación individual de cada archivo no está totalmente demostrada.",
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
              "- Matriz por archivo P2.4: " + matrix["status"] + " (" + str(matrix["rows"]) + " filas).",
+             "- P2.6 UI Compose: " + p26["functional_test_status"] + " (no equivale a smoke).",
+             "- P3 audio/publicación pública: " + p3["audio_functional_test_status"] + " / " + p3["public_release_readiness"],
              "- VirusTotal: " + virustotal["virus_total_status"] + " (véase VirusTotal/virustotal.md; no certifica seguridad)",
              "",
              "| Fase | Resultado |", "|---|---|"]
