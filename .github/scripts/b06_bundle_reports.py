@@ -243,6 +243,7 @@ def main() -> None:
         "source_compilation_evidence": coverage,
         "p2_file_matrix": {"status": matrix["status"], "tracked_files": matrix["tracked_files"], "rows": matrix["rows"], "issues": matrix["consistency_issues"]},
         "p2_6_ui_functional_status": p26["functional_test_status"],
+        "p3_mocked_controller_test_status": p3["mocked_controller_status"],
         "p3_audio_status": p3["audio_functional_test_status"],
         "p3_public_release_readiness": p3["public_release_readiness"],
         "source_evidence_reconciliation": {
@@ -267,6 +268,7 @@ def main() -> None:
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
              "- Matriz por archivo P2.4: " + matrix["status"] + " (" + str(matrix["rows"]) + " filas).",
              "- P2.6 UI Compose: " + p26["functional_test_status"] + " (no equivale a smoke).",
+             "- P3 controles con reproductor simulado: " + p3["mocked_controller_status"] + ".",
              "- P3 audio/publicación pública: " + p3["audio_functional_test_status"] + " / " + p3["public_release_readiness"],
              "- VirusTotal: " + virustotal["virus_total_status"] + " (véase VirusTotal/virustotal.md; no certifica seguridad)",
              "",

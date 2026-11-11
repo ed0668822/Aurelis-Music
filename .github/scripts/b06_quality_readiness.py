@@ -77,16 +77,43 @@ def report(package: Path, sha: str):
             "Verified Compose navigation and error-state tests",
         ],
     }
+    # Count only actual passing Robolectric JUnit cases in both variants and the same commit.
+    # Explicitly keep physical Android UI and audible output NOT_VERIFIED.
+    from b06_junit_attestation import UI_CASES, CONTROLLER_CASES, attest_cases
+    compose = attest_cases(package, sha, UI_CASES)
+    controls = attest_cases(package, sha, CONTROLLER_CASES)
+    ui["functional_scenarios"].update(compose["states"])
+    ui["junit_evidence"] = compose
+    ui["functional_test_status"] = (
+        "ROBOLECTRIC_COMPOSE_CASES_VERIFIED"
+        if all(v == "ROBOLECTRIC_JUNIT_PASS" for v in compose["states"].values())
+        else "NOT_VERIFIED"
+    )
+    ui["physical_android_ui_verification"] = "NOT_VERIFIED"
+    audio["mocked_controller_evidence"] = controls
+    audio["mocked_controller_status"] = (
+        "ROBOLECTRIC_MOCK_PLAYER_CASES_VERIFIED"
+        if all(v == "ROBOLECTRIC_JUNIT_PASS" for v in controls["states"].values())
+        else "NOT_VERIFIED"
+    )
+    for key, value in controls["states"].items():
+        audio["audio_scenarios"][key] = (
+            "MOCK_PLAYER_BEHAVIOR_VERIFIED" if value == "ROBOLECTRIC_JUNIT_PASS"
+            else "NOT_VERIFIED"
+        )
+    # Never claim actual decoding/speaker output solely from mocked player cases.
     (output_ui / "ui-functional-coverage.json").write_text(json.dumps(ui, indent=2) + "\n", encoding="utf-8")
     (output_audio / "audio-and-publication-readiness.json").write_text(json.dumps(audio, indent=2) + "\n", encoding="utf-8")
     ui_lines = ["# P2.6 — Evidencia UI Compose", "",
                 "- Inicio en emulador observado: " + str(foreground),
                 "- Captura PNG verificada: " + str(screenshot_verified),
-                "- Navegación y pantallas: **NOT_VERIFIED**", ""]
+                "- Navegación Compose bajo Robolectric: **" + ui["functional_test_status"] + "**",
+                "- Funcionalidad UI física: **NOT_VERIFIED**", ""]
     ui_lines += ["- " + name + ": NOT_VERIFIED" for name in UI]
     audio_lines = ["# P3 — Audio y publicación", "",
                    "- Verificación de integridad APK: " + str(audio["apk_integrity_verified"]),
-                   "- Tests reales de audio: **NOT_VERIFIED**",
+                   "- Controles con reproductor simulado: **" + audio["mocked_controller_status"] + "**",
+                   "- Audio real / salida audible: **NOT_VERIFIED**",
                    "- Publicación pública aprobada: **NO**", ""]
     audio_lines += ["- " + name + ": NOT_VERIFIED" for name in AUDIO]
     (output_ui / "Resumen.md").write_text("\n".join(ui_lines) + "\n", encoding="utf-8")
