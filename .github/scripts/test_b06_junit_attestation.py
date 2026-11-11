@@ -27,7 +27,7 @@ def setup(package):
             for case in cases:
                 ET.SubElement(suite, "testcase", classname=clazz, name=case)
             target = package / "B03" / v.title() / "junit" / v / ("TEST-" + clazz + ".xml")
-            target.parent.mkdir(parents=True)
+            target.parent.mkdir(parents=True, exist_ok=True)
             ET.ElementTree(suite).write(target, encoding="utf-8", xml_declaration=True)
 
 class Tests(unittest.TestCase):
