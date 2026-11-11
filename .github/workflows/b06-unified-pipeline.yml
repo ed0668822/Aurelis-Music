@@ -133,7 +133,9 @@ jobs:
           result = json.loads(file.read_text())
           if result["status"] != "PASS" or os.getenv("SUMMARY_OUTCOME") != "success" or os.getenv("UPLOAD_OUTCOME") != "success":
               bad = ", ".join(k + "=" + v for k, v in result["phases"].items() if v != "success")
-              raise SystemExit("B06 FAIL: " + (bad or "missing artifacts or report upload"))
+              failed_checks = [name for name, ok in result.get("checks", {}).items() if ok is not True]
+              reason = "; ".join(x for x in (bad, "failed checks: " + ", ".join(failed_checks) if failed_checks else "") if x)
+              raise SystemExit("B06 FAIL: " + (reason or "report gate or upload failed"))
           print("B06 PASS: B01-B05 verified, one organized report artifact published")
           PY
 

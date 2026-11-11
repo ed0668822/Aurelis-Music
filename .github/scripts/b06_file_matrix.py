@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import collections
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -145,9 +146,26 @@ def build_matrix(package: Path, sha: str):
         issues.append("MISSING_B02_LINT_ISSUES")
         lint_issues = []
     raw_gradle = read_json(b04 / "diagnostics.json")
+    provenance = read_json(b04 / "diagnostics-provenance.json")
+    provenance = provenance if isinstance(provenance, dict) else {}
     if not isinstance(raw_gradle, list):
         issues.append("MISSING_B04_GRADLE_DIAGNOSTICS")
         raw_gradle = []
+    if (provenance.get("status") != "PASS_LOG_PARSED"
+            or provenance.get("source_sha") != sha
+            or provenance.get("schema_version") != 1
+            or not isinstance(provenance.get("terminal_gradle_tasks"), int)
+            or provenance.get("terminal_gradle_tasks", 0) < 1
+            or provenance.get("diagnostic_count") != len(raw_gradle)):
+        issues.append("UNVERIFIED_B04_GRADLE_DIAGNOSTIC_PROVENANCE")
+    for file_name, expected_hash in (
+        ("build.log", provenance.get("build_log_sha256")),
+        ("diagnostics.json", provenance.get("diagnostics_sha256")),
+    ):
+        file = b04 / file_name
+        if (not file.is_file() or file.is_symlink() or not isinstance(expected_hash, str)
+                or hashlib.sha256(file.read_bytes()).hexdigest() != expected_hash):
+            issues.append("B04_GRADLE_DIAGNOSTIC_HASH_MISMATCH:" + file_name)
     lint_by_path = collections.defaultdict(collections.Counter)
     gradle_by_path = collections.defaultdict(collections.Counter)
     diag_output = []

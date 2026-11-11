@@ -87,6 +87,14 @@ class MatrixTests(unittest.TestCase):
             {"phase": "build", "severity": "warning", "file": SRC,
              "line": 25, "message": "Compiler warning"},
         ])
+        import hashlib
+        (b04 / "build.log").write_text('AURELIS_TASK_RESULT {"task":":app:compileDebugKotlin","state":"SUCCESS"}\\n')
+        put(b04 / "diagnostics-provenance.json", {
+            "schema_version": 1, "source_sha": SHA, "status": "PASS_LOG_PARSED",
+            "terminal_gradle_tasks": 1, "diagnostic_count": 1,
+            "build_log_sha256": hashlib.sha256((b04 / "build.log").read_bytes()).hexdigest(),
+            "diagnostics_sha256": hashlib.sha256((b04 / "diagnostics.json").read_bytes()).hexdigest(),
+        })
         tsv(package / "B02" / "Lint" / "issues.tsv", [
             {"severity": "Warning", "id": "ContextLeak",
              "file": "/home/runner/work/Aurelis-Music/Aurelis-Music/" + SRC,
@@ -158,6 +166,24 @@ class MatrixTests(unittest.TestCase):
             errors = (package / "00-Resumen/errores.csv").read_text()
             self.assertIn("Unknown.kt", errors)
 
+
+    def test_missing_or_modified_gradle_diagnostics_is_not_green(self):
+        for case in ("missing", "tampered", "wrong-commit"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                package = Path(tmp)
+                b04 = self.fixture(package)
+                if case == "missing":
+                    (b04 / "diagnostics.json").unlink()
+                elif case == "tampered":
+                    (b04 / "diagnostics.json").write_text("[]\n")
+                else:
+                    path = b04 / "diagnostics-provenance.json"
+                    record = json.loads(path.read_text())
+                    record["source_sha"] = "e" * 40
+                    put(path, record)
+                report = matrix.build_matrix(package, SHA)
+                self.assertEqual(report["status"], "INCOMPLETE_MATRIX")
+                self.assertTrue(any("GRADLE_DIAGNOSTIC" in i for i in report["consistency_issues"]))
 
 if __name__ == "__main__":
     unittest.main()
