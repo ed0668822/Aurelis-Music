@@ -190,9 +190,12 @@ def main() -> None:
     b03 = read_json(OUTPUT / "B03" / "Resumen" / "results.json")
     b05 = read_json(OUTPUT / "B05" / "Emulador" / "results.json")
     coverage = source_coverage()
+    from b06_file_matrix import build_matrix
+    matrix = build_matrix(OUTPUT, os.environ.get("GITHUB_SHA", ""))
     trusted_evidence = read_json(OUTPUT / "B04" / "Verificacion" / "source-evidence.json")
     evidence_file = OUTPUT / "B04" / "Verificacion" / "source-evidence.md"
     checks = {
+        "p2_file_matrix_consistent": matrix["status"] == "COMPLETE_MATRIX",
         "source_evidence_reconciliation_passed": (
             trusted_evidence.get("status") == "PASS_VERIFIED_GATES" and
             trusted_evidence.get("source_sha") == os.environ.get("GITHUB_SHA") and
@@ -218,6 +221,7 @@ def main() -> None:
         "missing_reports": missing,
         "report_index": index,
         "source_compilation_evidence": coverage,
+        "p2_file_matrix": {"status": matrix["status"], "tracked_files": matrix["tracked_files"], "rows": matrix["rows"], "issues": matrix["consistency_issues"]},
         "source_evidence_reconciliation": {
             "status": trusted_evidence.get("status", "MISSING_EVIDENCE"),
             "source_coverage_status": trusted_evidence.get("source_coverage_status", "UNKNOWN"),
@@ -238,6 +242,7 @@ def main() -> None:
              "- Las APK se entregan aparte (Debug y Release).",
              "- La compilación individual de cada archivo no está totalmente demostrada.",
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
+             "- Matriz por archivo P2.4: " + matrix["status"] + " (" + str(matrix["rows"]) + " filas).",
              "- VirusTotal: " + virustotal["virus_total_status"] + " (informe independiente; no es prueba definitiva de seguridad)",
              "",
              "| Fase | Resultado |", "|---|---|"]

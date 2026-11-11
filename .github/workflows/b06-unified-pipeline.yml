@@ -96,6 +96,9 @@ jobs:
       - name: Test VirusTotal report logic without network
         run: python3 -m unittest discover -s .github/scripts -p 'test_b06_virustotal_delivery.py' -v
 
+      - name: Test P2.4 per-file report matrix without network
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b06_file_matrix.py' -v
+
       - name: Consolidate B01-B06 reports into one phase-organized package
         id: summary
         if: always()
