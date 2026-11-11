@@ -99,6 +99,9 @@ jobs:
       - name: Test P2.4 per-file report matrix without network
         run: python3 -m unittest discover -s .github/scripts -p 'test_b06_file_matrix.py' -v
 
+      - name: Test P2.5 VirusTotal packaging and artifact contract offline
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b06_delivery_contract.py' -v
+
       - name: Consolidate B01-B06 reports into one phase-organized package
         id: summary
         if: always()
@@ -139,17 +142,7 @@ jobs:
           print("B06 PASS: B01-B05 verified, one organized report artifact published")
           PY
 
-      - name: Publish separate VirusTotal report
-        id: vt_report
-        if: ${{ success() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: Aurelis-VirusTotal-${{ github.run_number }}
-          path: b06-virustotal/
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Retain only 4 final artifacts after successful B06 gate
+      - name: Retain only 3 final artifacts after successful B06 gate
         if: ${{ success() }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

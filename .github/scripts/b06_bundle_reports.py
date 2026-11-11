@@ -29,7 +29,7 @@ def read_json(path: Path) -> dict:
 
 
 
-def create_virustotal_delivery(ci_passed: bool, b04: dict, commit: str, destination: Path = Path("b06-virustotal")) -> dict:
+def create_virustotal_delivery(ci_passed: bool, b04: dict, commit: str, destination: Path | None = None) -> dict:
     """Produce an independent advisory status report tied to the signed Release SHA-256."""
     import datetime as dt
     import re
@@ -72,6 +72,7 @@ def create_virustotal_delivery(ci_passed: bool, b04: dict, commit: str, destinat
         "url": "https://www.virustotal.com/gui/file/" + expected + "/detection" if sha_valid else None,
         "limitations": "No antivirus scan proves an APK is harmless; human review remains necessary.",
     }
+    destination = destination if destination is not None else OUTPUT / "VirusTotal"
     destination.mkdir(parents=True, exist_ok=True)
     (destination / "virustotal.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -173,8 +174,16 @@ def main() -> None:
             for file in sorted(source.rglob("*")):
                 if not file.is_file() or file.is_symlink() or file.suffix.lower() in NO_BINARIES:
                     continue
+                if file.suffix.lower() in (".zip", ".7z", ".rar"):
+                    missing.append(f"{phase}/{folder}: nested archive requires explicit extraction: {file.relative_to(source)}")
+                    all_present = False
+                    continue
                 relative = file.relative_to(source)
                 target = dest / relative
+                if target.exists() or target.is_symlink():
+                    missing.append(f"{phase}/{folder}: duplicate report path: {relative}")
+                    all_present = False
+                    continue
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(file, target)
                 copied.append(str(target.relative_to(OUTPUT)))
@@ -210,6 +219,9 @@ def main() -> None:
     }
     passed = all(checks.values())
     virustotal = create_virustotal_delivery(passed, b04, os.environ.get("GITHUB_SHA", ""))
+    # VirusTotal stays inside the single report artifact, including advisory errors.
+    index.append({"source_artifact": "derived-from-B04", "phase": "VirusTotal",
+                  "files": ["VirusTotal/virustotal.json", "VirusTotal/virustotal.md"]})
     report = {
         "schema_version": 2,
         "commit": os.environ.get("GITHUB_SHA"),
@@ -230,7 +242,7 @@ def main() -> None:
         },
         "apk_files_in_bundle": False,
         "virustotal": virustotal,
-        "note": "APK Debug and Release are separate GitHub Actions artifacts.",
+        "note": "Exactly three final artifacts: one B01-B06+VirusTotal report ZIP, Debug ARM64 APK and signed Release ARM64 APK.",
     }
     (OUTPUT / "B06" / "pipeline-results.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -239,11 +251,11 @@ def main() -> None:
     lines = ["# Aurelis Music — Informes B01-B06",
              f"- Commit: `{report['commit']}`",
              f"- Resultado: **{report['status']}**",
-             "- Las APK se entregan aparte (Debug y Release).",
+             "- Entrega final: 3 artefactos, informes (VirusTotal incluido), APK Debug ARM64 y APK Release ARM64 firmado.",
              "- La compilación individual de cada archivo no está totalmente demostrada.",
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
              "- Matriz por archivo P2.4: " + matrix["status"] + " (" + str(matrix["rows"]) + " filas).",
-             "- VirusTotal: " + virustotal["virus_total_status"] + " (informe independiente; no es prueba definitiva de seguridad)",
+             "- VirusTotal: " + virustotal["virus_total_status"] + " (véase VirusTotal/virustotal.md; no certifica seguridad)",
              "",
              "| Fase | Resultado |", "|---|---|"]
     lines.extend(f"| {name} | {state} |" for name, state in stages.items())

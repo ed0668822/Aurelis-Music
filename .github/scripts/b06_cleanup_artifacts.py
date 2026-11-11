@@ -2,8 +2,8 @@
 # Aurelis © 2026. GPL-3.0-or-later.
 """After B06 PASS, delete ONLY verified same-run temporary CI artifacts.
 
-Retain exactly four final downloads:
-  1. all B01-B06 reports, 2. Debug test APK, 3. signed Release APK, 4. separate VirusTotal report.
+Retain exactly three final downloads:
+  1. B01-B06 reports INCLUDING VirusTotal, 2. Debug ARM64 APK, 3. signed Release ARM64 APK.
 Never delete temporary reports on a failed pipeline.
 """
 from __future__ import annotations
@@ -58,7 +58,6 @@ def main() -> int:
         f"Aurelis-Informes-B01-B06-{n}",
         f"Aurelis-Pruebas-ARM64-{n}",
         f"Aurelis-Release-ARM64-{n}",
-        f"Aurelis-VirusTotal-{n}",
     }
     temporary = {
         f"b01-report-{n}",
@@ -80,6 +79,10 @@ def main() -> int:
             raise RuntimeError("Final or temporary artifacts are not yet visible; refusing cleanup: " +
                                repr(sorted((final | temporary) - names)))
         time.sleep(3)
+    # A duplicated final name would invalidate the exactly-three contract, even
+    # if the set comparison passed.
+    if len(names) != len(existing):
+        raise RuntimeError("Duplicate artifact names; refusing cleanup")
     unexpected = names - final - temporary
     if unexpected:
         raise RuntimeError("Unexpected artifacts in this run; refusing deletion: " + repr(sorted(unexpected)))
@@ -89,11 +92,11 @@ def main() -> int:
             print("Removed temporary artifact:", a["name"])
     for retry in range(8):
         remaining = artifacts()
-        if {x["name"] for x in remaining} == final and len(remaining) == 4:
-            print("B06 SUCCESS: exactly four final downloadable artifacts remain")
+        if {x["name"] for x in remaining} == final and len(remaining) == 3:
+            print("B06 SUCCESS: exactly three final downloadable artifacts remain")
             with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as f:
                 f.write("\n## Entrega final\n")
-                f.write("Se publicaron cuatro artefactos: informes, Debug ARM64, Release ARM64 y VirusTotal.\n")
+                f.write("Se publicaron tres artefactos: informes B01-B06 con VirusTotal, Debug ARM64 y Release ARM64.\n")
             return 0
         if retry == 7:
             raise RuntimeError("Cleanup not yet confirmed: " + repr([x["name"] for x in remaining]))
