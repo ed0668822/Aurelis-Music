@@ -71,6 +71,18 @@ jobs:
             2>&1 | tee ci-b05/build.log
           test -s app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Assemble P3 Android instrumentation APK
+        id: p3_build
+        if: ${{ steps.build.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebugAndroidTest --console=plain --build-cache \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b05/p3-androidtest-build.log
+          test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+
       - name: Enable KVM when available
         if: ${{ steps.build.outcome == 'success' }}
         run: |
@@ -85,7 +97,7 @@ jobs:
       # Actual installation and launch determine compatibility; do not assume it.
       - name: Boot Android 15 and exercise real app launch
         id: emulator
-        if: ${{ steps.build.outcome == 'success' }}
+        if: ${{ steps.build.outcome == 'success' && steps.p3_build.outcome == 'success' }}
         continue-on-error: true
         uses: ReactiveCircus/android-emulator-runner@v2.38.0
         with:
@@ -108,6 +120,7 @@ jobs:
           SDK_OUTCOME: ${{ steps.sdk.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
           EMULATOR_OUTCOME: ${{ steps.emulator.outcome }}
+          P3_BUILD_OUTCOME: ${{ steps.p3_build.outcome }}
         run: |
           python3 - <<'PY'
           import json
@@ -119,7 +132,7 @@ jobs:
           def read(name):
               p = out / name
               return p.read_text(errors="replace").strip() if p.exists() else ""
-          statuses = {x: os.environ.get(x.upper() + "_OUTCOME", "not_started") for x in ("sdk", "build", "emulator")}
+          statuses = {x: os.environ.get(x.upper() + "_OUTCOME", "not_started") for x in ("sdk", "build", "p3_build", "emulator")}
           checks = {
               "android_api_35": read("device-api.txt") == "35",
               "arm64_only_apk": read("apk-abi.txt") == "arm64-v8a only",
@@ -127,6 +140,7 @@ jobs:
               "launcher_started": "Status: ok" in read("start.log"),
               "app_process_survived_15s": bool(read("process.txt")),
               "emulator_script_completed": bool(read("smoke-pass.txt")),
+              "p3_local_wav_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
           }
           result = {
               "schema_version": 1,
@@ -141,8 +155,14 @@ jobs:
               "steps": statuses,
               "checks": checks,
               "pass": all(x == "success" for x in statuses.values()) and all(checks.values()),
-              "coverage": "INSTALL_LAUNCH_PROCESS_SMOKE_ONLY",
-              "not_tested": ["music playback", "audio output", "UI interactions", "native feature execution"],
+              "coverage": "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+              "p3_test": {
+                  "passed": bool(read("p3-instrumentation-pass.txt")),
+                  "scope": "AurelisPlaybackService / Media3 local PCM WAV",
+                  "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                  "limitations": "Emulator audio is not evidence of audible physical-device output",
+              },
+              "not_tested": ["audible physical-device output", "gapless", "crossfade", "physical audio routes", "full UI", "native DSP correctness"],
           }
           (out / "results.json").write_text(json.dumps(result, indent=2) + "\n")
           lines = [
@@ -159,7 +179,8 @@ jobs:
           for key, state in checks.items():
               lines.append(f"| {key.replace('_', ' ')} | {'PASS' if state else 'FAIL / unavailable'} |")
           lines += ["", "- Detailed evidence: installation, launch, process, activity and AndroidRuntime log.",
-                    "- This does NOT validate playback, native audio features, full UI or runtime permissions.",
+                    "- P3: Android instrumentation exercises generated local WAV through the actual Aurelis MediaSession.",
+                    "- Physical audio output, gapless, crossfade, routes and native DSP remain unverified.",
                     "- Emulator setup failure is reported separately from app failure."]
           summary = "\n".join(lines) + "\n"
           (out / "summary.md").write_text(summary)

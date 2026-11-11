@@ -80,4 +80,30 @@ test -s "$OUT/process.txt" || {
 
 echo 'PASS: ARM64-only APK installed, activity launched, and process survived 15 seconds' \
   > "$OUT/smoke-pass.txt"
-echo 'B05: smoke test passed (full feature coverage not claimed).'
+
+# P3: verify actual Media3 session decoding with an original local PCM WAV fixture.
+TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+test -s "$TEST_APK" || { echo 'P3: missing instrumentation APK'; exit 1; }
+if ! adb install -r "$TEST_APK" > "$OUT/p3-install.log" 2>&1; then
+  echo 'P3: Android instrumented-test installation failed'
+  cat "$OUT/p3-install.log"
+  exit 1
+fi
+if ! adb shell am instrument -w -r \
+     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest \
+     com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner \
+     > "$OUT/p3-instrumentation.log" 2>&1; then
+  echo 'P3: Android instrumented-test execution failed'
+  cat "$OUT/p3-instrumentation.log"
+  exit 1
+fi
+if ! grep -Eq '^OK \(1 test\)' "$OUT/p3-instrumentation.log" ||
+   ! grep -q 'INSTRUMENTATION_CODE: -1' "$OUT/p3-instrumentation.log" ||
+   grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_STATUS_CODE: -2' "$OUT/p3-instrumentation.log"; then
+  echo 'P3: no verified AndroidJUnitRunner PASS result'
+  cat "$OUT/p3-instrumentation.log"
+  exit 1
+fi
+echo 'PASS: actual Aurelis MediaSession decoded original PCM WAV; pause, seek, resume and progression observed' > "$OUT/p3-instrumentation-pass.txt"
+
+echo 'B05: startup smoke and local WAV instrumental playback passed.'

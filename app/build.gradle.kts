@@ -79,6 +79,7 @@ android {
 
         minSdk = 33
         targetSdk = 35
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         versionCode = autoVersionCode
         versionName = autoVersionName
@@ -245,6 +246,9 @@ dependencies {
     implementation("org.jsoup:jsoup:1.18.1")
 
     compileOnly("org.jspecify:jspecify:1.0.0")
+
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.14.1")
