@@ -55,7 +55,8 @@ class GraphTests(unittest.TestCase):
             data = path.read_text(encoding="utf-8")
             block = data.split("concurrency:", 1)[1].split("jobs:", 1)[0]
             self.assertEqual(block.count("cancel-in-progress:"), 1)
-            self.assertIn("cancel-in-progress: false", block)
+            expected = "true" if name.startswith("b06-") else "false"
+            self.assertIn(f"cancel-in-progress: {expected}", block)
 
     def test_b06_collects_all_and_preserves_failure_evidence(self):
         body = job(self.flow, "b06")
