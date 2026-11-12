@@ -44,7 +44,7 @@ class GraphTests(unittest.TestCase):
         self.assertIn("needs.b02.result == 'success' && needs.b03.result == 'success'", body)
         self.assertNotIn("secrets: inherit", body)
         for name in ["KEYSTORE_BASE64","KEYSTORE_PASSWORD","KEY_ALIAS","KEY_PASSWORD","LISTEN_TOGETHER_SERVER","VIRUSTOTAL_API_KEY"]:
-            self.assertIn(f"${{ secrets.{name} }}", body)
+            self.assertIn("${{ secrets." + name + " }}", body)
 
     def test_b05_reuses_b01_handoff_without_waiting_on_b04(self):
         body = job(self.flow, "b05")
