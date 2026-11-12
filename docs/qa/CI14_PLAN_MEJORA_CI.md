@@ -272,7 +272,7 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 | F0 | Línea base cerrada | (documentación F0) | API de GitHub consultada: run #41 29,3 min; #40 30,4 min; #50 27,4 min, #51 30,8 min (B05 falló). Detalles en CI14_F0_BASELINE.md. Decisiones D1-D3 y D6 incorporadas al alcance; D4 solo H3 en F1, D5 se reserva para F7. |
 | F1 | Seguridad fail-closed aplicada; configuración protegida pendiente | `dcc8aaf` + entrega F1 de 2026-11-12 | B04 consulta VirusTotal solo por hash sin que una variable del repositorio habilite subidas. Gradle exige keystore para ensamblar Release y solo permite firma Debug bajo `-PallowDebugSigned=true` explícito. La publicación oficial queda bloqueada hasta disponer de un job con environment `release` y revisores verificados. La variable `LISTEN_TOGETHER_SERVER` todavía debe configurarse; se conserva la compatibilidad con secreto hasta entonces. |
 | F2 | Consolidado; CI de este SHA pendiente | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
-| F3 | Pendiente | — | Build compartido y paralelización. |
+| F3 | Parcial: F3-a | Commit F3-a | B02 y B03 en paralelo tras B01; B04 exige ambas. Build compartido/SDK cache/Gradle pendientes. |
 | F4–F7 | Pendiente | — | Ver secciones 4 y 5. |
 
 Desviaciones respecto al plan:
@@ -305,3 +305,7 @@ La fase F1 conserva la prioridad de seguridad y no habilita publicación sin pro
 - `android.yml` fue retirado anteriormente. Los eventos push/PR de B06 usan el mismo conjunto explícito de paths (GitHub no permite combinar `paths` con `paths-ignore`).
 - B02 ya ejecutaba lint Debug y Release. Se corrige el resumen para que incluya los hallazgos y el XML de cada variante; antes únicamente contabilizaba Debug. La utilidad `b02_lint_summary.py` y sus pruebas impiden etiquetar resultados ausentes o inválidos como PASS.
 - `task-inputs.gradle` y las políticas previas de B01–B06, ARM64 y publicación segura siguen vigentes. La validación remota del nuevo SHA debe observarse antes de declarar todo verde.
+
+## 14. CI14 F3-a — paralelización parcial (2026-11-12)
+
+B02 y B03 ahora dependen de B01 y se pueden ejecutar en paralelo. B04 espera explícitamente el éxito de **ambos** y B05 sigue dependiendo de B04. B06 siempre se ejecuta para conservar evidencia en caso de fallo. `test_ci14_parallel_gate.py` verifica el DAG y se ejecuta antes del empaquetado de B06. No se han compartido aún APKs entre runners, alterado Gradle ni cambiado ABI/firmas. El resultado de tiempo se medirá en GitHub, sin afirmar automáticamente una reducción del 30 %. Siguiente subbloque: F3-b artefacto de build compartido con SHA256 y commit de procedencia.

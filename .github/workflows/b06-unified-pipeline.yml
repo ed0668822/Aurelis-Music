@@ -65,16 +65,17 @@ jobs:
 
   b03:
     name: "B03 | Unit Tests"
-    needs: b02
-    if: ${{ needs.b02.result == 'success' }}
+    needs: b01
+    if: ${{ needs.b01.result == 'success' }}
     uses: ./.github/workflows/b03-unit-tests.yml
     permissions:
       contents: read
 
+  # F3-a: B02 and B03 run concurrently; B04 must wait for both.
   b04:
     name: "B04 | APK Verification"
-    needs: b03
-    if: ${{ needs.b03.result == 'success' }}
+    needs: [b02, b03]
+    if: ${{ needs.b02.result == 'success' && needs.b03.result == 'success' }}
     uses: ./.github/workflows/b04-verify-apks.yml
     secrets: inherit
     permissions:
@@ -111,6 +112,9 @@ jobs:
           pattern: "b0*"
           path: b06-input/
           merge-multiple: false
+
+      - name: Test F3-a CI graph and fail-closed gates
+        run: python3 -m unittest discover -s .github/scripts -p 'test_ci14_parallel_gate.py' -v
 
       - name: Test VirusTotal report logic without network
         run: python3 -m unittest discover -s .github/scripts -p 'test_b06_virustotal_delivery.py' -v
