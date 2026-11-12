@@ -4,6 +4,19 @@ name: "B04 | Verify APKs"
 
 on:
   workflow_call:
+    secrets:
+      KEYSTORE_BASE64:
+        required: false
+      KEYSTORE_PASSWORD:
+        required: false
+      KEY_ALIAS:
+        required: false
+      KEY_PASSWORD:
+        required: false
+      LISTEN_TOGETHER_SERVER:
+        required: false
+      VIRUSTOTAL_API_KEY:
+        required: false
   workflow_dispatch:
 
 permissions:

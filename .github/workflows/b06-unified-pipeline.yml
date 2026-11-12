@@ -63,7 +63,13 @@ jobs:
     needs: [b02, b03]
     if: ${{ needs.b02.result == 'success' && needs.b03.result == 'success' }}
     uses: ./.github/workflows/b04-verify-apks.yml
-    secrets: inherit
+    secrets:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+      VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
     permissions:
       contents: read
 
