@@ -32,8 +32,7 @@ permissions:
 
 concurrency:
   group: aurelis-unified-${{ github.ref }}
-  # Un push nuevo no cancela una verificación en curso (la cancelación mataba B04 a mitad de build).
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   b01:
