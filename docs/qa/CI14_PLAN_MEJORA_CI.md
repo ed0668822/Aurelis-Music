@@ -270,9 +270,9 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 | Fase | Estado | Commit | Notas |
 |---|---|---|---|
 | F0 | Línea base cerrada | (documentación F0) | API de GitHub consultada: run #41 29,3 min; #40 30,4 min; #50 27,4 min, #51 30,8 min (B05 falló). Detalles en CI14_F0_BASELINE.md. Decisiones D1-D3 y D6 incorporadas al alcance; D4 solo H3 en F1, D5 se reserva para F7. |
-| F1 | Seguridad fail-closed aplicada; configuración protegida pendiente | `dcc8aaf` + entrega F1 de 2026-11-12 | B04 consulta VirusTotal solo por hash sin que una variable del repositorio habilite subidas. Gradle exige keystore para ensamblar Release y solo permite firma Debug bajo `-PallowDebugSigned=true` explícito. La publicación oficial queda bloqueada hasta disponer de un job con environment `release` y revisores verificados. La variable `LISTEN_TOGETHER_SERVER` todavía debe configurarse; se conserva la compatibilidad con secreto hasta entonces. |
+| F1 | Release protegido implementado; activación administrativa pendiente | CI14_F1_RELEASE_PROTEGIDO.md | Manual main/v*, job con environment release y confirmación adicional, requiere run verde mismo SHA, certificado oficial y VirusTotal opt-in; falta configurar y verificar reviewer, secretos y variables GitHub. No se declara Release publicado. |
 | F2 | Consolidado; CI de este SHA pendiente | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
-| F3 | Implementada arquitectura F3-b (CI pendiente) | CI14 F3 | APK Debug e instrumentación compilados en B01; B04 construye Release y valida Debug; B05 reutiliza los APK; B02/B03/B05 concurren; cache SDK en B01; faltan mediciones y validación CI. |
+| F3 | Meta de rendimiento verificada en CI | Run #41 y #88; CI14_F3_RESULTADO.md | 29,25 min a 15,65 min en runs exitosos, -46,5 % (meta -30 % alcanzada). Tres jobs paralelos y artefactos SHA256 comprobados. |
 | F4 | Implementación diagnóstica publicada; validación CI pendiente | F4 series | 7 veredictos reales, inventario P2 conservado; faltan objetos .o y evidencia Debug individual para activar gate estricto. |
 | F5–F7 | Pendiente | — | Ver secciones 4 y 5. |
 
@@ -367,3 +367,7 @@ B03 incluye historial Git para determinar `origin/main...HEAD` y genera `ci-b03/
 ## 27. F5 — auditoría de workflows (2026-11-12)
 
 B01 ejecuta la auditoría de workflows como paso independiente de diagnóstico, sin añadir un cuarto job simultáneo. actionlint 1.7.12 se descarga con verificación de SHA-256 contra checksum fijo; zizmor 1.32.0 se instala en entorno temporal aislado. Los informes y códigos de salida se conservan en el reporte B01. Un hallazgo no se etiqueta como PASS, pero permanece diagnóstico hasta revisar baseline y asegurar que no da falsos positivos; no se debilitan los gates del APK o de Media3.
+
+## 28. CI14 — cierre F1/F3 (2026-11-12)
+
+F3 cumplió la meta de tiempo en run #88, 15,65 min vs #41 29,25 min: -46,5%. Consultar CI14_F3_RESULTADO.md. F1 implementó el workflow manual b04-protected-release.yml con firma protegida y VirusTotal opt-in. El conector no permite verificar ni crear el environment release con revisor; la activación y migración completa de secretos aún requieren administración de GitHub. Un workflow en la rama feature no estará disponible por workflow_dispatch hasta que se integre en main. No se declara F1 operativamente completo antes de esa verificación.

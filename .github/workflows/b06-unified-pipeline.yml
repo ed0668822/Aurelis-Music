@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - feature/bitchord-local-migration
+      - main
+    tags:
+      - "v*"
     paths:
       - "app/**"
       - "build.gradle.kts"

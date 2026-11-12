@@ -38,6 +38,12 @@ jobs:
           python3 -m py_compile .github/scripts/apk_audit.py
           python3 -m unittest discover -s .github/scripts/tests -p 'test_apk_audit.py' -v
 
+      - name: Test fail-closed protected Release gate without secrets
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/f1_protected_release.py
+          python3 -m unittest discover -s .github/scripts -p 'test_f1_protected_release.py' -v
+
       - name: Diagnose workflow YAML and security with pinned tools
         id: workflow_audit
         continue-on-error: true
