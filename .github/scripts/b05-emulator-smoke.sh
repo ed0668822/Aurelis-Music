@@ -105,36 +105,37 @@ if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
   cat "$OUT/p3-permission-grant.log"
   exit 1
 fi
-if ! adb shell am instrument -w -r \
-     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest,com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest,com.music.aurelis.playback.RealAutoRepeatInstrumentedTest,com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest,com.music.aurelis.playback.RealSessionResilienceInstrumentedTest \
+# Seven separate AndroidJUnitRunner commands, all run even if one fails.
+mkdir -p "$OUT/p3-tests"
+mapfile -t CASE_SELECTORS < <(python3 .github/scripts/b05_case_results.py list)
+if [ "${#CASE_SELECTORS[@]}" -ne 7 ]; then
+  echo 'P3: expected seven independent test selectors'
+  exit 1
+fi
+: > "$OUT/p3-instrumentation.log"
+for entry in "${CASE_SELECTORS[@]}"; do
+  IFS='|' read -r case_id class_selector <<< "$entry"
+  echo "P3 isolated case: $case_id -> $class_selector"
+  adb shell am force-stop "$PKG"
+  adb shell am start -W -n "$PKG/.MainActivity" \
+    > "$OUT/p3-tests/${case_id}-start.log" 2>&1 || true
+  adb logcat -c >/dev/null 2>&1 || true
+  if timeout 125s adb shell am instrument -w -r \
+     -e class "$class_selector" \
      com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner \
-     > "$OUT/p3-instrumentation.log" 2>&1; then
-  echo 'P3: Android instrumented-test execution failed'
-  cat "$OUT/p3-instrumentation.log"
-  exit 1
-fi
-# Exactly seven named tests must pass, not merely a green exit code.
-# All seven named results must be present to avoid false P3.5-P3.7 coverage.
-if ! grep -Eq '^OK \(7 tests\)' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'test=generatedPcmWavPlaysPausesSeeksAndResumesThroughMediaSession' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'test=twoOriginalWavsNextPreviousAndQueueRemovalUseActualMediaSession' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'test=naturalTrackEndAdvancesAndRepeatOneLoopsOnRealMediaSession' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'test=missingLocalWavReportsErrorThenSameSessionRecoversToValidWav' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'test=activityRecreationRetainsMediaSessionQueueAndAdvancingPosition' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'test=repeatAllCyclesFromSecondOriginalWavBackToFirst' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'test=continuousTwelveSecondDecodeAndSeekRemainStable' "$OUT/p3-instrumentation.log" ||
-   ! grep -q 'INSTRUMENTATION_CODE: -1' "$OUT/p3-instrumentation.log" ||
-   grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_STATUS_CODE: -2' "$OUT/p3-instrumentation.log"; then
-  echo 'P3: no verified AndroidJUnitRunner PASS result'
-  cat "$OUT/p3-instrumentation.log"
-  exit 1
-fi
-echo 'PASS: seven named AndroidJUnitRunner cases through real Aurelis MediaSession' > "$OUT/p3-instrumentation-pass.txt"
-echo 'PASS: two original WAVs; next, previous, removal, and resume checked through real Media3 service' > "$OUT/p3-queue-transitions-pass.txt"
-echo 'PASS: real Media3 AUTO track transition, end-of-queue and repeat-one transition observed' > "$OUT/p3-auto-repeat-pass.txt"
-echo 'PASS: missing file emitted Media3 error and same service decoded/replayed a valid WAV' > "$OUT/p3-error-recovery-pass.txt"
-echo 'PASS: real activity recreated while MediaSession and position persisted' > "$OUT/p3-activity-recreation-pass.txt"
-echo 'PASS: repeat-all naturally wrapped to the first file on the real service' > "$OUT/p3-repeat-all-pass.txt"
-echo 'PASS: continuous 12-second decoding plus pause, seek and resume on real Media3' > "$OUT/p3-continuous-playback-pass.txt"
+     > "$OUT/p3-tests/${case_id}.log" 2>&1; then
+    printf '0\n' > "$OUT/p3-tests/${case_id}.exit"
+  else
+    printf '%s\n' "$?" > "$OUT/p3-tests/${case_id}.exit"
+  fi
+  printf '\n===== P3 CASE: %s =====\n' "$case_id" >> "$OUT/p3-instrumentation.log"
+  cat "$OUT/p3-tests/${case_id}.log" >> "$OUT/p3-instrumentation.log"
+  adb logcat -d -v threadtime -s \
+    P3Media3Test:D P3Media3Service:D MediaFocusControl:I \
+    ExoPlayerImplInternal:E AudioTrack:E AndroidRuntime:E '*:S' \
+    > "$OUT/p3-tests/${case_id}-logcat.txt" 2>&1 || true
+done
+# Failing any one case fails B05 after preserving the other six.
+python3 .github/scripts/b05_case_results.py summarize "$OUT"
 
 echo 'B05: seven real Media3 Android tests passed (WAV, queue, repeat modes, recovery, recreation, continuous decode).'

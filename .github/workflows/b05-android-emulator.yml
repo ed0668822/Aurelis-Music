@@ -82,6 +82,9 @@ jobs:
           python3 .github/scripts/ci14_handoff.py verify
           test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 
+      - name: Validate isolated Media3 test result parser
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b05_case_results.py' -v
+
       - name: Enable KVM when available
         if: ${{ steps.build.outcome == 'success' }}
         run: |
@@ -140,7 +143,8 @@ jobs:
               "launcher_started": "Status: ok" in read("start.log"),
               "app_process_survived_15s": bool(read("process.txt")),
               "emulator_script_completed": bool(read("smoke-pass.txt")),
-              "p3_local_wav_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
+              "p3_local_wav_instrumentation_passed": bool(read("p3-local-wav-pass.txt")),
+              "p3_all_seven_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
               "p3_queue_transitions_instrumentation_passed": bool(read("p3-queue-transitions-pass.txt")),
               "p3_auto_repeat_instrumentation_passed": bool(read("p3-auto-repeat-pass.txt")),
               "p3_error_recovery_instrumentation_passed": bool(read("p3-error-recovery-pass.txt")),
@@ -168,6 +172,7 @@ jobs:
                   "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
                   "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
                   "test_count": 7,
+              "per_case_evidence": json.loads(read("p3-case-results.json") or "{}"),
                   "session_resilience_test_class": "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest",
                   "activity_recreation_passed": bool(read("p3-activity-recreation-pass.txt")),
                   "repeat_all_passed": bool(read("p3-repeat-all-pass.txt")),
@@ -195,6 +200,10 @@ jobs:
           ]
           for key, state in checks.items():
               lines.append(f"| {key.replace('_', ' ')} | {'PASS' if state else 'FAIL / unavailable'} |")
+          cases = result["p3_test"]["per_case_evidence"].get("tests", {})
+          lines += ["", "## Individual Media3 test results", "| Case | Result |", "|---|---|"]
+          for slug, case in cases.items():
+              lines.append(f"| {slug} | {'PASS' if case.get('passed') else 'FAIL / incomplete'} |")
           lines += ["", "- Detailed evidence: installation, launch, process, activity and AndroidRuntime log.",
                     "- P3: Seven Android cases verify WAV, queue, repeat modes, error recovery, lifecycle recreation and 12-second continuous decode through real Media3.",
                     "- Physical audio output, gapless, crossfade, routes and native DSP remain unverified.",

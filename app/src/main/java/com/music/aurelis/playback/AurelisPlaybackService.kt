@@ -61,6 +61,12 @@ class AurelisPlaybackService : MediaSessionService() {
                         " reason=" + reason + " state=" + player.playbackState +
                         " suppression=" + player.playbackSuppressionReason)
                 }
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    Log.d("P3Media3Service", "playbackState=" + playbackState +
+                        " playWhenReady=" + player.playWhenReady +
+                        " mediaId=" + player.currentMediaItem?.mediaId +
+                        " count=" + player.mediaItemCount)
+                }
                 override fun onPlayerError(error: PlaybackException) {
                     Log.e("P3Media3Service", "Media3 player error=" + error.errorCodeName, error)
                 }
@@ -86,11 +92,17 @@ class AurelisPlaybackService : MediaSessionService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        if (BuildConfig.DEBUG) {
+            Log.d("P3Media3Service", "onTaskRemoved playWhenReady=" +
+                mediaSession?.player?.playWhenReady +
+                " count=" + mediaSession?.player?.mediaItemCount)
+        }
         val player = mediaSession?.player
         if (player == null || !player.playWhenReady || player.mediaItemCount == 0) stopSelf()
     }
 
     override fun onDestroy() {
+        if (BuildConfig.DEBUG) Log.d("P3Media3Service", "onDestroy playback service")
         profiles?.close(); profiles = null
         serviceScope.cancel()
         mediaSession?.run { player.release(); release() }
