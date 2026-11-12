@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: b03-unit-tests-${{ github.ref }}
-  cancel-in-progress: true
+  group: aurelis-b03-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
 
 jobs:
   unit-tests:

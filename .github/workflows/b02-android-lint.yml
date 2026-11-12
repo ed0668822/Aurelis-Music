@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: b02-lint-${{ github.ref }}
-  cancel-in-progress: true
+  group: aurelis-b02-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
 
 jobs:
   android-lint:

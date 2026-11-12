@@ -44,8 +44,8 @@ permissions:
   actions: read
 
 concurrency:
-  group: aurelis-unified-${{ github.ref }}
-  # Los pushes no cancelan una verificación en curso (cancelaba B04 a mitad de build); solo los PR superados.
+  group: aurelis-unified-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

@@ -325,3 +325,7 @@ Se usa `actions/cache` fijado a SHA y clave de versiones de Android 36, build-to
 ## 17. F3 / corrección de contrato de firma heredado (2026-11-12)
 
 El run #53 (anterior a F3) identificó un falso bloqueo de B04: `verify_evidence.py` imponía el certificado Release al APK Debug, aunque F1 había separado correctamente las firmas. Se conserva `apksigner` obligatorio para ambos APK y sus huellas SHA-256; solo Release debe coincidir con `configured_certificate_sha256`. Un certificado Release incorrecto sigue bloqueando y no se altera la distribución. Esta reparación es necesaria para el handoff Debug de F3 y no inicia F4.
+
+## 18. F3 — concurrencia de GitHub Actions
+
+Los seis workflows B01–B06 usan ahora grupos de concurrencia basados en `github.run_id` y `github.run_attempt` con `cancel-in-progress: false`. Un push nuevo no cancela automáticamente pruebas ni evidencia de una ejecución anterior. Si el usuario cancela manualmente, B06 conserva el estado real de cada etapa y nunca lo declara verde. Esto completa la revisión de concurrencia prevista en F3.

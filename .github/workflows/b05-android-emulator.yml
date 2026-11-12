@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: b05-emulator-${{ github.ref }}
-  cancel-in-progress: true
+  group: aurelis-b05-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
 
 jobs:
   emulator-smoke:
