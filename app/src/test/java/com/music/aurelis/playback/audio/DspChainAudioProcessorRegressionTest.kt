@@ -6,6 +6,7 @@ import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.util.UnstableApi
 import com.music.aurelis.AurelisApplication
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import org.junit.Assert.assertEquals
@@ -20,10 +21,17 @@ import org.robolectric.annotation.Config
 @Config(sdk = [33], manifest = Config.NONE, application = AurelisApplication::class)
 class DspChainAudioProcessorRegressionTest {
 
-    private fun processor() = DspChainAudioProcessor(DspChain()).also {
-        it.configure(AudioProcessor.AudioFormat(22_050, 1, C.ENCODING_PCM_16BIT))
-        it.flush()
-    }
+    private fun processor(channels: Int = 1, encoding: Int = C.ENCODING_PCM_16BIT) =
+        DspChainAudioProcessor(DspChain()).also {
+            it.configure(AudioProcessor.AudioFormat(22_050, channels, encoding))
+            it.flush()
+        }
+
+    private fun direct(bytes: ByteArray): ByteBuffer =
+        ByteBuffer.allocateDirect(bytes.size).order(ByteOrder.LITTLE_ENDIAN).apply {
+            put(bytes)
+            flip()
+        }
 
     @Test
     fun emptyInputCanBeQueuedRepeatedlyWithoutSelfCopy() {
@@ -64,17 +72,76 @@ class DspChainAudioProcessorRegressionTest {
     }
 
     @Test
-    fun nonEmptyPartialPcmFrameIsForwardedRatherThanLost() {
+    fun partialPcmFrameWaitsUntilSecondInputAndNeverLeaksToAudioSink() {
         val processor = processor()
         try {
-            val partial = ByteBuffer.allocateDirect(1)
-            partial.put(0x35.toByte())
-            partial.flip()
-            processor.queueInput(partial)
-            val output = processor.getOutput()
-            assertEquals(1, output.remaining())
-            assertEquals(0x35, output.get().toInt() and 0xFF)
-            assertFalse(partial.hasRemaining())
+            val first = direct(byteArrayOf(0x35))
+            processor.queueInput(first)
+            assertFalse(first.hasRemaining())
+            assertFalse("A single byte is not a PCM16 frame", processor.getOutput().hasRemaining())
+
+            val second = direct(byteArrayOf(0x12))
+            processor.queueInput(second)
+            assertFalse(second.hasRemaining())
+            assertEquals("A complete PCM16 mono frame must be emitted", 2,
+                processor.getOutput().remaining())
+        } finally {
+            processor.reset()
+        }
+    }
+
+    @Test
+    fun arbitraryChunkBoundariesPreservePacked24BitStereoAudioFrames() {
+        val processor = processor(channels = 2, encoding = C.ENCODING_PCM_24BIT)
+        try {
+            val bytes = byteArrayOf(
+                0x05, 0x00, 0x00, 0x06, 0x00, 0x00,
+                0x07, 0x00, 0x00, 0x08, 0x00, 0x00,
+                0x09, 0x00, 0x00, 0x0A, 0x00, 0x00,
+                0x0B, 0x00, 0x00, 0x0C, 0x00, 0x00,
+            )
+            val chunks = listOf(1, 2, 3, 4, 5, 9)
+            var offset = 0
+            var totalOutput = 0
+            val output = ByteArrayOutputStream()
+            chunks.forEach { size ->
+                val input = direct(bytes.copyOfRange(offset, offset + size))
+                processor.queueInput(input)
+                assertFalse("All input bytes should be consumed", input.hasRemaining())
+                val produced = processor.getOutput()
+                assertEquals("No partial PCM24 stereo frames may escape the DSP", 0,
+                    produced.remaining() % 6)
+                val chunk = ByteArray(produced.remaining())
+                produced.get(chunk)
+                totalOutput += chunk.size
+                output.write(chunk)
+                offset += size
+            }
+            assertEquals(bytes.size, offset)
+            assertEquals(bytes.size, totalOutput)
+            assertEquals(bytes.size, output.toByteArray().size)
+        } finally {
+            processor.reset()
+        }
+    }
+
+    @Test
+    fun flushAndEndOfStreamDiscardIncompletePcmFrames() {
+        val processor = processor()
+        try {
+            processor.queueInput(direct(byteArrayOf(0x35)))
+            assertFalse(processor.getOutput().hasRemaining())
+            processor.flush()
+            processor.queueInput(direct(byteArrayOf(0x46, 0x12)))
+            assertEquals(2, processor.getOutput().remaining())
+
+            processor.queueInput(direct(byteArrayOf(0x77)))
+            assertFalse(processor.getOutput().hasRemaining())
+            processor.queueEndOfStream()
+            assertFalse(processor.getOutput().hasRemaining())
+            processor.flush()
+            processor.queueInput(direct(byteArrayOf(0x56, 0x34)))
+            assertEquals(2, processor.getOutput().remaining())
         } finally {
             processor.reset()
         }
