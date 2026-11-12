@@ -178,9 +178,22 @@ class RealSessionResilienceInstrumentedTest {
                     it.isPlaying && it.currentMediaItemIndex == 0 &&
                         it.currentPosition > 100L
                 }
-                onMain { controller.seekTo(1, 0L) }
+                // A seek may leave Media3 IDLE while a decoder is switching.
+                // Prepare explicitly, then demand actual resumed second-track
+                // playback before measuring the natural repeat-all wrap.
+                onMain {
+                    controller.seekTo(1, 0L)
+                    controller.prepare()
+                }
+                until(controller, "second repeat-all track READY") {
+                    it.playbackState == Player.STATE_READY &&
+                        it.currentMediaItem?.mediaId == "repeat-all-second" &&
+                        it.playerError == null
+                }
+                onMain { controller.play() }
                 until(controller, "second repeat-all track advancing") {
-                    it.isPlaying &&
+                    it.playbackState == Player.STATE_READY &&
+                        it.isPlaying &&
                         it.currentMediaItem?.mediaId == "repeat-all-second" &&
                         it.currentPosition > 250L
                 }
