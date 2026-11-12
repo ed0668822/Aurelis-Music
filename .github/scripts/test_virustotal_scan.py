@@ -12,6 +12,14 @@ import virustotal_scan as vt
 
 
 class VirusTotalAuditTests(unittest.TestCase):
+    def test_b04_workflow_cannot_enable_public_upload_by_repo_variable(self):
+        workflow = Path(__file__).resolve().parent.parent / "workflows/b04-verify-apks.yml"
+        value = workflow.read_text(encoding="utf-8")
+        self.assertIn('VIRUSTOTAL_ALLOW_UPLOAD: "false"', value)
+        self.assertNotIn("VIRUSTOTAL_ALLOW_UPLOAD: ${{ vars.VIRUSTOTAL_ALLOW_UPLOAD }}", value)
+        self.assertIn("if: ${{ false }}", value)
+
+
     def test_no_key_never_claims_clean(self):
         with tempfile.TemporaryDirectory() as base:
             file = Path(base) / "app-release.apk"

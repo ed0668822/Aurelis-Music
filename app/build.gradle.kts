@@ -64,6 +64,19 @@ fun escapeForBuildConfig(value: String): String {
 
 val listenTogetherServer = readValue("LISTEN_TOGETHER_SERVER", "").trimEnd('/')
 
+// A debug-signed Release is only for explicitly requested local experiments.
+// CI never sets this property; official builds must use the configured release keystore.
+val allowDebugSignedRelease = providers.gradleProperty("allowDebugSigned")
+    .map { it == "true" }.getOrElse(false)
+val configuredReleaseSigning = listOf(
+    readSigning("storeFile") ?: readSigning("STORE_FILE"),
+    readSigning("storePassword") ?: readSigning("STORE_PASSWORD"),
+    readSigning("keyAlias") ?: readSigning("KEY_ALIAS"),
+    readSigning("keyPassword") ?: readSigning("KEY_PASSWORD"),
+).all { !it.isNullOrBlank() } && (
+    readSigning("storeFile") ?: readSigning("STORE_FILE")
+)?.let { rootProject.file(it).isFile } == true
+
 val runNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
 val autoVersionCode = if (runNumber != null) 10000 + runNumber else 1
 val autoVersionName = if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
@@ -157,9 +170,7 @@ android {
 
     buildTypes {
         debug {
-            signingConfigs.findByName("release")?.let {
-                signingConfig = it
-            }
+            // Keep Debug independently debug-signed, even when Release credentials exist.
         }
 
         release {
@@ -167,7 +178,7 @@ android {
             isShrinkResources = false
 
             signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.getByName("debug")
+                ?: if (allowDebugSignedRelease) signingConfigs.getByName("debug") else null
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -179,6 +190,21 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// Fail before running Release assembly if an actual release keystore is missing.
+// Release unit tests do not assemble an APK, so they remain executable without secrets.
+gradle.taskGraph.whenReady {
+    if (hasTask(":app:assembleRelease") &&
+        !configuredReleaseSigning &&
+        !allowDebugSignedRelease
+    ) {
+        throw GradleException(
+            "Release signing requires a valid configured keystore. " +
+                "No Debug signature fallback is allowed; " +
+                "-PallowDebugSigned=true is for explicit local experiments only."
+        )
     }
 }
 

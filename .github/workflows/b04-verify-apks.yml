@@ -253,7 +253,9 @@ jobs:
         continue-on-error: true
         env:
           VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          VIRUSTOTAL_ALLOW_UPLOAD: ${{ vars.VIRUSTOTAL_ALLOW_UPLOAD }}
+          # B04 CI is always hash-only. A repository variable cannot enable public uploads.
+          # Future manual uploads require a separate approved workflow.
+          VIRUSTOTAL_ALLOW_UPLOAD: "false"
         run: |
           set -euo pipefail
           python3 -m unittest discover -s .github/scripts -p 'test_virustotal_scan.py' -v
@@ -269,9 +271,12 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      - name: Publish signed Release APK separately
+      - name: Publish signed Release APK separately (blocked until protected environment is configured)
         id: release_apk
-        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        # A step cannot attach a protected GitHub environment: it is job-level only.
+        # Fail closed instead of publishing from this unprotected verification job.
+        # Official Release publication requires a separate environment-protected job.
+        if: ${{ false }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Aurelis-Release-ARM64-${{ github.run_number }}
@@ -302,7 +307,8 @@ jobs:
           EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
           DEBUG_APK_OUTCOME: ${{ steps.debug_apk.outcome }}
           RELEASE_APK_OUTCOME: ${{ steps.release_apk.outcome }}
-          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+          # Publication remains disabled until environment-protected job is implemented.
+          RELEASE_PUBLISH_EXPECTED: "false"
         run: |
           python3 - <<'PY'
           import json
@@ -338,5 +344,5 @@ jobs:
                   bad.append("expected_one_" + variant + "_apk")
           if bad:
               raise SystemExit("B04 failed: " + ", ".join(sorted(set(bad))))
-          print("B04 passed: Debug and signed Release APKs verified and published separately")
+          print("B04 passed: Debug and Release APKs verified; Debug only published. Official Release publication is locked until environment approval.")
           PY

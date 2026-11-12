@@ -270,7 +270,7 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 | Fase | Estado | Commit | Notas |
 |---|---|---|---|
 | F0 | Línea base cerrada | (documentación F0) | API de GitHub consultada: run #41 29,3 min; #40 30,4 min; #50 27,4 min, #51 30,8 min (B05 falló). Detalles en CI14_F0_BASELINE.md. Decisiones D1-D3 y D6 incorporadas al alcance; D4 solo H3 en F1, D5 se reserva para F7. |
-| F1 | Subido | `dcc8aaf` | VirusTotal solo por hash (`VIRUSTOTAL_ALLOW_UPLOAD` desactivado por defecto); release solo desde `main`/tags; `LISTEN_TOGETHER_SERVER` como variable con respaldo a secreto. Pendiente en GitHub: environment `release` con revisor, y la variable `LISTEN_TOGETHER_SERVER`. |
+| F1 | Seguridad fail-closed aplicada; configuración protegida pendiente | `dcc8aaf` + entrega F1 de 2026-11-12 | B04 consulta VirusTotal solo por hash sin que una variable del repositorio habilite subidas. Gradle exige keystore para ensamblar Release y solo permite firma Debug bajo `-PallowDebugSigned=true` explícito. La publicación oficial queda bloqueada hasta disponer de un job con environment `release` y revisores verificados. La variable `LISTEN_TOGETHER_SERVER` todavía debe configurarse; se conserva la compatibilidad con secreto hasta entonces. |
 | F2 | Subido | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
 | F3 | Pendiente | — | Build compartido y paralelización. |
 | F4–F7 | Pendiente | — | Ver secciones 4 y 5. |
@@ -289,3 +289,13 @@ Efectos colaterales a comunicar:
 Evidencia de los tiempos y decisiones de F0: [CI14_F0_BASELINE.md](CI14_F0_BASELINE.md).
 El CI del PR #51 falló en B05 por el cambio a IDLE de Media3; no se hereda el verde del push #50.
 La fase F1 conserva la prioridad de seguridad y no habilita publicación sin protección del environment `release`.
+
+## 12. CI14 F1 — refuerzo de seguridad, entrega 2026-11-12
+
+1. F1-H1: B04 fija `VIRUSTOTAL_ALLOW_UPLOAD=false`. Ninguna variable del repositorio puede publicar el binario por el flujo B01–B06. Los informes siguen distinguiendo `HASH_LOOKUP_ONLY` y `NOT_CONFIGURED` de un análisis limpio. Una futura subida manual exige un workflow independiente y protegido; no se crea uno sin autorización y protección reales.
+2. F1-H3: `assembleRelease` requiere keystore válido y no se firma automáticamente con la clave Debug. Para una prueba local explícita existe `-PallowDebugSigned=true` (nunca configurado en CI); los gates de B04 siguen rechazando cualquier publicación no firmada con el certificado configurado. Debug conserva su firma Debug independiente.
+3. F1-H2: publicación oficial Release desactivada de forma estricta en B04, porque los environments de GitHub se protegen por job, no por step. **No se afirma** que exista el environment `release` ni un revisor obligatorio. Se requiere configurar las reglas desde GitHub y trasladar la publicación a un job protegido antes de habilitar Release. B01–B06 sigue dando informes y Debug solamente.
+4. F1-H4: `LISTEN_TOGETHER_SERVER` prioriza `vars`, pero conserva temporalmente la compatibilidad con el secreto de repositorio. No se puede afirmar que esté migrado sin observar/configurar `vars.LISTEN_TOGETHER_SERVER` en GitHub.
+5. F1-H5: se mantienen permisos mínimos existentes; B06 requiere `actions: write` para borrar temporales únicamente tras PASS.
+
+**Estado:** salvaguardas de código aplicadas. La configuración de GitHub (environment `release`, revisores, variable de repositorio y eventual workflow manual) sigue pendiente. F1 no se declarará operativamente completa hasta verificarla. Los tests y el pipeline de este commit no se presumen verdes sin observarlos.
