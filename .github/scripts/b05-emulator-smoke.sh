@@ -106,27 +106,29 @@ if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
   exit 1
 fi
 if ! adb shell am instrument -w -r \
-     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest,com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest,com.music.aurelis.playback.RealAutoRepeatInstrumentedTest \
+     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest,com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest,com.music.aurelis.playback.RealAutoRepeatInstrumentedTest,com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest \
      com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner \
      > "$OUT/p3-instrumentation.log" 2>&1; then
   echo 'P3: Android instrumented-test execution failed'
   cat "$OUT/p3-instrumentation.log"
   exit 1
 fi
-# Exactly three named tests must succeed, not merely a green exit code.
-# Their distinct report entries are required to avoid false P3.2 coverage.
-if ! grep -Eq '^OK \(3 tests\)' "$OUT/p3-instrumentation.log" ||
+# Exactly four named tests must succeed, not merely a green exit code.
+# Their distinct result entries are required to avoid false P3.4 coverage.
+if ! grep -Eq '^OK \(4 tests\)' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'test=generatedPcmWavPlaysPausesSeeksAndResumesThroughMediaSession' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'test=twoOriginalWavsNextPreviousAndQueueRemovalUseActualMediaSession' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'test=naturalTrackEndAdvancesAndRepeatOneLoopsOnRealMediaSession' "$OUT/p3-instrumentation.log" ||
+   ! grep -q 'test=missingLocalWavReportsErrorThenSameSessionRecoversToValidWav' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'INSTRUMENTATION_CODE: -1' "$OUT/p3-instrumentation.log" ||
    grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_STATUS_CODE: -2' "$OUT/p3-instrumentation.log"; then
   echo 'P3: no verified AndroidJUnitRunner PASS result'
   cat "$OUT/p3-instrumentation.log"
   exit 1
 fi
-echo 'PASS: both AndroidJUnitRunner cases: real local WAV playback and actual MediaSession queue transitions' > "$OUT/p3-instrumentation-pass.txt"
+echo 'PASS: four named AndroidJUnitRunner cases through the real Aurelis MediaSession' > "$OUT/p3-instrumentation-pass.txt"
 echo 'PASS: two original WAVs; next, previous, removal, and resume checked through real Media3 service' > "$OUT/p3-queue-transitions-pass.txt"
 echo 'PASS: real Media3 AUTO track transition, end-of-queue and repeat-one transition observed' > "$OUT/p3-auto-repeat-pass.txt"
+echo 'PASS: missing file emitted Media3 error and same service decoded/replayed a valid WAV' > "$OUT/p3-error-recovery-pass.txt"
 
-echo 'B05: local WAV, manual queue commands, automatic transition and repeat-one tests passed.'
+echo 'B05: local WAV, queue, automatic transitions, repeat-one and error recovery passed.'

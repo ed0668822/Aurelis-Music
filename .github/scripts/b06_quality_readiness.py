@@ -15,7 +15,8 @@ UI = (
 )
 AUDIO = (
     "load_local_track", "play_pause_resume", "next_previous", "queue_management",
-    "automatic_track_advance", "repeat_one_mode", "gapless_transition", "crossfade", "audio_output_route",
+    "automatic_track_advance", "repeat_one_mode", "missing_local_file_recovery",
+    "gapless_transition", "crossfade", "audio_output_route",
 )
 
 
@@ -145,7 +146,7 @@ def report(package: Path, sha: str):
     auto_repeat = (
         queue
         and runtime.get("checks", {}).get("p3_auto_repeat_instrumentation_passed") is True
-        and runtime["p3_test"].get("test_count") == 3
+        and runtime["p3_test"].get("test_count") >= 3
         and runtime["p3_test"].get("auto_repeat_passed") is True
         and runtime["p3_test"].get("auto_repeat_test_class")
         == "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest"
@@ -156,6 +157,24 @@ def report(package: Path, sha: str):
     if auto_repeat:
         audio["audio_scenarios"]["automatic_track_advance"] = "EMULATOR_MEDIA3_AUTO_TRANSITION_VERIFIED"
         audio["audio_scenarios"]["repeat_one_mode"] = "EMULATOR_MEDIA3_REPEAT_ONE_VERIFIED"
+    # Fourth named AndroidJUnitRunner test proves error reporting and recovery
+    # through the same real MediaSessionService; not a general guarantee of
+    # external SD/USB permissions, network resilience or missing-codec fallback.
+    recovery = (
+        auto_repeat
+        and runtime.get("checks", {}).get("p3_error_recovery_instrumentation_passed") is True
+        and runtime["p3_test"].get("test_count") == 4
+        and runtime["p3_test"].get("error_recovery_passed") is True
+        and runtime["p3_test"].get("error_recovery_test_class")
+        == "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest"
+    )
+    audio["real_media3_missing_file_recovery"] = (
+        "MEDIA3_EMULATOR_FILE_ERROR_RECOVERED" if recovery else "NOT_VERIFIED"
+    )
+    if recovery:
+        audio["audio_scenarios"]["missing_local_file_recovery"] = (
+            "EMULATOR_MEDIA3_REAL_MISSING_FILE_RECOVERY_VERIFIED"
+        )
     audio["audible_physical_output_verified"] = False
     # Real emulated playback cannot prove audible physical output or native DSP.
 
@@ -173,6 +192,7 @@ def report(package: Path, sha: str):
                    "- WAV original a través de Media3 en emulador: **" + audio["local_wav_media3_instrumentation"] + "**",
                    "- Cambio de pista y cola con Media3 real: **" + audio["real_media3_queue_transitions"] + "**",
                    "- Transición automática y repeat-one reales: **" + audio["real_media3_auto_repeat"] + "**",
+                   "- Recuperación de archivo local inaccesible: **" + audio["real_media3_missing_file_recovery"] + "**",
                    "- Audio audible en dispositivo físico: **NOT_VERIFIED**",
                    "- Publicación pública aprobada: **NO**", ""]
     audio_lines += ["- " + name + ": " + audio["audio_scenarios"][name] for name in AUDIO]

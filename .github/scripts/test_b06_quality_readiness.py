@@ -167,5 +167,46 @@ class QualityReadinessTests(unittest.TestCase):
             _, audio = quality.report(root, SHA)
             self.assertEqual(audio["real_media3_auto_repeat"], "NOT_VERIFIED")
 
+    def test_missing_file_recovery_needs_fourth_real_android_case(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.create(root)
+            evidence = {
+                "commit": SHA,
+                "pass": True,
+                "coverage": "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+                "checks": {
+                    "p3_local_wav_instrumentation_passed": True,
+                    "p3_queue_transitions_instrumentation_passed": True,
+                    "p3_auto_repeat_instrumentation_passed": True,
+                    "p3_error_recovery_instrumentation_passed": True,
+                },
+                "p3_test": {
+                    "passed": True, "test_count": 4,
+                    "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                    "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
+                    "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
+                    "error_recovery_test_class": "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest",
+                    "queue_transitions_passed": True,
+                    "auto_repeat_passed": True,
+                    "error_recovery_passed": True,
+                },
+            }
+            put(root/"B05/Emulador/results.json", evidence)
+            _, audio = quality.report(root, SHA)
+            self.assertEqual(audio["real_media3_missing_file_recovery"],
+                             "MEDIA3_EMULATOR_FILE_ERROR_RECOVERED")
+            self.assertEqual(audio["audio_scenarios"]["missing_local_file_recovery"],
+                             "EMULATOR_MEDIA3_REAL_MISSING_FILE_RECOVERY_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["gapless_transition"], "NOT_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["crossfade"], "NOT_VERIFIED")
+            self.assertFalse(audio["audible_physical_output_verified"])
+            self.assertEqual(audio["public_release_readiness"], "NOT_APPROVED")
+            # The same commit with a missing successful fourth case is not proof.
+            evidence["p3_test"]["error_recovery_passed"] = False
+            put(root/"B05/Emulador/results.json", evidence)
+            _, audio = quality.report(root, SHA)
+            self.assertEqual(audio["real_media3_missing_file_recovery"], "NOT_VERIFIED")
+
 if __name__=="__main__":
     unittest.main()
