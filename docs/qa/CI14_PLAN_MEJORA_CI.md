@@ -329,3 +329,7 @@ El run #53 (anterior a F3) identificó un falso bloqueo de B04: `verify_evidence
 ## 18. F3 — concurrencia de GitHub Actions
 
 Los seis workflows B01–B06 usan ahora grupos de concurrencia basados en `github.run_id` y `github.run_attempt` con `cancel-in-progress: false`. Un push nuevo no cancela automáticamente pruebas ni evidencia de una ejecución anterior. Si el usuario cancela manualmente, B06 conserva el estado real de cada etapa y nunca lo declara verde. Esto completa la revisión de concurrencia prevista en F3.
+
+## 19. Corrección de sintaxis YAML de concurrencia
+
+GitHub rechazó el commit previo antes de asignar jobs porque B04 y B06 tenían una clave duplicada `cancel-in-progress` (la antigua expresión permanecía después de añadir `false`). Se eliminó la definición antigua y se añadió una prueba de regresión para que cada bloque tenga exactamente una clave. No se heredó ningún resultado verde de la ejecución inválida.

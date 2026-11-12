@@ -12,7 +12,6 @@ permissions:
 concurrency:
   group: aurelis-b04-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify-apks:

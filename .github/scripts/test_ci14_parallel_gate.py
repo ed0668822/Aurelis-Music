@@ -38,6 +38,14 @@ class GraphTests(unittest.TestCase):
         self.assertRegex(body, r"(?m)^    needs: b01$")
         self.assertIn("needs.b01.result == 'success'", body)
 
+    def test_concurrency_does_not_define_duplicate_yaml_keys(self):
+        for name in ("b04-verify-apks.yml", "b06-unified-pipeline.yml"):
+            path = WORKFLOW.parent / name
+            data = path.read_text(encoding="utf-8")
+            block = data.split("concurrency:", 1)[1].split("jobs:", 1)[0]
+            self.assertEqual(block.count("cancel-in-progress:"), 1)
+            self.assertIn("cancel-in-progress: false", block)
+
     def test_b06_collects_all_and_preserves_failure_evidence(self):
         body = job(self.flow, "b06")
         self.assertIn("needs: [b01, b02, b03, b04, b05]", body)
