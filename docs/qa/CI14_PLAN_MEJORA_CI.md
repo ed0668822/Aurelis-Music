@@ -379,3 +379,7 @@ B01 now executes `android_ci.py prepare` before Gradle so `task-inputs.gradle` k
 ## 30. F4 — evidencia de objetos C/C++ (2026-11-12)
 
 B04 registra SHA-256 del archivo objeto nativo `.o` para cada fuente declarada por CMake release/debug ARM64 cuando realmente existe y la ruta pertenece a `.cxx`; una orden CMake sin objeto se informa como NO_OBJECT_EVIDENCE. `native-object-evidence.json` queda en los informes B04. Nunca se interpreta un `.o` existente como confirmación de enlace en `.so` o inclusión en APK. Se ejecutan tests negativos de rutas externas y ausencia de `.o`; esto complementa, no elimina, las auditorías P2.
+
+## 31. F4 — cierre de integridad, sin atribución inflada (2026-11-12)
+
+A partir del run #98 SUCCESS se comprobaron 340 entradas Kotlin/Java observadas de Debug, 338 clases acreditadas en Debug y 338 en Release, más 11/11 objetos nativos SHA-256 de fuentes CMake declaradas para Release; un archivo FFmpeg nativo sin orden CMake observada permanece sin certificación individual. El nuevo gate en B06 cruza la matriz F4, las entradas de B01 y los objetos de B04 por el mismo source SHA, bloquea informes contradictorios, faltantes o con compilación inventada, y genera `00-Resumen/f4-integrity-gate.json`. Se verificó localmente contra el ZIP real de #98 y cinco fixtures de regresión, sin borrar los controles P2. Un archivo objeto no prueba el enlace al APK, por lo que `native_apk_linkage_proven=false` permanece explícito. Se requiere un run nuevo del commit para cerrar la validación remota.

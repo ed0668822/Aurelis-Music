@@ -214,6 +214,14 @@ def main() -> None:
     # F4 evidence-only report: no false per-file approval on incomplete inputs.
     from file_compile_matrix import generate as generate_f4
     f4_matrix = generate_f4(OUTPUT, os.environ.get("GITHUB_SHA", ""))
+    from f4_integrity_gate import inspect as inspect_f4
+    try:
+        f4_integrity = inspect_f4(OUTPUT, os.environ.get("GITHUB_SHA", ""))
+    except (ValueError, OSError, TypeError, KeyError, json.JSONDecodeError) as error:
+        f4_integrity = {"status": "FAIL", "source_sha": os.environ.get("GITHUB_SHA"),
+                        "errors": [str(error)], "native_apk_linkage_proven": False}
+        (OUTPUT / "00-Resumen" / "f4-integrity-gate.json").write_text(
+            json.dumps(f4_integrity, indent=2) + "\n", encoding="utf-8")
     from b06_quality_readiness import report as quality_report
     p26, p3 = quality_report(OUTPUT, os.environ.get("GITHUB_SHA", ""))
     index.extend([
@@ -226,6 +234,8 @@ def main() -> None:
     evidence_file = OUTPUT / "B04" / "Verificacion" / "source-evidence.md"
     checks = {
         "p2_file_matrix_consistent": matrix["status"] == "COMPLETE_MATRIX",
+        "f4_evidence_integrity_verified": (
+            f4_integrity["status"] == "PASS_EVIDENCE_INTEGRITY_WITH_LINKAGE_LIMITATIONS"),
         "source_evidence_reconciliation_passed": (
             trusted_evidence.get("status") == "PASS_VERIFIED_GATES" and
             trusted_evidence.get("source_sha") == os.environ.get("GITHUB_SHA") and
@@ -256,6 +266,7 @@ def main() -> None:
         "source_compilation_evidence": coverage,
         "p2_file_matrix": {"status": matrix["status"], "tracked_files": matrix["tracked_files"], "rows": matrix["rows"], "issues": matrix["consistency_issues"]},
         "f4_file_compile_matrix": f4_matrix,
+        "f4_evidence_integrity": f4_integrity,
         "p2_6_ui_functional_status": p26["functional_test_status"],
         "p3_mocked_controller_test_status": p3["mocked_controller_status"],
         "p3_audio_status": p3["audio_functional_test_status"],
