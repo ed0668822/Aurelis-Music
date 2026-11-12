@@ -29,6 +29,11 @@ interno de persistencia como permiso para mantener múltiples cuentas activas.
 | D22 | Exclusiones/aplazamientos de MASTER_PLAN; no eliminar funciones compatibles. |
 | D23 | Mantener plataforma actual; cambios por incompatibilidad demostrada. |
 | D24 | Dos revisiones por unidad; evidencia antes de declarar éxito. |
+| D25 | Regla vigente35/6: fácil/media máximo35; difícil máximo6. Conteo acumulado de todas las rutas de la entrega, incluidos tests/docs/recursos/CI/eliminaciones; renombrar cuenta origen y destino. PLAN_30_FILES queda histórico. |
+| D26 | Las31 adaptaciones de la selección de continuidad se planifican en PLAN_CONTINUATION. Referencia principal b690dc1; solo contraste del reproductor desde acf219a7 como delta seleccionado, no actualización global de main. |
+| D27 | Conservar los avances remotos, incluido f6309d29; sin sobrescribir integraciones previas ni aprobar por implicación NO/MÁS TARDE/no respondidas de otros anexos. |
+| D28 | Gradle/APK/suites Android exclusivamente en GitHub. Localmente inspección/estática/fixtures Python. Tras cada entrega publicada, avisar y esperar resultado comunicado por el usuario antes de la siguiente. |
+| D29 | Desarrollo B00–B13 y fases técnicas Actions B01–B06 son numeraciones distintas. Documentación sola no acredita un build nuevo; B09 permanece sin iniciar hasta sus previas y autorización de ejecución. |
 
 ## Nombres investigados
 

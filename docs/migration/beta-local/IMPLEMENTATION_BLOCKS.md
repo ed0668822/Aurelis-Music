@@ -8,7 +8,14 @@ No copiar familias enteras: editar solo archivos necesarios para el alcance de l
 subunidad. Autorizar un bloque no autoriza el siguiente; subunidades terminan con
 informe y solo avanzan si están incluidas en la autorización vigente.
 
-**Regla vigente (11-11-2026):** máximo 30 rutas de archivo afectadas por subbloque/entrega, acumuladas entre commits e incluyendo código, pruebas, recursos, documentación y CI. Orden agrupado por dependencias en [PLAN_30_FILES](PLAN_30_FILES.md); no renumerar B00–B13 ni relajar sus criterios de QA.
+**Regla vigente:** máximo **35 rutas en entregas fáciles/medias y 6 en difíciles**,
+acumuladas entre todos sus commits; incluye código, pruebas, recursos, documentación,
+configuración y eliminaciones. Renombrar cuenta origen/destino. El manifiesto se
+declara antes de editar y el diff acumulado se comprueba al cerrar. Véanse los hijos,
+dependencias y aceptación de [PLAN_CONTINUATION](PLAN_CONTINUATION.md); conservan las
+48 subunidades históricas y los IDs B00–B13. [PLAN_30_FILES](PLAN_30_FILES.md) queda
+como historial, con su límite sustituido. Si una entrega no cabe, se revisa su
+división antes de implementar; no se elude el máximo repartiendo commits.
 
 ## Contrato común
 
@@ -21,7 +28,9 @@ licencias/regresiones. Dos pasadas del mismo agente se describen honestamente;
 no atribuirlas a humanos independientes. Registrar tests nuevos vs UP-TO-DATE.
 Una compilación o captura no demuestra comportamiento.
 
-Antes de compilar: `source /workspace/toolchains/activate.sh`. Comandos:
+**Compilación y suites Android exclusivamente en GitHub.** Los siguientes comandos
+U/N/D/R son referencias para el runner, no instrucciones de ejecución local. Localmente
+solo inspección, comprobaciones estáticas y fixtures Python; no Gradle ni APK.
 
 - U: `bash gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --no-daemon --max-workers=4`
 - N: U más `bash gradlew :app:externalNativeBuildDebug --no-daemon --max-workers=4`

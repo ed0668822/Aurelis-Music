@@ -1,8 +1,17 @@
 # MASTER_PLAN — Aurelis Music beta local
 
-> **Regla de ejecución vigente (11-11-2026):** 30 rutas como máximo por subbloque/entrega, con conteo acumulado y divisiones previas cuando proceda. Ver [PLAN_30_FILES](PLAN_30_FILES.md), que conserva los IDs y dependencias B00–B13. El estado histórico de este documento no sustituye la verificación reciente por SHA.
+> **Regla de ejecución vigente:** máximo **35 archivos en entregas fáciles/medias y 6 en difíciles**, acumulados entre commits e incluyendo pruebas, recursos, documentación, configuración y eliminaciones. [PLAN_CONTINUATION](PLAN_CONTINUATION.md) registra las 31 adaptaciones seleccionadas y el orden aprobado. [PLAN_30_FILES](PLAN_30_FILES.md) se conserva como historial; su límite ha sido sustituido, sin renumerar B00–B13.
 
 ## Estado vigente
+
+Continuación autorizada mediante «Implement the proposed plan», sobre la rama/PR
+existentes. Base documental f6309d29, sincronizada por avance rápido, preservando
+las pruebas PCM de09b848df y todos los cambios previos. Primera entrega limitada
+al registro del plan; no inicia B09 ni cierra pendientes B06/B07. Ver el estado
+reciente y la puerta entre entregas en [PROGRESS_TRACKER](PROGRESS_TRACKER.md).
+No confundir B00–B13 de desarrollo con las fases B01–B06 de GitHub Actions.
+
+### Estado histórico al cerrar B02
 
 B01.1/.2/.3 y B02.1/.2/.3 implementados y comprobados localmente
 con autorización «continúa hasta B02». Consultar PROGRESS_TRACKER y evidencias

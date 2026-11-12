@@ -1,6 +1,51 @@
 # PROGRESS_TRACKER — beta local
 
-> **Límite nuevo (11-11-2026):** máximo 30 rutas de archivo por subbloque/entrega, incluidas pruebas, documentación y CI, contado sobre todos los commits del bloque. Ver [PLAN_30_FILES](PLAN_30_FILES.md). Esta regla no declara bloques existentes completados ni cambia su historia.
+> **Límite vigente:** máximo **35 archivos en entregas fáciles/medias y 6 en difíciles**, contando toda la entrega y todos sus commits, incluidos pruebas, recursos, documentación, configuración y eliminaciones. [PLAN_CONTINUATION](PLAN_CONTINUATION.md) gobierna la continuación; [PLAN_30_FILES](PLAN_30_FILES.md) queda histórico. No se cierran retrospectivamente B06/B07 ni se inicia B09 por registrar el plan.
+
+## Continuación actual — primera entrega documental
+
+Autorización: selección de todas las31 adaptaciones y «Implement the proposed plan».
+Base `f6309d2961384ca9a07197b51eb7c016d11f0b8d`; checkout previamente en c5ff687d,
+actualizado mediante avance rápido sin conflictos. Se conservaron el commit09b848df
+de regresiones PCM y el plan documental f6309d29; la rama work permanece intacta.
+Estado inicial limpio, sin cambios pendientes ni commits locales exclusivos.
+Cuenta autenticada ed0668822 y correo ed0668822@gmail.com verificado por API;
+identidad Git local coincidente. PR1 abierto, mismo título y rama.
+
+Manifiesto previsto: PLAN_CONTINUATION, MASTER_PLAN, IMPLEMENTATION_BLOCKS,
+PROGRESS_TRACKER, DECISIONS y FILE_MAPPING, todos .md en este directorio.
+Presupuesto conservador6; exclusivamente documentación. PLAN_30_FILES se conserva
+sin modificar. La matriz de selección enlaza las31 capacidades con sus entregas;
+no añade por implicación propuestas excluidas/no respondidas de anexos anteriores.
+
+La implementación funcional y la revisión de las tres carpetas aún no se ejecutan
+en esta entrega. No se ejecuta Gradle/Android localmente ni se modifica código de
+la app, pruebas, workflows, firma, ABI o modelos. Los resultados anteriores de CI
+no se atribuyen a esta documentación como una compilación nueva.
+
+### Revisión1 — estructura, referencias y presupuesto
+
+Primera pasada del mismo agente: manifiesto comprobado contra diff más archivos
+nuevos, exactamente6 rutas Markdown; selecciones01–31 completas, únicas y en
+orden; enlaces locales del nuevo plan resueltos; SHAs base/referencias fijos
+comprobados. PLAN_30_FILES sin cambios. `git diff --check` correcto.
+
+### Revisión2 — alcance, arquitectura y regresiones documentales
+
+Segunda pasada del mismo agente, no revisión humana independiente: comprobadas
+las75 filas de hoja de ruta (varias contienen hijos independientes), presupuestos
+6/35 y distinción entre entregas. Comprobadas puerta de espera, restricción
+GitHub, sesión/servicio únicos, SQLite, modos1/2/3 e interop1, límites físicos,
+proveedores condicionados y B09 sin iniciar. Se corrigió la instrucción antigua
+de compilación local de IMPLEMENTATION_BLOCKS y se identificaron como históricos
+los estados antiguos del master/progreso, sin borrar sus registros.
+
+Resultado de las comprobaciones documentales: correcto; sin pruebas Android,
+Gradle ni compilación nuevos en esta entrega. No se crearon tests de código para
+estos cambios exclusivamente documentales. Tras publicar, avisar y esperar el
+resultado comunicado por el usuario antes de revisar las tres carpetas/CI12.3.
+
+## Registro histórico anterior a la continuación
 
 Base 01c1ba511b9eb8ecb3eb40c98afb46d8d17a017a; rama existente; autorización recibida
 para ejecutar plan por unidades. B01 completado; B02 implementado y comprobado localmente. Ver últimas entradas y evidencias.

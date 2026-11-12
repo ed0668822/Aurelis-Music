@@ -48,6 +48,25 @@ AutoMixPanel existe solo en Aurelis; no hay archivo homónimo en el árbol orige
 Cada port requiere las dependencias aprobadas en B00, procedencia/avisos del
 LICENSE_AUDIT y pruebas del IMPLEMENTATION_BLOCKS.
 
+## Continuación aprobada: selección, referencias y reutilización
+
+[PLAN_CONTINUATION](PLAN_CONTINUATION.md) cruza las31 adaptaciones seleccionadas
+con las filas F00–F23 y las subunidades B existentes. Mantener estas rutas como
+correspondencias históricas; confirmar usos activos antes de editar, sin copiar
+familias enteras ni reiniciar implementaciones ya conectadas.
+
+Excepción delimitada a la referencia principal b690dc1: contraste de controles
+desde BitChord `acf219a7e4a7f52f026d4336d5c7ac5cf7bfafcc`, en
+`sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerChrome.kt`
+y consumidores del reproductor revisados, se integra detrás de F06/F03 en
+B05.2-b. No implica portar vídeo, fuentes, servicios ni las otras novedades de main.
+Al adaptar código realmente, registrar procedencia/avisos y contar esos archivos
+en el presupuesto; esta entrega únicamente documenta la referencia.
+
+Preservar servicio, coordinador/cola y parsers/repositorios de letras existentes.
+No crear otro PlayerLyrics, coordinador o gestor cuando el contrato necesario ya
+esté conectado. Las filas «nuevos previstos» no son permiso de duplicación.
+
 
 B01.1: F01 incluye las conexiones existentes Application/MainActivity/player para
 retirar listeners de cambio de perfil. No modifica catálogo (F02), DSP ni motor.
