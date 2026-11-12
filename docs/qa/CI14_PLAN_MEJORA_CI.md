@@ -337,3 +337,7 @@ GitHub rechazó el commit previo antes de asignar jobs porque B04 y B06 tenían 
 ## 20. F3 — preservación de salidas de compilador en B04
 
 El artefacto de APK no equivale a los directorios de clases que utiliza la auditoría de B04. Por ello B01 también empaqueta las salidas Kotlin/Java declaradas por `AURELIS_CLASS_OUTPUT` y las entrega en `b01-compiler-outputs` con SHA-256, tamaño y procedencia por run/attempt. B04 restaura estas clases antes de ejecutar su auditor; cualquier archivo inesperado, symlink, tamaño anormal, SHA incorrecto o commit diferente bloquea la fase. El bundle se elimina únicamente tras PASS final. La copia no convierte automáticamente cada archivo fuente en evidencia de compilación individual, que sigue sin atribuirse fuera de las pruebas disponibles.
+
+## 21. F3 — corrección de inicialización de adb
+
+El run #68 mostró fallo de B05 anterior a la descarga de APK porque `command -v adb` no encontraba ejecutable en PATH de `ubuntu-24.04`. B05 ahora obtiene `platform-tools/adb` de `ANDROID_HOME` (instalándolo por `sdkmanager` si falta), registra su versión y añade el directorio a `GITHUB_PATH`. No se compilan APKs ni se omite el test Media3 por esta corrección. El éxito final requiere ejecutar B05 para el SHA actualizado.
