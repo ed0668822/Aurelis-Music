@@ -359,3 +359,7 @@ Se añade `file_compile_matrix.py` y sus pruebas, que emite `file-compile-matrix
 ## 25. CI14 F5 — prueba y cobertura (2026-11-12)
 
 MediaSessionBridgeTest elimina el sleep fijo usando Robolectric idle y una espera cooperativa. Kover 0.9.11 genera XML Debug/Release; la cobertura de líneas cambiadas no se afirma cuando no se conoce el merge-base o falta XML. B05 deriva el número de pruebas de sus siete resultados reales; sin reintentos ocultos. Dependabot se configura semanalmente para Gradle/Actions. Faltan validaciones del nuevo SHA y comprobar control de cobertura sobre el diff antes de usarla como puerta obligatoria.
+
+## 26. CI14 F5 — cobertura de cambios verificable (2026-11-12)
+
+B03 incluye historial Git para determinar `origin/main...HEAD` y genera `ci-b03/diff-coverage.json` a partir del XML JaCoCo-compatible producido por Kover. Solo cuenta líneas ejecutables modificadas; distingue `NOT_MEASURED` para XML ausente, SHA base desconocido o fuentes sin correspondencia. La meta sugerida de 80 % queda diagnóstica porque el pipeline actual es exclusivo de push y no tiene un PR gate con merge-base aprobado; no se permite presentar el resultado ausente como cobertura completa. Las pruebas unitarias del parser se ejecutan en B03 y B06. Mantiene aislamiento B02/B03/B05 y los dos artefactos finales.

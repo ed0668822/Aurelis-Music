@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Create isolated report directory
         run: mkdir -p ci-b03/junit/debug ci-b03/junit/release
@@ -95,6 +96,14 @@ jobs:
           mkdir -p ci-b03/coverage
           find app/build/reports/kover -type f -name '*.xml' -exec cp --parents {} ci-b03/coverage/ \;
           test -n "$(find ci-b03/coverage -type f -name '*.xml' -print -quit)"
+
+      - name: Assess changed-line Kover coverage (fail closed on unknown provenance)
+        id: diff_coverage
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_f5_diff_coverage.py' -v
+          python3 .github/scripts/f5_diff_coverage.py --base origin/main             --reports ci-b03/coverage --output ci-b03/diff-coverage.json
 
       - name: Summarize JUnit XML results
         if: always()
@@ -211,6 +220,7 @@ jobs:
             ci-b03/results.json
             ci-b03/test-cases.tsv
             ci-b03/sdk-install.log
+            ci-b03/diff-coverage.json
             ci-b03/kover.log
             ci-b03/coverage/
           if-no-files-found: warn

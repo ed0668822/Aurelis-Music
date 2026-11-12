@@ -110,6 +110,9 @@ jobs:
       - name: Test CI14 F4 source and APK evidence verdicts
         run: python3 -m unittest discover -s .github/scripts -p 'test_file_compile_matrix.py' -v
 
+      - name: Test F5 changed-line coverage without misleading green results
+        run: python3 -m unittest discover -s .github/scripts -p 'test_f5_diff_coverage.py' -v
+
       - name: Test P2.5 VirusTotal packaging and artifact contract offline
         run: python3 -m unittest discover -s .github/scripts -p 'test_b06_delivery_contract.py' -v
 
