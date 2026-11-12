@@ -4,6 +4,27 @@
 
 ## Continuación actual — primera entrega documental
 
+### Corrección CI15 antes del siguiente bloque
+
+Autorización «Soluciona eso antes del siguiente bloque». Base final dcc8aafd:
+se preservan el documento CI14 y la fase F1 llegada concurrentemente. La resolución
+propia se guardó/verificó fuera del checkout antes de reanudar sobre ese avance.
+Se integra main 1d0d26a8 en la
+rama de trabajo y se resuelve manualmente el add/add de B01 con su contrato
+reutilizable actual; main/PR1 no se fusionan hacia main ni se reescribe historia.
+AGENTS.md/SECURITY.md de main se conservan intactos. Único cambio semántico de
+árbol fuera de documentación: ninguno; el YAML B01 conserva su estructura y solo
+aclara comentarios, que además hacen coincidir el push con el filtro b0*.yml.
+
+Manifiesto de cinco rutas y presupuesto máximo6 en
+[CI15_PR_CONFLICT](../../qa/CI15_PR_CONFLICT.md). Dos revisiones del mismo agente;
+139 fixtures Python y comprobaciones YAML/diff correctas; sin Gradle/Android
+locales. Tras publicar, verificar PR fusionable y pipeline iniciado para el SHA
+exacto. Resultado Android nuevo pendiente, sin avanzar al siguiente bloque ni
+implementar nuevas fases CI14 dentro de esta reparación. La restricción remota de
+Release a main/tags sigue intacta; su contradicción con gates B04/B06 queda
+identificada en CI15 y no se presenta como pipeline completo aprobado.
+
 Autorización: selección de todas las31 adaptaciones y «Implement the proposed plan».
 Base `f6309d2961384ca9a07197b51eb7c016d11f0b8d`; checkout previamente en c5ff687d,
 actualizado mediante avance rápido sin conflictos. Se conservaron el commit09b848df

@@ -1,5 +1,7 @@
 # Aurelis © 2026. GPL-3.0-or-later.
-# B01: independent debug APK compilation and diagnostics.
+# B01: reusable Debug compilation stage; feature pushes are owned by B06.
+# Keep workflow_call for B06 and publish verified APKs only in B04.
+# Reconciled with the standalone main workflow without restoring duplicate APK uploads.
 name: "B01 | Compile Debug APK"
 
 on:
