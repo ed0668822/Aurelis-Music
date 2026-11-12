@@ -179,8 +179,17 @@ def evaluate(root: Path, out: Path, expected_sha: str) -> dict:
                 problems.append(f"{variant.upper()}_{flag.upper()}_NOT_VERIFIED")
         if record.get("abis") != [EXPECTED_ABI] or record.get("package") != EXPECTED_PACKAGE:
             problems.append(f"{variant.upper()}_ABI_OR_PACKAGE_MISMATCH")
-        if expected_certificate not in record.get("signer_certificate_sha256", []):
-            problems.append(f"{variant.upper()}_SIGNER_CERTIFICATE_MISMATCH")
+        signer_hashes = record.get("signer_certificate_sha256", [])
+        if not isinstance(signer_hashes, list) or not signer_hashes or any(
+            not isinstance(cert, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", cert)
+            for cert in signer_hashes
+        ):
+            problems.append(f"{variant.upper()}_SIGNER_CERTIFICATE_INVALID_OR_MISSING")
+        # Debug and Release have distinct legitimate signing policies.
+        # Only the Release must match the configured production certificate.
+        # Debug still requires apksigner PASS plus valid fingerprint evidence.
+        if variant == "release" and expected_certificate not in signer_hashes:
+            problems.append("RELEASE_SIGNER_CERTIFICATE_MISMATCH")
         if audit.get("status") != EXPECTED_AUDIT or audit.get("required_failures") or audit.get("evidence_errors"):
             problems.append(f"{variant.upper()}_APK_CONTENT_AUDIT_NOT_VERIFIED")
         if audit.get("apk_sha256") != digest or audit.get("policy_sha256") != sha256(root / ".github/apk-audit-policy.json"):

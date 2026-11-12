@@ -64,6 +64,13 @@ class EvidencePolicyTests(unittest.TestCase):
             self.assertIsNone(verifier.safe_apk(root, "/tmp/untrusted.apk"))
             self.assertIsNone(verifier.safe_apk(root, "missing.apk"))
 
+    def test_release_signer_policy_is_distinct_from_debug(self):
+        import inspect
+        source = inspect.getsource(verifier.evaluate)
+        self.assertIn('variant == "release" and expected_certificate not in signer_hashes', source)
+        self.assertIn('SIGNER_CERTIFICATE_INVALID_OR_MISSING', source)
+        self.assertNotIn('if expected_certificate not in record.get("signer_certificate_sha256", [])', source)
+
     def test_missing_evidence_is_explicit(self):
         with tempfile.TemporaryDirectory() as folder:
             issues = []

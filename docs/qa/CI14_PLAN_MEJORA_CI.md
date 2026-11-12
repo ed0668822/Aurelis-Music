@@ -321,3 +321,7 @@ B02 y B03 ahora dependen de B01 y se pueden ejecutar en paralelo. B04 espera exp
 ## 16. F3 — caché de SDK y Gradle (2026-11-12)
 
 Se usa `actions/cache` fijado a SHA y clave de versiones de Android 36, build-tools 35.0.0, NDK 26.1.10909125 y CMake 3.22.1 en B01/B02/B03. `sdkmanager` sigue ejecutándose para comprobar la instalación. No se restaura caché en B04: firma y publicación quedan aisladas de datos cacheados. En B01 se prueba dos veces `:app:help --configuration-cache` como sonda diagnóstica no bloqueante; no se activa configuración cache en ensamblado real sin comprobar su compatibilidad. Se permite Gradle daemon en B01 y B03, manteniendo `--max-workers=2` y `--no-configuration-cache` para tareas de producción. F3 está implementada en código y pendiente de validación del SHA final y medición contra la línea base #41 (29,3 min); no se afirma ahorro del 30% sin pruebas.
+
+## 17. F3 / corrección de contrato de firma heredado (2026-11-12)
+
+El run #53 (anterior a F3) identificó un falso bloqueo de B04: `verify_evidence.py` imponía el certificado Release al APK Debug, aunque F1 había separado correctamente las firmas. Se conserva `apksigner` obligatorio para ambos APK y sus huellas SHA-256; solo Release debe coincidir con `configured_certificate_sha256`. Un certificado Release incorrecto sigue bloqueando y no se altera la distribución. Esta reparación es necesaria para el handoff Debug de F3 y no inicia F4.
