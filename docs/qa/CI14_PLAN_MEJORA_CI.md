@@ -317,3 +317,7 @@ B02 y B03 ahora dependen de B01 y se pueden ejecutar en paralelo. B04 espera exp
 - B02, B03 y B05 trabajan en paralelo tras B01; B04 necesita B02+B03 aprobados. B06 obliga a que los cinco stages finalicen correctamente, retiene evidencia si falla y limpia el bundle temporal únicamente tras PASS.
 - Caché SDK de herramientas fijadas por versión en B01; se ejecuta sdkmanager igualmente para comprobar que estén instaladas. No se otorga el estado de compilación a un resultado FROM-CACHE sin observaciones verificadas.
 - El siguiente paso dentro de F3 es contrastar la ejecución remota para validar el ahorro real, la compatibilidad de Gradle y el tratamiento de errores sin introducir cambios de alcance F4.
+
+## 16. F3 — caché de SDK y Gradle (2026-11-12)
+
+Se usa `actions/cache` fijado a SHA y clave de versiones de Android 36, build-tools 35.0.0, NDK 26.1.10909125 y CMake 3.22.1 en B01/B02/B03. `sdkmanager` sigue ejecutándose para comprobar la instalación. No se restaura caché en B04: firma y publicación quedan aisladas de datos cacheados. En B01 se prueba dos veces `:app:help --configuration-cache` como sonda diagnóstica no bloqueante; no se activa configuración cache en ensamblado real sin comprobar su compatibilidad. Se permite Gradle daemon en B01 y B03, manteniendo `--max-workers=2` y `--no-configuration-cache` para tareas de producción. F3 está implementada en código y pendiente de validación del SHA final y medición contra la línea base #41 (29,3 min); no se afirma ahorro del 30% sin pruebas.

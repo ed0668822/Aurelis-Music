@@ -67,12 +67,22 @@ jobs:
           echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
           chmod +x gradlew
 
+      - name: Probe Gradle configuration cache (diagnostic; not a production gate)
+        id: config_probe
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          ./gradlew :app:help --configuration-cache --console=plain --max-workers=2 \
+            2>&1 | tee ci-b01/configuration-cache-probe.log
+          ./gradlew :app:help --configuration-cache --console=plain --max-workers=2 \
+            2>&1 | tee -a ci-b01/configuration-cache-probe.log
+
       - name: Compile and assemble Debug APK
         id: compile
         run: |
           set -euo pipefail
           ./gradlew :app:assembleDebug --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            --stacktrace --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b01/gradle-build.log
 
       - name: Build Debug instrumentation APK (same source as Debug APK)
@@ -81,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           ./gradlew :app:assembleDebugAndroidTest --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            --stacktrace --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b01/p3-androidtest-build.log
           test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 
@@ -109,6 +119,7 @@ jobs:
           P3_BUILD_OUTCOME: ${{ steps.p3_build.outcome }}
           HANDOFF_OUTCOME: ${{ steps.handoff.outcome }}
           SHARED_OUTCOME: ${{ steps.shared.outcome }}
+          CONFIG_PROBE_OUTCOME: ${{ steps.config_probe.outcome }}
         run: |
           python3 - <<'PY'
           import hashlib
@@ -141,6 +152,7 @@ jobs:
               f"- Instrumentation APK built: **{os.getenv('P3_BUILD_OUTCOME', 'unknown')}**",
               f"- SHA-256 provenance verified: **{os.getenv('HANDOFF_OUTCOME', 'unknown')}**",
               f"- Immutable shared artifact uploaded: **{os.getenv('SHARED_OUTCOME', 'unknown')}**",
+              f"- Configuration cache probe: **{os.getenv('CONFIG_PROBE_OUTCOME', 'unknown')}** (diagnostic only)",
               f"- Commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
               f"- Gradle task lines captured: **{len(tasks)}**",
               f"- Debug APKs found: **{len(apks)}**",

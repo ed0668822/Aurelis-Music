@@ -42,6 +42,16 @@ jobs:
           validate-wrappers: true
           cache-read-only: true
 
+      - name: Cache fixed-version Android SDK components
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/platforms/android-36
+            ${{ env.ANDROID_HOME }}/build-tools/35.0.0
+            ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+            ${{ env.ANDROID_HOME }}/cmake/3.22.1
+          key: android-sdk-v1-${{ runner.os }}-api36-bt35-ndk26.1.10909125-cmake3.22.1
+
       - name: Prepare Android SDK
         run: |
           set -euo pipefail
@@ -61,7 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           ./gradlew :app:testDebugUnitTest --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            --stacktrace --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b03/debug.log
 
       - name: Run Release unit tests independently
@@ -71,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           ./gradlew :app:testReleaseUnitTest --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            --stacktrace --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b03/release.log
 
       - name: Summarize JUnit XML results
