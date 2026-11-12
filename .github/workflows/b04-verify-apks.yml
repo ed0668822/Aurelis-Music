@@ -87,7 +87,7 @@ jobs:
         run: python3 .github/scripts/android_ci.py signing
 
       - name: Download B01 same-run APK handoff
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: b01-shared-apks-${{ github.run_number }}
           path: ci-f3-handoff/
@@ -96,13 +96,13 @@ jobs:
         run: python3 .github/scripts/ci14_handoff.py restore --variant debug
 
       - name: Download B01 source compilation log
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: b01-report-${{ github.run_number }}
           path: ci-b01-from-producer/
 
       - name: Download B01 declared class outputs
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: b01-compiler-outputs-${{ github.run_number }}
           path: ci-f3-classes/
@@ -305,19 +305,6 @@ jobs:
           path: ci-artifacts/
           retention-days: 30
           if-no-files-found: warn
-
-      - name: Publish signed Release APK separately (blocked until protected environment is configured)
-        id: release_apk
-        # A step cannot attach a protected GitHub environment: it is job-level only.
-        # Fail closed instead of publishing from this unprotected verification job.
-        # Official Release publication requires a separate environment-protected job.
-        if: ${{ false }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: Aurelis-Release-ARM64-${{ github.run_number }}
-          path: ci-b04-delivery/release/*.apk
-          retention-days: 14
-          if-no-files-found: error
 
       - name: Publish Debug APK separately
         id: debug_apk

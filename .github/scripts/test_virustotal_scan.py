@@ -17,7 +17,7 @@ class VirusTotalAuditTests(unittest.TestCase):
         value = workflow.read_text(encoding="utf-8")
         self.assertIn('VIRUSTOTAL_ALLOW_UPLOAD: "false"', value)
         self.assertNotIn("VIRUSTOTAL_ALLOW_UPLOAD: ${{ vars.VIRUSTOTAL_ALLOW_UPLOAD }}", value)
-        self.assertIn("if: ${{ false }}", value)
+        self.assertNotIn("Aurelis-Release-ARM64-${{ github.run_number }}", value)
 
 
     def test_no_key_never_claims_clean(self):
