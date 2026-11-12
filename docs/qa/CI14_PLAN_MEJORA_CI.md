@@ -271,7 +271,7 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 |---|---|---|---|
 | F0 | Línea base cerrada | (documentación F0) | API de GitHub consultada: run #41 29,3 min; #40 30,4 min; #50 27,4 min, #51 30,8 min (B05 falló). Detalles en CI14_F0_BASELINE.md. Decisiones D1-D3 y D6 incorporadas al alcance; D4 solo H3 en F1, D5 se reserva para F7. |
 | F1 | Seguridad fail-closed aplicada; configuración protegida pendiente | `dcc8aaf` + entrega F1 de 2026-11-12 | B04 consulta VirusTotal solo por hash sin que una variable del repositorio habilite subidas. Gradle exige keystore para ensamblar Release y solo permite firma Debug bajo `-PallowDebugSigned=true` explícito. La publicación oficial queda bloqueada hasta disponer de un job con environment `release` y revisores verificados. La variable `LISTEN_TOGETHER_SERVER` todavía debe configurarse; se conserva la compatibilidad con secreto hasta entonces. |
-| F2 | Subido | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
+| F2 | Consolidado; CI de este SHA pendiente | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
 | F3 | Pendiente | — | Build compartido y paralelización. |
 | F4–F7 | Pendiente | — | Ver secciones 4 y 5. |
 
@@ -299,3 +299,9 @@ La fase F1 conserva la prioridad de seguridad y no habilita publicación sin pro
 5. F1-H5: se mantienen permisos mínimos existentes; B06 requiere `actions: write` para borrar temporales únicamente tras PASS.
 
 **Estado:** salvaguardas de código aplicadas. La configuración de GitHub (environment `release`, revisores, variable de repositorio y eventual workflow manual) sigue pendiente. F1 no se declarará operativamente completa hasta verificarla. Los tests y el pipeline de este commit no se presumen verdes sin observarlos.
+
+## 13. CI14 F2 — consolidación (2026-11-12)
+
+- `android.yml` fue retirado anteriormente. Los eventos push/PR de B06 usan el mismo conjunto explícito de paths (GitHub no permite combinar `paths` con `paths-ignore`).
+- B02 ya ejecutaba lint Debug y Release. Se corrige el resumen para que incluya los hallazgos y el XML de cada variante; antes únicamente contabilizaba Debug. La utilidad `b02_lint_summary.py` y sus pruebas impiden etiquetar resultados ausentes o inválidos como PASS.
+- `task-inputs.gradle` y las políticas previas de B01–B06, ARM64 y publicación segura siguen vigentes. La validación remota del nuevo SHA debe observarse antes de declarar todo verde.

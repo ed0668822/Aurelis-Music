@@ -63,65 +63,14 @@ jobs:
             --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b02/lint.log
 
-      - name: Summarize Android Lint issues
+      - name: Test lint-report summary logic offline
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b02_lint_summary.py' -v
+
+      - name: Summarize Debug and Release lint independently
         if: always()
         env:
           LINT_OUTCOME: ${{ steps.lint.outcome }}
-        run: |
-          python3 - <<'PY'
-          import collections
-          import os
-          from pathlib import Path
-          import xml.etree.ElementTree as ET
-
-          out = Path("ci-b02")
-          out.mkdir(exist_ok=True)
-          xml = Path("app/build/reports/lint-results-debug.xml")
-          issues = []
-          error = ""
-          if xml.exists():
-              try:
-                  root = ET.parse(xml).getroot()
-                  for issue in root.findall("issue"):
-                      location = issue.find("location")
-                      issues.append({
-                          "severity": issue.get("severity", "Unknown"),
-                          "id": issue.get("id", "Unknown"),
-                          "message": issue.get("message", ""),
-                          "file": location.get("file", "") if location is not None else "",
-                          "line": location.get("line", "") if location is not None else "",
-                      })
-              except ET.ParseError as exc:
-                  error = f"Lint XML parse failure: {exc}"
-          else:
-              error = "Lint XML was not generated (see lint.log)"
-          with (out / "issues.tsv").open("w", encoding="utf-8") as fp:
-              fp.write("severity\tid\tfile\tline\tmessage\n")
-              for issue in issues:
-                  vals = [issue[k] for k in ("severity", "id", "file", "line", "message")]
-                  fp.write("\t".join(str(v).replace("\t", " ").replace("\n", " ") for v in vals) + "\n")
-          counts = collections.Counter(i["severity"] for i in issues)
-          state = os.getenv("LINT_OUTCOME", "not_started")
-          lines = [
-              "# B02 — Android Lint",
-              f"- Gradle status: **{state}**",
-              f"- XML report: **{'present' if xml.exists() else 'missing'}**",
-              f"- Total issues: **{len(issues)}**",
-              f"- Error: **{counts['Error'] + counts['Fatal']}**",
-              f"- Warning: **{counts['Warning']}**",
-              f"- Information: **{counts['Information']}**",
-              "- Findings are static-analysis results, not proof of APK runtime behavior.",
-              f"- Diagnostic: {error}" if error else "- Diagnostics: `lint.log`, `issues.tsv`",
-          ]
-          (out / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as fp:
-              fp.write("\n".join(lines) + "\n")
-          if xml.exists():
-              (out / "lint-results-debug.xml").write_bytes(xml.read_bytes())
-          rel = Path("app/build/reports/lint-results-release.xml")
-          if rel.exists():
-              (out / "lint-results-release.xml").write_bytes(rel.read_bytes())
-          PY
+        run: python3 .github/scripts/b02_lint_summary.py
 
       - name: Upload B02 Lint report
         if: always()
