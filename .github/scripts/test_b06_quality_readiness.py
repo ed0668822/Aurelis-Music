@@ -95,5 +95,38 @@ class QualityReadinessTests(unittest.TestCase):
             self.assertEqual(audio["local_wav_media3_instrumentation"],"NOT_VERIFIED")
             self.assertEqual(audio["audio_functional_test_status"],"NOT_VERIFIED")
 
+    def test_media3_queue_transitions_require_second_named_android_test(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.create(root)
+            correct = {
+                "commit": SHA,
+                "pass": True,
+                "coverage": "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+                "checks": {
+                    "p3_local_wav_instrumentation_passed": True,
+                    "p3_queue_transitions_instrumentation_passed": True,
+                },
+                "p3_test": {
+                    "passed": True,
+                    "test_count": 2,
+                    "queue_transitions_passed": True,
+                    "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                    "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
+                },
+            }
+            put(root/"B05/Emulador/results.json", correct)
+            _, audio = quality.report(root, SHA)
+            self.assertEqual(audio["real_media3_queue_transitions"], "MEDIA3_EMULATOR_QUEUE_TRANSITIONS_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["next_previous"], "EMULATOR_REAL_MEDIA3_NEXT_PREVIOUS_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["queue_management"], "EMULATOR_REAL_MEDIA3_QUEUE_EDIT_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["gapless_transition"], "NOT_VERIFIED")
+            self.assertEqual(audio["public_release_readiness"], "NOT_APPROVED")
+            # A missing second-test proof cannot be silently treated as green.
+            correct["p3_test"]["queue_test_class"] = "other.Class"
+            put(root/"B05/Emulador/results.json", correct)
+            _, audio = quality.report(root, SHA)
+            self.assertEqual(audio["real_media3_queue_transitions"], "NOT_VERIFIED")
+
 if __name__=="__main__":
     unittest.main()

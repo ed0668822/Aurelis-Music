@@ -143,6 +143,7 @@ jobs:
               "app_process_survived_15s": bool(read("process.txt")),
               "emulator_script_completed": bool(read("smoke-pass.txt")),
               "p3_local_wav_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
+              "p3_queue_transitions_instrumentation_passed": bool(read("p3-queue-transitions-pass.txt")),
           }
           result = {
               "schema_version": 1,
@@ -162,9 +163,12 @@ jobs:
                   "passed": bool(read("p3-instrumentation-pass.txt")),
                   "scope": "AurelisPlaybackService / Media3 local PCM WAV",
                   "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                  "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
+                  "test_count": 2,
+                  "queue_transitions_passed": bool(read("p3-queue-transitions-pass.txt")),
                   "limitations": "Emulator audio is not evidence of audible physical-device output",
               },
-              "not_tested": ["audible physical-device output", "gapless", "crossfade", "physical audio routes", "full UI", "native DSP correctness"],
+              "not_tested": ["audible physical-device output", "sample-exact gapless", "crossfade", "physical audio routes", "full UI", "native DSP correctness"],
           }
           (out / "results.json").write_text(json.dumps(result, indent=2) + "\n")
           lines = [
@@ -181,7 +185,7 @@ jobs:
           for key, state in checks.items():
               lines.append(f"| {key.replace('_', ' ')} | {'PASS' if state else 'FAIL / unavailable'} |")
           lines += ["", "- Detailed evidence: installation, launch, process, activity and AndroidRuntime log.",
-                    "- P3: Android instrumentation exercises generated local WAV through the actual Aurelis MediaSession.",
+                    "- P3: Android instrumentation exercises generated WAV playback and two-track next/previous/queue edits through the actual MediaSession.",
                     "- Physical audio output, gapless, crossfade, routes and native DSP remain unverified.",
                     "- Emulator setup failure is reported separately from app failure."]
           summary = "\n".join(lines) + "\n"

@@ -123,6 +123,22 @@ def report(package: Path, sha: str):
         audio["audio_functional_test_status"] = "MEDIA3_LOCAL_WAV_PLAYBACK_VERIFIED_IN_EMULATOR"
         audio["audio_scenarios"]["load_local_track"] = "EMULATOR_REAL_WAV_DECODE_OBSERVED"
         audio["audio_scenarios"]["play_pause_resume"] = "EMULATOR_PLAY_PAUSE_SEEK_RESUME_OBSERVED"
+    # A second named AndroidJUnitRunner case must be present in B05 before
+    # queue transitions are promoted from mocked to real-media evidence.
+    queue = (
+        wav
+        and runtime.get("checks", {}).get("p3_queue_transitions_instrumentation_passed") is True
+        and runtime["p3_test"].get("test_count") == 2
+        and runtime["p3_test"].get("queue_transitions_passed") is True
+        and runtime["p3_test"].get("queue_test_class")
+        == "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest"
+    )
+    audio["real_media3_queue_transitions"] = (
+        "MEDIA3_EMULATOR_QUEUE_TRANSITIONS_VERIFIED" if queue else "NOT_VERIFIED"
+    )
+    if queue:
+        audio["audio_scenarios"]["next_previous"] = "EMULATOR_REAL_MEDIA3_NEXT_PREVIOUS_VERIFIED"
+        audio["audio_scenarios"]["queue_management"] = "EMULATOR_REAL_MEDIA3_QUEUE_EDIT_VERIFIED"
     audio["audible_physical_output_verified"] = False
     # Real emulated playback cannot prove audible physical output or native DSP.
 
@@ -138,6 +154,7 @@ def report(package: Path, sha: str):
                    "- Verificación de integridad APK: " + str(audio["apk_integrity_verified"]),
                    "- Controles con reproductor simulado: **" + audio["mocked_controller_status"] + "**",
                    "- WAV original a través de Media3 en emulador: **" + audio["local_wav_media3_instrumentation"] + "**",
+                   "- Cambio de pista y cola con Media3 real: **" + audio["real_media3_queue_transitions"] + "**",
                    "- Audio audible en dispositivo físico: **NOT_VERIFIED**",
                    "- Publicación pública aprobada: **NO**", ""]
     audio_lines += ["- " + name + ": " + audio["audio_scenarios"][name] for name in AUDIO]

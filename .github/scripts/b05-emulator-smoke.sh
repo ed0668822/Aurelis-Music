@@ -106,20 +106,25 @@ if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
   exit 1
 fi
 if ! adb shell am instrument -w -r \
-     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest \
+     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest,com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest \
      com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner \
      > "$OUT/p3-instrumentation.log" 2>&1; then
   echo 'P3: Android instrumented-test execution failed'
   cat "$OUT/p3-instrumentation.log"
   exit 1
 fi
-if ! grep -Eq '^OK \(1 test\)' "$OUT/p3-instrumentation.log" ||
+# Exactly two named tests must succeed, not merely a green exit code.
+# Their distinct report entries are required to avoid false P3.2 coverage.
+if ! grep -Eq '^OK \(2 tests\)' "$OUT/p3-instrumentation.log" ||
+   ! grep -q 'test=generatedPcmWavPlaysPausesSeeksAndResumesThroughMediaSession' "$OUT/p3-instrumentation.log" ||
+   ! grep -q 'test=twoOriginalWavsNextPreviousAndQueueRemovalUseActualMediaSession' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'INSTRUMENTATION_CODE: -1' "$OUT/p3-instrumentation.log" ||
    grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_STATUS_CODE: -2' "$OUT/p3-instrumentation.log"; then
   echo 'P3: no verified AndroidJUnitRunner PASS result'
   cat "$OUT/p3-instrumentation.log"
   exit 1
 fi
-echo 'PASS: actual Aurelis MediaSession decoded original PCM WAV; pause, seek, resume and progression observed' > "$OUT/p3-instrumentation-pass.txt"
+echo 'PASS: both AndroidJUnitRunner cases: real local WAV playback and actual MediaSession queue transitions' > "$OUT/p3-instrumentation-pass.txt"
+echo 'PASS: two original WAVs; next, previous, removal, and resume checked through real Media3 service' > "$OUT/p3-queue-transitions-pass.txt"
 
-echo 'B05: startup smoke and local WAV instrumental playback passed.'
+echo 'B05: startup smoke, local WAV playback and two-track queue transitions passed.'
