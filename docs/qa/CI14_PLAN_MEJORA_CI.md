@@ -269,7 +269,7 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 
 | Fase | Estado | Commit | Notas |
 |---|---|---|---|
-| F0 | Parcial | — | Último código verde: run #41 (`09b848d`). Tiempos por job pendientes: requieren API de GitHub con token válido. |
+| F0 | Línea base cerrada | (documentación F0) | API de GitHub consultada: run #41 29,3 min; #40 30,4 min; #50 27,4 min, #51 30,8 min (B05 falló). Detalles en CI14_F0_BASELINE.md. Decisiones D1-D3 y D6 incorporadas al alcance; D4 solo H3 en F1, D5 se reserva para F7. |
 | F1 | Subido | `dcc8aaf` | VirusTotal solo por hash (`VIRUSTOTAL_ALLOW_UPLOAD` desactivado por defecto); release solo desde `main`/tags; `LISTEN_TOGETHER_SERVER` como variable con respaldo a secreto. Pendiente en GitHub: environment `release` con revisor, y la variable `LISTEN_TOGETHER_SERVER`. |
 | F2 | Subido | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
 | F3 | Pendiente | — | Build compartido y paralelización. |
@@ -283,3 +283,9 @@ Desviaciones respecto al plan:
 Efectos colaterales a comunicar:
 - El check de PR ahora se llama "Aurelis | Unified B01-B06 Pipeline". Si la protección de rama exige "Build Release APK", hay que actualizar esa regla.
 - Documentos históricos (B06_1, B07_1) siguen mencionando `android.yml`; no se reescriben como evidencia.
+
+## 11. F0 actualizado — medición reproducible (2026-11-12)
+
+Evidencia de los tiempos y decisiones de F0: [CI14_F0_BASELINE.md](CI14_F0_BASELINE.md).
+El CI del PR #51 falló en B05 por el cambio a IDLE de Media3; no se hereda el verde del push #50.
+La fase F1 conserva la prioridad de seguridad y no habilita publicación sin protección del environment `release`.
