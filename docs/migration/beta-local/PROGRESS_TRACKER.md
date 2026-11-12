@@ -1,5 +1,7 @@
 # PROGRESS_TRACKER — beta local
 
+> **Límite nuevo (11-11-2026):** máximo 30 rutas de archivo por subbloque/entrega, incluidas pruebas, documentación y CI, contado sobre todos los commits del bloque. Ver [PLAN_30_FILES](PLAN_30_FILES.md). Esta regla no declara bloques existentes completados ni cambia su historia.
+
 Base 01c1ba511b9eb8ecb3eb40c98afb46d8d17a017a; rama existente; autorización recibida
 para ejecutar plan por unidades. B01 completado; B02 implementado y comprobado localmente. Ver últimas entradas y evidencias.
 Los bloques anteriores siguen en ../PROGRESS.md sin ser reiniciados o sobrescritos.

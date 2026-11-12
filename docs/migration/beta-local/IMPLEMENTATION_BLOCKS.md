@@ -8,6 +8,8 @@ No copiar familias enteras: editar solo archivos necesarios para el alcance de l
 subunidad. Autorizar un bloque no autoriza el siguiente; subunidades terminan con
 informe y solo avanzan si están incluidas en la autorización vigente.
 
+**Regla vigente (11-11-2026):** máximo 30 rutas de archivo afectadas por subbloque/entrega, acumuladas entre commits e incluyendo código, pruebas, recursos, documentación y CI. Orden agrupado por dependencias en [PLAN_30_FILES](PLAN_30_FILES.md); no renumerar B00–B13 ni relajar sus criterios de QA.
+
 ## Contrato común
 
 LOCK: LICENSE, firma/secretos/claves/configuración de publicación, applicationId,

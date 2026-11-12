@@ -1,5 +1,7 @@
 # MASTER_PLAN — Aurelis Music beta local
 
+> **Regla de ejecución vigente (11-11-2026):** 30 rutas como máximo por subbloque/entrega, con conteo acumulado y divisiones previas cuando proceda. Ver [PLAN_30_FILES](PLAN_30_FILES.md), que conserva los IDs y dependencias B00–B13. El estado histórico de este documento no sustituye la verificación reciente por SHA.
+
 ## Estado vigente
 
 B01.1/.2/.3 y B02.1/.2/.3 implementados y comprobados localmente
