@@ -17,10 +17,12 @@ collect_diagnostics() {
   adb logcat -d -s AndroidRuntime:E > "$OUT/android-runtime-errors.log" 2>&1
   # On failure, collect only Media3/audio tags to avoid unrelated private logs.
   adb logcat -d -v threadtime -s \
-    P3Media3Test:D P3Media3Service:D ExoPlayerImplInternal:E AudioTrack:E \
+    P3Media3Test:D P3Media3Service:D MediaFocusControl:D AudioManager:D \
+    ExoPlayerImplInternal:E AudioTrack:E \
     MediaCodecAudioRenderer:E DefaultAudioSink:E AudioFlinger:E \
     AurelisDspChain:D '*:S' > "$OUT/p3-media3-logcat.txt" 2>&1
   adb shell dumpsys activity activities > "$OUT/activity.txt" 2>&1
+  adb shell dumpsys audio > "$OUT/audio-focus-state.txt" 2>&1
   adb shell screencap -p /sdcard/ci-b05.png >/dev/null 2>&1
   adb pull /sdcard/ci-b05.png "$OUT/screen.png" >/dev/null 2>&1
   printf 'exit_code=%s\n' "$status" > "$OUT/script-exit.txt"
@@ -92,6 +94,15 @@ test -s "$TEST_APK" || { echo 'P3: missing instrumentation APK'; exit 1; }
 if ! adb install -r "$TEST_APK" > "$OUT/p3-install.log" 2>&1; then
   echo 'P3: Android instrumented-test installation failed'
   cat "$OUT/p3-install.log"
+  exit 1
+fi
+# MainActivity requests READ_MEDIA_AUDIO on first launch. Grant only for this
+# automated test so the Android permission dialog cannot replace the foreground
+# app while Media3 requests audio focus (Android 15, targetSdk 35).
+if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
+    > "$OUT/p3-permission-grant.log" 2>&1; then
+  echo 'P3: READ_MEDIA_AUDIO permission setup failed'
+  cat "$OUT/p3-permission-grant.log"
   exit 1
 fi
 if ! adb shell am instrument -w -r \

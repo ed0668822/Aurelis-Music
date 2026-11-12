@@ -5,10 +5,14 @@ package com.music.aurelis.playback
 import android.content.ComponentName
 import android.net.Uri
 import android.util.Log
+import com.music.aurelis.MainActivity
+import androidx.lifecycle.Lifecycle
+import org.junit.Assert.assertEquals
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
@@ -33,10 +37,24 @@ class RealLocalPlaybackInstrumentedTest {
             "P3 requires an original readable PCM WAV fixture",
             fixture.isFile && fixture.canRead() && fixture.length() == 44L + 22_050L * 4L * 2L,
         )
+        // Android 15+ restricts audio focus to a top app or foreground service.
+        // Starting a MediaSessionService from am instrument is not proof that
+        // the target package is foreground; the prior runs received focus loss
+        // (Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS).
+        //
+        // Keep Aurelis's real UI resumed during this test, without disabling
+        // or mocking ExoPlayer's production audio-focus policy.
+        val foreground = ActivityScenario.launch(MainActivity::class.java)
         val future = MediaController.Builder(
             context, SessionToken(context, ComponentName(context, AurelisPlaybackService::class.java))
         ).buildAsync()
         try {
+            assertEquals("P3: Aurelis must be foreground to request audio focus on API 35",
+                Lifecycle.State.RESUMED, foreground.state)
+            foreground.onActivity { activity ->
+                Log.d("P3Media3Test", "Aurelis MainActivity RESUMED; windowFocused=" +
+                    activity.hasWindowFocus())
+            }
             val controller = future.get(30, TimeUnit.SECONDS)
             val listener = object : Player.Listener {
                 override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
@@ -130,6 +148,7 @@ class RealLocalPlaybackInstrumentedTest {
             }
         } finally {
             instrumentation.runOnMainSync { MediaController.releaseFuture(future) }
+            foreground.close()
             fixture.delete()
         }
     }
