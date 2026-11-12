@@ -33,10 +33,10 @@ class GraphTests(unittest.TestCase):
         self.assertIn("needs.b02.result == 'success' && needs.b03.result == 'success'", body)
         self.assertIn("secrets: inherit", body)
 
-    def test_b05_requires_b04(self):
+    def test_b05_reuses_b01_handoff_without_waiting_on_b04(self):
         body = job(self.flow, "b05")
-        self.assertRegex(body, r"(?m)^    needs: b04$")
-        self.assertIn("needs.b04.result == 'success'", body)
+        self.assertRegex(body, r"(?m)^    needs: b01$")
+        self.assertIn("needs.b01.result == 'success'", body)
 
     def test_b06_collects_all_and_preserves_failure_evidence(self):
         body = job(self.flow, "b06")

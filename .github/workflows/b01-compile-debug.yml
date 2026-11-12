@@ -44,6 +44,16 @@ jobs:
           validate-wrappers: true
           cache-read-only: true
 
+      - name: Restore pinned-version Android SDK cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/platforms/android-36
+            ${{ env.ANDROID_HOME }}/build-tools/35.0.0
+            ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+            ${{ env.ANDROID_HOME }}/cmake/3.22.1
+          key: android-sdk-v1-${{ runner.os }}-api36-bt35-ndk26.1.10909125-cmake3.22.1
+
       - name: Install required Android SDK tools
         run: |
           set -euo pipefail
@@ -65,10 +75,40 @@ jobs:
             --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b01/gradle-build.log
 
+      - name: Build Debug instrumentation APK (same source as Debug APK)
+        id: p3_build
+        timeout-minutes: 25
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebugAndroidTest --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b01/p3-androidtest-build.log
+          test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+
+      - name: Verify and package signed-for-debug APK handoff
+        id: handoff
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_ci14_handoff.py' -v
+          python3 .github/scripts/ci14_handoff.py pack
+          python3 .github/scripts/ci14_handoff.py verify
+
+      - name: Upload same-run APK handoff
+        id: shared
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b01-shared-apks-${{ github.run_number }}
+          path: ci-f3-handoff/
+          if-no-files-found: error
+          retention-days: 2
+
       - name: Generate independent B01 report
         if: always()
         env:
           BUILD_OUTCOME: ${{ steps.compile.outcome }}
+          P3_BUILD_OUTCOME: ${{ steps.p3_build.outcome }}
+          HANDOFF_OUTCOME: ${{ steps.handoff.outcome }}
+          SHARED_OUTCOME: ${{ steps.shared.outcome }}
         run: |
           python3 - <<'PY'
           import hashlib
@@ -98,6 +138,9 @@ jobs:
           summary = [
               "# B01 — Debug APK compilation",
               f"- Status: **{status}**",
+              f"- Instrumentation APK built: **{os.getenv('P3_BUILD_OUTCOME', 'unknown')}**",
+              f"- SHA-256 provenance verified: **{os.getenv('HANDOFF_OUTCOME', 'unknown')}**",
+              f"- Immutable shared artifact uploaded: **{os.getenv('SHARED_OUTCOME', 'unknown')}**",
               f"- Commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
               f"- Gradle task lines captured: **{len(tasks)}**",
               f"- Debug APKs found: **{len(apks)}**",

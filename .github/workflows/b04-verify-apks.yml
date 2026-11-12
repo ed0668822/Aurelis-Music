@@ -81,7 +81,22 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: python3 .github/scripts/android_ci.py signing
 
-      - name: Build Debug and Release APKs for verification
+      - name: Download B01 same-run APK handoff
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        with:
+          name: b01-shared-apks-${{ github.run_number }}
+          path: ci-f3-handoff/
+
+      - name: Restore SHA-256-verified B01 Debug APK
+        run: python3 .github/scripts/ci14_handoff.py restore --variant debug
+
+      - name: Download B01 source compilation log
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        with:
+          name: b01-report-${{ github.run_number }}
+          path: ci-b01-from-producer/
+
+      - name: Build verified Release APK without recompiling Debug
         id: build
         continue-on-error: true
         timeout-minutes: 50
@@ -92,11 +107,14 @@ jobs:
           LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebug :app:assembleRelease \
+          test -s ci-b01-from-producer/gradle-build.log
+          cat ci-b01-from-producer/gradle-build.log > ci-artifacts/build.log
+          printf '\n===== F3 RELEASE COMPILE =====\n' >> ci-artifacts/build.log
+          ./gradlew :app:assembleRelease \
             --init-script .github/scripts/task-inputs.gradle \
             --continue --build-cache --console=plain --stacktrace \
             --no-daemon --no-configuration-cache --max-workers=2 \
-            2>&1 | tee ci-artifacts/build.log
+            2>&1 | tee -a ci-artifacts/build.log
 
       - name: Verify signatures, APK identity, ZIP alignment, ABI and required contents
         id: verify

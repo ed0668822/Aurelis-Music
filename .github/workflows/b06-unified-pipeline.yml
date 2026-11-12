@@ -81,10 +81,12 @@ jobs:
     permissions:
       contents: read
 
+  # F3: B05 is safe to execute concurrently with B02/B03 and B04.
+  # Its APKs come exclusively from B01; B06 requires B04 and B05 success.
   b05:
     name: "B05 | Android Emulator"
-    needs: b04
-    if: ${{ needs.b04.result == 'success' }}
+    needs: b01
+    if: ${{ needs.b01.result == 'success' }}
     uses: ./.github/workflows/b05-android-emulator.yml
     permissions:
       contents: read

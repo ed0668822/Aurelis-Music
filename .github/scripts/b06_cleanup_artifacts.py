@@ -71,6 +71,7 @@ def main() -> int:
         final.add(f"Aurelis-Release-ARM64-{n}")
     temporary = {
         f"b01-report-{n}",
+        f"b01-shared-apks-{n}",
         f"b02-lint-report-{n}",
         f"b03-debug-tests-{n}",
         f"b03-release-tests-{n}",

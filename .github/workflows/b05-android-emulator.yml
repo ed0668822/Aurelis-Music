@@ -44,44 +44,33 @@ jobs:
           validate-wrappers: true
           cache-read-only: true
 
-      - name: Prepare app build SDK and native toolchain
+      - name: Verify Android emulator runtime tools
         id: sdk
-        continue-on-error: true
         run: |
           set -euo pipefail
-          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
-          test -x "$SDKMANAGER"
-          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" \
-            "ndk;26.1.10909125" "cmake;3.22.1" > ci-b05/sdk-install.log 2>&1 || {
-              cat ci-b05/sdk-install.log
-              exit 1
-            }
-          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
-          chmod +x gradlew
+          command -v adb
+          test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "Runtime tools available; source APKs built once by B01" > ci-b05/sdk-install.log
 
-      - name: Assemble Debug APK for current commit
+      - name: Download Debug and instrumentation APKs from B01
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        with:
+          name: b01-shared-apks-${{ github.run_number }}
+          path: ci-f3-handoff/
+
+      - name: Restore APKs from identical commit, run, attempt and SHA-256
         id: build
-        if: ${{ steps.sdk.outcome == 'success' }}
-        continue-on-error: true
-        timeout-minutes: 30
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebug --init-script .github/scripts/task-inputs.gradle --console=plain --build-cache \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
-            2>&1 | tee ci-b05/build.log
-          test -s app/build/outputs/apk/debug/app-debug.apk
+          python3 .github/scripts/ci14_handoff.py restore --variant all
+          echo "Verified immutable B01 Debug APK" > ci-b05/build.log
+          echo "Verified immutable B01 instrumentation APK" > ci-b05/p3-androidtest-build.log
 
-      - name: Assemble P3 Android instrumentation APK
+      - name: Confirm P3 instrumentation APK without rebuilding
         id: p3_build
-        if: ${{ steps.build.outcome == 'success' }}
-        continue-on-error: true
-        timeout-minutes: 20
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebugAndroidTest --init-script .github/scripts/task-inputs.gradle --console=plain --build-cache \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
-            2>&1 | tee ci-b05/p3-androidtest-build.log
+          python3 .github/scripts/ci14_handoff.py verify
           test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 
       - name: Enable KVM when available

@@ -272,7 +272,7 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 | F0 | Línea base cerrada | (documentación F0) | API de GitHub consultada: run #41 29,3 min; #40 30,4 min; #50 27,4 min, #51 30,8 min (B05 falló). Detalles en CI14_F0_BASELINE.md. Decisiones D1-D3 y D6 incorporadas al alcance; D4 solo H3 en F1, D5 se reserva para F7. |
 | F1 | Seguridad fail-closed aplicada; configuración protegida pendiente | `dcc8aaf` + entrega F1 de 2026-11-12 | B04 consulta VirusTotal solo por hash sin que una variable del repositorio habilite subidas. Gradle exige keystore para ensamblar Release y solo permite firma Debug bajo `-PallowDebugSigned=true` explícito. La publicación oficial queda bloqueada hasta disponer de un job con environment `release` y revisores verificados. La variable `LISTEN_TOGETHER_SERVER` todavía debe configurarse; se conserva la compatibilidad con secreto hasta entonces. |
 | F2 | Consolidado; CI de este SHA pendiente | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
-| F3 | Parcial: F3-a | Commit F3-a | B02 y B03 en paralelo tras B01; B04 exige ambas. Build compartido/SDK cache/Gradle pendientes. |
+| F3 | Implementada arquitectura F3-b (CI pendiente) | CI14 F3 | APK Debug e instrumentación compilados en B01; B04 construye Release y valida Debug; B05 reutiliza los APK; B02/B03/B05 concurren; cache SDK en B01; faltan mediciones y validación CI. |
 | F4–F7 | Pendiente | — | Ver secciones 4 y 5. |
 
 Desviaciones respecto al plan:
@@ -309,3 +309,11 @@ La fase F1 conserva la prioridad de seguridad y no habilita publicación sin pro
 ## 14. CI14 F3-a — paralelización parcial (2026-11-12)
 
 B02 y B03 ahora dependen de B01 y se pueden ejecutar en paralelo. B04 espera explícitamente el éxito de **ambos** y B05 sigue dependiendo de B04. B06 siempre se ejecuta para conservar evidencia en caso de fallo. `test_ci14_parallel_gate.py` verifica el DAG y se ejecuta antes del empaquetado de B06. No se han compartido aún APKs entre runners, alterado Gradle ni cambiado ABI/firmas. El resultado de tiempo se medirá en GitHub, sin afirmar automáticamente una reducción del 30 %. Siguiente subbloque: F3-b artefacto de build compartido con SHA256 y commit de procedencia.
+
+## 15. F3 — compilación reutilizada y pruebas concurrentes (2026-11-12)
+
+- B01 produce Debug e instrumentación una sola vez, con manifiesto de SHA-256, ABI, commit, run_id, attempt y número de ejecución. El artefacto temporal no contiene keystores ni Release.
+- B04 restaura Debug con integridad verificada, preserva el log de compilación de B01 y ensambla Release con certificado configurado; los gates de firma/ABI/contenido continúan. B05 consume Debug+instrumentación y conserva todas las siete pruebas reales sin reconstruir esos APKs.
+- B02, B03 y B05 trabajan en paralelo tras B01; B04 necesita B02+B03 aprobados. B06 obliga a que los cinco stages finalicen correctamente, retiene evidencia si falla y limpia el bundle temporal únicamente tras PASS.
+- Caché SDK de herramientas fijadas por versión en B01; se ejecuta sdkmanager igualmente para comprobar que estén instaladas. No se otorga el estado de compilación a un resultado FROM-CACHE sin observaciones verificadas.
+- El siguiente paso dentro de F3 es contrastar la ejecución remota para validar el ahorro real, la compatibilidad de Gradle y el tratamiento de errores sin introducir cambios de alcance F4.
