@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import shutil
 
+from b06_cleanup_artifacts import release_expected
+
 INPUT = Path("b06-input")
 OUTPUT = Path("b06-package")
 SOURCES = {
@@ -155,6 +157,14 @@ def source_coverage() -> dict:
 
 
 def main() -> None:
+    publish_release = release_expected()
+    final_count = 3 if publish_release else 2
+    delivery_note = (
+        "Exactly three final artifacts: B01-B06+VirusTotal report ZIP, Debug ARM64 APK and signed Release ARM64 APK."
+        if publish_release else
+        "Exactly two final artifacts: B01-B06+VirusTotal report ZIP and Debug ARM64 APK. "
+        "B04 verifies signed Release ARM64, but it is not published outside main/tags."
+    )
     OUTPUT.mkdir(parents=True, exist_ok=True)
     (OUTPUT / "B06").mkdir(parents=True, exist_ok=True)
     all_present = True
@@ -254,7 +264,9 @@ def main() -> None:
         },
         "apk_files_in_bundle": False,
         "virustotal": virustotal,
-        "note": "Exactly three final artifacts: one B01-B06+VirusTotal report ZIP, Debug ARM64 APK and signed Release ARM64 APK.",
+        "release_publish_expected": publish_release,
+        "expected_final_artifacts": final_count,
+        "note": delivery_note,
     }
     (OUTPUT / "B06" / "pipeline-results.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -263,7 +275,9 @@ def main() -> None:
     lines = ["# Aurelis Music — Informes B01-B06",
              f"- Commit: `{report['commit']}`",
              f"- Resultado: **{report['status']}**",
-             "- Entrega final: 3 artefactos, informes (VirusTotal incluido), APK Debug ARM64 y APK Release ARM64 firmado.",
+             (f"- Entrega final: {final_count} artefactos, informes (VirusTotal incluido) y APK Debug ARM64" +
+              (", más APK Release ARM64 firmado." if publish_release else
+               "; APK Release firmado verificado en B04, sin publicación en esta referencia.")),
              "- La compilación individual de cada archivo no está totalmente demostrada.",
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
              "- Matriz por archivo P2.4: " + matrix["status"] + " (" + str(matrix["rows"]) + " filas).",

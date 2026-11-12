@@ -95,14 +95,68 @@ class DeliveryTests(unittest.TestCase):
                 "Aurelis-Release-ARM64-23",
             })
 
+    def test_feature_branch_keeps_two_final_artifacts(self):
+        with TemporaryDirectory() as tmp:
+            records = [r for r in self.artifacts_for_run()
+                       if r["name"] != "Aurelis-Release-ARM64-23"]
+            deletes = []
+            def fake_api(method, resource):
+                nonlocal records
+                if method == "DELETE":
+                    ident = int(resource.rsplit("/", 1)[-1])
+                    deletes.append(ident)
+                    records = [r for r in records if r["id"] != ident]
+                return None
+            env = {**self.fake_env(tmp), "RELEASE_PUBLISH_EXPECTED": "false"}
+            with patch.dict(os.environ, env), \
+                 patch.object(clean, "artifacts", side_effect=lambda: list(records)), \
+                 patch.object(clean, "api", side_effect=fake_api):
+                old = os.getcwd()
+                try:
+                    os.chdir(tmp)
+                    self.assertEqual(clean.main(), 0)
+                finally:
+                    os.chdir(old)
+            self.assertEqual(len(deletes), 7)
+            self.assertEqual({r["name"] for r in records}, {
+                "Aurelis-Informes-B01-B06-23", "Aurelis-Pruebas-ARM64-23",
+            })
+
+    def test_release_policy_strict_by_default_and_invalid_values_rejected(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertTrue(clean.release_expected())
+        with patch.dict(os.environ, {"RELEASE_PUBLISH_EXPECTED": "false"}, clear=True):
+            self.assertFalse(clean.release_expected())
+        with patch.dict(os.environ, {"RELEASE_PUBLISH_EXPECTED": "unexpected"}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "RELEASE_PUBLISH_EXPECTED"):
+                clean.release_expected()
+
+    def test_feature_branch_refuses_unexpected_release_without_deleting(self):
+        with TemporaryDirectory() as tmp:
+            env = {**self.fake_env(tmp), "RELEASE_PUBLISH_EXPECTED": "false"}
+            deletes = []
+            with patch.dict(os.environ, env), \
+                 patch.object(clean, "artifacts", return_value=self.artifacts_for_run()), \
+                 patch.object(clean, "api", side_effect=lambda *args: deletes.append(args)):
+                old = os.getcwd()
+                try:
+                    os.chdir(tmp)
+                    with self.assertRaisesRegex(RuntimeError, "Unexpected artifacts"):
+                        clean.main()
+                finally:
+                    os.chdir(old)
+            self.assertEqual(deletes, [])
+
     def test_cleanup_refuses_missing_final_or_unrecognized_artifact_without_deleting(self):
-        for scenario in ("fourth-VT", "missing-debug"):
+        for scenario in ("fourth-VT", "missing-debug", "missing-release"):
             with self.subTest(scenario=scenario), TemporaryDirectory() as tmp:
                 records = self.artifacts_for_run()
                 if scenario == "fourth-VT":
                     records.append({"id": 100, "name": "Aurelis-VirusTotal-23", "expired": False})
-                else:
+                elif scenario == "missing-debug":
                     records = [r for r in records if r["name"] != "Aurelis-Pruebas-ARM64-23"]
+                else:
+                    records = [r for r in records if r["name"] != "Aurelis-Release-ARM64-23"]
                 deletions = []
                 with patch.dict(os.environ, self.fake_env(tmp)), \
                      patch.object(clean, "artifacts", return_value=records), \

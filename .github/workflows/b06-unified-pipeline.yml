@@ -133,6 +133,7 @@ jobs:
         env:
           STAGES_JSON: ${{ toJSON(needs) }}
           DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
         run: python3 .github/scripts/b06_bundle_reports.py
 
       - name: Upload B06 final report
@@ -167,8 +168,9 @@ jobs:
           print("B06 PASS: B01-B05 verified, one organized report artifact published")
           PY
 
-      - name: Retain only 3 final artifacts after successful B06 gate
+      - name: Retain only expected final artifacts after successful B06 gate
         if: ${{ success() }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
         run: python3 .github/scripts/b06_cleanup_artifacts.py

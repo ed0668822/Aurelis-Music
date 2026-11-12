@@ -2,8 +2,9 @@
 # Aurelis © 2026. GPL-3.0-or-later.
 """After B06 PASS, delete ONLY verified same-run temporary CI artifacts.
 
-Retain exactly three final downloads:
-  1. B01-B06 reports INCLUDING VirusTotal, 2. Debug ARM64 APK, 3. signed Release ARM64 APK.
+Retain reports with VirusTotal and Debug ARM64 in all successful runs.
+Only main and tags publish the third artifact, a signed Release ARM64 APK.
+An absent policy flag defaults to the strict three-artifact contract.
 Never delete temporary reports on a failed pipeline.
 """
 from __future__ import annotations
@@ -47,6 +48,14 @@ def artifacts() -> list[dict]:
     return collected
 
 
+def release_expected() -> bool:
+    """Use B04's Release policy and reject invalid settings."""
+    value = os.environ.get("RELEASE_PUBLISH_EXPECTED", "true")
+    if value not in ("true", "false"):
+        raise RuntimeError("RELEASE_PUBLISH_EXPECTED must be 'true' or 'false'")
+    return value == "true"
+
+
 def main() -> int:
     summary = Path("b06-package/B06/pipeline-results.json")
     if not summary.is_file() or json.loads(summary.read_text()).get("status") != "PASS":
@@ -57,8 +66,9 @@ def main() -> int:
     final = {
         f"Aurelis-Informes-B01-B06-{n}",
         f"Aurelis-Pruebas-ARM64-{n}",
-        f"Aurelis-Release-ARM64-{n}",
     }
+    if release_expected():
+        final.add(f"Aurelis-Release-ARM64-{n}")
     temporary = {
         f"b01-report-{n}",
         f"b02-lint-report-{n}",
@@ -79,7 +89,7 @@ def main() -> int:
             raise RuntimeError("Final or temporary artifacts are not yet visible; refusing cleanup: " +
                                repr(sorted((final | temporary) - names)))
         time.sleep(3)
-    # A duplicated final name would invalidate the exactly-three contract, even
+    # A duplicated final name would invalidate the expected final-artifact contract, even
     # if the set comparison passed.
     if len(names) != len(existing):
         raise RuntimeError("Duplicate artifact names; refusing cleanup")
@@ -92,11 +102,15 @@ def main() -> int:
             print("Removed temporary artifact:", a["name"])
     for retry in range(8):
         remaining = artifacts()
-        if {x["name"] for x in remaining} == final and len(remaining) == 3:
-            print("B06 SUCCESS: exactly three final downloadable artifacts remain")
+        if {x["name"] for x in remaining} == final and len(remaining) == len(final):
+            count = len(final)
+            print(f"B06 SUCCESS: exactly {count} final downloadable artifacts remain")
             with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as f:
                 f.write("\n## Entrega final\n")
-                f.write("Se publicaron tres artefactos: informes B01-B06 con VirusTotal, Debug ARM64 y Release ARM64.\n")
+                detail = ("informes B01-B06 con VirusTotal, Debug ARM64 y Release ARM64 firmado"
+                          if count == 3 else
+                          "informes B01-B06 con VirusTotal y Debug ARM64; Release no publicado en esta referencia")
+                f.write(f"Se publicaron {count} artefactos: {detail}.\n")
             return 0
         if retry == 7:
             raise RuntimeError("Cleanup not yet confirmed: " + repr([x["name"] for x in remaining]))
