@@ -260,3 +260,26 @@ F0 ──► F1 ──► F2 ──► F3 ──► F4 ──► F5 ──► F6
 - No se ejecutó Gradle ni el build Android en este entorno (no hay Android SDK).
 - No se pudo leer el log del run #38 (fallido) porque el token de GitHub del entorno es inválido.
 - Las versiones de SDK, acciones y requisitos de Play deben revalidarse en el momento de cada fase.
+
+---
+
+## 10. Registro de ejecución
+
+Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
+
+| Fase | Estado | Commit | Notas |
+|---|---|---|---|
+| F0 | Parcial | — | Último código verde: run #41 (`09b848d`). Tiempos por job pendientes: requieren API de GitHub con token válido. |
+| F1 | Subido | `dcc8aaf` | VirusTotal solo por hash (`VIRUSTOTAL_ALLOW_UPLOAD` desactivado por defecto); release solo desde `main`/tags; `LISTEN_TOGETHER_SERVER` como variable con respaldo a secreto. Pendiente en GitHub: environment `release` con revisor, y la variable `LISTEN_TOGETHER_SERVER`. |
+| F2 | Subido | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
+| F3 | Pendiente | — | Build compartido y paralelización. |
+| F4–F7 | Pendiente | — | Ver secciones 4 y 5. |
+
+Desviaciones respecto al plan:
+- VirusTotal: la subida se activa con variable de repo, no con input de `workflow_dispatch`, porque B04 se invoca con `workflow_call`.
+- `redact()` en `android_ci.py` no se modificó: protege el log y no hace falta quitarlo.
+- Publicación de release desde `main` (push) no está habilitada: falta el environment `release`. B06 aún no se dispara en push a `main`.
+
+Efectos colaterales a comunicar:
+- El check de PR ahora se llama "Aurelis | Unified B01-B06 Pipeline". Si la protección de rama exige "Build Release APK", hay que actualizar esa regla.
+- Documentos históricos (B06_1, B07_1) siguen mencionando `android.yml`; no se reescriben como evidencia.
