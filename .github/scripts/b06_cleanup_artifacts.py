@@ -72,6 +72,7 @@ def main() -> int:
     temporary = {
         f"b01-report-{n}",
         f"b01-shared-apks-{n}",
+        f"b01-compiler-outputs-{n}",
         f"b02-lint-report-{n}",
         f"b03-debug-tests-{n}",
         f"b03-release-tests-{n}",

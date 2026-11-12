@@ -95,6 +95,18 @@ jobs:
           name: b01-report-${{ github.run_number }}
           path: ci-b01-from-producer/
 
+      - name: Download B01 declared class outputs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093a # v4
+        with:
+          name: b01-compiler-outputs-${{ github.run_number }}
+          path: ci-f3-classes/
+
+      - name: Restore verified Debug compiler classes for APK/source auditing
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/ci14_compiler_outputs.py restore
+          python3 .github/scripts/ci14_compiler_outputs.py verify
+
       - name: Build verified Release APK without recompiling Debug
         id: build
         continue-on-error: true

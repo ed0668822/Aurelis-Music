@@ -333,3 +333,7 @@ Los seis workflows B01–B06 usan ahora grupos de concurrencia basados en `githu
 ## 19. Corrección de sintaxis YAML de concurrencia
 
 GitHub rechazó el commit previo antes de asignar jobs porque B04 y B06 tenían una clave duplicada `cancel-in-progress` (la antigua expresión permanecía después de añadir `false`). Se eliminó la definición antigua y se añadió una prueba de regresión para que cada bloque tenga exactamente una clave. No se heredó ningún resultado verde de la ejecución inválida.
+
+## 20. F3 — preservación de salidas de compilador en B04
+
+El artefacto de APK no equivale a los directorios de clases que utiliza la auditoría de B04. Por ello B01 también empaqueta las salidas Kotlin/Java declaradas por `AURELIS_CLASS_OUTPUT` y las entrega en `b01-compiler-outputs` con SHA-256, tamaño y procedencia por run/attempt. B04 restaura estas clases antes de ejecutar su auditor; cualquier archivo inesperado, symlink, tamaño anormal, SHA incorrecto o commit diferente bloquea la fase. El bundle se elimina únicamente tras PASS final. La copia no convierte automáticamente cada archivo fuente en evidencia de compilación individual, que sigue sin atribuirse fuera de las pruebas disponibles.

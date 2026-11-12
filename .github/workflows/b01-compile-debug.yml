@@ -103,6 +103,23 @@ jobs:
           python3 .github/scripts/ci14_handoff.py pack
           python3 .github/scripts/ci14_handoff.py verify
 
+      - name: Package and test Debug compiler class evidence
+        id: compiler_outputs
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_ci14_compiler_outputs.py' -v
+          python3 .github/scripts/ci14_compiler_outputs.py pack
+          python3 .github/scripts/ci14_compiler_outputs.py verify
+
+      - name: Upload same-run compiler class evidence
+        id: compiler_upload
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b01-compiler-outputs-${{ github.run_number }}
+          path: ci-f3-classes/
+          if-no-files-found: error
+          retention-days: 2
+
       - name: Upload same-run APK handoff
         id: shared
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -120,6 +137,8 @@ jobs:
           HANDOFF_OUTCOME: ${{ steps.handoff.outcome }}
           SHARED_OUTCOME: ${{ steps.shared.outcome }}
           CONFIG_PROBE_OUTCOME: ${{ steps.config_probe.outcome }}
+          COMPILER_OUTCOME: ${{ steps.compiler_outputs.outcome }}
+          COMPILER_UPLOAD_OUTCOME: ${{ steps.compiler_upload.outcome }}
         run: |
           python3 - <<'PY'
           import hashlib
@@ -153,6 +172,8 @@ jobs:
               f"- SHA-256 provenance verified: **{os.getenv('HANDOFF_OUTCOME', 'unknown')}**",
               f"- Immutable shared artifact uploaded: **{os.getenv('SHARED_OUTCOME', 'unknown')}**",
               f"- Configuration cache probe: **{os.getenv('CONFIG_PROBE_OUTCOME', 'unknown')}** (diagnostic only)",
+              f"- Debug compiler outputs verified: **{os.getenv('COMPILER_OUTCOME', 'unknown')}**",
+              f"- Compiler evidence uploaded: **{os.getenv('COMPILER_UPLOAD_OUTCOME', 'unknown')}**",
               f"- Commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
               f"- Gradle task lines captured: **{len(tasks)}**",
               f"- Debug APKs found: **{len(apks)}**",
