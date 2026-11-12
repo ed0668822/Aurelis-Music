@@ -19,24 +19,8 @@ on:
       - ".github/scripts/**"
       - ".github/apk-audit-policy.json"
       - ".github/workflows/b0*.yml"
-  # Validación de PR hacia main (sustituye a android.yml). No publica release:
-  # B04 solo publica el APK Release desde refs/heads/main o tags.
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle/**"
-      - "gradle.properties"
-      - "gradlew"
-      - "LICENSE"
-      - "LICENSES/**"
-      - "NOTICE"
-      - ".github/scripts/**"
-      - ".github/apk-audit-policy.json"
-      - ".github/workflows/b0*.yml"
+  # The feature branch has a single push-driven pipeline per commit.
+  # Avoid duplicating full builds for its open pull request.
   workflow_dispatch:
 
 permissions:
@@ -44,8 +28,8 @@ permissions:
   actions: read
 
 concurrency:
-  group: aurelis-unified-${{ github.run_id }}-${{ github.run_attempt }}
-  cancel-in-progress: false
+  group: aurelis-unified-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   b01:
@@ -138,7 +122,7 @@ jobs:
         env:
           STAGES_JSON: ${{ toJSON(needs) }}
           DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
-          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+          RELEASE_PUBLISH_EXPECTED: "false"
         run: python3 .github/scripts/b06_bundle_reports.py
 
       - name: Upload B06 final report
@@ -177,5 +161,5 @@ jobs:
         if: ${{ success() }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+          RELEASE_PUBLISH_EXPECTED: "false"
         run: python3 .github/scripts/b06_cleanup_artifacts.py

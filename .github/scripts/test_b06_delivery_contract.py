@@ -63,7 +63,8 @@ class DeliveryTests(unittest.TestCase):
             "Aurelis-Informes-B01-B06-23",
             "Aurelis-Pruebas-ARM64-23",
             "Aurelis-Release-ARM64-23",
-            "b01-report-23", "b02-lint-report-23", "b03-debug-tests-23",
+            "b01-report-23", "b01-shared-apks-23", "b01-compiler-outputs-23",
+            "b02-lint-report-23", "b03-debug-tests-23",
             "b03-release-tests-23", "b03-summary-23",
             "b04-verification-report-23", "b05-android-emulator-23",
         ]
@@ -89,7 +90,7 @@ class DeliveryTests(unittest.TestCase):
                     self.assertEqual(clean.main(), 0)
                 finally:
                     os.chdir(old)
-            self.assertEqual(len(deletes), 7)
+            self.assertEqual(len(deletes), 9)
             self.assertEqual({x["name"] for x in records}, {
                 "Aurelis-Informes-B01-B06-23", "Aurelis-Pruebas-ARM64-23",
                 "Aurelis-Release-ARM64-23",
@@ -117,7 +118,7 @@ class DeliveryTests(unittest.TestCase):
                     self.assertEqual(clean.main(), 0)
                 finally:
                     os.chdir(old)
-            self.assertEqual(len(deletes), 7)
+            self.assertEqual(len(deletes), 9)
             self.assertEqual({r["name"] for r in records}, {
                 "Aurelis-Informes-B01-B06-23", "Aurelis-Pruebas-ARM64-23",
             })
@@ -148,15 +149,19 @@ class DeliveryTests(unittest.TestCase):
             self.assertEqual(deletes, [])
 
     def test_cleanup_refuses_missing_final_or_unrecognized_artifact_without_deleting(self):
-        for scenario in ("fourth-VT", "missing-debug", "missing-release"):
+        for scenario in ("fourth-VT", "missing-debug", "missing-release", "missing-shared", "missing-compiler"):
             with self.subTest(scenario=scenario), TemporaryDirectory() as tmp:
                 records = self.artifacts_for_run()
                 if scenario == "fourth-VT":
                     records.append({"id": 100, "name": "Aurelis-VirusTotal-23", "expired": False})
                 elif scenario == "missing-debug":
                     records = [r for r in records if r["name"] != "Aurelis-Pruebas-ARM64-23"]
-                else:
+                elif scenario == "missing-release":
                     records = [r for r in records if r["name"] != "Aurelis-Release-ARM64-23"]
+                elif scenario == "missing-shared":
+                    records = [r for r in records if r["name"] != "b01-shared-apks-23"]
+                else:
+                    records = [r for r in records if r["name"] != "b01-compiler-outputs-23"]
                 deletions = []
                 with patch.dict(os.environ, self.fake_env(tmp)), \
                      patch.object(clean, "artifacts", return_value=records), \

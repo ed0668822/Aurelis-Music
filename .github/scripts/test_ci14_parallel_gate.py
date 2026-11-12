@@ -27,6 +27,17 @@ class GraphTests(unittest.TestCase):
             self.assertRegex(body, r"(?m)^    needs: b01$")
             self.assertIn("needs.b01.result == 'success'", body)
 
+    def test_three_independent_parallel_jobs_after_b01(self):
+        for name in ("b02", "b03", "b05"):
+            body = job(self.flow, name)
+            self.assertRegex(body, r"(?m)^    needs: b01$")
+            self.assertIn("needs.b01.result == 'success'", body)
+
+    def test_one_push_trigger_not_two_full_runs(self):
+        self.assertIn("  push:", self.flow)
+        self.assertNotIn("  pull_request:", self.flow)
+        self.assertIn("cancel-in-progress: true", self.flow)
+
     def test_b04_requires_both_lint_and_unit_tests(self):
         body = job(self.flow, "b04")
         self.assertIn("needs: [b02, b03]", body)

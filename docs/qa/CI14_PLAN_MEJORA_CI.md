@@ -341,3 +341,10 @@ El artefacto de APK no equivale a los directorios de clases que utiliza la audit
 ## 21. F3 — corrección de inicialización de adb
 
 El run #68 mostró fallo de B05 anterior a la descarga de APK porque `command -v adb` no encontraba ejecutable en PATH de `ubuntu-24.04`. B05 ahora obtiene `platform-tools/adb` de `ANDROID_HOME` (instalándolo por `sdkmanager` si falta), registra su versión y añade el directorio a `GITHUB_PATH`. No se compilan APKs ni se omite el test Media3 por esta corrección. El éxito final requiere ejecutar B05 para el SHA actualizado.
+
+## 22. F3: un único pipeline, tres trabajos paralelos y B06 (2026-11-12)
+
+- Un push a `feature/bitchord-local-migration` genera un pipeline; se evita la ejecución idéntica por `pull_request`. Se conserva `workflow_dispatch` para la validación manual. Las ejecuciones obsoletas de la misma referencia se cancelan al llegar otro push; los artefactos ya publicados permanecen como evidencias parciales.
+- B02 (Lint), B03 (JVM) y B05 (Emulador) son tres jobs separados y paralelos, todos posteriores a B01. B04 espera el éxito de B02 y B03. B06 espera todas las fases y exige su éxito para limpiar temporales.
+- Los tests de B06 incorporan los dos artefactos F3, `b01-shared-apks` y `b01-compiler-outputs`. Nueve temporales por ejecución, dos finales en la rama feature; faltantes e inesperados prohíben la eliminación.
+- Release sigue bloqueado para publicación oficial por F1, y B06 se mantiene coherente con `RELEASE_PUBLISH_EXPECTED=false`.
