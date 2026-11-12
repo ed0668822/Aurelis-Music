@@ -128,5 +128,44 @@ class QualityReadinessTests(unittest.TestCase):
             _, audio = quality.report(root, SHA)
             self.assertEqual(audio["real_media3_queue_transitions"], "NOT_VERIFIED")
 
+    def test_auto_repeat_requires_third_verified_instrumentation(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.create(root)
+            correct = {
+                "commit": SHA, "pass": True,
+                "coverage": "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+                "checks": {
+                    "p3_local_wav_instrumentation_passed": True,
+                    "p3_queue_transitions_instrumentation_passed": True,
+                    "p3_auto_repeat_instrumentation_passed": True,
+                },
+                "p3_test": {
+                    "passed": True,
+                    "test_count": 3,
+                    "queue_transitions_passed": True,
+                    "auto_repeat_passed": True,
+                    "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                    "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
+                    "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
+                },
+            }
+            put(root/"B05/Emulador/results.json", correct)
+            _, audio = quality.report(root, SHA)
+            self.assertEqual(audio["real_media3_auto_repeat"],
+                             "MEDIA3_EMULATOR_AUTO_AND_REPEAT_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["automatic_track_advance"],
+                             "EMULATOR_MEDIA3_AUTO_TRANSITION_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["repeat_one_mode"],
+                             "EMULATOR_MEDIA3_REPEAT_ONE_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["gapless_transition"], "NOT_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["crossfade"], "NOT_VERIFIED")
+            self.assertEqual(audio["public_release_readiness"], "NOT_APPROVED")
+            # A missing third-test proof is not interchangeable with B05 success.
+            correct["p3_test"]["auto_repeat_passed"] = False
+            put(root/"B05/Emulador/results.json", correct)
+            _, audio = quality.report(root, SHA)
+            self.assertEqual(audio["real_media3_auto_repeat"], "NOT_VERIFIED")
+
 if __name__=="__main__":
     unittest.main()

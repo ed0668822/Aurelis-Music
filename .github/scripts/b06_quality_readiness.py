@@ -15,7 +15,7 @@ UI = (
 )
 AUDIO = (
     "load_local_track", "play_pause_resume", "next_previous", "queue_management",
-    "gapless_transition", "crossfade", "audio_output_route",
+    "automatic_track_advance", "repeat_one_mode", "gapless_transition", "crossfade", "audio_output_route",
 )
 
 
@@ -128,7 +128,7 @@ def report(package: Path, sha: str):
     queue = (
         wav
         and runtime.get("checks", {}).get("p3_queue_transitions_instrumentation_passed") is True
-        and runtime["p3_test"].get("test_count") == 2
+        and runtime["p3_test"].get("test_count") >= 2
         and runtime["p3_test"].get("queue_transitions_passed") is True
         and runtime["p3_test"].get("queue_test_class")
         == "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest"
@@ -139,6 +139,23 @@ def report(package: Path, sha: str):
     if queue:
         audio["audio_scenarios"]["next_previous"] = "EMULATOR_REAL_MEDIA3_NEXT_PREVIOUS_VERIFIED"
         audio["audio_scenarios"]["queue_management"] = "EMULATOR_REAL_MEDIA3_QUEUE_EDIT_VERIFIED"
+    # Third named test: automatic MEDIA_ITEM_TRANSITION_REASON_AUTO and
+    # MEDIA_ITEM_TRANSITION_REASON_REPEAT under real Media3 in the emulator.
+    # Neither event measures sample-perfect gapless output.
+    auto_repeat = (
+        queue
+        and runtime.get("checks", {}).get("p3_auto_repeat_instrumentation_passed") is True
+        and runtime["p3_test"].get("test_count") == 3
+        and runtime["p3_test"].get("auto_repeat_passed") is True
+        and runtime["p3_test"].get("auto_repeat_test_class")
+        == "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest"
+    )
+    audio["real_media3_auto_repeat"] = (
+        "MEDIA3_EMULATOR_AUTO_AND_REPEAT_VERIFIED" if auto_repeat else "NOT_VERIFIED"
+    )
+    if auto_repeat:
+        audio["audio_scenarios"]["automatic_track_advance"] = "EMULATOR_MEDIA3_AUTO_TRANSITION_VERIFIED"
+        audio["audio_scenarios"]["repeat_one_mode"] = "EMULATOR_MEDIA3_REPEAT_ONE_VERIFIED"
     audio["audible_physical_output_verified"] = False
     # Real emulated playback cannot prove audible physical output or native DSP.
 
@@ -155,6 +172,7 @@ def report(package: Path, sha: str):
                    "- Controles con reproductor simulado: **" + audio["mocked_controller_status"] + "**",
                    "- WAV original a través de Media3 en emulador: **" + audio["local_wav_media3_instrumentation"] + "**",
                    "- Cambio de pista y cola con Media3 real: **" + audio["real_media3_queue_transitions"] + "**",
+                   "- Transición automática y repeat-one reales: **" + audio["real_media3_auto_repeat"] + "**",
                    "- Audio audible en dispositivo físico: **NOT_VERIFIED**",
                    "- Publicación pública aprobada: **NO**", ""]
     audio_lines += ["- " + name + ": " + audio["audio_scenarios"][name] for name in AUDIO]

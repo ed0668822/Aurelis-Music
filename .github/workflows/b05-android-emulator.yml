@@ -144,6 +144,7 @@ jobs:
               "emulator_script_completed": bool(read("smoke-pass.txt")),
               "p3_local_wav_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
               "p3_queue_transitions_instrumentation_passed": bool(read("p3-queue-transitions-pass.txt")),
+              "p3_auto_repeat_instrumentation_passed": bool(read("p3-auto-repeat-pass.txt")),
           }
           result = {
               "schema_version": 1,
@@ -164,7 +165,9 @@ jobs:
                   "scope": "AurelisPlaybackService / Media3 local PCM WAV",
                   "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
                   "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
-                  "test_count": 2,
+                  "test_count": 3,
+                  "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
+                  "auto_repeat_passed": bool(read("p3-auto-repeat-pass.txt")),
                   "queue_transitions_passed": bool(read("p3-queue-transitions-pass.txt")),
                   "limitations": "Emulator audio is not evidence of audible physical-device output",
               },
@@ -185,7 +188,7 @@ jobs:
           for key, state in checks.items():
               lines.append(f"| {key.replace('_', ' ')} | {'PASS' if state else 'FAIL / unavailable'} |")
           lines += ["", "- Detailed evidence: installation, launch, process, activity and AndroidRuntime log.",
-                    "- P3: Android instrumentation exercises generated WAV playback and two-track next/previous/queue edits through the actual MediaSession.",
+                    "- P3: Android tests verify WAV playback, manual queue edits, natural track transitions and repeat-one through the actual MediaSession.",
                     "- Physical audio output, gapless, crossfade, routes and native DSP remain unverified.",
                     "- Emulator setup failure is reported separately from app failure."]
           summary = "\n".join(lines) + "\n"
