@@ -29,6 +29,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Preflight APK audit syntax and fixtures
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/apk_audit.py
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_apk_audit.py' -v
+
       - name: Prepare evidence folder and source inventory
         id: prepare
         run: |

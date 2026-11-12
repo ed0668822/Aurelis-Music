@@ -32,6 +32,12 @@ jobs:
       - name: Prepare report directory
         run: mkdir -p ci-b01
 
+      - name: Preflight APK audit syntax and fixtures
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/apk_audit.py
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_apk_audit.py' -v
+
       - name: Diagnose workflow YAML and security with pinned tools
         id: workflow_audit
         continue-on-error: true

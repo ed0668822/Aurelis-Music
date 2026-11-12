@@ -119,6 +119,33 @@ class ContentAuditTest(unittest.TestCase):
             self.assertEqual(row['state'],'COMPILER_CLASSES_MAPPED_TO_DEX')
             self.assertEqual(row['source_equivalence'],'NOT_PROVEN_BY_CLASS_PRESENCE')
 
+
+    def test_block_and_line_comments_do_not_spoof_source_package(self):
+        fixtures = (
+            ('/*\npackage wrong.block\n*/\n// package wrong.line\npackage fixture\nclass App',
+             'COMPILER_CLASSES_MAPPED_TO_DEX'),
+            ('/* package fixture */\n// package fixture\npackage other\nclass App',
+             'CLASS_PRESENCE_EVIDENCE_INCOMPLETE'),
+        )
+        for source_text, expected_state in fixtures:
+            with self.subTest(expected_state=expected_state), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                source = root / 'app/src/main/java/fixture/App.kt'
+                source.parent.mkdir(parents=True)
+                source.write_text(source_text, encoding='utf-8')
+                output = root / 'app/build/tmp/kotlin-classes/debug'
+                output.mkdir(parents=True)
+                (output / 'App.class').write_bytes(jvm())
+                inventory = [{'path': str(source.relative_to(root)), 'kind': 'production',
+                              'role': 'MANAGED_SOURCE', 'source_set': 'main'}]
+                out, apk = self.fixture(root, inventory=inventory)
+                (out / 'compile.log').write_text('AURELIS_CLASS_OUTPUT ' + json.dumps({
+                    'task': ':app:compileDebugKotlin', 'path': str(output.relative_to(root))
+                }))
+                result = self.run_audit(root, out, apk)
+                record = next(row for row in result['rows'] if row['path'].endswith('App.kt'))
+                self.assertEqual(record['state'], expected_state)
+
     def test_absent_compiler_outputs_and_homonymous_sources_remain_incomplete(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);inventory=[]
