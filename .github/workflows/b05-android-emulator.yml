@@ -146,6 +146,9 @@ jobs:
               "p3_queue_transitions_instrumentation_passed": bool(read("p3-queue-transitions-pass.txt")),
               "p3_auto_repeat_instrumentation_passed": bool(read("p3-auto-repeat-pass.txt")),
               "p3_error_recovery_instrumentation_passed": bool(read("p3-error-recovery-pass.txt")),
+              "p3_activity_recreation_instrumentation_passed": bool(read("p3-activity-recreation-pass.txt")),
+              "p3_repeat_all_instrumentation_passed": bool(read("p3-repeat-all-pass.txt")),
+              "p3_continuous_playback_instrumentation_passed": bool(read("p3-continuous-playback-pass.txt")),
           }
           result = {
               "schema_version": 1,
@@ -166,7 +169,11 @@ jobs:
                   "scope": "AurelisPlaybackService / Media3 local PCM WAV",
                   "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
                   "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
-                  "test_count": 4,
+                  "test_count": 7,
+                  "session_resilience_test_class": "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest",
+                  "activity_recreation_passed": bool(read("p3-activity-recreation-pass.txt")),
+                  "repeat_all_passed": bool(read("p3-repeat-all-pass.txt")),
+                  "continuous_playback_passed": bool(read("p3-continuous-playback-pass.txt")),
                   "error_recovery_test_class": "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest",
                   "error_recovery_passed": bool(read("p3-error-recovery-pass.txt")),
                   "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
@@ -191,7 +198,7 @@ jobs:
           for key, state in checks.items():
               lines.append(f"| {key.replace('_', ' ')} | {'PASS' if state else 'FAIL / unavailable'} |")
           lines += ["", "- Detailed evidence: installation, launch, process, activity and AndroidRuntime log.",
-                    "- P3: Android tests verify WAV, queue, automatic transitions, repeat-one and recovery from inaccessible files through the real MediaSession.",
+                    "- P3: Seven Android cases verify WAV, queue, repeat modes, error recovery, lifecycle recreation and 12-second continuous decode through real Media3.",
                     "- Physical audio output, gapless, crossfade, routes and native DSP remain unverified.",
                     "- Emulator setup failure is reported separately from app failure."]
           summary = "\n".join(lines) + "\n"

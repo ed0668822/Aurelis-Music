@@ -106,29 +106,35 @@ if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
   exit 1
 fi
 if ! adb shell am instrument -w -r \
-     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest,com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest,com.music.aurelis.playback.RealAutoRepeatInstrumentedTest,com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest \
+     -e class com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest,com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest,com.music.aurelis.playback.RealAutoRepeatInstrumentedTest,com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest,com.music.aurelis.playback.RealSessionResilienceInstrumentedTest \
      com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner \
      > "$OUT/p3-instrumentation.log" 2>&1; then
   echo 'P3: Android instrumented-test execution failed'
   cat "$OUT/p3-instrumentation.log"
   exit 1
 fi
-# Exactly four named tests must succeed, not merely a green exit code.
-# Their distinct result entries are required to avoid false P3.4 coverage.
-if ! grep -Eq '^OK \(4 tests\)' "$OUT/p3-instrumentation.log" ||
+# Exactly seven named tests must pass, not merely a green exit code.
+# All seven named results must be present to avoid false P3.5-P3.7 coverage.
+if ! grep -Eq '^OK \(7 tests\)' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'test=generatedPcmWavPlaysPausesSeeksAndResumesThroughMediaSession' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'test=twoOriginalWavsNextPreviousAndQueueRemovalUseActualMediaSession' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'test=naturalTrackEndAdvancesAndRepeatOneLoopsOnRealMediaSession' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'test=missingLocalWavReportsErrorThenSameSessionRecoversToValidWav' "$OUT/p3-instrumentation.log" ||
+   ! grep -q 'test=activityRecreationRetainsMediaSessionQueueAndAdvancingPosition' "$OUT/p3-instrumentation.log" ||
+   ! grep -q 'test=repeatAllCyclesFromSecondOriginalWavBackToFirst' "$OUT/p3-instrumentation.log" ||
+   ! grep -q 'test=continuousTwelveSecondDecodeAndSeekRemainStable' "$OUT/p3-instrumentation.log" ||
    ! grep -q 'INSTRUMENTATION_CODE: -1' "$OUT/p3-instrumentation.log" ||
    grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_STATUS_CODE: -2' "$OUT/p3-instrumentation.log"; then
   echo 'P3: no verified AndroidJUnitRunner PASS result'
   cat "$OUT/p3-instrumentation.log"
   exit 1
 fi
-echo 'PASS: four named AndroidJUnitRunner cases through the real Aurelis MediaSession' > "$OUT/p3-instrumentation-pass.txt"
+echo 'PASS: seven named AndroidJUnitRunner cases through real Aurelis MediaSession' > "$OUT/p3-instrumentation-pass.txt"
 echo 'PASS: two original WAVs; next, previous, removal, and resume checked through real Media3 service' > "$OUT/p3-queue-transitions-pass.txt"
 echo 'PASS: real Media3 AUTO track transition, end-of-queue and repeat-one transition observed' > "$OUT/p3-auto-repeat-pass.txt"
 echo 'PASS: missing file emitted Media3 error and same service decoded/replayed a valid WAV' > "$OUT/p3-error-recovery-pass.txt"
+echo 'PASS: real activity recreated while MediaSession and position persisted' > "$OUT/p3-activity-recreation-pass.txt"
+echo 'PASS: repeat-all naturally wrapped to the first file on the real service' > "$OUT/p3-repeat-all-pass.txt"
+echo 'PASS: continuous 12-second decoding plus pause, seek and resume on real Media3' > "$OUT/p3-continuous-playback-pass.txt"
 
-echo 'B05: local WAV, queue, automatic transitions, repeat-one and error recovery passed.'
+echo 'B05: seven real Media3 Android tests passed (WAV, queue, repeat modes, recovery, recreation, continuous decode).'

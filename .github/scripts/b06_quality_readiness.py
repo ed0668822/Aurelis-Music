@@ -16,6 +16,7 @@ UI = (
 AUDIO = (
     "load_local_track", "play_pause_resume", "next_previous", "queue_management",
     "automatic_track_advance", "repeat_one_mode", "missing_local_file_recovery",
+    "activity_recreation", "repeat_all_mode", "continuous_playback_12s",
     "gapless_transition", "crossfade", "audio_output_route",
 )
 
@@ -163,7 +164,7 @@ def report(package: Path, sha: str):
     recovery = (
         auto_repeat
         and runtime.get("checks", {}).get("p3_error_recovery_instrumentation_passed") is True
-        and runtime["p3_test"].get("test_count") == 4
+        and runtime["p3_test"].get("test_count") >= 4
         and runtime["p3_test"].get("error_recovery_passed") is True
         and runtime["p3_test"].get("error_recovery_test_class")
         == "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest"
@@ -175,6 +176,27 @@ def report(package: Path, sha: str):
         audio["audio_scenarios"]["missing_local_file_recovery"] = (
             "EMULATOR_MEDIA3_REAL_MISSING_FILE_RECOVERY_VERIFIED"
         )
+    # Only the new, fully successful 7-case real instrumentation suite can
+    # attest to persistence, repeat-all and bounded 12-second stability.
+    resilience = (
+        recovery
+        and runtime.get("checks", {}).get("p3_activity_recreation_instrumentation_passed") is True
+        and runtime.get("checks", {}).get("p3_repeat_all_instrumentation_passed") is True
+        and runtime.get("checks", {}).get("p3_continuous_playback_instrumentation_passed") is True
+        and runtime["p3_test"].get("test_count") == 7
+        and runtime["p3_test"].get("session_resilience_test_class")
+        == "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest"
+        and runtime["p3_test"].get("activity_recreation_passed") is True
+        and runtime["p3_test"].get("repeat_all_passed") is True
+        and runtime["p3_test"].get("continuous_playback_passed") is True
+    )
+    audio["real_media3_session_resilience"] = (
+        "MEDIA3_EMULATOR_SESSION_RESILIENCE_VERIFIED" if resilience else "NOT_VERIFIED"
+    )
+    if resilience:
+        audio["audio_scenarios"]["activity_recreation"] = "EMULATOR_SESSION_SURVIVED_ACTIVITY_RECREATE"
+        audio["audio_scenarios"]["repeat_all_mode"] = "EMULATOR_REPEAT_ALL_AUTO_WRAP_VERIFIED"
+        audio["audio_scenarios"]["continuous_playback_12s"] = "EMULATOR_12_SECOND_DECODE_VERIFIED"
     audio["audible_physical_output_verified"] = False
     # Real emulated playback cannot prove audible physical output or native DSP.
 
@@ -193,6 +215,7 @@ def report(package: Path, sha: str):
                    "- Cambio de pista y cola con Media3 real: **" + audio["real_media3_queue_transitions"] + "**",
                    "- Transición automática y repeat-one reales: **" + audio["real_media3_auto_repeat"] + "**",
                    "- Recuperación de archivo local inaccesible: **" + audio["real_media3_missing_file_recovery"] + "**",
+                   "- Persistencia, repeat-all y reproducción continua: **" + audio["real_media3_session_resilience"] + "**",
                    "- Audio audible en dispositivo físico: **NOT_VERIFIED**",
                    "- Publicación pública aprobada: **NO**", ""]
     audio_lines += ["- " + name + ": " + audio["audio_scenarios"][name] for name in AUDIO]

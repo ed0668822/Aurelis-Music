@@ -208,5 +208,52 @@ class QualityReadinessTests(unittest.TestCase):
             _, audio = quality.report(root, SHA)
             self.assertEqual(audio["real_media3_missing_file_recovery"], "NOT_VERIFIED")
 
+    def test_lifecycle_repeat_all_and_continuous_audio_require_all_seven_cases(self):
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            self.create(root)
+            evidence = {
+                "commit": SHA, "pass": True,
+                "coverage": "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+                "checks": {
+                    "p3_local_wav_instrumentation_passed": True,
+                    "p3_queue_transitions_instrumentation_passed": True,
+                    "p3_auto_repeat_instrumentation_passed": True,
+                    "p3_error_recovery_instrumentation_passed": True,
+                    "p3_activity_recreation_instrumentation_passed": True,
+                    "p3_repeat_all_instrumentation_passed": True,
+                    "p3_continuous_playback_instrumentation_passed": True,
+                },
+                "p3_test": {
+                    "passed": True, "test_count": 7,
+                    "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                    "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
+                    "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
+                    "error_recovery_test_class": "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest",
+                    "session_resilience_test_class": "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest",
+                    "queue_transitions_passed": True, "auto_repeat_passed": True,
+                    "error_recovery_passed": True, "activity_recreation_passed": True,
+                    "repeat_all_passed": True, "continuous_playback_passed": True,
+                },
+            }
+            put(root/"B05/Emulador/results.json", evidence)
+            _, audio=quality.report(root,SHA)
+            self.assertEqual(audio["real_media3_session_resilience"],
+                             "MEDIA3_EMULATOR_SESSION_RESILIENCE_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["repeat_all_mode"],
+                             "EMULATOR_REPEAT_ALL_AUTO_WRAP_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["activity_recreation"],
+                             "EMULATOR_SESSION_SURVIVED_ACTIVITY_RECREATE")
+            self.assertEqual(audio["audio_scenarios"]["continuous_playback_12s"],
+                             "EMULATOR_12_SECOND_DECODE_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["crossfade"], "NOT_VERIFIED")
+            self.assertEqual(audio["public_release_readiness"], "NOT_APPROVED")
+            # Different SHA or incomplete evidence must never qualify.
+            evidence["p3_test"]["continuous_playback_passed"] = False
+            put(root/"B05/Emulador/results.json", evidence)
+            _, audio=quality.report(root,SHA)
+            self.assertEqual(audio["real_media3_session_resilience"], "NOT_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["repeat_all_mode"], "NOT_VERIFIED")
+
 if __name__=="__main__":
     unittest.main()
