@@ -84,6 +84,13 @@ jobs:
           echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
           chmod +x gradlew
 
+      - name: Prepare tracked source inventory before Debug compilation
+        run: |
+          set -euo pipefail
+          mkdir -p ci-artifacts
+          python3 .github/scripts/android_ci.py prepare
+          test -s ci-artifacts/source-inventory.json
+
       - name: Probe Gradle configuration cache (diagnostic; not a production gate)
         id: config_probe
         continue-on-error: true
@@ -101,6 +108,12 @@ jobs:
           ./gradlew :app:assembleDebug --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
             --stacktrace --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b01/gradle-build.log
+
+      - name: Verify every tracked Debug Kotlin/Java task input
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_f4_debug_inputs.py' -v
+          python3 .github/scripts/f4_debug_inputs.py --sha "$GITHUB_SHA"
 
       - name: Build Debug instrumentation APK (same source as Debug APK)
         id: p3_build

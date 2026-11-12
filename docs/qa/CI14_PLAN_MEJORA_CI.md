@@ -371,3 +371,7 @@ B01 ejecuta la auditoría de workflows como paso independiente de diagnóstico, 
 ## 28. CI14 — cierre F1/F3 (2026-11-12)
 
 F3 cumplió la meta de tiempo en run #88, 15,65 min vs #41 29,25 min: -46,5%. Consultar CI14_F3_RESULTADO.md. F1 implementó el workflow manual b04-protected-release.yml con firma protegida y VirusTotal opt-in. El conector no permite verificar ni crear el environment release con revisor; la activación y migración completa de secretos aún requieren administración de GitHub. Un workflow en la rama feature no estará disponible por workflow_dispatch hasta que se integre en main. No se declara F1 operativamente completo antes de esa verificación.
+
+## 29. F4 — Debug compiler input provenance
+
+B01 now executes `android_ci.py prepare` before Gradle so `task-inputs.gradle` knows the full tracked source inventory. Previously B01 had no `ci-artifacts/source-inventory.json` and observed no real tracked Debug source input, while B04 observed 340 Release source inputs. A mandatory F4 assertion now checks observed task input and terminal success for every tracked main Kotlin/Java source; generated-only input or failed task cannot count. Native `.o` source-to-output attribution remains separately pending. This correction is functional for CI evidence and makes no app runtime changes.
