@@ -375,3 +375,7 @@ F3 cumplió la meta de tiempo en run #88, 15,65 min vs #41 29,25 min: -46,5%. Co
 ## 29. F4 — Debug compiler input provenance
 
 B01 now executes `android_ci.py prepare` before Gradle so `task-inputs.gradle` knows the full tracked source inventory. Previously B01 had no `ci-artifacts/source-inventory.json` and observed no real tracked Debug source input, while B04 observed 340 Release source inputs. A mandatory F4 assertion now checks observed task input and terminal success for every tracked main Kotlin/Java source; generated-only input or failed task cannot count. Native `.o` source-to-output attribution remains separately pending. This correction is functional for CI evidence and makes no app runtime changes.
+
+## 30. F4 — evidencia de objetos C/C++ (2026-11-12)
+
+B04 registra SHA-256 del archivo objeto nativo `.o` para cada fuente declarada por CMake release/debug ARM64 cuando realmente existe y la ruta pertenece a `.cxx`; una orden CMake sin objeto se informa como NO_OBJECT_EVIDENCE. `native-object-evidence.json` queda en los informes B04. Nunca se interpreta un `.o` existente como confirmación de enlace en `.so` o inclusión en APK. Se ejecutan tests negativos de rutas externas y ausencia de `.o`; esto complementa, no elimina, las auditorías P2.

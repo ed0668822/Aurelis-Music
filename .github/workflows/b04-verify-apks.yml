@@ -133,6 +133,12 @@ jobs:
             --no-daemon --no-configuration-cache --max-workers=2 \
             2>&1 | tee -a ci-artifacts/build.log
 
+      - name: Attest native ARM64 object bytes without inventing linker proof
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_f4_native_objects.py' -v
+          python3 .github/scripts/f4_native_objects.py --root . --out ci-artifacts/native-object-evidence.json --sha "$GITHUB_SHA"
+
       - name: Verify signatures, APK identity, ZIP alignment, ABI and required contents
         id: verify
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
