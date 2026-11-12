@@ -32,6 +32,11 @@ jobs:
       - name: Prepare report directory
         run: mkdir -p ci-b01
 
+      - name: Diagnose workflow YAML and security with pinned tools
+        id: workflow_audit
+        continue-on-error: true
+        run: bash .github/scripts/f5_workflow_audit.sh
+
       - name: Set up Java 17
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
@@ -137,6 +142,7 @@ jobs:
           HANDOFF_OUTCOME: ${{ steps.handoff.outcome }}
           SHARED_OUTCOME: ${{ steps.shared.outcome }}
           CONFIG_PROBE_OUTCOME: ${{ steps.config_probe.outcome }}
+          WORKFLOW_AUDIT_OUTCOME: ${{ steps.workflow_audit.outcome }}
           COMPILER_OUTCOME: ${{ steps.compiler_outputs.outcome }}
           COMPILER_UPLOAD_OUTCOME: ${{ steps.compiler_upload.outcome }}
         run: |
@@ -172,6 +178,7 @@ jobs:
               f"- SHA-256 provenance verified: **{os.getenv('HANDOFF_OUTCOME', 'unknown')}**",
               f"- Immutable shared artifact uploaded: **{os.getenv('SHARED_OUTCOME', 'unknown')}**",
               f"- Configuration cache probe: **{os.getenv('CONFIG_PROBE_OUTCOME', 'unknown')}** (diagnostic only)",
+              f"- Actionlint/zizmor diagnostic: **{os.getenv('WORKFLOW_AUDIT_OUTCOME', 'unknown')}**",
               f"- Debug compiler outputs verified: **{os.getenv('COMPILER_OUTCOME', 'unknown')}**",
               f"- Compiler evidence uploaded: **{os.getenv('COMPILER_UPLOAD_OUTCOME', 'unknown')}**",
               f"- Commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",

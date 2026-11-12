@@ -363,3 +363,7 @@ MediaSessionBridgeTest elimina el sleep fijo usando Robolectric idle y una esper
 ## 26. CI14 F5 — cobertura de cambios verificable (2026-11-12)
 
 B03 incluye historial Git para determinar `origin/main...HEAD` y genera `ci-b03/diff-coverage.json` a partir del XML JaCoCo-compatible producido por Kover. Solo cuenta líneas ejecutables modificadas; distingue `NOT_MEASURED` para XML ausente, SHA base desconocido o fuentes sin correspondencia. La meta sugerida de 80 % queda diagnóstica porque el pipeline actual es exclusivo de push y no tiene un PR gate con merge-base aprobado; no se permite presentar el resultado ausente como cobertura completa. Las pruebas unitarias del parser se ejecutan en B03 y B06. Mantiene aislamiento B02/B03/B05 y los dos artefactos finales.
+
+## 27. F5 — auditoría de workflows (2026-11-12)
+
+B01 ejecuta la auditoría de workflows como paso independiente de diagnóstico, sin añadir un cuarto job simultáneo. actionlint 1.7.12 se descarga con verificación de SHA-256 contra checksum fijo; zizmor 1.32.0 se instala en entorno temporal aislado. Los informes y códigos de salida se conservan en el reporte B01. Un hallazgo no se etiqueta como PASS, pero permanece diagnóstico hasta revisar baseline y asegurar que no da falsos positivos; no se debilitan los gates del APK o de Media3.
