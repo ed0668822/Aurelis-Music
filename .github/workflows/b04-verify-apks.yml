@@ -88,7 +88,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
           ./gradlew :app:assembleDebug :app:assembleRelease \
@@ -112,7 +112,7 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           python3 - <<'PY'
           import json
@@ -252,6 +252,7 @@ jobs:
         continue-on-error: true
         env:
           VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          VIRUSTOTAL_ALLOW_UPLOAD: ${{ vars.VIRUSTOTAL_ALLOW_UPLOAD }}
         run: |
           set -euo pipefail
           python3 -m unittest discover -s .github/scripts -p 'test_virustotal_scan.py' -v
@@ -269,7 +270,7 @@ jobs:
 
       - name: Publish signed Release APK separately
         id: release_apk
-        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Aurelis-Release-ARM64-${{ github.run_number }}

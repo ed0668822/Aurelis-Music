@@ -21,6 +21,21 @@ class VirusTotalAuditTests(unittest.TestCase):
             self.assertEqual(report["status"], "NOT_CONFIGURED")
             self.assertEqual(report["last_analysis_stats"], {})
 
+    def test_upload_disabled_by_default_without_existing_report(self):
+        from urllib.error import HTTPError
+        with tempfile.TemporaryDirectory() as base:
+            file = Path(base) / "app-release.apk"
+            file.write_bytes(b"sample")
+            digest = hashlib.sha256(b"sample").hexdigest()
+            not_found = HTTPError("https://example.invalid", 404, "Not Found", None, None)
+            with patch.object(vt, "get_api", side_effect=not_found), \
+                 patch.object(vt, "upload", side_effect=AssertionError("public upload must not happen")):
+                report = vt.report_for(file, digest, "dummy-local-key")
+            self.assertEqual(report["status"], "HASH_LOOKUP_ONLY")
+            self.assertEqual(report["error_code"], "UPLOAD_DISABLED_BY_POLICY")
+            self.assertIsNone(report["report_origin"])
+            self.assertIn("HASH_LOOKUP_ONLY", vt.VALID_STATES)
+
     def test_zero_detections_not_from_missing_stats(self):
         self.assertEqual(vt.classification({}), "PENDING")
         self.assertEqual(vt.classification({"malicious": 0, "suspicious": 0, "undetected": 0}), "PENDING")

@@ -41,7 +41,7 @@ def create_virustotal_delivery(ci_passed: bool, b04: dict, commit: str, destinat
     expected = candidates[0].get("sha256") if len(candidates) == 1 else None
     sha_valid = isinstance(expected, str) and re.fullmatch(r"[0-9a-f]{64}", expected) is not None
     matches = bool(sha_valid and source.get("sha256") == expected and source.get("source_sha") == commit)
-    allowed = {"NO_DETECTIONS_REPORTED", "REVIEW_REQUIRED", "PENDING", "ERROR", "NOT_CONFIGURED"}
+    allowed = {"NO_DETECTIONS_REPORTED", "REVIEW_REQUIRED", "PENDING", "ERROR", "NOT_CONFIGURED", "HASH_LOOKUP_ONLY"}
     status = source.get("status") if matches else "REPORT_UNVERIFIED"
     if status not in allowed and status != "REPORT_UNVERIFIED":
         status = "REPORT_UNVERIFIED"

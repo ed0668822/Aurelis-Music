@@ -111,7 +111,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
           ./gradlew :app:compileDebugKotlin :app:compileReleaseKotlin \
@@ -130,7 +130,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
           ./gradlew :app:lintDebug :app:lintRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
@@ -144,7 +144,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
           ./gradlew :app:testDebugUnitTest :app:testReleaseUnitTest --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
@@ -158,7 +158,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: |
           set -euo pipefail
           ./gradlew :app:assembleDebug :app:assembleRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
@@ -184,7 +184,7 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
         run: python3 .github/scripts/android_ci.py report --annotations
 
       - name: Upload reports and redacted logs

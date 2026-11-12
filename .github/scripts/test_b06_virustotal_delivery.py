@@ -33,6 +33,21 @@ class VirusTotalDeliveryTests(unittest.TestCase):
             self.assertEqual(report["virus_total_status"], "REPORT_UNVERIFIED")
             self.assertEqual(report["antivirus_review"], "NOT_CLEARED")
 
+    def test_hash_lookup_only_is_never_cleared(self):
+        with TemporaryDirectory() as dirname:
+            path = Path(dirname) / "B04" / "Verificacion"
+            path.mkdir(parents=True)
+            (path / "virustotal.json").write_text(json.dumps({
+                "status": "HASH_LOOKUP_ONLY", "error_code": "UPLOAD_DISABLED_BY_POLICY",
+                "sha256": "a" * 64, "source_sha": "b" * 40,
+                "analysis_updated_at": "2026-11-08T00:00:00+00:00"}))
+            with patch.object(mod, "OUTPUT", Path(dirname)):
+                report = mod.create_virustotal_delivery(
+                    True, {"apks": [{"variant": "release", "sha256": "a" * 64}]},
+                    "b" * 40, Path(dirname) / "out")
+            self.assertEqual(report["virus_total_status"], "HASH_LOOKUP_ONLY")
+            self.assertEqual(report["antivirus_review"], "NOT_CLEARED")
+
     def test_error_status_is_not_passed(self):
         with TemporaryDirectory() as dirname:
             path = Path(dirname) / "B04" / "Verificacion"

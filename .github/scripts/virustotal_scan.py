@@ -24,7 +24,7 @@ from urllib.parse import urlsplit, urlunsplit
 BASE = "https://www.virustotal.com/api/v3"
 VALID_STATES = {
     "NOT_CONFIGURED", "NO_DETECTIONS_REPORTED", "REVIEW_REQUIRED",
-    "PENDING", "ERROR",
+    "PENDING", "ERROR", "HASH_LOOKUP_ONLY",
 }
 MAX_DIRECT_UPLOAD = 32 * 1024 * 1024
 MAX_LARGE_UPLOAD = 650 * 1024 * 1024
@@ -170,7 +170,7 @@ def selected_detections(attrs: dict) -> list[dict]:
     return result[:50]
 
 
-def report_for(file: Path, digest: str, key: str) -> dict:
+def report_for(file: Path, digest: str, key: str, allow_upload: bool = False) -> dict:
     report = {
         "schema_version": 1,
         "sha256": digest,
@@ -212,6 +212,10 @@ def report_for(file: Path, digest: str, key: str) -> dict:
                 detections=selected_detections(attrs),
                 status=classification(stats),
             )
+            return report
+        if not allow_upload:
+            # Public uploads share the APK with VirusTotal; only an explicit opt-in may do it.
+            report.update(status="HASH_LOOKUP_ONLY", error_code="UPLOAD_DISABLED_BY_POLICY")
             return report
 
         analysis_id = upload(file, key)
@@ -264,7 +268,9 @@ def write_reports(out: Path, report: dict):
         "",
         "## Detecciones y advertencias",
     ]
-    if report["status"] == "NOT_CONFIGURED":
+    if report["status"] == "HASH_LOOKUP_ONLY":
+        lines.append("- Solo se consultó el hash: no hay informe previo y la subida pública está desactivada por política. **NO ANALIZADO**.")
+    elif report["status"] == "NOT_CONFIGURED":
         lines.append("- Falta el secreto `VIRUSTOTAL_API_KEY` en GitHub Actions: **NO ANALIZADO**.")
     elif report["status"] == "PENDING":
         lines.append("- El análisis está pendiente o aún no dispone de resultados suficientes.")
@@ -292,9 +298,10 @@ def main() -> int:
     root = Path.cwd()
     out = root / "ci-artifacts"
     key = os.environ.get("VIRUSTOTAL_API_KEY", "").strip()
+    allow_upload = os.environ.get("VIRUSTOTAL_ALLOW_UPLOAD", "").strip().lower() == "true"
     try:
         file, digest = verified_release(root)
-        report = report_for(file, digest, key)
+        report = report_for(file, digest, key, allow_upload=allow_upload)
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
         report = {
             "schema_version": 1, "source_sha": os.environ.get("GITHUB_SHA", ""),
