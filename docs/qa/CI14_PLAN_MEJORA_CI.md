@@ -273,7 +273,8 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 | F1 | Seguridad fail-closed aplicada; configuración protegida pendiente | `dcc8aaf` + entrega F1 de 2026-11-12 | B04 consulta VirusTotal solo por hash sin que una variable del repositorio habilite subidas. Gradle exige keystore para ensamblar Release y solo permite firma Debug bajo `-PallowDebugSigned=true` explícito. La publicación oficial queda bloqueada hasta disponer de un job con environment `release` y revisores verificados. La variable `LISTEN_TOGETHER_SERVER` todavía debe configurarse; se conserva la compatibilidad con secreto hasta entonces. |
 | F2 | Consolidado; CI de este SHA pendiente | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
 | F3 | Implementada arquitectura F3-b (CI pendiente) | CI14 F3 | APK Debug e instrumentación compilados en B01; B04 construye Release y valida Debug; B05 reutiliza los APK; B02/B03/B05 concurren; cache SDK en B01; faltan mediciones y validación CI. |
-| F4–F7 | Pendiente | — | Ver secciones 4 y 5. |
+| F4 | Implementación diagnóstica publicada; validación CI pendiente | F4 series | 7 veredictos reales, inventario P2 conservado; faltan objetos .o y evidencia Debug individual para activar gate estricto. |
+| F5–F7 | Pendiente | — | Ver secciones 4 y 5. |
 
 Desviaciones respecto al plan:
 - VirusTotal: la subida se activa con variable de repo, no con input de `workflow_dispatch`, porque B04 se invoca con `workflow_call`.
@@ -348,3 +349,9 @@ El run #68 mostró fallo de B05 anterior a la descarga de APK porque `command -v
 - B02 (Lint), B03 (JVM) y B05 (Emulador) son tres jobs separados y paralelos, todos posteriores a B01. B04 espera el éxito de B02 y B03. B06 espera todas las fases y exige su éxito para limpiar temporales.
 - Los tests de B06 incorporan los dos artefactos F3, `b01-shared-apks` y `b01-compiler-outputs`. Nueve temporales por ejecución, dos finales en la rama feature; faltantes e inesperados prohíben la eliminación.
 - Release sigue bloqueado para publicación oficial por F1, y B06 se mantiene coherente con `RELEASE_PUBLISH_EXPECTED=false`.
+
+## 24. CI14 F4 — matriz conservadora por archivo (2026-11-12)
+
+Se añade `file_compile_matrix.py` y sus pruebas, que emite `file-compile-matrix.json` y `.tsv` con los siete veredictos definidos en F4. El informe cruza entradas/tareas Gradle observadas y presencia de clases JVM en DEX, con mapping R8 obligatorio para marcar evidencia Release. Native C/C++ requiere aún correspondencia individual de `.o`; una orden en `compile_commands.json` no basta. No se atribuye ausencia de culpa a fuentes en tasks fallidas: `COMPILER_TASK_FAILED_SIN_ERROR_ATRIBUIDO` reemplaza el estado engañoso. Se corrige extracción de package con comentarios de bloque y lectura UTF-8 en apk_audit.
+
+**Política:** la nueva matriz es un diagnóstico adicional; las puertas P2 preexistentes se mantienen estrictas. El gate de cero `NO_EVIDENCIA_SUFICIENTE` en Release y retirada de los tres scripts P2 permanecen pendientes de evidencias per-source auténticas y dos ejecuciones verdes consecutivas. No se presenta una compilación por archivo que no esté probada.

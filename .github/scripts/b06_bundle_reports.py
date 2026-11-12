@@ -211,6 +211,9 @@ def main() -> None:
     coverage = source_coverage()
     from b06_file_matrix import build_matrix
     matrix = build_matrix(OUTPUT, os.environ.get("GITHUB_SHA", ""))
+    # F4 evidence-only report: no false per-file approval on incomplete inputs.
+    from file_compile_matrix import generate as generate_f4
+    f4_matrix = generate_f4(OUTPUT, os.environ.get("GITHUB_SHA", ""))
     from b06_quality_readiness import report as quality_report
     p26, p3 = quality_report(OUTPUT, os.environ.get("GITHUB_SHA", ""))
     index.extend([
@@ -252,6 +255,7 @@ def main() -> None:
         "report_index": index,
         "source_compilation_evidence": coverage,
         "p2_file_matrix": {"status": matrix["status"], "tracked_files": matrix["tracked_files"], "rows": matrix["rows"], "issues": matrix["consistency_issues"]},
+        "f4_file_compile_matrix": f4_matrix,
         "p2_6_ui_functional_status": p26["functional_test_status"],
         "p3_mocked_controller_test_status": p3["mocked_controller_status"],
         "p3_audio_status": p3["audio_functional_test_status"],

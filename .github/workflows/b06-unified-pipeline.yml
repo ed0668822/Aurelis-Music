@@ -107,6 +107,9 @@ jobs:
       - name: Test P2.4 per-file report matrix without network
         run: python3 -m unittest discover -s .github/scripts -p 'test_b06_file_matrix.py' -v
 
+      - name: Test CI14 F4 source and APK evidence verdicts
+        run: python3 -m unittest discover -s .github/scripts -p 'test_file_compile_matrix.py' -v
+
       - name: Test P2.5 VirusTotal packaging and artifact contract offline
         run: python3 -m unittest discover -s .github/scripts -p 'test_b06_delivery_contract.py' -v
 

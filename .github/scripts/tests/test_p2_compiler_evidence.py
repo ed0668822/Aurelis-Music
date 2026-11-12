@@ -80,7 +80,7 @@ class CompilerEvidenceTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             _, rows, _ = self.rows(Path(tmp), kotlin="FAILED")
             kotlin = next(r for r in rows if r["path"] == KT and r["variant"] == "release")
-            self.assertEqual(kotlin["compiler_evidence"], "COMPILER_TASK_FAILED_WITH_INPUT_NOT_FILE_FAULT")
+            self.assertEqual(kotlin["compiler_evidence"], "COMPILER_TASK_FAILED_SIN_ERROR_ATRIBUIDO")
             self.assertEqual(kotlin["attributed_errors"], 0)
 
     def test_reuse_is_separate_from_executed_success(self):
