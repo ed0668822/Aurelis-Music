@@ -100,7 +100,7 @@ jobs:
         id: emulator
         if: ${{ steps.build.outcome == 'success' && steps.p3_build.outcome == 'success' }}
         continue-on-error: true
-        uses: ReactiveCircus/android-emulator-runner@v2.38.0
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 35
           target: google_apis
