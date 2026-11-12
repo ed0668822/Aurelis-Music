@@ -105,6 +105,14 @@ jobs:
           python3 -m unittest discover -s .github/scripts -p 'test_f5_diff_coverage.py' -v
           python3 .github/scripts/f5_diff_coverage.py --base origin/main             --reports ci-b03/coverage --output ci-b03/diff-coverage.json
 
+      - name: Enforce F5 changed-line coverage threshold on the source diff
+        id: f5_coverage_gate
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_f5_coverage_gate.py' -v
+          python3 .github/scripts/f5_coverage_gate.py ci-b03/diff-coverage.json
+
       - name: Summarize JUnit XML results
         if: always()
         env:
