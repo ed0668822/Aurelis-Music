@@ -84,6 +84,18 @@ jobs:
             --stacktrace --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b03/release.log
 
+      - name: Generate Kover Debug and Release XML coverage
+        id: coverage
+        if: ${{ steps.debug.outcome == 'success' && steps.release.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          ./gradlew :app:koverXmlReportDebug :app:koverXmlReportRelease --console=plain --max-workers=2 \
+            --no-configuration-cache 2>&1 | tee ci-b03/kover.log
+          mkdir -p ci-b03/coverage
+          find app/build/reports/kover -type f -name '*.xml' -exec cp --parents {} ci-b03/coverage/ \;
+          test -n "$(find ci-b03/coverage -type f -name '*.xml' -print -quit)"
+
       - name: Summarize JUnit XML results
         if: always()
         env:
@@ -199,6 +211,8 @@ jobs:
             ci-b03/results.json
             ci-b03/test-cases.tsv
             ci-b03/sdk-install.log
+            ci-b03/kover.log
+            ci-b03/coverage/
           if-no-files-found: warn
           retention-days: 30
 

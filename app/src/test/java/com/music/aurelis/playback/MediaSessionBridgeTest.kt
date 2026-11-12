@@ -79,7 +79,7 @@ class MediaSessionBridgeTest {
         val deadline = System.nanoTime() + 5_000_000_000
         while (!condition() && System.nanoTime() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
-            Thread.sleep(5)
+            Thread.yield()
         }
         assertTrue("MediaSession command did not complete", condition())
     }

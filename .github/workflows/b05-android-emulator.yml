@@ -171,7 +171,7 @@ jobs:
                   "scope": "AurelisPlaybackService / Media3 local PCM WAV",
                   "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
                   "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
-                  "test_count": 7,
+                  "test_count": len(json.loads(read("p3-case-results.json") or "{}").get("tests", {})),
               "per_case_evidence": json.loads(read("p3-case-results.json") or "{}"),
                   "session_resilience_test_class": "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest",
                   "activity_recreation_passed": bool(read("p3-activity-recreation-pass.txt")),

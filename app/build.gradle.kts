@@ -7,6 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 val localProps = Properties().apply {
