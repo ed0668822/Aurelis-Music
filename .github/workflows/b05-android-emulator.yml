@@ -67,7 +67,7 @@ jobs:
         timeout-minutes: 30
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebug --console=plain --build-cache \
+          ./gradlew :app:assembleDebug --init-script .github/scripts/task-inputs.gradle --console=plain --build-cache \
             --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b05/build.log
           test -s app/build/outputs/apk/debug/app-debug.apk
@@ -79,7 +79,7 @@ jobs:
         timeout-minutes: 20
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebugAndroidTest --console=plain --build-cache \
+          ./gradlew :app:assembleDebugAndroidTest --init-script .github/scripts/task-inputs.gradle --console=plain --build-cache \
             --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b05/p3-androidtest-build.log
           test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk

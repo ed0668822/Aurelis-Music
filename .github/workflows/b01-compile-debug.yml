@@ -61,7 +61,7 @@ jobs:
         id: compile
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebug --build-cache --console=plain \
+          ./gradlew :app:assembleDebug --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
             --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b01/gradle-build.log
 

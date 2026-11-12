@@ -59,7 +59,7 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          ./gradlew :app:lintDebug --build-cache --console=plain \
+          ./gradlew :app:lintDebug :app:lintRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
             --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b02/lint.log
 
@@ -118,6 +118,9 @@ jobs:
               fp.write("\n".join(lines) + "\n")
           if xml.exists():
               (out / "lint-results-debug.xml").write_bytes(xml.read_bytes())
+          rel = Path("app/build/reports/lint-results-release.xml")
+          if rel.exists():
+              (out / "lint-results-release.xml").write_bytes(rel.read_bytes())
           PY
 
       - name: Upload B02 Lint report
@@ -136,3 +139,4 @@ jobs:
         run: |
           test "$LINT_OUTCOME" = success
           test -s ci-b02/lint-results-debug.xml
+          test -s ci-b02/lint-results-release.xml
