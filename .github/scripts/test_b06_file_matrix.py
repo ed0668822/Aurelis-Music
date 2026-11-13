@@ -3,11 +3,15 @@
 """P2.4 regression tests for complete, truthful cross-report inventory."""
 import csv
 import json
+import os
+from contextlib import contextmanager
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import b06_file_matrix as matrix
+import b06_bundle_reports as bundle
 
 SHA = "a" * 40
 SRC = "app/src/main/java/com/music/aurelis/ui/haptics/Haptics.kt"
@@ -184,6 +188,133 @@ class MatrixTests(unittest.TestCase):
                 report = matrix.build_matrix(package, SHA)
                 self.assertEqual(report["status"], "INCOMPLETE_MATRIX")
                 self.assertTrue(any("GRADLE_DIAGNOSTIC" in i for i in report["consistency_issues"]))
+
+class BundleFailureTests(unittest.TestCase):
+    """Synthetic artifact fixtures, never substituted for actual CI evidence."""
+
+    @contextmanager
+    def pipeline(self, b04_result="skipped", include_b04=False):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            incoming, output = root / "input", root / "package"
+            for phase, groups in bundle.SOURCES.items():
+                if phase == "B04" and not include_b04:
+                    continue
+                for _, prefix in groups:
+                    folder = incoming / (prefix + "117")
+                    folder.mkdir(parents=True)
+                    (folder / "summary.txt").write_text("Synthetic artifact fixture\n")
+            put(incoming / "b03-summary-117/results.json", {
+                "debug": {"passed_gate": True}, "release": {"passed_gate": True},
+            })
+            put(incoming / "b05-android-emulator-117/results.json", {"pass": True, "commit": SHA})
+            results = {f"b0{i}": {"result": "success"} for i in range(1, 6)}
+            results["b04"]["result"] = b04_result
+            if b04_result == "skipped":
+                results["b02"]["result"] = "failure"
+            env = {
+                "STAGES_JSON": json.dumps(results), "GITHUB_SHA": SHA,
+                "GITHUB_RUN_ID": "117", "GITHUB_REF_NAME": "feature/bitchord-local-migration",
+                "GITHUB_STEP_SUMMARY": str(root / "step-summary.md"),
+                "DOWNLOAD_OUTCOME": "success", "RELEASE_PUBLISH_EXPECTED": "false",
+            }
+            with patch.object(bundle, "INPUT", incoming), patch.object(bundle, "OUTPUT", output), patch.dict(os.environ, env):
+                yield incoming, output
+
+    def result(self, output):
+        return json.loads((output / "B06/pipeline-results.json").read_text())
+
+    def test_skipped_b04_still_bundles_failure_and_original_phases(self):
+        with self.pipeline() as (_, output):
+            bundle.main()
+            report = self.result(output)
+            self.assertEqual(report["status"], "FAIL")
+            self.assertEqual(report["phases"]["B02"], "failure")
+            self.assertEqual(report["phases"]["B04"], "skipped")
+            self.assertEqual(report["phases"]["B03"], "success")
+            self.assertTrue(report["checks"]["debug_tests_success"])
+            self.assertFalse(report["checks"]["stage_jobs_success"])
+            self.assertFalse(report["checks"]["f4_matrix_generated"])
+            self.assertEqual(report["f4_file_compile_matrix"]["status"], "NOT_GENERATED")
+            self.assertEqual(report["f4_evidence_integrity"]["status"], "FAIL")
+            self.assertTrue(any("p2-apk-trace.json" in error for error in report["missing_reports"]))
+            self.assertTrue((output / "B06/summary.md").is_file())
+            self.assertTrue((output / "B06/artifact-index.json").is_file())
+            self.assertTrue((output / "00-Resumen/f4-generation-error.json").is_file())
+            self.assertFalse((output / "B04/Verificacion/p2-apk-trace.json").exists())
+            self.assertFalse((output / "00-Resumen/file-compile-matrix.json").exists())
+            self.assertEqual(report["p3_public_release_readiness"], "NOT_APPROVED")
+
+    def test_successful_b04_job_without_its_evidence_does_not_pass(self):
+        with self.pipeline("success", include_b04=True) as (_, output):
+            bundle.main()
+            report = self.result(output)
+            self.assertTrue(report["checks"]["stage_jobs_success"])
+            self.assertEqual(report["phases"]["B04"], "success")
+            self.assertEqual(report["status"], "FAIL")
+            self.assertFalse(report["checks"]["f4_matrix_generated"])
+            self.assertFalse(report["checks"]["f4_evidence_integrity_verified"])
+
+    def test_malformed_trace_remains_failure_with_diagnostic(self):
+        with self.pipeline("success", include_b04=True) as (incoming, output):
+            (incoming / "b04-verification-report-117/p2-apk-trace.json").write_text("{invalid")
+            bundle.main()
+            self.assertEqual(self.result(output)["status"], "FAIL")
+            diagnostic = json.loads((output / "00-Resumen/f4-generation-error.json").read_text())
+            self.assertEqual(diagnostic["status"], "NOT_GENERATED")
+            self.assertTrue(diagnostic["errors"])
+
+    def test_symlink_trace_is_not_copied_or_certified(self):
+        with self.pipeline("success", include_b04=True) as (incoming, output):
+            external = incoming.parent / "external.json"
+            sentinel = '{"summary":{"status":"EVIDENCE_RECONCILED"}}'
+            external.write_text(sentinel)
+            (incoming / "b04-verification-report-117/p2-apk-trace.json").symlink_to(external)
+            bundle.main()
+            self.assertEqual(self.result(output)["status"], "FAIL")
+            self.assertFalse((output / "B04/Verificacion/p2-apk-trace.json").exists())
+            self.assertEqual(external.read_text(), sentinel)
+
+    def test_failed_generation_removes_only_stale_derived_f4_outputs(self):
+        with self.pipeline() as (_, output):
+            summary = output / "00-Resumen"
+            summary.mkdir(parents=True)
+            names = ("file-compile-matrix.json", "file-compile-matrix.tsv", "CI14-F4.md")
+            for name in names:
+                (summary / name).write_text("stale successful report")
+            bundle.main()
+            self.assertEqual(self.result(output)["status"], "FAIL")
+            self.assertTrue(all(not (summary / name).exists() for name in names))
+            self.assertTrue((summary / "estado-todos-los-archivos.json").is_file())
+
+    def test_valid_generation_is_preserved_and_clears_previous_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            package = Path(tmp)
+            self.assertEqual(bundle.compilation_matrix(package, SHA, "skipped")["status"], "NOT_GENERATED")
+            b04 = MatrixTests().fixture(package)
+            put(b04 / "apk-content-release.json", {"r8": {"mapping.txt": {"sha256": "c" * 64}}})
+            self.assertEqual(matrix.build_matrix(package, SHA)["status"], "COMPLETE_MATRIX")
+            report = bundle.compilation_matrix(package, SHA, "success")
+            self.assertEqual(report["status"], "CLASSIFIED_WITH_LIMITATIONS")
+            self.assertEqual(report["total_rows"], 6)
+            self.assertTrue((package / "00-Resumen/file-compile-matrix.json").is_file())
+            self.assertFalse((package / "00-Resumen/f4-generation-error.json").exists())
+
+    def test_stale_trace_sha_is_reported_without_certification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            package = Path(tmp)
+            b04 = MatrixTests().fixture(package)
+            put(b04 / "apk-content-release.json", {})
+            path = b04 / "p2-apk-trace.json"
+            trace = json.loads(path.read_text())
+            trace["summary"]["source_sha"] = "e" * 40
+            put(path, trace)
+            matrix.build_matrix(package, SHA)
+            report = bundle.compilation_matrix(package, SHA, "success")
+            self.assertEqual(report["status"], "NOT_GENERATED")
+            self.assertIn("stale", report["errors"][0])
+            self.assertFalse((package / "00-Resumen/file-compile-matrix.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

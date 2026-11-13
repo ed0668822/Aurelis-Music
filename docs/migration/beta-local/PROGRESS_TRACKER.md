@@ -1,9 +1,28 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
-> **Límite vigente:** máximo **35 archivos en entregas fáciles/medias y 6 en difíciles**, contando toda la entrega y todos sus commits, incluidos pruebas, recursos, documentación, configuración y eliminaciones. [PLAN_CONTINUATION](PLAN_CONTINUATION.md) gobierna la continuación; [PLAN_30_FILES](PLAN_30_FILES.md) queda histórico. No se cierran retrospectivamente B06/B07 ni se inicia B09 por registrar el plan.
+> **Límite vigente solicitado:** máximo **30 archivos por bloque**, contando toda la entrega y todos sus commits, incluidos pruebas, recursos, documentación, configuración y eliminaciones. Esta regla posterior prevalece sobre el techo35 histórico de [PLAN_CONTINUATION](PLAN_CONTINUATION.md); los subbloques menores siguen permitidos. [PLAN_30_FILES](PLAN_30_FILES.md) conserva su registro histórico. No se cierran retrospectivamente B06/B07 ni se inicia B09 por registrar el plan.
 
 ## Continuación actual — primera entrega documental
+
+### CI18 — reparación conjunta de B02 y B06 tras run117
+
+Autorización explícita para corregir ambas causas y comprobar B01–B06 después
+del push. Base09083362; cinco archivos de un máximo30. Manifiesto, procedencia
+de evidencia, accesos intentados y revisiones en
+[CI18_HAPTICS_AND_REPORT_FAILURE](../../qa/CI18_HAPTICS_AND_REPORT_FAILURE.md).
+
+B02 comprueba todos los tipos de golpe requeridos mediante constantes SDK
+explícitas en areAllPrimitivesSupported, eliminando el IntArray que Lint no
+aceptaba. B06 conserva la validación estricta F4 y registra su fallo como
+NOT_GENERATED cuando B04 está skipped o faltan datos; consolida los diagnósticos
+con resultado global FAIL y conserva fases originales. No crea p2-apk-trace ni
+certifica fuentes ausentes. Retira únicamente salidas F4 derivadas antiguas.
+
+Reproducción local del error original confirmada. Siete regresiones nuevas,
+222 pruebas Python aprobadas; dos revisiones del mismo agente. Sin Gradle ni
+Android locales, cambios de firma, SDK, ABI o supresiones de Lint. Resultado
+remoto nuevo pendiente; esta vez se comprobarán las seis fases tras publicar.
 
 ### B02.3-b3 — ritmos por motor y feedback de pulsación larga
 

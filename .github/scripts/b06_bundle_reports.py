@@ -173,6 +173,30 @@ def artifact_delivery_policy(publish_release: bool) -> dict:
     }
 
 
+def compilation_matrix(package: Path, sha: str, b04_result: str) -> dict:
+    """Preserve strict F4 validation while making missing evidence reportable."""
+    from file_compile_matrix import generate
+
+    summary = package / "00-Resumen"
+    summary.mkdir(parents=True, exist_ok=True)
+    diagnostic = summary / "f4-generation-error.json"
+    diagnostic.unlink(missing_ok=True)
+    try:
+        return generate(package, sha)
+    except (ValueError, OSError, TypeError, KeyError) as error:
+        # These are derived outputs, never input evidence. Do not ship a stale
+        # successful matrix after this attempt could not verify its inputs.
+        for name in ("file-compile-matrix.json", "file-compile-matrix.tsv", "CI14-F4.md"):
+            (summary / name).unlink(missing_ok=True)
+        result = {
+            "status": "NOT_GENERATED", "source_sha": sha,
+            "b04_job_result": b04_result, "errors": [str(error)],
+            "individual_compilation_proven": False,
+        }
+        diagnostic.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return result
+
+
 def main() -> None:
     delivery = artifact_delivery_policy(release_expected())
     publish_release = delivery["release_publish_expected"]
@@ -224,10 +248,13 @@ def main() -> None:
     from b06_file_matrix import build_matrix
     matrix = build_matrix(OUTPUT, os.environ.get("GITHUB_SHA", ""))
     # F4 evidence-only report: no false per-file approval on incomplete inputs.
-    from file_compile_matrix import generate as generate_f4
-    f4_matrix = generate_f4(OUTPUT, os.environ.get("GITHUB_SHA", ""))
+    f4_matrix = compilation_matrix(OUTPUT, os.environ.get("GITHUB_SHA", ""), stages["B04"])
+    if f4_matrix["status"] == "NOT_GENERATED":
+        missing.extend("F4: " + error for error in f4_matrix["errors"])
     from f4_integrity_gate import inspect as inspect_f4
     try:
+        if f4_matrix["status"] != "CLASSIFIED_WITH_LIMITATIONS":
+            raise ValueError("F4 matrix not generated; see f4-generation-error.json")
         f4_integrity = inspect_f4(OUTPUT, os.environ.get("GITHUB_SHA", ""))
     except (ValueError, OSError, TypeError, KeyError, json.JSONDecodeError) as error:
         f4_integrity = {"status": "FAIL", "source_sha": os.environ.get("GITHUB_SHA"),
@@ -246,6 +273,7 @@ def main() -> None:
     evidence_file = OUTPUT / "B04" / "Verificacion" / "source-evidence.md"
     checks = {
         "p2_file_matrix_consistent": matrix["status"] == "COMPLETE_MATRIX",
+        "f4_matrix_generated": f4_matrix["status"] == "CLASSIFIED_WITH_LIMITATIONS",
         "f4_evidence_integrity_verified": (
             f4_integrity["status"] == "PASS_EVIDENCE_INTEGRITY_WITH_LINKAGE_LIMITATIONS"),
         "source_evidence_reconciliation_passed": (
@@ -306,6 +334,7 @@ def main() -> None:
              "- La compilación individual de cada archivo no está totalmente demostrada.",
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
              "- Matriz por archivo P2.4: " + matrix["status"] + " (" + str(matrix["rows"]) + " filas).",
+             "- Matriz de compilación F4: " + f4_matrix["status"] + ".",
              "- P2.6 UI Compose: " + p26["functional_test_status"] + " (no equivale a smoke).",
              "- P3 controles con reproductor simulado: " + p3["mocked_controller_status"] + ".",
              "- P3 audio/publicación pública: " + p3["audio_functional_test_status"] + " / " + p3["public_release_readiness"],

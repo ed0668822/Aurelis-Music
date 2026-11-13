@@ -67,8 +67,14 @@ class Haptics(
     private fun compile(vibrator: Vibrator, beats: List<Beat>): VibrationEffect {
         // Check every primitive used by this pattern, including LOW_TICK. API
         // level alone does not imply support, nor does support for another rhythm.
-        val primitives = beats.map { it.kind.primitive }.distinct().toIntArray()
-        if (vibrator.areAllPrimitivesSupported(*primitives)) {
+        val canCompose = beats.map { it.kind }.distinct().all { kind ->
+            when (kind) {
+                BeatKind.Tick -> vibrator.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_TICK)
+                BeatKind.LowTick -> vibrator.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_LOW_TICK)
+                BeatKind.Click -> vibrator.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_CLICK)
+            }
+        }
+        if (canCompose) {
             val composition = VibrationEffect.startComposition()
             beats.forEach { beat ->
                 // The SDK's @IntDef requires visible primitive constants here.
@@ -97,10 +103,10 @@ class Haptics(
     }
 }
 
-private enum class BeatKind(val primitive: Int, val pulseMs: Long, val amplitude: Int) {
-    Tick(VibrationEffect.Composition.PRIMITIVE_TICK, 8, 110),
-    LowTick(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 10, 95),
-    Click(VibrationEffect.Composition.PRIMITIVE_CLICK, 14, 210),
+private enum class BeatKind(val pulseMs: Long, val amplitude: Int) {
+    Tick(8, 110),
+    LowTick(10, 95),
+    Click(14, 210),
 }
 
 private class Beat(val kind: BeatKind, val scale: Float, val gapMs: Long)
