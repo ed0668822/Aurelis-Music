@@ -26,6 +26,7 @@ object SettingsRepository {
     val liquidGlass = MutableStateFlow(true)
     val reduceAnimation = MutableStateFlow(false)
     val reduceDynamicBlur = MutableStateFlow(false)
+    val hapticFeedback = MutableStateFlow(true)
     val syncedLyrics = MutableStateFlow(true)
     val blurUnfocusedLyrics = MutableStateFlow(true)
     val filterNonMusicAudio = MutableStateFlow(true)
@@ -84,6 +85,7 @@ object SettingsRepository {
         liquidGlass.value = readBoolean("liquid_glass", true)
         reduceAnimation.value = readBoolean("reduce_animation", false)
         reduceDynamicBlur.value = readBoolean("reduce_dynamic_blur", false)
+        hapticFeedback.value = readBoolean("haptic_feedback", true)
         syncedLyrics.value = readBoolean("synced_lyrics", true)
         blurUnfocusedLyrics.value = readBoolean("blur_lyrics", true)
         filterNonMusicAudio.value = readBoolean("filter_non_music", true)
@@ -159,6 +161,11 @@ object SettingsRepository {
     fun setLiquidGlass(value: Boolean) { writable(); liquidGlass.value = value; prefs.edit { putBoolean("liquid_glass", value) } }
     fun setReduceAnimation(value: Boolean) { writable(); reduceAnimation.value = value; prefs.edit { putBoolean("reduce_animation", value) } }
     fun setReduceDynamicBlur(value: Boolean) { writable(); reduceDynamicBlur.value = value; prefs.edit { putBoolean("reduce_dynamic_blur", value) } }
+    fun setHapticFeedback(value: Boolean) {
+        writable()
+        check(prefs.edit().putBoolean("haptic_feedback", value).commit()) { "No se pudo guardar la respuesta háptica." }
+        hapticFeedback.value = value
+    }
     fun setSyncedLyrics(value: Boolean) { writable(); syncedLyrics.value = value; prefs.edit { putBoolean("synced_lyrics", value) } }
     fun setBlurUnfocusedLyrics(value: Boolean) { writable(); blurUnfocusedLyrics.value = value; prefs.edit { putBoolean("blur_lyrics", value) } }
     fun setFilterNonMusicAudio(value: Boolean) { writable(); filterNonMusicAudio.value = value; prefs.edit { putBoolean("filter_non_music", value) } }

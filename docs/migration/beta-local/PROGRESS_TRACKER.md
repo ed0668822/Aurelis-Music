@@ -5,6 +5,81 @@
 
 ## Continuación actual — primera entrega documental
 
+### B02.3-b2 — preferencia propia de respuesta háptica
+
+**Autorización/base.** El usuario pidió «Continúa». Aplicación, commit y push en
+feature/bitchord-local-migration, mismo PR1. Base1714325ed9dcade11785dc59fae7cf827f9964c0;
+checkout limpio y remoto coincidente tras fetch. Cuenta/identidad local ed0668822
+y ed0668822@gmail.com verificado por API. Puerta anterior:
+[run114](https://github.com/ed0668822/Aurelis-Music/actions/runs/43483218982)
+completed/success para ese SHA, con las seis fases B01–B06 success. El resultado
+previo no acredita el código nuevo de esta entrega.
+
+**Manifiesto difícil: seis archivos distintos en toda la entrega.** Este tracker
+contiene el informe detallado para mantener el presupuesto, sin informe separado.
+
+| Archivo | Cambio |
+|---|---|
+| app/src/main/java/com/music/aurelis/data/SettingsRepository.kt | Preferencia persistente y actualización tras guardar. |
+| app/src/main/java/com/music/aurelis/ui/screens/SettingsScreen.kt | Fila real Respuesta háptica y error al guardar. |
+| app/src/main/java/com/music/aurelis/ui/haptics/Haptics.kt | Política común app/Android para patrones y feedback Compose. |
+| app/src/main/java/com/music/aurelis/ui/theme/AurelisTheme.kt | Proveedor del host real para feedback del framework. |
+| app/src/test/java/com/music/aurelis/ui/SettingsIntegrationTest.kt | Cuatro regresiones funcionales nuevas. |
+| docs/migration/beta-local/PROGRESS_TRACKER.md | Informe, evidencia, revisiones y pendientes. |
+
+**Comportamiento.** Respuesta háptica se incorpora en Apariencia con el mismo
+SettingsSubRow de rol Switch/objetivo48dp y un único propietario de la acción.
+La preferencia haptic_feedback queda en el almacenamiento de ajustes del único
+perfil local. Ausente: true, conservando el comportamiento anterior. Un tipo
+desconocido usa el fallback sin sobrescribir los bytes originales. El setter
+comprueba escritura permitida y commit() antes de cambiar el StateFlow: un error
+conserva el valor y la pantalla muestra el fallo. El modo de solo lectura no
+expone el control y también impide su modificación desde el repositorio.
+
+La política permite feedback solo con la preferencia Aurelis activada Y el ajuste
+de Android activado. Apagar Aurelis no modifica Android; activar Aurelis no
+anula un ajuste de Android apagado. Los handles existentes leen la política al
+usar un control, sin recrear pantalla/servicio. Se conserva el chequeo de motor
+y USAGE_TOUCH para patrones propios. El proveedor LocalHapticFeedback del tema
+filtra las llamadas del framework y delega una sola vez al proveedor capturado
+fuera de él; no genera un pulso adicional ni se llama recursivamente.
+
+**Referencia y límites.** Continúa la política Android revisada en BitChord
+b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/androidMain/kotlin/com/music/bitchord/ui/haptics/Haptics.android.kt.
+La preferencia propia y el wrapper se implementan sobre los repositorios/tema de
+Aurelis; no se trasplanta código ni se elimina ninguna atribución. Se conservan
+patrones, formas, iconos y animaciones de los controles. Lectura estática de la
+dependencia Compose1.7.x: su combinedClickable invoca el callback largo, sin
+emitir por sí mismo un pulso. Este filtro no añade ese pulso; la integración
+háptica explícita del menú y primitivas/adaptación de motor siguen pendientes.
+No declarar B02 cerrado ni paridad TalkBack/motor físico por este bloque.
+
+**Pruebas preparadas para GitHub.** SettingsIntegrationTest conserva sus cuatro
+casos anteriores y añade cuatro, ocho en total: pantalla real → repositorio →
+reapertura y política de los mismos handles propio/Compose; preferencia
+ausente/malformada sin pérdida; modo de solo lectura; fallo de commit con valor
+conservado/error visible. La política se prueba con ambos ajustes activos, app
+apagada y Android apagado, contando una sola delegación del tipo solicitado.
+ShadowVibrator registra atributos sin depender de la duración del pulso. Cada
+caso con inyección de estado restaura preferencias de Android/hardware/campos
+inyectados en finally. La suite SharedGesturesTest del bloque anterior permanece
+intacta; no se retiran aserciones de foco ni controles de calidad.
+
+**Dos revisiones del mismo agente.** Primera: conexiones reales, prioridad de
+ajustes, ciclo de vida, persistencia antes de publicar estado y modo de solo
+lectura. Segunda: API Compose/Android, casos de error y aislamiento de pruebas,
+enlaces, cabeceras, seis rutas y preservación de licencias/firma/ABI/workflows.
+No son revisiones independientes. Solo comprobaciones estáticas/diff locales;
+sin Gradle, APK o pruebas Android locales. El push de app/** activa el pipeline
+unificado; compilación/pruebas nuevas pendientes de GitHub. La evidencia física
+y el resultado Android nuevo no se deducen de la revisión estática.
+
+**Puerta siguiente.** Publicar esta entrega autorizada y esperar resultado del
+usuario y autorización para la siguiente. Capturas/retorno visual de HeldItem
+siguen pendientes de integración B03–B05; CI12.3 y comentarios CI16 abiertos;
+B06/B07 no se cierran retrospectivamente y B09 permanece sin iniciar.
+
 ### B02.3-b1 — política háptica y una acción accesible por control
 
 El usuario autorizó reparar ZIP112 y continuar. Base de preparación b02607d6;
@@ -22,8 +97,9 @@ deshabilitado, rol/valor únicos y objetivo48dp. Diseño visual conservado.
 Cuatro regresiones nuevas para GitHub,18 casos en la suite, incluidos los14
 anteriores y las aserciones de foco. Dos revisiones estáticas del mismo agente;
 sin Gradle ni pruebas Android locales. Gates, firma, ABI y atribuciones intactos.
-Nuevo resultado Android pendiente; primitivas/paridad física, preferencia propia
-y TalkBack siguen abiertos. B02.3-a conserva pendiente de captura/retorno visual
+Resultado posterior run114/43483218982 SUCCESS en las seis fases B01–B06;
+primitivas/paridad física y TalkBack siguen abiertos. La preferencia propia se
+aborda en B02.3-b2. B02.3-a conserva pendiente de captura/retorno visual
 en B03–B05. Tras publicar esta entrega, esperar resultado del usuario y nueva
 autorización; B09 no se inicia.
 

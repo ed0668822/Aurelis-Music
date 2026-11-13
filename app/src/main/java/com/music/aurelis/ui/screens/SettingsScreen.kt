@@ -84,6 +84,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     val glass by SettingsRepository.liquidGlass.collectAsState()
     val motion by SettingsRepository.reduceAnimation.collectAsState()
     val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsState()
+    val hapticFeedback by SettingsRepository.hapticFeedback.collectAsState()
     val sync by SettingsRepository.syncedLyrics.collectAsState()
     val lyricBlur by SettingsRepository.blurUnfocusedLyrics.collectAsState()
     val filter by SettingsRepository.filterNonMusicAudio.collectAsState()
@@ -122,6 +123,9 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             }
             SettingsToggle("Reducir animaciones", "Detiene los efectos continuos y elimina transiciones del reproductor.", motion, SettingsRepository::setReduceAnimation)
             SettingsToggle("Reducir desenfoque", "Usa superficies sólidas y evita desenfoques dinámicos.", reduceBlur, SettingsRepository::setReduceDynamicBlur)
+            SettingsToggle("Respuesta háptica", "Vibración al usar los controles. También respeta la configuración de Android.", hapticFeedback) { enabled ->
+                change { SettingsRepository.setHapticFeedback(enabled) }
+            }
             SettingsToggle("Liquid Glass", "Superficies translúcidas y reflejos ligeros; se desactiva al reducir desenfoque.", glass, SettingsRepository::setLiquidGlass)
         }
         SettingsGroup(header = "Letras") {

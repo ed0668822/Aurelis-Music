@@ -44,6 +44,7 @@ fun AurelisTheme(
     val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
     val resolvedDark = darkTheme ?: isAurelisDarkTheme(mode, isSystemInDarkTheme())
     val heldMenus = com.music.aurelis.ui.components.rememberHeldMenuState()
+    val hapticFeedback = com.music.aurelis.ui.haptics.rememberAurelisHapticFeedback()
     SystemBarIcons(dark = !resolvedDark)
     CompositionLocalProvider(
         LocalReduceMotion provides reduceMotion,
@@ -51,6 +52,7 @@ fun AurelisTheme(
         LocalLiquidGlassEnabled provides (glass && !reduceBlur),
         LocalPlayingBarsMotion provides !reduceMotion,
         com.music.aurelis.ui.components.LocalHeldMenuState provides heldMenus,
+        androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback,
     ) {
         MaterialTheme(
             colorScheme = if (resolvedDark) DarkColorScheme else LightColorScheme,

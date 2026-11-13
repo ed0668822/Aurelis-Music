@@ -10,6 +10,10 @@ import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.music.aurelis.data.SettingsRepository
 
 enum class Haptic {
     Tick,
@@ -22,6 +26,24 @@ enum class Haptic {
     Resume,
     Pause,
     Expand,
+}
+
+private fun feedbackAllowed(context: Context): Boolean =
+    SettingsRepository.hapticFeedback.value &&
+        Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) != 0
+
+/** Filters Compose's existing feedback without generating a second vibration. */
+@Composable
+internal fun rememberAurelisHapticFeedback(): HapticFeedback {
+    val platform = LocalHapticFeedback.current
+    val context = LocalContext.current.applicationContext
+    return remember(platform, context) {
+        object : HapticFeedback {
+            override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
+                if (feedbackAllowed(context)) platform.performHapticFeedback(hapticFeedbackType)
+            }
+        }
+    }
 }
 
 class Haptics(
@@ -59,7 +81,7 @@ fun rememberHaptics(): Haptics {
         Haptics(vibrator) {
             // Read on each user action so changing Android's setting takes effect
             // immediately without retaining a ContentObserver or an Activity.
-            Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) != 0
+            feedbackAllowed(context)
         }
     }
 }
