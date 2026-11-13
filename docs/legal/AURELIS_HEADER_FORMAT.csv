@@ -1,0 +1,29 @@
+Extensión / tipo,Sintaxis exacta (primera línea del archivo),Notas
+.kt,// Aurelis © 2026. GPL-3.0-or-later,Antes de package y de @file:...
+.kts,// Aurelis © 2026. GPL-3.0-or-later,"build.gradle.kts, settings.gradle.kts"
+.java,// Aurelis © 2026. GPL-3.0-or-later,Antes de package
+.gradle (Groovy),// Aurelis © 2026. GPL-3.0-or-later,
+.c / .cpp / .cc / .h / .hpp,// Aurelis © 2026. GPL-3.0-or-later,Antes de #include
+CMakeLists.txt,# Aurelis © 2026. GPL-3.0-or-later,Antes de cmake_minimum_required
+.pro (ProGuard),# Aurelis © 2026. GPL-3.0-or-later,ProGuard usa #
+.properties,# Aurelis © 2026. GPL-3.0-or-later,"gradle.properties, gradle-wrapper.properties"
+.toml,# Aurelis © 2026. GPL-3.0-or-later,libs.versions.toml
+.txt (baseline-prof),# Aurelis © 2026. GPL-3.0-or-later,baseline-prof.txt
+.yml / .yaml,# Aurelis © 2026. GPL-3.0-or-later,"CI, configs"
+.sh,"#!/usr/bin/env bash (línea 1, si aplica) + # Aurelis © 2026. GPL-3.0-or-later (línea 2)",Nunca por encima del shebang
+.bat / .cmd,@REM Aurelis © 2026. GPL-3.0-or-later,También válido :: Aurelis © 2026. GPL-3.0-or-later
+.xml (con <?xml ...?>),"<?xml version=""1.0"" encoding=""utf-8""?> en línea 1, <!-- Aurelis © 2026. GPL-3.0-or-later --> en línea 2",Nunca antes del <?xml?> — rompe el parser
+.xml (sin <?xml ...?>),<!-- Aurelis © 2026. GPL-3.0-or-later -->,"Típico en res/values/*.xml, mipmap-anydpi"
+.html / .htm,<!-- Aurelis © 2026. GPL-3.0-or-later -->,
+.md,<!-- Aurelis © 2026. GPL-3.0-or-later -->,Opcional; solo si el archivo es propio
+.json,❌ NO se añade,JSON estándar no admite comentarios; rompería el parseo
+.jsonc,// Aurelis © 2026. GPL-3.0-or-later,Solo si el consumidor lo admite explícitamente
+.py,# Aurelis © 2026. GPL-3.0-or-later,Después del shebang si lo tiene
+.rb,# Aurelis © 2026. GPL-3.0-or-later,Después del shebang si lo tiene
+.ps1,# Aurelis © 2026. GPL-3.0-or-later,
+.rs,// Aurelis © 2026. GPL-3.0-or-later,
+.swift,// Aurelis © 2026. GPL-3.0-or-later,
+.dart,// Aurelis © 2026. GPL-3.0-or-later,
+.js / .ts / .jsx / .tsx,// Aurelis © 2026. GPL-3.0-or-later,No aplica en Aurelis (web está fuera del alcance)
+.css / .scss,/* Aurelis © 2026. GPL-3.0-or-later */,No aplica en Aurelis
+.sql,-- Aurelis © 2026. GPL-3.0-or-later,

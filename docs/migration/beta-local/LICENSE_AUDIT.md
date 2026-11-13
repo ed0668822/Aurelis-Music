@@ -1,4 +1,55 @@
+<!-- Aurelis © 2026. GPL-3.0-or-later -->
 # LICENSE_AUDIT — beta local
+
+## LEGAL01 — formato recibido y primer bloque de cabeceras propias
+
+El usuario aportó Formato de licencias.csv y autorizó aplicarlo a archivos propios
+por bloques, conservando las licencias y atribuciones de terceros. Se guarda una
+copia byte por byte en [AURELIS_HEADER_FORMAT.csv](../../legal/AURELIS_HEADER_FORMAT.csv),
+con sus 28 reglas. Las menciones posteriores al CSV pendiente son registros
+históricos de entregas anteriores, no el estado actual de recepción del formato.
+
+Base de preparación: bb417f39a0d8e76307977d52b1fa88587d67ae51; misma rama/PR1.
+Solo se añade la línea `// Aurelis © 2026. GPL-3.0-or-later` al inicio de cuatro
+pruebas propias de perfiles/ajustes; después de esa línea sus bytes no cambian.
+La cabecera no se inserta en código de terceros ni sustituye avisos originales.
+
+| Archivo propio bajo app/src/test/java/com/music/aurelis/data | Commit de creación, autor ed0668822 |
+|---|---|
+| SingleProfileMigrationTest.kt | bfbc81fdaeee5d9cb2086f27ae156ce75ca5c58b |
+| ProfileStorageTest.kt | 2a10e63fd89db9993ebfd1ef21920cc761aec886 |
+| ProfileAvatarsTest.kt | 30569f194d8f05ebe728caa3b51406a27ccbf96b |
+| SettingsPersistenceTest.kt | 640b936179e95356fc58df6aa458e3d0858fd226 |
+
+Se revisaron sus contenidos y antecedentes: pruebas de contratos locales de
+Aurelis, sin avisos previos de terceros y sin coincidencia de ruta en el inventario
+de la referencia BitChord. Esto delimita esta selección; no atribuye automáticamente
+todos los archivos del repositorio a Aurelis por su ubicación o por el autor Git.
+
+Manifiesto de entrega: los cuatro .kt anteriores, el CSV y este LICENSE_AUDIT.md;
+6 rutas como máximo conservador, incluidos documentación y referencia. Los tres
+documentos CI16 previamente pendientes se conservan sin modificar, fuera de esta
+entrega. No se mezclan presupuestos ni se preparan commits conjuntos.
+
+Aplicación futura del CSV: respetar shebang antes de comentario en scripts,
+declaración XML antes de comentario y JSON sin comentarios. Los archivos propios
+Markdown pueden llevar comentario HTML; aquí se aplica a este registro. El CSV
+se conserva como dato original, sin anteponer una línea que altere sus columnas.
+No se modifican LICENSE, NOTICE, LICENSES, textos de dependencias, binarios,
+modelos ni fuentes; tampoco firmas, Gradle, CI o comportamiento de las pruebas.
+
+Revisión1 del mismo agente: historial/contenido de la selección propia y sintaxis
+exacta .kt/.md según CSV. Revisión2 del mismo agente: prefijo único/resto de bytes,
+CSV íntegro, seis rutas, archivos legales y documentos CI16 intactos. No son
+revisores independientes ni una certificación legal global. Comprobaciones
+estáticas de preservación y diff; no tests nuevos ni Gradle/Android locales para
+este cambio de comentarios. Compilación Android nueva no acreditada aquí.
+El usuario autorizó aplicar y subir este bloque. En adelante, la autorización
+para aplicar cada bloque incluye su commit y push a
+feature/bitchord-local-migration, conservando el mismo PR. Tras publicarlo se
+espera el resultado comunicado por el usuario y su autorización para el siguiente
+bloque. Este es el primer bloque, no una aplicación masiva ni un cierre de todos
+los pendientes de licencias/modelos/procedencia.
 
 ## Alcance de B00
 
@@ -36,8 +87,8 @@ en formatos que no los admiten. Preservar LICENSE y configuración de firma.
 
 El inventario de dependencias identifica metadatos POM/BOM/constraints, no cantidad
 de binarios dentro del APK. No sustituye auditoría del contenido enlazado.
-«Formato de licencias.csv» sigue pendiente para el formato definitivo de cabeceras
-según la instrucción anterior; no impide conservar avisos ni documentar el plan.
+El formato definitivo de cabeceras propias está recibido y registrado en LEGAL01
+al inicio de este documento. Su aplicación no elimina avisos de terceros.
 
 ## Puertas de cierre
 
