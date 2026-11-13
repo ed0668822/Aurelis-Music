@@ -7,6 +7,35 @@
 
 ### B02.3-b3 — ritmos por motor y feedback de pulsación larga
 
+**Reparación autorizada tras run116.** El usuario pidió revisar/corregir el error
+y aportó Aurelis-Informes-B01-B06-116.zip. Base de reparación:
+9dcfb964eaf082acee9ae6ee1305308bc0e473c8. ZIP íntegro, SHA-256 verificado:
+317d4de9e1582ef82e26b9714d954e70ed66be6dbbd5cb65eaf2cc9e9d0f953e.
+Los XML Debug/Release registran un error WrongConstant por variante en
+Haptics.kt:71, argumento de Composition.addPrimitive; también229 warnings por
+variante, fuera del alcance de esta reparación. B01, B03 y B05 aprobaron; B02
+falló, B04 se omitió y B06 falló por la puerta global. Es un diagnóstico Lint,
+no un error de compilación Kotlin ni una prueba de fallo de reproducción.
+El ZIP registra299/299 pruebas aprobadas en Debug y299/299 en Release, cero
+errores/skips; pertenecen al run116, no a la reparación nueva.
+
+La propiedad Int del enum conservaba el valor correcto en runtime, pero Lint
+no la reconocía como uno de los valores del @IntDef del SDK. Se expresa la
+selección mediante when exhaustivo y constantes PRIMITIVE_TICK, LOW_TICK y CLICK
+directamente en addPrimitive. Se conservan comprobaciones de soporte, escalas,
+pausas, cache, fallback, preferencias y gesto. La suite existente de23 pruebas
+cubre ya las tres primitivas y las rutas de motor; se conserva sin añadir casos
+que solo repitan el cambio sintáctico. No se suprime WrongConstant ni se cambia
+Lint, el umbral de cobertura, workflows, firma, SDK o ABI.
+
+Dos rutas: Haptics.kt y este tracker, ambas dentro de las seis de B02.3-b3.
+Revisión1 del mismo agente: diagnóstico de ambos XML y constantes del @IntDef
+en anotaciones del SDK. Revisión2: equivalencia de las tres ramas con el enum,
+datos de ritmos/pruebas/avisos intactos y presupuesto. Solo comprobaciones
+estáticas/diff locales; sin Gradle ni pruebas Android locales. Resultado nuevo
+de Lint/Android pendiente de GitHub; tras publicar esta reparación se espera
+el resultado comunicado por el usuario antes de otro bloque.
+
 **Autorización/base.** «Autorización concedida» para la siguiente entrega,
 incluidos commit/push a feature/bitchord-local-migration, mismo PR1.
 Base c3844686db58283ee70325d8bc4f44393e48599f, estado limpio y remoto coincidente

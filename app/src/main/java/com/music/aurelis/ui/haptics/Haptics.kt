@@ -70,7 +70,15 @@ class Haptics(
         val primitives = beats.map { it.kind.primitive }.distinct().toIntArray()
         if (vibrator.areAllPrimitivesSupported(*primitives)) {
             val composition = VibrationEffect.startComposition()
-            beats.forEach { composition.addPrimitive(it.kind.primitive, it.scale, it.gapMs.toInt()) }
+            beats.forEach { beat ->
+                // The SDK's @IntDef requires visible primitive constants here.
+                val delay = beat.gapMs.toInt()
+                when (beat.kind) {
+                    BeatKind.Tick -> composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, beat.scale, delay)
+                    BeatKind.LowTick -> composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, beat.scale, delay)
+                    BeatKind.Click -> composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, beat.scale, delay)
+                }
+            }
             return composition.compose()
         }
         val coarse = !vibrator.hasAmplitudeControl()
