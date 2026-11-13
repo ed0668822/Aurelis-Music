@@ -5,6 +5,28 @@
 
 ## Continuación actual — primera entrega documental
 
+### B02.3-a — primera entrega de anclaje y devolución del foco
+
+El usuario priorizó empezar B02–B05. Base ed977183; rama/remoto sincronizados,
+cuenta ed0668822 e identidad local con correo verificado. Autorizada aplicación,
+commit y push de esta entrega al mismo PR1. Presupuesto difícil: seis rutas,
+incluidos tres archivos de producción, SharedGesturesTest y dos documentos.
+Manifiesto y revisión en [B02_3A_ANCHOR_FOCUS](B02_3A_ANCHOR_FOCUS.md).
+
+El gesto compartido captura el origen, el menú lo consume por host y se coloca
+según ventana/tamaño/LTR/RTL. Cierre mantiene callbacks; devuelve foco tras retirar
+el popup si el origen sigue montado. Filas retiradas invalidan el ancla; el host
+cancela su efecto al desaparecer. Aperturas sin origen conservan el centro.
+No cambia la arquitectura de reproducción, firmas, ABI ni workflow.
+
+Dos revisiones del mismo agente y comprobaciones estáticas de API/diff/presupuesto.
+Regresiones geométricas, ciclo de vida y Compose preparadas para GitHub; sin
+Gradle ni pruebas Android locales. El push de app/** activa B01–B06, cuyo resultado
+nuevo queda pendiente. No se acredita fidelidad visual ni hardware por este cambio.
+B02.3-a sigue parcial: captura/retorno visual del elemento pendientes; después
+B02.3-b y B03–B05 por entregas autorizadas. CI12.3/comentarios CI16 siguen abiertos;
+B09 sin iniciar. Esperar resultado comunicado por el usuario y nueva autorización.
+
 ### CI16 — entrega documental autorizada de la revisión de las tres carpetas
 
 Autorización inicial para sincronizar por avance rápido y preparar la revisión

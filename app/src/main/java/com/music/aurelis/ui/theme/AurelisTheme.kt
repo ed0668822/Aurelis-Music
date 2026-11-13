@@ -43,12 +43,14 @@ fun AurelisTheme(
     val glass by SettingsRepository.liquidGlass.collectAsStateWithLifecycle()
     val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
     val resolvedDark = darkTheme ?: isAurelisDarkTheme(mode, isSystemInDarkTheme())
+    val heldMenus = com.music.aurelis.ui.components.rememberHeldMenuState()
     SystemBarIcons(dark = !resolvedDark)
     CompositionLocalProvider(
         LocalReduceMotion provides reduceMotion,
         com.music.aurelis.ui.components.LocalGlassHardware provides hardware,
         LocalLiquidGlassEnabled provides (glass && !reduceBlur),
         LocalPlayingBarsMotion provides !reduceMotion,
+        com.music.aurelis.ui.components.LocalHeldMenuState provides heldMenus,
     ) {
         MaterialTheme(
             colorScheme = if (resolvedDark) DarkColorScheme else LightColorScheme,

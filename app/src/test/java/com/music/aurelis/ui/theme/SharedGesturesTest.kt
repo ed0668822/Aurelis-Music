@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.theme
 
 import android.view.MotionEvent
@@ -10,6 +11,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import com.music.aurelis.AurelisApplication
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
@@ -32,6 +37,107 @@ class SharedGesturesTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
     private val song = LocalSong("shared-1", "Canción de prueba", "Artista local", null,
         "content://media/external/audio/media/1", null, 180000, null, null, null)
+
+    @Test fun menuFollowsTheHeldRowAndRespectsLogicalTrailingEdge() {
+        val anchor = IntRect(80, 100, 300, 148)
+        val window = IntSize(360, 800)
+        val panel = IntSize(200, 240)
+        assertEquals(IntOffset(100, 156), heldMenuPosition(anchor, window, panel, LayoutDirection.Ltr, 16, 8))
+        assertEquals(IntOffset(80, 156), heldMenuPosition(anchor, window, panel, LayoutDirection.Rtl, 16, 8))
+    }
+
+    @Test fun menuFlipsAboveBottomRowAndClampsBothWindowEdges() {
+        val window = IntSize(360, 800)
+        val panel = IntSize(200, 240)
+        assertEquals(IntOffset(140, 482), heldMenuPosition(
+            IntRect(240, 730, 340, 778), window, panel, LayoutDirection.Ltr, 16, 8))
+        assertEquals(IntOffset(16, 20), heldMenuPosition(
+            IntRect(0, 0, 12, 12), window, panel, LayoutDirection.Ltr, 16, 8))
+        assertEquals(IntOffset(144, 156), heldMenuPosition(
+            IntRect(350, 100, 360, 148), window, panel, LayoutDirection.Rtl, 16, 8))
+    }
+
+    @Test fun missingOrOffscreenAnchorKeepsCenteredFallbackInSmallWindows() {
+        val window = IntSize(360, 800)
+        val panel = IntSize(200, 240)
+        for (anchor in listOf(null, IntRect(0, 0, 0, 0), IntRect(0, 900, 100, 948))) {
+            assertEquals(IntOffset(80, 280), heldMenuPosition(anchor, window, panel, LayoutDirection.Ltr, 16, 8))
+        }
+        assertEquals(IntOffset.Zero, heldMenuPosition(
+            null, IntSize(100, 120), IntSize(120, 150), LayoutDirection.Ltr, 16, 8))
+        assertEquals(IntOffset(16, 84), heldMenuPosition(
+            IntRect(40, 170, 140, 210), IntSize(360, 400), IntSize(200, 300), LayoutDirection.Ltr, 16, 8))
+    }
+
+    @Test fun openerIsConsumedOnceAndCannotLeakAcrossHostsOrDetachedRows() {
+        val first = HeldMenuState()
+        val second = HeldMenuState()
+        val opener = HeldMenuAnchor().also { it.attached = true }
+        first.pendingAnchor = opener
+        assertNull(second.takeAnchor())
+        assertSame(opener, first.takeAnchor())
+        assertNull(first.takeAnchor())
+        opener.attached = false
+        first.pendingAnchor = opener
+        assertNull(first.takeAnchor())
+        assertNull(first.pendingAnchor)
+    }
+
+    @Test fun dismissingHeldMenuRestoresFocusWithoutPlayingOrKeepingStaleAnchor() {
+        var plays = 0
+        lateinit var menus: HeldMenuState
+        compose.setContent { AurelisTheme {
+            menus = checkNotNull(LocalHeldMenuState.current)
+            var open by remember { mutableStateOf(false) }
+            Column {
+                Box(Modifier.testTag("held-opener").size(48.dp)
+                    .heldContextMenuInteractions({ plays++ }, { open = true })) {
+                    androidx.compose.material3.Text("Origen")
+                }
+                if (open) HeldContextMenu({ open = false }) {
+                    androidx.compose.material3.TextButton({ open = false }) {
+                        androidx.compose.material3.Text("Cerrar anclado")
+                    }
+                }
+            }
+        } }
+        compose.onNodeWithTag("held-opener").performTouchInput { longClick() }
+        compose.onNode(isPopup()).assertExists()
+        compose.runOnIdle { assertNull(menus.pendingAnchor); assertEquals(0, plays) }
+        compose.onNodeWithText("Cerrar anclado").performClick()
+        compose.onNode(isPopup()).assertDoesNotExist()
+        compose.onNodeWithTag("held-opener").assertIsFocused()
+        compose.runOnIdle { assertNull(menus.restoreAnchor); assertEquals(0, plays) }
+    }
+
+    @Test fun removingTheOpenerBeforeDismissalDoesNotRequestFocusOnDetachedRow() {
+        lateinit var menus: HeldMenuState
+        compose.setContent { AurelisTheme {
+            menus = checkNotNull(LocalHeldMenuState.current)
+            var open by remember { mutableStateOf(false) }
+            var visible by remember { mutableStateOf(true) }
+            Column {
+                if (visible) Box(Modifier.testTag("removed-opener").size(48.dp)
+                    .heldContextMenuInteractions({}, { open = true })) {
+                    androidx.compose.material3.Text("Fila temporal")
+                }
+                if (open) HeldContextMenu({ open = false }) {
+                    androidx.compose.material3.TextButton({ visible = false }) {
+                        androidx.compose.material3.Text("Retirar origen")
+                    }
+                    androidx.compose.material3.TextButton({ open = false }) {
+                        androidx.compose.material3.Text("Cerrar sin origen")
+                    }
+                }
+            }
+        } }
+        compose.onNodeWithTag("removed-opener").performTouchInput { longClick() }
+        compose.onNodeWithText("Retirar origen").performClick()
+        compose.onNodeWithTag("removed-opener").assertDoesNotExist()
+        compose.onNodeWithText("Cerrar sin origen").performClick()
+        compose.onNode(isPopup()).assertDoesNotExist()
+        compose.runOnIdle { assertNull(menus.restoreAnchor); assertNull(menus.pendingAnchor) }
+    }
 
     @Test fun iosSwitchKeepsTouchTargetDisabledStateAndSingleAction() {
         var changes = 0
@@ -122,9 +228,16 @@ class SharedGesturesTest {
     @Test fun backKeyDismissesTheActualPopup() {
         var dismissals = 0
         compose.setContent { AurelisTheme {
-            var open by remember { mutableStateOf(true) }
-            if (open) IosMenu({ open = false; dismissals++ }) { androidx.compose.material3.Text("Acciones locales") }
+            var open by remember { mutableStateOf(false) }
+            Column {
+                Box(Modifier.testTag("back-opener").size(48.dp)
+                    .heldContextMenuInteractions({}, { open = true })) {
+                    androidx.compose.material3.Text("Abrir acciones")
+                }
+                if (open) IosMenu({ open = false; dismissals++ }) { androidx.compose.material3.Text("Acciones locales") }
+            }
         } }
+        compose.onNodeWithTag("back-opener").performTouchInput { longClick() }
         compose.onNode(isPopup()).assertExists()
         compose.runOnIdle {
             val global = ReflectionHelpers.callStaticMethod<Any>(Class.forName("android.view.WindowManagerGlobal"), "getInstance")
@@ -134,15 +247,23 @@ class SharedGesturesTest {
             popup.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_BACK))
         }
         compose.onNode(isPopup()).assertDoesNotExist()
+        compose.onNodeWithTag("back-opener").assertIsFocused()
         compose.runOnIdle { assertEquals(1, dismissals) }
     }
 
     @Test fun outsideEventDismissesTheActualPopup() {
         var dismissals = 0
         compose.setContent { AurelisTheme {
-            var open by remember { mutableStateOf(true) }
-            if (open) IosMenu({ open = false; dismissals++ }) { androidx.compose.material3.Text("Acciones locales") }
+            var open by remember { mutableStateOf(false) }
+            Column {
+                Box(Modifier.testTag("outside-opener").size(48.dp)
+                    .heldContextMenuInteractions({}, { open = true })) {
+                    androidx.compose.material3.Text("Abrir acciones")
+                }
+                if (open) IosMenu({ open = false; dismissals++ }) { androidx.compose.material3.Text("Acciones locales") }
+            }
         } }
+        compose.onNodeWithTag("outside-opener").performTouchInput { longClick() }
         compose.onNode(isPopup()).assertExists()
         compose.runOnIdle {
             val global = ReflectionHelpers.callStaticMethod<Any>(Class.forName("android.view.WindowManagerGlobal"), "getInstance")
@@ -152,6 +273,7 @@ class SharedGesturesTest {
             try { popup.dispatchTouchEvent(event) } finally { event.recycle() }
         }
         compose.onNode(isPopup()).assertDoesNotExist()
+        compose.onNodeWithTag("outside-opener").assertIsFocused()
         compose.runOnIdle { assertEquals(1, dismissals) }
     }
 }
