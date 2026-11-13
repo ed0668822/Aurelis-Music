@@ -185,6 +185,25 @@ sin cambios. Persisten los pendientes legales y el CSV para cabeceras definitiva
 Comparación y límites en docs/qa/GLASS01_MATERIAL_PARITY.md y evidencia JSON.
 
 
+## B03.1-a — identidad y ciclo de vida del estado de páginas
+
+Referencia BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, solo lectura:
+app/src/main/java/com/music/bitchord/ui/navigation/AppNavigator.kt,
+SHA-256: 9ffe029a38252ecd0e3355009c366d6e1b25f8de1837ae8d3578e13db65c0947;
+app/src/main/java/com/music/bitchord/MainActivity.kt,
+SHA-256: 90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2.
+Se adaptan la identidad por RouteEntry y el patrón pageStates/pageKeysSeen para
+retirar estado de páginas cerradas, en AppNavigator/AppNavigationHost locales.
+NOTICE conserva origen y condiciones GPLv3 del material upstream; las cabeceras
+Aurelis identifican aportes propios, sin conceder or-later al original.
+
+Persistencia v2, compatibilidad de claves v1 y pruebas son integración propia de
+Aurelis con las rutas locales existentes. GlassNavBar se consultó como referencia
+de interacción; su archivo permanece sin cambios. No se incorporan dependencias,
+recursos, fuentes, modelos, APIs remotas ni binarios. LICENSE/otras atribuciones,
+firmas, applicationId y ABI intactos. No se cierran los pendientes legales de
+modelos/binarios por esta adaptación de UI.
+
 ## B04 — entrega incremental
 
 Nuevos agrupador de géneros/historial y wiring propios sobre catálogo, preferencias

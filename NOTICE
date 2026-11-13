@@ -264,6 +264,19 @@ Original BitChord contributors, GPLv3 per upstream LICENSE.
 Changes: LocalSong/playlist data, local queue/actions, Android accessibility and shared Aurelis tokens.
 Existing Kyant0 and Ahmed Gamil notices remain applicable to the reused glass navigation.
 
+B03.1-a — entry-scoped navigation state lifecycle
+Reference commit: b690dc146009d4815825fa4a20815ef2e4ee8898 (BitChord).
+Sources: app/src/main/java/com/music/bitchord/ui/navigation/AppNavigator.kt
+(SHA-256: 9ffe029a38252ecd0e3355009c366d6e1b25f8de1837ae8d3578e13db65c0947)
+and app/src/main/java/com/music/bitchord/MainActivity.kt, pageStates/pageKeysSeen lifecycle
+(SHA-256: 90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2).
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Destinations: Aurelis ui/navigation/AppNavigator.kt and AppNavigationHost.kt.
+Changes: local wired routes, stable per-entry saved keys, removal of closed-page
+state, v2 Activity snapshot identities/counters and v1 key compatibility.
+Root-tab state and the existing local playback graph remain Aurelis integrations.
+The Aurelis headers identify local contributions; upstream conditions are retained.
+
 
 ────────────────────────────────────────────────────────────────────
 

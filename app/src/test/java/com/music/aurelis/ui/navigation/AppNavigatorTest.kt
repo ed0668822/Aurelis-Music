@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.navigation
 
 import com.music.aurelis.data.model.LocalShelf
@@ -5,6 +6,58 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AppNavigatorTest {
+    @Test fun separateVisitsKeepTheirEntryKeysAcrossRestoration() {
+        val navigator = AppNavigator().apply {
+            selectTab(AppTab.LIBRARY)
+            push(AppRoute.Settings); push(AppRoute.Equalizer); push(AppRoute.Settings)
+        }
+        val keys = navigator.entries.map { AppDestination.Route(it).key }
+        assertEquals(3, keys.distinct().size)
+        assertNotEquals(keys.first(), keys.last())
+        val restored = requireNotNull(AppNavigator.restoreState(requireNotNull(navigator.saveState())))
+        assertEquals(navigator.entries, restored.entries)
+        assertEquals(keys, restored.entries.map { AppDestination.Route(it).key })
+        val previousId = restored.entries.last().id
+        restored.pop(); restored.push(AppRoute.Replay)
+        assertTrue(restored.entries.last().id > previousId)
+    }
+
+    @Test fun poppedEntryIdsAreNotReusedAfterRecreation() {
+        val navigator = AppNavigator().apply { push(AppRoute.Settings) }
+        val oldId = navigator.entries.single().id
+        navigator.pop()
+        val restored = requireNotNull(AppNavigator.restoreState(requireNotNull(navigator.saveState())))
+        restored.push(AppRoute.Settings)
+        assertTrue(restored.entries.single().id > oldId)
+    }
+
+    @Test fun legacyNavigationPreservesItsProviderKeysUntilClosed() {
+        val legacy = requireNotNull(AppNavigator.restoreState(listOf("1", "SEARCH", "settings", "equalizer")))
+        assertEquals(listOf("page.settings", "page.equalizer"), legacy.entries.map { AppDestination.Route(it).key })
+        val updated = requireNotNull(legacy.saveState())
+        assertEquals("2", updated.first())
+        val restored = requireNotNull(AppNavigator.restoreState(updated))
+        assertEquals(legacy.entries, restored.entries)
+        restored.clear(); restored.push(AppRoute.Settings)
+        assertTrue(AppDestination.Route(restored.entries.single()).key.startsWith("route:"))
+    }
+
+    @Test fun malformedEntryIdentitiesAndCountersRejectTheWholeSnapshot() {
+        val invalid = listOf(
+            listOf("2", "HOME", "not-a-number"),
+            listOf("2", "HOME", "-1"),
+            listOf("2", "HOME", Long.MAX_VALUE.toString()),
+            listOf("2", "HOME", "10", "1", "settings"),
+            listOf("2", "HOME", "10", "-1", "settings", "0"),
+            listOf("2", "HOME", "10", "10", "settings", "0"),
+            listOf("2", "HOME", "10", "1", "settings", "invalid-flag"),
+            listOf("2", "HOME", "10", "1", "removed-page", "0"),
+            listOf("2", "HOME", "10", "1", "settings", "0", "1", "equalizer", "0"),
+            listOf("2", "HOME", "10", "2", "settings", "0", "1", "equalizer", "0"),
+        )
+        invalid.forEach { assertNull(it.toString(), AppNavigator.restoreState(it)) }
+    }
+
     @Test fun collectionRoutesRestoreSmallIdsIncludingUnicodeAndSeparators() {
         for (route in listOf(AppRoute.Collection(LocalCollectionKind.FAVORITES),
             AppRoute.Collection(LocalCollectionKind.PLAYLISTS),

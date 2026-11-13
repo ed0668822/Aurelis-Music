@@ -1,4 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
+// Entry identity follows BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+// GPLv3; original contributors/provenance in NOTICE. Persistence is Aurelis glue.
 package com.music.aurelis.ui.navigation
 
 import androidx.compose.runtime.Stable
@@ -31,7 +33,14 @@ sealed interface AppRoute {
     data object EqualizerPresets : AppRoute
 }
 
-data class RouteEntry(val id: Long, val route: AppRoute, val detailDepth: Int)
+data class RouteEntry(
+    val id: Long, val route: AppRoute, val detailDepth: Int,
+    internal val legacyStateKey: Boolean = false,
+) {
+    // Retain a v1 Activity's provider key until that entry leaves the stack.
+    internal val stateKey: String
+        get() = if (legacyStateKey) "page.${requireNotNull(route.navigationKey)}" else "route:$id"
+}
 
 enum class AppTab { HOME, EXPLORE, LIBRARY, SEARCH }
 enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST, FOLDER, GENRE, ALBUMS, ARTISTS, FOLDERS, HISTORY }
@@ -145,18 +154,40 @@ class AppNavigator(
     internal fun saveState(): List<String>? {
         // Never put track lists, artwork or callbacks into the Activity's saved Bundle.
         if (detailDepth() != 0 || stack.any { it.detailDepth != 0 }) return null
-        val routes = stack.map { it.route.navigationKey ?: return null }
-        return listOf("1", selectedTab.name) + routes
+        val entries = stack.flatMap { entry ->
+            val route = entry.route.navigationKey ?: return null
+            listOf(entry.id.toString(), route, if (entry.legacyStateKey) "1" else "0")
+        }
+        return listOf("2", selectedTab.name, nextId.toString()) + entries
     }
 
     companion object {
         internal fun restoreState(saved: List<String>): AppNavigator? {
-            if (saved.size < 2 || saved[0] != "1") return null
+            if (saved.size < 2) return null
             val tab = AppTab.entries.firstOrNull { it.name == saved[1] } ?: return null
-            val routes = saved.drop(2).map { routeForKey(it) ?: return null }
+            if (saved[0] == "1") {
+                val routes = saved.drop(2).map { routeForKey(it) ?: return null }
+                return AppNavigator().apply {
+                    selectedTab = tab
+                    routes.forEach(::push)
+                    for (index in stack.indices) {
+                        stack[index] = stack[index].copy(legacyStateKey = true)
+                    }
+                }
+            }
+            if (saved[0] != "2" || saved.size < 3 || (saved.size - 3) % 3 != 0) return null
+            val savedNextId = saved[2].toLongOrNull()?.takeIf { it >= 0 && it < Long.MAX_VALUE } ?: return null
+            val entries = saved.drop(3).chunked(3).map { fields ->
+                val id = fields[0].toLongOrNull()?.takeIf { it >= 0 && it < savedNextId } ?: return null
+                val route = routeForKey(fields[1]) ?: return null
+                val legacy = when (fields[2]) { "0" -> false; "1" -> true; else -> return null }
+                RouteEntry(id, route, 0, legacy)
+            }
+            if (entries.zipWithNext().any { (first, second) -> first.id >= second.id }) return null
             return AppNavigator().apply {
-                selectTab(tab)
-                routes.forEach(::push)
+                selectedTab = tab
+                nextId = savedNextId
+                stack.addAll(entries)
             }
         }
 
@@ -175,7 +206,7 @@ sealed interface AppDestination {
     }
 
     data class Route(val entry: RouteEntry) : AppDestination {
-        override val key: String get() = "route:${entry.id}"
+        override val key: String get() = entry.stateKey
     }
 
     data class Release(val id: String) : AppDestination {

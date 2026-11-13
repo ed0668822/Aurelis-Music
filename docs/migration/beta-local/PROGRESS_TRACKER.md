@@ -5,10 +5,26 @@
 
 ## Continuación actual — primera entrega documental
 
+### B03.1-a — estado por entrada, Atrás y restauración
+
+Autorización «Continúa», base 49ba012a; cuenta/identidad verificada, checkout
+limpio y remoto coincidente. Run118 success en B01–B06 confirma CI18 antes de
+este bloque. Ocho rutas de un máximo 30; manifiesto/referencia/revisiones en
+[B03_1A_ENTRY_STATE](B03_1A_ENTRY_STATE.md).
+
+Se adapta de BitChord b690dc1 la identidad por entrada y limpieza de estados
+cerrados. Cada visita nueva tiene clave propia; cerrar/cambiar tab retira solo
+las páginas que salen de la pila y mantiene estado de tabs. El snapshot v2
+conserva IDs/contador, acepta v1 con sus claves antiguas y rechaza datos inválidos.
+Los overlays conservan la entrada subyacente. Nueve pruebas nuevas para GitHub
+(cuatro modelo/cinco Compose) y suites anteriores intactas. Dos revisiones
+estáticas del mismo agente; sin Gradle/Android locales. Nuevo B01–B06 pendiente.
+No se cierra paridad física/visual de B03 ni se inician B09 u otros bloques.
+
 ### CI18 — reparación conjunta de B02 y B06 tras run117
 
 Autorización explícita para corregir ambas causas y comprobar B01–B06 después
-del push. Base09083362; cinco archivos de un máximo30. Manifiesto, procedencia
+del push. Base09083362; cinco archivos de un máximo 30. Manifiesto, procedencia
 de evidencia, accesos intentados y revisiones en
 [CI18_HAPTICS_AND_REPORT_FAILURE](../../qa/CI18_HAPTICS_AND_REPORT_FAILURE.md).
 
@@ -22,7 +38,9 @@ certifica fuentes ausentes. Retira únicamente salidas F4 derivadas antiguas.
 Reproducción local del error original confirmada. Siete regresiones nuevas,
 222 pruebas Python aprobadas; dos revisiones del mismo agente. Sin Gradle ni
 Android locales, cambios de firma, SDK, ABI o supresiones de Lint. Resultado
-remoto nuevo pendiente; esta vez se comprobarán las seis fases tras publicar.
+posterior confirmado: run118/43520405511 SUCCESS para 49ba012a, las seis fases
+B01–B06 success y tres artefactos finales conservados. No se reutiliza ese verde
+para la nueva entrega B03.1-a.
 
 ### B02.3-b3 — ritmos por motor y feedback de pulsación larga
 
