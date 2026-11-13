@@ -91,6 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s .github/scripts -p 'test_v1_versioning.py' -v
+          python3 -m unittest discover -s .github/scripts -p 'test_v1_release_source.py' -v
           python3 .github/scripts/v1_versioning.py generate --env-file "$GITHUB_ENV"
           test -s ci-b01/version-metadata.json
 

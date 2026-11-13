@@ -50,11 +50,14 @@ def assert_prior_green(sha, token):
     })
     with urlopen(req, timeout=30) as response:
         result = json.load(response)
-    if not any(isinstance(x, dict) and x.get("head_sha", "").lower() == sha
-               and x.get("event") == "push" and x.get("conclusion") == "success"
-               and x.get("status") == "completed"
-               for x in result.get("workflow_runs", [])):
+    accepted = [x for x in result.get("workflow_runs", [])
+                if isinstance(x, dict) and x.get("head_sha", "").lower() == sha
+                and x.get("event") == "push" and x.get("conclusion") == "success"
+                and x.get("status") == "completed"
+                and type(x.get("id")) is int and type(x.get("run_number")) is int]
+    if not accepted:
         raise ValueError("No successful B01-B06 push run for the exact Release SHA")
+    return max(accepted, key=lambda x: x["run_number"])
 
 def verify_and_stage(root, cert, sha):
     if not re.fullmatch("[0-9a-f]{64}", cert) or not re.fullmatch("[0-9a-f]{40}", sha):
@@ -115,7 +118,12 @@ def main():
     command = sys.argv[1:]
     if command == ["preflight"]:
         validate_environment(os.environ)
-        assert_prior_green(os.environ["GITHUB_SHA"].lower(), os.environ["GITHUB_TOKEN"])
+        green = assert_prior_green(os.environ["GITHUB_SHA"].lower(), os.environ["GITHUB_TOKEN"])
+        outputs = Path(os.environ.get("GITHUB_OUTPUT", "/nonexistent"))
+        if outputs.is_symlink() or not outputs.is_file():
+            raise ValueError("Cannot bind verified green run ID to protected release job")
+        with outputs.open("a", encoding="utf-8") as stream:
+            stream.write(f"run_id={green['id']}\nrun_number={green['run_number']}\n")
     elif command == ["stage"]:
         verify_and_stage(Path("."), os.environ["RELEASE_SIGNER_SHA256"].lower(), os.environ["GITHUB_SHA"].lower())
     elif command == ["validate-vt"]:

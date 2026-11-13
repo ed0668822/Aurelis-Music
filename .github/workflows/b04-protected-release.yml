@@ -44,6 +44,7 @@ jobs:
           persist-credentials: false
 
       - name: Validate previous green B01-B06 and protected environment
+        id: green_ci
         env:
           RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
           RELEASE_PROTECTION_CONFIRMED: ${{ vars.RELEASE_PROTECTION_CONFIRMED }}
@@ -66,6 +67,23 @@ jobs:
         with:
           validate-wrappers: true
           cache-read-only: true
+
+      - name: Download exact same-SHA successful B01-B06 report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          run-id: ${{ steps.green_ci.outputs.run_id }}
+          name: Aurelis-Informes-B01-B06-${{ steps.green_ci.outputs.run_number }}
+          path: ci-prev-green/
+          github-token: ${{ github.token }}
+
+      - name: Pin official Release to same versionName/code as green source CI
+        env:
+          GREEN_SOURCE_RUN_ID: ${{ steps.green_ci.outputs.run_id }}
+          GREEN_SOURCE_RUN_NUMBER: ${{ steps.green_ci.outputs.run_number }}
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_v1_release_source.py' -v
+          python3 .github/scripts/v1_release_source.py pin --env-file "$GITHUB_ENV"
 
       - name: Install ARM64 Android SDK and toolchain
         run: |
@@ -117,6 +135,9 @@ jobs:
           set -euo pipefail
           python3 .github/scripts/android_ci.py verify
           python3 .github/scripts/f1_protected_release.py stage
+          GREEN_SOURCE_RUN_ID="${{ steps.green_ci.outputs.run_id }}" \
+          GREEN_SOURCE_RUN_NUMBER="${{ steps.green_ci.outputs.run_number }}" \
+          python3 .github/scripts/v1_release_source.py check
 
       - name: Optional explicitly authorized public VirusTotal submission
         if: ${{ inputs.upload_to_virustotal == true }}

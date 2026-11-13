@@ -33,6 +33,24 @@ class ProtectedReleaseTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 mod.validate_environment({**GOOD, field: bad})
 
+    def test_green_run_binding_requires_actual_successful_push(self):
+        from unittest.mock import patch
+        class FakeResponse:
+            def __enter__(self): return self
+            def __exit__(self, *_): return False
+            def read(self, *_): return b""
+        import io
+        import json
+        complete = {"id": 123, "run_number": 108, "head_sha": GOOD["GITHUB_SHA"],
+                    "event": "push", "status": "completed", "conclusion": "success"}
+        with patch.object(mod, "urlopen", return_value=io.BytesIO(json.dumps({
+                "workflow_runs": [dict(complete, conclusion="failure"), complete]}).encode())):
+            self.assertEqual(mod.assert_prior_green(GOOD["GITHUB_SHA"], "token")["id"], 123)
+        with patch.object(mod, "urlopen", return_value=io.BytesIO(json.dumps({
+                "workflow_runs": [dict(complete, conclusion="failure")]}).encode())):
+            with self.assertRaisesRegex(ValueError, "No successful"):
+                mod.assert_prior_green(GOOD["GITHUB_SHA"], "token")
+
     def test_unsigned_or_missing_source_cannot_be_staged(self):
         from pathlib import Path
         from tempfile import TemporaryDirectory

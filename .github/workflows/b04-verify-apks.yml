@@ -165,6 +165,12 @@ jobs:
         continue-on-error: true
         run: python3 .github/scripts/android_ci.py verify
 
+      - name: Assert Debug and signed Release versions equal B01 source
+        if: ${{ !cancelled() && steps.verify.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/v1_release_source.py check
+
       - name: Redact logs and publish verification summary
         id: summary
         if: always()
