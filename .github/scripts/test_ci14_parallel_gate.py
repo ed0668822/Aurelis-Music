@@ -60,6 +60,18 @@ class GraphTests(unittest.TestCase):
             expected = "true" if name.startswith("b06-") else "false"
             self.assertIn(f"cancel-in-progress: {expected}", block)
 
+    def test_removed_release_upload_step_is_not_referenced(self):
+        data = (WORKFLOW.parent / "b04-verify-apks.yml").read_text(encoding="utf-8")
+        self.assertNotIn("steps.release_apk.outcome", data)
+        self.assertNotIn("RELEASE_APK_OUTCOME", data)
+        self.assertIn("Publish Debug APK separately", data)
+
+    def test_protected_release_reuses_green_run_identity_via_env(self):
+        data = (WORKFLOW.parent / "b04-protected-release.yml").read_text(encoding="utf-8")
+        self.assertIn("GREEN_SOURCE_RUN_ID: ${{ steps.green_ci.outputs.run_id }}", data)
+        self.assertIn("GREEN_SOURCE_RUN_NUMBER: ${{ steps.green_ci.outputs.run_number }}", data)
+        self.assertNotIn('GREEN_SOURCE_RUN_ID="${{ steps.green_ci.outputs.run_id }}"', data)
+
     def test_b06_collects_all_and_preserves_failure_evidence(self):
         body = job(self.flow, "b06")
         self.assertIn("needs: [b01, b02, b03, b04, b05]", body)

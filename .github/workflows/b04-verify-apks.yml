@@ -360,9 +360,6 @@ jobs:
           STAGE_OUTCOME: ${{ steps.stage_apks.outcome }}
           EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
           DEBUG_APK_OUTCOME: ${{ steps.debug_apk.outcome }}
-          RELEASE_APK_OUTCOME: ${{ steps.release_apk.outcome }}
-          # Publication remains disabled until environment-protected job is implemented.
-          RELEASE_PUBLISH_EXPECTED: "false"
         run: |
           python3 - <<'PY'
           import json
@@ -370,10 +367,7 @@ jobs:
           from pathlib import Path
 
           outcomes = {key: os.environ.get(key + "_OUTCOME", "missing")
-                      for key in ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "STAGE", "EVIDENCE", "REPORT", "DEBUG_APK", "RELEASE_APK")}
-          # La publicación de la APK firmada solo aplica en main y tags; en otras ramas se omite por diseño.
-          if os.environ.get("RELEASE_PUBLISH_EXPECTED") != "true":
-              outcomes.pop("RELEASE_APK")
+                      for key in ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "STAGE", "EVIDENCE", "REPORT", "DEBUG_APK")}
           bad = [key for key, value in outcomes.items() if value != "success"]
           path = Path("ci-artifacts/apk-verification.json")
           manifest = Path("ci-approved-apks/apk-manifest.json")

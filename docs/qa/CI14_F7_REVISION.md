@@ -27,4 +27,4 @@ Fecha: 2026-11-12. Fuente de comprobación: rama feature/bitchord-local-migratio
 
 ## Verificación final pendiente
 
-Esperar el pipeline B01–B06 del commit final y auditar ambos APK (Debug/Release), cobertura y Media3. Verificar UI/audio en Android 16 antes de promocionar el targetSdk al canal de publicación protegido. Los cambios de esta revisión son dos ajustes puntuales; los archivos de FFmpeg y la dependencia org.json permanecen sin cambios.
+Run #108 aprobó B01–B06, cobertura y siete pruebas Media3 en emulador Android 15; el último commit de cierre necesita su propio resultado. Verificar UI/audio en Android 16 antes de promocionar el targetSdk al canal de publicación protegido. Los cambios de esta revisión son dos ajustes puntuales; los archivos de FFmpeg y la dependencia org.json permanecen sin cambios.

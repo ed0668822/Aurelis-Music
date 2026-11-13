@@ -271,10 +271,12 @@ Decisión D1 tomada por el usuario: pipeline canónico **B01–B06**.
 |---|---|---|---|
 | F0 | Línea base cerrada | (documentación F0) | API de GitHub consultada: run #41 29,3 min; #40 30,4 min; #50 27,4 min, #51 30,8 min (B05 falló). Detalles en CI14_F0_BASELINE.md. Decisiones D1-D3 y D6 incorporadas al alcance; D4 solo H3 en F1, D5 se reserva para F7. |
 | F1 | Release protegido implementado; activación administrativa pendiente | CI14_F1_RELEASE_PROTEGIDO.md | Manual main/v*, job con environment release y confirmación adicional, requiere run verde mismo SHA, certificado oficial y VirusTotal opt-in; falta configurar y verificar reviewer, secretos y variables GitHub. No se declara Release publicado. |
-| F2 | Consolidado; CI de este SHA pendiente | `2e88ebe`, `7a9c748` (SHA de emulador), siguiente commit (unificación) | Lint debug+release en B02; `task-inputs.gradle` en B01/B03/B05; B06 valida PR hacia `main`; `android.yml` retirado. |
+| F2 | Consolidado y validado | Run #108 | Lint Debug+Release y CI de seis etapas verificados; PR duplicado retirado para esta rama. |
 | F3 | Meta de rendimiento verificada en CI | Run #41 y #88; CI14_F3_RESULTADO.md | 29,25 min a 15,65 min en runs exitosos, -46,5 % (meta -30 % alcanzada). Tres jobs paralelos y artefactos SHA256 comprobados. |
-| F4 | Implementación diagnóstica publicada; validación CI pendiente | F4 series | 7 veredictos reales, inventario P2 conservado; faltan objetos .o y evidencia Debug individual para activar gate estricto. |
-| F5–F7 | Pendiente | — | Ver secciones 4 y 5. |
+| F4 | Evidencia íntegra con limitaciones expresas | #108, f4-integrity-gate.json | 663 archivos, 1326 filas, 338 clases mapeadas por variante y 11 objetos .o con SHA-256. El enlace de cada objeto al APK no está individualmente probado. |
+| F5 | Pruebas/cobertura verificadas; estática reforzada | #108 y cierre | 280+280 unitarias, 7/7 Media3, cobertura 88,86 %; actionlint obligatorio. Detekt/ktlint aún pendiente. |
+| F6 | Documentación consolidada | CI14_CIERRE_ACTUALIZACION.md | Evidencias y límites explícitos; historial y archivos P2 conservados. |
+| F7 | Revisión Android aplicada; QA físico pendiente | #108, CI14_F7_REVISION.md | targetSdk 36 y URL GitHub corregidos; FFmpeg y org.json conservados. |
 
 Desviaciones respecto al plan:
 - VirusTotal: la subida se activa con variable de repo, no con input de `workflow_dispatch`, porque B04 se invoca con `workflow_call`.
@@ -387,3 +389,9 @@ A partir del run #98 SUCCESS se comprobaron 340 entradas Kotlin/Java observadas 
 ## 32. V1 y F7: versión y revisión Android (2026-11-12)
 
 Se implementó V1 desde la serie 1.9, ancla #101, paso minor después de 150 runs B01-B06 SUCCESS. B01 fija versión y B04 comprueba el mismo run; F1 protegido reaprovecha la versión del ZIP verde del mismo SHA. Ver V1_VERSIONADO_150.md. En F7, Google Play exige targetSdk 36 desde agosto de 2026, ajustado en Gradle; se corrigió la URL releases/latest de AppUpdateChecker al repo Aurelis-Music. Se preservan org.json y las clases/librerías FFmpeg ante falta de prueba de equivalencia y de audio físico. Ver CI14_F7_REVISION.md.
+
+## 33. Cierre de CI14 y entrega a GitHub — 2026-11-12
+
+El run #108 del commit `94c7218` fue SUCCESS en B01–B06. Reportó 663 archivos, 1326 filas de matriz, 560 pruebas JVM correctas, 7/7 Media3 en Android 15, cobertura diff 88,86 % y dos artefactos: informe ZIP y APK Debug ARM64. La auditoría actionlint detectó una referencia inválida a `steps.release_apk.outcome`; el commit de cierre la elimina y convierte actionlint en gate obligatorio en B01. Se corrige la expansión directa de identidades de run en el shell del Release protegido usando `env:`. Zizmor mantiene hallazgos separados y explícitos, no se considera PASS automáticamente.
+
+[CI14_CIERRE_ACTUALIZACION.md](CI14_CIERRE_ACTUALIZACION.md) es el resumen final; las secciones anteriores quedan como historial. No se realizan merge a main ni publicación. F1 sigue sin aprobación administrativa del environment release y la prueba física Android 16 permanece pendiente. El último SHA debe acreditar su propia ejecución B01–B06.

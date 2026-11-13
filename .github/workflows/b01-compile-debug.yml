@@ -45,9 +45,8 @@ jobs:
           python3 -m py_compile .github/scripts/f1_protected_release.py
           python3 -m unittest discover -s .github/scripts -p 'test_f1_protected_release.py' -v
 
-      - name: Diagnose workflow YAML and security with pinned tools
+      - name: Enforce actionlint and record zizmor findings
         id: workflow_audit
-        continue-on-error: true
         run: bash .github/scripts/f5_workflow_audit.sh
 
       - name: Set up Java 17
@@ -214,7 +213,7 @@ jobs:
               f"- SHA-256 provenance verified: **{os.getenv('HANDOFF_OUTCOME', 'unknown')}**",
               f"- Immutable shared artifact uploaded: **{os.getenv('SHARED_OUTCOME', 'unknown')}**",
               f"- Configuration cache probe: **{os.getenv('CONFIG_PROBE_OUTCOME', 'unknown')}** (diagnostic only)",
-              f"- Actionlint/zizmor diagnostic: **{os.getenv('WORKFLOW_AUDIT_OUTCOME', 'unknown')}**",
+              f"- actionlint mandatory: **{os.getenv('WORKFLOW_AUDIT_OUTCOME', 'unknown')}**; see workflow-audit.md for zizmor findings",
               f"- Debug compiler outputs verified: **{os.getenv('COMPILER_OUTCOME', 'unknown')}**",
               f"- Compiler evidence uploaded: **{os.getenv('COMPILER_UPLOAD_OUTCOME', 'unknown')}**",
               f"- Commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",

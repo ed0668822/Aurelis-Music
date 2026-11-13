@@ -30,11 +30,23 @@ set -e
   echo
   echo "- actionlint 1.7.12 exit code: $ACTIONLINT_CODE"
   echo "- zizmor 1.32.0 exit code: $ZIZMOR_CODE"
-  echo "- Status: diagnostic baseline; findings require review."
-  echo "- Never convert a failing audit into a claimed PASS."
+  if [ "$ACTIONLINT_CODE" -eq 0 ]; then
+    echo "- actionlint obligatorio: **PASS**"
+  else
+    echo "- actionlint obligatorio: **FAIL**"
+  fi
+  if [ "$ZIZMOR_CODE" -eq 0 ]; then
+    echo "- zizmor: **sin hallazgos**"
+  else
+    echo "- zizmor: **hallazgos para revisión; no equivale a PASS**"
+  fi
+  echo "- Evidencia íntegra: zizmor-findings.json, zizmor.log y actionlint.log."
 } > ci-b01/workflow-audit.md
-if [ "$ACTIONLINT_CODE" -ne 0 ] || [ "$ZIZMOR_CODE" -ne 0 ]; then
-  echo "F5 audit found issues; inspect archived logs" >&2
+if [ "$ACTIONLINT_CODE" -ne 0 ]; then
+  echo "F5 FAIL: invalid workflow detected by actionlint" >&2
   exit 1
 fi
-echo "F5 workflow audit PASS"
+if [ "$ZIZMOR_CODE" -ne 0 ]; then
+  echo "F5: advisory zizmor findings recorded, no green security claim"
+fi
+echo "F5 actionlint PASS"
