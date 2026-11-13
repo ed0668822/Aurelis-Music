@@ -79,8 +79,22 @@ val configuredReleaseSigning = listOf(
 )?.let { rootProject.file(it).isFile } == true
 
 val runNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
-val autoVersionCode = if (runNumber != null) 10000 + runNumber else 1
-val autoVersionName = if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
+val v1Name = System.getenv("AURELIS_VERSION_NAME")?.trim()?.takeIf { it.isNotEmpty() }
+val v1Code = System.getenv("AURELIS_VERSION_CODE")?.trim()?.takeIf { it.isNotEmpty() }
+require((v1Name == null) == (v1Code == null)) {
+    "V1 versionName and versionCode must be supplied together"
+}
+if (v1Name != null) {
+    require(Regex("""1\.\d+\.\d+""").matches(v1Name)) { "Invalid V1 versionName" }
+}
+val parsedVersionCode = v1Code?.toIntOrNull()
+if (v1Code != null) {
+    require(parsedVersionCode != null && parsedVersionCode in 1..2_100_000_000) {
+        "Invalid Android versionCode"
+    }
+}
+val autoVersionCode = parsedVersionCode ?: if (runNumber != null) 10000 + runNumber else 1
+val autoVersionName = v1Name ?: if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
 
 android {
     namespace = "com.music.aurelis"

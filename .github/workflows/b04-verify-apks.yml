@@ -114,6 +114,13 @@ jobs:
           name: b01-report-${{ github.run_number }}
           path: ci-b01-from-producer/
 
+      - name: Reuse version from B01 of same source SHA and CI run
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/v1_versioning.py adopt \
+            --manifest ci-b01-from-producer/version-metadata.json \
+            --env-file "$GITHUB_ENV"
+
       - name: Download B01 declared class outputs
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:

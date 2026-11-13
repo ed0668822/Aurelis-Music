@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: aurelis-b01-${{ github.run_id }}-${{ github.run_attempt }}
@@ -83,6 +84,15 @@ jobs:
           }
           echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
           chmod +x gradlew
+
+      - name: Compute V1 version from complete successful B01-B06 pipelines
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_v1_versioning.py' -v
+          python3 .github/scripts/v1_versioning.py generate --env-file "$GITHUB_ENV"
+          test -s ci-b01/version-metadata.json
 
       - name: Prepare tracked source inventory before Debug compilation
         run: |

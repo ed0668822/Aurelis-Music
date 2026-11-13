@@ -40,6 +40,7 @@ jobs:
     uses: ./.github/workflows/b01-compile-debug.yml
     permissions:
       contents: read
+      actions: read
 
   b02:
     name: "B02 | Android Lint"
