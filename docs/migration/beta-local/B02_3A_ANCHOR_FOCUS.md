@@ -97,3 +97,41 @@ B02–B05. B06/B07 no se cierran retrospectivamente y B09 continúa sin iniciar.
 Tras publicar, comunicar commit e inicio del CI y esperar el resultado del
 usuario y su autorización antes del siguiente bloque. Si falla, conservar el
 alcance y revisar los informes aportados antes de continuar el plan.
+
+## Reparación tras run112 — foco en modo táctil
+
+El usuario aportó Aurelis-Informes-B01-B06-112.zip y autorizó reparar el problema
+y continuar con la siguiente entrega. Base de reparación: e6e030275328929f7d4cc3fc97ea78e0cd32ace8.
+SHA-256 del ZIP verificado contra los metadatos de GitHub:
+a71c398b113b14db910567c35766ccaca0119cabc9c5187e9516cfd19a9ef437.
+Integridad ZIP correcta; lectura de informes/JUnit sin ejecutar contenido.
+
+El run43470182513 compiló Debug y aprobó Lint/emulador. B03 ejecutó286 casos por
+variante:283 aprobados y3 fallos, cero errores/skips. Fallaron en ambas variantes
+dismissingHeldMenuRestoresFocusWithoutPlayingOrKeepingStaleAnchor,
+backKeyDismissesTheActualPopup y outsideEventDismissesTheActualPopup: la fila
+seguía con Focused=false tras desaparecer el popup. La compilación de producción
+y pruebas llegó a completarse; fueron fallos de aserciones, no errores Kotlin.
+
+El motor Compose de combinedClickable instala FocusableInNonTouchMode, cuya
+propiedad canFocus es false cuando LocalInputModeManager indica Touch. Se verificó
+estáticamente en la dependencia existente. Por ello solicitar foco al siguiente
+frame no bastaba para la pulsación larga táctil. La reparación declara canFocus
+explícito en el mismo destino del gesto, sin añadir otro destino ni cambiar a
+modo teclado. Mantiene las tres aserciones assertIsFocused y añade la comprobación
+de que el modo táctil se conserva antes/después del cierre. La retirada de filas
+y la cancelación por desaparición del host mantienen sus protecciones anteriores.
+
+diff-coverage.json informa NOT_MEASURED/COVERAGE_XML_UNAVAILABLE: Kover se omitió
+por los tests fallidos. No hay porcentaje acreditado en ese run; se conserva la
+puerta80%, la condición de Kover y el resto de workflows. B04 no se ejecutó y B06
+falló como consecuencia; no se atribuye este ZIP a un Release nuevo validado.
+
+Reparación: cuatro rutas, todas dentro de las seis de B02.3-a: HeldContextMenu,
+SharedGesturesTest y estos dos documentos (informe/tracker). Revisión1 del mismo
+agente: causa en JUnit/API, prioridad de focusProperties y conservación del modo
+Touch. Revisión2: aserciones intactas, presupuesto y firma/ABI/gates intactos.
+Comprobaciones locales estáticas/diff; sin Gradle ni tests Android locales.
+Resultado de la reparación pendiente de un nuevo run en GitHub; no se declara
+PASS por el cambio de código. La entrega posterior tiene autorización del usuario
+y se conserva separada de esta reparación para verificar su resultado.

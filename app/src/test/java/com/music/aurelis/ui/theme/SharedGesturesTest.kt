@@ -7,6 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -86,8 +89,10 @@ class SharedGesturesTest {
     @Test fun dismissingHeldMenuRestoresFocusWithoutPlayingOrKeepingStaleAnchor() {
         var plays = 0
         lateinit var menus: HeldMenuState
+        lateinit var inputMode: InputModeManager
         compose.setContent { AurelisTheme {
             menus = checkNotNull(LocalHeldMenuState.current)
+            inputMode = LocalInputModeManager.current
             var open by remember { mutableStateOf(false) }
             Column {
                 Box(Modifier.testTag("held-opener").size(48.dp)
@@ -103,11 +108,17 @@ class SharedGesturesTest {
         } }
         compose.onNodeWithTag("held-opener").performTouchInput { longClick() }
         compose.onNode(isPopup()).assertExists()
-        compose.runOnIdle { assertNull(menus.pendingAnchor); assertEquals(0, plays) }
+        compose.runOnIdle {
+            assertNull(menus.pendingAnchor); assertEquals(0, plays)
+            assertEquals(InputMode.Touch, inputMode.inputMode)
+        }
         compose.onNodeWithText("Cerrar anclado").performClick()
         compose.onNode(isPopup()).assertDoesNotExist()
         compose.onNodeWithTag("held-opener").assertIsFocused()
-        compose.runOnIdle { assertNull(menus.restoreAnchor); assertEquals(0, plays) }
+        compose.runOnIdle {
+            assertNull(menus.restoreAnchor); assertEquals(0, plays)
+            assertEquals(InputMode.Touch, inputMode.inputMode)
+        }
     }
 
     @Test fun removingTheOpenerBeforeDismissalDoesNotRequestFocusOnDetachedRow() {

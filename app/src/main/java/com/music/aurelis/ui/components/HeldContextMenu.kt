@@ -15,6 +15,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -70,6 +71,9 @@ fun Modifier.heldContextMenuInteractions(onClick: () -> Unit, onLongClick: () ->
             }
         }
         this.focusRequester(anchor.focusRequester)
+            // combinedClickable normally refuses input focus in Touch mode. The held
+            // opener must also accept the explicit restoration after its popup closes.
+            .focusProperties { canFocus = true }
             .onGloballyPositioned { coordinates ->
                 anchor.attached = coordinates.isAttached
                 val bounds = coordinates.boundsInWindow()

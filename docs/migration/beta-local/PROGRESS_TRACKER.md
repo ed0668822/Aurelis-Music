@@ -7,6 +7,16 @@
 
 ### B02.3-a — primera entrega de anclaje y devolución del foco
 
+Reparación autorizada tras ZIP112: run43470182513 compiló Debug y pasó Lint/
+emulador; B03 tuvo283/286 casos aprobados por variante y tres aserciones de foco
+fallidas en ambas. combinedClickable impide el foco en modo Touch por defecto.
+Se explicita canFocus en el destino existente; se conservan las aserciones y se
+comprueba que no cambie a modo teclado. Cobertura no medida por pruebas fallidas,
+sin modificar gates. Cuatro rutas, subconjunto de las seis de la entrega original;
+dos revisiones estáticas del mismo agente. Detalle y digest del ZIP en B02_3A.
+Nuevo resultado Android pendiente de GitHub; siguiente entrega también autorizada,
+manteniendo reparación y desarrollo separados. Sin Gradle/pruebas Android locales.
+
 El usuario priorizó empezar B02–B05. Base ed977183; rama/remoto sincronizados,
 cuenta ed0668822 e identidad local con correo verificado. Autorizada aplicación,
 commit y push de esta entrega al mismo PR1. Presupuesto difícil: seis rutas,
