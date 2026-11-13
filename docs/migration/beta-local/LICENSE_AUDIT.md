@@ -114,6 +114,30 @@ No cambios de LICENSE/NOTICE/firma ni actualización ORT/ABI; mantiene pendiente
 
 ## B02 — incorporaciones comprobadas
 
+### B02.3-b3 — adaptación del motor háptico
+
+Fuente BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, archivo
+sharedUi/src/androidMain/kotlin/com/music/bitchord/ui/haptics/Haptics.android.kt;
+SHA-256 verificado por lectura API del ref fijo:
+074cb0c645dac155555bbd57378b0ed027b8f025771d145daaa2999c2bc683ab.
+Su LICENSE es GNU GPLv3, mismo texto íntegro ya conservado en LICENSE;
+SHA-256: 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986.
+Se adaptan datos de ritmos, composición y fallbacks de onda en Haptics.kt.
+La cabecera primera de Aurelis queda delimitada a contribuciones locales;
+comentario de procedencia y NOTICE conservan autoría/condiciones BitChord,
+sin inventar permiso or-later para el material upstream.
+
+Cambios propios: API mínima33 existente, soporte de primitivas por ritmo
+(incluido LOW_TICK), caché por handle, política app/Android y conexión del gesto
+largo a la acción compartida. No se incorpora el singleton/observador global del
+origen. No entran dependencias, permisos, recursos, fuentes, modelos o binarios.
+LICENSE y LICENSES sin cambios, avisos anteriores de NOTICE íntegros. Las dos
+revisiones de esta entrega incluyen procedencia/alcance de licencia; no son una
+certificación de cumplimiento completo ni de paridad física. Se conservan
+los pendientes B00 de otras dependencias/modelos y distribución final.
+
+### Incorporaciones previas de B02
+
 Vazirmatn regular y OFL íntegros del origen fijo: hashes en B02_1_EVIDENCE,
 NOTICE y LICENSES/Vazirmatn-OFL.txt, incluidos en bundle legal. No SF Pro.
 IosSwitch: GPLv3 según README/LICENSE upstream, sin copyright individual añadido

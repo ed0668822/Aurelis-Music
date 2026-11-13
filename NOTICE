@@ -242,6 +242,20 @@ Original file SHA-256: 1931946478c7c4e0f81cac1f3cb89a3070d38d71366ac446bf327291a
 License: GPLv3 (upstream LICENSE); original BitChord contributors.
 Changes: Aurelis package/haptics, reduced-motion animation, active Settings wiring.
 
+B02.3-b3 — Android haptic rhythms and motor adaptation from BitChord
+Source: sharedUi/src/androidMain/kotlin/com/music/bitchord/ui/haptics/Haptics.android.kt
+Commit: b690dc146009d4815825fa4a20815ef2e4ee8898
+Original file SHA-256: 074cb0c645dac155555bbd57378b0ed027b8f025771d145daaa2999c2bc683ab
+License: GPLv3 (upstream LICENSE); original BitChord contributors.
+Destination: app/src/main/java/com/music/aurelis/ui/haptics/Haptics.kt
+Adapted material: beat rhythms, native primitive composition and amplitude/basic
+waveform fallbacks. Aurelis changes: minSdk33 API surface, required-primitives
+checks per rhythm including LOW_TICK, cache per handle, existing app/Android
+preferences, USAGE_TOUCH and shared song-hold action wiring. No process-wide
+ContentObserver or legacy-platform device singleton is imported.
+The Aurelis header identifies local contributions and does not replace the
+upstream GPLv3 conditions. Physical haptic parity is not certified by tests.
+
 B03 — Home local components
 Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
 sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt

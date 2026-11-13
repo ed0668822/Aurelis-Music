@@ -5,6 +5,79 @@
 
 ## Continuación actual — primera entrega documental
 
+### B02.3-b3 — ritmos por motor y feedback de pulsación larga
+
+**Autorización/base.** «Autorización concedida» para la siguiente entrega,
+incluidos commit/push a feature/bitchord-local-migration, mismo PR1.
+Base c3844686db58283ee70325d8bc4f44393e48599f, estado limpio y remoto coincidente
+tras fetch. Cuenta/identidad ed0668822 y correo ed0668822@gmail.com verificado.
+[Run115](https://github.com/ed0668822/Aurelis-Music/actions/runs/43502658583)
+completed/success en esa base: las seis fases B01–B06 aprobaron. No trasladar ese
+resultado al código nuevo de esta entrega.
+
+**Manifiesto difícil: seis archivos distintos en toda la entrega.** Informe
+detallado en este tracker y registro legal; sin informe adicional fuera del límite.
+
+| Archivo | Cambio |
+|---|---|
+| app/src/main/java/com/music/aurelis/ui/haptics/Haptics.kt | Ritmos BitChord, tres rutas de motor y caché de efectos. |
+| app/src/main/java/com/music/aurelis/ui/components/HeldContextMenu.kt | Una solicitud Select al abrir acciones por pulsación larga. |
+| app/src/test/java/com/music/aurelis/ui/theme/SharedGesturesTest.kt | Cinco regresiones de motor/gesto. |
+| NOTICE | Archivo/ref/hash/condiciones y cambios de la adaptación. |
+| docs/migration/beta-local/LICENSE_AUDIT.md | Procedencia y conservación de avisos. |
+| docs/migration/beta-local/PROGRESS_TRACKER.md | Informe, revisiones, pruebas y pendientes. |
+
+**Adaptación concreta.** BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/androidMain/kotlin/com/music/bitchord/ui/haptics/Haptics.android.kt,
+SHA-256: 074cb0c645dac155555bbd57378b0ed027b8f025771d145daaa2999c2bc683ab.
+Se conservan sus ritmos Tick/Tap/Select/ToggleOn/ToggleOff/SkipNext/SkipPrevious/
+Resume/Pause/Expand y las reglas de fallback. Los avisos GPLv3 del origen se
+registran sin relabelar el material como propio u or-later. El primer comentario
+Aurelis se delimita a cambios locales. LICENSE y avisos legales anteriores intactos.
+
+Con primitivas soportadas se usan composición, fuerza y pausas de esos ritmos.
+La comprobación se hace por las primitivas requeridas para cada ritmo, incluyendo
+LOW_TICK; no basta la versión Android ni soportar Tick/Click para dar Resume por
+compatible. Sin soporte completo se usa la onda con amplitudes si el motor las
+admite. En un motor básico se conservan extremos del ritmo, pausas mínimas20ms y
+pulsos18–40ms, como el fallback upstream; sin amplitudes ficticias. minSdk33
+existente permite las APIs utilizadas sin importar compatibilidad antigua.
+
+Los efectos inmutables se cachean por handle, con un máximo del enum de 10
+patrones. App/Android y presencia de motor se comprueban antes de emitir incluso
+si el efecto ya estaba cacheado. Se conserva USAGE_TOUCH; no se crea singleton
+con Activity, observador global, dependencia, permiso o cambio de ABI.
+El gesto compartido, ya conectado a SongRow/HomeCarousels, solicita Select una
+vez después de su callback largo. Compose1.7.x no emite otro pulso desde ese
+callback, según la lectura estática previa. Un toque corto conserva reproducción;
+la acción larga táctil o semántica abre el mismo menú sin invocarla. Ancla/foco,
+acciones de cola y modos deshabilitados existentes se conservan.
+
+**Pruebas preparadas para GitHub.** SharedGesturesTest conserva18 casos y añade
+cinco,23 en total: primitivas/fuerzas/pausas Select y Resume; soporte parcial sin
+LOW_TICK elige fallback por ritmo; motor con amplitud conserva tres golpes de
+SkipNext y fuerzas distintas; motor básico emite los10 ritmos sin repetición y
+con duración de onda<=80ms; pantalla SongRow real comprueba toque, largo táctil,
+acción semántica, apertura y supresión con cada preferencia apagada. Las pruebas
+de primitivas/ondas usan ShadowVibrator4.14.1 y no acreditan fuerza percibida en
+hardware. Los atributos registrados sobreviven al pulso; no se depende de que
+isVibrating siga activo al terminar animaciones. Se conservan aserciones de foco,
+las cuatro pruebas previas de preferencias y gates sin modificar.
+
+**Dos revisiones del mismo agente.** Primera: comparación del origen fijo,
+licencia, ritmos, capacidades por patrón, límites de fallback y política viva.
+Segunda: consumidores/acciones, API Android/ShadowVibrator, persistencia de
+preferencias, seis rutas y conservación de firma/ABI/reproducción/workflows.
+Solo comprobaciones estáticas/diff locales; no Gradle, APK o pruebas Android
+locales ni revisión independiente. Compilación/pruebas nuevas pendientes de
+GitHub; el push de app/** y NOTICE activa B01–B06 en la misma rama.
+
+**Pendientes/puerta.** No declarar paridad háptica física, TalkBack ni B02 cerrado.
+Captura/elevación/retorno visual del elemento siguen pendientes de integración
+B03–B05; CI12.3/comentarios CI16 abiertos, B06/B07 sin cierre retroactivo y B09
+sin iniciar. Tras publicar, esperar resultado del usuario y autorización antes
+de la siguiente entrega.
+
 ### B02.3-b2 — preferencia propia de respuesta háptica
 
 **Autorización/base.** El usuario pidió «Continúa». Aplicación, commit y push en
@@ -72,7 +145,8 @@ lectura. Segunda: API Compose/Android, casos de error y aislamiento de pruebas,
 enlaces, cabeceras, seis rutas y preservación de licencias/firma/ABI/workflows.
 No son revisiones independientes. Solo comprobaciones estáticas/diff locales;
 sin Gradle, APK o pruebas Android locales. El push de app/** activa el pipeline
-unificado; compilación/pruebas nuevas pendientes de GitHub. La evidencia física
+unificado; el resultado posterior run115/43502658583 fue SUCCESS en las seis fases.
+La evidencia física
 y el resultado Android nuevo no se deducen de la revisión estática.
 
 **Puerta siguiente.** Publicar esta entrega autorizada y esperar resultado del

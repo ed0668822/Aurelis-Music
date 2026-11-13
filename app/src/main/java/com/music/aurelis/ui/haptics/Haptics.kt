@@ -1,4 +1,7 @@
 // Aurelis © 2026. GPL-3.0-or-later
+// Aurelis header covers local contributions. Rhythms and motor fallback adapted
+// from BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3.
+// Original BitChord contributors; source, hash and changes recorded in NOTICE.
 package com.music.aurelis.ui.haptics
 
 import android.content.Context
@@ -52,24 +55,59 @@ class Haptics(
 ) {
     private val touchAttributes = VibrationAttributes.Builder()
         .setUsage(VibrationAttributes.USAGE_TOUCH).build()
+    private val compiled = mutableMapOf<Haptic, VibrationEffect>()
 
     fun play(haptic: Haptic) {
         val v = vibrator ?: return
         if (!feedbackEnabled() || !v.hasVibrator()) return
-        val effect = when (haptic) {
-            Haptic.Tick -> VibrationEffect.createOneShot(8, 40)
-            Haptic.Tap -> VibrationEffect.createOneShot(12, 80)
-            Haptic.Select -> VibrationEffect.createOneShot(15, 120)
-            Haptic.ToggleOn -> VibrationEffect.createWaveform(longArrayOf(0, 10, 30, 18), intArrayOf(0, 60, 0, 140), -1)
-            Haptic.ToggleOff -> VibrationEffect.createWaveform(longArrayOf(0, 18, 30, 10), intArrayOf(0, 140, 0, 60), -1)
-            Haptic.SkipNext -> VibrationEffect.createWaveform(longArrayOf(0, 8, 20, 8, 20, 12), intArrayOf(0, 60, 0, 90, 0, 130), -1)
-            Haptic.SkipPrevious -> VibrationEffect.createWaveform(longArrayOf(0, 12, 20, 8, 20, 8), intArrayOf(0, 130, 0, 90, 0, 60), -1)
-            Haptic.Resume -> VibrationEffect.createWaveform(longArrayOf(0, 25, 15), intArrayOf(0, 80, 160), -1)
-            Haptic.Pause -> VibrationEffect.createWaveform(longArrayOf(0, 15, 25), intArrayOf(0, 160, 80), -1)
-            Haptic.Expand -> VibrationEffect.createOneShot(20, 100)
-        }
+        val effect = synchronized(compiled) { compiled.getOrPut(haptic) { compile(v, rhythmOf(haptic)) } }
         v.vibrate(effect, touchAttributes)
     }
+
+    private fun compile(vibrator: Vibrator, beats: List<Beat>): VibrationEffect {
+        // Check every primitive used by this pattern, including LOW_TICK. API
+        // level alone does not imply support, nor does support for another rhythm.
+        val primitives = beats.map { it.kind.primitive }.distinct().toIntArray()
+        if (vibrator.areAllPrimitivesSupported(*primitives)) {
+            val composition = VibrationEffect.startComposition()
+            beats.forEach { composition.addPrimitive(it.kind.primitive, it.scale, it.gapMs.toInt()) }
+            return composition.compose()
+        }
+        val coarse = !vibrator.hasAmplitudeControl()
+        val selected = if (coarse && beats.size > 2) listOf(beats.first(), beats.last()) else beats
+        val timings = LongArray(selected.size * 2)
+        val amplitudes = IntArray(selected.size * 2)
+        selected.forEachIndexed { index, beat ->
+            timings[index * 2] = if (coarse) beat.gapMs.coerceAtLeast(if (index == 0) 0L else 20L) else beat.gapMs
+            timings[index * 2 + 1] = if (coarse) {
+                (beat.kind.pulseMs * 2.5f * (0.6f + 0.4f * beat.scale)).toLong().coerceIn(18, 40)
+            } else beat.kind.pulseMs
+            amplitudes[index * 2 + 1] = (beat.kind.amplitude * beat.scale).toInt().coerceIn(1, 255)
+        }
+        return if (coarse) VibrationEffect.createWaveform(timings, -1)
+            else VibrationEffect.createWaveform(timings, amplitudes, -1)
+    }
+}
+
+private enum class BeatKind(val primitive: Int, val pulseMs: Long, val amplitude: Int) {
+    Tick(VibrationEffect.Composition.PRIMITIVE_TICK, 8, 110),
+    LowTick(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 10, 95),
+    Click(VibrationEffect.Composition.PRIMITIVE_CLICK, 14, 210),
+}
+
+private class Beat(val kind: BeatKind, val scale: Float, val gapMs: Long)
+
+private fun rhythmOf(haptic: Haptic): List<Beat> = when (haptic) {
+    Haptic.Tick -> listOf(Beat(BeatKind.Tick, 0.35f, 0))
+    Haptic.Tap -> listOf(Beat(BeatKind.Click, 0.5f, 0))
+    Haptic.Select -> listOf(Beat(BeatKind.Tick, 0.4f, 0), Beat(BeatKind.Click, 0.75f, 18))
+    Haptic.ToggleOn -> listOf(Beat(BeatKind.Tick, 0.4f, 0), Beat(BeatKind.Click, 0.9f, 14))
+    Haptic.ToggleOff -> listOf(Beat(BeatKind.Click, 0.75f, 0), Beat(BeatKind.Tick, 0.3f, 14))
+    Haptic.SkipNext -> listOf(Beat(BeatKind.Tick, 0.4f, 0), Beat(BeatKind.Tick, 0.55f, 16), Beat(BeatKind.Click, 0.7f, 16))
+    Haptic.SkipPrevious -> listOf(Beat(BeatKind.Click, 0.7f, 0), Beat(BeatKind.Tick, 0.55f, 16), Beat(BeatKind.Tick, 0.4f, 16))
+    Haptic.Resume -> listOf(Beat(BeatKind.LowTick, 0.5f, 0), Beat(BeatKind.Click, 0.85f, 22))
+    Haptic.Pause -> listOf(Beat(BeatKind.Click, 0.85f, 0), Beat(BeatKind.LowTick, 0.4f, 22))
+    Haptic.Expand -> listOf(Beat(BeatKind.Tick, 0.3f, 0), Beat(BeatKind.Tick, 0.45f, 12), Beat(BeatKind.Click, 0.6f, 12))
 }
 
 @Composable

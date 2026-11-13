@@ -4,6 +4,7 @@ package com.music.aurelis.ui.theme
 import android.view.MotionEvent
 import android.view.View
 import android.os.VibrationAttributes
+import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
@@ -15,6 +16,7 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import com.music.aurelis.AurelisApplication
 import com.music.aurelis.data.LocalUserLibrary
+import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.components.*
 import com.music.aurelis.ui.haptics.Haptic
@@ -92,6 +95,103 @@ class SharedGesturesTest {
         shadow.setHasVibrator(false)
         Haptic.entries.forEach(Haptics(vibrator)::play)
         assertNull(shadow.vibrationAttributesFromLastVibration)
+    }
+
+    @Test fun supportedMotorReceivesBitChordPrimitivesAndStrengths() = withHapticDevice { vibrator, shadow ->
+        val tick = VibrationEffect.Composition.PRIMITIVE_TICK
+        val low = VibrationEffect.Composition.PRIMITIVE_LOW_TICK
+        val click = VibrationEffect.Composition.PRIMITIVE_CLICK
+        shadow.setSupportedPrimitives(listOf(tick, low, click))
+        val handle = Haptics(vibrator)
+        handle.play(Haptic.Select)
+        val selection = shadow.primitiveSegmentsInPrimitiveEffects
+        assertEquals(listOf(tick, click), selection.map { it.id })
+        assertEquals(listOf(0, 18), selection.map { it.delay })
+        assertEquals(0.4f, selection[0].scale, 0f)
+        assertEquals(0.75f, selection[1].scale, 0f)
+        handle.play(Haptic.Resume)
+        assertEquals(listOf(low, click), shadow.primitiveSegmentsInPrimitiveEffects.map { it.id })
+        assertEquals(listOf(0, 22), shadow.primitiveSegmentsInPrimitiveEffects.map { it.delay })
+        assertEquals(VibrationAttributes.USAGE_TOUCH,
+            (shadow.vibrationAttributesFromLastVibration as VibrationAttributes).usage)
+    }
+
+    @Test fun partialMotorSupportFallsBackForThePatternThatNeedsLowTick() = withHapticDevice { vibrator, shadow ->
+        shadow.setSupportedPrimitives(listOf(VibrationEffect.Composition.PRIMITIVE_TICK, VibrationEffect.Composition.PRIMITIVE_CLICK))
+        shadow.setHasAmplitudeControl(true)
+        val handle = Haptics(vibrator)
+        handle.play(Haptic.Select)
+        assertEquals(2, shadow.primitiveSegmentsInPrimitiveEffects.size)
+        handle.play(Haptic.Resume)
+        assertTrue(shadow.primitiveSegmentsInPrimitiveEffects.isEmpty())
+        assertEquals(46L, shadow.pattern.sum())
+        assertEquals(-1, shadow.repeat)
+    }
+
+    @Test fun amplitudeMotorKeepsAllBeatsAndDifferentStrengths() = withHapticDevice { vibrator, shadow ->
+        shadow.setHasAmplitudeControl(true)
+        Haptics(vibrator).play(Haptic.SkipNext)
+        assertTrue(shadow.primitiveSegmentsInPrimitiveEffects.isEmpty())
+        assertEquals(62L, shadow.pattern.sum())
+        val segments = ReflectionHelpers.getField<List<Any>>(shadow, "vibrationEffectSegments")
+        val amplitudes = segments.map { ReflectionHelpers.callInstanceMethod<Float>(it, "getAmplitude") }.filter { it > 0f }
+        assertEquals(3, amplitudes.size)
+        assertEquals(3, amplitudes.distinct().size)
+        assertTrue(amplitudes.all { it in 0f..1f })
+        assertEquals(-1, shadow.repeat)
+    }
+
+    @Test fun basicMotorUsesShortNonRepeatingFallbackForEveryRhythm() = withHapticDevice { vibrator, shadow ->
+        val handle = Haptics(vibrator)
+        Haptic.entries.forEach { haptic ->
+            handle.play(haptic)
+            assertTrue(shadow.primitiveSegmentsInPrimitiveEffects.isEmpty())
+            assertTrue(shadow.pattern.all { it >= 0 })
+            assertTrue(shadow.pattern.sum() in 18L..80L)
+            assertEquals(-1, shadow.repeat)
+            assertNotNull(shadow.vibrationAttributesFromLastVibration)
+        }
+    }
+
+    @Test fun heldSongFeedbackHonorsBothPreferencesForTouchAndAccessibleActions() = withHapticDevice { _, shadow ->
+        val originalApp = SettingsRepository.hapticFeedback.value
+        var played = 0; var held = 0
+        SettingsRepository.setHapticFeedback(true)
+        try {
+            compose.setContent { AurelisTheme {
+                var open by remember { mutableStateOf(false) }
+                SongRow(song, { played++ }, { held++; open = true }, false, false)
+                if (open) SongActionsDialog(song, LocalUserLibrary(RuntimeEnvironment.getApplication()), {},
+                    { open = false }, onPlayNext = {})
+            } }
+            compose.onNodeWithText(song.title).performTouchInput { click() }
+            compose.runOnIdle { assertEquals(1, played); assertNull(shadow.vibrationAttributesFromLastVibration) }
+            compose.onNodeWithText(song.title).performTouchInput { longClick() }
+            compose.onNode(isPopup()).assertExists()
+            compose.runOnIdle { assertEquals(1, held); assertEquals(1, played); assertNotNull(shadow.vibrationAttributesFromLastVibration) }
+            compose.onNodeWithText("Cerrar").performScrollTo().performClick()
+            compose.runOnIdle { ShadowVibrator.reset(); SettingsRepository.setHapticFeedback(false) }
+            compose.onNodeWithText(song.title).performTouchInput { longClick() }
+            compose.onNode(isPopup()).assertExists()
+            compose.runOnIdle { assertEquals(2, held); assertEquals(1, played); assertNull(shadow.vibrationAttributesFromLastVibration) }
+            compose.onNodeWithText("Cerrar").performScrollTo().performClick()
+            compose.runOnIdle {
+                SettingsRepository.setHapticFeedback(true)
+                Settings.System.putInt(RuntimeEnvironment.getApplication().contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0)
+            }
+            compose.onNodeWithText(song.title).performTouchInput { longClick() }
+            compose.onNode(isPopup()).assertExists()
+            compose.runOnIdle { assertEquals(3, held); assertNull(shadow.vibrationAttributesFromLastVibration) }
+            compose.onNodeWithText("Cerrar").performScrollTo().performClick()
+            compose.runOnIdle {
+                Settings.System.putInt(RuntimeEnvironment.getApplication().contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1)
+            }
+            compose.onNodeWithText(song.title).performSemanticsAction(SemanticsActions.OnLongClick) { assertTrue(it()) }
+            compose.onNode(isPopup()).assertExists()
+            compose.runOnIdle { assertEquals(4, held); assertEquals(1, played); assertNotNull(shadow.vibrationAttributesFromLastVibration) }
+        } finally {
+            SettingsRepository.setHapticFeedback(originalApp)
+        }
     }
 
     @Test fun switchFeedbackBelongsOnlyToItsEnabledUserAction() = withHapticDevice { _, shadow ->

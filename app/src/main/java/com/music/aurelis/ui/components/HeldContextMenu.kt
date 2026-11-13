@@ -21,6 +21,8 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntRect
 import kotlin.math.roundToInt
+import com.music.aurelis.ui.haptics.Haptic
+import com.music.aurelis.ui.haptics.rememberHaptics
 
 /** One UI host owns pending anchors; no Activity, song or bitmap is retained globally. */
 internal class HeldMenuState {
@@ -63,6 +65,7 @@ fun Modifier.heldContextMenuInteractions(onClick: () -> Unit, onLongClick: () ->
     composed {
         val state = LocalHeldMenuState.current
         val anchor = remember { HeldMenuAnchor() }
+        val haptics = rememberHaptics()
         DisposableEffect(state, anchor) {
             onDispose {
                 anchor.attached = false
@@ -84,6 +87,7 @@ fun Modifier.heldContextMenuInteractions(onClick: () -> Unit, onLongClick: () ->
                 state?.restoreAnchor = null
                 state?.pendingAnchor = anchor
                 onLongClick()
+                haptics.play(Haptic.Select)
             }, onLongClickLabel = "Mostrar acciones de la canción")
     }
 
