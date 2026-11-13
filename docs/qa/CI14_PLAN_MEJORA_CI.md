@@ -383,3 +383,7 @@ B04 registra SHA-256 del archivo objeto nativo `.o` para cada fuente declarada p
 ## 31. F4 — cierre de integridad, sin atribución inflada (2026-11-12)
 
 A partir del run #98 SUCCESS se comprobaron 340 entradas Kotlin/Java observadas de Debug, 338 clases acreditadas en Debug y 338 en Release, más 11/11 objetos nativos SHA-256 de fuentes CMake declaradas para Release; un archivo FFmpeg nativo sin orden CMake observada permanece sin certificación individual. El nuevo gate en B06 cruza la matriz F4, las entradas de B01 y los objetos de B04 por el mismo source SHA, bloquea informes contradictorios, faltantes o con compilación inventada, y genera `00-Resumen/f4-integrity-gate.json`. Se verificó localmente contra el ZIP real de #98 y cinco fixtures de regresión, sin borrar los controles P2. Un archivo objeto no prueba el enlace al APK, por lo que `native_apk_linkage_proven=false` permanece explícito. Se requiere un run nuevo del commit para cerrar la validación remota.
+
+## 32. V1 y F7: versión y revisión Android (2026-11-12)
+
+Se implementó V1 desde la serie 1.9, ancla #101, paso minor después de 150 runs B01-B06 SUCCESS. B01 fija versión y B04 comprueba el mismo run; F1 protegido reaprovecha la versión del ZIP verde del mismo SHA. Ver V1_VERSIONADO_150.md. En F7, Google Play exige targetSdk 36 desde agosto de 2026, ajustado en Gradle; se corrigió la URL releases/latest de AppUpdateChecker al repo Aurelis-Music. Se preservan org.json y las clases/librerías FFmpeg ante falta de prueba de equivalencia y de audio físico. Ver CI14_F7_REVISION.md.

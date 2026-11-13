@@ -106,7 +106,7 @@ android {
         applicationId = "com.music.aurelis"
 
         minSdk = 33
-        targetSdk = 35
+        targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         versionCode = autoVersionCode

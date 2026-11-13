@@ -30,7 +30,7 @@ object AppUpdateChecker {
     )
 
     private const val CACHE_SUBDIR = "updates"
-    private const val LATEST_RELEASE_URL = "https://api.github.com/repos/ed0668822/AurelisMusic/releases/latest"
+    private const val LATEST_RELEASE_URL = "https://api.github.com/repos/ed0668822/Aurelis-Music/releases/latest"
 
     private val json = Json { ignoreUnknownKeys = true }
     private val httpClient = OkHttpClient()
