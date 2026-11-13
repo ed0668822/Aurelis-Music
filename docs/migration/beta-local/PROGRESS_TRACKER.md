@@ -1,8 +1,52 @@
+<!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
 > **Límite vigente:** máximo **35 archivos en entregas fáciles/medias y 6 en difíciles**, contando toda la entrega y todos sus commits, incluidos pruebas, recursos, documentación, configuración y eliminaciones. [PLAN_CONTINUATION](PLAN_CONTINUATION.md) gobierna la continuación; [PLAN_30_FILES](PLAN_30_FILES.md) queda histórico. No se cierran retrospectivamente B06/B07 ni se inicia B09 por registrar el plan.
 
 ## Continuación actual — primera entrega documental
+
+### CI16 — entrega documental autorizada de la revisión de las tres carpetas
+
+Autorización inicial para sincronizar por avance rápido y preparar la revisión
+con máximo6 archivos. La autorización posterior para continuar incluye commit y
+push de sus tres documentos a feature/bitchord-local-migration, en el mismo PR1.
+Sincronización c1bc7359 → 780fe6e3: 52 commits remotos conservados, sin conflictos.
+El run109/43339311481 de ese SHA tiene B01–B06 success según API; las anteriores
+inconsistencias de gates CI15 son históricas y no describen el flujo CI14 actual.
+
+Inventario revisado: ui/audit5, ui/components107, ui/haptics1;113 fuentes sin cambios
+frente a c5ff687d. LocalAppBackdrop.kt no tiene declaraciones propias; la real
+está en LiquidGlass.kt. Hay5 comentarios antiguos no se compila/PolyDev, no4.
+No se modifican fuentes ni se convierten estados de auditoría antiguos en CI.
+
+46 fixtures existentes de inventario/clasificación/integridad pasaron localmente;
+no se ejecutaron Gradle/APK/pruebas Android. Preparados
+[informe CI16](../../qa/CI16_THREE_FOLDERS_REVIEW.md) y
+[evidencia estructurada](../../qa/CI16_THREE_FOLDERS_REVIEW.json), más este tracker:
+3 rutas de un máximo6, dos revisiones del mismo agente.
+
+La descarga de red estaba bloqueada, pero el usuario aportó el ZIP del run109.
+Se comprobó su digest contra GitHub e integridad ZIP, procedencia SHA y226 filas
+únicas con hashes de fuente/input/tareas/DEX/R8:224 COMPILADO_EN_APK y2
+SIN_CLASES_ESPERADAS (LocalAppBackdrop, ambas variantes), cero errores atribuidos.
+La declaración real en LiquidGlass conserva evidencia propia. Esto no cierra
+CI12.3 funcional ni acredita hardware; los cinco comentarios siguen sin modificar.
+
+El ZIP del run109 también informa que Release1.9.103 fue construido y firmado con
+la clave configurada, pero esa entrega esperaba solo2 artefactos y no lo publicó.
+El binario Release no está en el ZIP de informes. El ajuste posterior CI17,
+bb417f39, habilitó el candidato Release firmado de pruebas; ver
+[CI17](../../qa/CI17_SIGNED_RELEASE_CANDIDATE.md). El ZIP109 no certifica su resultado.
+
+Base de publicación documental eeb1c1bc: los113 hashes de fuentes siguen iguales
+a la evidencia del run109. Reconfirmados digest/integridad del ZIP,226 pares,
+clasificaciones, referencias y presupuesto de3 rutas. Dos revisiones finales del
+mismo agente: evidencia/procedencia y alcance/consistencia. Las46 pruebas son la
+ejecución inicial registrada; no se repiten por esta publicación documental.
+Sin Gradle ni pruebas Android locales, cambios de app/CI/firma/ABI ni cierre de
+B06/B07/B09. Los cinco comentarios ambiguos y CI12.3 siguen pendientes.
+Tras subir este bloque se espera el resultado comunicado por el usuario y su
+autorización para el siguiente; el push puede activar el CI existente.
 
 ### Corrección CI15 antes del siguiente bloque
 
