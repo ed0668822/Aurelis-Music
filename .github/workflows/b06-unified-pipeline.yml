@@ -20,6 +20,7 @@ on:
       - "LICENSES/**"
       - "NOTICE"
       - ".github/scripts/**"
+      - ".github/version-policy.json"
       - ".github/apk-audit-policy.json"
       - ".github/workflows/b0*.yml"
   # The feature branch has a single push-driven pipeline per commit.

@@ -25,6 +25,8 @@ def read_policy(path):
         p["successes_per_minor"] != 150 or
         type(p.get("anchor_visible_patch")) is not int or
         p["anchor_visible_patch"] != 101 or
+        p["anchor_run_number"] != 101 or
+        p["version_code_offset"] != 10000 or
         (p["base_major"], p["base_minor"]) != (1, 9)):
         raise ValueError("Invalid V1 policy")
     return p
