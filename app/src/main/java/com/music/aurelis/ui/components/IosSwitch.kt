@@ -1,3 +1,5 @@
+// Aurelis © 2026. GPL-3.0-or-later
+// Aurelis header covers local contributions; original upstream notices follow.
 // Adapted from BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3 (upstream LICENSE).
 // Original BitChord authors and project notices are preserved in NOTICE/LICENSE.
 package com.music.aurelis.ui.components
@@ -18,11 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwitchColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -97,12 +96,6 @@ fun IosSwitch(
     val ltr = LocalLayoutDirection.current == LayoutDirection.Ltr
 
     val haptics = rememberHaptics()
-    // Skips the first run, so a switch scrolling into view stays quiet.
-    var settled by remember { mutableStateOf(false) }
-    LaunchedEffect(checked) {
-        if (settled) haptics.play(if (checked) Haptic.ToggleOn else Haptic.ToggleOff)
-        settled = true
-    }
 
     Box(
         modifier = modifier
@@ -115,7 +108,10 @@ fun IosSwitch(
                         interactionSource = interaction,
                         indication = null,
                         role = Role.Switch,
-                        onValueChange = onCheckedChange,
+                        onValueChange = { value ->
+                            onCheckedChange(value)
+                            haptics.play(if (value) Haptic.ToggleOn else Haptic.ToggleOff)
+                        },
                     )
                 } else {
                     Modifier

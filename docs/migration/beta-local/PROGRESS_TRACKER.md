@@ -5,6 +5,28 @@
 
 ## Continuación actual — primera entrega documental
 
+### B02.3-b1 — política háptica y una acción accesible por control
+
+El usuario autorizó reparar ZIP112 y continuar. Base de preparación b02607d6;
+la entrega posterior se verifica y publica por separado de la reparación.
+Puerta previa confirmada: run113/43479948669 completed/success en b02607d6,
+las seis fases B01–B06 success, incluidos tests Debug/Release y cobertura80%.
+Ese resultado certifica los gates de la reparación, no la nueva entrega háptica.
+Seis rutas: Haptics, IosSwitch, SettingsComponents, SharedGesturesTest, informe
+[B02_3B_HAPTIC_ACTIONS](B02_3B_HAPTIC_ACTIONS.md) y este tracker.
+Haptics respeta el ajuste de Android y motor disponible, usa applicationContext
+y atributos USAGE_TOUCH. Switch/fila emiten feedback desde su acción habilitada,
+sin vibraciones por cambios externos o dibujo decorativo. Fila con estado
+deshabilitado, rol/valor únicos y objetivo48dp. Diseño visual conservado.
+
+Cuatro regresiones nuevas para GitHub,18 casos en la suite, incluidos los14
+anteriores y las aserciones de foco. Dos revisiones estáticas del mismo agente;
+sin Gradle ni pruebas Android locales. Gates, firma, ABI y atribuciones intactos.
+Nuevo resultado Android pendiente; primitivas/paridad física, preferencia propia
+y TalkBack siguen abiertos. B02.3-a conserva pendiente de captura/retorno visual
+en B03–B05. Tras publicar esta entrega, esperar resultado del usuario y nueva
+autorización; B09 no se inicia.
+
 ### B02.3-a — primera entrega de anclaje y devolución del foco
 
 Reparación autorizada tras ZIP112: run43470182513 compiló Debug y pasó Lint/
@@ -14,8 +36,9 @@ Se explicita canFocus en el destino existente; se conservan las aserciones y se
 comprueba que no cambie a modo teclado. Cobertura no medida por pruebas fallidas,
 sin modificar gates. Cuatro rutas, subconjunto de las seis de la entrega original;
 dos revisiones estáticas del mismo agente. Detalle y digest del ZIP en B02_3A.
-Nuevo resultado Android pendiente de GitHub; siguiente entrega también autorizada,
-manteniendo reparación y desarrollo separados. Sin Gradle/pruebas Android locales.
+Resultado posterior confirmado: run113/43479948669 SUCCESS, fases B01–B06
+aprobadas. Siguiente entrega también autorizada, manteniendo reparación y
+desarrollo separados. Sin Gradle/pruebas Android locales.
 
 El usuario priorizó empezar B02–B05. Base ed977183; rama/remoto sincronizados,
 cuenta ed0668822 e identidad local con correo verificado. Autorizada aplicación,

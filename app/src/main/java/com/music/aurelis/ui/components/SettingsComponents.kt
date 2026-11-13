@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
@@ -23,6 +23,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
+import com.music.aurelis.ui.haptics.Haptic
+import com.music.aurelis.ui.haptics.rememberHaptics
 
 internal val GROUP_INSET = 16.dp
 internal val ROW_INSET = 16.dp
@@ -151,16 +153,21 @@ fun SettingsSubRow(
     modifier: Modifier = Modifier,
     badge: String? = null,
     subtitle: String? = null,
+    enabled: Boolean = true,
 ) {
+    val haptics = rememberHaptics()
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = { value ->
+                onCheckedChange(value)
+                haptics.play(if (value) Haptic.ToggleOn else Haptic.ToggleOff)
+            })
             .heightIn(min = 48.dp)
             .padding(start = ROW_INSET, end = ROW_INSET, top = 0.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).alpha(if (enabled) 1f else 0.45f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title,
@@ -183,7 +190,7 @@ fun SettingsSubRow(
                 )
             }
         }
-        IosSwitch(checked = checked, onCheckedChange = null)
+        IosSwitch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
 

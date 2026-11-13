@@ -3,6 +3,10 @@ package com.music.aurelis.ui.theme
 
 import android.view.MotionEvent
 import android.view.View
+import android.os.VibrationAttributes
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -22,12 +26,17 @@ import com.music.aurelis.AurelisApplication
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.components.*
+import com.music.aurelis.ui.haptics.Haptic
+import com.music.aurelis.ui.haptics.Haptics
+import com.music.aurelis.ui.haptics.rememberHaptics
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows
+import org.robolectric.shadows.ShadowVibrator
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.util.ReflectionHelpers
@@ -40,6 +49,91 @@ class SharedGesturesTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
     private val song = LocalSong("shared-1", "Canción de prueba", "Artista local", null,
         "content://media/external/audio/media/1", null, 180000, null, null, null)
+
+    private fun withHapticDevice(block: (Vibrator, ShadowVibrator) -> Unit) {
+        val context = RuntimeEnvironment.getApplication()
+        val vibrator = checkNotNull(context.getSystemService(VibratorManager::class.java)).defaultVibrator
+        val shadow = Shadows.shadowOf(vibrator)
+        val original = Settings.System.getString(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED)
+        val originalHardware = vibrator.hasVibrator()
+        ShadowVibrator.reset()
+        Settings.System.putInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1)
+        try {
+            block(vibrator, shadow)
+        } finally {
+            vibrator.cancel()
+            ShadowVibrator.reset()
+            shadow.setHasVibrator(originalHardware)
+            Settings.System.putString(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, original)
+        }
+    }
+
+    @Test fun hapticsFollowAndroidSettingWithoutRecreatingTheRememberedHandle() = withHapticDevice { _, shadow ->
+        val resolver = RuntimeEnvironment.getApplication().contentResolver
+        lateinit var handle: Haptics
+        compose.setContent { handle = rememberHaptics() }
+        compose.runOnIdle {
+            Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0)
+            Haptic.entries.forEach(handle::play)
+            assertNull(shadow.vibrationAttributesFromLastVibration)
+            Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1)
+            handle.play(Haptic.Tap)
+            val attributes = shadow.vibrationAttributesFromLastVibration as VibrationAttributes
+            assertEquals(VibrationAttributes.USAGE_TOUCH, attributes.usage)
+            ShadowVibrator.reset()
+            Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0)
+            handle.play(Haptic.Select)
+            assertNull(shadow.vibrationAttributesFromLastVibration)
+        }
+    }
+
+    @Test fun hapticsSkipMissingMotorWithoutBlockingTheCaller() = withHapticDevice { vibrator, shadow ->
+        Haptic.entries.forEach(Haptics(null)::play)
+        shadow.setHasVibrator(false)
+        Haptic.entries.forEach(Haptics(vibrator)::play)
+        assertNull(shadow.vibrationAttributesFromLastVibration)
+    }
+
+    @Test fun switchFeedbackBelongsOnlyToItsEnabledUserAction() = withHapticDevice { _, shadow ->
+        var value by mutableStateOf(false)
+        var changes = 0
+        compose.setContent { AurelisTheme {
+            Column {
+                IosSwitch(value, { value = it; changes++ }, Modifier.testTag("haptic-switch"))
+                IosSwitch(value, null, Modifier.testTag("drawing-only-switch"))
+                IosSwitch(value, { changes++ }, Modifier.testTag("disabled-haptic-switch"), enabled = false)
+            }
+        } }
+        compose.runOnIdle { assertNull(shadow.vibrationAttributesFromLastVibration); value = true }
+        compose.waitForIdle()
+        compose.runOnIdle { assertNull(shadow.vibrationAttributesFromLastVibration) }
+        compose.onNodeWithTag("disabled-haptic-switch").assertIsNotEnabled().performTouchInput { click() }
+        compose.onNodeWithTag("drawing-only-switch").performTouchInput { click() }
+        compose.runOnIdle { assertEquals(0, changes); assertNull(shadow.vibrationAttributesFromLastVibration) }
+        compose.onNodeWithTag("haptic-switch").performClick().assertIsOff()
+        compose.runOnIdle { assertEquals(1, changes); assertNotNull(shadow.vibrationAttributesFromLastVibration) }
+    }
+
+    @Test fun settingsRowOwnsOneAccessibleToggleAndDisabledRowIsInert() = withHapticDevice { _, shadow ->
+        var checked by mutableStateOf(false)
+        var changes = 0
+        compose.setContent { AurelisTheme {
+            Column {
+                SettingsSubRow("Acción única", checked, { checked = it; changes++ }, Modifier.testTag("haptic-row"))
+                SettingsSubRow("Deshabilitada", false, { changes++ }, Modifier.testTag("disabled-haptic-row"), enabled = false)
+            }
+        } }
+        compose.onAllNodes(isToggleable()).assertCountEquals(2)
+        compose.onNodeWithTag("haptic-row").assertHeightIsAtLeast(48.dp).assertIsOff().performClick().assertIsOn()
+        compose.runOnIdle {
+            assertEquals(1, changes); assertNotNull(shadow.vibrationAttributesFromLastVibration)
+            ShadowVibrator.reset(); checked = false
+        }
+        compose.waitForIdle()
+        compose.runOnIdle { assertNull(shadow.vibrationAttributesFromLastVibration) }
+        compose.onNodeWithTag("disabled-haptic-row").assertIsNotEnabled().performTouchInput { click() }
+        compose.runOnIdle { assertEquals(1, changes); assertNull(shadow.vibrationAttributesFromLastVibration) }
+    }
 
     @Test fun menuFollowsTheHeldRowAndRespectsLogicalTrailingEdge() {
         val anchor = IntRect(80, 100, 300, 148)

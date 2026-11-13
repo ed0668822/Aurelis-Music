@@ -3,8 +3,10 @@ package com.music.aurelis.ui.haptics
 
 import android.content.Context
 import android.os.VibrationEffect
+import android.os.VibrationAttributes
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -22,10 +24,16 @@ enum class Haptic {
     Expand,
 }
 
-class Haptics(private val vibrator: Vibrator?) {
+class Haptics(
+    private val vibrator: Vibrator?,
+    private val feedbackEnabled: () -> Boolean = { true },
+) {
+    private val touchAttributes = VibrationAttributes.Builder()
+        .setUsage(VibrationAttributes.USAGE_TOUCH).build()
 
     fun play(haptic: Haptic) {
         val v = vibrator ?: return
+        if (!feedbackEnabled() || !v.hasVibrator()) return
         val effect = when (haptic) {
             Haptic.Tick -> VibrationEffect.createOneShot(8, 40)
             Haptic.Tap -> VibrationEffect.createOneShot(12, 80)
@@ -38,16 +46,20 @@ class Haptics(private val vibrator: Vibrator?) {
             Haptic.Pause -> VibrationEffect.createWaveform(longArrayOf(0, 15, 25), intArrayOf(0, 160, 80), -1)
             Haptic.Expand -> VibrationEffect.createOneShot(20, 100)
         }
-        v.vibrate(effect)
+        v.vibrate(effect, touchAttributes)
     }
 }
 
 @Composable
 fun rememberHaptics(): Haptics {
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext
     return remember(context) {
         val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
         val vibrator = manager?.defaultVibrator
-        Haptics(vibrator)
+        Haptics(vibrator) {
+            // Read on each user action so changing Android's setting takes effect
+            // immediately without retaining a ContentObserver or an Activity.
+            Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) != 0
+        }
     }
 }
