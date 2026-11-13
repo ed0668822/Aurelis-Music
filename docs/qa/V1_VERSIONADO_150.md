@@ -1,18 +1,17 @@
-# V1 — Auto-versionado tras 150 pipelines exitosos
+# V1 — Versionado después de 150 compilaciones exitosas
 
-El ancla es el run #101. Desde el siguiente build se cuenta cada B01–B06 completo SUCCESS exactamente una vez. Fallos, cancelaciones, skips y ejecuciones incompletas no cuentan.
+Se conserva la serie visible anterior: el último APK previo al ancla #101 tenía versionName **1.9.101** y versionCode **10101**. La primera compilación con la política nueva tendrá como mínimo **1.9.102** y versionCode 10000 + GITHUB_RUN_NUMBER. No se reinicia el patch a cero al activar V1.
 
-| Éxitos anteriores | Versión siguiente |
+| Pipelines B01–B06 SUCCESS acumulados después del #101 | Versión en la siguiente compilación |
 |---|---|
-| 0 | 1.9.0 |
-| 149 | 1.9.149 |
-| 150 | 1.10.0 |
-| 300 | 1.11.0 |
+| 0 | 1.9.102 |
+| 1 | 1.9.103 |
+| 149 | 1.9.251 |
+| 150 | **1.10.0** |
+| 300 | **1.11.0** |
 
-B01 obtiene el conteo mediante API de GitHub Actions y genera ci-b01/version-metadata.json; B04 adopta la misma versión y code del mismo run; F1 protegido fija la versión del informe de la ejecución verde del SHA, nunca del número de su workflow manual.
+Se cuentan una sola vez los runs realmente terminados con SUCCESS de B01–B06. Cancelados, fallidos, skipped e in-progress no incrementan el contador. GitHub REST (actions:read) reconstruye éxitos anteriores desde #101; B01 fija versionName/versionCode y B04 verifica exactamente el mismo manifiesto y SHA. F1 protegido reutiliza el versionado del informe B06 verde del SHA aprobado.
 
-versionCode = 10000 + GITHUB_RUN_NUMBER conserva la monotonía para instalaciones. Cambiar versionName NO publica en Google Play, no crea un GitHub Release y no instala el APK automáticamente en teléfonos.
+versionCode siempre se incrementa por número de ejecución (10000 + GITHUB_RUN_NUMBER), incluso cuando la versión visible no cambia por fallos. No se hace push ni se publica un Release por subir versionName. En caso de borrar metadatos históricos de GitHub Actions, el contador deja de ser reconstructible: preservar historial o crear checkpoint auditado antes de eliminarlos. El envío a Google Play y la instalación en Android son procesos independientes protegidos por F1.
 
-Si la API no devuelve historial confiable, falta permiso o el SHA/versionName/code no coincide, el gate falla sin inventar resultados. No borrar el historial de runs sin un checkpoint auditado porque el contador reconstruido perdería precisión.
-
-La publicación F1 exige environment release configurado y aprobado. La validación Android 16 física sigue siendo necesaria tras cambiar targetSdk a 36.
+Validación requerida: tests de transición 149→150, controles de SHA y run, y ejecución completa B01–B06 del commit final.

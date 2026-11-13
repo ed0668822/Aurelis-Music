@@ -22,7 +22,10 @@ def read_policy(path):
         any(type(p.get(k)) is not int or p[k] <= 0
             for k in ("anchor_run_number", "base_major", "base_minor",
                       "successes_per_minor", "version_code_offset")) or
-        p["successes_per_minor"] != 150 or (p["base_major"], p["base_minor"]) != (1, 9)):
+        p["successes_per_minor"] != 150 or
+        type(p.get("anchor_visible_patch")) is not int or
+        p["anchor_visible_patch"] != 101 or
+        (p["base_major"], p["base_minor"]) != (1, 9)):
         raise ValueError("Invalid V1 policy")
     return p
 
@@ -32,11 +35,17 @@ def compute(count, number, policy):
         raise ValueError("Invalid green-build count or run number")
     if count > number - policy["anchor_run_number"] - 1:
         raise ValueError("Impossible successful-run count")
-    minor_offset, patch = divmod(count, 150)
+    # Preserve previously issued 1.9.101; never restart the visible patch at 0.
+    if count < policy["successes_per_minor"]:
+        visible_name = f"{policy['base_major']}.{policy['base_minor']}.{policy['anchor_visible_patch'] + 1 + count}"
+    else:
+        minor_offset, patch = divmod(count - policy["successes_per_minor"],
+                                    policy["successes_per_minor"])
+        visible_name = f"{policy['base_major']}.{policy['base_minor'] + 1 + minor_offset}.{patch}"
     code = policy["version_code_offset"] + number
     if not 1 <= code <= 2100000000:
         raise ValueError("Android versionCode out of range")
-    return f"1.{policy['base_minor'] + minor_offset}.{patch}", code
+    return visible_name, code
 
 
 def count_completed(token, current_run_id, current_number, policy):

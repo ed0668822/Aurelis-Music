@@ -5,13 +5,14 @@ import v1_versioning as v1
 
 P = {"schema_version": 1, "repo": v1.REPO, "workflow": v1.WORKFLOW,
      "anchor_run_number": 101, "base_major": 1, "base_minor": 9,
-     "successes_per_minor": 150, "version_code_offset": 10000}
+     "successes_per_minor": 150, "anchor_visible_patch": 101,
+     "version_code_offset": 10000}
 
 
 class VersionTests(unittest.TestCase):
     def test_exact_150_success_cycle(self):
         for green, run, result in [
-            (0, 102, "1.9.0"), (149, 251, "1.9.149"),
+            (0, 102, "1.9.102"), (149, 251, "1.9.251"),
             (150, 252, "1.10.0"), (300, 402, "1.11.0")]:
             self.assertEqual(v1.compute(green, run, P)[0], result)
             self.assertEqual(v1.compute(green, run, P)[1], 10000 + run)

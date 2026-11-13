@@ -8,7 +8,8 @@ from v1_release_source import verify_apk_versions
 import v1_versioning as v1
 
 P = {"anchor_run_number": 101, "base_major": 1, "base_minor": 9,
-     "successes_per_minor": 150, "version_code_offset": 10000}
+     "successes_per_minor": 150, "anchor_visible_patch": 101,
+     "version_code_offset": 10000}
 INFO = v1.manifest(P, "a" * 40, 8000, 102, 0)
 
 
@@ -16,7 +17,7 @@ class ReleaseVersionTests(unittest.TestCase):
     def test_apk_debug_and_release_must_share_verified_name_and_code(self):
         with TemporaryDirectory() as tmp:
             base = Path(tmp)
-            items = [{"variant": v, "version_name": "1.9.0", "version_code": "10102"}
+            items = [{"variant": v, "version_name": "1.9.102", "version_code": "10102"}
                      for v in ("debug", "release")]
             m, v = base / "manifest.json", base / "verification.json"
             m.write_text(json.dumps(items))

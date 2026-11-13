@@ -6,5 +6,6 @@
   "base_major": 1,
   "base_minor": 9,
   "successes_per_minor": 150,
-  "version_code_offset": 10000
+  "version_code_offset": 10000,
+  "anchor_visible_patch": 101
 }
