@@ -3,6 +3,10 @@
 """P2.5: three-artifact contract, VirusTotal-in-ZIP and cleanup guardrails."""
 import json
 import os
+import re
+import subprocess
+import sys
+import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -96,7 +100,7 @@ class DeliveryTests(unittest.TestCase):
                 "Aurelis-Release-ARM64-23",
             })
 
-    def test_feature_branch_keeps_two_final_artifacts(self):
+    def test_disabled_candidate_policy_keeps_two_final_artifacts(self):
         with TemporaryDirectory() as tmp:
             records = [r for r in self.artifacts_for_run()
                        if r["name"] != "Aurelis-Release-ARM64-23"]
@@ -132,7 +136,7 @@ class DeliveryTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "RELEASE_PUBLISH_EXPECTED"):
                 clean.release_expected()
 
-    def test_feature_branch_refuses_unexpected_release_without_deleting(self):
+    def test_disabled_candidate_policy_refuses_unexpected_release_without_deleting(self):
         with TemporaryDirectory() as tmp:
             env = {**self.fake_env(tmp), "RELEASE_PUBLISH_EXPECTED": "false"}
             deletes = []
@@ -190,6 +194,130 @@ class DeliveryTests(unittest.TestCase):
                 finally:
                     os.chdir(old)
                 api.assert_not_called()
+
+
+class SignedCandidateTests(unittest.TestCase):
+    """Run the real B04 inline guards using synthetic files, never real APKs/keys."""
+
+    workflows = Path(__file__).resolve().parent.parent / "workflows"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.b04 = (cls.workflows / "b04-verify-apks.yml").read_text(encoding="utf-8")
+        cls.b06 = (cls.workflows / "b06-unified-pipeline.yml").read_text(encoding="utf-8")
+
+    @classmethod
+    def step(cls, name):
+        match = re.search(r"(?ms)^      - name: " + re.escape(name)
+                          + r"\n(.*?)(?=^      - name: |\Z)", cls.b04)
+        if match is None:
+            raise AssertionError("Missing workflow step: " + name)
+        return match.group(1)
+
+    @classmethod
+    def inline_python(cls, name):
+        body = cls.step(name).split("python3 - <<'PY'\n", 1)[1]
+        return textwrap.dedent(body.rsplit("\n          PY", 1)[0])
+
+    def test_testing_upload_has_same_scope_as_report_and_cleanup(self):
+        scope = ("${{ github.ref == 'refs/heads/feature/bitchord-local-migration' && "
+                 "(github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}")
+        self.assertIn("RELEASE_CANDIDATE_EXPECTED: " + scope, self.b04)
+        self.assertEqual(self.b06.count("RELEASE_PUBLISH_EXPECTED: " + scope), 2)
+        step = self.step("Publish signed Release candidate for testing")
+        for required in ("!cancelled()", "github.ref == 'refs/heads/feature/bitchord-local-migration'",
+                         "github.event_name == 'push'", "github.event_name == 'workflow_dispatch'",
+                         "steps.stage_apks.outcome == 'success'", "steps.evidence.outcome == 'success'",
+                         "steps.report.outcome == 'success'", "path: ci-b04-delivery/release/*.apk",
+                         "name: Aurelis-Release-ARM64-${{ github.run_number }}", "if-no-files-found: error"):
+            self.assertIn(required, step)
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotIn("secrets.", step)
+
+    def test_official_release_guard_is_still_main_tags_and_environment_only(self):
+        text = (self.workflows / "b04-protected-release.yml").read_text(encoding="utf-8")
+        for required in ("inputs.confirmation == 'PUBLICAR'", "github.ref == 'refs/heads/main'",
+                         "startsWith(github.ref, 'refs/tags/v')", "name: release"):
+            self.assertIn(required, text)
+        self.assertNotIn("release_candidate_apk", text)
+
+    def run_gate(self, root, expected="true", outcome="success"):
+        for rel, data in (("ci-artifacts/apk-verification.json", {"status": "success"}),
+                          ("ci-artifacts/source-evidence.json", {"status": "PASS_VERIFIED_GATES"}),
+                          ("ci-approved-apks/apk-manifest.json", [{"variant": "debug"}, {"variant": "release"}])):
+            p = root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps(data), encoding="utf-8")
+        (root / "ci-approved-apks/SHA256SUMS.txt").write_text("fixture\n", encoding="utf-8")
+        for variant in ("debug", "release"):
+            p = root / "ci-b04-delivery" / variant / "verified.apk"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b"synthetic gate fixture, not an Android APK")
+        env = {**os.environ, **{k + "_OUTCOME": "success" for k in
+               ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "STAGE", "EVIDENCE", "REPORT", "DEBUG_APK")},
+               "RELEASE_CANDIDATE_OUTCOME": outcome}
+        env.pop("RELEASE_CANDIDATE_EXPECTED", None)
+        if expected is not None:
+            env["RELEASE_CANDIDATE_EXPECTED"] = expected
+        return subprocess.run([sys.executable, "-c", self.inline_python("Enforce B04 verified artifact gate")],
+                              cwd=root, env=env, capture_output=True, text=True)
+
+    def test_candidate_upload_must_succeed_when_expected(self):
+        for outcome in ("success", "failure", "skipped", "cancelled", "missing"):
+            with self.subTest(outcome=outcome), TemporaryDirectory() as tmp:
+                result = self.run_gate(Path(tmp), outcome=outcome)
+                self.assertEqual(result.returncode == 0, outcome == "success", result.stderr)
+
+    def test_other_refs_require_skipped_candidate_and_invalid_policy_fails(self):
+        for expected, outcome, ok in (("false", "skipped", True), ("false", "success", False),
+                                      ("false", "failure", False), ("invalid", "success", False),
+                                      (None, "success", False)):
+            with self.subTest(expected=expected, outcome=outcome), TemporaryDirectory() as tmp:
+                result = self.run_gate(Path(tmp), expected=expected, outcome=outcome)
+                self.assertEqual(result.returncode == 0, ok, result.stderr)
+
+    def test_staging_preserves_verified_bytes_and_rejects_bad_signer_hash_or_abi(self):
+        import hashlib
+        for scenario in ("valid", "debug-fallback", "wrong-signer", "wrong-hash", "wrong-abi"):
+            with self.subTest(scenario=scenario), TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                approved, evidence = root / "ci-approved-apks", root / "ci-artifacts"
+                approved.mkdir(); evidence.mkdir()
+                records = []
+                for variant in ("debug", "release"):
+                    payload = ("verified synthetic " + variant).encode()
+                    name = variant + ".apk"
+                    (approved / name).write_bytes(payload)
+                    records.append({"variant": variant, "file": name, "bytes": len(payload),
+                                    "sha256": hashlib.sha256(payload).hexdigest(), "abis": ["arm64-v8a"],
+                                    "package": "com.music.aurelis", "signer_certificate_sha256": ["a" * 64],
+                                    **{k: True for k in ("signature_verified", "zip_verified",
+                                          "zip_16kb_alignment_verified", "native_16kb_alignment_verified")}})
+                signing = {"mode": "configured_release", "configured_certificate_sha256": "a" * 64}
+                if scenario == "debug-fallback": signing["mode"] = "debug_fallback"
+                if scenario == "wrong-signer": records[1]["signer_certificate_sha256"] = ["b" * 64]
+                if scenario == "wrong-hash": records[1]["sha256"] = "0" * 64
+                if scenario == "wrong-abi": records[1]["abis"] = ["x86_64"]
+                (approved / "apk-manifest.json").write_text(json.dumps(records), encoding="utf-8")
+                (approved / "SHA256SUMS.txt").write_text("fixture\n", encoding="utf-8")
+                (evidence / "apk-verification.json").write_text('{"status":"success"}', encoding="utf-8")
+                (evidence / "signing.json").write_text(json.dumps(signing), encoding="utf-8")
+                code = self.inline_python("Stage individually verified Debug and signed Release APKs")
+                result = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, scenario == "valid", result.stderr)
+                if scenario == "valid":
+                    self.assertEqual((root / "ci-b04-delivery/release/release.apk").read_bytes(),
+                                     (approved / "release.apk").read_bytes())
+
+    def test_signed_candidate_policy_never_claims_official_publication(self):
+        candidate = bundle.artifact_delivery_policy(True)
+        self.assertEqual(candidate["expected_final_artifacts"], 3)
+        self.assertEqual(candidate["release_artifact_purpose"], "SIGNED_TESTING_CANDIDATE")
+        self.assertFalse(candidate["official_release_published"])
+        without = bundle.artifact_delivery_policy(False)
+        self.assertEqual(without["expected_final_artifacts"], 2)
+        self.assertEqual(without["release_artifact_purpose"], "NOT_PUBLISHED")
+        self.assertFalse(without["official_release_published"])
 
 
 if __name__ == "__main__":

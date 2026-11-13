@@ -17,7 +17,13 @@ class VirusTotalAuditTests(unittest.TestCase):
         value = workflow.read_text(encoding="utf-8")
         self.assertIn('VIRUSTOTAL_ALLOW_UPLOAD: "false"', value)
         self.assertNotIn("VIRUSTOTAL_ALLOW_UPLOAD: ${{ vars.VIRUSTOTAL_ALLOW_UPLOAD }}", value)
-        self.assertNotIn("Aurelis-Release-ARM64-${{ github.run_number }}", value)
+        # A user-authorized signed testing artifact is not a public VirusTotal upload.
+        # Keep the advisory step hash-only independently of other artifact delivery.
+        step = value.split("      - name: Analyze verified Release APK with VirusTotal", 1)[1]
+        step = step.split("\n      - name:", 1)[0]
+        self.assertIn('VIRUSTOTAL_ALLOW_UPLOAD: "false"', step)
+        self.assertNotIn("actions/upload-artifact", step)
+        self.assertNotIn("gh release create", value)
 
 
     def test_no_key_never_claims_clean(self):

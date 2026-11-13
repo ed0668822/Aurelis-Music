@@ -338,6 +338,18 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      # Authorized testing artifact on the migration branch, not an official Release.
+      # Use only the byte-for-byte staged APK whose configured signer was verified.
+      - name: Publish signed Release candidate for testing
+        id: release_candidate_apk
+        if: ${{ !cancelled() && github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Aurelis-Release-ARM64-${{ github.run_number }}
+          path: ci-b04-delivery/release/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
       - name: Publish Debug APK separately
         id: debug_apk
         if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' }}
@@ -360,6 +372,8 @@ jobs:
           STAGE_OUTCOME: ${{ steps.stage_apks.outcome }}
           EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
           DEBUG_APK_OUTCOME: ${{ steps.debug_apk.outcome }}
+          RELEASE_CANDIDATE_EXPECTED: ${{ github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          RELEASE_CANDIDATE_OUTCOME: ${{ steps.release_candidate_apk.outcome }}
         run: |
           python3 - <<'PY'
           import json
@@ -369,6 +383,12 @@ jobs:
           outcomes = {key: os.environ.get(key + "_OUTCOME", "missing")
                       for key in ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "STAGE", "EVIDENCE", "REPORT", "DEBUG_APK")}
           bad = [key for key, value in outcomes.items() if value != "success"]
+          candidate_expected = os.environ.get("RELEASE_CANDIDATE_EXPECTED")
+          candidate_outcome = os.environ.get("RELEASE_CANDIDATE_OUTCOME", "missing")
+          if candidate_expected not in ("true", "false"):
+              bad.append("release_candidate_policy_missing_or_invalid")
+          elif candidate_outcome != ("success" if candidate_expected == "true" else "skipped"):
+              bad.append("release_candidate_upload_not_as_expected")
           path = Path("ci-artifacts/apk-verification.json")
           manifest = Path("ci-approved-apks/apk-manifest.json")
           checksums = Path("ci-approved-apks/SHA256SUMS.txt")
@@ -392,5 +412,5 @@ jobs:
                   bad.append("expected_one_" + variant + "_apk")
           if bad:
               raise SystemExit("B04 failed: " + ", ".join(sorted(set(bad))))
-          print("B04 passed: Debug and Release APKs verified; Debug only published. Official Release publication is locked until environment approval.")
+          print("B04 passed: Debug and Release APKs verified; signed Release testing artifact expected=" + candidate_expected + ". Official Release publication remains locked behind its protected workflow.")
           PY

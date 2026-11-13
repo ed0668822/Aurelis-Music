@@ -142,7 +142,8 @@ jobs:
         env:
           STAGES_JSON: ${{ toJSON(needs) }}
           DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
-          RELEASE_PUBLISH_EXPECTED: "false"
+          # Expect the signed testing candidate only on the explicitly authorized branch/events.
+          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
         run: python3 .github/scripts/b06_bundle_reports.py
 
       - name: Upload B06 final report
@@ -181,5 +182,5 @@ jobs:
         if: ${{ success() }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_PUBLISH_EXPECTED: "false"
+          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
         run: python3 .github/scripts/b06_cleanup_artifacts.py

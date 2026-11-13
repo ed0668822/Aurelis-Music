@@ -156,15 +156,27 @@ def source_coverage() -> dict:
     return result
 
 
+def artifact_delivery_policy(publish_release: bool) -> dict:
+    """Describe Actions downloads without granting official publication approval."""
+    return {
+        "release_publish_expected": publish_release,
+        "expected_final_artifacts": 3 if publish_release else 2,
+        "release_artifact_purpose": "SIGNED_TESTING_CANDIDATE" if publish_release else "NOT_PUBLISHED",
+        "official_release_published": False,
+        "note": (
+            "Exactly three final artifacts: report ZIP, Debug ARM64 APK and signed Release ARM64 testing candidate. "
+            "No official GitHub Release is created."
+            if publish_release else
+            "Exactly two final artifacts: report ZIP and Debug ARM64 APK. "
+            "B04 verifies signed Release ARM64, but its testing artifact is not selected on this reference/event."
+        ),
+    }
+
+
 def main() -> None:
-    publish_release = release_expected()
-    final_count = 3 if publish_release else 2
-    delivery_note = (
-        "Exactly three final artifacts: B01-B06+VirusTotal report ZIP, Debug ARM64 APK and signed Release ARM64 APK."
-        if publish_release else
-        "Exactly two final artifacts: B01-B06+VirusTotal report ZIP and Debug ARM64 APK. "
-        "B04 verifies signed Release ARM64, but it is not published outside main/tags."
-    )
+    delivery = artifact_delivery_policy(release_expected())
+    publish_release = delivery["release_publish_expected"]
+    final_count = delivery["expected_final_artifacts"]
     OUTPUT.mkdir(parents=True, exist_ok=True)
     (OUTPUT / "B06").mkdir(parents=True, exist_ok=True)
     all_present = True
@@ -279,9 +291,7 @@ def main() -> None:
         },
         "apk_files_in_bundle": False,
         "virustotal": virustotal,
-        "release_publish_expected": publish_release,
-        "expected_final_artifacts": final_count,
-        "note": delivery_note,
+        **delivery,
     }
     (OUTPUT / "B06" / "pipeline-results.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -291,7 +301,7 @@ def main() -> None:
              f"- Commit: `{report['commit']}`",
              f"- Resultado: **{report['status']}**",
              (f"- Entrega final: {final_count} artefactos, informes (VirusTotal incluido) y APK Debug ARM64" +
-              (", más APK Release ARM64 firmado." if publish_release else
+              (", más APK Release ARM64 firmado para pruebas; no una publicación oficial." if publish_release else
                "; APK Release firmado verificado en B04, sin publicación en esta referencia.")),
              "- La compilación individual de cada archivo no está totalmente demostrada.",
              "- Auditoría independiente B04: " + trusted_evidence.get("status", "MISSING_EVIDENCE"),
