@@ -15,8 +15,16 @@ Compose nuevas aprobaron por variante. Kover se omitió tras fallar las suites;
 F5 rechazó la falta de cobertura. Se corrigen las dos aserciones usando toList()
 en ambos lados, sin cambiar producción ni rebajar CI. Tres archivos ya incluidos
 en los ocho del bloque (máximo acumulado 30); dos revisiones del mismo agente y
-git diff --check locales, sin ejecutar Gradle/Android. Resultado del nuevo SHA
-pendiente de GitHub Actions; B03.1-a sigue abierto hasta verificar B01–B06.
+git diff --check locales, sin ejecutar Gradle/Android.
+
+**Resultado posterior confirmado:** b11427277569b591acb8ab6f476ee1a6171098d3,
+run120/43537277492 SUCCESS en las seis fases B01–B06. Informes originales y XML
+verificados: 308/308 pruebas Debug y 308/308 Release, cero fallos/errores/omitidas;
+13/13 AppNavigatorTest y 5/5 NavigationEntryStateTest por variante. XML Kover
+Debug/Release presentes; cobertura cambiada 89,46 % (3718/4156), puerta F5 success.
+Resuelto el fallo CI de B03.1-a. El cierre documental posterior conserva ocho
+rutas acumuladas y no equivale a una nueva compilación. No se acredita validación
+física/visual completa ni se inicia otro bloque; esperar nueva autorización.
 
 Autorización «Continúa», base 49ba012a; cuenta/identidad verificada, checkout
 limpio y remoto coincidente. Run118 success en B01–B06 confirma CI18 antes de

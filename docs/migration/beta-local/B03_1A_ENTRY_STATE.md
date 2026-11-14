@@ -140,3 +140,31 @@ y límites; sin deshabilitar pruebas ni modificar las puertas de CI. Comprobaci�
 local git diff --check; sin Gradle/Lint/tests Android locales. El nuevo resultado
 B01–B06 debe verificarse por SHA tras el push; no se declara verde anticipado.
 B03.2/B03.3, validación física, CI12.3 y B09 conservan su estado anterior.
+
+
+## Resultado confirmado de la reparación — run120
+
+Commit de código b11427277569b591acb8ab6f476ee1a6171098d3.
+[Run120/43537277492](https://github.com/ed0668822/Aurelis-Music/actions/runs/43537277492)
+terminó SUCCESS: las seis fases B01, B02, B03, B04, B05 y B06 success.
+Se verificaron la API de jobs, la integridad del artefacto original
+Aurelis-Informes-B01-B06-120 (14090763536), results.json y XML de ambas variantes.
+Debug: 308/308 aprobadas; Release: 308/308 aprobadas. Cero fallos, errores u
+omitidas. AppNavigatorTest: 13/13; NavigationEntryStateTest: 5/5, por variante.
+Los XML Kover Debug/Release están presentes y son parseables; diff-coverage.json
+registra MEASURED, 3718/4156 líneas cubiertas (89,46 %), threshold_met=true.
+La puerta F5 terminó success; no se modificaron sus condiciones.
+
+B04 verificó los APK y B05 aprobó su flujo de emulador Android 15. Existen los
+artefactos Aurelis-Release-ARM64-120 y Aurelis-Pruebas-ARM64-120; el nombre del
+primero no significa publicación de una Release oficial. No se certifican
+pruebas físicas, fidelidad visual completa, hápticos ni reproducción real por
+este resultado. Queda resuelto el fallo CI de B03.1-a; los pendientes del plan
+principal permanecen abiertos y se espera autorización para el siguiente bloque.
+
+Cierre documental limitado a este informe y PROGRESS_TRACKER.md, sin cambios de
+código adicionales. Dos revisiones del mismo agente: cotejo SHA/run/XML/cobertura,
+y revisión del diff/documentación/presupuesto; git diff --check sin incidencias.
+El bloque mantiene ocho archivos distintos acumulados. El resultado anterior
+pertenece al SHA b1142727; el commit documental posterior no recibe ese verde
+como si se hubiera ejecutado una nueva compilación.
