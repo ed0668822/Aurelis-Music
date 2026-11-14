@@ -7,6 +7,17 @@
 
 ### B03.1-a — estado por entrada, Atrás y restauración
 
+**Reparación run119 autorizada.** Run119/43527135590 del SHA dc9a4b13 falló:
+B01/B02/B05 success, B03/B06 failure, B04 skipped. XML y logs confirman por
+variante 306/308 pruebas aprobadas, dos fallidas por igualdad de identidad de
+SnapshotStateList en AppNavigatorTest (no por compilación). Las cinco pruebas
+Compose nuevas aprobaron por variante. Kover se omitió tras fallar las suites;
+F5 rechazó la falta de cobertura. Se corrigen las dos aserciones usando toList()
+en ambos lados, sin cambiar producción ni rebajar CI. Tres archivos ya incluidos
+en los ocho del bloque (máximo acumulado 30); dos revisiones del mismo agente y
+git diff --check locales, sin ejecutar Gradle/Android. Resultado del nuevo SHA
+pendiente de GitHub Actions; B03.1-a sigue abierto hasta verificar B01–B06.
+
 Autorización «Continúa», base 49ba012a; cuenta/identidad verificada, checkout
 limpio y remoto coincidente. Run118 success en B01–B06 confirma CI18 antes de
 este bloque. Ocho rutas de un máximo 30; manifiesto/referencia/revisiones en

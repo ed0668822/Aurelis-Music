@@ -15,7 +15,7 @@ class AppNavigatorTest {
         assertEquals(3, keys.distinct().size)
         assertNotEquals(keys.first(), keys.last())
         val restored = requireNotNull(AppNavigator.restoreState(requireNotNull(navigator.saveState())))
-        assertEquals(navigator.entries, restored.entries)
+        assertEquals(navigator.entries.toList(), restored.entries.toList())
         assertEquals(keys, restored.entries.map { AppDestination.Route(it).key })
         val previousId = restored.entries.last().id
         restored.pop(); restored.push(AppRoute.Replay)
@@ -37,7 +37,7 @@ class AppNavigatorTest {
         val updated = requireNotNull(legacy.saveState())
         assertEquals("2", updated.first())
         val restored = requireNotNull(AppNavigator.restoreState(updated))
-        assertEquals(legacy.entries, restored.entries)
+        assertEquals(legacy.entries.toList(), restored.entries.toList())
         restored.clear(); restored.push(AppRoute.Settings)
         assertTrue(AppDestination.Route(restored.entries.single()).key.startsWith("route:"))
     }

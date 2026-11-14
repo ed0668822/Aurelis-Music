@@ -103,3 +103,40 @@ retorno visual integradas en B03–B05 siguen abiertas. Reproducción/servicio,
 firmas, permisos, ABI y los workflows de CI se conservan. CI12.3 y comentarios
 CI16 permanecen pendientes; B09 sigue sin iniciar. Esperar resultado y nueva
 autorización antes del siguiente bloque.
+
+
+## Reparación autorizada de run119
+
+Autorización «Implement the proposed plan». Base dc9a4b136b9cfb5a44b32b62bf5f3134cb06d727,
+misma rama/PR1. Preparación en worktree aislado, preservando el checkout work y
+sus salidas locales sin seguimiento. Cuenta ed0668822, permiso push y correo
+ed0668822@gmail.com verificado mediante API; identidad Git local coincidente.
+
+Run119/43527135590 terminó FAILURE: B01/B02/B05 success, B03/B06 failure y
+B04 skipped. Se verificó la integridad del ZIP original consolidado y se leyeron
+results.json, los XML JUnit y los logs Debug/Release. Cada variante ejecutó
+308 pruebas: 306 aprobadas, dos fallidas, cero errores y cero omitidas. Las dos
+fallidas son separateVisitsKeepTheirEntryKeysAcrossRestoration y
+legacyNavigationPreservesItsProviderKeysUntilClosed (AppNavigatorTest, líneas
+18 y 40 de la base). Las cinco NavigationEntryStateTest aprobaron por variante.
+
+Las aserciones comparaban directamente instancias distintas de SnapshotStateList,
+cuya igualdad es de identidad, aunque sus RouteEntry tenían iguales valores.
+Se comparan ahora snapshots toList() de ambos lados: se sigue exigiendo igualdad
+de todas las entradas y su orden, incluidos ID, ruta, profundidad y flag legacy.
+No se modifica la restauración ni se elimina ninguna aserción o prueba.
+Kover fue skipped por el fallo de las suites; diff-coverage.json registró
+NOT_MEASURED/COVERAGE_XML_UNAVAILABLE. No se reduce ni omite la puerta F5.
+
+Manifiesto de reparación: AppNavigatorTest.kt, este informe y PROGRESS_TRACKER.md.
+Son tres rutas ya incluidas en el bloque: ocho archivos distintos acumulados
+sobre 49ba012a, dentro del máximo de 30. Se conservan cabeceras y atribuciones;
+sin cambios de producción, workflows, firmas, ABI, SDK o dependencias.
+
+Revisión 1 del mismo agente: contraste de los dos fallos XML con las aserciones,
+codec v1/v2 y RouteEntry; snapshots estructurales conservan todas las exigencias.
+Revisión 2 del mismo agente: diff completo, casos existentes, manifiesto acumulado
+y límites; sin deshabilitar pruebas ni modificar las puertas de CI. Comprobación
+local git diff --check; sin Gradle/Lint/tests Android locales. El nuevo resultado
+B01–B06 debe verificarse por SHA tras el push; no se declara verde anticipado.
+B03.2/B03.3, validación física, CI12.3 y B09 conservan su estado anterior.
