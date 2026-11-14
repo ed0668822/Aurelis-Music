@@ -416,3 +416,10 @@ propios nuevos con cabecera Aurelis. Sin nuevas dependencias ni cambio de LICENS
 Referencia fija b690dc1 playback/PlaybackService.kt, SHA256 775a6680dbad4e94124264f1acd06747b86b75c329b951279bfa7f973ef3cb3b.
 Consulta del patrón de setters reales; comandos, restricciones y UI propios de
 Aurelis. NOTICE conserva atribuciones existentes; sin copiar decks ni dependencias.
+
+
+## B06.2-c — continuación local
+
+Selector determinista/binding y pruebas propios Aurelis. Se preservan atribuciones
+BitChord existentes de identidad/tier; no se importa radio/red/JS ni otro motor.
+Sin dependencias, recursos binarios o cambios de licencia. Cabeceras propias.

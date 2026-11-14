@@ -498,3 +498,9 @@ for setters on the actual player; SHA256 775a6680dbad4e94124264f1acd06747b86b75c
 Aurelis private command/capability/publication/UI code is original; no multi-deck
 or global settings implementation copied. Existing GPLv3 notices remain intact.
 No decoder/audio-sink/DSP changes, new dependency or claim of measured output.
+
+B06.2-c — local autoplay continuation
+AutoplayEngine and LocalAutoplayBinding are Aurelis contributions. They extend the
+single local Media3 queue using MediaStore metadata and new AUTOPLAY occurrences.
+No upstream network/radio/recommendation engine, model output or remote source is
+copied. Existing BitChord-derived queue tier and identity notices remain applicable.

@@ -85,6 +85,9 @@ data class PlaybackState(
     val isConnected: Boolean = false,
     val canEditQueue: Boolean = false,
     val canUsePlaybackTools: Boolean = false,
+    val autoplayEnabled: Boolean = false,
+    val canSetAutoplay: Boolean = false,
+    val autoplayStatus: String? = null,
     val playbackSpeed: Float = 1f,
     val skipSilence: Boolean = false,
     val canSetPlaybackSpeed: Boolean = false,
@@ -221,6 +224,9 @@ class PlaybackViewModel internal constructor(
     fun next() { if (_state.value.canNext) controller?.seekToNextMediaItem() }
     fun previous() { if (_state.value.canPrevious) controller?.seekToPrevious() }
 
+    fun setAutoplay(enabled: Boolean) = sendPlaybackControl(android.os.Bundle().apply {
+        putString("action", "autoplay"); putBoolean("enabled", enabled)
+    })
     fun setPlaybackSpeed(speed: Float) = sendPlaybackControl(android.os.Bundle().apply {
         putString("action", "speed"); putFloat("speed", speed)
     })
@@ -252,6 +258,9 @@ class PlaybackViewModel internal constructor(
             canUsePlaybackTools = remote?.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND) == true,
             sleepRemainingMs = if (deadline > 0) (deadline - android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L) else 0L,
             sleepAfterTrack = extras?.getBoolean("sleep_after_track") == true,
+            autoplayEnabled = extras?.getBoolean("autoplay") == true,
+            canSetAutoplay = remote?.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND) == true && extras?.getBoolean("autoplay_available") == true,
+            autoplayStatus = extras?.getString("autoplay_status"),
             playbackSpeed = extras?.getFloat("speed", 1f) ?: 1f,
             skipSilence = extras?.getBoolean("skip_silence") == true,
             canSetPlaybackSpeed = remote?.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND) == true && extras?.getBoolean("speed_available") == true,

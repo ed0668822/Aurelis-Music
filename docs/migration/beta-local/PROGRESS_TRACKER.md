@@ -5,6 +5,16 @@
 
 ## Continuación actual — primera entrega documental
 
+### B06.2-c — continuación automática local (CI pendiente)
+
+Autorización acumulada terminar B06. Trece archivos de máximo30. Al finalizar cola
+solicitada, repeatOFF y opción activa, consulta MediaStore y añade hasta diez temas
+locales no presentes, con tier AUTOPLAY/IDs nuevos. Valida fingerprint y estado al
+volver; pausa/cambio/opción/cierre cancelan y rechazan respuestas tardías. Catálogo
+vacío/error no inicia bucle. Cinco pruebas nuevas de selector/binding y caso UI
+previo extendido. Dos revisiones del mismo agente, diff --check, Android solo CI.
+[B06_2C_LOCAL_AUTOPLAY](B06_2C_LOCAL_AUTOPLAY.md). Validación física pendiente.
+
 ### B06.2-b — velocidad/silencio con capacidades (CI pendiente)
 
 Autorizado dentro de terminar B06. Diez archivos de máximo30. Setters reales sobre

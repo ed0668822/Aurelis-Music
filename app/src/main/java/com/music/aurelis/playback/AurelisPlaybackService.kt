@@ -92,6 +92,14 @@ class AurelisPlaybackService : MediaSessionService() {
             .build()
         controls.bind(requireNotNull(mediaSession))
         profiles = ProfilePlaybackBinding(this, player, serviceScope)
+        controls.bindAutoplay(serviceScope) {
+            withContext(Dispatchers.IO) {
+                if (com.music.aurelis.data.AudioPermission.isGranted(this@AurelisPlaybackService))
+                    com.music.aurelis.data.LocalMediaRepository.getLibrarySongs(this@AurelisPlaybackService,
+                        com.music.aurelis.data.SettingsRepository.filterNonMusicAudio.value)
+                else emptyList()
+            }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession

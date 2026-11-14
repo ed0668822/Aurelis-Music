@@ -24,6 +24,15 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
         publish()
     }
     override fun onSkipSilenceEnabledChanged(skipSilenceEnabled: Boolean) { publish() }
+    private var autoplay: LocalAutoplayBinding? = null
+    private var autoplayStatus: String? = null
+    fun bindAutoplay(scope: kotlinx.coroutines.CoroutineScope, load: suspend () -> List<com.music.aurelis.data.model.LocalSong>) {
+        autoplay?.close()
+        autoplay = LocalAutoplayBinding(player, scope, com.music.aurelis.data.SettingsRepository.autoplay, load) {
+            autoplayStatus = it; publish()
+        }
+        publish()
+    }
     private var session: MediaSession? = null
     private val timer = SleepTimer(player, onChange = { publish() })
     fun bind(session: MediaSession) { this.session = session; publish() }
@@ -31,6 +40,9 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
         session?.setSessionExtras(Bundle().apply {
             putLong("sleep_deadline", timer.deadlineMs)
             putBoolean("sleep_after_track", timer.afterTrack)
+            putBoolean("autoplay", com.music.aurelis.data.SettingsRepository.autoplay.value)
+            putBoolean("autoplay_available", autoplay != null && !com.music.aurelis.data.ProfileRepository.state.value.readOnly)
+            putString("autoplay_status", autoplayStatus)
             putFloat("speed", player.playbackParameters.speed)
             putBoolean("skip_silence", exo?.skipSilenceEnabled == true)
             putBoolean("speed_available", player.isCommandAvailable(Player.COMMAND_SET_SPEED_AND_PITCH) && !highResolutionOutput())
@@ -40,6 +52,10 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
     }
     fun execute(args: Bundle): SessionResult {
         val success = when (args.getString("action")) {
+            "autoplay" -> {
+                if (autoplay == null || com.music.aurelis.data.ProfileRepository.state.value.readOnly) false
+                else { com.music.aurelis.data.SettingsRepository.setAutoplay(args.getBoolean("enabled")); true }
+            }
             "speed" -> {
                 val speed = args.getFloat("speed", Float.NaN)
                 if (!speed.isFinite() || speed !in 0.5f..2f ||
@@ -60,7 +76,7 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
         return if (success) SessionResult(SessionResult.RESULT_SUCCESS)
         else SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
     }
-    fun close() { player.removeListener(this); timer.close(); session = null }
+    fun close() { autoplay?.close(); autoplay = null; player.removeListener(this); timer.close(); session = null }
 }
 
 /** The existing sink uses its float path for these encodings, bypassing Sonic/silence. */

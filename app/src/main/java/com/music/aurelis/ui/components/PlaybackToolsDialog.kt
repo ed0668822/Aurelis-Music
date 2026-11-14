@@ -12,9 +12,14 @@ import androidx.compose.ui.Modifier
 import com.music.aurelis.playback.PlaybackState
 
 @Composable
-internal fun PlaybackToolsDialog(state: PlaybackState, onTimer: (Long, Boolean) -> Unit, onSpeed: (Float) -> Unit, onSilence: (Boolean) -> Unit, onDismiss: () -> Unit) {
+internal fun PlaybackToolsDialog(state: PlaybackState, onTimer: (Long, Boolean) -> Unit, onSpeed: (Float) -> Unit, onSilence: (Boolean) -> Unit, onAutoplay: (Boolean) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, title = { Text("Controles de reproducción") }, text = {
         Column(Modifier.verticalScroll(rememberScrollState())) {
+            TextButton(onClick = { onAutoplay(!state.autoplayEnabled) },
+                enabled = state.canUsePlaybackTools && state.canSetAutoplay) {
+                Text(if (state.autoplayEnabled) "Desactivar continuación local" else "Activar continuación local")
+            }
+            state.autoplayStatus?.let { Text(it) }
             Text("Velocidad: ${state.playbackSpeed}×")
             for (speed in listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)) TextButton(
                 onClick = { onSpeed(speed) }, enabled = state.canUsePlaybackTools && state.canSetPlaybackSpeed,

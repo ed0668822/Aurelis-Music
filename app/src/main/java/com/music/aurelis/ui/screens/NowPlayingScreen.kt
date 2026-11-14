@@ -537,7 +537,7 @@ fun NowPlayingScreen(
 
                 if (showPlaybackTools) com.music.aurelis.ui.components.PlaybackToolsDialog(
                     state, { duration, after -> playbackViewModel.setSleepTimer(duration, after) },
-                    playbackViewModel::setPlaybackSpeed, playbackViewModel::setSkipSilence, { showPlaybackTools = false })
+                    playbackViewModel::setPlaybackSpeed, playbackViewModel::setSkipSilence, playbackViewModel::setAutoplay, { showPlaybackTools = false })
                 if (showSongActions) SongActionsDialog(s, userStore,
                     onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false },
                     onPlayNext = { playbackViewModel.playNext(listOf(s)) },

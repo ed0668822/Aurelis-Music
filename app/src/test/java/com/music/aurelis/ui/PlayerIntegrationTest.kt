@@ -92,17 +92,19 @@ class PlayerIntegrationTest {
     @Test fun playbackToolsExposeTimerSpeedAndSilenceActionsWhenServiceSupportsThem() {
         var speed = 1f
         var silence = false
+        var autoplay = false
         var duration = 0L
         var afterTrack = false
         compose.setContent { AurelisTheme {
             com.music.aurelis.ui.components.PlaybackToolsDialog(
-                PlaybackState(canUsePlaybackTools = true, canSetPlaybackSpeed = true, canSkipSilence = true),
-                { millis, after -> duration = millis; afterTrack = after }, { speed = it }, { silence = it }, {})
+                PlaybackState(canUsePlaybackTools = true, canSetPlaybackSpeed = true, canSkipSilence = true, canSetAutoplay = true),
+                { millis, after -> duration = millis; afterTrack = after }, { speed = it }, { silence = it }, { autoplay = it }, {})
         } }
+        compose.onNodeWithText("Activar continuación local").performScrollTo().performClick()
         compose.onNodeWithText("1.5×").performScrollTo().performClick()
         compose.onNodeWithText("Activar salto de silencio").performScrollTo().performClick()
         compose.onNodeWithText("30 min").performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(1.5f, speed); assertTrue(silence); assertEquals(1_800_000L, duration); assertFalse(afterTrack) }
+        compose.runOnIdle { assertEquals(1.5f, speed); assertTrue(silence); assertTrue(autoplay); assertEquals(1_800_000L, duration); assertFalse(afterTrack) }
         compose.onNodeWithText("Al terminar esta canción").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(afterTrack) }
         compose.onNodeWithText("Cancelar temporizador").performScrollTo().performClick()
