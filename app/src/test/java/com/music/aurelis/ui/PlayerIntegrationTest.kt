@@ -120,6 +120,63 @@ class PlayerIntegrationTest {
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
     }
 
+    @Test
+    @Config(sdk = [33], qualifiers = "w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
+    fun landscapeQueueAndLyricsUseSidePanesAndTheSameController() {
+        start()
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        val thirdEntry = vm.state.value.queue[2].queueEntryId
+        compose.onNodeWithContentDescription("Abrir cola").performClick()
+        compose.onNodeWithTag("landscape-queue").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
+        compose.onNode(hasText("Canción local 2") and hasAnyAncestor(hasTestTag("playback-queue"))).performClick()
+        compose.onNode(hasContentDescription(app.getString(R.string.remove_from_queue)) and
+            hasAnyAncestor(hasTestTag("queue-entry-$thirdEntry")), useUnmergedTree = true)
+            .performScrollTo().performClick()
+        compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); assertEquals(listOf("1", "2"), vm.state.value.queue.map { it.id }) }
+        val prepares = player.prepares
+        val replacements = player.replacements
+        compose.onNodeWithContentDescription("Abrir letras").performClick()
+        compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
+        compose.onNodeWithTag("landscape-queue").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
+        compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithTag("player-landscape").assertIsDisplayed()
+        compose.onNodeWithTag("landscape-lyrics").assertDoesNotExist()
+        compose.runOnIdle { assertEquals(prepares, player.prepares); assertEquals(replacements, player.replacements) }
+    }
+
+    @Test
+    @Config(sdk = [33], qualifiers = "w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
+    fun landscapeImportedLyricsSeekWithTheExistingOffsetWithoutReplacingTheQueue() {
+        start()
+        val previousOffset = SettingsRepository.lyricsOffsetMs.value
+        try {
+            compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(500) }
+            val lrc = File(app.cacheDir, "landscape-lyrics.lrc").apply {
+                writeText("[00:00.000]Primera frase horizontal\n[00:01.000]Segunda frase horizontal")
+            }
+            compose.runOnIdle { vm.importLyrics(android.net.Uri.fromFile(lrc)) }
+            compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.lyrics !is LyricsState.Loading } }
+            compose.runOnIdle { assertTrue(vm.state.value.lyrics is LyricsState.Loaded) }
+            val queue = vm.state.value.queue.map { it.id to it.queueEntryId }
+            val prepares = player.prepares
+            val replacements = player.replacements
+            compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+            compose.onNodeWithContentDescription("Abrir letras").performClick()
+            compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
+            compose.onNodeWithText("Segunda frase horizontal").performScrollTo().performClick()
+            compose.runOnIdle {
+                assertEquals(1500L, vm.state.value.positionMs)
+                assertEquals(queue, vm.state.value.queue.map { it.id to it.queueEntryId })
+                assertEquals(prepares, player.prepares); assertEquals(replacements, player.replacements)
+            }
+            compose.onNodeWithContentDescription("Cerrar letras").performClick()
+            compose.onNodeWithTag("landscape-lyrics").assertDoesNotExist()
+            compose.onNodeWithTag("player-landscape").assertIsDisplayed()
+        } finally { compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(previousOffset) } }
+    }
+
     @Test fun cancellingAPartialHeaderDragPreservesTheOpenPlayerAndQueue() {
         start()
         compose.onNodeWithContentDescription("Abrir reproductor").performClick()

@@ -5,7 +5,19 @@
 
 ## Continuación actual — primera entrega documental
 
-### B05.2-b — contraste de transporte (CI pendiente)
+### B05.3-a — letras y cola laterales (CI pendiente)
+
+«Continúa con el siguiente bloque» acepta la corrección44c0c9db y autoriza este
+bloque. Sin descargar informes previos. Ocho rutas de máximo30, misma rama/PR1.
+Slots horizontales existentes conectados a letras y cola reales, contenido modal/
+lateral compartido, transporte/cabecera visibles y Back al principal. Mismas
+capacidades/cola/lookup/offset/traducción, sin segundo controlador. Fades omitidos
+con reducción de movimiento. Dos regresiones preparadas para Actions; dos
+revisiones del mismo agente y diff --check. Sin Gradle/Android locales; CI, GPU y
+fidelidad física pendientes. Ver [B05_3A_SIDE_PANES](B05_3A_SIDE_PANES.md).
+No iniciar B05.3-b/B06/B09 hasta la siguiente autorización.
+
+### B05.2-b — corrección aceptada por el usuario; físico/GPU pendiente
 
 **Reparación run127 autorizada:** ZIP válido leído. Debug320/324, cuatro errores
 RenderNode al capturar Canvas software; Release324/324. Se reemplaza GraphicsLayer

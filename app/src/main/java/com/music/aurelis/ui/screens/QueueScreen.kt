@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -29,8 +30,14 @@ fun QueueScreen(
     playbackViewModel: PlaybackViewModel,
     isVisible: Boolean,
     onDismiss: () -> Unit,
+    embedded: Boolean = false,
 ) {
-    val state by playbackViewModel.state.collectAsState()
+    if (embedded) {
+        if (isVisible) Surface(Modifier.fillMaxSize(), color = Color(0xFF141414)) {
+            QueuePanelContent(playbackViewModel, onDismiss, embedded = true)
+        }
+        return
+    }
     val reduceMotion = LocalReduceMotion.current
 
     AnimatedVisibility(
@@ -47,53 +54,59 @@ fun QueueScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
-                    .testTag("playback-queue")
                     .align(Alignment.BottomCenter),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 color = Color(0xFF141414)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding()
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Cola de reproducción",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = Color.White)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    if (state.queue.isEmpty()) {
-                        Text("La cola está vacía.", color = Color.White)
-                    } else {
-                        InlineQueue(
-                            queue = state.queue,
-                            currentIndex = state.currentIndex,
-                            autoplayEnabled = false,
-                            controlsLocked = !state.isConnected || !state.canEditQueue,
-                            onJumpTo = playbackViewModel::seekToIndex,
-                            onRemove = playbackViewModel::removeFromQueue,
-                            onMove = playbackViewModel::moveQueueItem,
-                            onClear = playbackViewModel::clearUserQueue,
-                            modifier = Modifier.weight(1f),
-                            showHeader = false,
-                            groupByTier = false, // Display the actual Media3 playback order.
-                        )
-                    }
-                }
+                QueuePanelContent(playbackViewModel, onDismiss)
             }
+        }
+    }
+}
+
+
+@Composable
+private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: () -> Unit, embedded: Boolean = false) {
+    val state by playbackViewModel.state.collectAsState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize().testTag("playback-queue")
+            .then(if (embedded) Modifier else Modifier.navigationBarsPadding())
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Cola de reproducción",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = Color.White)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (state.queue.isEmpty()) {
+            Text("La cola está vacía.", color = Color.White)
+        } else {
+            InlineQueue(
+                queue = state.queue,
+                currentIndex = state.currentIndex,
+                autoplayEnabled = false,
+                controlsLocked = !state.isConnected || !state.canEditQueue,
+                onJumpTo = playbackViewModel::seekToIndex,
+                onRemove = playbackViewModel::removeFromQueue,
+                onMove = playbackViewModel::moveQueueItem,
+                onClear = playbackViewModel::clearUserQueue,
+                modifier = Modifier.weight(1f),
+                showHeader = false,
+                groupByTier = false, // Display the actual Media3 playback order.
+            )
         }
     }
 }

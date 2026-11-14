@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import androidx.compose.animation.AnimatedContent
@@ -80,6 +81,7 @@ internal fun LandscapePlayerLayout(
     lyricsPane: @Composable () -> Unit,
     queuePane: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    reduceMotion: Boolean = false,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         background(Modifier.fillMaxSize())
@@ -124,7 +126,8 @@ internal fun LandscapePlayerLayout(
                 AnimatedContent(
                     targetState = pane,
                     transitionSpec = {
-                        fadeIn(
+                        if (reduceMotion) androidx.compose.animation.EnterTransition.None togetherWith androidx.compose.animation.ExitTransition.None
+                        else fadeIn(
                             tween(
                                 LANDSCAPE_PANE_FADE_IN_MS,
                                 delayMillis = LANDSCAPE_PANE_FADE_IN_DELAY_MS,

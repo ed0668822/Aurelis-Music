@@ -148,10 +148,12 @@ fun NowPlayingScreen(
 
     var showQuality by rememberSaveable { mutableStateOf(false) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
+    var showInlineQueue by rememberSaveable { mutableStateOf(false) }
     var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
 
+    BackHandler(enabled = isVisible && showInlineQueue) { showInlineQueue = false }
     BackHandler(enabled = isVisible && showLyrics) { showLyrics = false }
 
     val lyricsOffset by SettingsRepository.lyricsOffsetMs.collectAsState()
@@ -161,7 +163,7 @@ fun NowPlayingScreen(
     val reduceAnimation by SettingsRepository.reduceAnimation.collectAsState()
     val hazeState = remember { HazeState() }
     val closePlayer: () -> Unit = { if (panelMotion != null && song != null) panelMotion.close() else onDismiss() }
-    BackHandler(enabled = isVisible && !showLyrics) { closePlayer() }
+    BackHandler(enabled = isVisible && !showLyrics && !showInlineQueue) { closePlayer() }
     LaunchedEffect(isVisible, song?.id, panelMotion) {
         if (isVisible && song != null) panelMotion?.reveal()
     }
@@ -192,7 +194,7 @@ fun NowPlayingScreen(
             // Intercept new touches outside the moving panel; an existing mini-player
             // drag retains its original pointer path until release or cancellation.
             Box(Modifier.fillMaxSize().pointerInput(panelMotion) { detectTapGestures { closePlayer() } })
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .onSizeChanged { if (it.width > 0 && it.height > 0) panelMotion?.laidOut = true }
@@ -204,6 +206,7 @@ fun NowPlayingScreen(
                     .background(MaterialTheme.colorScheme.background)
                     .hazeSource(hazeState),
             ) {
+                val landscape = maxWidth > maxHeight
                 val meshPalette = rememberArtworkColors(s.artworkUri?.let { Uri.parse(it) })
                 if (!reduceBlur) MeshGradientBackground(
                     palette = meshPalette,
@@ -252,7 +255,13 @@ fun NowPlayingScreen(
                                 modifier = Modifier.size(26.dp),
                             )
                         }
-                        IconButton(onClick = onOpenQueue) {
+                        if (landscape) IconButton(onClick = { showInlineQueue = false; showLyrics = !showLyrics }) {
+                            Icon(Icons.AutoMirrored.Rounded.Subject, "Abrir letras")
+                        }
+                        IconButton(onClick = {
+                            if (landscape) { showLyrics = false; showInlineQueue = !showInlineQueue }
+                            else onOpenQueue()
+                        }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
                                 contentDescription = "Abrir cola",
@@ -311,7 +320,7 @@ fun NowPlayingScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { showLyrics = true },
+                            onClick = { showInlineQueue = false; showLyrics = true },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 contentColor = MaterialTheme.colorScheme.onSurface,
@@ -366,36 +375,7 @@ fun NowPlayingScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
-                BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { dock?.reportPanel(it) }
-                    .then(if (showLyrics) Modifier.clearAndSetSemantics { } else Modifier)) {
-                    val portraitArtworkSize = (maxWidth - 48.dp).coerceIn(160.dp, 320.dp)
-                    SideEffect { dock?.attached = isVisible && !reduceAnimation && maxWidth <= maxHeight }
-                    if (maxWidth > maxHeight) {
-                        LandscapePlayerLayout(
-                            pane = PlayerPane.Main, background = {},
-                            artwork = { artwork(it, 320.dp) }, actions = {},
-                            mainPane = {
-                                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                                    .testTag("player-landscape"), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    header()
-                                    controls()
-                                }
-                            }, lyricsPane = {}, queuePane = {},
-                        )
-                    } else {
-                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
-                            .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)
-                            .testTag("player-portrait"), horizontalAlignment = Alignment.CenterHorizontally) {
-                            header()
-                            Spacer(Modifier.height(24.dp))
-                            artwork(Modifier, portraitArtworkSize)
-                            Spacer(Modifier.height(32.dp))
-                            controls()
-                        }
-                    }
-                }
-
-                if (showLyrics) {
+                val lyricsContent: @Composable () -> Unit = {
                     val lyricsState = state.lyrics
                     val loadedLyrics = lyricsState as? LyricsState.Loaded
                     val lines = loadedLyrics?.lines.orEmpty()
@@ -407,7 +387,7 @@ fun NowPlayingScreen(
                         color = MaterialTheme.colorScheme.background,
                         contentColor = MaterialTheme.colorScheme.onBackground,
                     ) {
-                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+                        Column(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -498,6 +478,56 @@ fun NowPlayingScreen(
                         }
                     }
                 }
+
+                BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { dock?.reportPanel(it) }
+                    .then(if (showLyrics && !landscape) Modifier.clearAndSetSemantics { } else Modifier)) {
+                    val portraitArtworkSize = (maxWidth - 48.dp).coerceIn(160.dp, 320.dp)
+                    SideEffect { dock?.attached = isVisible && !reduceAnimation && maxWidth <= maxHeight }
+                    if (maxWidth > maxHeight) {
+                        LandscapePlayerLayout(
+                            pane = when { showLyrics -> PlayerPane.Lyrics; showInlineQueue -> PlayerPane.Queue; else -> PlayerPane.Main },
+                            background = {},
+                            modifier = Modifier.testTag("player-landscape"),
+                            reduceMotion = reduceAnimation,
+                            artwork = { artwork(it, 320.dp) }, actions = {
+                                Column(Modifier.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    header()
+                                    if (showLyrics || showInlineQueue) PlayerControls(
+                                        state.isPlayRequested, state.isLoading, playbackViewModel::togglePlayPause,
+                                        playbackViewModel::next, playbackViewModel::previous,
+                                        enabled = state.isConnected, canNext = state.canNext,
+                                        canPrevious = state.canPrevious, reduceAnimation = reduceAnimation,
+                                        blendChrome = !reduceBlur && LocalView.current.isHardwareAccelerated)
+                                }
+                            },
+                            mainPane = {
+                                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    controls()
+                                }
+                            }, lyricsPane = {
+                                Box(Modifier.fillMaxSize().testTag("landscape-lyrics")) { lyricsContent() }
+                            }, queuePane = {
+                                Box(Modifier.fillMaxSize().testTag("landscape-queue")) {
+                                    QueueScreen(playbackViewModel, true, { showInlineQueue = false }, embedded = true)
+                                }
+                            },
+                        )
+                    } else {
+                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+                            .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)
+                            .testTag("player-portrait"), horizontalAlignment = Alignment.CenterHorizontally) {
+                            header()
+                            Spacer(Modifier.height(24.dp))
+                            artwork(Modifier, portraitArtworkSize)
+                            Spacer(Modifier.height(32.dp))
+                            controls()
+                        }
+                    }
+                }
+
+                if (showLyrics && !landscape) lyricsContent()
+                if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false })
 
                 if (showSongActions) SongActionsDialog(s, userStore,
                     onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false },

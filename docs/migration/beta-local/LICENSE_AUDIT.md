@@ -358,3 +358,15 @@ Adaptación parcial additiveChrome/tinta neutral; GPLv3, autores/avisos en NOTIC
 comentario de procedencia y cabecera Aurelis propia sin sustituir derechos ajenos.
 No se importa ColorDodge ni ninguna otra novedad del delta. Sin dependencias,
 recursos o binarios nuevos; LICENSE intacto.
+
+## B05.3-a — paneles horizontales
+
+BitChord fijo b690dc146009d4815825fa4a20815ef2e4ee8898, solo lectura.
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/LandscapePlayer.kt,
+SHA256 04ccd317d0e37822dbc0fd3b5ea041c36a296c396af20c3e91f7d15774ca013d;
+NowPlayingScreen.kt SHA256
+1d5ceae1f1c045881a49601f3fa535ecd4cf8efe45837fc97990045e3ed9024e.
+Se adapta el patrón de selección de panel; contenido/acciones locales Aurelis
+reutilizados sin copiar archivos completos. GPLv3/atribuciones conservadas en
+NOTICE. Cabeceras Aurelis propias añadidas a archivos tocados sin cabecera;
+no nuevas dependencias, fuentes, recursos, binarios ni cambios de LICENSE.

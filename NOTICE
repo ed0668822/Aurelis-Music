@@ -446,3 +446,13 @@ GPLv3 per upstream LICENSE; existing notices retained. Changes: hardware/reduced
 blur gate, solid theme fallback and disabled transport tint. Applied only to skip
 icons; central Material button preserved. ColorDodge and the full player chrome
 are not imported. Exact source hash and limits: B05_2B_CHROME.md.
+
+B05.3-a — horizontal lyric/queue panes
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/
+LandscapePlayer.kt and NowPlayingScreen.kt (Main/Lyrics/Queue pane selection).
+Original BitChord contributors, GPLv3 per upstream LICENSE; notices retained.
+Aurelis connects the existing layout slots to its current lyric content and
+shared queue content, with the same controller/capability checks, transport and
+Back actions. Reduced motion skips pane fades. No remote/video APIs or second
+player are imported; source hashes and limits: docs/migration/beta-local/B05_3A_SIDE_PANES.md.
