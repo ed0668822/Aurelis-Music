@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "repo": "ed0668822/Aurelis-Music",
+  "workflow": "b06-unified-pipeline.yml",
+  "anchor_run_number": 101,
+  "base_major": 1,
+  "base_minor": 9,
+  "successes_per_minor": 150,
+  "version_code_offset": 10000,
+  "anchor_visible_patch": 101
+}

@@ -2,18 +2,15 @@
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,13 +18,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
@@ -65,23 +62,21 @@ fun SearchField(
                     Modifier.fillMaxHeight()
                 } else {
                     Modifier
-                        .height(46.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(11.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
                 },
             )
-            .padding(start = 8.dp, end = 12.dp),
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            Icons.Rounded.Search,
-            contentDescription = stringResource(R.string.search),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .clickable(enabled = query.isNotBlank(), onClick = submit)
-                .padding(6.dp),
-        )
+        IconButton(onClick = submit, enabled = query.isNotBlank(), modifier = Modifier.size(48.dp)) {
+            Icon(
+                Icons.Rounded.Search,
+                contentDescription = stringResource(R.string.search),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
         Spacer(Modifier.width(4.dp))
         Box(Modifier.weight(1f)) {
             if (query.isEmpty()) {
@@ -98,7 +93,7 @@ fun SearchField(
                 onValueChange = onQueryChange,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -109,16 +104,13 @@ fun SearchField(
             )
         }
         if (query.isNotEmpty()) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        onQueryChange("")
-                        focusRequester.requestFocus()
-                        keyboardController?.show()
-                    },
-                contentAlignment = Alignment.Center,
+            IconButton(
+                modifier = Modifier.size(48.dp),
+                onClick = {
+                    onQueryChange("")
+                    focusRequester.requestFocus()
+                    keyboardController?.show()
+                },
             ) {
                 Icon(
                     Icons.Rounded.Close,

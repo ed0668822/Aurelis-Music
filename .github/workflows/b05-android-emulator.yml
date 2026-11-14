@@ -1,0 +1,245 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B05: Android runtime smoke plus real generated-WAV playback instrumentation.
+# Physical audio output, native DSP, and gapless remain outside this gate.
+name: "B05 | Android Emulator Smoke"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aurelis-b05-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  emulator-smoke:
+    name: "B05 | Android 15 install and launch"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Prepare diagnostic folder
+        run: mkdir -p ci-b05
+
+      - name: Set up Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Locate Android platform-tools for emulator runtime
+        id: sdk
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          # ubuntu-24.04 does not guarantee adb on PATH before emulator setup.
+          if [ ! -x "$SDK_DIR/platform-tools/adb" ]; then
+            "$SDKMANAGER" --install "platform-tools" > ci-b05/sdk-install.log 2>&1
+          fi
+          test -x "$SDK_DIR/platform-tools/adb"
+          "$SDK_DIR/platform-tools/adb" version > ci-b05/adb-version.txt
+          echo "$SDK_DIR/platform-tools" >> "$GITHUB_PATH"
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          echo "Runtime tools available; source APKs built once by B01" >> ci-b05/sdk-install.log
+
+      - name: Download Debug and instrumentation APKs from B01
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: b01-shared-apks-${{ github.run_number }}
+          path: ci-f3-handoff/
+
+      - name: Restore APKs from identical commit, run, attempt and SHA-256
+        id: build
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/ci14_handoff.py restore --variant all
+          echo "Verified immutable B01 Debug APK" > ci-b05/build.log
+          echo "Verified immutable B01 instrumentation APK" > ci-b05/p3-androidtest-build.log
+
+      - name: Confirm P3 instrumentation APK without rebuilding
+        id: p3_build
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/ci14_handoff.py verify
+          test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+
+      - name: Validate isolated Media3 test result parser
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b05_case_results.py' -v
+
+      - name: Enable KVM when available
+        if: ${{ steps.build.outcome == 'success' }}
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            echo "KVM is available."
+          else
+            echo "::warning::KVM missing. Emulator may be slow or unable to boot."
+          fi
+
+      # Android 15 Google APIs x86_64 may translate ARM64 app code.
+      # Actual installation and launch determine compatibility; do not assume it.
+      - name: Boot Android 15 and exercise real app launch
+        id: emulator
+        if: ${{ steps.build.outcome == 'success' && steps.p3_build.outcome == 'success' }}
+        continue-on-error: true
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          cores: 2
+          ram-size: 4096M
+          heap-size: 512M
+          emulator-boot-timeout: 900
+          # Do not disable audio: P3 tests the real Media3 sink on Android.
+          emulator-options: "-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none"
+          disable-animations: true
+          script: bash .github/scripts/b05-emulator-smoke.sh
+
+      - name: Generate B05 diagnostic report
+        id: report
+        if: always()
+        env:
+          SDK_OUTCOME: ${{ steps.sdk.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          EMULATOR_OUTCOME: ${{ steps.emulator.outcome }}
+          P3_BUILD_OUTCOME: ${{ steps.p3_build.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          out = Path("ci-b05")
+          out.mkdir(exist_ok=True)
+          def read(name):
+              p = out / name
+              return p.read_text(errors="replace").strip() if p.exists() else ""
+          statuses = {x: os.environ.get(x.upper() + "_OUTCOME", "not_started") for x in ("sdk", "build", "p3_build", "emulator")}
+          checks = {
+              "android_api_35": read("device-api.txt") == "35",
+              "arm64_only_apk": read("apk-abi.txt") == "arm64-v8a only",
+              "apk_installed": "Success" in read("install.log") and "package:" in read("package-path.txt"),
+              "launcher_started": "Status: ok" in read("start.log"),
+              "app_process_survived_15s": bool(read("process.txt")),
+              "emulator_script_completed": bool(read("smoke-pass.txt")),
+              "p3_local_wav_instrumentation_passed": bool(read("p3-local-wav-pass.txt")),
+              "p3_all_seven_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
+              "p3_queue_transitions_instrumentation_passed": bool(read("p3-queue-transitions-pass.txt")),
+              "p3_auto_repeat_instrumentation_passed": bool(read("p3-auto-repeat-pass.txt")),
+              "p3_error_recovery_instrumentation_passed": bool(read("p3-error-recovery-pass.txt")),
+              "p3_activity_recreation_instrumentation_passed": bool(read("p3-activity-recreation-pass.txt")),
+              "p3_repeat_all_instrumentation_passed": bool(read("p3-repeat-all-pass.txt")),
+              "p3_continuous_playback_instrumentation_passed": bool(read("p3-continuous-playback-pass.txt")),
+          }
+          result = {
+              "schema_version": 1,
+              "commit": os.environ.get("GITHUB_SHA"),
+              "os": "Android 15 / API 35",
+              "emulator_image": "google_apis x86_64",
+              "app_package": "com.music.aurelis",
+              "app_apk_abi": "arm64-v8a",
+              "device_abis": read("device-abis.txt"),
+              "native_bridge": read("native-bridge.txt"),
+              "apk_abi_detected": read("apk-abi.txt"),
+              "steps": statuses,
+              "checks": checks,
+              "pass": all(x == "success" for x in statuses.values()) and all(checks.values()),
+              "coverage": "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION",
+              "p3_test": {
+                  "passed": bool(read("p3-instrumentation-pass.txt")),
+                  "scope": "AurelisPlaybackService / Media3 local PCM WAV",
+                  "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                  "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
+                  "test_count": len(json.loads(read("p3-case-results.json") or "{}").get("tests", {})),
+              "per_case_evidence": json.loads(read("p3-case-results.json") or "{}"),
+                  "session_resilience_test_class": "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest",
+                  "activity_recreation_passed": bool(read("p3-activity-recreation-pass.txt")),
+                  "repeat_all_passed": bool(read("p3-repeat-all-pass.txt")),
+                  "continuous_playback_passed": bool(read("p3-continuous-playback-pass.txt")),
+                  "error_recovery_test_class": "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest",
+                  "error_recovery_passed": bool(read("p3-error-recovery-pass.txt")),
+                  "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
+                  "auto_repeat_passed": bool(read("p3-auto-repeat-pass.txt")),
+                  "queue_transitions_passed": bool(read("p3-queue-transitions-pass.txt")),
+                  "limitations": "Emulator audio is not evidence of audible physical-device output",
+              },
+              "not_tested": ["audible physical-device output", "sample-exact gapless", "crossfade", "physical audio routes", "full UI", "native DSP correctness"],
+          }
+          (out / "results.json").write_text(json.dumps(result, indent=2) + "\n")
+          lines = [
+              "# B05 — Android emulator smoke test",
+              f"- Result: **{'PASS' if result['pass'] else 'FAIL / NOT EXECUTED'}**",
+              f"- Commit: `{result['commit']}`",
+              "- Emulator: Android 15 API 35; Google APIs x86_64",
+              "- Application APK: ARM64-only; runtime compatibility is determined by installation and launch",
+              f"- Device ABI list: `{result['device_abis'] or 'not_available'}`",
+              "",
+              "| Check | Result |",
+              "|---|---|",
+          ]
+          for key, state in checks.items():
+              lines.append(f"| {key.replace('_', ' ')} | {'PASS' if state else 'FAIL / unavailable'} |")
+          cases = result["p3_test"]["per_case_evidence"].get("tests", {})
+          lines += ["", "## Individual Media3 test results", "| Case | Result |", "|---|---|"]
+          for slug, case in cases.items():
+              lines.append(f"| {slug} | {'PASS' if case.get('passed') else 'FAIL / incomplete'} |")
+          lines += ["", "- Detailed evidence: installation, launch, process, activity and AndroidRuntime log.",
+                    "- P3: Seven Android cases verify WAV, queue, repeat modes, error recovery, lifecycle recreation and 12-second continuous decode through real Media3.",
+                    "- Physical audio output, gapless, crossfade, routes and native DSP remain unverified.",
+                    "- Emulator setup failure is reported separately from app failure."]
+          summary = "\n".join(lines) + "\n"
+          (out / "summary.md").write_text(summary)
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as fp:
+              fp.write(summary)
+          PY
+
+      - name: Upload B05 runtime and diagnostics
+        id: artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b05-android-emulator-${{ github.run_number }}
+          path: ci-b05/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Enforce B05 smoke results
+        if: always()
+        env:
+          REPORT_OUTCOME: ${{ steps.report.outcome }}
+          ARTIFACTS_OUTCOME: ${{ steps.artifacts.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path("ci-b05/results.json")
+          if not path.is_file():
+              raise SystemExit("B05 FAIL: missing report; inspect workflow setup steps")
+          data = json.loads(path.read_text())
+          if not data.get("pass") or os.environ.get("REPORT_OUTCOME") != "success" or os.environ.get("ARTIFACTS_OUTCOME") != "success":
+              failed = [k for k,v in data["checks"].items() if not v]
+              raise SystemExit("B05 FAIL: " + ", ".join(failed or ["step_status_or_upload"]) + "; see B05 artifacts")
+          print("B05 PASS: Android emulator install and startup smoke succeeded")
+          PY

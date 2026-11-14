@@ -1,0 +1,163 @@
+# Manual-only: Release publication is not part of unprotected B01-B06.
+name: "Aurelis | Protected Official Release"
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Confirm official Release publication"
+        required: true
+        type: choice
+        options: ["NO", "PUBLICAR"]
+        default: "NO"
+      upload_to_virustotal:
+        description: "Authorize sharing the APK with VirusTotal"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: aurelis-protected-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  protected-release:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirmation == 'PUBLICAR' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment:
+      name: release
+    permissions:
+      contents: read
+      actions: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout the approved SHA
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate previous green B01-B06 and protected environment
+        id: green_ci
+        env:
+          RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_PROTECTION_CONFIRMED: ${{ vars.RELEASE_PROTECTION_CONFIRMED }}
+          RELEASE_SIGNER_SHA256: ${{ vars.RELEASE_SIGNER_SHA256 }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/f1_protected_release.py
+          python3 -m unittest discover -s .github/scripts -p 'test_f1_protected_release.py' -v
+          python3 .github/scripts/f1_protected_release.py preflight
+
+      - name: Set up Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Download exact same-SHA successful B01-B06 report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          run-id: ${{ steps.green_ci.outputs.run_id }}
+          name: Aurelis-Informes-B01-B06-${{ steps.green_ci.outputs.run_number }}
+          path: ci-prev-green/
+          github-token: ${{ github.token }}
+
+      - name: Pin official Release to same versionName/code as green source CI
+        env:
+          GREEN_SOURCE_RUN_ID: ${{ steps.green_ci.outputs.run_id }}
+          GREEN_SOURCE_RUN_NUMBER: ${{ steps.green_ci.outputs.run_number }}
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_v1_release_source.py' -v
+          python3 .github/scripts/v1_release_source.py pin --env-file "$GITHUB_ENV"
+
+      - name: Install ARM64 Android SDK and toolchain
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" \
+            "ndk;26.1.10909125" "cmake;3.22.1"
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
+
+      - name: Prepare source inventory
+        run: |
+          mkdir -p ci-artifacts
+          python3 .github/scripts/android_ci.py prepare
+
+      - name: Import signing keystore from protected environment
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          python3 .github/scripts/android_ci.py signing
+
+      - name: Build Debug and signed Release once
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug :app:assembleRelease \
+            --init-script .github/scripts/task-inputs.gradle \
+            --build-cache --console=plain --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-artifacts/build.log
+
+      - name: Verify signer SHA256, APK contents, ZIP16 and ARM64
+        env:
+          RELEASE_SIGNER_SHA256: ${{ vars.RELEASE_SIGNER_SHA256 }}
+          GREEN_SOURCE_RUN_ID: ${{ steps.green_ci.outputs.run_id }}
+          GREEN_SOURCE_RUN_NUMBER: ${{ steps.green_ci.outputs.run_number }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/android_ci.py verify
+          python3 .github/scripts/f1_protected_release.py stage
+          python3 .github/scripts/v1_release_source.py check
+
+      - name: Optional explicitly authorized public VirusTotal submission
+        if: ${{ inputs.upload_to_virustotal == true }}
+        env:
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          VIRUSTOTAL_ALLOW_UPLOAD: "true"
+        run: |
+          set -euo pipefail
+          test -n "$VIRUSTOTAL_API_KEY" || { echo "VirusTotal API key unavailable"; exit 1; }
+          python3 .github/scripts/virustotal_scan.py
+          python3 .github/scripts/f1_protected_release.py validate-vt
+
+      - name: Publish approved ARM64 Release artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Aurelis-Release-ARM64-Protected-${{ github.run_number }}
+          path: ci-protected-release/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove temporary signing keystore
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/aurelis-ci-release.jks"

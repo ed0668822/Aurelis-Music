@@ -1,0 +1,416 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B04: separate artifact verification using the repository's existing audited checks.
+name: "B04 | Verify APKs"
+
+on:
+  workflow_call:
+    secrets:
+      KEYSTORE_BASE64:
+        required: false
+      KEYSTORE_PASSWORD:
+        required: false
+      KEY_ALIAS:
+        required: false
+      KEY_PASSWORD:
+        required: false
+      LISTEN_TOGETHER_SERVER:
+        required: false
+      VIRUSTOTAL_API_KEY:
+        required: false
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aurelis-b04-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  verify-apks:
+    name: "B04 | Build, signature, identity, ABI, contents"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Preflight APK audit syntax and fixtures
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/apk_audit.py
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_apk_audit.py' -v
+
+      - name: Prepare evidence folder and source inventory
+        id: prepare
+        run: |
+          set -euo pipefail
+          mkdir -p ci-artifacts
+          python3 .github/scripts/android_ci.py prepare
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Validate wrapper and configure Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Install matching Android SDK tools
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install \
+            "platforms;android-36" \
+            "build-tools;35.0.0" \
+            "ndk;26.1.10909125" \
+            "cmake;3.22.1" > ci-artifacts/sdk-install.log 2>&1 || {
+              cat ci-artifacts/sdk-install.log
+              exit 1
+            }
+          test -x "$SDK_DIR/build-tools/35.0.0/apksigner"
+          test -x "$SDK_DIR/build-tools/35.0.0/aapt2"
+          test -x "$SDK_DIR/build-tools/35.0.0/zipalign"
+          test -f "$SDK_DIR/platforms/android-36/source.properties"
+          test -f "$SDK_DIR/ndk/26.1.10909125/source.properties"
+          test -d "$SDK_DIR/cmake/3.22.1"
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
+
+      - name: Prepare signing mode without exposing private keys
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: python3 .github/scripts/android_ci.py signing
+
+      - name: Download B01 same-run APK handoff
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: b01-shared-apks-${{ github.run_number }}
+          path: ci-f3-handoff/
+
+      - name: Restore SHA-256-verified B01 Debug APK
+        run: python3 .github/scripts/ci14_handoff.py restore --variant debug
+
+      - name: Download B01 source compilation log
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: b01-report-${{ github.run_number }}
+          path: ci-b01-from-producer/
+
+      - name: Reuse version from B01 of same source SHA and CI run
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/v1_versioning.py adopt \
+            --manifest ci-b01-from-producer/version-metadata.json \
+            --env-file "$GITHUB_ENV"
+
+      - name: Download B01 declared class outputs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: b01-compiler-outputs-${{ github.run_number }}
+          path: ci-f3-classes/
+
+      - name: Restore verified Debug compiler classes for APK/source auditing
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/ci14_compiler_outputs.py restore
+          python3 .github/scripts/ci14_compiler_outputs.py verify
+
+      - name: Build verified Release APK without recompiling Debug
+        id: build
+        continue-on-error: true
+        timeout-minutes: 50
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          set -euo pipefail
+          test -s ci-b01-from-producer/gradle-build.log
+          cat ci-b01-from-producer/gradle-build.log > ci-artifacts/build.log
+          printf '\n===== F3 RELEASE COMPILE =====\n' >> ci-artifacts/build.log
+          ./gradlew :app:assembleRelease \
+            --init-script .github/scripts/task-inputs.gradle \
+            --continue --build-cache --console=plain --stacktrace \
+            --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee -a ci-artifacts/build.log
+
+      - name: Attest native ARM64 object bytes without inventing linker proof
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_f4_native_objects.py' -v
+          python3 .github/scripts/f4_native_objects.py --root . --out ci-artifacts/native-object-evidence.json --sha "$GITHUB_SHA"
+
+      - name: Verify signatures, APK identity, ZIP alignment, ABI and required contents
+        id: verify
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        run: python3 .github/scripts/android_ci.py verify
+
+      - name: Assert Debug and signed Release versions equal B01 source
+        if: ${{ !cancelled() && steps.verify.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/v1_release_source.py check
+
+      - name: Redact logs and publish verification summary
+        id: summary
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LISTEN_TOGETHER_SERVER: ${{ vars.LISTEN_TOGETHER_SERVER || secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, ".github/scripts")
+          from android_ci import redact
+
+          out = Path("ci-artifacts")
+          out.mkdir(exist_ok=True)
+          for name in ("build.log", "sdk-install.log"):
+              path = out / name
+              if path.is_file():
+                  path.write_text(redact(path.read_text(errors="replace")), encoding="utf-8")
+          verification = out / "apk-verification.json"
+          data = json.loads(verification.read_text()) if verification.exists() else {}
+          signing = out / "signing.json"
+          signing_data = json.loads(signing.read_text()) if signing.exists() else {}
+          records = data.get("apks", [])
+          lines = [
+              "# B04 — APK verification",
+              f"- Source commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
+              f"- Build result: **{os.environ.get('BUILD_OUTCOME', 'unknown')}**",
+              f"- Verification step: **{os.environ.get('VERIFY_OUTCOME', 'unknown')}**",
+              f"- APK audit result: **{data.get('status', 'not_executed')}**",
+              f"- Signing mode: **{signing_data.get('mode', 'not_recorded')}**",
+              f"- Verified APK count: **{len(records)}**",
+              "",
+              "| Variant | Package | Version | Size (bytes) | Signature | 16KB alignment |",
+              "|---|---|---|---:|---|---|",
+          ]
+          for record in records:
+              lines.append(
+                  f"| {record['variant']} | {record['package']} | {record['version_name']} | "
+                  f"{record['bytes']} | {'pass' if record['signature_verified'] else 'fail'} | "
+                  f"{'pass' if record['zip_16kb_alignment_verified'] else 'fail'} |"
+              )
+          if data.get("error"):
+              lines += ["", f"- Verification error: {redact(str(data['error']))}"]
+          lines += [
+              "",
+              "- Verifies Android APK artifacts without launching the app.",
+              "- A debug-fallback signature is valid for testing, not a production release-signing approval.",
+              "- APK content auditing has coverage limits; B05 handles runtime tests separately.",
+              "- Detailed JSON/TSV, build logs and SHA256SUMS (on success) are downloadable as artifacts.",
+          ]
+          summary = "\n".join(lines) + "\n"
+          (out / "b04-summary.md").write_text(summary, encoding="utf-8")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as file:
+              file.write(summary)
+          PY
+
+      - name: Remove private temporary keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/aurelis-ci-release.jks"
+
+      - name: Stage individually verified Debug and signed Release APKs
+        id: stage_apks
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.verify.outcome == 'success' && steps.summary.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import shutil
+
+          source = Path("ci-approved-apks")
+          evidence = Path("ci-artifacts")
+          manifest = json.loads((source / "apk-manifest.json").read_text())
+          verification = json.loads((evidence / "apk-verification.json").read_text())
+          signing = json.loads((evidence / "signing.json").read_text())
+          if verification.get("status") != "success":
+              raise SystemExit("APK content/signature verification did not pass")
+          if signing.get("mode") != "configured_release":
+              raise SystemExit("No configured release certificate: do not publish an official Release APK")
+          if len(manifest) != 2 or {r["variant"] for r in manifest} != {"debug", "release"}:
+              raise SystemExit("Exactly one verified APK per variant is required")
+          for record in manifest:
+              variant = record["variant"]
+              if not all(record.get(k) is True for k in
+                         ("signature_verified", "zip_verified",
+                          "zip_16kb_alignment_verified", "native_16kb_alignment_verified")):
+                  raise SystemExit("APK failed mandatory security/integrity checks: " + variant)
+              if record.get("abis") != ["arm64-v8a"] or record.get("package") != "com.music.aurelis":
+                  raise SystemExit("Unexpected APK ABI or package: " + variant)
+              expected_cert = signing.get("configured_certificate_sha256")
+              if variant == "release" and expected_cert not in record.get("signer_certificate_sha256", []):
+                  raise SystemExit("Release signing certificate does not match configured keystore")
+              name = record["file"]
+              file = source / name
+              if file.name != name or not file.is_file():
+                  raise SystemExit("Missing verified APK file: " + name)
+              digest = hashlib.sha256(file.read_bytes()).hexdigest()
+              if digest != record["sha256"] or file.stat().st_size != record["bytes"]:
+                  raise SystemExit("APK digest/size mismatch: " + variant)
+              folder = Path("ci-b04-delivery") / variant
+              folder.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(file, folder / name)
+          shutil.copy2(source / "apk-manifest.json", evidence / "apk-manifest.json")
+          shutil.copy2(source / "SHA256SUMS.txt", evidence / "SHA256SUMS.txt")
+          print("Both ARM64 APKs independently staged; Release certificate verified")
+          PY
+
+      - name: Verify evidence integrity and source classification policy
+        id: evidence
+        if: always()
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_b04_gradle_diagnostics.py' -v \
+            2>&1 | tee ci-artifacts/gradle-diagnostics-tests.log
+          python3 .github/scripts/b04_gradle_diagnostics.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
+            2>&1 | tee ci-artifacts/gradle-diagnostics-collector.log
+          python3 -m unittest discover -s .github/scripts -p 'test_verify_evidence.py' -v \
+            2>&1 | tee ci-artifacts/evidence-tests.log
+          python3 .github/scripts/verify_evidence.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
+            2>&1 | tee ci-artifacts/evidence-verification.log
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_p2_inventory.py' -v \
+            2>&1 | tee ci-artifacts/p2-inventory-tests.log
+          python3 .github/scripts/p2_inventory.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
+            2>&1 | tee ci-artifacts/p2-inventory-verification.log
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_p2_compiler_evidence.py' -v \
+            2>&1 | tee ci-artifacts/p2-compiler-tests.log
+          python3 .github/scripts/p2_compiler_evidence.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
+            2>&1 | tee ci-artifacts/p2-compiler-verification.log
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_p2_apk_trace.py' -v \
+            2>&1 | tee ci-artifacts/p2-apk-trace-tests.log
+          python3 .github/scripts/p2_apk_trace.py --root . --out ci-artifacts --sha "$GITHUB_SHA" \
+            2>&1 | tee ci-artifacts/p2-apk-trace-verification.log
+
+      - name: Analyze verified Release APK with VirusTotal (optional advisory)
+        id: virustotal
+        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          # B04 CI is always hash-only. A repository variable cannot enable public uploads.
+          # Future manual uploads require a separate approved workflow.
+          VIRUSTOTAL_ALLOW_UPLOAD: "false"
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_virustotal_scan.py' -v
+          python3 .github/scripts/virustotal_scan.py
+
+      - name: Upload B04 diagnostic reports
+        id: report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b04-verification-report-${{ github.run_number }}
+          path: ci-artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # Authorized testing artifact on the migration branch, not an official Release.
+      # Use only the byte-for-byte staged APK whose configured signer was verified.
+      - name: Publish signed Release candidate for testing
+        id: release_candidate_apk
+        if: ${{ !cancelled() && github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Aurelis-Release-ARM64-${{ github.run_number }}
+          path: ci-b04-delivery/release/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Publish Debug APK separately
+        id: debug_apk
+        if: ${{ !cancelled() && steps.stage_apks.outcome == 'success' && steps.evidence.outcome == 'success' && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Aurelis-Pruebas-ARM64-${{ github.run_number }}
+          path: ci-b04-delivery/debug/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Enforce B04 verified artifact gate
+        if: always()
+        env:
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          SIGNING_OUTCOME: ${{ steps.signing.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          SUMMARY_OUTCOME: ${{ steps.summary.outcome }}
+          REPORT_OUTCOME: ${{ steps.report.outcome }}
+          STAGE_OUTCOME: ${{ steps.stage_apks.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
+          DEBUG_APK_OUTCOME: ${{ steps.debug_apk.outcome }}
+          RELEASE_CANDIDATE_EXPECTED: ${{ github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          RELEASE_CANDIDATE_OUTCOME: ${{ steps.release_candidate_apk.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          outcomes = {key: os.environ.get(key + "_OUTCOME", "missing")
+                      for key in ("PREPARE", "SIGNING", "BUILD", "VERIFY", "SUMMARY", "STAGE", "EVIDENCE", "REPORT", "DEBUG_APK")}
+          bad = [key for key, value in outcomes.items() if value != "success"]
+          candidate_expected = os.environ.get("RELEASE_CANDIDATE_EXPECTED")
+          candidate_outcome = os.environ.get("RELEASE_CANDIDATE_OUTCOME", "missing")
+          if candidate_expected not in ("true", "false"):
+              bad.append("release_candidate_policy_missing_or_invalid")
+          elif candidate_outcome != ("success" if candidate_expected == "true" else "skipped"):
+              bad.append("release_candidate_upload_not_as_expected")
+          path = Path("ci-artifacts/apk-verification.json")
+          manifest = Path("ci-approved-apks/apk-manifest.json")
+          checksums = Path("ci-approved-apks/SHA256SUMS.txt")
+          if not path.is_file() or not manifest.is_file() or not checksums.is_file():
+              bad.append("verified_artifact_evidence_missing")
+          else:
+              verification = json.loads(path.read_text())
+              records = json.loads(manifest.read_text())
+              if verification.get("status") != "success":
+                  bad.append("verification_report_not_success")
+              if len(records) != 2 or {r.get("variant") for r in records} != {"debug", "release"}:
+                  bad.append("debug_release_not_verified")
+          evidence_file = Path("ci-artifacts/source-evidence.json")
+          if not evidence_file.is_file() or json.loads(evidence_file.read_text()).get("status") != "PASS_VERIFIED_GATES":
+              bad.append("evidence_reconciliation_not_passed")
+          if bad:
+              raise SystemExit("B04 failed: " + ", ".join(sorted(set(bad))))
+          for variant in ("debug", "release"):
+              files = list((Path("ci-b04-delivery") / variant).glob("*.apk"))
+              if len(files) != 1:
+                  bad.append("expected_one_" + variant + "_apk")
+          if bad:
+              raise SystemExit("B04 failed: " + ", ".join(sorted(set(bad))))
+          print("B04 passed: Debug and Release APKs verified; signed Release testing artifact expected=" + candidate_expected + ". Official Release publication remains locked behind its protected workflow.")
+          PY

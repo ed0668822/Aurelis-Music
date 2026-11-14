@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.animation.core.Spring
@@ -6,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import com.music.aurelis.ui.player.playerAdditiveChrome
+import com.music.aurelis.ui.player.playerControlTint
 import androidx.compose.ui.unit.dp
 
 /**
@@ -43,6 +47,11 @@ fun PlayerControls(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    canNext: Boolean = true,
+    canPrevious: Boolean = true,
+    reduceAnimation: Boolean = false,
+    blendChrome: Boolean = false,
 ) {
     Row(
         modifier = modifier,
@@ -51,48 +60,46 @@ fun PlayerControls(
         // Anterior
         IconButton(
             onClick = onPrevious,
+            enabled = enabled && canPrevious,
             modifier = Modifier.size(56.dp),
         ) {
             Icon(
                 imageVector = Icons.Rounded.SkipPrevious,
                 contentDescription = "Anterior",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(36.dp),
+                tint = playerControlTint(MaterialTheme.colorScheme.onSurface, enabled && canPrevious, blendChrome),
+                modifier = Modifier.size(36.dp).playerAdditiveChrome(blendChrome),
             )
         }
 
         Spacer(modifier = Modifier.width(24.dp))
 
-        // Play / Pausa / Loading con spring de pulsación
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(72.dp),
-                color = MaterialTheme.colorScheme.primary,
-                strokeWidth = 3.dp,
-            )
-        } else {
-            val interaction = remember { MutableInteractionSource() }
-            val pressed by interaction.collectIsPressedAsState()
-            val scale by animateFloatAsState(
-                targetValue = if (pressed) 0.92f else 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium,
-                ),
-                label = "playButtonScale",
-            )
+        // Buffering does not disable pause.
+        val interaction = remember { MutableInteractionSource() }
+        val pressed by interaction.collectIsPressedAsState()
+        val scale by animateFloatAsState(
+            targetValue = if (pressed) 0.92f else 1f,
+            animationSpec = if (reduceAnimation) androidx.compose.animation.core.snap() else spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+            label = "playButtonScale",
+        )
 
-            FilledIconButton(
-                onClick = onPlayPause,
-                modifier = Modifier
-                    .size(72.dp)
-                    .scale(scale),
-                interactionSource = interaction,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
+        FilledIconButton(
+            onClick = onPlayPause,
+            enabled = enabled,
+            modifier = Modifier
+                .size(72.dp)
+                .scale(scale),
+            interactionSource = interaction,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                if (isLoading) CircularProgressIndicator(Modifier.size(56.dp),
+                    color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                 Icon(
                     imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = if (isPlaying) "Pausar" else "Reproducir",
@@ -106,13 +113,14 @@ fun PlayerControls(
         // Siguiente
         IconButton(
             onClick = onNext,
+            enabled = enabled && canNext,
             modifier = Modifier.size(56.dp),
         ) {
             Icon(
                 imageVector = Icons.Rounded.SkipNext,
                 contentDescription = "Siguiente",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(36.dp),
+                tint = playerControlTint(MaterialTheme.colorScheme.onSurface, enabled && canNext, blendChrome),
+                modifier = Modifier.size(36.dp).playerAdditiveChrome(blendChrome),
             )
         }
     }

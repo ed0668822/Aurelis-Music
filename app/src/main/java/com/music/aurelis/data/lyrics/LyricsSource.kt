@@ -83,7 +83,7 @@ enum class LyricsSource(
     ),
     LRCLIB(
         label = "LRCLIB",
-        detail = "Whole lines only, and always up",
+        detail = "Letras comunitarias sincronizadas o en texto; búsqueda manual",
         wordSynced = false,
     ),
     MUSIXMATCH(
@@ -96,10 +96,12 @@ enum class LyricsSource(
         detail = "Plain text fallback, massive web catalogue",
         wordSynced = false,
     ),
+    LOCAL_FILE("Archivo local", "LRC importado por el usuario", false, hidden = true),
+    EMBEDDED("Incrustadas", "Etiquetas del archivo local", false, hidden = true),
     ;
 
     companion object {
-        val offered: List<LyricsSource> = entries.filterNot { it.hidden }
+        val offered: List<LyricsSource> get() = LyricsProviderRegistry.availableSources
 
         fun ordered(saved: List<LyricsSource>): List<LyricsSource> {
             val result = saved.filter { it in offered }.distinct().toMutableList()

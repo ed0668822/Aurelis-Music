@@ -1,0 +1,101 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+name: "B02 | Android Lint"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aurelis-b02-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  android-lint:
+    name: "B02 | Lint + isolated diagnostics"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Create diagnostics directory
+        run: mkdir -p ci-b02
+
+      - name: Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
+        with:
+          validate-wrappers: true
+          cache-read-only: true
+
+      - name: Cache fixed-version Android SDK components
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/platforms/android-36
+            ${{ env.ANDROID_HOME }}/build-tools/35.0.0
+            ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+            ${{ env.ANDROID_HOME }}/cmake/3.22.1
+          key: android-sdk-v1-${{ runner.os }}-api36-bt35-ndk26.1.10909125-cmake3.22.1
+
+      - name: Android SDK dependencies
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" "ndk;26.1.10909125" "cmake;3.22.1" > ci-b02/sdk-install.log 2>&1 || {
+            cat ci-b02/sdk-install.log
+            exit 1
+          }
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          chmod +x gradlew
+
+      - name: Run Android Lint Debug
+        id: lint
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          ./gradlew :app:lintDebug :app:lintRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
+            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b02/lint.log
+
+      - name: Test lint-report summary logic offline
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b02_lint_summary.py' -v
+
+      - name: Summarize Debug and Release lint independently
+        if: always()
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+        run: python3 .github/scripts/b02_lint_summary.py
+
+      - name: Upload B02 Lint report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b02-lint-report-${{ github.run_number }}
+          path: ci-b02/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Enforce lint outcome
+        if: always()
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+        run: |
+          test "$LINT_OUTCOME" = success
+          test -s ci-b02/lint-results-debug.xml
+          test -s ci-b02/lint-results-release.xml

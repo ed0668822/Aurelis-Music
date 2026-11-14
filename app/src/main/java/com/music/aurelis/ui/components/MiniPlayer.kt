@@ -1,38 +1,27 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import com.music.aurelis.ui.player.PlayerDock
+import com.music.aurelis.ui.player.MiniPlayerPull
+import com.music.aurelis.ui.player.playerDockArtwork
 
 @Composable
 fun MiniPlayer(
@@ -42,76 +31,54 @@ fun MiniPlayer(
     onPlayPauseClick: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    artworkUri: String? = null,
+    isLoading: Boolean = false,
+    enabled: Boolean = true,
+    canNext: Boolean = true,
+    onNext: () -> Unit = {},
+    progress: Float = 0f,
+    qualityLabel: String? = null,
+    songId: String = "",
+    dock: PlayerDock? = null,
+    pull: MiniPlayerPull? = null,
+    canPrevious: Boolean = false,
+    onPrevious: () -> Unit = {},
 ) {
-    // FIX: animationSpec no es nullable en animateFloatAsState.
-    // Cuando no se reproduce, no animamos (snap()). Cuando sí, oscilamos.
-    val pulseSpec: AnimationSpec<Float> =
-        if (isPlaying) {
-            infiniteRepeatable(
-                animation = tween(durationMillis = 800),
-                repeatMode = RepeatMode.Reverse,
-            )
-        } else {
-            snap()
-        }
-
-    val pulse by animateFloatAsState(
-        targetValue = if (isPlaying) 1.05f else 1f,
-        animationSpec = pulseSpec,
-        label = "miniPlayerPulse",
-    )
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .padding(horizontal = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 4.dp,
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title.ifEmpty { "Reproduciendo música local" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                )
-                Text(
-                    text = artist.ifEmpty { "Aurelis Music" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
+    val glass = LocalLiquidGlassEnabled.current
+    val shape = RoundedCornerShape(percent = 50)
+    val surface = if (glass) Modifier.liquidGlass(shape,
+        fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh) else Modifier
+    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").miniPlayerGestures(pull, enabled, canNext, canPrevious, onNext, onPrevious, onClick).then(surface),
+        shape = shape, color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (glass) 0.dp else 4.dp, onClick = onClick) {
+        Column {
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 12.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(40.dp).playerDockArtwork(dock, songId, mini = true).clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.MusicNote, null, Modifier.size(24.dp))
+                    AsyncImage(artworkUri, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                }
+                Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                    Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleSmall)
+                    qualityLabel?.let { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelSmall) }
+                    Text(artist, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                }
+                // The full screen exposes previous; keep the compact bar usable at 320dp.
+                IconButton(onClick = onPlayPauseClick, enabled = enabled,
+                    modifier = Modifier.semantics { contentDescription = if (isPlaying) "Pausar" else "Reproducir" }) {
+                    if (isLoading) CircularProgressIndicator(Modifier.size(22.dp))
+                    else Icon(if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        null, modifier = Modifier.size(32.dp))
+                }
+                IconButton(onClick = onNext, enabled = enabled && canNext) {
+                    Icon(Icons.Rounded.SkipNext, "Siguiente", modifier = Modifier.size(25.dp))
+                }
+                IconButton(onClick = onClick) { Icon(Icons.Rounded.ExpandLess, "Abrir reproductor") }
             }
-
-            AnimatedVisibility(
-                visible = isPlaying,
-                enter = fadeIn(animationSpec = tween(200)),
-                exit = fadeOut(animationSpec = tween(200)),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .clip(CircleShape),
-                )
-            }
-
-            IconButton(onClick = onPlayPauseClick) {
-                Text(
-                    text = if (isPlaying) "⏸" else "▶",
-                    modifier = Modifier.scale(pulse),
-                )
-            }
+            LinearProgressIndicator(progress = { progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f },
+                modifier = Modifier.fillMaxWidth().height(2.dp))
         }
     }
 }

@@ -1,0 +1,106 @@
+{
+  "block": "B03.1/B03.2/B03.3",
+  "base": "b8b89102880b0917af9ad2b88395038b23927a01",
+  "tested_parent": "6b4bded2cd53545baea4c207a1bba9121bf209e6",
+  "tested_app_and_notice_sha256": {
+    "NOTICE": "3bfa7d2a05ca368648e6c2439fd71db39c6a8beef8f6c4754b8adedcbaf7e3ee",
+    "app/src/main/java/com/music/aurelis/AurelisApplication.kt": "9562f7a0df48f06f2a4c9f6a438b292661902f8aea7bab33e0b2231d6cb2ff7c",
+    "app/src/main/java/com/music/aurelis/MainActivity.kt": "b68bbad99b34f0d55efad5de05ed7132a91350ed9d67fd7d8032f6b47920a780",
+    "app/src/main/java/com/music/aurelis/ui/AppUi.kt": "7dfb5bebf92d0b14aec296ccccfbe0c2210ebbc85c2fc831069ef5258384737f",
+    "app/src/main/java/com/music/aurelis/ui/components/GlassNavBar.kt": "7240aad05f72f6bccb1e871007a22becb9c072824f3636eb90b2d841258e790d",
+    "app/src/main/java/com/music/aurelis/ui/components/home/HomeCarousels.kt": "15a46f45c6e68731532697049a74a4a0be8fd16bec7dd1fbcdfc3a3328977fda",
+    "app/src/main/java/com/music/aurelis/ui/screens/HomeScreen.kt": "bfb503faf3f3480a27b7f005b9e5374badb20083ac15660054e683e7dce4603c",
+    "app/src/main/res/values/strings.xml": "42f376d88793d0de73b163632761f7b31a4034c345f92ba7a8fffa40fc738f63",
+    "app/src/test/java/com/music/aurelis/ui/HomeShelvesIntegrationTest.kt": "a1fa2f2d076354f579fdb4fc24f82e90ca548b908ead8e520e8ece1179f97169",
+    "app/src/test/java/com/music/aurelis/ui/navigation/GlassNavigationTest.kt": "082e13a94c4708415fdfe1c0dbf5607d93936cb23309c9994f794c42ccca1918",
+    "app/src/test/java/com/music/aurelis/ui/navigation/LocalAppHostTest.kt": "75773ab394a4370362988121fb732f94912e42bce84b9a5fb16809a2e54f6e3d"
+  },
+  "protected_unchanged_sha256": {
+    "docs/migration/beta-local/MASTER_PLAN.md": "38ad02b189fd3fbfedb987bab44c38ceb3d0fa927858b5b59b64a98b08d1e87f",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md": "693f45628d56fd3fa9bc648ba81764a140519afa678cf1214ef3e29d461fc30b",
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "app/build.gradle.kts": "2b6c94109480f2348771fd4730949108d905c4f1b04bf31d2e6b6f5515d1864a",
+    "app/src/main/AndroidManifest.xml": "df3c0b91cf033fb46f03335e26990ce0ecd1c06712fb3345759226b96dfac4cd",
+    ".github/workflows/android.yml": "64a8a50fef82f28f7db8849b3e435224080362f1cd3eac0188df2aac3837f888",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/BackdropEffectScope.kt": "cb2487704ae769285d8353da14fa8ac199db94fced9048aa2f6b9992890d39cb",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/DrawBackdropModifier.kt": "774f17fe54c0a54e961d15e12f772f5139228f4e2187c5c4ed725ea74b858029",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/effects/Lens.kt": "097ed024d43550f30be1b0b973b0d4e5bb823163d3457b86e0dc7af9e12a2e16",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/Shaders.kt": "32fbbce75fc9671e285baced1e7575a89adb24add63d67aac3f20353cc409ecf"
+  },
+  "original_notice_prefix_preserved": true,
+  "build": "BUILD SUCCESSFUL in 5m 6s",
+  "command": "bash gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:testReleaseUnitTest :app:lintDebug :app:lintRelease --no-daemon --max-workers=4",
+  "tests": {
+    "debug": {
+      "tests": 179,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "release": {
+      "tests": 179,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "debug": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 224
+    },
+    "release": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 223
+    }
+  },
+  "apks": {
+    "debug": {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "20b92a46161f8d1a58c0793450be469a561516071b26aca38f2dcba82650271a",
+      "bytes": 121079797,
+      "signature_verified": true,
+      "signer_public_cert_sha256": "59d8d19f093a742472464b61360965a1b107a1da3475a2871651285ca5081280",
+      "zip_integrity": "OK",
+      "legal_assets_identical": 10,
+      "arm64_shared_libraries": 12,
+      "font_matches_pinned_source": true
+    },
+    "release": {
+      "path": "app/build/outputs/apk/release/app-release.apk",
+      "sha256": "ee5e1e0057b8b51825be9ac12cf88babc7e9b65ba74435044aca37892d1186fe",
+      "bytes": 56988760,
+      "signature_verified": true,
+      "signer_public_cert_sha256": "59d8d19f093a742472464b61360965a1b107a1da3475a2871651285ca5081280",
+      "zip_integrity": "OK",
+      "legal_assets_identical": 10,
+      "arm64_shared_libraries": 12,
+      "font_matches_pinned_source": true
+    }
+  },
+  "screenshots": {
+    "docs/migration/beta-local/screenshots/b03/robolectric-home-light.png": "e37815272f3c3cd1b9a6ac478b2c7141bb1304dd0ad9809d8ddc238ff1742a80",
+    "docs/migration/beta-local/screenshots/b03/robolectric-home-dark-large.png": "4bcfb3774cb42bf3aa332a3ecc3acb9e42b36e0ff71016877ef20518b936f110"
+  },
+  "reviews": [
+    "architecture/state/queue/layout/licensing",
+    "full regression/UI snapshots/build/lint/artifacts/main-plan checks; separate pass same agent"
+  ],
+  "limitations": [
+    "No Android device installation/launch/Logcat",
+    "RecordingPlayer does not prove audio decoding",
+    "GPU/fps/visual parity against running BitChord unverified",
+    "Explore and anchored HeldItem integration remain for their original future blocks"
+  ],
+  "ci": "pending this delivery SHA; QA127 was successful for b8b8910 only",
+  "next": "B04 not started; requires authorization; QA02 not started",
+  "implementation_commits": {
+    "B03.1": "e79f32a64cd0c6faf16538ee872132b6db6759e4",
+    "B03.2": "6b4bded2cd53545baea4c207a1bba9121bf209e6",
+    "B03.3": "2e91a09f8c8c4ab621a54ffe4992dd3280ba5eaa"
+  },
+  "code_commit": "2e91a09f8c8c4ab621a54ffe4992dd3280ba5eaa",
+  "pull_request": "https://github.com/ed0668822/Aurelis-Music/pull/1"
+}

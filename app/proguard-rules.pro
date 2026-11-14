@@ -30,7 +30,7 @@
 -keep class org.jsoup.** { *; }
 -keep class okhttp3.** { *; }
 -keep class androidx.media3.** { *; }
--keep class com.microsoft.onnxruntime.** { *; }
+-keep class ai.onnxruntime.** { *; }
 
 # 5b. Coil 3 (usa ServiceLoader y reflexión para ImageLoader)
 -keep class coil3.** { *; }

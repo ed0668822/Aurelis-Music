@@ -2,6 +2,7 @@
 
 package com.music.aurelis.ui.components.backdrop.shadow
 
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.BlurEffect
@@ -80,7 +81,7 @@ internal class InnerShadowNode(
     override fun ContentDrawScope.draw() {
         drawContent()
 
-        if (!isRenderEffectSupported()) return
+        if (!drawContext.canvas.nativeCanvas.isHardwareAccelerated || !isRenderEffectSupported()) return
 
         val shadow = shadow() ?: return
 

@@ -4,6 +4,7 @@ package com.music.aurelis
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,12 +43,33 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.AppUpdateChecker
 import com.music.aurelis.data.AudioPermission
+import com.music.aurelis.data.LocalGenres
+import com.music.aurelis.data.LocalSearchHistory
+import com.music.aurelis.ui.screens.ExploreScreen
+import com.music.aurelis.ui.screens.LocalGenre
+import com.music.aurelis.ui.screens.LocalSearchCategory
+import com.music.aurelis.ui.screens.LocalSearchDestination
+import com.music.aurelis.data.LocalSearch
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import com.music.aurelis.ui.player.PlayerDock
+import com.music.aurelis.ui.player.PlayerSheetMotion
+import com.music.aurelis.ui.player.DockedArtworkOverlay
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.provider.Settings
+import com.music.aurelis.data.LocalHomeData
+import com.music.aurelis.ui.navigation.LocalCollectionKind
+import com.music.aurelis.ui.screens.LocalCollectionScreen
 import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.ui.components.BottomTab
 import com.music.aurelis.ui.components.GlassNavBar
-import com.music.aurelis.ui.components.MiniPlayer
 import com.music.aurelis.ui.components.UpdateAvailableDialog
 import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.screens.HomeScreen
@@ -58,12 +79,24 @@ import com.music.aurelis.ui.screens.LocalMusicScreen
 import com.music.aurelis.ui.screens.NowPlayingScreen
 import com.music.aurelis.ui.screens.QueueScreen
 import com.music.aurelis.ui.screens.ReplayScreen
+import com.music.aurelis.ui.components.SongActionsDialog
 import com.music.aurelis.ui.screens.SearchScreen
 import com.music.aurelis.ui.screens.SettingsScreen
 import com.music.aurelis.ui.theme.AurelisTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import com.music.aurelis.ui.components.backdrop.backdrops.layerBackdrop
 import kotlinx.coroutines.launch
+
+import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Arrangement
+import com.music.aurelis.ui.navigation.AppNavigator
+import com.music.aurelis.ui.navigation.AppNavigationHost
+import com.music.aurelis.ui.navigation.AppRoute
+import com.music.aurelis.ui.navigation.AppTab
+import com.music.aurelis.ui.navigation.rememberAppNavigator
+import com.music.aurelis.ui.screens.EqualizerScreen
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,194 +119,48 @@ private fun AurelisApp() {
     val scope = rememberCoroutineScope()
     val playbackViewModel: PlaybackViewModel = viewModel()
     val libraryViewModel: LibraryViewModel = viewModel()
-
-    var hasPermission by remember { mutableStateOf(AudioPermission.isGranted(context)) }
+    val navigator = rememberAppNavigator()
+    val hazeState = remember { HazeState() }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { granted -> hasPermission = granted }
-
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var showNowPlaying by remember { mutableStateOf(false) }
-    var showQueue by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) }
-    var showLocalMusic by remember { mutableStateOf(false) }
-    var showReplay by remember { mutableStateOf(false) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        playbackViewModel.connect()
-        AppUpdateChecker.check()
-        if (!hasPermission) {
-            permissionLauncher.launch(AudioPermission.requiredPermission())
-        }
-    }
-
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) libraryViewModel.loadLibrary()
-    }
-
-    LaunchedEffect(showLocalMusic) {
-        if (showLocalMusic && AudioPermission.isGranted(context)) {
-            libraryViewModel.loadLibrary(force = true)
-        }
-    }
-
-    val playbackState by playbackViewModel.state.collectAsState()
-    val libraryUiState by libraryViewModel.uiState.collectAsState()
-    val hazeState = remember { HazeState() }
-
+    ) { libraryViewModel.onForeground() }
+    var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
     val updateInfo by AppUpdateChecker.available.collectAsState()
     val downloadState by AppUpdateChecker.download.collectAsState()
 
+    val meta = remember(context) { context.getSharedPreferences("app_meta", android.content.Context.MODE_PRIVATE) }
+    val requestAudioAccess = {
+        if (AudioPermission.needsSettings(context, meta.getBoolean("audio_permission_requested", false))) {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+        } else {
+            meta.edit().putBoolean("audio_permission_requested", true).apply()
+            permissionLauncher.launch(AudioPermission.requiredPermission())
+        }
+    }
+    LaunchedEffect(Unit) {
+        playbackViewModel.connect()
+        if (!AudioPermission.isGranted(context) && !meta.getBoolean("audio_permission_requested", false)) requestAudioAccess()
+    }
+    // An offline/slow update server must not delay audio permission or catalogue loading.
+    LaunchedEffect(Unit) { AppUpdateChecker.check() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, libraryViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) libraryViewModel.onForeground()
+            if (event == Lifecycle.Event.ON_STOP) {
+                libraryViewModel.onBackground()
+                com.music.aurelis.data.stats.ListeningStats.flush()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer); libraryViewModel.onBackground() }
+    }
     LaunchedEffect(updateInfo) {
         if (updateInfo != null) showUpdateDialog = true
     }
-
-    val tabs = listOf(
-        BottomTab("Home", Icons.Filled.Home),
-        BottomTab("Explore", Icons.Filled.Explore),
-        BottomTab("Library", Icons.Filled.LibraryMusic),
-        BottomTab("Search", Icons.Filled.Search),
-    )
-
-    val librarySuccess = libraryUiState.libraryState as? LibraryState.Success
-    val allSongs = librarySuccess?.songs ?: emptyList()
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .hazeSource(hazeState),
-    ) {
-        when (selectedTab) {
-            0 -> {
-                val listState = rememberLazyListState()
-                HomeScreen(
-                    recentlyPlayed = emptyList(),
-                    mostPlayed = emptyList(),
-                    recentlyAdded = librarySuccess?.recentlyAdded ?: emptyList(),
-                    albums = librarySuccess?.albums ?: emptyList(),
-                    artists = librarySuccess?.artists ?: emptyList(),
-                    listState = listState,
-                    onSongClick = { song: LocalSong ->
-                        val idx = allSongs.indexOfFirst { it.id == song.id }
-                        if (idx >= 0) playbackViewModel.playSongs(allSongs, idx)
-                    },
-                    onSongLongPress = { },
-                    onAlbumClick = { },
-                    onArtistClick = { },
-                    currentSong = playbackState.currentSong,
-                    isPlaying = playbackState.isPlaying,
-                    contentPadding = PaddingValues(bottom = 180.dp),
-                )
-            }
-
-            1 -> Text("Explore (Próximamente)", modifier = Modifier.align(Alignment.Center))
-
-            2 -> {
-                when {
-                    showReplay -> ReplayScreen(onBack = { showReplay = false })
-                    showLocalMusic -> LocalMusicScreen(
-                        playbackViewModel = playbackViewModel,
-                        onBackClick = { showLocalMusic = false },
-                        libraryViewModel = libraryViewModel,
-                    )
-                    else -> {
-                        val listState = rememberLazyListState()
-                        val links = listOf(
-                            LibraryLink("Canciones", AurelisIcons.MusicNote) { },
-                            LibraryLink("Replay", AurelisIcons.Clock) { },
-                            LibraryLink("Ajustes", AurelisIcons.Home) { },
-                        )
-                        LibraryScreen(
-                            listState = listState,
-                            links = links,
-                            onShowAll = { },
-                            contentPadding = PaddingValues(bottom = 180.dp),
-                        )
-                    }
-                }
-            }
-
-            3 -> {
-                var searchQuery by remember { mutableStateOf("") }
-                val searchListState = rememberLazyListState()
-                val results: List<LocalSong>? = if (searchQuery.isBlank()) null else allSongs.filter {
-                    it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.artist.contains(searchQuery, ignoreCase = true) ||
-                        it.album?.contains(searchQuery, ignoreCase = true) == true
-                }
-                SearchScreen(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    results = results,
-                    listState = searchListState,
-                    focusRequested = false,
-                    onFocusHandled = { },
-                    onSongClick = { songs, index -> playbackViewModel.playSongs(songs, index) },
-                    onSongLongPress = { },
-                    history = emptyList(),
-                    onSubmit = { },
-                    onHistoryClick = { },
-                    onHistoryRemove = { },
-                    onHistoryClear = { },
-                    currentSong = playbackState.currentSong,
-                    isPlaying = playbackState.isPlaying,
-                    contentPadding = PaddingValues(bottom = 180.dp),
-                    topPadding = 0.dp,
-                )
-            }
-        }
-
-        if (!showNowPlaying && !showQueue && !showSettings && !showLocalMusic && !showReplay) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(bottom = 16.dp, start = 12.dp, end = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                if (playbackState.currentSong != null) {
-                    val song = playbackState.currentSong
-                    MiniPlayer(
-                        title = song?.title.orEmpty(),
-                        artist = song?.artist.orEmpty(),
-                        isPlaying = playbackState.isPlaying,
-                        onPlayPauseClick = { playbackViewModel.togglePlayPause() },
-                        onClick = { showNowPlaying = true },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    )
-                }
-                GlassNavBar(
-                    tabs = tabs,
-                    selectedIndex = selectedTab,
-                    onTabSelected = { selectedTab = it },
-                    song = playbackState.currentSong,
-                    isPlaying = playbackState.isPlaying,
-                    isLoading = false,
-                    onPlayPause = { playbackViewModel.togglePlayPause() },
-                    onNext = { playbackViewModel.next() },
-                    onPrevious = { playbackViewModel.previous() },
-                    onExpand = { showNowPlaying = true },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-
-        NowPlayingScreen(
-            playbackViewModel = playbackViewModel,
-            isVisible = showNowPlaying,
-            onDismiss = { showNowPlaying = false },
-            onOpenQueue = { showNowPlaying = false; showQueue = true },
-        )
-        QueueScreen(
-            playbackViewModel = playbackViewModel,
-            isVisible = showQueue,
-            onDismiss = { showQueue = false },
-        )
-        SettingsScreen(isVisible = showSettings, onDismiss = { showSettings = false })
-
+    Box(Modifier.fillMaxSize()) {
+        AurelisNavigationContent(navigator, playbackViewModel, libraryViewModel, hazeState,
+            onRequestAudioPermission = requestAudioAccess)
         if (showUpdateDialog && updateInfo != null) {
             UpdateAvailableDialog(
                 version = updateInfo!!.version,
@@ -296,5 +183,317 @@ private fun AurelisApp() {
                 },
             )
         }
+        // This modal owns Back before the page below it; no navigation is discarded.
+        BackHandler(enabled = showUpdateDialog && updateInfo != null) {
+            showUpdateDialog = false
+            AppUpdateChecker.resetDownload()
+        }
     }
+}
+
+/** UI graph separated from startup/service effects so navigation can be verified offline. */
+@Composable
+internal fun AurelisNavigationContent(
+    navigator: AppNavigator,
+    playbackViewModel: PlaybackViewModel,
+    libraryViewModel: LibraryViewModel,
+    hazeState: HazeState = remember { HazeState() },
+    onRequestAudioPermission: () -> Unit = {},
+) {
+    val playbackState by playbackViewModel.state.collectAsState()
+    val libraryUiState by libraryViewModel.uiState.collectAsState()
+    val userStore by com.music.aurelis.ui.AppUi.host.libraries.collectAsState()
+    val userState by userStore.state.collectAsState()
+    var actionSong by remember { mutableStateOf<LocalSong?>(null) }
+    val route = navigator.visibleRoute()
+    val dock = remember { PlayerDock() }
+    val panelScope = rememberCoroutineScope()
+    val panelMotion = remember(navigator, dock, panelScope) {
+        PlayerSheetMotion(panelScope, dock,
+            shown = { navigator.visibleRoute() == AppRoute.NowPlaying },
+            setShown = { show ->
+                if (show) navigator.push(AppRoute.NowPlaying)
+                else if (navigator.visibleRoute() == AppRoute.NowPlaying) navigator.pop()
+            }, inlineMode = true,
+            reduceMotion = { com.music.aurelis.data.SettingsRepository.reduceAnimation.value },
+        ).also { dock.motion = it }
+    }
+    DisposableEffect(panelMotion) { onDispose { panelMotion.onSheetGone() } }
+    val flingVelocity = with(LocalDensity.current) { 900.dp.toPx() }
+    SideEffect { panelMotion.flingVelocity = flingVelocity }
+    LaunchedEffect(route) {
+        // Let the existing ViewModel report missing permission instead of leaving Loading forever.
+        if (route == AppRoute.LocalMusic) libraryViewModel.refresh()
+    }
+    val tabs = listOf(
+        BottomTab(stringResource(R.string.home), Icons.Filled.Home),
+        BottomTab(stringResource(R.string.explore), Icons.Filled.Explore),
+        BottomTab(stringResource(R.string.library), Icons.Filled.LibraryMusic),
+        BottomTab(stringResource(R.string.search), Icons.Filled.Search),
+    )
+    val librarySuccess = libraryUiState.libraryState as? LibraryState.Success
+    val allSongs = librarySuccess?.songs ?: emptyList()
+    val home = remember(allSongs, userState, playbackState.currentSong?.id) {
+        LocalHomeData.build(allSongs, userState, playbackState.currentSong?.id)
+    }
+
+    // Match BitChord's opaque recording: transparent page pixels must not reveal
+    // an unblurred second copy of the page through the refracting surface.
+    val windowBackground = MaterialTheme.colorScheme.background
+    val paintBackdrop: androidx.compose.ui.graphics.drawscope.ContentDrawScope.() -> Unit = remember(windowBackground) {
+        { drawRect(windowBackground); drawContent() }
+    }
+    val genreGroups = remember(allSongs) { LocalGenres.groups(allSongs) }
+    val appBackdrop = com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop(onDraw = paintBackdrop)
+    val reduceBlur by com.music.aurelis.data.SettingsRepository.reduceDynamicBlur.collectAsState()
+    val captureGlass = com.music.aurelis.ui.components.shouldSampleGlass(
+        com.music.aurelis.ui.components.LocalLiquidGlassEnabled.current, reduceBlur,
+        com.music.aurelis.ui.components.LocalGlassHardware.current,
+    )
+    androidx.compose.runtime.CompositionLocalProvider(
+        com.music.aurelis.ui.components.LocalAppBackdrop provides appBackdrop,
+        com.music.aurelis.ui.components.LocalAppHazeState provides hazeState,
+    ) {
+    AppNavigationHost(
+        navigator = navigator,
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
+            .onSizeChanged { dock.sheetTravel = it.height.toFloat() }.onGloballyPositioned { dock.reportHost(it) },
+        pageModifier = Modifier.hazeSource(hazeState).then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier),
+        tabContent = { tab ->
+            when (tab) {
+            AppTab.HOME -> {
+                val listState = rememberLazyListState()
+                HomeScreen(
+                    recentlyPlayed = home.recent,
+                    mostPlayed = home.mostPlayed,
+                    recentlyAdded = librarySuccess?.recentlyAdded ?: emptyList(),
+                    albums = librarySuccess?.albums ?: emptyList(),
+                    artists = librarySuccess?.artists ?: emptyList(),
+                    listState = listState,
+                    onSongClick = { song: LocalSong ->
+                        val idx = allSongs.indexOfFirst { it.id == song.id }
+                        if (idx >= 0) playbackViewModel.playSongs(allSongs, idx)
+                    },
+                    onSongLongPress = { actionSong = it },
+                    onAlbumClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
+                    onArtistClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) },
+                    currentSong = playbackState.currentSong,
+                    isPlaying = playbackState.isPlaying,
+                    contentPadding = PaddingValues(bottom = 180.dp),
+                    libraryState = libraryUiState.libraryState,
+                    isRefreshing = libraryUiState.isRefreshing,
+                    favorites = home.favorites,
+                    recommendations = home.recommendations,
+                    playlists = userState.playlists,
+                    collectionsReadOnly = userState.readOnly,
+                    onPlayShelf = playbackViewModel::playSongs,
+                    onRetry = { libraryViewModel.refresh() },
+                    onRequestPermission = onRequestAudioPermission,
+                    onOpenPlayer = { playbackViewModel.resume(); navigator.push(AppRoute.NowPlaying) },
+                    onAutoMix = { playbackViewModel.startAutoMix(allSongs, userState) },
+                    isCreatingMix = playbackState.isCreatingMix, mixError = playbackState.mixError,
+                    onOpenFavorites = { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
+                    onOpenPlaylists = { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
+                    onOpenPlaylist = { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it)) },
+                )
+            }
+
+            AppTab.EXPLORE -> {
+                val genres = genreGroups
+                if (libraryUiState.libraryState !is LibraryState.Success) {
+                    Column(Modifier.align(Alignment.Center).padding(24.dp)) {
+                        val error = libraryUiState.libraryState as? LibraryState.Error
+                        if (error == null) androidx.compose.material3.CircularProgressIndicator()
+                        else {
+                            Text(error.message)
+                            TextButton(onClick = { if (error.permissionRequired) onRequestAudioPermission() else libraryViewModel.refresh() }) {
+                                Text(if (error.permissionRequired) "Permitir acceso" else "Reintentar")
+                            }
+                        }
+                    }
+                } else ExploreScreen(genres.map { LocalGenre(it.name, it.songs.size, null, it.key) },
+                    rememberLazyListState(), { genre ->
+                        genres.firstOrNull { it.key == genre.key }?.let {
+                            navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key))
+                        }
+                    }, PaddingValues(bottom = 180.dp))
+            }
+            AppTab.LIBRARY -> {
+                val listState = rememberLazyListState()
+                val links = listOf(
+                    LibraryLink(stringResource(R.string.songs), AurelisIcons.MusicNote) { navigator.push(AppRoute.LocalMusic) },
+                    LibraryLink("Álbumes", AurelisIcons.MusicNote) { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUMS)) },
+                    LibraryLink("Artistas", AurelisIcons.MusicNote) { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTISTS)) },
+                    LibraryLink("Carpetas", AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDERS)) },
+                    LibraryLink("Historial", AurelisIcons.Clock) { navigator.push(AppRoute.Collection(LocalCollectionKind.HISTORY)) },
+                    LibraryLink(stringResource(R.string.home_favorites), AurelisIcons.Heart) { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
+                    LibraryLink(stringResource(R.string.home_playlists), AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
+                    LibraryLink(stringResource(R.string.replay), AurelisIcons.Clock) { navigator.push(AppRoute.Replay) },
+                    LibraryLink(stringResource(R.string.navigation_settings), AurelisIcons.Home) { navigator.push(AppRoute.Settings) },
+                )
+                LibraryScreen(
+                    listState = listState,
+                    links = links,
+                    onShowAll = {},
+                    contentPadding = PaddingValues(bottom = 180.dp),
+                )
+            }
+            AppTab.SEARCH -> {
+                var searchQuery by rememberSaveable { mutableStateOf("") }
+                var searchCategory by rememberSaveable { mutableStateOf(LocalSearchCategory.ALL) }
+                val searchListState = rememberLazyListState()
+                val searchContext = LocalContext.current
+                val searchHistory = remember(userStore) { LocalSearchHistory(searchContext) }
+                var history by remember(searchHistory) { mutableStateOf(searchHistory.entries) }
+                fun saveQuery() { searchHistory.submit(searchQuery); history = searchHistory.entries }
+                val key = LocalSearch.normalize(searchQuery)
+                val destinations = if (key.isBlank()) emptyList() else buildList {
+                    val allTypes = searchCategory == LocalSearchCategory.ALL
+                    if (allTypes || searchCategory == LocalSearchCategory.ALBUMS) librarySuccess?.albums?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
+                        add(LocalSearchDestination(it.name, "Álbum") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) })
+                    }
+                    if (allTypes || searchCategory == LocalSearchCategory.ARTISTS) librarySuccess?.artists?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
+                        add(LocalSearchDestination(it.name, "Artista") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) })
+                    }
+                    if (allTypes || searchCategory == LocalSearchCategory.PLAYLISTS) userState.playlists.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
+                        add(LocalSearchDestination(it.name, "Playlist") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it.id)) })
+                    }
+                    if (allTypes || searchCategory == LocalSearchCategory.GENRES) genreGroups.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
+                        add(LocalSearchDestination(it.name, "Género") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key)) })
+                    }
+                }
+                val results = remember(searchQuery, allSongs, libraryUiState.sortOption) {
+                    if (searchQuery.isBlank()) null else {
+                        val key = LocalSearch.normalize(searchQuery)
+                        LocalSearch.sort(allSongs.filter { LocalSearch.matchesNormalized(it, key) }, libraryUiState.sortOption)
+                    }
+                }
+                SearchScreen(
+                    filter = libraryUiState.sortOption,
+                    onFilterChange = libraryViewModel::onSortOptionChanged,
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    results = if (results == null || searchCategory in listOf(LocalSearchCategory.ALL, LocalSearchCategory.SONGS)) results else emptyList(),
+                    category = searchCategory, onCategoryChange = { searchCategory = it },
+                    listState = searchListState,
+                    focusRequested = false,
+                    onFocusHandled = { },
+                    onSongClick = { songs, index -> saveQuery(); playbackViewModel.playSongs(songs, index) },
+                    onSongLongPress = { actionSong = it },
+                    history = history,
+                    destinations = destinations,
+                    onSubmit = { saveQuery() },
+                    onHistoryClick = { searchQuery = it },
+                    onHistoryRemove = { searchHistory.remove(it); history = searchHistory.entries },
+                    onHistoryClear = { searchHistory.clear(); history = searchHistory.entries },
+                    currentSong = playbackState.currentSong,
+                    isPlaying = playbackState.isPlaying,
+                    contentPadding = PaddingValues(bottom = 180.dp),
+                    topPadding = 0.dp,
+                )
+            }
+            }
+        },
+        routeContent = { page ->
+            when (page) {
+                AppRoute.LocalMusic -> LocalMusicScreen(
+                    playbackViewModel = playbackViewModel,
+                    libraryViewModel = libraryViewModel,
+                    onBackClick = { navigator.pop() },
+                    onAlbumOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
+                    onArtistOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) },
+                    onRequestPermission = onRequestAudioPermission,
+                )
+                AppRoute.Settings -> SettingsScreen(
+                    isVisible = true,
+                    onDismiss = { navigator.pop() },
+                    onOpenEqualizer = { navigator.push(AppRoute.Equalizer) },
+                    localSongs = allSongs,
+                    onOpenFolder = { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDER, it)) },
+                )
+                AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
+                AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() }, store = userStore,
+                    songs = allSongs, onPlay = { playbackViewModel.playSongs(listOf(it)) })
+                is AppRoute.Collection -> LocalCollectionScreen(
+                    page, libraryUiState.libraryState, userStore,
+                    playbackState.currentSong?.id, playbackState.isPlaying,
+                    onBack = { navigator.pop() }, onOpen = { navigator.push(it) },
+                    onPlay = playbackViewModel::playSongs,
+                )
+                else -> error("Destination is not wired in the local graph: $page")
+            }
+        },
+        bottomBar = {
+            Column(
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                    .navigationBarsPadding(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (!playbackState.isConnected && playbackState.errorMessage != null) {
+                    Surface(shape = MaterialTheme.shapes.medium) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                            Text(playbackState.errorMessage.orEmpty())
+                            TextButton(onClick = playbackViewModel::retry) { Text("Reintentar") }
+                        }
+                    }
+                }
+                // GlassNavBar already includes the current-track entry point and controls.
+                GlassNavBar(
+                    tabs = tabs,
+                    selectedIndex = navigator.selectedTab.ordinal,
+                    onTabSelected = { index -> AppTab.entries.getOrNull(index)?.let(navigator::selectTab) },
+                    song = playbackState.currentSong,
+                    isPlaying = playbackState.isPlayRequested,
+                    isLoading = playbackState.isLoading,
+                    controlsLocked = !playbackState.isConnected,
+                    canNext = playbackState.canNext,
+                    canPrevious = playbackState.canPrevious,
+                    qualityLabel = playbackState.sourceQuality.takeIf { it.mimeType != null }?.formatLabel,
+                    progress = if (playbackState.durationMs > 0)
+                        playbackState.positionMs.toFloat() / playbackState.durationMs else 0f,
+                    onPlayPause = { playbackViewModel.togglePlayPause() },
+                    onNext = { playbackViewModel.next() },
+                    onPrevious = { playbackViewModel.previous() },
+                    onExpand = { if (playbackState.currentSong != null) panelMotion.open() },
+                    dock = dock, pull = panelMotion,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        playbackOverlays = {
+            NowPlayingScreen(
+                playbackViewModel = playbackViewModel,
+                isVisible = route == AppRoute.NowPlaying,
+                onDismiss = { navigator.pop() },
+                onOpenQueue = { navigator.push(AppRoute.Queue) },
+                dock = dock, panelMotion = panelMotion,
+            )
+            DockedArtworkOverlay(dock, playbackState.currentSong)
+            QueueScreen(
+                playbackViewModel = playbackViewModel,
+                isVisible = route == AppRoute.Queue,
+                onDismiss = { navigator.pop() },
+            )
+            if (route == AppRoute.NowPlaying && playbackState.currentSong == null) {
+                // Restoring navigation must not depend on the service already being connected.
+                Surface(Modifier.fillMaxSize()) {
+                    Column(
+                        Modifier.fillMaxSize().padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(stringResource(R.string.navigation_no_song))
+                        TextButton(onClick = { navigator.pop() }) { Text(stringResource(R.string.back)) }
+                    }
+                }
+            }
+        },
+    )
+    actionSong?.let { song -> SongActionsDialog(song, userStore,
+        onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null },
+        onPlayNext = { playbackViewModel.playNext(listOf(song)) },
+        queueActionsEnabled = playbackState.isConnected && playbackState.canEditQueue,
+        playNextEnabled = !playbackState.shuffleEnabled) }
+    }
+
 }

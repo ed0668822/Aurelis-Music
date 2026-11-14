@@ -1,0 +1,236 @@
+# Mapa de componentes
+
+Origen fijo: `kushagrasinghx/BitChord@b690dc146009d4815825fa4a20815ef2e4ee8898`.
+Destino inspeccionado: `ed0668822/Aurelis-Music@9bf3fd3db8f5870f942f5167dca5bc77e3c48edd`.
+Las rutas abreviadas de destino parten de `app/src/main/java/com/music/aurelis/`.
+En origen, A = `app/src/main/java/com/music/bitchord/`,
+S = `shared/src/jvmSharedMain/kotlin/com/music/bitchord/`,
+C = `shared/src/commonMain/kotlin/com/music/bitchord/`,
+U = `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/`.
+Cada fila identifica una referencia leída/listada, no una copia autorizada automáticamente.
+
+| Área / bloque | Origen exacto abreviado | Destino existente | Decisión y dependencias |
+|---|---|---|---|
+| Biblioteca B06 | A:`data/LocalMediaRepository.kt` | `data/LocalMediaRepository.kt` | Conservar MediaStore; adaptar mejoras selectivas tras permisos/URI/modelos. `scanLocalFolders` devuelve vacío; no presentarlo como funcional |
+| Home B05 | U:`ui/screens/HomeScreen.kt` | `ui/screens/HomeScreen.kt`, `ui/components/home/` | Adaptar composición visual a LocalSong/álbum/artista. Home destino ya recibe recientes/más reproducidas/añadidas; verificar proveedores de datos |
+| Sistema visual B03 | A:`ui/theme/Theme.kt` | `ui/theme/AurelisTheme.kt` y temas actuales | Adaptar tokens y efectos compatibles; auditar fuentes, recursos y APIs Compose por separado |
+| Navegación B04 | A:`ui/navigation/AppNavigator.kt` | `ui/navigation/AppNavigator.kt`, `NavigationController.kt` | Evaluar ambas rutas existentes antes de integrar; excluir rutas remotas del origen |
+| Barra/mini B04/B07 | A:`ui/components/GlassNavBar.kt`, `MiniPlayer.kt` | mismos nombres en `ui/components/` | Adaptar controles sobre host actual; GlassNavBar origen declara procedencia Echo-Music y FloatingTabBar: preservar avisos |
+| Reproductor B07 | U:`ui/player/PlayerHost.kt` | `ui/player/PlayerHost.kt`, `FullScreenPlayerHost.kt`, `AurelisPlayerHost.kt` | Conservar contratos compatibles; servicio destino `playback/AurelisPlaybackService.kt` crea ExoPlayer y MediaSession. No crear motor paralelo |
+| Letras B09 | A:`data/lyrics/EmbeddedLyrics.kt`; S:`data/lyrics/LyricsRepository.kt`, `LrcLib.kt` | mismos nombres bajo `data/lyrics/` | Conservar parsers/proveedores compatibles; auditar orden local/caché/red en llamadas. El repositorio observado lanza consultas de proveedores concurrentes |
+| Traducción B10 | S:`data/lyrics/LyricsTranslation.kt` | `data/lyrics/LyricsTranslation.kt` | Conservar solo partes utilizables con servicios permitidos, caché y cancelación; endpoint observado translate.googleapis.com no acredita condiciones de uso |
+| Historial B08 | A:`data/stats/ListeningRecorder.kt`, `ListeningStats.kt` | mismos nombres bajo `data/stats/` | Conservar registro compatible; comprobar persistencia e integración por perfil |
+| Cola B07/B08 | S:`playback/QueueBuilder.kt` | `playback/QueueBuilder.kt` y cola existente | Conservar deduplicación y modelos locales; verificar uso efectivo, restauración y cambios de biblioteca |
+| Audio local B11 | A:`playback/smart/LocalAudioSource.kt` | `playback/smart/LocalAudioSource.kt` | Fuente Android usa content URI sin duplicar caché de disco; comprobar adaptación y cancelación |
+| AutoMix B11 | C:`playback/smart/TransitionPolicy.kt`; S:`playback/smart/TrackFeatures.kt` | mismos nombres bajo `playback/smart/` y DSP nativo | Auditar antes de copiar: origen declara Orchard/AGPL. Contratos destino difieren; no sustituir por nombre. Separar análisis/transiciones de recomendación local |
+| AutoMix remoto | C:`playback/smart/AutomixAnalysisSource.kt` | `playback/smart/AutomixAnalysisSource.kt` | Origen contiene resolución YouTube/Opus; excluir esa dependencia del flujo local |
+| Playlists B08 | No se seleccionó implementación origen | `data/OfflinePlaylists.kt` | Método observado devuelve lista vacía. Especificar persistencia en B02; no afirmar que otras rutas de playlists no existen sin trazarlas |
+| Perfiles B12 | Implementación propia local; sin autenticación del origen | ProfileRepository, ProfileStorage, ProfileAvatars, ProfilePlaybackBinding y SettingsScreen | Crear/renombrar/cambiar/eliminar confirmado; seis áreas privadas, avatar y restauración de cola pausada; legado conservado |
+
+## Límites y próximos detalles
+
+No se auditaron todos los archivos ni se ejecutó BitChord. El inventario es una
+selección de puntos de entrada para B01; cada bloque ampliará solo las filas afectadas.
+No hay evidencia de fidelidad visual en dispositivo ni de funcionamiento de todos
+los proveedores. No seleccionar automáticamente recursos SF Pro del origen.
+Las nuevas rutas de producción se decidirán en el bloque correspondiente tras
+trazar las llamadas existentes; B01 solo añade documentos.
+
+## Cambios propios B02
+
+Sin nuevas copias de BitChord ni cambios en sus fuentes. Referencias históricas
+anteriores se mantienen para próximos bloques.
+
+| Contrato / integración | Destino añadido o modificado | Resultado |
+|---|---|---|
+| Identidad local | `data/model/ProfileId.kt` | ID estable; default conserva la instalación previa |
+| Ámbitos privados | `data/ProfileStorage.kt` | Cinco áreas; archivos separados para otros IDs, sin CRUD ni selector de perfiles |
+| Compatibilidad heredada | `data/ProfileRepository.kt`, `data/SettingsRepository.kt` | Mismos archivos y claves del perfil default, sin copiar/borrar datos |
+| Inicio de aplicación | `AurelisApplication.kt` | Inicializa ProfileRepository para las escrituras de Ajustes existentes |
+| Lectura de biblioteca | `data/LocalLibrarySource.kt`, `LibraryViewModel.kt` | Adapter MediaStore existente, inyección y propagación de cancelación |
+| Verificación | `app/src/test/java/com/music/aurelis/` desde raíz | Pruebas Robolectric de persistencia y contrato de biblioteca |
+
+No se modifican los stubs de playlists/historial ni la UI. Los ámbitos de almacenamiento
+permiten implementarlos después sin mezclar datos de perfiles.
+
+## Sistema visual B03
+
+Referencia consultada: A:`ui/theme/Theme.kt` en el mismo SHA fijo de BitChord.
+Se reaprovechan valores y jerarquía ya adaptados en Theme.kt de Aurelis, sin importar
+fuentes ni módulos compartidos del origen. Texto secundario se ajusta para contraste.
+
+| Área | Destino | Decisión B03 |
+|---|---|---|
+| Color | `ui/theme/ColorSchemes.kt` | Una paleta clara/oscura con roles opacos y superficies neutras; se corrige alfa secundario |
+| Tipografía | `ui/theme/Theme.kt` | Activar escala existente con sans del sistema e interlineados; retirar paletas privadas inactivas |
+| Tema raíz | `ui/theme/AurelisTheme.kt` | Preferencias de tema/movimiento, formas comunes e iconos de barras del sistema |
+| Tema de carátula | `ui/theme/DynamicAurelisTheme.kt` | Conservar colores dinámicos y compartir tipografía/formas |
+| Búsqueda | `ui/components/SearchField.kt`, `SearchBar.kt` | Campo único, áreas táctiles, altura adaptable y semántica existente de buscar/borrar |
+| Ajustes | `ui/components/SettingsComponents.kt` | Superficies, títulos extensibles, selección, estado deshabilitado y switch único |
+| Carga | `ui/components/Skeletons.kt` | Superficie estática cuando se reduce movimiento |
+| Verificación | `app/src/test/java/com/music/aurelis/ui/theme/` desde raíz | Contraste y composición/interacción real de componentes, más capturas nativas |
+
+No se reemplaza la biblioteca de iconos ya existente ni se copia una familia de
+fuentes del origen. Home, navegación y reproductor mantienen su estructura para
+sus bloques posteriores. El PR se identifica como #1 por referencia Git coincidente;
+su título fue proporcionado por el usuario y después confirmado en la página HTML
+de GitHub, junto al estado OPEN. La API sigue sin estar disponible.
+
+## Navegación B04
+
+Se integra la adaptación AppNavigator existente en Aurelis; no se vuelve a copiar
+el navegador del origen ni se crean servicios de audio. Se conservan sus callbacks
+de detalle, mientras las rutas de datos complejos quedan diferidas.
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Pila y estado | `ui/navigation/AppNavigator.kt` | AppTab tipada, rutas NowPlaying/Queue, retorno a Inicio y Saver pequeño/versionado |
+| Host activo | `ui/navigation/AppNavigationHost.kt` | BackHandler único, SaveableStateHolder, página activa y overlays existentes |
+| Integración real | `MainActivity.kt` | AurelisNavigationContent separado de arranque; enlaces Biblioteca y Ajustes conectados; sin booleanos de rutas |
+| Barra inferior | `ui/components/GlassNavBar.kt` | Selección accesible y entrada única al reproductor; MiniPlayer independiente conservado como componente |
+| Música local | `ui/screens/LocalMusicScreen.kt` | Estado UI guardable y búsqueda interna con prioridad de Atrás |
+| Páginas existentes | `ui/screens/ReplayScreen.kt`, `EqualizerScreen.kt` | Se explicita que métricas/controles de estas estructuras no están disponibles |
+| Textos | `app/src/main/res/values/strings.xml` desde raíz | Etiquetas de navegación y estados incompletos sin referencias a bloques técnicos |
+| Pruebas | `app/src/test/java/com/music/aurelis/ui/navigation/` desde raíz | Pila pura y grafo Compose real, sin efectos de arranque/red/audio |
+
+NavigationController y sus referencias estáticas de auditoría permanecen como legado
+sin uso en el grafo activo; no se usa navigateBack por decremento de índices.
+Home y callbacks de detalles de álbum/artista permanecen pendientes de B05/B06.
+
+## Home y datos reales B05
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Selección local | `data/LocalHomeData.kt` | Resuelve recientes/frecuentes/favoritas y recomendaciones contra el catálogo; QueueBuilder existente para cola local |
+| Persistencia básica | `data/LocalUserLibrary.kt` | Ámbitos B02, favoritos, playlists e indicadores de escucha por ID; versiones desconocidas conservadas sin escribir |
+| Registro real | `data/stats/ListeningStats.kt`, `playback/PlaybackViewModel.kt` | Se conecta el hook existente de deltas y transiciones; no motor nuevo |
+| Home | `ui/screens/HomeScreen.kt`, `ui/components/home/HomeHero.kt` | Estados de biblioteca y secciones reales; continuar sin reiniciar cola; no datos simulados |
+| Colecciones | `ui/screens/LocalCollectionScreen.kt` | Álbum/artista/favoritos y listas actuales, reproducción, favoritos y edición básica de listas con confirmación |
+| Rutas/integración | AppNavigator, MainActivity, AurelisApplication | Claves pequeñas de colecciones, estado reactivo privado y acciones reales de Home/Biblioteca |
+| Estado/modelo | LibraryState, LibraryViewModel, LocalAlbum | Error de permiso diferenciable y clave de álbum sin colisiones de separador |
+
+OfflinePlaylists y ListeningRecorder legados no forman una segunda persistencia activa;
+se mantiene un único LocalUserLibrary para estos datos. Su compatibilidad/integración
+avanzada se revisará en B08; no se declaran esos stubs como funciones completas.
+No se importó nuevo código de BitChord ni DSP/recursos externos en B05.
+
+## Catálogo y actualización B06
+
+| Área | Destino | Resultado |
+|---|---|---|
+| MediaStore | `data/LocalMediaRepository.kt` | Consulta IO, cursor seguro, filtros, metadatos y URIs locales |
+| Observación | `data/LocalLibrarySource.kt`, `LibraryViewModel.kt` | Ciclo de vida, debounce, reconciliación por ID y refresco pendiente |
+| Modelos | `data/model/LocalSong.kt`, `LocalAlbum.kt`, `LocalArtist.kt` | IDs MediaStore de grupos y disco/pista; referencias de canciones compatibles |
+| Permisos/arranque | `data/AudioPermission.kt`, `MainActivity.kt` | Revocación/restauración, Ajustes del sistema y arranque local independiente de red |
+| Búsqueda | `data/LocalSearch.kt`, LocalMusicScreen y MainActivity | Acentos, ordenamiento compartido y estados sin resultados |
+| Detalles | LocalCollectionScreen y HomeCarousels | Rutas con ID de grupo y compatibilidad con claves previas |
+| Puente Media3 | MediaItemExtensions y PlaybackViewModel | Metadatos completos sin duplicar motor |
+| Pruebas | MediaStoreLibraryTest, LibraryUpdatesTest, LocalMetadataTest, LibraryCatalogueIntegrationTest | Proveedor/cursor, concurrencia, permisos, roundtrip y grafo real Compose |
+
+Sin código adicional copiado de BitChord; se amplía la infraestructura local de Aurelis.
+
+## Reproductor activo B07
+
+| Área | Archivos de destino | Resultado |
+|---|---|---|
+| Controlador | PlaybackViewModel, PlayerConnection | Conexión única/cancelable, estado desde eventos, repeat/shuffle/seek y errores |
+| Metadatos | MediaItemExtensions | Conversor único también para selección inicial; no se pierden IDs ni duración |
+| Mini | GlassNavBar, MiniPlayer, MainActivity | Una sola barra con carátula/progreso y apertura visible |
+| Completo | NowPlayingScreen, AnimatedArtwork, PlayerControls, PlayerSlider | Arte local real, tiempos, controles, modos, accesibilidad y scroll |
+| Cola básica | QueueScreen | Saltar/quitar tema no actual; sin arrastre decorativo |
+| Sesión/fondo | AurelisPlaybackService existente, sin cambios | Propietario único ExoPlayer/DSP/MediaSessionService y controles Android |
+| Verificación | PlaybackIntegrationTest, MediaSessionBridgeTest, PlayerIntegrationTest | Eventos y sesión reales con audio controlado, grafo Compose y capturas |
+
+Se reutiliza código ya presente en Aurelis; no se copia otro host ni código de BitChord.
+FullScreenPlayerHost y AurelisPlayerPlatform legados no se instalan como motor/host activos.
+
+## Colecciones y continuidad B08
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Cola privada | LocalQueueStore, ProfileStorage.QUEUE | Versionado, IDs y posición; reconstrucción contra catálogo sin autoplay |
+| Registro | ServicePlaybackRecorder, AurelisPlaybackService | Un único contador monotónico desde el servicio, no desde UI |
+| Transporte | PlaybackViewModel, QueueScreen | Añadir y reordenar sin reiniciar posición; comandos Media3 existentes |
+| Colecciones | LocalUserLibrary, LocalCollectionScreen, SongActionsDialog | Favoritos, membresía y orden persistentes |
+| Historial | ReplayScreen y MainActivity | Agregados reales, resolver temas actuales y confirmar borrado |
+| Pruebas | ServiceCollectionsTest, PlayerIntegrationTest | Persistencia, tiempo real frente a seek, orden, opciones y borrado |
+
+## Letras activas B09
+
+| Área | Archivos | Resultado |
+|---|---|---|
+| LRC | Lyrics, LrcLib.parseLrc | Marcas/offset/gaps y texto plano sin tiempos ficticios |
+| Audio local | EmbeddedLyricsExtractor | USLT ID3v2.3/2.4 y comentarios FLAC, lectura acotada |
+| Prioridad/persistencia | LocalLyricsRepository | Importado, incrustado, caché y búsqueda explícita; archivos privados/versionados |
+| Consulta | LrcLib, LyricsHttp, LyricsRepository existente | LRCLIB con metadatos codificados y coincidencia conservadora, sin claves |
+| Estado/acciones | PlaybackViewModel, NowPlayingScreen | Importación SAF, estado real y protección contra cambios de canción |
+| Sincronización | SyncedLyricsPanel, PlaybackPosition existente | Resaltado, seguimiento manual/automático y seek con offset |
+| Pruebas | LocalLyricsTest, LyricsPanelTest, PlayerIntegrationTest | Fixtures propios de metadatos/letras y grafo Compose; sin consultas remotas |
+
+## Traducción activa B10
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Servicio | LyricsTranslation | POST HTTPS compatible LibreTranslate, lotes/errores/cancelación y caché v4 |
+| Configuración | SettingsRepository, TranslationLanguageDialog | Servidor e idiomas privados; confirmar permite petición, cerrar no |
+| Integración | AurelisApplication, PlaybackViewModel | Directorio de caché real y protección de canción/versión/petición |
+| Bilingüe | SyncedLyricsPanel, NowPlayingScreen | Original y traducción juntos, fuente/idioma/caché/estados y ocultar |
+| Pruebas | TranslationTest, PlayerIntegrationTest | Protocolo controlado sin red, caché en disco, errores y respuesta atrasada |
+
+No se copian implementaciones del servidor. Helpers de romanización legacy se
+conservan sin conectarlos al flujo activo ni afirmar revisión de sus servicios.
+
+## AutoMix activo B11
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Selección | LocalAutoMix | Semilla, afinidad, género, favorito/historial/frecuencia y diversidad local |
+| Compatibilidad | QueueBuilder | Caps incluyen cola previa y participantes de colaboraciones |
+| Género | LocalSong, LocalMediaRepository, MediaItemExtensions | Metadato real opcional y roundtrip Media3 |
+| Acción | PlaybackViewModel, HomeScreen, MainActivity | Generar fuera de UI, estados/errores y aplicar sin reiniciar semilla |
+| Continuidad | Servicio y LocalQueueStore B08 sin duplicar | La cola recomendada se guarda/restaura por el flujo existente |
+| Pruebas | LocalAutoMixTest, metadata/scanner y PlayerIntegrationTest | Solo local, ranking, caps, duplicados, cola/posición y error sin borrar |
+
+Referencia leída BitChord: shared/jvmSharedMain QueueBuilder; shared/commonMain
+TransitionPolicy y AutomixAnalysisSource. No se copia nueva implementación;
+YouTube/Opus y transiciones Orchard quedan fuera de esta selección local.
+
+## Ajustes activos B13
+
+| Área | Destino | Resultado |
+|---|---|---|
+| Ajustes | SettingsScreen/Repository | Grupos locales, valores persistentes y límites honestos; perfil legado conservado |
+| Audio | EqualizerProcessor, EqualizerScreen | Bandas/tono reales, balance y amplitud estéreo existente |
+| Ciclo de vida | AudioSettingsBinding, AurelisPlaybackService | Suscripciones del servicio, sin reiniciar ni duplicar motor |
+| Apariencia | AurelisTheme, LiquidGlass, Haze | Proveedores conectados, bordes ligeros y fondo sólido al reducir blur |
+| Letras/movimiento | SyncedLyricsPanel, NowPlayingScreen, QueueScreen | Ajustes respetados sin inventar marcas ni desactivar lectura |
+| Traducción | TranslationLanguageDialog | Guardar desde ajustes no traduce ni envía letras |
+| Pruebas | EqualizerProcessorTest, SettingsPersistenceTest, SettingsIntegrationTest | PCM espectral, pipeline/estado vivo y UI/capturas |
+
+## Integración B14
+
+| Área | Archivos/evidencia | Resultado |
+|---|---|---|
+| CI | `.github/workflows/android.yml` | SDK 36; cierre falla por lint/tests/build y conserva informes |
+| Release tests | RobolectricActivityRule y ocho suites Compose | Registro en memoria; release libre de helper/actividad de tests |
+| Avisos | NOTICE, LICENSES, bundleLicenseTexts en Gradle | Nueve textos íntegros en assets/licenses, sin relabelar terceros |
+| Dependencias | DEPENDENCIES_RELEASE.tsv | Versiones y licencias declaradas por POM, con herencia |
+| APK | APK_EVIDENCE.json | Hashes, tamaños, firma de desarrollo, identidad y ABI verificadas |
+| Cierre | RELEASE_READINESS.md | Distingue éxito local de producto completo/dispositivo/CI/licencias |
+
+Ningún cambio en B12 ni nueva integración de streaming/segundo motor.
+
+
+## Perfiles B12 y continuidad de B13
+
+- Aplicación: `libraries` reactivo reemplaza ámbito único; el repositorio saliente
+  queda cerrado y se recargan ajustes. MediaStore y cachés de letras son compartidos.
+- Servicio: ProfilePlaybackBinding usa el único ExoPlayer/MediaSession existente,
+  guarda antes de vaciar, restaura sin autoplay y cancela consultas obsoletas.
+- UI: SettingsScreen administra perfiles/avatares privados; MainActivity reinicia
+  páginas al cambiar; NowPlaying observa colecciones nuevas. B13 conserva DSP,
+  apariencia y letras, ahora con preferencias independientes por perfil.
+- Persistencia: registro privado v1 con borrados reintentables; `default` usa las
+  seis áreas legacy sin migración destructiva. Sin nuevas dependencias externas.
+- Pruebas añadidas: perfiles, corrupción/tombstones, copia de avatar nativa,
+  cambio/restore Media3, acciones pendientes, navegación y confirmación UI.

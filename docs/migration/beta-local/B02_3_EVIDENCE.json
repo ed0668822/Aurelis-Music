@@ -1,0 +1,72 @@
+{
+  "unit": "B02.3 and cumulative B01/B02 closeout",
+  "tested_parent_commit": "56643ba212cea3908644b3bd84deee176b3294bb",
+  "tested_changes_sha256": {
+    "NOTICE": "ac9aee1623420a916011eb999e9fbc01e418a9bf90a0fa2df9e934d01a33da59",
+    "app/src/main/java/com/music/aurelis/MainActivity.kt": "92b31b1e5c78843bb8652e8949ab7190e1b8eb16095604c9d65b50019c86220a",
+    "app/src/main/java/com/music/aurelis/ui/components/HeldContextMenu.kt": "e3ec522fbe79f56ed3e82add9857e06536501f5b69ce679eb85483294d389ff7",
+    "app/src/main/java/com/music/aurelis/ui/components/IosMenu.kt": "256219f9ce3689903908882903b3a9a5ce9221c103ef4b07ed66911a75f6e035",
+    "app/src/main/java/com/music/aurelis/ui/components/IosSwitch.kt": "de1472f5e305dd1e69587aa66480e70e062422421e516a1a1e0cfa4a25544b24",
+    "app/src/main/java/com/music/aurelis/ui/components/SettingsComponents.kt": "aebf1b30a53d028e446898c79e29b5f2d148ef0a6c366bbdbeb3cffbcbb5f19d",
+    "app/src/main/java/com/music/aurelis/ui/components/SongActionsDialog.kt": "28d965bb7d98370cf24b578cf995e5a4e63f1f448e36e535a5ffa305956d7e46",
+    "app/src/main/java/com/music/aurelis/ui/components/SongRow.kt": "c995fba867b984019e580ad9a7d663b0a4667c856139e99887a10c9986ad99a0",
+    "app/src/main/java/com/music/aurelis/ui/screens/SettingsScreen.kt": "b42271b120a630dc76174c211ea0fbc6fda68965873c24985eabe701a1e722d8",
+    "app/src/test/java/com/music/aurelis/ui/theme/SharedGesturesTest.kt": "4c7dd688b5d30b0e29c602551cb67432465e5646abd5254dd85ee1f40349f047"
+  },
+  "tests": {
+    "debug": {
+      "tests": 164,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "release": {
+      "tests": 164,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "debug": {
+      "Error": 0,
+      "Warning": 224,
+      "Fatal": 0
+    },
+    "release": {
+      "Error": 0,
+      "Warning": 223,
+      "Fatal": 0
+    }
+  },
+  "build": "BUILD SUCCESSFUL in 5m 32s",
+  "command": "bash gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:testReleaseUnitTest :app:lintDebug :app:lintRelease --no-daemon --max-workers=4",
+  "log_external": "/workspace/toolchains/beta-b02-closeout.log",
+  "artifacts": {
+    "debug": {
+      "sha256": "8ec90f89c79eac3eec00c54e8c12101c005b5b7540d72b0df67d0acdcb67ab1d",
+      "bytes": 121063257,
+      "signature": "apksigner verify exit0",
+      "zip": "testzip OK",
+      "legal_texts_identical": 10,
+      "font_identical_to_pinned_source": true,
+      "arm64_libraries": 12
+    },
+    "release": {
+      "sha256": "228eeaafb1d94b963af2367f8f4aba95ca3be80b14804a9ee5e8b29e7f3e15ed",
+      "bytes": 56955252,
+      "signature": "apksigner verify exit0",
+      "zip": "testzip OK",
+      "legal_texts_identical": 10,
+      "font_identical_to_pinned_source": true,
+      "arm64_libraries": 12
+    }
+  },
+  "reviews": [
+    "1: architecture/logic/integration/compiler, same agent",
+    "2: interactions/UI/licensing/regressions, separate pass same agent"
+  ],
+  "device": "adb empty; D/GPU/OEM/SAF/SD/TalkBack/audio hardware pending",
+  "ci": "pending current delivery SHA; check after push",
+  "next": "B03 requires authorization; not started"
+}

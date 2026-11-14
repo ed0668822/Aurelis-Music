@@ -1,3 +1,33 @@
+AURELIS MUSIC — AVISOS LEGALES Y ATRIBUCIONES
+===========================================
+
+Identificación del proyecto: Aurelis © 2026. GPL-3.0-or-later.
+Repositorio: https://github.com/ed0668822/Aurelis-Music
+
+Este documento identifica las aportaciones propias, los componentes adaptados
+y las licencias de terceros. La identificación de Aurelis corresponde a sus
+aportaciones propias y no sustituye los derechos ni las condiciones de los
+componentes originales. Los avisos y textos legales originales se conservan
+en su idioma; la guía en español está en LICENSES/README.md.
+
+El texto íntegro de la GNU GPL v3 está en LICENSE. El permiso de Aurelis para
+utilizar la versión 3 o cualquier versión posterior se declara a continuación.
+Cada componente de terceros conserva las condiciones que le correspondan.
+Este aviso no concede permisos adicionales ni certifica el cumplimiento de
+las obligaciones de distribución de todos los binarios y modelos.
+
+Contenido
+---------
+1. BitChord y adaptaciones de su interfaz y componentes
+2. Orchard y componentes de análisis bajo AGPL
+3. Kyant0/backdrop — Apache-2.0
+4. liquid_glass_easy — MIT
+5. Modelos ONNX — atribuciones y procedencia pendiente
+6. Dependencias de terceros
+7. Fuente Vazirmatn — SIL OFL 1.1
+8. Procedencia detallada de adaptaciones B02.3 y B03
+9. Código fuente, distribución y verificaciones pendientes
+
 Aurelis Music
 Copyright (C) 2026 ed0668822 (Aurelis adaptations)
 Licensed under the GNU General Public License, version 3 or later.
@@ -21,11 +51,15 @@ Their original notices are preserved below.
 ────────────────────────────────────────────────────────────────────
 
 1. BitChord
-   https://github.com/kushagrasinghx/bitchord
+   https://github.com/kushagrasinghx/BitChord
    Copyright (C) 2026 Kushagra Singh
-   License: GNU General Public License v3.0 or later (GPL-3.0-or-later)
+   Reference commit: b690dc146009d4815825fa4a20815ef2e4ee8898
+   License: GNU General Public License v3.0 (GPLv3), as declared in
+   the upstream README and LICENSE at the reference commit.
+   Any permission to use a later version must be established from the
+   applicable original notice; it is not inferred from Aurelis's license.
 
-   Adapted modules include: the complete lyrics system (providers,
+   Adapted areas include: lyrics (providers,
    parsers, repository, translation), the DSP audio chain (equalizer,
    spatial audio, transition filter, loudness), the offline audio
    analysis pipeline (envelope, tempo, key, structure), AudioRouting,
@@ -33,8 +67,17 @@ Their original notices are preserved below.
    History), DSD decoding, the synced lyrics panel, LyricFocus, and
    the AndroidPlayerHost / PlayerHost abstractions.
 
-   BitChord's source is licensed under the GNU General Public License
-   version 3 or later. See https://www.gnu.org/licenses/gpl-3.0.html.
+   This attribution identifies adapted areas, not verified feature
+   completeness or runtime availability. Original per-file notices,
+   including separate third-party licenses, remain applicable.
+   Liquid Glass material integration also retains the provenance declared
+   by BitChord's LiquidGlass.kt: EchoMusicApp/Echo-Music's
+   GlassEffectConfig/Modifier.liquidGlass (GPL-3.0).
+   Reference: https://github.com/EchoMusicApp/Echo-Music
+   Aurelis changes: material applied to the active tab bar and MiniPlayer,
+   opaque page recording, and shared disabled/reduced-effect sampling policy.
+   Kyant0/backdrop and liquid_glass_easy notices below remain applicable.
+   See https://www.gnu.org/licenses/gpl-3.0.html.
 
 ────────────────────────────────────────────────────────────────────
 
@@ -44,18 +87,24 @@ Their original notices are preserved below.
    License: GNU Affero General Public License v3.0 or later
             (AGPL-3.0-or-later)
 
-   Adapted modules: native/analyzer/audio_analysis.cpp,
-   native/analyzer/mel_spectrogram.cpp, native/analyzer/resampler.cpp,
-   native/analyzer/tempo_analysis.cpp,
-   native/analyzer/vocal_spectrogram.cpp, and the JNI bridges
-   native/jni/analysis_jni.cpp, native/jni/mel_jni.cpp,
-   native/jni/vocal_jni.cpp.
+   Adapted modules: app/src/main/cpp/analyzer/audio_analysis.cpp,
+   app/src/main/cpp/analyzer/mel_spectrogram.cpp,
+   app/src/main/cpp/analyzer/resampler.cpp,
+   app/src/main/cpp/analyzer/tempo_analysis.cpp,
+   app/src/main/cpp/analyzer/vocal_spectrogram.cpp, and the JNI bridges
+   app/src/main/cpp/jni/analysis_jni.cpp,
+   app/src/main/cpp/jni/mel_jni.cpp,
+   app/src/main/cpp/jni/vocal_jni.cpp.
 
-   Per section 13 of the AGPLv3, these files are combined here into
-   Aurelis -- a work licensed under the GNU General Public License,
-   version 3 or later -- and remain themselves governed by the AGPLv3
-   as part of that combination. The terms of the GPLv3 continue to
-   apply to the combined work.
+   These files remain governed by AGPL-3.0-or-later. Section 13 of
+   GPLv3 and section 13 of AGPLv3 permit the specified combination:
+   GPLv3 continues to apply to the GPL-covered part, while the
+   AGPL-covered part retains its own license. The special AGPLv3
+   section 13 requirements concerning interaction through a network
+   apply to the combination as such. This does not relicense the
+   Orchard-derived files under GPL alone or change Aurelis's LICENSE.
+   Retain the corresponding source and all applicable notices when
+   distributing the combined binaries.
 
    Orchard's original source: https://github.com/SFG5453/Orchard
 
@@ -121,8 +170,8 @@ Their original notices are preserved below.
 
 5. ONNX models (Beat This! and Open-Unmix)
 
-   The Automix feature optionally uses two quantized neural-network
-   models distributed as ONNX files:
+   Legacy optional audio-analysis modules include two quantized ONNX
+   models. Active local AutoMix selection does not load these models:
 
    • beat_this_int8.onnx
      Derived from CPJKU/beat_this (https://github.com/CPJKU/beat_this)
@@ -134,9 +183,10 @@ Their original notices are preserved below.
      Copyright (c) Inria / SigSep
      License: MIT
 
-   Both are redistributed under the MIT License, whose full text
-   appears in section 4 above. The models are optional: Aurelis works
-   without them, falling back to the pure-DSP analyzer.
+   Upstream MIT notices are preserved in LICENSES/beat_this-MIT.txt
+   and LICENSES/open-unmix-MIT.txt. Exact quantized-export provenance
+   remains under review. Open-Unmix's umxl model has different,
+   non-commercial terms; it must not be confused with umxhq above.
 
 ────────────────────────────────────────────────────────────────────
 
@@ -151,11 +201,248 @@ Their original notices are preserved below.
    • OkHttp — Apache-2.0
    • Coil — Apache-2.0
    • Haze (dev.chrisbanes.haze) — Apache-2.0
-   • nextlib (io.github.anilbeesetti) — Apache-2.0
-   • ONNX Runtime Android (com.microsoft.onnxruntime) — MIT
+   • nextlib-media3ext 1.11.1-0.16.0 (io.github.anilbeesetti) — GPL-3.0
+     (as declared by its published POM; not Apache-2.0). Sources:
+     https://github.com/anilbeesetti/nextlib. FFmpeg binary/source
+     distribution obligations must also be retained.
+   • ONNX Runtime Android 1.22.0 (com.microsoft.onnxruntime) — MIT
+     Source tag: https://github.com/microsoft/onnxruntime/tree/v1.22.0
+     Original Microsoft MIT text retained; upstream ThirdPartyNotices.txt is
+     included unchanged as LICENSES/onnxruntime-ThirdPartyNotices.txt.
+     This aggregate notice also covers components for other upstream platforms;
+     inclusion does not assert that every listed component is linked in Android.
    • Guava (com.google.guava) — Apache-2.0
-   • Checker Framework (org.checkerframework) — MIT / GPL-2.0-with-classpath-exception
+   • checker-qual 3.48.3 (org.checkerframework) — MIT (artifact POM)
+   • org.json:json 20240303 — Public Domain (artifact POM)
    • Jsoup (org.jsoup) — MIT
 
-   Full license texts for the Apache-2.0 and MIT licenses appear
-   above in sections 3 and 4 respectively.
+   Full license texts and upstream MIT notices are included in LICENSES/;
+   the project GPL text is LICENSE. The original notices above and these
+   files are bundled under assets/licenses/ in both APK variants.
+   AGPL-governed source remains subject to AGPL-3.0-or-later; the full
+   text is LICENSES/AGPL-3.0-or-later.txt. These references do not replace
+   the obligation to supply corresponding source for distributed binaries.
+
+────────────────────────────────────────────────────────────────────
+
+7. Vazirmatn font
+Copyright 2015 The Vazirmatn Project Authors
+https://github.com/rastikerdar/vazirmatn
+SIL Open Font License, Version 1.1.
+Unmodified font referenced from BitChord commit
+b690dc146009d4815825fa4a20815ef2e4ee8898.
+Full notice and license: LICENSES/Vazirmatn-OFL.txt.
+
+8. Adaptation provenance
+
+B02.3 — IosSwitch adapted from BitChord
+Source: app/src/main/java/com/music/bitchord/ui/components/IosSwitch.kt
+Commit: b690dc146009d4815825fa4a20815ef2e4ee8898
+Original file SHA-256: 1931946478c7c4e0f81cac1f3cb89a3070d38d71366ac446bf327291a2eed9c5
+License: GPLv3 (upstream LICENSE); original BitChord contributors.
+Changes: Aurelis package/haptics, reduced-motion animation, active Settings wiring.
+
+B02.3-b3 — Android haptic rhythms and motor adaptation from BitChord
+Source: sharedUi/src/androidMain/kotlin/com/music/bitchord/ui/haptics/Haptics.android.kt
+Commit: b690dc146009d4815825fa4a20815ef2e4ee8898
+Original file SHA-256: 074cb0c645dac155555bbd57378b0ed027b8f025771d145daaa2999c2bc683ab
+License: GPLv3 (upstream LICENSE); original BitChord contributors.
+Destination: app/src/main/java/com/music/aurelis/ui/haptics/Haptics.kt
+Adapted material: beat rhythms, native primitive composition and amplitude/basic
+waveform fallbacks. Aurelis changes: minSdk33 API surface, required-primitives
+checks per rhythm including LOW_TICK, cache per handle, existing app/Android
+preferences, USAGE_TOUCH and shared song-hold action wiring. No process-wide
+ContentObserver or legacy-platform device singleton is imported.
+The Aurelis header identifies local contributions and does not replace the
+upstream GPLv3 conditions. Physical haptic parity is not certified by tests.
+
+B03 — Home local components
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
+(RecentShelf/CompactTrackRow/HeroShelf) and ui/components/Common.kt metrics.
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Changes: LocalSong/playlist data, local queue/actions, Android accessibility and shared Aurelis tokens.
+Existing Kyant0 and Ahmed Gamil notices remain applicable to the reused glass navigation.
+
+B03.1-a — entry-scoped navigation state lifecycle
+Reference commit: b690dc146009d4815825fa4a20815ef2e4ee8898 (BitChord).
+Sources: app/src/main/java/com/music/bitchord/ui/navigation/AppNavigator.kt
+(SHA-256: 9ffe029a38252ecd0e3355009c366d6e1b25f8de1837ae8d3578e13db65c0947)
+and app/src/main/java/com/music/bitchord/MainActivity.kt, pageStates/pageKeysSeen lifecycle
+(SHA-256: 90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2).
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Destinations: Aurelis ui/navigation/AppNavigator.kt and AppNavigationHost.kt.
+Changes: local wired routes, stable per-entry saved keys, removal of closed-page
+state, v2 Activity snapshot identities/counters and v1 key compatibility.
+Root-tab state and the existing local playback graph remain Aurelis integrations.
+The Aurelis headers identify local contributions; upstream conditions are retained.
+
+
+────────────────────────────────────────────────────────────────────
+
+B05 — Local player integration
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt
+and sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/LandscapePlayer.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Changes: local-file quality provenance, active horizontal layout with shared
+Aurelis playback controls, entry/dismiss gestures and existing glass surfaces.
+No Dolby branding or unverified streaming quality tiers are imported.
+
+B05.2 — Progressive panel and artwork dock
+Reference: the same BitChord commit, app/src/main/java/com/music/bitchord/ui/player/PlayerSheetMotion.kt
+and sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerDock.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE.
+Changes: inline Aurelis host, measured host/panel coordinates, cancellation and
+finite-size guards, same-track artwork overlay and accessibility isolation.
+The existing spring constants and third-party glass notices are retained.
+
+B06.1 — Local queue integration
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/playback/QueueCoordinator.kt,
+app/src/main/java/com/music/bitchord/ui/components/SongActionsMenu.kt,
+and sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerQueue.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE; upstream notices retained.
+Changes: activate the existing Aurelis queue renderer, serialize per-occurrence
+identity and tiers, use Media3 in-place edits, add local Play Next callbacks,
+accessible reorder actions and reduced-motion behavior. The active queue displays
+the canonical physical timeline; no remote/party queue logic is imported.
+Play Next while shuffle is enabled remains unavailable with an explanation until
+the session owns an explicit shuffled-successor policy. Aurelis integration and
+tests do not replace third-party authorship or change their licence terms.
+
+B07.1 — Local rich lyric formats and timing persistence
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/EnhancedLrc.kt
+and shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/TtmlLyrics.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE; existing notices retained.
+Changes: connect the existing parsers to local imports, repeated stamps/offsets,
+namespace and bounded XML handling, safe entities and lossless local cache metadata.
+Existing word/syllable model and helpers reused; no new external lyric service.
+Original short test fixtures and cache integration are Aurelis contributions;
+no commercial lyrics or replacement of third-party authorship is included.
+
+B07.2 — Local lyric frame clock and swept text
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerLyrics.kt
+(offset/playhead, foreground frame loop, swept-line and clipping sections)
+and sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/LyricClock.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE; prior notices retained.
+Changes: adapt existing local clock to Media3 discontinuities/lifecycle, draw-time
+prefix/grapheme clipping with native text shaping and bidi, measured focus,
+manual following and coherent offset math. No full upstream renderer port claimed.
+Original integration/fixtures are Aurelis contributions without replacing third-party authorship.
+
+9. Código fuente, distribución y verificaciones pendientes
+
+Repositorio de Aurelis Music:
+https://github.com/ed0668822/Aurelis-Music
+
+Al distribuir un APK, debe proporcionarse el código fuente correspondiente
+por una vía permitida por las licencias aplicables, incluidas las
+modificaciones y los archivos necesarios para generar los componentes
+cubiertos. Un enlace a un repositorio, por sí solo, no demuestra que se
+cumplan todas esas obligaciones ni que sus fuentes correspondan al binario.
+
+Siguen pendientes de acreditación la configuración y las fuentes exactas de
+los binarios FFmpeg/NextLib y la procedencia de las exportaciones cuantizadas
+de los modelos ONNX. El inventario de dependencias no sustituye esa revisión.
+Consultar docs/migration/beta-local/LICENSE_AUDIT.md y la auditoría histórica
+docs/migration/LICENSE_AUDIT.md para conocer la evidencia y sus límites.
+
+Los textos de LICENSE, NOTICE y LICENSES/ se incorporan mediante la tarea
+Gradle bundleLicenseTexts a assets/licenses/ de los APK. Su inclusión efectiva
+en cada APK debe verificarse en GitHub; no equivale a validar su ejecución.
+
+Este documento no otorga derechos sobre canciones, letras, carátulas, marcas
+ni servicios externos. Sus respectivos titulares conservan sus derechos.
+
+B08 — local-first lyric providers and configured translation
+----------------------------------------------------------
+Reference reviewed: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/
+LyricsRepository.kt, LrcLib.kt, BetterLyrics.kt, BiniLyrics.kt,
+LrcRed.kt and LyricsTranslation.kt.
+Original BitChord contributors, GPLv3 per upstream LICENSE; existing notices
+and the original copyright above remain applicable to adapted code.
+Aurelis additions provide an explicit provider registry, cancellable bounded
+HTTP requests, diagnostics, and integration with the existing local repository,
+player and configured LibreTranslate-compatible client. No new third-party
+library, model, font or native binary is introduced by this block.
+A client code license does not license the lyrics served by a third party.
+Only LRCLIB is enabled for explicit lookup. BetterLyrics, BiniLyrics and lrc.red
+remain disabled pending verified service/content terms. Other legacy provider
+clients and unofficial translation endpoints are not connected to the active
+lookup/translation flow. See docs/migration/beta-local/B08_PROVIDERS.md and
+LICENSE_AUDIT.md for the scope, evidence and outstanding verification.
+
+B03.2-a — local Home shelf layout continuation
+--------------------------------------------
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
+(HomeTitle, SectionHeader, Shelf/ShelfCard, HeroShelf, CompactTrackRow), and
+ui/components/SongText.kt (thumbnailBorder). Original BitChord contributors,
+GPLv3 per upstream LICENSE; existing notices and third-party rights retained.
+Adaptations: Home shelf gutters/gaps, section and caption typography, vertical
+spacing, artwork rims, playing indicator and heading-relative mark sizing.
+Aurelis retains its own icon/title, local models, queues/actions and artist tiles.
+The Home-only rim uses the active Aurelis theme rather than system theme so
+manual light/dark settings apply; the global no-op helper is not changed.
+No upstream wordmark, remote feed, dependencies or excluded features imported.
+Exact source hashes and remaining differences: docs/migration/beta-local/B03_2A_HOME.md.
+
+B03.3-a — scrollable local library states and recovery
+----------------------------------------------------
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
+(HomeTitle followed by loading/error items in LazyColumn) and
+ui/components/Common.kt (MessageState). Original BitChord contributors, GPLv3
+per upstream LICENSE; existing notices and third-party rights retained.
+Changes: reuse Aurelis MessageState for reachable local error/permission/empty
+recovery, align heading padding, and connect the existing LibraryUiState refresh
+flag. Aurelis keeps local models, real permission/settings callbacks and its
+existing scanner. No remote feed or source-of-truth replacement is imported.
+Spinner/progress and controlled local test fixtures are Aurelis additions.
+Source hashes and validation limits: docs/migration/beta-local/B03_3A_RECOVERY.md.
+
+B04-a — current visible ordering and saved local selection
+--------------------------------------------------------
+Reference reviewed: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/screens/LocalFolder.kt,
+LocalFolderState and LocalFolderSelectionBar (resolve selected IDs against songs).
+Original BitChord contributors, GPLv3 per upstream LICENSE; prior notices retained.
+Aurelis corrections resolve multi-selection against its current displayed order
+and save only ID strings across recreation. They retain the existing Aurelis
+screen, local catalogue, playlist membership and playback callback; no whole
+upstream file or remote/cache/upload feature is copied. Selection persistence
+and fixtures are Aurelis contributions. Details: docs/migration/beta-local/B04_A_SELECTION.md.
+
+B05.1-a — MiniPlayer queue gestures and progress
+----------------------------------------------
+Adapted from BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt:
+miniPlayerGestures axis/slop arbitration, upward bias, 72dp track swipe threshold,
+release-only queue action and glyph/spinner metrics. Original BitChord
+contributors, GPLv3 per upstream LICENSE; existing notices retained.
+Changes: gate queue actions by Aurelis controller capabilities, preserve Aurelis
+vertical threshold/fallback and explicit cancellation using its existing
+PlayerSheetMotion/PlayerDock, and normalize non-finite progress to zero.
+Aurelis keeps its 48dp transport targets and expand control, standard local skip
+icon, artwork and input-only AudioQualityInfo. No remote/video/party APIs,
+new controller, decoder, DSP or upstream bar lift animation are imported.
+SourceQualityBadge.kt was consulted to distinguish offered labels from confirmed
+input; its streaming/marketing classification is not copied. Hashes and limits:
+docs/migration/beta-local/B05_1A_MINIPLAYER.md.
+
+B05.2-a — Aurelis handle gesture lifecycle
+Explicit cancellation on pointer-input disposal; existing BitChord-derived panel/dock
+provenance and third-party notices retained. No new upstream source is copied.
+
+B05.2-b — transport contrast, selected approved delta
+Partial adaptation of BitChord acf219a7e4a7f52f026d4336d5c7ac5cf7bfafcc,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerChrome.kt
+(additiveChrome and neutral white strengths). Original BitChord contributors,
+GPLv3 per upstream LICENSE; existing notices retained. Changes: hardware/reduced-
+blur gate, solid theme fallback and disabled transport tint. Applied only to skip
+icons; central Material button preserved. ColorDodge and the full player chrome
+are not imported. Exact source hash and limits: B05_2B_CHROME.md.

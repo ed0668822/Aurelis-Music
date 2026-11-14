@@ -1,27 +1,20 @@
 # Aurelis © 2026. GPL-3.0-or-later.
-# B01: independent debug APK compilation and diagnostics.
+# B01: reusable Debug compilation stage; feature pushes are owned by B06.
+# Keep workflow_call for B06 and publish verified APKs only in B04.
+# Reconciled with the standalone main workflow without restoring duplicate APK uploads.
 name: "B01 | Compile Debug APK"
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle/**"
-      - "gradle.properties"
-      - "gradlew"
-      - ".github/workflows/b01-compile-debug.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
-  group: b01-debug-${{ github.ref }}
-  cancel-in-progress: true
+  group: aurelis-b01-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
 
 jobs:
   compile-apk:
@@ -40,6 +33,22 @@ jobs:
       - name: Prepare report directory
         run: mkdir -p ci-b01
 
+      - name: Preflight APK audit syntax and fixtures
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/apk_audit.py
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_apk_audit.py' -v
+
+      - name: Test fail-closed protected Release gate without secrets
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/f1_protected_release.py
+          python3 -m unittest discover -s .github/scripts -p 'test_f1_protected_release.py' -v
+
+      - name: Enforce actionlint and record zizmor findings
+        id: workflow_audit
+        run: bash .github/scripts/f5_workflow_audit.sh
+
       - name: Set up Java 17
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
@@ -51,6 +60,16 @@ jobs:
         with:
           validate-wrappers: true
           cache-read-only: true
+
+      - name: Restore pinned-version Android SDK cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/platforms/android-36
+            ${{ env.ANDROID_HOME }}/build-tools/35.0.0
+            ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+            ${{ env.ANDROID_HOME }}/cmake/3.22.1
+          key: android-sdk-v1-${{ runner.os }}-api36-bt35-ndk26.1.10909125-cmake3.22.1
 
       - name: Install required Android SDK tools
         run: |
@@ -65,18 +84,102 @@ jobs:
           echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
           chmod +x gradlew
 
+      - name: Compute V1 version from complete successful B01-B06 pipelines
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_v1_versioning.py' -v
+          python3 -m unittest discover -s .github/scripts -p 'test_v1_release_source.py' -v
+          python3 .github/scripts/v1_versioning.py generate --env-file "$GITHUB_ENV"
+          test -s ci-b01/version-metadata.json
+
+      - name: Prepare tracked source inventory before Debug compilation
+        run: |
+          set -euo pipefail
+          mkdir -p ci-artifacts
+          python3 .github/scripts/android_ci.py prepare
+          test -s ci-artifacts/source-inventory.json
+
+      - name: Probe Gradle configuration cache (diagnostic; not a production gate)
+        id: config_probe
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          ./gradlew :app:help --configuration-cache --console=plain --max-workers=2 \
+            2>&1 | tee ci-b01/configuration-cache-probe.log
+          ./gradlew :app:help --configuration-cache --console=plain --max-workers=2 \
+            2>&1 | tee -a ci-b01/configuration-cache-probe.log
+
       - name: Compile and assemble Debug APK
         id: compile
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebug --build-cache --console=plain \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
+          ./gradlew :app:assembleDebug --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
+            --stacktrace --no-configuration-cache --max-workers=2 \
             2>&1 | tee ci-b01/gradle-build.log
+
+      - name: Verify every tracked Debug Kotlin/Java task input
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_f4_debug_inputs.py' -v
+          python3 .github/scripts/f4_debug_inputs.py --sha "$GITHUB_SHA"
+
+      - name: Build Debug instrumentation APK (same source as Debug APK)
+        id: p3_build
+        timeout-minutes: 25
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebugAndroidTest --init-script .github/scripts/task-inputs.gradle --build-cache --console=plain \
+            --stacktrace --no-configuration-cache --max-workers=2 \
+            2>&1 | tee ci-b01/p3-androidtest-build.log
+          test -s app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+
+      - name: Verify and package signed-for-debug APK handoff
+        id: handoff
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_ci14_handoff.py' -v
+          python3 .github/scripts/ci14_handoff.py pack
+          python3 .github/scripts/ci14_handoff.py verify
+
+      - name: Package and test Debug compiler class evidence
+        id: compiler_outputs
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s .github/scripts -p 'test_ci14_compiler_outputs.py' -v
+          python3 .github/scripts/ci14_compiler_outputs.py pack
+          python3 .github/scripts/ci14_compiler_outputs.py verify
+
+      - name: Upload same-run compiler class evidence
+        id: compiler_upload
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b01-compiler-outputs-${{ github.run_number }}
+          path: ci-f3-classes/
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Upload same-run APK handoff
+        id: shared
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: b01-shared-apks-${{ github.run_number }}
+          path: ci-f3-handoff/
+          if-no-files-found: error
+          retention-days: 2
 
       - name: Generate independent B01 report
         if: always()
         env:
           BUILD_OUTCOME: ${{ steps.compile.outcome }}
+          P3_BUILD_OUTCOME: ${{ steps.p3_build.outcome }}
+          HANDOFF_OUTCOME: ${{ steps.handoff.outcome }}
+          SHARED_OUTCOME: ${{ steps.shared.outcome }}
+          CONFIG_PROBE_OUTCOME: ${{ steps.config_probe.outcome }}
+          WORKFLOW_AUDIT_OUTCOME: ${{ steps.workflow_audit.outcome }}
+          COMPILER_OUTCOME: ${{ steps.compiler_outputs.outcome }}
+          COMPILER_UPLOAD_OUTCOME: ${{ steps.compiler_upload.outcome }}
         run: |
           python3 - <<'PY'
           import hashlib
@@ -106,6 +209,13 @@ jobs:
           summary = [
               "# B01 — Debug APK compilation",
               f"- Status: **{status}**",
+              f"- Instrumentation APK built: **{os.getenv('P3_BUILD_OUTCOME', 'unknown')}**",
+              f"- SHA-256 provenance verified: **{os.getenv('HANDOFF_OUTCOME', 'unknown')}**",
+              f"- Immutable shared artifact uploaded: **{os.getenv('SHARED_OUTCOME', 'unknown')}**",
+              f"- Configuration cache probe: **{os.getenv('CONFIG_PROBE_OUTCOME', 'unknown')}** (diagnostic only)",
+              f"- actionlint mandatory: **{os.getenv('WORKFLOW_AUDIT_OUTCOME', 'unknown')}**; see workflow-audit.md for zizmor findings",
+              f"- Debug compiler outputs verified: **{os.getenv('COMPILER_OUTCOME', 'unknown')}**",
+              f"- Compiler evidence uploaded: **{os.getenv('COMPILER_UPLOAD_OUTCOME', 'unknown')}**",
               f"- Commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
               f"- Gradle task lines captured: **{len(tasks)}**",
               f"- Debug APKs found: **{len(apks)}**",
@@ -127,11 +237,4 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Upload compiled Debug APK
-        if: ${{ steps.compile.outcome == 'success' }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: b01-debug-apk-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
+# APK delivery belongs exclusively to B04, after independent verification.

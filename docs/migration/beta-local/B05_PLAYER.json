@@ -1,0 +1,44 @@
+{
+  "baseline": "4c407859ee4aa20dcf9412e300b6c72241d1a401",
+  "reference_commit": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "selected_reference_sections_sha256": {
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/LandscapePlayer.kt": "04ccd317d0e37822dbc0fd3b5ea041c36a296c396af20c3e91f7d15774ca013d",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/SourceQualityBadge.kt": "aac9316e1eeb609d799955ab6a7fbd326fda8f761dbc31c20b7fe9eaedd9592a",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt": "f294dfd1b75d1808fb86df2a93580efc87783daef5bc774f4ff9c3f6f7317b69"
+  },
+  "modified_kotlin_sha256": {
+    "app/src/main/java/com/music/aurelis/MainActivity.kt": "ba0707f087ff3179638256bb7723f7d191d573e8e38354201c56a17e16b9e898",
+    "app/src/main/java/com/music/aurelis/playback/PlaybackViewModel.kt": "17c3fda5c4d1026eca1c2896b5737078bd525e2040059875075d1ce25e270ed6",
+    "app/src/main/java/com/music/aurelis/ui/components/GlassNavBar.kt": "a5f69afb857233ddf835068dbbc5702d1fd6b57fe629af12161426c83f238841",
+    "app/src/main/java/com/music/aurelis/ui/components/MiniPlayer.kt": "f4adfec50efc0fc954408346cb39fef19819df9b1e453db099178fefe3583d9f",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "11eb8acf742f3661373b7cc832aaa87aa7ee9cd339f380a13abc0625355efcad",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "26640b0f251c247be2c74f964d9fd07604c7d27767b31e3d828a664101b6a89f",
+    "app/src/main/java/com/music/aurelis/playback/AudioQualityInfo.kt": "500cdf66965c3af2df62ebd574e4c7525d2e77fc221a3563e36c79caf20822ec",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerSwipeTrigger.kt": "43e15545f27023efd18d316c8233ab256f4d06b947e0d7474f6a4342a5f5bf65",
+    "app/src/test/java/com/music/aurelis/playback/AudioQualityInfoTest.kt": "3fa209fd4527affef6011aaca4c4525988bc1e1d42ca32f6a845eb9a25679e86"
+  },
+  "protected_unchanged": [
+    ".github",
+    "LICENSE",
+    "LICENSES",
+    "gradle",
+    "app/build.gradle.kts",
+    "app/src/main/cpp",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/java/com/music/aurelis/playback/AurelisPlaybackService.kt",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop",
+    "app/src/test/java/com/music/aurelis/ui/components/backdrop",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "static_reviews": [
+    "architecture, API signatures read using javap, quality provenance",
+    "separate integration, cancellation, reduced effects and license review; same agent"
+  ],
+  "git_diff_check": "PASS",
+  "new_tests_prepared": 6,
+  "local_android_build_tests": "NOT_EXECUTED by user preference",
+  "github_build": "PENDING user feedback; no inherited green from B04",
+  "device_rotation_playback_logcat_gpu": "NOT_EXECUTED",
+  "status": "B05 incremental; active layouts, quality, gestures; panel/dock morph and visual parity pending; no B06/QA02"
+}

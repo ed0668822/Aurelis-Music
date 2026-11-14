@@ -1,9 +1,19 @@
 // Aurelis © 2026. GPL-3.0-or-later
+// Entry identity follows BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+// GPLv3; original contributors/provenance in NOTICE. Persistence is Aurelis glue.
 package com.music.aurelis.ui.navigation
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.music.aurelis.data.model.LocalShelf
+import java.net.URLEncoder
+import java.net.URLDecoder
 
 sealed interface AppRoute {
     data object Settings : AppRoute
@@ -12,6 +22,9 @@ sealed interface AppRoute {
     data object Replay : AppRoute
     data object History : AppRoute
     data object LocalMusic : AppRoute
+    data object NowPlaying : AppRoute
+    data object Queue : AppRoute
+    data class Collection(val kind: LocalCollectionKind, val key: String = "") : AppRoute
 
     data class LibraryShowAll(val shelf: LocalShelf) : AppRoute
     data class ArtistShelf(val artistId: String, val shelf: LocalShelf) : AppRoute
@@ -20,18 +33,80 @@ sealed interface AppRoute {
     data object EqualizerPresets : AppRoute
 }
 
-data class RouteEntry(val id: Long, val route: AppRoute, val detailDepth: Int)
+data class RouteEntry(
+    val id: Long, val route: AppRoute, val detailDepth: Int,
+    internal val legacyStateKey: Boolean = false,
+) {
+    // Retain a v1 Activity's provider key until that entry leaves the stack.
+    internal val stateKey: String
+        get() = if (legacyStateKey) "page.${requireNotNull(route.navigationKey)}" else "route:$id"
+}
+
+enum class AppTab { HOME, EXPLORE, LIBRARY, SEARCH }
+enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST, FOLDER, GENRE, ALBUMS, ARTISTS, FOLDERS, HISTORY }
+
+/** Only implemented, parameter-free destinations are restored in the current graph. */
+internal val AppRoute.navigationKey: String?
+    get() = when (this) {
+        AppRoute.Settings -> "settings"
+        AppRoute.Equalizer -> "equalizer"
+        AppRoute.Replay -> "replay"
+        AppRoute.LocalMusic -> "local-music"
+        AppRoute.NowPlaying -> "now-playing"
+        AppRoute.Queue -> "queue"
+        is AppRoute.Collection -> "collection:${kind.name}:${URLEncoder.encode(key, "UTF-8")}"
+        else -> null
+    }
+
+private fun routeForKey(key: String): AppRoute? = when (key) {
+    "settings" -> AppRoute.Settings
+    "equalizer" -> AppRoute.Equalizer
+    "replay" -> AppRoute.Replay
+    "local-music" -> AppRoute.LocalMusic
+    "now-playing" -> AppRoute.NowPlaying
+    "queue" -> AppRoute.Queue
+    else -> if (key.startsWith("collection:")) runCatching {
+        val parts = key.split(':', limit = 3)
+        val kind = LocalCollectionKind.valueOf(parts[1])
+        val id = URLDecoder.decode(parts[2], "UTF-8")
+        require(id.isNotBlank() || kind in listOf(LocalCollectionKind.FAVORITES, LocalCollectionKind.PLAYLISTS, LocalCollectionKind.ALBUMS, LocalCollectionKind.ARTISTS, LocalCollectionKind.FOLDERS, LocalCollectionKind.HISTORY))
+        AppRoute.Collection(kind, id)
+    }.getOrNull() else null
+}
+
+@Composable
+fun rememberAppNavigator(): AppNavigator =
+    rememberSaveable(saver = AppNavigator.StateSaver) { AppNavigator() }
 
 @Stable
 class AppNavigator(
-    private val detailDepth: () -> Int,
-    private val popDetail: () -> Boolean,
-    private val clearDetails: () -> Unit,
+    private val detailDepth: () -> Int = { 0 },
+    private val popDetail: () -> Boolean = { false },
+    private val clearDetails: () -> Unit = {},
 ) {
     private val stack = mutableStateListOf<RouteEntry>()
     private var nextId = System.currentTimeMillis()
 
     val entries: List<RouteEntry> get() = stack
+
+    var selectedTab by mutableStateOf(AppTab.HOME)
+        private set
+
+    val canGoBack: Boolean
+        get() = stack.isNotEmpty() || detailDepth() > 0 || selectedTab != AppTab.HOME
+
+    fun selectTab(tab: AppTab) {
+        clear()
+        selectedTab = tab
+    }
+
+    /** Pop pages first; a root tab returns to Home, whose Back belongs to Android. */
+    fun back(): Boolean {
+        if (pop()) return true
+        if (selectedTab == AppTab.HOME) return false
+        selectedTab = AppTab.HOME
+        return true
+    }
 
     fun visibleEntry(depth: Int = detailDepth()): RouteEntry? =
         stack.lastOrNull()?.takeIf { depth <= it.detailDepth }
@@ -75,6 +150,52 @@ class AppNavigator(
             if (entry.detailDepth > depth) stack[i] = entry.copy(detailDepth = depth)
         }
     }
+
+    internal fun saveState(): List<String>? {
+        // Never put track lists, artwork or callbacks into the Activity's saved Bundle.
+        if (detailDepth() != 0 || stack.any { it.detailDepth != 0 }) return null
+        val entries = stack.flatMap { entry ->
+            val route = entry.route.navigationKey ?: return null
+            listOf(entry.id.toString(), route, if (entry.legacyStateKey) "1" else "0")
+        }
+        return listOf("2", selectedTab.name, nextId.toString()) + entries
+    }
+
+    companion object {
+        internal fun restoreState(saved: List<String>): AppNavigator? {
+            if (saved.size < 2) return null
+            val tab = AppTab.entries.firstOrNull { it.name == saved[1] } ?: return null
+            if (saved[0] == "1") {
+                val routes = saved.drop(2).map { routeForKey(it) ?: return null }
+                return AppNavigator().apply {
+                    selectedTab = tab
+                    routes.forEach(::push)
+                    for (index in stack.indices) {
+                        stack[index] = stack[index].copy(legacyStateKey = true)
+                    }
+                }
+            }
+            if (saved[0] != "2" || saved.size < 3 || (saved.size - 3) % 3 != 0) return null
+            val savedNextId = saved[2].toLongOrNull()?.takeIf { it >= 0 && it < Long.MAX_VALUE } ?: return null
+            val entries = saved.drop(3).chunked(3).map { fields ->
+                val id = fields[0].toLongOrNull()?.takeIf { it >= 0 && it < savedNextId } ?: return null
+                val route = routeForKey(fields[1]) ?: return null
+                val legacy = when (fields[2]) { "0" -> false; "1" -> true; else -> return null }
+                RouteEntry(id, route, 0, legacy)
+            }
+            if (entries.zipWithNext().any { (first, second) -> first.id >= second.id }) return null
+            return AppNavigator().apply {
+                selectedTab = tab
+                nextId = savedNextId
+                stack.addAll(entries)
+            }
+        }
+
+        internal val StateSaver = listSaver<AppNavigator, String>(
+            save = { it.saveState() ?: emptyList() },
+            restore = { restoreState(it) },
+        )
+    }
 }
 
 sealed interface AppDestination {
@@ -85,7 +206,7 @@ sealed interface AppDestination {
     }
 
     data class Route(val entry: RouteEntry) : AppDestination {
-        override val key: String get() = "route:${entry.id}"
+        override val key: String get() = entry.stateKey
     }
 
     data class Release(val id: String) : AppDestination {

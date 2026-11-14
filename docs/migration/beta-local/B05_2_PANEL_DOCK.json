@@ -1,0 +1,58 @@
+{
+  "baseline": "a5e06bc3d021ae7dd9ec97058ce70c4042c7a4fa",
+  "reference_commit": "b690dc146009d4815825fa4a20815ef2e4ee8898",
+  "reference_files_sha256": {
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerDock.kt": "00b61a242a9447a66ffb45686dd4a146c6a22dd17cb61f54f2fc6a3ddb370b47",
+    "BitChord-b690dc146009d4815825fa4a20815ef2e4ee8898/app/src/main/java/com/music/bitchord/ui/player/PlayerSheetMotion.kt": "7fae8d451d6763c81de6f44654503a504519194e7c268557a9e55c4f30dec12b"
+  },
+  "preserved_motion_constants": {
+    "SLIDE_STIFFNESS": "195f",
+    "SLIDE_SETTLED_PX": "0.5f",
+    "SHEET_VELOCITY_FRESH_MS": "80f",
+    "LAYOUT_WAIT_MS": "300L",
+    "WINDOW_ENTER_MS": "600L"
+  },
+  "modified_kotlin_sha256": {
+    "app/src/main/java/com/music/aurelis/MainActivity.kt": "85de74149675485266bed508813bb07383004561c1e3dbb474bfecca9134fdd2",
+    "app/src/main/java/com/music/aurelis/ui/components/GlassNavBar.kt": "2103849cf4f62384435647aeaeaafc9164af9f7366794f215eb294f5731b43ef",
+    "app/src/main/java/com/music/aurelis/ui/components/MiniPlayer.kt": "dd6075469ecfa89f5abe43c5cbc4293b772e83951717c7a9d3792c411303ac98",
+    "app/src/main/java/com/music/aurelis/ui/navigation/AppNavigationHost.kt": "8a99038aaf8299d0fd1e45f81df3c04998f889ec3531ad69a42371bf6a787e55",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerDock.kt": "a565c23dc0e97cda37ce6718c01d75806edbf3df136326e6698835708b739032",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerSheetMotion.kt": "b25774b0999939e6acf8010f4fd50eeccc962b78902b9d2e7852091b8c873f3e",
+    "app/src/main/java/com/music/aurelis/ui/player/PlayerSwipeTrigger.kt": "33c872bff5bac2a17970e75385e3ca595aa033e2cb2c2a2ce70fd7d5a435fe5e",
+    "app/src/main/java/com/music/aurelis/ui/screens/NowPlayingScreen.kt": "2d62bd684b2b4b20b63ca6e20c89bdc9c4470a48e775ed6822cceb52d0575b30",
+    "app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt": "7017c28a9c3f341664ff93737443eed259318bb23da4deb31912b9aaa9dbb4aa",
+    "app/src/main/java/com/music/aurelis/ui/player/DockedArtworkOverlay.kt": "54d246de8d2cbf1e0482e704f4a597e845a17ed5d271bc1de90e9029089d317d",
+    "app/src/test/java/com/music/aurelis/ui/player/PlayerDockGeometryTest.kt": "e7ee0f3f813ff5590ece86ad21d32eea6e5f443fb271ab5b11ded147c671571a",
+    "app/src/test/java/com/music/aurelis/ui/player/PlayerPanelMotionTest.kt": "7d0595bd81060dcc5c35d7e7be21d0ad1b2a0c19e920eedd7825c0a4721cc08a"
+  },
+  "protected_unchanged": [
+    ".github",
+    "LICENSE",
+    "LICENSES",
+    "gradle",
+    "gradle.properties",
+    "build.gradle.kts",
+    "settings.gradle.kts",
+    "app/build.gradle.kts",
+    "app/src/main/cpp",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/java/com/music/aurelis/playback",
+    "app/src/main/java/com/music/aurelis/data",
+    "app/src/main/java/com/music/aurelis/ui/components/backdrop",
+    "app/src/test/java/com/music/aurelis/ui/components/backdrop",
+    "docs/migration/beta-local/MASTER_PLAN.md",
+    "docs/migration/beta-local/IMPLEMENTATION_BLOCKS.md"
+  ],
+  "reviews": [
+    "static architecture, geometry, input lifetime and coroutine cleanup",
+    "separate static accessibility, RTL, fallback, provenance and regression review; same agent"
+  ],
+  "api_inspection": "javap: AbsoluteAlignment.TopLeft, LayoutCoordinates.localBoundingBoxOf, VelocityTracker, BroadcastFrameClock.sendFrame present",
+  "static_whitespace_and_duplicate_imports": "PASS",
+  "new_tests_prepared": 7,
+  "prior_swipe_test_updated": true,
+  "android_build_and_tests": "NOT_EXECUTED_LOCALLY; GitHub pending user feedback",
+  "android_device_visual_rotation_audio_logcat": "NOT_EXECUTED",
+  "status": "B05.2 code connected; CI and visual/runtime validation pending; no B06 or QA02"
+}

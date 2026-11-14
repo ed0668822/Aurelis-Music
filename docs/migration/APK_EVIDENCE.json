@@ -1,0 +1,37 @@
+{
+  "debug": {
+    "bytes": 121108010,
+    "sha256": "5959bc0231e2f5f336058058b553b3f5a1820c8216de5e67358927d8c374d8fe",
+    "bundled_licenses": 9,
+    "native_libraries": 12
+  },
+  "release": {
+    "bytes": 56835537,
+    "sha256": "11e0a32b6e3ff4c0de2052d80983c15e6ab93db1ba83db69445706de90e41bfe",
+    "bundled_licenses": 9,
+    "native_libraries": 12
+  },
+  "applicationId": "com.music.aurelis",
+  "minSdk": 33,
+  "targetSdk": 35,
+  "compileSdk": 36,
+  "versionName": "1.9.0-dev",
+  "versionCode": 1,
+  "abi": "arm64-v8a",
+  "signing": "Android Debug certificate via existing fallback; not a publication signature",
+  "validation": "Local Gradle/ZIP/signature checks; no device or remote CI success asserted",
+  "tests_debug": {
+    "tests": 126,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "tests_release": {
+    "tests": 126,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "validation_base_commit": "2ecce6e96d15f6e033a9ee407fa9f0958504c911 plus B12/B13 source changes; delivery commit recorded in PROGRESS",
+  "validation_source_commit": "30569f194d8f05ebe728caa3b51406a27ccbf96b"
+}

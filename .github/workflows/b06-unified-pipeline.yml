@@ -1,0 +1,186 @@
+# Aurelis © 2026. GPL-3.0-or-later.
+# B06: one push -> ordered, independently reported CI stages.
+name: "Aurelis | Unified B01-B06 Pipeline"
+
+on:
+  push:
+    branches:
+      - feature/bitchord-local-migration
+      - main
+    tags:
+      - "v*"
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradle.properties"
+      - "gradlew"
+      - "LICENSE"
+      - "LICENSES/**"
+      - "NOTICE"
+      - ".github/scripts/**"
+      - ".github/version-policy.json"
+      - ".github/apk-audit-policy.json"
+      - ".github/workflows/b0*.yml"
+  # The feature branch has a single push-driven pipeline per commit.
+  # Avoid duplicating full builds for its open pull request.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: aurelis-unified-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  b01:
+    name: "B01 | Compile Debug APK"
+    uses: ./.github/workflows/b01-compile-debug.yml
+    permissions:
+      contents: read
+      actions: read
+
+  b02:
+    name: "B02 | Android Lint"
+    needs: b01
+    if: ${{ needs.b01.result == 'success' }}
+    uses: ./.github/workflows/b02-android-lint.yml
+    permissions:
+      contents: read
+
+  b03:
+    name: "B03 | Unit Tests"
+    needs: b01
+    if: ${{ needs.b01.result == 'success' }}
+    uses: ./.github/workflows/b03-unit-tests.yml
+    permissions:
+      contents: read
+
+  # F3-a: B02 and B03 run concurrently; B04 must wait for both.
+  b04:
+    name: "B04 | APK Verification"
+    needs: [b02, b03]
+    if: ${{ needs.b02.result == 'success' && needs.b03.result == 'success' }}
+    uses: ./.github/workflows/b04-verify-apks.yml
+    secrets:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+      VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+    permissions:
+      contents: read
+
+  # F3: B05 is safe to execute concurrently with B02/B03 and B04.
+  # Its APKs come exclusively from B01; B06 requires B04 and B05 success.
+  b05:
+    name: "B05 | Android Emulator"
+    needs: b01
+    if: ${{ needs.b01.result == 'success' }}
+    uses: ./.github/workflows/b05-android-emulator.yml
+    permissions:
+      contents: read
+
+  b06:
+    name: "B06 | Reports and final gate"
+    needs: [b01, b02, b03, b04, b05]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout report bundling script
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Collect all B01-B05 artifacts (if any)
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: "b0*"
+          path: b06-input/
+          merge-multiple: false
+
+      - name: Test F3-a CI graph and fail-closed gates
+        run: python3 -m unittest discover -s .github/scripts -p 'test_ci14_parallel_gate.py' -v
+
+      - name: Test VirusTotal report logic without network
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b06_virustotal_delivery.py' -v
+
+      - name: Test P2.4 per-file report matrix without network
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b06_file_matrix.py' -v
+
+      - name: Test CI14 F4 cross-stage evidence integrity gate
+        run: python3 -m unittest discover -s .github/scripts -p 'test_f4_integrity_gate.py' -v
+
+      - name: Test CI14 F4 source and APK evidence verdicts
+        run: python3 -m unittest discover -s .github/scripts -p 'test_file_compile_matrix.py' -v
+
+      - name: Test F5 changed-line coverage without misleading green results
+        run: python3 -m unittest discover -s .github/scripts -p 'test_f5_diff_coverage.py' -v
+
+      - name: Test P2.5 VirusTotal packaging and artifact contract offline
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b06_delivery_contract.py' -v
+
+      - name: Test P2.6/P3 JUnit attestation by commit and variant
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b06_junit_attestation.py' -v
+
+      - name: Test P2.6/P3 quality-readiness evidence without network
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b06_quality_readiness.py' -v
+
+      - name: Consolidate B01-B06 reports into one phase-organized package
+        id: summary
+        if: always()
+        env:
+          STAGES_JSON: ${{ toJSON(needs) }}
+          DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+          # Expect the signed testing candidate only on the explicitly authorized branch/events.
+          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+        run: python3 .github/scripts/b06_bundle_reports.py
+
+      - name: Upload B06 final report
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Aurelis-Informes-B01-B06-${{ github.run_number }}
+          path: b06-package/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce all phases and report publication
+        if: always()
+        env:
+          SUMMARY_OUTCOME: ${{ steps.summary.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          file = Path("b06-package/B06/pipeline-results.json")
+          if not file.is_file():
+              raise SystemExit("B06 FAIL: missing final report")
+          result = json.loads(file.read_text())
+          if result["status"] != "PASS" or os.getenv("SUMMARY_OUTCOME") != "success" or os.getenv("UPLOAD_OUTCOME") != "success":
+              bad = ", ".join(k + "=" + v for k, v in result["phases"].items() if v != "success")
+              failed_checks = [name for name, ok in result.get("checks", {}).items() if ok is not True]
+              reason = "; ".join(x for x in (bad, "failed checks: " + ", ".join(failed_checks) if failed_checks else "") if x)
+              raise SystemExit("B06 FAIL: " + (reason or "report gate or upload failed"))
+          print("B06 PASS: B01-B05 verified, one organized report artifact published")
+          PY
+
+      - name: Retain only expected final artifacts after successful B06 gate
+        if: ${{ success() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_PUBLISH_EXPECTED: ${{ github.ref == 'refs/heads/feature/bitchord-local-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+        run: python3 .github/scripts/b06_cleanup_artifacts.py

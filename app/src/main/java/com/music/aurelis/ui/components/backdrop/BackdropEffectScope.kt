@@ -3,6 +3,7 @@
 package com.music.aurelis.ui.components.backdrop
 
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -61,6 +62,9 @@ internal abstract class BackdropEffectScopeImpl : BackdropEffectScope, RuntimeSh
     fun apply(effects: BackdropEffectScope.() -> Unit) {
         padding = 0f
         renderEffect = null
+        // Attachment precedes the first DrawScope update. Do not evaluate effects
+        // against unspecified/empty dimensions, including after detach/reset.
+        if (!size.isUsableForBackdrop()) return
         effects()
     }
 
@@ -74,3 +78,6 @@ internal abstract class BackdropEffectScopeImpl : BackdropEffectScope, RuntimeSh
         runtimeShaderCache.clear()
     }
 }
+
+internal fun Size.isUsableForBackdrop(): Boolean =
+    isSpecified && width.isFinite() && height.isFinite() && width > 0f && height > 0f

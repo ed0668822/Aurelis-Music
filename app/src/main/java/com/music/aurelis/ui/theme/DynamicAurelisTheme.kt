@@ -91,6 +91,8 @@ fun DynamicAurelisTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = AurelisTypography,
+        shapes = AurelisShapes,
         content = content
     )
 }

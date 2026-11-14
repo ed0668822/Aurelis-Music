@@ -11,12 +11,28 @@ import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.request.crossfade
 import com.music.aurelis.data.SettingsRepository
+import com.music.aurelis.data.ProfileRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import com.music.aurelis.data.LocalUserLibrary
+import com.music.aurelis.data.stats.ListeningStats
 
 class AurelisApplication : Application(), SingletonImageLoader.Factory {
+    private lateinit var mutableLibraries: MutableStateFlow<LocalUserLibrary>
+    val libraries: StateFlow<LocalUserLibrary> get() = mutableLibraries.asStateFlow()
+    val userLibrary: LocalUserLibrary get() = mutableLibraries.value
 
     override fun onCreate() {
         super.onCreate()
+        ProfileRepository.init(this)
         SettingsRepository.init(this)
+        mutableLibraries = MutableStateFlow(LocalUserLibrary(this, ProfileRepository.profileId))
+        com.music.aurelis.ui.AppUi.install(object : com.music.aurelis.ui.AppUiHost {
+            override val libraries: StateFlow<LocalUserLibrary> = this@AurelisApplication.libraries
+        })
+        com.music.aurelis.data.lyrics.LyricsTranslation.cacheDir = cacheDir
+        ListeningStats.init(userLibrary)
 
         val meta = getSharedPreferences("app_meta", MODE_PRIVATE)
         val lastVersion = meta.getInt("last_version_code", 0)

@@ -4,6 +4,7 @@ package com.music.aurelis.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -31,6 +33,10 @@ import com.music.aurelis.R
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.data.model.SortOption
 import com.music.aurelis.ui.components.*
+
+enum class LocalSearchCategory(val label: String) { ALL("Todo"), SONGS("Canciones"), ALBUMS("Álbumes"), ARTISTS("Artistas"), PLAYLISTS("Playlists"), GENRES("Géneros") }
+
+data class LocalSearchDestination(val title: String, val detail: String, val onOpen: () -> Unit)
 
 @Composable
 fun SearchScreen(
@@ -54,6 +60,9 @@ fun SearchScreen(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues,
     topPadding: Dp,
+    destinations: List<LocalSearchDestination> = emptyList(),
+    category: LocalSearchCategory = LocalSearchCategory.ALL,
+    onCategoryChange: (LocalSearchCategory) -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -77,7 +86,13 @@ fun SearchScreen(
                 placeholder = "Buscar canciones, artistas, álbumes…",
                 modifier = Modifier.padding(start = PAGE_GUTTER, end = PAGE_GUTTER, bottom = 4.dp),
             )
-            if (results != null) {
+            if (results != null) LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                itemsIndexed(LocalSearchCategory.entries.toList()) { _, item ->
+                    SearchFilterChip(item.label, category == item, { onCategoryChange(item) })
+                }
+            }
+            if (results != null && category in listOf(LocalSearchCategory.ALL, LocalSearchCategory.SONGS)) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -105,9 +120,16 @@ fun SearchScreen(
 
         LazyColumn(
             state = listState,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+            modifier = Modifier.weight(1f).fillMaxWidth().testTag("local-search-results"),
             contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
         ) {
+            itemsIndexed(destinations) { _, destination ->
+                Column(Modifier.fillMaxWidth().clickable(onClick = destination.onOpen)
+                    .padding(horizontal = PAGE_GUTTER, vertical = 12.dp)) {
+                    Text(destination.title, style = MaterialTheme.typography.titleMedium)
+                    Text(destination.detail, style = MaterialTheme.typography.bodySmall)
+                }
+            }
             when {
                 results == null && query.isEmpty() -> {
                     if (history.isEmpty()) {
@@ -122,7 +144,7 @@ fun SearchScreen(
                     }
                 }
                 results == null -> item { MessageState("Escribe para buscar") }
-                results.isEmpty() -> item {
+                results.isEmpty() && destinations.isEmpty() -> item {
                     MessageState("No hay resultados para \"$query\"")
                 }
                 else -> {

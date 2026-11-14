@@ -10,4 +10,7 @@ data class LocalArtist(
     val songCount: Int,
     val albumCount: Int,
     val songs: List<LocalSong>,
-)
+    val mediaId: String? = null,
+) {
+    val key: String get() = mediaId?.let { "media:$it" } ?: name
+}

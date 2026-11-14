@@ -7,6 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 val localProps = Properties().apply {
@@ -64,9 +65,36 @@ fun escapeForBuildConfig(value: String): String {
 
 val listenTogetherServer = readValue("LISTEN_TOGETHER_SERVER", "").trimEnd('/')
 
+// A debug-signed Release is only for explicitly requested local experiments.
+// CI never sets this property; official builds must use the configured release keystore.
+val allowDebugSignedRelease = providers.gradleProperty("allowDebugSigned")
+    .map { it == "true" }.getOrElse(false)
+val configuredReleaseSigning = listOf(
+    readSigning("storeFile") ?: readSigning("STORE_FILE"),
+    readSigning("storePassword") ?: readSigning("STORE_PASSWORD"),
+    readSigning("keyAlias") ?: readSigning("KEY_ALIAS"),
+    readSigning("keyPassword") ?: readSigning("KEY_PASSWORD"),
+).all { !it.isNullOrBlank() } && (
+    readSigning("storeFile") ?: readSigning("STORE_FILE")
+)?.let { rootProject.file(it).isFile } == true
+
 val runNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
-val autoVersionCode = if (runNumber != null) 10000 + runNumber else 1
-val autoVersionName = if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
+val v1Name = System.getenv("AURELIS_VERSION_NAME")?.trim()?.takeIf { it.isNotEmpty() }
+val v1Code = System.getenv("AURELIS_VERSION_CODE")?.trim()?.takeIf { it.isNotEmpty() }
+require((v1Name == null) == (v1Code == null)) {
+    "V1 versionName and versionCode must be supplied together"
+}
+if (v1Name != null) {
+    require(Regex("""1\.\d+\.\d+""").matches(v1Name)) { "Invalid V1 versionName" }
+}
+val parsedVersionCode = v1Code?.toIntOrNull()
+if (v1Code != null) {
+    require(parsedVersionCode != null && parsedVersionCode in 1..2_100_000_000) {
+        "Invalid Android versionCode"
+    }
+}
+val autoVersionCode = parsedVersionCode ?: if (runNumber != null) 10000 + runNumber else 1
+val autoVersionName = v1Name ?: if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
 
 android {
     namespace = "com.music.aurelis"
@@ -78,7 +106,8 @@ android {
         applicationId = "com.music.aurelis"
 
         minSdk = 33
-        targetSdk = 35
+        targetSdk = 36
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         versionCode = autoVersionCode
         versionName = autoVersionName
@@ -139,6 +168,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     androidResources {
         noCompress.add("onnx")
     }
@@ -152,9 +185,7 @@ android {
 
     buildTypes {
         debug {
-            signingConfigs.findByName("release")?.let {
-                signingConfig = it
-            }
+            // Keep Debug independently debug-signed, even when Release credentials exist.
         }
 
         release {
@@ -162,7 +193,7 @@ android {
             isShrinkResources = false
 
             signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.getByName("debug")
+                ?: if (allowDebugSignedRelease) signingConfigs.getByName("debug") else null
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -176,6 +207,31 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+// Fail before running Release assembly if an actual release keystore is missing.
+// Release unit tests do not assemble an APK, so they remain executable without secrets.
+gradle.taskGraph.whenReady {
+    if (hasTask(":app:assembleRelease") &&
+        !configuredReleaseSigning &&
+        !allowDebugSignedRelease
+    ) {
+        throw GradleException(
+            "Release signing requires a valid configured keystore. " +
+                "No Debug signature fallback is allowed; " +
+                "-PallowDebugSigned=true is for explicit local experiments only."
+        )
+    }
+}
+
+// Bundle verbatim project and third-party notices; never edit license text during builds.
+val bundleLicenseTexts by tasks.registering(Sync::class) {
+    from(rootProject.file("LICENSE"))
+    from(rootProject.file("NOTICE"))
+    from(rootProject.file("LICENSES"))
+    into(layout.buildDirectory.dir("generated/legalAssets/licenses"))
+}
+android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/legalAssets"))
+tasks.named("preBuild").configure { dependsOn(bundleLicenseTexts) }
 
 kotlin {
     compilerOptions {
@@ -224,12 +280,22 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     implementation("com.google.guava:guava:33.3.1-android")
     implementation("org.checkerframework:checker-qual:3.48.3")
     implementation("org.jsoup:jsoup:1.18.1")
 
     compileOnly("org.jspecify:jspecify:1.0.0")
+
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
 

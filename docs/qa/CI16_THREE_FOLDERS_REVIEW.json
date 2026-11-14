@@ -1,0 +1,4092 @@
+{
+  "schema_version": 1,
+  "review_id": "CI16",
+  "status": "REVIEW_COMPLETE_WITH_DOCUMENTATION_FINDING_AND_RUNTIME_LIMITS",
+  "source_sha": "780fe6e3b054d1a7f52ee0864132684f817da67b",
+  "branch": "feature/bitchord-local-migration",
+  "authorization": {
+    "scope": "publish the completed three-folder documentation review on the existing branch and PR",
+    "file_limit": 6,
+    "commit_authorized": true,
+    "push_authorized": true,
+    "workflow_dispatch_authorized": false,
+    "delivery_policy": "Apply authorization includes commit and push; wait for user-reported CI result and authorization before the next block"
+  },
+  "sync": {
+    "from_sha": "c1bc73591993c01b9ac41808d990f2e54a9b0bc3",
+    "to_sha": "780fe6e3b054d1a7f52ee0864132684f817da67b",
+    "remote_commits_preserved": 52,
+    "method": "fast-forward",
+    "conflicts": false
+  },
+  "planned_files": [
+    "docs/qa/CI16_THREE_FOLDERS_REVIEW.md",
+    "docs/qa/CI16_THREE_FOLDERS_REVIEW.json",
+    "docs/migration/beta-local/PROGRESS_TRACKER.md"
+  ],
+  "counts": {
+    "by_folder": {
+      "audit": 5,
+      "components": 107,
+      "haptics": 1
+    },
+    "sources": 113,
+    "expected_source_variant_pairs": 226,
+    "observed_current_artifact_pairs": 226,
+    "observed_verdicts_by_folder": {
+      "audit": {
+        "COMPILADO_EN_APK": 10
+      },
+      "components": {
+        "COMPILADO_EN_APK": 212,
+        "SIN_CLASES_ESPERADAS": 2
+      },
+      "haptics": {
+        "COMPILADO_EN_APK": 2
+      }
+    }
+  },
+  "github": {
+    "run_id": 43339311481,
+    "run_number": 109,
+    "url": "https://github.com/ed0668822/Aurelis-Music/actions/runs/43339311481",
+    "head_sha": "780fe6e3b054d1a7f52ee0864132684f817da67b",
+    "conclusion": "success",
+    "phase_results": [
+      {
+        "name": "B01 | Compile Debug APK / B01 | APK Debug + report",
+        "conclusion": "success"
+      },
+      {
+        "name": "B03 | Unit Tests / B03 | Debug + Release unit tests",
+        "conclusion": "success"
+      },
+      {
+        "name": "B02 | Android Lint / B02 | Lint + isolated diagnostics",
+        "conclusion": "success"
+      },
+      {
+        "name": "B05 | Android Emulator / B05 | Android 15 install and launch",
+        "conclusion": "success"
+      },
+      {
+        "name": "B04 | APK Verification / B04 | Build, signature, identity, ABI, contents",
+        "conclusion": "success"
+      },
+      {
+        "name": "B06 | Reports and final gate",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "artifact": {
+    "id": 13999063083,
+    "name": "Aurelis-Informes-B01-B06-109",
+    "expired": false,
+    "declared_archive_digest": "sha256:125c7055571e55f8bac10da819828a3adb739e011186c90461d12f5294687943",
+    "digest_verified_locally": true,
+    "download_status": "USER_ATTACHMENT_VERIFIED",
+    "blocked_host": "productionresultssa10.blob.core.windows.net",
+    "previous_network_download_status": "FORBIDDEN",
+    "source": "User uploaded Aurelis-Informes-B01-B06-109.zip",
+    "verified_archive_sha256": "125c7055571e55f8bac10da819828a3adb739e011186c90461d12f5294687943",
+    "metadata_scope": "Historical metadata observed during the initial review; current expiry was not rechecked"
+  },
+  "static_checks": {
+    "targeted_source_exclusions_found": false,
+    "no_source_changes_since_c5ff687d": true,
+    "current_source_hashes_verified_locally": true,
+    "old_artifact_not_reused_as_current": true,
+    "gradle_executed_locally": false,
+    "android_tests_executed_locally": false,
+    "new_workflow_dispatched": false,
+    "haptics_manifest_permission": {
+      "path": "app/src/main/AndroidManifest.xml",
+      "line": 22,
+      "permission": "android.permission.VIBRATE"
+    }
+  },
+  "findings": [
+    {
+      "id": "CI16-01",
+      "severity": "Low",
+      "issue": "Historical comments imply source files are excluded from compilation",
+      "scenario": "Reading old static audit notes as current Android build evidence",
+      "impact": "Misleading interpretation of build/source coverage, not a demonstrated compilation failure",
+      "locations": [
+        {
+          "path": "app/src/main/java/com/music/aurelis/ui/audit/AnimationAudit.kt",
+          "line": 14,
+          "text": "* Este archivo es estático: no se compila, solo documenta las verificaciones requeridas."
+        },
+        {
+          "path": "app/src/main/java/com/music/aurelis/ui/audit/ImportsAudit.kt",
+          "line": 8,
+          "text": "* Este archivo es estático y no se compila en el entorno de PolyDev."
+        },
+        {
+          "path": "app/src/main/java/com/music/aurelis/ui/audit/LayoutAudit.kt",
+          "line": 12,
+          "text": "* Este archivo es estático: no se compila, solo documenta las verificaciones requeridas."
+        },
+        {
+          "path": "app/src/main/java/com/music/aurelis/ui/audit/LocalSongMappingAudit.kt",
+          "line": 20,
+          "text": "* Este archivo es estático: no se compila, solo documenta las verificaciones requeridas."
+        },
+        {
+          "path": "app/src/main/java/com/music/aurelis/ui/audit/UiAudit.kt",
+          "line": 6,
+          "text": "* Este archivo es estático y no se compila en el entorno de PolyDev (sin NDK, FFmpeg, SDK completo de Android)."
+        }
+      ],
+      "minimal_fix": "Clarify historical audit scope without changing Gradle, emitting dummy classes or rewriting functional status; not applied in this block"
+    }
+  ],
+  "files": [
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/audit/AnimationAudit.kt",
+      "folder": "audit",
+      "source_sha256": "aa3fb6b4dda118c5837f0bca73d233b6abe72645658f9c4ae9eadd51c42b9a2c",
+      "bytes": 2712,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/audit/ImportsAudit.kt",
+      "folder": "audit",
+      "source_sha256": "5f09bac2e4dc5dbbdd7648e7fbef377a60b5dd1f43c7bc16b3e0eef018591f94",
+      "bytes": 3595,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/audit/LayoutAudit.kt",
+      "folder": "audit",
+      "source_sha256": "a96738c5a72da1ef76e622ad665415d10e73de04ec26ec4267c5cbf0b8ff5dbc",
+      "bytes": 2516,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/audit/LocalSongMappingAudit.kt",
+      "folder": "audit",
+      "source_sha256": "103599a88436801b13aab42f1c351874c9a06f3ba12f80eb077d226fe809a867",
+      "bytes": 3097,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 5,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 5,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/audit/UiAudit.kt",
+      "folder": "audit",
+      "source_sha256": "939046fdf2cd878ab804b7fc716f01e2e47a0ec9d270156e59f3369a9f289074",
+      "bytes": 4644,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/Alert.kt",
+      "folder": "components",
+      "source_sha256": "51e5a0d44c55db483768b08ed16bd27472d1e5cbb0c8a3a483096e55154baeab",
+      "bytes": 1103,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/AnimatedArtwork.kt",
+      "folder": "components",
+      "source_sha256": "434c381d0fa7214898de6ec11cbde570526d4a80fe448e3ba637b64d9f7355ff",
+      "bytes": 2337,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/AppLanguageDialog.kt",
+      "folder": "components",
+      "source_sha256": "2a2a6f826b09794376d582dd920f2b94a24e52f70efe297a4f5347a0cf973f8b",
+      "bytes": 805,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/ArtworkBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "fd8e81544973938075bd910030be4799df236ce1e22527f3cab7d8a796cc1b04",
+      "bytes": 1024,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/AudioPipelineDialog.kt",
+      "folder": "components",
+      "source_sha256": "99bb8ce8c50debb58031da3c722a28d3496181282b6992dbc50fe9859bd5da6d",
+      "bytes": 639,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/AudioPopupCard.kt",
+      "folder": "components",
+      "source_sha256": "1441120f96aca33590d8403a42c2d30d8be410bb248cca64db164bc0d7489047",
+      "bytes": 1247,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/AutoMixPanel.kt",
+      "folder": "components",
+      "source_sha256": "a88d5320a2a76d7796b9b4d1a4c46395b64699a0245291039d1e6320b8d7d5fc",
+      "bytes": 9473,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/BlurredBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "7a8d58b4ce32892c2c64c786563cdf3cc2829a4a817d1fb150f8db18020e95ff",
+      "bytes": 1056,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/BottomFadeScrim.kt",
+      "folder": "components",
+      "source_sha256": "b1821b28a2af08447c6cbdcf3cdf4a4fb33b4a53bef3148d7fdc1c559ee1edf1",
+      "bytes": 435,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/BottomPlayerBar.kt",
+      "folder": "components",
+      "source_sha256": "259af4940aae128f3703263996152e6ebb959ed6030374539f6c663753ab7670",
+      "bytes": 1497,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/BottomTab.kt",
+      "folder": "components",
+      "source_sha256": "3d72ad4555ad1f6d0de0c0c49c4b55035d6f7d2350ffffeb7c2b2efa96512c4a",
+      "bytes": 208,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/BrowseActionsMenu.kt",
+      "folder": "components",
+      "source_sha256": "1d7a6378655f3c8ebe1c7c55614b5cd3e3e19143328110070a565631ae9e6be9",
+      "bytes": 835,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/BrowseActionsSheet.kt",
+      "folder": "components",
+      "source_sha256": "73755fd9bd61be817117733106e9d607b412b77c4da60e71be0327dc3acaa800",
+      "bytes": 8265,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 6,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 6,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/Common.kt",
+      "folder": "components",
+      "source_sha256": "bd8ece0dccab91bd3c34493f2e2fde6638086ef2e3800caff5670482dd3e2575",
+      "bytes": 10678,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/ContextClick.kt",
+      "folder": "components",
+      "source_sha256": "ce12e2db3bda646ac9980fc3bb21f445e71d0b886ffdc6b3051cf4b739f77eff",
+      "bytes": 182,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/ContinuousCornerShape.kt",
+      "folder": "components",
+      "source_sha256": "adcffc32c46f6fa06bc3db86c811619a8f8352708bb0e2b805df0735c89f5811",
+      "bytes": 736,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/CoverPlaceholder.kt",
+      "folder": "components",
+      "source_sha256": "1ae451ee59a63db2207c5699fe16226977624827d1537dd7b4b17a029c596f7a",
+      "bytes": 562,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/CoverPlaceholderWidget.kt",
+      "folder": "components",
+      "source_sha256": "c6dc096fffed0555b9c43e63b4bf2b9da085be82e7d1a54fdaec6343a1cb282a",
+      "bytes": 671,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/DacVolumeHud.kt",
+      "folder": "components",
+      "source_sha256": "6525a81a801bddc5e6e8b518d773cb6e1b9d24d7faef06546ddcfe76c1944a87",
+      "bytes": 1040,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/DecoderControls.kt",
+      "folder": "components",
+      "source_sha256": "373820513e00badacde7f44451bfc21e4b95a851f63990d57aa9d381a4355507",
+      "bytes": 9353,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/DownloadManagerSheet.kt",
+      "folder": "components",
+      "source_sha256": "c2b8e5e459c6dbb789fb4dfd0e4af47f50ae3cd4ab2ab33b002b2924287811b8",
+      "bytes": 1066,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/EqualizerBars.kt",
+      "folder": "components",
+      "source_sha256": "c4d88a2605d1c9c5b3e21e31959e3652d4a45a9dc1f14f086f5259308a6f6b09",
+      "bytes": 2657,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/FloatingBottomBar.kt",
+      "folder": "components",
+      "source_sha256": "15461e84406db685acbc3a6f0c8e766605e92a77c0b1ac04f1fd89957c93f2dd",
+      "bytes": 979,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/FrostedGlassBox.kt",
+      "folder": "components",
+      "source_sha256": "7dec15daf004323648539a120d70ed7d97a851853d9a42f132bb3c24b5d2b40f",
+      "bytes": 593,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/FrostedTopBar.kt",
+      "folder": "components",
+      "source_sha256": "b5c4a3f01b1727c4f774b68e8c4135b193d8db8f742cd11e76888531778e3e6b",
+      "bytes": 6411,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/GlassNavBar.kt",
+      "folder": "components",
+      "source_sha256": "2103849cf4f62384435647aeaeaafc9164af9f7366794f215eb294f5731b43ef",
+      "bytes": 8729,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/GlassRendering.kt",
+      "folder": "components",
+      "source_sha256": "090987e00e0e2003fa039804042a1564b703a69baacb778e9243a5b3a8594e42",
+      "bytes": 2164,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/HeldContextMenu.kt",
+      "folder": "components",
+      "source_sha256": "e3ec522fbe79f56ed3e82add9857e06536501f5b69ce679eb85483294d389ff7",
+      "bytes": 865,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/IosMenu.kt",
+      "folder": "components",
+      "source_sha256": "256219f9ce3689903908882903b3a9a5ce9221c103ef4b07ed66911a75f6e035",
+      "bytes": 2320,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/IosSwitch.kt",
+      "folder": "components",
+      "source_sha256": "de1472f5e305dd1e69587aa66480e70e062422421e516a1a1e0cfa4a25544b24",
+      "bytes": 6613,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt",
+      "folder": "components",
+      "source_sha256": "41f2f260fb128752888439c3068231168cf03265aa164eee37a132f467ac1367",
+      "bytes": 9762,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/LocalAppBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "904bb787cb04e0783290320fc4d388692d7cd690c2558707451c888a3f82a85b",
+      "bytes": 192,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "SIN_CLASES_ESPERADAS",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "NO_STANDALONE_DECLARATION_HINT",
+          "r8_mapping": null,
+          "mapped_class_count": 0,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": false
+        },
+        "release": {
+          "observed_verdict": "SIN_CLASES_ESPERADAS",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "NO_STANDALONE_DECLARATION_HINT",
+          "r8_mapping": true,
+          "mapped_class_count": 0,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": false
+        }
+      },
+      "expected_classification_from_static_source": "SIN_CLASES_ESPERADAS",
+      "actual_declaration": {
+        "path": "app/src/main/java/com/music/aurelis/ui/components/LiquidGlass.kt",
+        "line": 48
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/LongPressOrigin.kt",
+      "folder": "components",
+      "source_sha256": "b175e8e52b615bf0964ca0afd8ea19adef2f89190522c171687dc43b8f2b6047",
+      "bytes": 431,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/LyricsFailureText.kt",
+      "folder": "components",
+      "source_sha256": "0d14f7965ce28e35ef0f26de5c74a4b4cd0d8e2f8b34a267a5b13ae01726a207",
+      "bytes": 1081,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/LyricsSheet.kt",
+      "folder": "components",
+      "source_sha256": "c5aff591f1a94b68ada6590f1d38a255de9cec09dbf3bcc4062816faac09b66d",
+      "bytes": 6133,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/LyricsSourcesDialog.kt",
+      "folder": "components",
+      "source_sha256": "19d53a48446e453ae8952e0a873a335cbd3ef1815afe7a61bdbd81c8ea0106ec",
+      "bytes": 4115,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/LyricsView.kt",
+      "folder": "components",
+      "source_sha256": "b1347005bf33c9eb03f9e6f3464fd2e4b6ba94df279504ffea23cf9c579962cb",
+      "bytes": 2456,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/MenuAnchor.kt",
+      "folder": "components",
+      "source_sha256": "fa591f83be811ed8743294ef09c2a7727c49d90e61cebe33857cc34ee813b6a4",
+      "bytes": 426,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/MiniPlayer.kt",
+      "folder": "components",
+      "source_sha256": "dd6075469ecfa89f5abe43c5cbc4293b772e83951717c7a9d3792c411303ac98",
+      "bytes": 4164,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/OptimizedHaze.kt",
+      "folder": "components",
+      "source_sha256": "bf32c545a76fb6f3f7e7b481b429f87600780b7607788bc83ca56041bc2b1467",
+      "bytes": 547,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/PillSegmentedControl.kt",
+      "folder": "components",
+      "source_sha256": "7093efc4ad0187cb1c1e9e2dbe680112ac26c8c226c6fb8ffadfc009ee1dfb21",
+      "bytes": 1727,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/PlayerControls.kt",
+      "folder": "components",
+      "source_sha256": "3eef2cde4ee5df10d447be139226f28d5ab410f0f7c8db9c517e4a8bf7cf2a55",
+      "bytes": 4567,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/PlayerSlider.kt",
+      "folder": "components",
+      "source_sha256": "0065a1672fff3e8c05b2c6330a8c4670f30131b115ebf7ec1b8659fca01f03ee",
+      "bytes": 3197,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/PlaylistPickerSheet.kt",
+      "folder": "components",
+      "source_sha256": "5870ebf1598690cedeaaff359333cd6e1075feaef7685ecbad42dd977063ed11",
+      "bytes": 1375,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/QrCodeView.kt",
+      "folder": "components",
+      "source_sha256": "b7fe6d40287c5b1c948e3cc2a7be17a32631e11ea2e47f9ab4235b1cf45823f8",
+      "bytes": 841,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/QueueActionNotice.kt",
+      "folder": "components",
+      "source_sha256": "fa4997a168869a13f38cf10e9fd5d20a7840012a28d61ee959763e1bfc571f79",
+      "bytes": 973,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/ReorderPlaylistPage.kt",
+      "folder": "components",
+      "source_sha256": "9d505a0bd70ada6f7f8c2559d2b13e502938fe5d5aeafcf0f308c21021c892f8",
+      "bytes": 747,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SearchBar.kt",
+      "folder": "components",
+      "source_sha256": "29ddde7ba39f83b01b4b7a66fda79295234b0c42807f8d56a877e346d50a34ea",
+      "bytes": 840,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SearchField.kt",
+      "folder": "components",
+      "source_sha256": "ad0dd4d14031f9b9f44da9810e17fb23d1749be95886d8763fa62cbeff629ad0",
+      "bytes": 4906,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SettingsComponents.kt",
+      "folder": "components",
+      "source_sha256": "bb8cea6c9a381bc8b87e72fdaee8002f1eb3ef06e6cb4ed799bf72160428a1d8",
+      "bytes": 8270,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/ShelfRow.kt",
+      "folder": "components",
+      "source_sha256": "d7e1dd6d68aa1a68ce50da4c661f10150dd8ce970b68d2f26382484a4a265c8d",
+      "bytes": 2452,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SkeletonLoader.kt",
+      "folder": "components",
+      "source_sha256": "870275025c5fc5c0bf839ae08a5a834cb3f6e451fbcfcd06c1d854a4af66f1fe",
+      "bytes": 744,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/Skeletons.kt",
+      "folder": "components",
+      "source_sha256": "7c52db63d8cc91a7ceccb24337477435d3782f1959a761653c57cb607c3ebaa8",
+      "bytes": 8889,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SongActionsDialog.kt",
+      "folder": "components",
+      "source_sha256": "acc4b18706b3553e35313910d8d5b629a87ef5ae2112d3bb347b3791a792ac2c",
+      "bytes": 2366,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SongActionsMenu.kt",
+      "folder": "components",
+      "source_sha256": "d4eaf332b76fba4a7f0ccf5028e256daa3438ab435101e4b5b77f879dbd18538",
+      "bytes": 809,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SongActionsSheet.kt",
+      "folder": "components",
+      "source_sha256": "c8058161c7f3870a676dc8a51bec0ed5c90b6e9335cf6bb8ee3484e2641018a3",
+      "bytes": 1086,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SongInfoDialog.kt",
+      "folder": "components",
+      "source_sha256": "1e52e389ce5657f816be3258f504360a14942da0fe1d2778928d1c965f684da6",
+      "bytes": 635,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SongListItem.kt",
+      "folder": "components",
+      "source_sha256": "6cc3cdc6f6a1022996530e620c2d6f7143fb442883d3671fc26fa031ddf0df02",
+      "bytes": 3857,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SongRow.kt",
+      "folder": "components",
+      "source_sha256": "c995fba867b984019e580ad9a7d663b0a4667c856139e99887a10c9986ad99a0",
+      "bytes": 4113,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SongText.kt",
+      "folder": "components",
+      "source_sha256": "147cec89ef8e24501aa5c3002ea0e6101a2906e435c25eaa37a6730d202471cd",
+      "bytes": 699,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SortMenu.kt",
+      "folder": "components",
+      "source_sha256": "ff5d47c10426d1449fb984ff7773ba6bc5cde16d83fa4cd22cbd4aeae68681ed",
+      "bytes": 3114,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SourceQualityBadge.kt",
+      "folder": "components",
+      "source_sha256": "21a20999cee6a2756bfa01990f8e0781ecd791a0f3721433339d63d422e47b18",
+      "bytes": 812,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SquirclePillShape.kt",
+      "folder": "components",
+      "source_sha256": "edab32a8ce387e38bb7b2e47c2bbff8d9eed7b72708c3e1e0832d4aa416aad87",
+      "bytes": 577,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/SyncedLyricsPanel.kt",
+      "folder": "components",
+      "source_sha256": "d18a355c41f89a479432bfe0c469939c03dd40f594ab7e15ae83fa8f64162de2",
+      "bytes": 2870,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/ThinSlider.kt",
+      "folder": "components",
+      "source_sha256": "c777319bc948c82bb839c445060470a0a6c9c14f135c500ab2058f33978b6b02",
+      "bytes": 13288,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 9,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 9,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/TopFadeBlur.kt",
+      "folder": "components",
+      "source_sha256": "afe346ebaadb194b52226dbd094a58b84fd3e3a8790186d5f44113ef6aa5bf13",
+      "bytes": 431,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/TranslationLanguageDialog.kt",
+      "folder": "components",
+      "source_sha256": "b0adf65bc8b4774ebddf2eb78b2b64ceaa3656b9058a095aeead921f14796dc5",
+      "bytes": 3010,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/UpdateAvailableDialog.kt",
+      "folder": "components",
+      "source_sha256": "5b2b729b6707bb10eef770a81a2acae13808e05b12a916dd93093888335741ab",
+      "bytes": 5075,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/VisualExtensions.kt",
+      "folder": "components",
+      "source_sha256": "c79e52f69df61cd032ce3cc386722b48ceb907cfa33872fcaac7a9cdefb1cc36",
+      "bytes": 1609,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/AnimatedGlassBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "8b888d6e8f1f58f80a8105cafd74c1b65ccb59feec44a1ff9abcfe16aaf58082",
+      "bytes": 860,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/Backdrop.kt",
+      "folder": "components",
+      "source_sha256": "f0085b633022996807d766b853f8b0bda955c69c05f7c5d510d4327299a279d1",
+      "bytes": 523,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/BackdropEffectScope.kt",
+      "folder": "components",
+      "source_sha256": "cb2487704ae769285d8353da14fa8ac199db94fced9048aa2f6b9992890d39cb",
+      "bytes": 2628,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/DrawBackdropModifier.kt",
+      "folder": "components",
+      "source_sha256": "774f17fe54c0a54e961d15e12f772f5139228f4e2187c5c4ed725ea74b858029",
+      "bytes": 15421,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/Platform.kt",
+      "folder": "components",
+      "source_sha256": "98cd7d1df5f8b8833196276bd9ef17ee7a8522ec325ee2924a3b1db0fdc71504",
+      "bytes": 281,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/RuntimeShader.kt",
+      "folder": "components",
+      "source_sha256": "785e7a26118878b7a98a31e808bb5ba3cce6a7a564bf5101c341929bf10f68e8",
+      "bytes": 3203,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/RuntimeShaderCache.kt",
+      "folder": "components",
+      "source_sha256": "94eb45ca7a4b7078f7c60ace1a9dc22aaab84a0d65a852bab26b22bcd68d1890",
+      "bytes": 617,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/backdrops/Backdrop.kt",
+      "folder": "components",
+      "source_sha256": "ddd1fbc11eda67724ed7a4f06c8db3af9ffd46aff211e8b54aa71c62d2ec93c1",
+      "bytes": 1219,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/backdrops/CanvasBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "b817c934bbbc50f2a287c0fd9849cdd747287af6301ee36b66bbc6dfaacfc78b",
+      "bytes": 950,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/backdrops/CombinedBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "65fcdcaa7b5810683bec2313f373378eac6769199a43a1a8cf65b5a46a8674de",
+      "bytes": 2896,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/backdrops/EmptyBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "b44aafac8111220ea55d5f0dc902674483d2f0a7212c6734b1075f3e5977e255",
+      "bytes": 1214,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/backdrops/LayerBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "0cca3a4d85d6b56773a6eae4331627498d57f0e71fb788c9bd7d16598b182d35",
+      "bytes": 2732,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/backdrops/LayerBackdropModifier.kt",
+      "folder": "components",
+      "source_sha256": "52412bd085248d94e77b2ff73088ba1fdbddbf3ebe987cfaf6294a88fc27159e",
+      "bytes": 2688,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/backdrops/SnapshotBackdrop.kt",
+      "folder": "components",
+      "source_sha256": "78da2cf8538829c253997d696d9b883e1cf26b601dd2561e16108756c0d80900",
+      "bytes": 6277,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/effects/Blur.kt",
+      "folder": "components",
+      "source_sha256": "08cbdfa28cf40f72ded5e4efdcb518d94e7c846e99c3260d0143ec36be21a0b1",
+      "bytes": 849,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/effects/ColorFilter.kt",
+      "folder": "components",
+      "source_sha256": "0f34af6fe666c90385154eddd9265296629f70f7e3547120a4d7f69e73f77301",
+      "bytes": 2152,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/effects/Lens.kt",
+      "folder": "components",
+      "source_sha256": "097ed024d43550f30be1b0b973b0d4e5bb823163d3457b86e0dc7af9e12a2e16",
+      "bytes": 4661,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/effects/RenderEffect.kt",
+      "folder": "components",
+      "source_sha256": "8c1d8ef3de765f608ea7cbbb39e5cddd976562580096b7b40d58734919bbd19d",
+      "bytes": 1294,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/highlight/Highlight.kt",
+      "folder": "components",
+      "source_sha256": "f954bfb14135f4c65e8a446f3d16fe14ad7428adea9bd905adff0c67b8acedc5",
+      "bytes": 788,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/highlight/HighlightModifier.kt",
+      "folder": "components",
+      "source_sha256": "b3da836559c7678667040d7227a4282bb91533e9ad0996a3ee00ea670acf06e2",
+      "bytes": 5794,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/highlight/HighlightStyle.kt",
+      "folder": "components",
+      "source_sha256": "31964c8be627ab92069635c22dcdee570f707e9359a9d258744cfae3ecb006e9",
+      "bytes": 4774,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 6,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 6,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/InverseLayerScope.kt",
+      "folder": "components",
+      "source_sha256": "dc1240296dc57e83d773d71246e81000fa2cd2612ce8842305e217368dc6be5b",
+      "bytes": 3963,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/LayerRecorder.kt",
+      "folder": "components",
+      "source_sha256": "d7a6aea9dedabb46033dc4cef3fea2237e98ac0a065163a126578a4d7ba1c159",
+      "bytes": 828,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/Outline.kt",
+      "folder": "components",
+      "source_sha256": "e72d3bb91749d7ec155d744cef52ad4d19d53dbdb05bc634445c8a5ed4af8759",
+      "bytes": 574,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/Paint.kt",
+      "folder": "components",
+      "source_sha256": "a2ddeb0ccf3143dc1c620d52e23eaa91ecb0fb44990b26a3a14866347b82c885",
+      "bytes": 638,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/RenderEffect.kt",
+      "folder": "components",
+      "source_sha256": "74477e9a2e21665982a5ea2e3ff3209c87ea45a724701a958365e2445e8b14dc",
+      "bytes": 1734,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/Shaders.kt",
+      "folder": "components",
+      "source_sha256": "32fbbce75fc9671e285baced1e7575a89adb24add63d67aac3f20353cc409ecf",
+      "bytes": 5934,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/internal/ShapeProvider.kt",
+      "folder": "components",
+      "source_sha256": "0eac0f279c8640d7fafedd33001d0e261eb012db9540c9beaecbd1d0d8202b40",
+      "bytes": 1428,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/shadow/InnerShadow.kt",
+      "folder": "components",
+      "source_sha256": "809344ce2bb79ee5af703eb589c460b8a206488ad8d814856bbda74afafa8c41",
+      "bytes": 1417,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/shadow/InnerShadowModifier.kt",
+      "folder": "components",
+      "source_sha256": "517dc2e92bd611d3f63118181e2acf97763e24e27bf1aa230911a9d4afa36637",
+      "bytes": 5301,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/shadow/Shadow.kt",
+      "folder": "components",
+      "source_sha256": "54ae3ca8f7dd43b33a25d5a412b8626069307594c2ff2ae506cbf866b81a82c7",
+      "bytes": 859,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/backdrop/shadow/ShadowModifier.kt",
+      "folder": "components",
+      "source_sha256": "aa2797ebf01ef83c1120e7ca2005977e7a086d09ba54a22dbad4dd3640019cc2",
+      "bytes": 4690,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 3,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/floatingtabbar/FloatingTabBar.kt",
+      "folder": "components",
+      "source_sha256": "ccbac6125499b3958ee9e771b77c10c2a41c88b3cb2ecf174daaacd884b96802",
+      "bytes": 4997,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/floatingtabbar/FloatingTabBarDefaults.kt",
+      "folder": "components",
+      "source_sha256": "944a4be4c13db50a8aafd946b9e668254131bdaad4671b9bc2027ff8ebaeeea7",
+      "bytes": 2007,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/floatingtabbar/FloatingTabBarScrollConnection.kt",
+      "folder": "components",
+      "source_sha256": "fff5b2d273bff1e7338453595ef4171184fa453e52c5404290f16be55c9755c3",
+      "bytes": 1023,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 2,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/floatingtabbar/GlassSelectionPill.kt",
+      "folder": "components",
+      "source_sha256": "03d731bf670af188d5958a8389c3b547b67bec077e0ae2717c3a3957a7f4acdd",
+      "bytes": 16688,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 8,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 8,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/home/HomeCarousels.kt",
+      "folder": "components",
+      "source_sha256": "15a46f45c6e68731532697049a74a4a0be8fd16bec7dd1fbcdfc3a3328977fda",
+      "bytes": 14983,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 11,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 11,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/components/home/HomeHero.kt",
+      "folder": "components",
+      "source_sha256": "4c22e4bc43b171f10ede45495e5cc99cd3a92f99ec858e583e23a38e69e9deaa",
+      "bytes": 4095,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 1,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    },
+    {
+      "path": "app/src/main/java/com/music/aurelis/ui/haptics/Haptics.kt",
+      "folder": "haptics",
+      "source_sha256": "5f740b99c6f46fe0ec581df13efd53019eb12faef99bb447e876270dfc51b626",
+      "bytes": 1983,
+      "evidence_status": "CURRENT_ARTIFACT_VERIFIED",
+      "variants": {
+        "debug": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": null,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        },
+        "release": {
+          "observed_verdict": "COMPILADO_EN_APK",
+          "status": "CURRENT_ARTIFACT_VERIFIED",
+          "task_state": "SUCCESS",
+          "task_input": true,
+          "attributed_errors": 0,
+          "class_evidence": "DEX_CLASSES_OBSERVED",
+          "r8_mapping": true,
+          "mapped_class_count": 4,
+          "artifact_source_hash_matches": true,
+          "individual_compilation_proven_as_reported": true
+        }
+      }
+    }
+  ],
+  "fixtures": {
+    "executed": 46,
+    "passed": true,
+    "suites": [
+      {
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".github/scripts",
+          "-p",
+          "test_file_compile_matrix.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "tests": 5,
+        "log_sha256": "d1dc00fb1ad7649c17a8e256f35e28ae54cc9ae1bf7658f4f6615baffcf3bb96",
+        "passed": true
+      },
+      {
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".github/scripts",
+          "-p",
+          "test_f4_debug_inputs.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "tests": 4,
+        "log_sha256": "aa6039540f56128db8610e7b3531d1f65ea65b975a5a209d466350c2fe27e149",
+        "passed": true
+      },
+      {
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".github/scripts",
+          "-p",
+          "test_f4_integrity_gate.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "tests": 5,
+        "log_sha256": "365a4bf164ef7bb884125df681be32dff17839bb9e3244f02a9515827f07e9b5",
+        "passed": true
+      },
+      {
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".github/scripts/tests",
+          "-p",
+          "test_p2_inventory.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "tests": 3,
+        "log_sha256": "eced2d11e8b8ba9147a33ff87dd6d4688d97e75f1a7e7115a7430d7a5f993fc5",
+        "passed": true
+      },
+      {
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".github/scripts/tests",
+          "-p",
+          "test_p2_compiler_evidence.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "tests": 6,
+        "log_sha256": "c93c4b5665d40535c3a195e4c7b0a1a4e0e293c49e83b129736fc9465dab295b",
+        "passed": true
+      },
+      {
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".github/scripts/tests",
+          "-p",
+          "test_p2_apk_trace.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "tests": 5,
+        "log_sha256": "0d4328fe999313eda53999bd8d822582d8ee96835be069584ed701c20f37cea4",
+        "passed": true
+      },
+      {
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          ".github/scripts/tests",
+          "-p",
+          "test_apk_audit.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "tests": 18,
+        "log_sha256": "8e03d48fe651dc66562b2abdae11aa50f41e2b0018b3305d49bf49a632fd5955",
+        "passed": true
+      }
+    ],
+    "scope": "Synthetic evidence fixtures, not application Android tests"
+  },
+  "reviews": [
+    {
+      "pass": 1,
+      "reviewer": "same_agent",
+      "scope": "source inventory, hashes, declarations, comments, source sets and CI provenance",
+      "result": "ARTIFACT_AND_STATIC_REVIEW_PASSED; misleading comments remain unchanged"
+    },
+    {
+      "pass": 2,
+      "reviewer": "same_agent",
+      "scope": "evidence distinctions, document consistency, fixture counts, budget and preservation",
+      "result": "ARTIFACT_AND_STATIC_REVIEW_PASSED; misleading comments remain unchanged"
+    }
+  ],
+  "limitations": [
+    "No physical haptics, UI or audio validated",
+    "No exhaustive functional code audit of 107 components",
+    "F4 class/DEX evidence does not establish runtime integration or an isolated compiler invocation for each file",
+    "Native object-to-APK linkage is outside this three-folder scope"
+  ],
+  "next_required": [
+    "Publish only the three documented paths to the existing branch and PR",
+    "Wait for user-reported CI result and authorization before the next block",
+    "Clarify five historical comments only in a separately authorized block",
+    "Continue CI12.3 without duplicating the completed compilation review"
+  ],
+  "document_validation": {
+    "actual_file_count": 3,
+    "max_file_count": 6,
+    "unique_source_records": 113,
+    "expected_variant_pairs": 226,
+    "observed_current_artifact_pairs": 226,
+    "all_local_source_hashes_match": true,
+    "fixture_counts_match": true,
+    "finding_locations_match": true,
+    "only_planned_document_paths_changed": true,
+    "app_and_ci_unchanged": true,
+    "status": "PASS_FOR_COMPLETED_EVIDENCE_REVIEW"
+  },
+  "f4_integrity": {
+    "status": "PASS_EVIDENCE_INTEGRITY_WITH_LINKAGE_LIMITATIONS",
+    "main_managed_sources": 340,
+    "native_apk_linkage_proven": false,
+    "debug_inputs_status": "PASS",
+    "debug_source_inputs_count": 340,
+    "r8_mapping_observed": true
+  },
+  "delivery_observation": {
+    "expected_final_artifacts": 2,
+    "release_publish_expected": false,
+    "signed_release_built_and_verified": true,
+    "release_apk_in_attached_zip": false,
+    "note": "Historical run109 observation; later CI17 commit bb417f39 enables a signed testing candidate. This report does not certify the outcome of CI17 or a later Android run."
+  },
+  "publication": {
+    "base_sha": "eeb1c1bc78ea1c3bc79ae7f593d8a390520239b6",
+    "evidence_scope": "Historical run109 artifacts; all 113 reviewed source hashes reconfirmed unchanged at the publication base",
+    "source_hashes_reconfirmed": true,
+    "source_variant_pairs_reconfirmed": 226,
+    "fixture_execution": "46 existing Python fixtures passed during initial review; not rerun for documentation publication",
+    "local_gradle_executed": false,
+    "local_android_tests_executed": false,
+    "manual_workflow_dispatch": false,
+    "automatic_ci_on_push_possible": true,
+    "later_signed_candidate_fix": {
+      "commit": "bb417f39a0d8e76307977d52b1fa88587d67ae51",
+      "report": "docs/qa/CI17_SIGNED_RELEASE_CANDIDATE.md",
+      "android_result_certified_here": false
+    },
+    "final_reviews": [
+      {
+        "pass": 1,
+        "reviewer": "same_agent",
+        "scope": "ZIP integrity and digest, source hashes and artifact matrix provenance",
+        "result": "PASS"
+      },
+      {
+        "pass": 2,
+        "reviewer": "same_agent",
+        "scope": "three-path budget, document consistency, historical evidence limits and app/CI preservation",
+        "result": "PASS"
+      }
+    ]
+  }
+}
