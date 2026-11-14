@@ -101,7 +101,7 @@ class QueuePlaybackOrderTest {
 
     @Test fun mediaControllerReceivesTheSameShuffleOrderAndCanRestoreTheOriginal() = withQueue { player ->
         player.shuffleModeEnabled = true
-        val app = RuntimeEnvironment.getApplication<android.app.Application>()
+        val app = RuntimeEnvironment.getApplication()
         val session = MediaSession.Builder(app, player).build()
         var controller: MediaController? = null
         try {

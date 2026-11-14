@@ -66,3 +66,23 @@ git diff --check local; XML de recursos parseado. Sin Gradle/Lint/tests Android
 locales. CI nuevo, seis pruebas y dispositivo físico pendientes. No se cierra B06.1
 completo ni se inicia B06.1-b/B06.2/B09 hasta la siguiente autorización del usuario.
 Tras push avisar y esperar; no crear Release oficial ni descargar ZIP preventivo.
+
+
+## Corrección de run 131
+
+Run 43632198693, commit 627749c7885417b430b73aec4a371ef6f08b6f4e: FAILURE.
+Informe original Aurelis-Informes-B01-B06-131 descargado y ZIP verificado sin errores.
+B01/B02/B05 SUCCESS; B03/B06 FAILURE; B04 SKIPPED. results.json registra cero
+pruebas y cero XML en ambas variantes: no llegaron a ejecutarse las suites.
+Debug/debug.log:156 y Release/release.log:154 identifican el mismo error de
+compilación en QueuePlaybackOrderTest.kt:104: «No type arguments expected for
+static fun getApplication(): Application!». La llamada de Robolectric no es genérica.
+Se retira únicamente el argumento de tipo; conserva Application inferido y toda
+la prueba MediaSession/MediaController. No se altera producción ni las puertas CI.
+La cobertura omitida y las puertas finales no demuestran otro defecto de cobertura.
+
+Corrección en tres archivos ya incluidos en el bloque: test, este informe y tracker.
+Acumulado sigue en once archivos distintos, máximo30. Dos revisiones estáticas del
+mismo agente: diagnóstico comparado entre variantes y firma/call sites; después diff,
+alcance y conservación de las seis regresiones. git diff --check pasa. No Gradle,
+Lint ni pruebas Android locales. Compilación y ejecución nuevas pendientes de Actions.

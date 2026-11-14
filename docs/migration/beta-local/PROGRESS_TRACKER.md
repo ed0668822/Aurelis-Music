@@ -7,6 +7,14 @@
 
 ### B06.1-a — orden aleatorio visible (CI pendiente)
 
+Run131 falló en compileDebugUnitTestKotlin y compileReleaseUnitTestKotlin por argumento
+de tipo inválido en RuntimeEnvironment.getApplication del test de MediaController.
+Ambas suites: cero pruebas/XML; no se declara que aprobaron. Corregida la llamada
+sin argumento genérico, conservando las seis regresiones. Tres archivos ya incluidos,
+once distintos acumulados. Dos revisiones estáticas del mismo agente y diff --check;
+nueva compilación/ejecución pendiente de Actions. Detalle en B06_1A_SHUFFLE_VIEW.md.
+
+
 «Continúa» confirma B05.3-b y autoriza esta entrega; base2e85dc59, misma rama/PR1.
 Once archivos de máximo30 según [B06_1A_SHUFFLE_VIEW](B06_1A_SHUFFLE_VIEW.md).
 Se proyecta el orden real de Timeline Media3, conservando índices físicos para
