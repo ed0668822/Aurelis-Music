@@ -5,9 +5,19 @@
 
 ## Continuación actual — primera entrega documental
 
-### B03.2-a — fidelidad incremental de Home (CI pendiente)
+### B03.2-a — implementación entregada, run122 success; visual/físico pendiente
 
-Run121/43549705914 de da216319 terminó failure: B01/B02/B05 success,
+**Resultado posterior:** run122/43552336276, SHA fcc10d128df854ef819d786cb14d5641e9724460,
+SUCCESS en B01–B06 confirmado por API. Kover, evaluación de cobertura, puerta F5
+y Enforce both test suites terminaron success. El informe original no se pudo
+descargar por el proxy: recuento exacto de tests/porcentaje de cobertura no leídos.
+Queda resuelto el fallo de CI; implementación de esta subentrega entregada, sin
+cerrar la fidelidad visual/física pendiente ni B03 completo. Siete rutas acumuladas;
+cierre documental con dos revisiones del mismo agente y git diff --check. No se
+traslada el verde de fcc10d12 al commit documental posterior ni se inicia otro bloque.
+
+
+**Antecedente corregido:** Run121/43549705914 de da216319 terminó failure: B01/B02/B05 success,
 B03/B06 failure, B04 skipped. Descargas de resultados/logs bloqueadas por proxy
 al dominio productionresultssa31.blob.core.windows.net. Defecto estático
 comprobado en la prueba nueva: import de RobolectricActivityRule en paquete

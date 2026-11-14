@@ -97,3 +97,28 @@ Dos revisiones del mismo agente: resolución de la clase y tipos/imports de la
 prueba; después diff completo, aserciones conservadas y presupuesto acumulado.
 git diff --check local; sin Gradle/Android locales. La corrección toca tres
 rutas ya incluidas: se mantienen siete archivos distintos en B03.2-a de máximo 30.
+
+
+## Resultado posterior — run122
+
+[Run122/43552336276](https://github.com/ed0668822/Aurelis-Music/actions/runs/43552336276),
+SHA fcc10d128df854ef819d786cb14d5641e9724460, terminó SUCCESS según la API.
+B01, B02, B03, B04, B05 y B06 terminaron success. En B03 también terminaron
+success Generate Kover Debug and Release XML coverage, Assess changed-line
+Kover coverage, Enforce F5 changed-line coverage threshold y Enforce both test
+suites. Esto confirma el CI de la corrección sin rebajar puertas ni retirar tests.
+
+Artefactos publicados por Actions: Aurelis-Informes-B01-B06-122 (14097236880),
+Aurelis-Release-ARM64-122 (14097067805) y Aurelis-Pruebas-ARM64-122 (14097351303).
+No se creó una Release oficial. La descarga del informe volvió a fallar por el
+proxy; no se afirma haber leído sus XML/results.json ni se inventan números de
+pruebas o porcentajes de cobertura. El verde corresponde al SHA fcc10d12, no al
+commit documental posterior. El checkout de entrega permanece limpio tras commit.
+
+Se cierra la implementación de esta subentrega y su fallo de CI. Quedan pendientes
+las comprobaciones visuales/físicas y las diferencias explícitas del apartado
+Implementación y límites. No se cierra B03 completo ni se inicia B03.3 u otro bloque.
+Cierre limitado a este informe y PROGRESS_TRACKER.md; siguen siendo siete rutas
+acumuladas de máximo 30. Dos revisiones del mismo agente: cotejo API/SHA/jobs y
+limitaciones de acceso; después diff/documentación/presupuesto y git diff --check.
+Sin Gradle/Android locales. Esperar autorización para el siguiente bloque.
