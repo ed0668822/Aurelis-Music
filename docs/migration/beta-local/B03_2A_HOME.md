@@ -74,3 +74,26 @@ rutas dentro de 30. git diff --check local. La ausencia de hallazgos estáticos 
 certifica ejecución Android ni fidelidad visual; B01–B06 del SHA publicado deben
 comprobarse antes de cerrar el bloque. Pruebas físicas y capturas comparativas
 con BitChord ejecutable siguen pendientes.
+
+
+## Corrección posterior de B03 — run121
+
+Run121/43549705914, SHA da2163196f2fa76f1673c528ae0f90e7dd38843a,
+FAILURE según la API: B01/B02/B05 success, B03/B06 failure y B04 skipped.
+Las puertas F5 y ambas suites fallaron. Las anotaciones solo aportan códigos
+de salida, sin causa detallada. Los informes y logs redirigen a
+productionresultssa31.blob.core.windows.net y el proxy devuelve Forbidden;
+no se afirma haber leído XML/resultados que no se han podido descargar.
+
+La inspección estática confirmó un defecto de compilación en la prueba nueva:
+import com.music.aurelis.RobolectricActivityRule no existe. La declaración real
+está en app/src/test/java/com/music/aurelis/ui/RobolectricActivityRule.kt,
+paquete com.music.aurelis.ui, el mismo que HomeShelfLayoutTest. Se elimina solo
+el import erróneo; la clase se resuelve en su paquete sin cambiar las pruebas.
+No se presenta este defecto comprobado como explicación exclusiva de todos
+los resultados sin disponer de logs. Hace falta comprobar el nuevo CI.
+
+Dos revisiones del mismo agente: resolución de la clase y tipos/imports de la
+prueba; después diff completo, aserciones conservadas y presupuesto acumulado.
+git diff --check local; sin Gradle/Android locales. La corrección toca tres
+rutas ya incluidas: se mantienen siete archivos distintos en B03.2-a de máximo 30.

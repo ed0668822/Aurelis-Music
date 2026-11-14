@@ -7,6 +7,15 @@
 
 ### B03.2-a — fidelidad incremental de Home (CI pendiente)
 
+Run121/43549705914 de da216319 terminó failure: B01/B02/B05 success,
+B03/B06 failure, B04 skipped. Descargas de resultados/logs bloqueadas por proxy
+al dominio productionresultssa31.blob.core.windows.net. Defecto estático
+comprobado en la prueba nueva: import de RobolectricActivityRule en paquete
+inexistente; se retira para resolver la clase del mismo paquete ui. Se conserva
+el contenido de las dos pruebas; nuevo CI pendiente, sin declarar causa única
+ni suites aprobadas sin sus evidencias. Siete rutas acumuladas, dos revisiones
+del mismo agente y git diff --check; sin Gradle/Android locales.
+
 Autorización «Continúa con el siguiente bloque». Base 43cdc0c0, misma rama/PR1;
 B03.1-a CI resuelto con run120 success. Siete archivos distintos de máximo 30;
 manifestado antes de editar en [B03_2A_HOME](B03_2A_HOME.md). Referencia BitChord
