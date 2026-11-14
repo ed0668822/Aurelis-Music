@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.media3.common.Player
 import com.music.aurelis.ui.components.PlayerSlider
 import androidx.compose.foundation.layout.Arrangement
@@ -149,6 +150,7 @@ fun NowPlayingScreen(
     var showQuality by rememberSaveable { mutableStateOf(false) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var showInlineQueue by rememberSaveable { mutableStateOf(false) }
+    val queueListState = rememberLazyListState()
     var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
@@ -207,13 +209,13 @@ fun NowPlayingScreen(
                     .hazeSource(hazeState),
             ) {
                 val landscape = maxWidth > maxHeight
-                val meshPalette = rememberArtworkColors(s.artworkUri?.let { Uri.parse(it) })
-                if (!reduceBlur) MeshGradientBackground(
+                val meshPalette = if (!reduceBlur) rememberArtworkColors(s.artworkUri?.let { Uri.parse(it) }) else null
+                if (meshPalette != null) MeshGradientBackground(
                     palette = meshPalette,
                     trackKey = s.id,
                     continuous = false,
                     reduceAnimation = reduceAnimation,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().testTag("player-mesh-background"),
                 )
 
                 Box(
@@ -480,7 +482,7 @@ fun NowPlayingScreen(
                 }
 
                 BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { dock?.reportPanel(it) }
-                    .then(if (showLyrics && !landscape) Modifier.clearAndSetSemantics { } else Modifier)) {
+                    .then(if ((showLyrics || showInlineQueue) && !landscape) Modifier.clearAndSetSemantics { } else Modifier)) {
                     val portraitArtworkSize = (maxWidth - 48.dp).coerceIn(160.dp, 320.dp)
                     SideEffect { dock?.attached = isVisible && !reduceAnimation && maxWidth <= maxHeight }
                     if (maxWidth > maxHeight) {
@@ -509,7 +511,7 @@ fun NowPlayingScreen(
                                 Box(Modifier.fillMaxSize().testTag("landscape-lyrics")) { lyricsContent() }
                             }, queuePane = {
                                 Box(Modifier.fillMaxSize().testTag("landscape-queue")) {
-                                    QueueScreen(playbackViewModel, true, { showInlineQueue = false }, embedded = true)
+                                    QueueScreen(playbackViewModel, true, { showInlineQueue = false }, embedded = true, listState = queueListState)
                                 }
                             },
                         )
@@ -527,7 +529,7 @@ fun NowPlayingScreen(
                 }
 
                 if (showLyrics && !landscape) lyricsContent()
-                if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false })
+                if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false }, listState = queueListState)
 
                 if (showSongActions) SongActionsDialog(s, userStore,
                     onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false },

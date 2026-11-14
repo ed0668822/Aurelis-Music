@@ -456,3 +456,11 @@ Aurelis connects the existing layout slots to its current lyric content and
 shared queue content, with the same controller/capability checks, transport and
 Back actions. Reduced motion skips pane fades. No remote/video APIs or second
 player are imported; source hashes and limits: docs/migration/beta-local/B05_3A_SIDE_PANES.md.
+
+B05.3-b — Aurelis viewport continuity and background preparation
+Aurelis changes hoist the queue scroll state across its existing lateral/modal
+presentations and avoid re-centering that supplied viewport on attachment or an
+effects preference change. Existing track/history changes still update focus.
+Palette loading is omitted when the mesh is disabled. Existing BitChord-derived
+player/queue/mesh provenance remains applicable; no new upstream code is copied.
+No audio/controller/media objects are serialized. See B05_3B_CONTINUITY.md.

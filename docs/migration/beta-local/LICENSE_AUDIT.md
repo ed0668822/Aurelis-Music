@@ -370,3 +370,11 @@ Se adapta el patrón de selección de panel; contenido/acciones locales Aurelis
 reutilizados sin copiar archivos completos. GPLv3/atribuciones conservadas en
 NOTICE. Cabeceras Aurelis propias añadidas a archivos tocados sin cabecera;
 no nuevas dependencias, fuentes, recursos, binarios ni cambios de LICENSE.
+
+## B05.3-b — continuidad propia Aurelis
+
+Se conserva la referencia b690dc1 y las atribuciones ya registradas de LandscapePlayer,
+NowPlayingScreen, PlayerQueue y MeshGradient. Hoisting de viewport, política de
+reattachment y guard de preparación de paleta son cambios Aurelis; no se copia
+nuevo código de terceros. NOTICE conserva procedencia. Prueba/documento propios
+nuevos llevan cabecera Aurelis. Sin dependencias/recursos/binarios ni cambios de LICENSE.

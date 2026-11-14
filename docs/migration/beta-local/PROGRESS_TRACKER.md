@@ -5,7 +5,18 @@
 
 ## Continuación actual — primera entrega documental
 
-### B05.3-a — letras y cola laterales (CI pendiente)
+### B05.3-b — continuidad de tamaño y fondos (CI pendiente)
+
+«Continúa» acepta B05.3-a y autoriza esta entrega, basec5139134. Misma rama/PR1,
+sin descargar ZIP. Estado de scroll compartido/guardable de cola entre lateral y
+modal; no se recentra al readjuntar o cambiar efectos, sí ante cambios reales de
+canción/historial. Se omite preparar paleta cuando reduceBlur omite mesh.
+Dos regresiones de restricciones/restauración/efectos con mismo playback; ocho
+rutas de máximo30, dos revisiones del mismo agente y diff --check. Sin Gradle ni
+Android locales, nuevo CI/físico/GPU pendiente. Ver [B05_3B_CONTINUITY](B05_3B_CONTINUITY.md).
+No se cierran pendientes B07 ni se inicia B06/B09; avisar tras push y esperar.
+
+### B05.3-a — resultado aceptado por el usuario; físico/visual pendiente
 
 «Continúa con el siguiente bloque» acepta la corrección44c0c9db y autoriza este
 bloque. Sin descargar informes previos. Ocho rutas de máximo30, misma rama/PR1.

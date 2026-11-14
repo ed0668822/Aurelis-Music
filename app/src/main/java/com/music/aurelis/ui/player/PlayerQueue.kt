@@ -171,9 +171,10 @@ internal fun InlineQueue(
     onHidePlayer: () -> Unit = {},
     showHeader: Boolean = true,
     groupByTier: Boolean = true,
+    listState: LazyListState = rememberLazyListState(),
+    scrollToCurrentOnAttach: Boolean = true,
 ) {
     val reduceMotion = LocalReduceMotion.current
-    val listState = rememberLazyListState()
     LaunchedEffect(listState) { snapshotFlow { listState.isScrollInProgress }.collect(onScrollingChange) }
     val keepScroll = remember(listState) { keepScrollInList(listState) }
 
@@ -187,7 +188,14 @@ internal fun InlineQueue(
     val contextTitle = contextSong?.albumName?.takeIf { groupByTier && it.isNotBlank() }
 
     var hasScrolledOnce by remember { mutableStateOf(false) }
+    var observedFocus by remember { mutableStateOf<Triple<Int, String?, Boolean>?>(null) }
     LaunchedEffect(currentIndex, nowPlaying?.key, showHistory, reduceMotion) {
+        val focus = Triple(currentIndex, nowPlaying?.key, showHistory)
+        val previousFocus = observedFocus
+        observedFocus = focus
+        // Preference changes cancel animation without recentering a manual viewport.
+        // A caller-supplied viewport is authoritative on reattachment/restoration.
+        if (previousFocus == focus || (previousFocus == null && !scrollToCurrentOnAttach)) return@LaunchedEffect
         val nowPlayingRow = if (tracks.history.isEmpty()) 0 else tracks.history.size + 1
         val scrolledAway = listState.firstVisibleItemIndex != nowPlayingRow || listState.firstVisibleItemScrollOffset != 0
         if (drag.held == null && nowPlaying != null && scrolledAway) {

@@ -7,8 +7,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -31,10 +35,11 @@ fun QueueScreen(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     embedded: Boolean = false,
+    listState: LazyListState? = null,
 ) {
     if (embedded) {
         if (isVisible) Surface(Modifier.fillMaxSize(), color = Color(0xFF141414)) {
-            QueuePanelContent(playbackViewModel, onDismiss, embedded = true)
+            QueuePanelContent(playbackViewModel, onDismiss, embedded = true, listState = listState)
         }
         return
     }
@@ -49,6 +54,7 @@ fun QueueScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.6f))
+                .pointerInput(Unit) { detectTapGestures { } }
         ) {
             Surface(
                 modifier = Modifier
@@ -58,7 +64,7 @@ fun QueueScreen(
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 color = Color(0xFF141414)
             ) {
-                QueuePanelContent(playbackViewModel, onDismiss)
+                QueuePanelContent(playbackViewModel, onDismiss, listState = listState)
             }
         }
     }
@@ -66,7 +72,8 @@ fun QueueScreen(
 
 
 @Composable
-private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: () -> Unit, embedded: Boolean = false) {
+private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: () -> Unit, embedded: Boolean = false, listState: LazyListState? = null) {
+    val queueListState = listState ?: rememberLazyListState()
     val state by playbackViewModel.state.collectAsState()
     Column(
         modifier = Modifier
@@ -106,6 +113,8 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
                 modifier = Modifier.weight(1f),
                 showHeader = false,
                 groupByTier = false, // Display the actual Media3 playback order.
+                listState = queueListState,
+                scrollToCurrentOnAttach = listState == null,
             )
         }
     }
