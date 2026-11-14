@@ -7,6 +7,14 @@
 
 ### B06.1-b — Play Next/edición con shuffle (CI pendiente)
 
+Run134: B01/B02/B05 SUCCESS; B03/B06 FAILURE, B04 SKIPPED. Debug y Release ejecutan
+344 pruebas cada uno, falla el mismo caso UI de append sin capacidad privada.
+Se restaura append estándar Media3 en esa alternativa; Play Next sigue protegido y
+la sesión con capacidad conserva pinning. Regresión existente reforzada sin rebajar
+su expectativa. Cuatro archivos ya incluidos, quince acumulados; dos revisiones del
+mismo agente y diff --check. Nuevo CI/cobertura pendientes; ver informe B06_1B.
+
+
 Run133 FAILURE en compileDebugKotlin: dos SessionResult.Code colocadas en destinos
 no permitidos (función/parámetro). Corregidas como anotaciones del tipo Int; también
 se declara el tipo del código local. Evidencia: ZIP oficial de logs verificado;

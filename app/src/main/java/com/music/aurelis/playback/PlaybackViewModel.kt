@@ -262,7 +262,9 @@ class PlaybackViewModel internal constructor(
             connect(); connectionJob?.join()
             if (generation != queueEditGeneration) return@launch
             val player = controller ?: return@launch
-            if (player.shuffleModeEnabled) {
+            // Append remains valid through ordinary Media3 commands when the private
+            // permutation edit is unavailable. Only Play Next requires that guarantee.
+            if (player.shuffleModeEnabled && (next || ShuffleQueueEdits.available(player))) {
                 finishShuffleEdit(ShuffleQueueEdits.insert(player, selection, next))
             } else {
                 if (next) queueCoordinator.playNext(selection) else queueCoordinator.append(selection)

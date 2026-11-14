@@ -103,3 +103,26 @@ acumulados de máximo30. Dos revisiones estáticas del mismo agente: diagnóstic
 metadatos de la anotación en dependencia; después diff/call sites/alcance. Pasa
 `git diff --check`. Sin Gradle/Lint/compilación ni pruebas Android locales. Nueve
 regresiones y nuevo CI pendientes, no se afirma aprobación de fases omitidas.
+
+
+## Reparación de run134 — append sin comando privado
+
+Run43638434413 del commit29c3d9fad3714c805037dc686ef873ff63776ccc: B01/B02/B05
+SUCCESS, B03/B06 FAILURE, B04 SKIPPED. ZIP oficial de logs descargado y verificado;
+artefactos de informes/XML bloqueados por proxy en productionresultssa32.
+Los logs de Debug y Release registran344 pruebas, una fallida por variante:
+PlayerIntegrationTest.shuffleExplainsWhyPlayNextIsUnavailableAndAppendRemainsAvailable,
+PlayerIntegrationTest.kt:565. El flujo de producción había enviado también append al
+comando privado indisponible de RecordingPlayer; no se añadía la cuarta canción.
+
+Restaurada inserción Media3 estándar para append con shuffle cuando falta capacidad
+privada; no promete un sucesor concreto ni prioridad de pinning en esa alternativa.
+La sesión Aurelis con capacidad conserva su ruta privada y pinning. Play Next sin
+capacidad sigue rechazado/bloqueado. La prueba existente se conserva y amplía con
+identidad/posición/pausa, ausencia de error, nueva ocurrencia y contadores intactos.
+No se cambia el resultado esperado, se suprime la prueba ni se rebajan puertas.
+
+Cuatro archivos ya incluidos, quince distintos acumulados. Dos revisiones del mismo
+agente: primero rutas con/sin capacidad y next/append; después test/diff/alcance.
+Pasa git diff --check. Sin Gradle/Lint/Android locales; las suites nuevas y cobertura
+quedan pendientes de Actions. No se inicia otro bloque hasta confirmación.

@@ -556,13 +556,24 @@ class PlayerIntegrationTest {
 
     @Test fun shuffleExplainsWhyPlayNextIsUnavailableAndAppendRemainsAvailable() {
         start()
-        compose.runOnIdle { player.shuffleModeEnabled = true }
+        compose.runOnIdle { player.seekTo(12_345); player.shuffleModeEnabled = true }
+        val current = vm.state.value.currentSong?.queueEntryId
+        val before = Triple(player.replacements, player.prepares, player.seeks)
+        compose.runOnIdle { assertFalse(vm.state.value.canEditShuffleQueue) }
         compose.onNodeWithContentDescription("Abrir reproductor").performClick()
         compose.onNodeWithContentDescription("Opciones de canción").performClick()
         compose.onNodeWithText("Reproducir después").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Desactiva el modo aleatorio para elegir la siguiente canción.").assertExists()
         compose.onNodeWithText("Añadir a la cola").performScrollTo().assertIsEnabled().performClick()
-        compose.runOnIdle { assertTrue(player.shuffleModeEnabled); assertEquals(4, player.mediaItemCount) }
+        compose.runOnIdle {
+            assertTrue(player.shuffleModeEnabled); assertEquals(4, player.mediaItemCount)
+            assertEquals(current, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(12_345L, vm.state.value.positionMs)
+            assertFalse(player.playWhenReady)
+            assertEquals(before, Triple(player.replacements, player.prepares, player.seeks))
+            assertNotEquals(current, player.getMediaItemAt(3).queueEntryId)
+            assertNull(vm.state.value.errorMessage)
+        }
     }
 
 }
