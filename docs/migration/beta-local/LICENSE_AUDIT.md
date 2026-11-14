@@ -287,3 +287,17 @@ BiniLyrics además requiere endurecer coincidencias/destinos antes de habilitarl
 Otros proveedores legacy no se despachan. Traducción: solo servidor HTTPS que
 configure el usuario; sin activar endpoints Google legacy ni claves embebidas.
 Disponibilidad real y derechos del contenido no certificados por esta revisión.
+
+## B03.2-a — cabeceras, tarjetas y carruseles de Home
+
+Referencia local fija BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+GPLv3 según LICENSE; no se le atribuye automáticamente «or later».
+HomeScreen.kt upstream, sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens,
+SHA256 d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017.
+SongText.kt upstream, ui/components bajo la misma raíz, SHA256
+2579d2a9eb577c04de023e7dc1ce9ae00e9ec22477fc7706e135ff1e8e4ac79c.
+Se adaptan métricas, tipografía, borde y proporción del encabezado, no archivos
+completos ni marcas. NOTICE registra contribuyentes/procedencia; conserva las
+atribuciones originales y cabeceras Aurelis existentes. Nueva prueba y documento
+propios llevan la cabecera indicada por el usuario. LICENSE/terceros no se borran.
+Sin nuevas dependencias, fuentes, imágenes, modelos o binarios externos.

@@ -375,3 +375,18 @@ remain disabled pending verified service/content terms. Other legacy provider
 clients and unofficial translation endpoints are not connected to the active
 lookup/translation flow. See docs/migration/beta-local/B08_PROVIDERS.md and
 LICENSE_AUDIT.md for the scope, evidence and outstanding verification.
+
+B03.2-a — local Home shelf layout continuation
+--------------------------------------------
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
+(HomeTitle, SectionHeader, Shelf/ShelfCard, HeroShelf, CompactTrackRow), and
+ui/components/SongText.kt (thumbnailBorder). Original BitChord contributors,
+GPLv3 per upstream LICENSE; existing notices and third-party rights retained.
+Adaptations: Home shelf gutters/gaps, section and caption typography, vertical
+spacing, artwork rims, playing indicator and heading-relative mark sizing.
+Aurelis retains its own icon/title, local models, queues/actions and artist tiles.
+The Home-only rim uses the active Aurelis theme rather than system theme so
+manual light/dark settings apply; the global no-op helper is not changed.
+No upstream wordmark, remote feed, dependencies or excluded features imported.
+Exact source hashes and remaining differences: docs/migration/beta-local/B03_2A_HOME.md.

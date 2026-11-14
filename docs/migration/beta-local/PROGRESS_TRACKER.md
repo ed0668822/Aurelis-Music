@@ -5,6 +5,19 @@
 
 ## Continuación actual — primera entrega documental
 
+### B03.2-a — fidelidad incremental de Home (CI pendiente)
+
+Autorización «Continúa con el siguiente bloque». Base 43cdc0c0, misma rama/PR1;
+B03.1-a CI resuelto con run120 success. Siete archivos distintos de máximo 30;
+manifestado antes de editar en [B03_2A_HOME](B03_2A_HOME.md). Referencia BitChord
+local fija b690dc1, solo lectura. Se adaptan gutters, cabeceras, captions,
+espaciado, bordes y escala del icono; se conecta el indicador de reproducción
+existente a tarjetas normales. Datos/colas y funciones locales conservados.
+Dos casos nuevos para Actions sobre geometría/acciones y texto 1,5x en ambos
+temas; dos revisiones del mismo agente, git diff --check local. Sin Gradle/Android
+locales. B01–B06 del nuevo SHA pendientes: no se cierra B03.2 ni paridad visual
+física. Esperar resultado y autorización antes de B03.3 u otro bloque.
+
 ### B03.1-a — estado por entrada, Atrás y restauración
 
 **Reparación run119 autorizada.** Run119/43527135590 del SHA dc9a4b13 falló:

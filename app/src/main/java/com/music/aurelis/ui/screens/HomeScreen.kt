@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import coil3.compose.AsyncImage
 import com.music.aurelis.R
@@ -207,23 +208,24 @@ fun HomeScreen(
                 )
             }
         }
-
-        item { Spacer(Modifier.height(100.dp)) }
     }
 }
 
 @Composable
 private fun HomeTitle(title: String, modifier: Modifier = Modifier) {
+    // BitChord HomeTitle proportion, retaining the Aurelis icon and heading.
+    val titleStyle = MaterialTheme.typography.displayLarge
+    val markSize = with(LocalDensity.current) { (titleStyle.fontSize * 0.9f).toDp() }
     Column(modifier = modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp)) {
         Icon(
             imageVector = AurelisIcons.Home,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 14.dp).size(30.dp),
+            modifier = Modifier.padding(bottom = 14.dp).size(markSize),
         )
         Text(
             text = title,
-            style = MaterialTheme.typography.displayLarge,
+            style = titleStyle,
             color = MaterialTheme.colorScheme.onBackground,
         )
     }
