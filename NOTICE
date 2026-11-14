@@ -437,3 +437,12 @@ docs/migration/beta-local/B05_1A_MINIPLAYER.md.
 B05.2-a — Aurelis handle gesture lifecycle
 Explicit cancellation on pointer-input disposal; existing BitChord-derived panel/dock
 provenance and third-party notices retained. No new upstream source is copied.
+
+B05.2-b — transport contrast, selected approved delta
+Partial adaptation of BitChord acf219a7e4a7f52f026d4336d5c7ac5cf7bfafcc,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerChrome.kt
+(additiveChrome and neutral white strengths). Original BitChord contributors,
+GPLv3 per upstream LICENSE; existing notices retained. Changes: hardware/reduced-
+blur gate, solid theme fallback and disabled transport tint. Applied only to skip
+icons; central Material button preserved. ColorDodge and the full player chrome
+are not imported. Exact source hash and limits: B05_2B_CHROME.md.

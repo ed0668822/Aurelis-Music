@@ -5,6 +5,16 @@
 
 ## Continuación actual — primera entrega documental
 
+### B05.2-b — contraste de transporte (CI pendiente)
+
+Segundo bloque autorizado junto a B05.2-a, base668daa36. Adaptación parcial del
+delta aprobado acf219a7: tinta aditiva limitada a iconos skip con hardware y sin
+reduceBlur; fallback sólido del tema y atenuación de controles sin capacidad.
+Botón central/targets/callbacks conservados. Ocho rutas, dos pruebas preparadas;
+dos revisiones del mismo agente, diff --check y sin Gradle/Android locales.
+Las dos entregas suman once rutas distintas y se envían juntas, cada una en su
+commit. Nuevo CI/físico/GPU pendiente. Ver [B05_2B_CHROME](B05_2B_CHROME.md).
+
 ### B05.2-a — cabecera/panel (CI pendiente)
 
 Dos bloques autorizados por el usuario, base48b72fae. Resultado previo aceptado
@@ -13,7 +23,7 @@ cabecera, sin duplicar cancel/release. Seis rutas, dos regresiones para Actions,
 dos revisiones del mismo agente y diff --check; sin Gradle/Android locales.
 Ver [B05_2A_HANDLE](B05_2A_HANDLE.md). Pendiente nuevo CI/físico.
 
-### B05.1-a — MiniPlayer, gestos y progreso (CI pendiente)
+### B05.1-a — resultado aceptado por el usuario; físico/visual pendiente
 
 **Corrección run125 autorizada:** ZIP aportado y verificado. SHA3fd112c8,
 B01/B02/B05 success, B03/B06 failure y B04 skipped. Por variante319/320 tests

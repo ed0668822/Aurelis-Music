@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.animation.core.Spring
@@ -27,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import com.music.aurelis.ui.player.playerAdditiveChrome
+import com.music.aurelis.ui.player.playerControlTint
 import androidx.compose.ui.unit.dp
 
 /**
@@ -48,6 +51,7 @@ fun PlayerControls(
     canNext: Boolean = true,
     canPrevious: Boolean = true,
     reduceAnimation: Boolean = false,
+    blendChrome: Boolean = false,
 ) {
     Row(
         modifier = modifier,
@@ -62,8 +66,8 @@ fun PlayerControls(
             Icon(
                 imageVector = Icons.Rounded.SkipPrevious,
                 contentDescription = "Anterior",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(36.dp),
+                tint = playerControlTint(MaterialTheme.colorScheme.onSurface, enabled && canPrevious, blendChrome),
+                modifier = Modifier.size(36.dp).playerAdditiveChrome(blendChrome),
             )
         }
 
@@ -115,8 +119,8 @@ fun PlayerControls(
             Icon(
                 imageVector = Icons.Rounded.SkipNext,
                 contentDescription = "Siguiente",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(36.dp),
+                tint = playerControlTint(MaterialTheme.colorScheme.onSurface, enabled && canNext, blendChrome),
+                modifier = Modifier.size(36.dp).playerAdditiveChrome(blendChrome),
             )
         }
     }

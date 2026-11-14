@@ -348,3 +348,13 @@ sus etiquetas de streaming no se conectan. Sin nuevas dependencias/recursos/bina
 Corrección propia de cancelación del detector de cabecera. Se conservan NOTICE
 y atribuciones del panel/dock ya adaptado. Cabeceras Aurelis propias; sin
 dependencias, recursos, licencias retiradas ni nueva copia de terceros.
+
+## B05.2-b — excepción de contraste autorizada
+
+Fuente fija acf219a7e4a7f52f026d4336d5c7ac5cf7bfafcc, PlayerChrome.kt upstream
+(sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player), SHA256
+6dad18b561bf3b8dbf5a61c4c8cbf390883525ac921b158f2980e1b67b376c78.
+Adaptación parcial additiveChrome/tinta neutral; GPLv3, autores/avisos en NOTICE,
+comentario de procedencia y cabecera Aurelis propia sin sustituir derechos ajenos.
+No se importa ColorDodge ni ninguna otra novedad del delta. Sin dependencias,
+recursos o binarios nuevos; LICENSE intacto.
