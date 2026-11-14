@@ -89,6 +89,19 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertEquals(listOf("Álbum"), LocalSearchHistory(app).entries) }
     }
 
+    @Test fun timerDialogExplainsUnavailableServiceWithoutChangingPlayback() {
+        start()
+        val current = vm.state.value.currentSong?.queueEntryId
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithText("Temporizador").performScrollTo().performClick()
+        compose.onNodeWithText("El servicio conectado no ofrece este control.").assertExists()
+        compose.onNodeWithText("15 min").assertIsNotEnabled()
+        compose.onNodeWithText("Al terminar esta canción").assertIsNotEnabled()
+        compose.onNodeWithText("Cancelar temporizador").assertIsNotEnabled()
+        compose.onNodeWithText("Cerrar").performClick()
+        compose.runOnIdle { assertEquals(current, vm.state.value.currentSong?.queueEntryId); assertFalse(player.playWhenReady) }
+    }
+
     @Test fun flatQueueCanClearOnlyAddedFutureOccurrencesWithoutChangingPlayback() {
         start()
         compose.runOnIdle {

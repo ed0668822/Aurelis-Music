@@ -483,3 +483,11 @@ notices remain applicable. Aurelis implements its own Media3 session command and
 ShuffleOrder permutation edits; no upstream global context/crossfade is copied.
 Original physical order is preserved, new occurrences append physically. See
 B06_1B_QUEUE_EDITS.md for boundaries, command permissions and validation status.
+
+B06.2-a — service-owned sleep timer
+BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 playback/SleepTimer.kt:
+monotonic deadline/after-track pattern adapted into a service-owned listener and
+handler, private session commands and observed session extras. Original BitChord
+GPLv3 contributor attribution is preserved; Aurelis contributions GPL-3.0-or-later.
+Source SHA256 306d96ab08fee7edae578ac0caba8899ace263ad1997c17c3449512d90613d19.
+No global UI timer, exact alarm, remote service or dependency is introduced.

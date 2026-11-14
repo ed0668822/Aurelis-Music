@@ -5,7 +5,17 @@
 
 ## Continuación actual — primera entrega documental
 
-### B06.1-b — Play Next/edición con shuffle (CI pendiente)
+### B06.2-a — temporizador del servicio (CI pendiente)
+
+Autorización «Continúa con el siguiente bloque y termina B06». Basec6ad3dd2,
+misma rama/PR1, catorce archivos de máximo30. Deadline monotónico, after-track,
+cancelación/rearmado, estado observado y controles reales en ambos layouts.
+Cinco pruebas para Actions: UI sin capacidad, plazo/rearmado, cancelación/cierre/límites,
+auto/repeat/ENDED/selección manual y comando de sesión tras cerrar controlador.
+Dos revisiones del mismo agente, diff --check; sin Gradle/Android locales.
+CI/dispositivo pendientes. [B06_2A_SLEEP_TIMER](B06_2A_SLEEP_TIMER.md).
+
+### B06.1-b — resultado aceptado por el usuario; físico pendiente
 
 Run134: B01/B02/B05 SUCCESS; B03/B06 FAILURE, B04 SKIPPED. Debug y Release ejecutan
 344 pruebas cada uno, falla el mismo caso UI de append sin capacidad privada.

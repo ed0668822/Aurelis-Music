@@ -26,6 +26,7 @@ import com.music.aurelis.playback.dsd.DsdExtractorsFactory
 class AurelisPlaybackService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
+    private var coordinator: LocalPlaybackCoordinator? = null
     private var dspChain: DspChain? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var profiles: ProfilePlaybackBinding? = null
@@ -83,10 +84,13 @@ class AurelisPlaybackService : MediaSessionService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val controls = LocalPlaybackCoordinator(player)
+        coordinator = controls
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivity)
-            .setCallback(ShuffleQueueCallback(player, packageName))
+            .setCallback(ShuffleQueueCallback(player, packageName, controls))
             .build()
+        controls.bind(requireNotNull(mediaSession))
         profiles = ProfilePlaybackBinding(this, player, serviceScope)
     }
 
@@ -104,6 +108,7 @@ class AurelisPlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         if (BuildConfig.DEBUG) Log.d("P3Media3Service", "onDestroy playback service")
+        coordinator?.close(); coordinator = null
         profiles?.close(); profiles = null
         serviceScope.cancel()
         mediaSession?.run { player.release(); release() }

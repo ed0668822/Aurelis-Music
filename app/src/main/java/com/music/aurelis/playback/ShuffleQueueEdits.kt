@@ -117,19 +117,25 @@ internal object ShuffleQueueEdits {
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
-internal class ShuffleQueueCallback(private val player: ExoPlayer, private val ownerPackage: String) : MediaSession.Callback {
+internal class ShuffleQueueCallback(private val player: ExoPlayer, private val ownerPackage: String,
+    private val controls: LocalPlaybackCoordinator? = null) : MediaSession.Callback {
     private fun owns(controller: MediaSession.ControllerInfo) =
         controller.uid == Process.myUid() && controller.packageName == ownerPackage
 
     override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
         val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
-        if (owns(controller)) commands.add(ShuffleQueueEdits.command)
+        if (owns(controller)) {
+            commands.add(ShuffleQueueEdits.command)
+            if (controls != null) commands.add(LocalPlaybackCoordinator.COMMAND)
+        }
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
             .setAvailableSessionCommands(commands.build()).build()
     }
 
     override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo,
         customCommand: SessionCommand, args: Bundle): ListenableFuture<SessionResult> {
+        if (owns(controller) && controls != null && customCommand == LocalPlaybackCoordinator.COMMAND)
+            return Futures.immediateFuture(controls.execute(args))
         val code: @SessionResult.Code Int = when {
             !owns(controller) -> SessionResult.RESULT_ERROR_PERMISSION_DENIED
             customCommand != ShuffleQueueEdits.command -> SessionResult.RESULT_ERROR_NOT_SUPPORTED

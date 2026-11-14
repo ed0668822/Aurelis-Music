@@ -84,6 +84,9 @@ data class PlaybackState(
     val currentIndex: Int = -1,
     val isConnected: Boolean = false,
     val canEditQueue: Boolean = false,
+    val canUsePlaybackTools: Boolean = false,
+    val sleepRemainingMs: Long = 0L,
+    val sleepAfterTrack: Boolean = false,
     val canEditShuffleQueue: Boolean = false,
     val lyrics: LyricsState = LyricsState.None,
     val lyricsLookup: LyricsLookupState = LyricsLookupState.Idle,
@@ -113,6 +116,7 @@ class PlaybackViewModel internal constructor(
     private var playRequestJob: Job? = null
     private var mixJob: Job? = null
     private var mixVersion = 0L
+    private var controlStateJob: Job? = null
     private var positionJob: Job? = null
     private var lyricsJob: Job? = null
     private var translationJob: Job? = null
@@ -154,6 +158,8 @@ class PlaybackViewModel internal constructor(
                     controller?.removeListener(playerListener)
                     controller?.release()
                     controller = null
+                    controlStateJob?.cancel()
+                    _state.update { it.copy(canUsePlaybackTools = false, sleepRemainingMs = 0, sleepAfterTrack = false) }
                     stopPositionPolling()
                     _state.update { it.copy(isConnected = false, canEditQueue = false, canEditShuffleQueue = false, isPlaying = false, isPlayRequested = false,
                         isLoading = false, canSeek = false, canNext = false, canPrevious = false, queuePlaybackOrder = null,
@@ -163,6 +169,13 @@ class PlaybackViewModel internal constructor(
                 player.addListener(playerListener)
                 _state.update { it.copy(isConnected = true, errorMessage = null) }
                 syncState()
+                controlStateJob?.cancel()
+                controlStateJob = viewModelScope.launch {
+                    while (isActive && controller === player) {
+                        syncControlState(player)
+                        delay(1000)
+                    }
+                }
                 if (player.isPlaying) startPositionPolling()
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -203,6 +216,33 @@ class PlaybackViewModel internal constructor(
     fun next() { if (_state.value.canNext) controller?.seekToNextMediaItem() }
     fun previous() { if (_state.value.canPrevious) controller?.seekToPrevious() }
 
+    fun setSleepTimer(durationMs: Long = 0L, afterTrack: Boolean = false) {
+        sendPlaybackControl(android.os.Bundle().apply {
+            putString("action", when { afterTrack -> "sleep_track"; durationMs > 0 -> "sleep"; else -> "sleep_cancel" })
+            putLong("duration", durationMs)
+        })
+    }
+
+    private fun sendPlaybackControl(args: android.os.Bundle) {
+        val player = controller as? androidx.media3.session.MediaController ?: return
+        if (!player.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND)) return
+        viewModelScope.launch {
+            finishSessionCommand(player.sendCustomCommand(LocalPlaybackCoordinator.COMMAND, args), R.string.playback_control_error)
+            syncControlState(player)
+        }
+    }
+
+    private fun syncControlState(player: Player) {
+        val remote = player as? androidx.media3.session.MediaController
+        val extras = remote?.sessionExtras
+        val deadline = extras?.getLong("sleep_deadline") ?: 0L
+        _state.update { it.copy(
+            canUsePlaybackTools = remote?.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND) == true,
+            sleepRemainingMs = if (deadline > 0) (deadline - android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L) else 0L,
+            sleepAfterTrack = extras?.getBoolean("sleep_after_track") == true,
+        ) }
+    }
+
     fun toggleShuffle() { controller?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled } }
     fun cycleRepeat() { controller?.let {
         it.repeatMode = when (it.repeatMode) {
@@ -237,14 +277,14 @@ class PlaybackViewModel internal constructor(
     fun moveQueueItem(from: Int, to: Int) {
         val player = controller ?: return
         if (player.shuffleModeEnabled) {
-            viewModelScope.launch { finishShuffleEdit(ShuffleQueueEdits.move(player, from, to)) }
+            viewModelScope.launch { finishSessionCommand(ShuffleQueueEdits.move(player, from, to)) }
         } else if (queueCoordinator.moveItem(from, to)) syncState()
     }
 
     fun clearUserQueue() {
         val player = controller ?: return
         if (player.shuffleModeEnabled) {
-            viewModelScope.launch { finishShuffleEdit(ShuffleQueueEdits.clear(player)) }
+            viewModelScope.launch { finishSessionCommand(ShuffleQueueEdits.clear(player)) }
         } else if (queueCoordinator.clearUserQueue()) syncState()
     }
 
@@ -265,7 +305,7 @@ class PlaybackViewModel internal constructor(
             // Append remains valid through ordinary Media3 commands when the private
             // permutation edit is unavailable. Only Play Next requires that guarantee.
             if (player.shuffleModeEnabled && (next || ShuffleQueueEdits.available(player))) {
-                finishShuffleEdit(ShuffleQueueEdits.insert(player, selection, next))
+                finishSessionCommand(ShuffleQueueEdits.insert(player, selection, next))
             } else {
                 if (next) queueCoordinator.playNext(selection) else queueCoordinator.append(selection)
                 syncState()
@@ -273,14 +313,14 @@ class PlaybackViewModel internal constructor(
         }
     }
 
-    private suspend fun finishShuffleEdit(future: com.google.common.util.concurrent.ListenableFuture<androidx.media3.session.SessionResult>) {
+    private suspend fun finishSessionCommand(future: com.google.common.util.concurrent.ListenableFuture<androidx.media3.session.SessionResult>, @androidx.annotation.StringRes errorText: Int = R.string.queue_shuffle_edit_failed) {
         val success = try {
             future.await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
         } catch (cancelled: CancellationException) { throw cancelled }
           catch (_: Exception) { false }
         syncState()
         if (!success) {
-            _state.update { it.copy(errorMessage = getApplication<Application>().getString(R.string.queue_shuffle_edit_failed)) }
+            _state.update { it.copy(errorMessage = getApplication<Application>().getString(errorText)) }
         }
     }
 
@@ -498,6 +538,7 @@ class PlaybackViewModel internal constructor(
     }
 
     override fun onCleared() {
+        controlStateJob?.cancel()
         connectionJob?.cancel()
         playRequestJob?.cancel()
         mixJob?.cancel()

@@ -400,3 +400,12 @@ Comandos privados de sesión, permutación nativa y pruebas nuevos son Aurelis p
 no se copia infraestructura global/crossfade ni se cambia LICENSE o dependencias.
 NOTICE conserva atribuciones GPLv3 previas; cabeceras propias en nuevos archivos y
 en el test propio modificado que carecía de ella. XML conserva declaración primera.
+
+
+## B06.2-a — temporizador
+
+BitChord fijo b690dc1 playback/SleepTimer.kt SHA256
+306d96ab08fee7edae578ac0caba8899ace263ad1997c17c3449512d90613d19.
+Deadline monotónico/afterTrack adaptados a propietario de servicio y Handler,
+sin copiar estado global. NOTICE conserva GPLv3 y autores aplicables. Archivos
+propios nuevos con cabecera Aurelis. Sin nuevas dependencias ni cambio de LICENSE.
