@@ -89,6 +89,26 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertEquals(listOf("Álbum"), LocalSearchHistory(app).entries) }
     }
 
+    @Test fun flatQueueCanClearOnlyAddedFutureOccurrencesWithoutChangingPlayback() {
+        start()
+        compose.runOnIdle {
+            player.seekTo(12_345)
+            vm.playNext(listOf(song("1"), song("3")))
+        }
+        compose.waitForIdle()
+        val current = vm.state.value.currentSong?.queueEntryId
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithText(app.getString(R.string.queue_clear_user)).performClick()
+        compose.runOnIdle {
+            assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id })
+            assertEquals(current, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(12_345L, vm.state.value.positionMs)
+            assertFalse(player.playWhenReady)
+        }
+        compose.onNodeWithText(app.getString(R.string.queue_clear_user)).assertDoesNotExist()
+    }
+
     @Test fun shuffleQueueKeepsSelectionAndDisablingItDoesNotReplacePlayback() {
         start()
         compose.runOnIdle { vm.toggleShuffle() }

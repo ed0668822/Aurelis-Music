@@ -47,12 +47,16 @@ internal class QueueCoordinator(private val connectedPlayer: () -> Player?) {
     fun clearUserQueue(): Boolean {
         val player = editablePlayer() ?: return false
         var removed = false
-        // Reverse indices keep earlier occurrences stable. History/current/context survive.
-        for (index in player.mediaItemCount - 1 downTo player.currentMediaItemIndex + 1) {
-            if (player.getMediaItemAt(index).queueTier == QueueTier.USER_QUEUE) {
-                player.removeMediaItem(index)
-                removed = true
-            }
+        val order = queuePlaybackOrder(player) ?: return false
+        val cursor = order.indexOf(player.currentMediaItemIndex)
+        if (cursor < 0) return false
+        // Descending physical indices keep every still-pending removal stable.
+        val upcomingUser = order.drop(cursor + 1).filter {
+            player.getMediaItemAt(it).queueTier == QueueTier.USER_QUEUE
+        }
+        for (index in upcomingUser.sortedDescending()) {
+            player.removeMediaItem(index)
+            removed = true
         }
         return removed
     }

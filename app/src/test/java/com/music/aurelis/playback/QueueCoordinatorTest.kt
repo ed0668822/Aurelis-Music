@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback
 
 import android.os.Looper
@@ -105,6 +106,17 @@ class QueueCoordinatorTest {
         assertEquals(1, player.currentMediaItemIndex)
         assertEquals(4_567L, player.currentPosition)
         assertFalse(queue.clearUserQueue())
+    }
+
+    @Test fun clearWithUnknownShuffleOrderLeavesEveryOccurrenceIntact() {
+        start()
+        player.shuffleModeEnabled = true
+        queue.append(listOf(song("4")))
+        player.publish(player.snapshot.buildUpon().setAvailableCommands(
+            Player.Commands.Builder().addAllCommands().remove(Player.COMMAND_GET_TIMELINE).build()).build())
+        val before = entries()
+        assertFalse(queue.clearUserQueue())
+        assertEquals(before, entries())
     }
 
     @Test fun invalidIndexesAndEmptyRequestsAreNoOps() {

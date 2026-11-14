@@ -5,7 +5,20 @@
 
 ## Continuación actual — primera entrega documental
 
-### B06.1-a — orden aleatorio visible (CI pendiente)
+### B06.1-b — Play Next/edición con shuffle (CI pendiente)
+
+«Continúa» confirma la reparación80dcae7a y autoriza este bloque. Quince archivos
+de máximo30, dos revisiones estáticas del mismo agente; sin descarga de ZIP previo.
+La sesión existente aplica inserciones/movimientos a la permutación nativa y vacía
+solo USER_QUEUE futuras. UI habilita según comando privado disponible; botón de
+vaciar conectado también a la cola plana. Inserciones físicas al final conservan
+orden original al apagar shuffle. Duplicados con identidad nueva; current/posición,
+pausa y controlador único conservados sin setMediaItems/prepare/seek en la edición.
+Nueve regresiones preparadas (siete Media3/sesión, una coordinador y una UI); no se
+han ejecutado localmente. CI nuevo/audio físico pendientes. Detalles, límites y
+manifiesto en [B06_1B_QUEUE_EDITS](B06_1B_QUEUE_EDITS.md). Esperar tras push.
+
+### B06.1-a — reparación aceptada por el usuario; físico pendiente
 
 Run131 falló en compileDebugUnitTestKotlin y compileReleaseUnitTestKotlin por argumento
 de tipo inválido en RuntimeEnvironment.getApplication del test de MediaController.

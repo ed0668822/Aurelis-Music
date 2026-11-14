@@ -232,11 +232,13 @@ internal fun InlineQueue(
                         InlineQueueRow(nowPlaying.song, true, { onJumpTo(nowPlaying.timelineIndex) }, { onRemove(nowPlaying.timelineIndex) },
                             locked = controlsLocked, modifier = Modifier.queueMotion(this, reduceMotion).semantics {
                                 if (!controlsLocked && canReorder) customActions = buildList {
-                                    if (currentIndex > 0) add(CustomAccessibilityAction("Subir en la cola") {
-                                        onMove(currentIndex, currentIndex - 1); true
+                                    val order = playbackOrder ?: queue.indices.toList()
+                                    val cursor = order.indexOf(currentIndex)
+                                    if (cursor > 0) add(CustomAccessibilityAction("Subir en la cola") {
+                                        onMove(currentIndex, order[cursor - 1]); true
                                     })
-                                    if (currentIndex < queue.lastIndex) add(CustomAccessibilityAction("Bajar en la cola") {
-                                        onMove(currentIndex, currentIndex + 1); true
+                                    if (cursor in 0 until order.lastIndex) add(CustomAccessibilityAction("Bajar en la cola") {
+                                        onMove(currentIndex, order[cursor + 1]); true
                                     })
                                 }
                             })

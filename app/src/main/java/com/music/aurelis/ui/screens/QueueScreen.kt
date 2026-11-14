@@ -96,6 +96,16 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
             }
         }
 
+        val order = state.queuePlaybackOrder ?: if (!state.shuffleEnabled) state.queue.indices.toList() else emptyList()
+        val cursor = order.indexOf(state.currentIndex)
+        val hasQueued = cursor >= 0 && order.drop(cursor + 1).any {
+            state.queue.getOrNull(it)?.queueTier == com.music.aurelis.data.model.QueueTier.USER_QUEUE
+        }
+        if (hasQueued) TextButton(onClick = playbackViewModel::clearUserQueue,
+            enabled = state.isConnected && state.canEditQueue && (!state.shuffleEnabled || state.canEditShuffleQueue)) {
+            Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_clear_user))
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (state.queue.isEmpty()) {
@@ -103,7 +113,7 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
         } else if (state.shuffleEnabled && state.queuePlaybackOrder == null) {
             Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_shuffle_unavailable), color = Color.White)
         } else {
-            if (state.shuffleEnabled) Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_shuffle_reorder), color = Color.White)
+            if (state.shuffleEnabled && !state.canEditShuffleQueue) Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_shuffle_reorder), color = Color.White)
             InlineQueue(
                 queue = state.queue,
                 currentIndex = state.currentIndex,
@@ -119,7 +129,7 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
                 listState = queueListState,
                 scrollToCurrentOnAttach = listState == null,
                 playbackOrder = state.queuePlaybackOrder,
-                canReorder = !state.shuffleEnabled,
+                canReorder = !state.shuffleEnabled || state.canEditShuffleQueue,
             )
         }
     }

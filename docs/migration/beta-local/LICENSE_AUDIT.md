@@ -389,3 +389,14 @@ contexto canónico ni infraestructura de crossfade. La proyección Timeline y pr
 son Aurelis propias. Se conservan GPLv3/atribuciones existentes de UI/cola en NOTICE.
 Cabeceras propias en archivos nuevos; comentario XML después de declaración, no
 antes. Sin dependencias/recursos gráficos/binarios ni cambio de LICENSE.
+
+
+## B06.1-b — edición de cola con shuffle
+
+BitChord fijo b690dc146009d4815825fa4a20815ef2e4ee8898, playback/QueueShuffle.kt,
+SHA256 06fb7c84d7b66fabfa1c361ed6e5ab1a8a7f40b9c52d1b37edd544e16a6f3985.
+Se consultan sections/restore para prioridad USER_QUEUE e identidad de ocurrencias.
+Comandos privados de sesión, permutación nativa y pruebas nuevos son Aurelis propios;
+no se copia infraestructura global/crossfade ni se cambia LICENSE o dependencias.
+NOTICE conserva atribuciones GPLv3 previas; cabeceras propias en nuevos archivos y
+en el test propio modificado que carecía de ella. XML conserva declaración primera.

@@ -474,3 +474,12 @@ upstream global canonical-context/crossfade shuffle object or physically editing
 the playlist. Index projection, validation, state wiring and fixtures are Aurelis
 contributions. No second player/service, remote functions or new dependency.
 Detailed limits and source hash: docs/migration/beta-local/B06_1A_SHUFFLE_VIEW.md.
+
+B06.1-b — service-owned shuffle queue editing
+Reference consulted: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/playback/QueueShuffle.kt (sections/restore:
+upcoming USER_QUEUE priority and occurrence identity). Existing GPLv3 contributor
+notices remain applicable. Aurelis implements its own Media3 session command and
+ShuffleOrder permutation edits; no upstream global context/crossfade is copied.
+Original physical order is preserved, new occurrences append physically. See
+B06_1B_QUEUE_EDITS.md for boundaries, command permissions and validation status.

@@ -24,6 +24,7 @@ import com.music.aurelis.data.lyrics.LyricsProviderRegistry
 import com.music.aurelis.data.lyrics.LyricsRequestException
 import com.music.aurelis.data.lyrics.LyricsTranslation
 import com.music.aurelis.data.model.LocalSong
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -83,6 +84,7 @@ data class PlaybackState(
     val currentIndex: Int = -1,
     val isConnected: Boolean = false,
     val canEditQueue: Boolean = false,
+    val canEditShuffleQueue: Boolean = false,
     val lyrics: LyricsState = LyricsState.None,
     val lyricsLookup: LyricsLookupState = LyricsLookupState.Idle,
     val repeatMode: Int = Player.REPEAT_MODE_OFF,
@@ -153,7 +155,7 @@ class PlaybackViewModel internal constructor(
                     controller?.release()
                     controller = null
                     stopPositionPolling()
-                    _state.update { it.copy(isConnected = false, canEditQueue = false, isPlaying = false, isPlayRequested = false,
+                    _state.update { it.copy(isConnected = false, canEditQueue = false, canEditShuffleQueue = false, isPlaying = false, isPlayRequested = false,
                         isLoading = false, canSeek = false, canNext = false, canPrevious = false, queuePlaybackOrder = null,
                         errorMessage = getApplication<Application>().getString(R.string.playback_connection_error)) }
                 }
@@ -233,11 +235,17 @@ class PlaybackViewModel internal constructor(
     }
 
     fun moveQueueItem(from: Int, to: Int) {
-        if (queueCoordinator.moveItem(from, to)) syncState()
+        val player = controller ?: return
+        if (player.shuffleModeEnabled) {
+            viewModelScope.launch { finishShuffleEdit(ShuffleQueueEdits.move(player, from, to)) }
+        } else if (queueCoordinator.moveItem(from, to)) syncState()
     }
 
     fun clearUserQueue() {
-        if (queueCoordinator.clearUserQueue()) syncState()
+        val player = controller ?: return
+        if (player.shuffleModeEnabled) {
+            viewModelScope.launch { finishShuffleEdit(ShuffleQueueEdits.clear(player)) }
+        } else if (queueCoordinator.clearUserQueue()) syncState()
     }
 
     fun enqueue(songs: List<LocalSong>) = editQueue(songs, next = false)
@@ -253,8 +261,24 @@ class PlaybackViewModel internal constructor(
             previous?.join()
             connect(); connectionJob?.join()
             if (generation != queueEditGeneration) return@launch
-            if (next) queueCoordinator.playNext(selection) else queueCoordinator.append(selection)
-            syncState()
+            val player = controller ?: return@launch
+            if (player.shuffleModeEnabled) {
+                finishShuffleEdit(ShuffleQueueEdits.insert(player, selection, next))
+            } else {
+                if (next) queueCoordinator.playNext(selection) else queueCoordinator.append(selection)
+                syncState()
+            }
+        }
+    }
+
+    private suspend fun finishShuffleEdit(future: com.google.common.util.concurrent.ListenableFuture<androidx.media3.session.SessionResult>) {
+        val success = try {
+            future.await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+        } catch (cancelled: CancellationException) { throw cancelled }
+          catch (_: Exception) { false }
+        syncState()
+        if (!success) {
+            _state.update { it.copy(errorMessage = getApplication<Application>().getString(R.string.queue_shuffle_edit_failed)) }
         }
     }
 
@@ -345,6 +369,7 @@ class PlaybackViewModel internal constructor(
                     ctrl.currentTracks else androidx.media3.common.Tracks.EMPTY),
                 currentSong = song, currentIndex = currentIndex, isPlaying = ctrl.isPlaying,
                 canEditQueue = queueCoordinator.canEdit,
+                canEditShuffleQueue = ShuffleQueueEdits.available(ctrl),
                 isPlayRequested = ctrl.playWhenReady && ctrl.playbackState != Player.STATE_ENDED && ctrl.playerError == null,
                 isLoading = ctrl.playbackState == Player.STATE_BUFFERING,
                 positionMs = ctrl.currentPosition.coerceAtLeast(0L),

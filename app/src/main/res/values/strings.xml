@@ -341,4 +341,6 @@
     </plurals>
     <string name="queue_shuffle_unavailable">No se puede verificar el orden aleatorio. Desactiva aleatorio para ver la cola.</string>
     <string name="queue_shuffle_reorder">Desactiva aleatorio para reordenar. Puedes elegir o quitar canciones.</string>
+    <string name="queue_shuffle_edit_failed">No se pudo editar la cola aleatoria. Vuelve a abrirla e inténtalo de nuevo. Puedes insertar hasta 200 canciones por operación.</string>
+    <string name="queue_clear_user">Quitar canciones añadidas pendientes</string>
 </resources>

@@ -85,6 +85,7 @@ class AurelisPlaybackService : MediaSessionService() {
 
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivity)
+            .setCallback(ShuffleQueueCallback(player, packageName))
             .build()
         profiles = ProfilePlaybackBinding(this, player, serviceScope)
     }
