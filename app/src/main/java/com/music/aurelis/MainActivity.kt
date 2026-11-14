@@ -281,6 +281,7 @@ internal fun AurelisNavigationContent(
                     isPlaying = playbackState.isPlaying,
                     contentPadding = PaddingValues(bottom = 180.dp),
                     libraryState = libraryUiState.libraryState,
+                    isRefreshing = libraryUiState.isRefreshing,
                     favorites = home.favorites,
                     recommendations = home.recommendations,
                     playlists = userState.playlists,

@@ -390,3 +390,17 @@ The Home-only rim uses the active Aurelis theme rather than system theme so
 manual light/dark settings apply; the global no-op helper is not changed.
 No upstream wordmark, remote feed, dependencies or excluded features imported.
 Exact source hashes and remaining differences: docs/migration/beta-local/B03_2A_HOME.md.
+
+B03.3-a — scrollable local library states and recovery
+----------------------------------------------------
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
+(HomeTitle followed by loading/error items in LazyColumn) and
+ui/components/Common.kt (MessageState). Original BitChord contributors, GPLv3
+per upstream LICENSE; existing notices and third-party rights retained.
+Changes: reuse Aurelis MessageState for reachable local error/permission/empty
+recovery, align heading padding, and connect the existing LibraryUiState refresh
+flag. Aurelis keeps local models, real permission/settings callbacks and its
+existing scanner. No remote feed or source-of-truth replacement is imported.
+Spinner/progress and controlled local test fixtures are Aurelis additions.
+Source hashes and validation limits: docs/migration/beta-local/B03_3A_RECOVERY.md.

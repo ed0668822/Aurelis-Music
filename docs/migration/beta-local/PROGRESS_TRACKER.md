@@ -5,6 +5,21 @@
 
 ## Continuación actual — primera entrega documental
 
+### B03.3-a — estados y recuperación accesibles (CI pendiente)
+
+«Continúa con el siguiente bloque» confirma el éxito previo y autoriza esta
+entrega. Base14e4567c, misma rama/PR1; siete rutas de máximo30 según el manifiesto
+[B03_3A_RECOVERY](B03_3A_RECOVERY.md). Home permite desplazar estados largos y
+mantiene cabecera/padding; isRefreshing del ViewModel se conecta para distinguir
+vacío de escaneo activo y mostrar progreso sin retirar canciones ya cargadas.
+Callbacks de permisos/Ajustes, cancelación y escáner existentes conservados.
+Tres pruebas nuevas para Actions (pantalla baja/texto grande, permiso y lecturas
+controladas con ViewModel real); dos revisiones del mismo agente y diff --check.
+Sin Gradle/Android locales; B01–B06 y comprobaciones físicas/visuales pendientes.
+Regla nueva explícita: tras push avisar y esperar; «continúa» confirma éxito y
+ordena el siguiente bloque, sin descargar ZIP. Solo investigar/descargar informes
+cuando el usuario comunique fallo. No iniciar otro bloque antes de esa respuesta.
+
 ### B03.2-a — implementación entregada, run122 success; visual/físico pendiente
 
 **Resultado posterior:** run122/43552336276, SHA fcc10d128df854ef819d786cb14d5641e9724460,

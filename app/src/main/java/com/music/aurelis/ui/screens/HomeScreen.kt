@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
@@ -27,6 +29,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import coil3.compose.AsyncImage
 import com.music.aurelis.R
@@ -72,28 +77,45 @@ fun HomeScreen(
     onOpenPlaylist: (String) -> Unit = {},
     collectionsReadOnly: Boolean = false,
     onPlayShelf: ((List<LocalSong>, Int) -> Unit)? = null,
+    isRefreshing: Boolean = false,
 ) {
     val playShelf: (List<LocalSong>, Int) -> Unit = { songs, index ->
         songs.getOrNull(index)?.let { song ->
             if (onPlayShelf != null) onPlayShelf(songs, index) else onSongClick(song)
         }
     }
+    val homePadding = PaddingValues(
+        top = (contentPadding.calculateTopPadding() - HOME_TITLE_LIFT).coerceAtLeast(0.dp),
+        bottom = contentPadding.calculateBottomPadding(),
+    )
     if (libraryState !is LibraryState.Success || libraryState.songs.isEmpty()) {
-        Column(modifier.fillMaxSize().padding(contentPadding).testTag("home-state")) {
-            HomeTitle(stringResource(R.string.home))
-            Column(Modifier.weight(1f).fillMaxWidth().padding(24.dp),
-                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        // Keep recovery actions reachable with large text or a long scanner error.
+        // Separate state scroll from the populated feed's saved scroll position.
+        LazyColumn(
+            state = rememberLazyListState(),
+            modifier = modifier.fillMaxSize().testTag("home-state"),
+            contentPadding = homePadding,
+        ) {
+            item(key = "title") { HomeTitle(stringResource(R.string.home)) }
+            item(key = "library-state") {
+                val announcement = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 when (libraryState) {
-                    LibraryState.Loading -> { CircularProgressIndicator(); Text(stringResource(R.string.home_loading)) }
-                    is LibraryState.Error -> {
-                        Text(libraryState.message)
-                        Button(onClick = if (libraryState.permissionRequired) onRequestPermission else onRetry) {
-                            Text(stringResource(if (libraryState.permissionRequired) R.string.home_grant_permission else R.string.home_retry))
-                        }
-                    }
-                    is LibraryState.Success -> {
-                        Text(stringResource(R.string.home_empty))
-                        Button(onClick = onRetry) { Text(stringResource(R.string.home_refresh)) }
+                    LibraryState.Loading -> HomeLoadingState(announcement)
+                    is LibraryState.Error -> MessageState(
+                        message = libraryState.message,
+                        modifier = announcement,
+                        actionLabel = stringResource(if (libraryState.permissionRequired) R.string.home_grant_permission else R.string.home_retry),
+                        onAction = if (libraryState.permissionRequired) onRequestPermission else onRetry,
+                    )
+                    is LibraryState.Success -> if (isRefreshing) {
+                        HomeLoadingState(announcement)
+                    } else {
+                        MessageState(
+                            message = stringResource(R.string.home_empty),
+                            modifier = announcement,
+                            actionLabel = stringResource(R.string.home_refresh),
+                            onAction = onRetry,
+                        )
                     }
                 }
             }
@@ -103,12 +125,12 @@ fun HomeScreen(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize().testTag("local-home"),
-        contentPadding = PaddingValues(
-            top = (contentPadding.calculateTopPadding() - HOME_TITLE_LIFT).coerceAtLeast(0.dp),
-            bottom = contentPadding.calculateBottomPadding(),
-        ),
+        contentPadding = homePadding,
     ) {
-        item { HomeTitle(stringResource(R.string.home)) }
+        item(key = "title") { HomeTitle(stringResource(R.string.home)) }
+        if (isRefreshing) item(key = "refreshing") {
+            LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER).testTag("home-refresh"))
+        }
         if (collectionsReadOnly) item { Text(stringResource(R.string.collections_unavailable), Modifier.padding(16.dp)) }
 
         item(key = "local-actions") {
@@ -208,6 +230,18 @@ fun HomeScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun HomeLoadingState(modifier: Modifier = Modifier) {
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER + 6.dp, vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        CircularProgressIndicator()
+        Text(stringResource(R.string.home_loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -301,3 +301,17 @@ completos ni marcas. NOTICE registra contribuyentes/procedencia; conserva las
 atribuciones originales y cabeceras Aurelis existentes. Nueva prueba y documento
 propios llevan la cabecera indicada por el usuario. LICENSE/terceros no se borran.
 Sin nuevas dependencias, fuentes, imágenes, modelos o binarios externos.
+
+## B03.3-a — estados y recuperación local
+
+Referencia local fija BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3
+según LICENSE, conservando atribuciones originales y NOTICE. Se adapta el patrón
+de estados en LazyColumn de sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/
+ui/screens/HomeScreen.kt (SHA256
+d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017) y se reutiliza
+MessageState ya presente en Aurelis, contrastado con ui/components/Common.kt
+upstream (SHA256 9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e).
+No se copian skeletons, datos remotos ni archivos completos. El wiring del flag
+isRefreshing y las pruebas controladas son aportaciones Aurelis. Prueba y documento
+propios nuevos tienen la cabecera solicitada. No se eliminan licencias/avisos
+ni se añaden dependencias, recursos de terceros o binarios.
