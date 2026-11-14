@@ -491,3 +491,10 @@ handler, private session commands and observed session extras. Original BitChord
 GPLv3 contributor attribution is preserved; Aurelis contributions GPL-3.0-or-later.
 Source SHA256 306d96ab08fee7edae578ac0caba8899ace263ad1997c17c3449512d90613d19.
 No global UI timer, exact alarm, remote service or dependency is introduced.
+
+B06.2-b — playback speed and silence controls
+BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 PlaybackService.kt was consulted
+for setters on the actual player; SHA256 775a6680dbad4e94124264f1acd06747b86b75c329b951279bfa7f973ef3cb3b.
+Aurelis private command/capability/publication/UI code is original; no multi-deck
+or global settings implementation copied. Existing GPLv3 notices remain intact.
+No decoder/audio-sink/DSP changes, new dependency or claim of measured output.

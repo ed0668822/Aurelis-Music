@@ -409,3 +409,10 @@ BitChord fijo b690dc1 playback/SleepTimer.kt SHA256
 Deadline monotónico/afterTrack adaptados a propietario de servicio y Handler,
 sin copiar estado global. NOTICE conserva GPLv3 y autores aplicables. Archivos
 propios nuevos con cabecera Aurelis. Sin nuevas dependencias ni cambio de LICENSE.
+
+
+## B06.2-b — controles de velocidad/silencio
+
+Referencia fija b690dc1 playback/PlaybackService.kt, SHA256 775a6680dbad4e94124264f1acd06747b86b75c329b951279bfa7f973ef3cb3b.
+Consulta del patrón de setters reales; comandos, restricciones y UI propios de
+Aurelis. NOTICE conserva atribuciones existentes; sin copiar decks ni dependencias.

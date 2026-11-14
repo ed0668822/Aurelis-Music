@@ -5,6 +5,16 @@
 
 ## Continuación actual — primera entrega documental
 
+### B06.2-b — velocidad/silencio con capacidades (CI pendiente)
+
+Autorizado dentro de terminar B06. Diez archivos de máximo30. Setters reales sobre
+el único player, estado publicado y controles0.5–2x/silencio. Salida float/PCM24/32
+excluida por la ruta actual del sink; motivo visible y retorno1x/sin salto. Sin
+cambios DSP/ABI/SDK. Cuatro regresiones para Actions: propiedades/identidad/posición,
+valores inválidos, encodings restringidos y acciones UI. Dos revisiones del mismo
+agente y diff --check; sin Android local ni afirmación de efecto audible medido.
+[B06_2B_SPEED_SILENCE](B06_2B_SPEED_SILENCE.md). B06.2-a mantiene CI pendiente.
+
 ### B06.2-a — temporizador del servicio (CI pendiente)
 
 Autorización «Continúa con el siguiente bloque y termina B06». Basec6ad3dd2,

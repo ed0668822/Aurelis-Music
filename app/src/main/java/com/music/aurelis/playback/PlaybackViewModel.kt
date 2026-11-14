@@ -85,6 +85,11 @@ data class PlaybackState(
     val isConnected: Boolean = false,
     val canEditQueue: Boolean = false,
     val canUsePlaybackTools: Boolean = false,
+    val playbackSpeed: Float = 1f,
+    val skipSilence: Boolean = false,
+    val canSetPlaybackSpeed: Boolean = false,
+    val canSkipSilence: Boolean = false,
+    val controlRestriction: String? = null,
     val sleepRemainingMs: Long = 0L,
     val sleepAfterTrack: Boolean = false,
     val canEditShuffleQueue: Boolean = false,
@@ -216,6 +221,13 @@ class PlaybackViewModel internal constructor(
     fun next() { if (_state.value.canNext) controller?.seekToNextMediaItem() }
     fun previous() { if (_state.value.canPrevious) controller?.seekToPrevious() }
 
+    fun setPlaybackSpeed(speed: Float) = sendPlaybackControl(android.os.Bundle().apply {
+        putString("action", "speed"); putFloat("speed", speed)
+    })
+    fun setSkipSilence(enabled: Boolean) = sendPlaybackControl(android.os.Bundle().apply {
+        putString("action", "silence"); putBoolean("enabled", enabled)
+    })
+
     fun setSleepTimer(durationMs: Long = 0L, afterTrack: Boolean = false) {
         sendPlaybackControl(android.os.Bundle().apply {
             putString("action", when { afterTrack -> "sleep_track"; durationMs > 0 -> "sleep"; else -> "sleep_cancel" })
@@ -240,6 +252,11 @@ class PlaybackViewModel internal constructor(
             canUsePlaybackTools = remote?.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND) == true,
             sleepRemainingMs = if (deadline > 0) (deadline - android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L) else 0L,
             sleepAfterTrack = extras?.getBoolean("sleep_after_track") == true,
+            playbackSpeed = extras?.getFloat("speed", 1f) ?: 1f,
+            skipSilence = extras?.getBoolean("skip_silence") == true,
+            canSetPlaybackSpeed = remote?.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND) == true && extras?.getBoolean("speed_available") == true,
+            canSkipSilence = remote?.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND) == true && extras?.getBoolean("silence_available") == true,
+            controlRestriction = extras?.getString("control_restriction"),
         ) }
     }
 

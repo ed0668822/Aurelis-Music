@@ -322,7 +322,7 @@ fun NowPlayingScreen(
                             modifier = Modifier.fillMaxWidth(),
                         )
                         androidx.compose.material3.TextButton(onClick = { showPlaybackTools = true }) {
-                            Text(if (state.sleepRemainingMs > 0 || state.sleepAfterTrack) "Temporizador activo" else "Temporizador")
+                            Text(if (state.sleepRemainingMs > 0 || state.sleepAfterTrack) "Controles · temporizador activo" else "Controles de reproducción")
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
@@ -536,7 +536,8 @@ fun NowPlayingScreen(
                 if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false }, listState = queueListState)
 
                 if (showPlaybackTools) com.music.aurelis.ui.components.PlaybackToolsDialog(
-                    state, { duration, after -> playbackViewModel.setSleepTimer(duration, after) }, { showPlaybackTools = false })
+                    state, { duration, after -> playbackViewModel.setSleepTimer(duration, after) },
+                    playbackViewModel::setPlaybackSpeed, playbackViewModel::setSkipSilence, { showPlaybackTools = false })
                 if (showSongActions) SongActionsDialog(s, userStore,
                     onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false },
                     onPlayNext = { playbackViewModel.playNext(listOf(s)) },

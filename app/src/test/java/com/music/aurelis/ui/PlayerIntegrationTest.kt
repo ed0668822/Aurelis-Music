@@ -89,15 +89,37 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertEquals(listOf("Álbum"), LocalSearchHistory(app).entries) }
     }
 
+    @Test fun playbackToolsExposeTimerSpeedAndSilenceActionsWhenServiceSupportsThem() {
+        var speed = 1f
+        var silence = false
+        var duration = 0L
+        var afterTrack = false
+        compose.setContent { AurelisTheme {
+            com.music.aurelis.ui.components.PlaybackToolsDialog(
+                PlaybackState(canUsePlaybackTools = true, canSetPlaybackSpeed = true, canSkipSilence = true),
+                { millis, after -> duration = millis; afterTrack = after }, { speed = it }, { silence = it }, {})
+        } }
+        compose.onNodeWithText("1.5×").performScrollTo().performClick()
+        compose.onNodeWithText("Activar salto de silencio").performScrollTo().performClick()
+        compose.onNodeWithText("30 min").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1.5f, speed); assertTrue(silence); assertEquals(1_800_000L, duration); assertFalse(afterTrack) }
+        compose.onNodeWithText("Al terminar esta canción").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(afterTrack) }
+        compose.onNodeWithText("Cancelar temporizador").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(0L, duration); assertFalse(afterTrack) }
+    }
+
     @Test fun timerDialogExplainsUnavailableServiceWithoutChangingPlayback() {
         start()
         val current = vm.state.value.currentSong?.queueEntryId
         compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithText("Temporizador").performScrollTo().performClick()
+        compose.onNodeWithText("Controles de reproducción").performScrollTo().performClick()
         compose.onNodeWithText("El servicio conectado no ofrece este control.").assertExists()
-        compose.onNodeWithText("15 min").assertIsNotEnabled()
-        compose.onNodeWithText("Al terminar esta canción").assertIsNotEnabled()
-        compose.onNodeWithText("Cancelar temporizador").assertIsNotEnabled()
+        compose.onNodeWithText("1.5×").assertIsNotEnabled()
+        compose.onNodeWithText("Activar salto de silencio").assertIsNotEnabled()
+        compose.onNodeWithText("15 min").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Al terminar esta canción").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Cancelar temporizador").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Cerrar").performClick()
         compose.runOnIdle { assertEquals(current, vm.state.value.currentSong?.queueEntryId); assertFalse(player.playWhenReady) }
     }

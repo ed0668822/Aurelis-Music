@@ -12,9 +12,19 @@ import androidx.compose.ui.Modifier
 import com.music.aurelis.playback.PlaybackState
 
 @Composable
-internal fun PlaybackToolsDialog(state: PlaybackState, onTimer: (Long, Boolean) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Temporizador") }, text = {
+internal fun PlaybackToolsDialog(state: PlaybackState, onTimer: (Long, Boolean) -> Unit, onSpeed: (Float) -> Unit, onSilence: (Boolean) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Controles de reproducción") }, text = {
         Column(Modifier.verticalScroll(rememberScrollState())) {
+            Text("Velocidad: ${state.playbackSpeed}×")
+            for (speed in listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)) TextButton(
+                onClick = { onSpeed(speed) }, enabled = state.canUsePlaybackTools && state.canSetPlaybackSpeed,
+            ) { Text("${speed}×") }
+            TextButton(onClick = { onSilence(!state.skipSilence) },
+                enabled = state.canUsePlaybackTools && state.canSkipSilence) {
+                Text(if (state.skipSilence) "Desactivar salto de silencio" else "Activar salto de silencio")
+            }
+            state.controlRestriction?.let { Text(it) }
+            Text("Temporizador")
             Text(when {
                 state.sleepAfterTrack -> "Se pausará al terminar esta canción"
                 state.sleepRemainingMs > 0 -> "Tiempo restante: ${(state.sleepRemainingMs + 59_999) / 60_000} min"
