@@ -343,3 +343,8 @@ finito. No se portan el lift/spring de la barra ni contratos remotos/video/party
 SourceQualityBadge.kt upstream solo consultado, SHA256
 aac9316e1eeb609d799955ab6a7fbd326fda8f761dbc31c20b7fe9eaedd9592a;
 sus etiquetas de streaming no se conectan. Sin nuevas dependencias/recursos/binarios.
+
+## B05.2-a
+Corrección propia de cancelación del detector de cabecera. Se conservan NOTICE
+y atribuciones del panel/dock ya adaptado. Cabeceras Aurelis propias; sin
+dependencias, recursos, licencias retiradas ni nueva copia de terceros.

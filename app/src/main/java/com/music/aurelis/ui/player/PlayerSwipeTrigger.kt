@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -19,20 +20,26 @@ internal fun Modifier.playerSwipeTrigger(direction: Int, onTriggered: () -> Unit
         var distance = 0f
         var accepted = false
         val velocity = VelocityTracker()
-        detectVerticalDragGestures(
-            onDragStart = { distance = 0f; accepted = false; velocity.resetTracking() },
-            onDragCancel = { if (accepted) pull?.cancel(); distance = 0f },
-            onDragEnd = {
-                if (pull != null) { if (accepted) pull.release(velocity.calculateVelocity().y) }
-                else if (distance * direction >= threshold) current.value()
-                distance = 0f
-            },
-            onVerticalDrag = { change, amount ->
-                change.consume(); distance += amount
-                velocity.addPosition(change.uptimeMillis, change.position)
-                if (!accepted && amount * direction > 0f) { accepted = true; pull?.beginDrag() }
-                if (accepted) pull?.drag(amount)
-            },
-        )
+        try {
+            detectVerticalDragGestures(
+                onDragStart = { distance = 0f; accepted = false; velocity.resetTracking() },
+                onDragCancel = { if (accepted) pull?.cancel(); accepted = false; distance = 0f },
+                onDragEnd = {
+                    if (pull != null) { if (accepted) pull.release(velocity.calculateVelocity().y) }
+                    else if (distance * direction >= threshold) current.value()
+                    accepted = false
+                    distance = 0f
+                },
+                onVerticalDrag = { change, amount ->
+                    change.consume(); distance += amount
+                    velocity.addPosition(change.uptimeMillis, change.position)
+                    if (!accepted && amount * direction > 0f) { accepted = true; pull?.beginDrag() }
+                    if (accepted) pull?.drag(amount)
+                },
+            )
+        } finally {
+            // Pointer-input disposal also cancels an in-flight pull.
+            if (accepted) pull?.cancel()
+        }
     }
 }

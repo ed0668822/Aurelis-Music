@@ -5,6 +5,14 @@
 
 ## Continuación actual — primera entrega documental
 
+### B05.2-a — cabecera/panel (CI pendiente)
+
+Dos bloques autorizados por el usuario, base48b72fae. Resultado previo aceptado
+sin descargar ZIP. Se garantiza cancelación del pull al retirar el detector de
+cabecera, sin duplicar cancel/release. Seis rutas, dos regresiones para Actions,
+dos revisiones del mismo agente y diff --check; sin Gradle/Android locales.
+Ver [B05_2A_HANDLE](B05_2A_HANDLE.md). Pendiente nuevo CI/físico.
+
 ### B05.1-a — MiniPlayer, gestos y progreso (CI pendiente)
 
 **Corrección run125 autorizada:** ZIP aportado y verificado. SHA3fd112c8,

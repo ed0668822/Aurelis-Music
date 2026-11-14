@@ -433,3 +433,7 @@ new controller, decoder, DSP or upstream bar lift animation are imported.
 SourceQualityBadge.kt was consulted to distinguish offered labels from confirmed
 input; its streaming/marketing classification is not copied. Hashes and limits:
 docs/migration/beta-local/B05_1A_MINIPLAYER.md.
+
+B05.2-a — Aurelis handle gesture lifecycle
+Explicit cancellation on pointer-input disposal; existing BitChord-derived panel/dock
+provenance and third-party notices retained. No new upstream source is copied.
