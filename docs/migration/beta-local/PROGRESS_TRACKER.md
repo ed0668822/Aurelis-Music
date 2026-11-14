@@ -7,6 +7,16 @@
 
 ### B05.1-a — MiniPlayer, gestos y progreso (CI pendiente)
 
+**Corrección run125 autorizada:** ZIP aportado y verificado. SHA3fd112c8,
+B01/B02/B05 success, B03/B06 failure y B04 skipped. Por variante319/320 tests
+aprobados; único fallo en la medición de tamaño de MiniPlayerInteractionTest:
+confundía bounds visuales del state layer40dp con hit target48dp. Contrastadas
+fuentes oficiales de las versiones existentes: ahora usa assertTouchWidthIsEqualTo
+y assertTouchHeightIsEqualTo(48.dp), sin reducir tamaño ni quitar acciones/tests.
+Kover omitido por el fallo; no se modifica la puerta de cobertura. Tres rutas
+ya incluidas, nueve acumuladas de máximo30; dos revisiones del mismo agente y
+diff --check. Sin Gradle/Android locales; nuevo CI pendiente, B05.2 sin iniciar.
+
 «Continúa» confirma B04-a y autoriza la siguiente entrega. Base359c940e, misma
 rama/PR1, referencia local BitChord fija b690dc1. Detector único MiniPlayer para
 swipes de cola y pull ascendente; comandos al soltar y capacidades/callbacks

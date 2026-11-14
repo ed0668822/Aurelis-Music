@@ -88,3 +88,35 @@ fidelidad visual completa, tacto bajo TalkBack, GPU ni reproducción/rotación f
 B05.2/B05.3, B06 y B09 no se inician por esta entrega. Tras enviar, avisar y esperar:
 «continúa» confirma éxito y autoriza la siguiente; investigar ZIP solo si comunica
 un fallo. No crear Release oficial.
+
+
+## Reparación de run125 — medir el objetivo táctil real
+
+El usuario adjuntó Aurelis-Informes-B01-B06-125.zip y autorizó corregir el error.
+ZIP íntegro verificado, SHA de la evidencia 3fd112c823bc0552833986fa87461bbc9d591449.
+Run125/43566891741 terminó failure: B01/B02/B05 success, B03/B06 failure,
+B04 skipped según API. results.json, XML y logs coinciden: 320 tests ejecutados
+por variante, 319 aprobados, uno fallido, cero errores/omitidos. MiniPlayerInteractionTest
+aprobó tres de cuatro casos por variante; solo falló
+compactLargeTextKeepsTransportTargetsAndTapAndSwipeExpansionSeparate, línea115.
+La generación Kover se omitió tras fallar suites; cobertura NOT_MEASURED por
+COVERAGE_XML_UNAVAILABLE. La matriz incompleta no acredita un APK B04 verificado.
+
+Causa: la prueba comparaba SemanticsNode.boundsInRoot (límites visuales) con los
+48dp del objetivo táctil. Se contrastó el código fuente oficial de Material3
+1.3.1 IconButton: minimumInteractiveComponentSize seguido de state layer40dp;
+la zona táctil mínima se amplía a48dp sin exigir48dp al dibujo. El BOM declarado
+es2024.12.01. En las fuentes oficiales ui-test-android1.7.6, BoundsAssertions.kt
+expone assertTouchWidthIsEqualTo/HeightIsEqualTo y mide node.touchBoundsInRoot
+con su densidad. Se usan esas APIs con48.dp para cada uno de los tres controles,
+conservando texto1,5x, frame320dp y todas las acciones/aserciones restantes.
+No se rebaja la dimensión exigida ni se elimina el test.
+
+Solo se modifica la medición de la prueba y estos dos registros de entrega.
+Sin cambios de producción, gestos, capacidades, Material3, SDK/ABI o puertasCI.
+Tres rutas ya incluidas: nueve archivos distintos acumulados de máximo30.
+Revisión1 del mismo agente: XML/logs/resultado y semántica visual frente a táctil,
+API pública en versión existente. Revisión2 del mismo agente: diff, aserciones y
+acciones conservadas, cabeceras y presupuesto. git diff --check local; sin Gradle
+ni tests Android locales. El nuevo B01–B06 queda pendiente del SHA publicado.
+B05.1-a no se cierra ni se inicia B05.2 hasta recibir el resultado del usuario.

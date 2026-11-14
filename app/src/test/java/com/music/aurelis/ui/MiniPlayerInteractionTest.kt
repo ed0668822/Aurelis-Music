@@ -111,8 +111,10 @@ class MiniPlayerInteractionTest {
             }
         } }
         for (label in listOf("Reproducir", "Siguiente", "Abrir reproductor")) {
-            val bounds = compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot
-            assertTrue(bounds.width >= 48f); assertTrue(bounds.height >= 48f)
+            // Material's visual state layer is 40dp; verify the expanded hit target.
+            compose.onNodeWithContentDescription(label)
+                .assertTouchWidthIsEqualTo(48.dp)
+                .assertTouchHeightIsEqualTo(48.dp)
         }
         compose.onNodeWithContentDescription("Reproducir").performClick()
         compose.onNodeWithContentDescription("Siguiente").performClick()
