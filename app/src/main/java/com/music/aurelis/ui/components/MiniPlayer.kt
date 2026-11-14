@@ -19,7 +19,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
-import com.music.aurelis.ui.player.playerSwipeTrigger
 import com.music.aurelis.ui.player.PlayerDock
 import com.music.aurelis.ui.player.MiniPlayerPull
 import com.music.aurelis.ui.player.playerDockArtwork
@@ -42,12 +41,14 @@ fun MiniPlayer(
     songId: String = "",
     dock: PlayerDock? = null,
     pull: MiniPlayerPull? = null,
+    canPrevious: Boolean = false,
+    onPrevious: () -> Unit = {},
 ) {
     val glass = LocalLiquidGlassEnabled.current
     val shape = RoundedCornerShape(percent = 50)
     val surface = if (glass) Modifier.liquidGlass(shape,
         fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh) else Modifier
-    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").playerSwipeTrigger(-1, onClick, pull).then(surface),
+    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").miniPlayerGestures(pull, enabled, canNext, canPrevious, onNext, onPrevious, onClick).then(surface),
         shape = shape, color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (glass) 0.dp else 4.dp, onClick = onClick) {
         Column {
@@ -67,16 +68,16 @@ fun MiniPlayer(
                 // The full screen exposes previous; keep the compact bar usable at 320dp.
                 IconButton(onClick = onPlayPauseClick, enabled = enabled,
                     modifier = Modifier.semantics { contentDescription = if (isPlaying) "Pausar" else "Reproducir" }) {
-                    if (isLoading) CircularProgressIndicator(Modifier.size(20.dp))
+                    if (isLoading) CircularProgressIndicator(Modifier.size(22.dp))
                     else Icon(if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        null)
+                        null, modifier = Modifier.size(32.dp))
                 }
                 IconButton(onClick = onNext, enabled = enabled && canNext) {
-                    Icon(Icons.Rounded.SkipNext, "Siguiente")
+                    Icon(Icons.Rounded.SkipNext, "Siguiente", modifier = Modifier.size(25.dp))
                 }
                 IconButton(onClick = onClick) { Icon(Icons.Rounded.ExpandLess, "Abrir reproductor") }
             }
-            LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) },
+            LinearProgressIndicator(progress = { progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f },
                 modifier = Modifier.fillMaxWidth().height(2.dp))
         }
     }

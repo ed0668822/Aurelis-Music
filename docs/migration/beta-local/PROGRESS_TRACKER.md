@@ -5,7 +5,21 @@
 
 ## Continuación actual — primera entrega documental
 
-### B04-a — comprobación incremental y selección (CI pendiente)
+### B05.1-a — MiniPlayer, gestos y progreso (CI pendiente)
+
+«Continúa» confirma B04-a y autoriza la siguiente entrega. Base359c940e, misma
+rama/PR1, referencia local BitChord fija b690dc1. Detector único MiniPlayer para
+swipes de cola y pull ascendente; comandos al soltar y capacidades/callbacks
+vigentes. Se conserva PlayerSheetMotion/PlayerDock, objetivos48dp y expandir;
+glyph/spinner alineados con referencia y progreso finito/acotado. AudioQualityInfo
+mantiene origen de entrada real/desconocido, sin marketing ni afirmación de salida.
+Nueve archivos de máximo30 en [B05_1A_MINIPLAYER](B05_1A_MINIPLAYER.md), cuatro
+pruebas nuevas para Actions y dos revisiones del mismo agente; diff --check local.
+Sin Gradle/Android locales; nuevo CI y comprobaciones físicas/visuales pendientes.
+Avisar tras push y esperar respuesta; no descargar ZIP preventivamente ni iniciar
+B05.2/B05.3/B06/B09 u otro bloque.
+
+### B04-a — resultado aceptado por el usuario; físico/visual pendiente
 
 «Continúa» confirma el resultado bueno de B03.3-a y autoriza esta entrega;
 no se descargan informes ni se afirma una nueva lectura de su CI. Base5fde06ac,

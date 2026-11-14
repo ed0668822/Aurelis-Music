@@ -80,6 +80,7 @@ fun GlassNavBar(
     canNext: Boolean = true,
     progress: Float = 0f,
     qualityLabel: String? = null,
+    canPrevious: Boolean = false,
 ) {
     val contentColor = glassContentColor()
     val selectedColor = contentColor
@@ -183,7 +184,8 @@ fun GlassNavBar(
                 isPlaying = isPlaying, isLoading = isLoading,
                 onPlayPauseClick = onPlayPause, onNext = onNext,
                 onClick = onExpand, enabled = !controlsLocked,
-                canNext = canNext, progress = progress, qualityLabel = qualityLabel,
+                canNext = canNext, canPrevious = canPrevious, onPrevious = onPrevious,
+                progress = progress, qualityLabel = qualityLabel,
                 songId = current.id, dock = dock, pull = pull,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )

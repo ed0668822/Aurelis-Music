@@ -416,3 +416,20 @@ and save only ID strings across recreation. They retain the existing Aurelis
 screen, local catalogue, playlist membership and playback callback; no whole
 upstream file or remote/cache/upload feature is copied. Selection persistence
 and fixtures are Aurelis contributions. Details: docs/migration/beta-local/B04_A_SELECTION.md.
+
+B05.1-a — MiniPlayer queue gestures and progress
+----------------------------------------------
+Adapted from BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt:
+miniPlayerGestures axis/slop arbitration, upward bias, 72dp track swipe threshold,
+release-only queue action and glyph/spinner metrics. Original BitChord
+contributors, GPLv3 per upstream LICENSE; existing notices retained.
+Changes: gate queue actions by Aurelis controller capabilities, preserve Aurelis
+vertical threshold/fallback and explicit cancellation using its existing
+PlayerSheetMotion/PlayerDock, and normalize non-finite progress to zero.
+Aurelis keeps its 48dp transport targets and expand control, standard local skip
+icon, artwork and input-only AudioQualityInfo. No remote/video/party APIs,
+new controller, decoder, DSP or upstream bar lift animation are imported.
+SourceQualityBadge.kt was consulted to distinguish offered labels from confirmed
+input; its streaming/marketing classification is not copied. Hashes and limits:
+docs/migration/beta-local/B05_1A_MINIPLAYER.md.

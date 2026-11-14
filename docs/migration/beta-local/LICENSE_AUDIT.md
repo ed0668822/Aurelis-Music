@@ -328,3 +328,18 @@ al upstream esta persistencia nueva. NOTICE conserva contribuyentes y GPLv3 del
 material de referencia. Archivo propio modificado, prueba y documento nuevos
 llevan la cabecera Aurelis solicitada, sin retirar atribuciones de terceros.
 Sin dependencias, recursos, modelos ni binarios nuevos. LICENSE intacto.
+
+## B05.1-a — MiniPlayer y gestos de cola
+
+Adaptación parcial de BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt,
+SHA256 f294dfd1b75d1808fb86df2a93580efc87783daef5bc774f4ff9c3f6f7317b69:
+miniPlayerGestures y métricas de glyph/spinner. GPLv3 según LICENSE del origen;
+se conservan autores/avisos en NOTICE y el comentario de procedencia del helper.
+Cabecera Aurelis en primera línea del helper, prueba y documento propios nuevos;
+no sustituye derechos del material adaptado. Cambios propios: capacidades del
+controller Aurelis, cancelación explícita, slop vertical preservado y progreso
+finito. No se portan el lift/spring de la barra ni contratos remotos/video/party.
+SourceQualityBadge.kt upstream solo consultado, SHA256
+aac9316e1eeb609d799955ab6a7fbd326fda8f761dbc31c20b7fe9eaedd9592a;
+sus etiquetas de streaming no se conectan. Sin nuevas dependencias/recursos/binarios.
