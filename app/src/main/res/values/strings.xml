@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Aurelis © 2026. GPL-3.0-or-later -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="library_read_error">No se pudo leer la biblioteca del dispositivo. Inténtalo de nuevo.</string>
     <string name="library_unknown_title">Canción sin título</string>
@@ -338,4 +339,6 @@
         <item quantity="one">%d canción disponible</item>
         <item quantity="other">%d canciones disponibles</item>
     </plurals>
+    <string name="queue_shuffle_unavailable">No se puede verificar el orden aleatorio. Desactiva aleatorio para ver la cola.</string>
+    <string name="queue_shuffle_reorder">Desactiva aleatorio para reordenar. Puedes elegir o quitar canciones.</string>
 </resources>

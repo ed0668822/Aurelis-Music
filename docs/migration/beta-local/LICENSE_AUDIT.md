@@ -378,3 +378,14 @@ NowPlayingScreen, PlayerQueue y MeshGradient. Hoisting de viewport, política de
 reattachment y guard de preparación de paleta son cambios Aurelis; no se copia
 nuevo código de terceros. NOTICE conserva procedencia. Prueba/documento propios
 nuevos llevan cabecera Aurelis. Sin dependencias/recursos/binarios ni cambios de LICENSE.
+
+## B06.1-a — proyección del orden aleatorio
+
+Referencia BitChord fija b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/playback/QueueShuffle.kt, SHA256
+06fb7c84d7b66fabfa1c361ed6e5ab1a8a7f40b9c52d1b37edd544e16a6f3985.
+Consulta del objetivo de orden visible/reversible; no se copia su objeto global,
+contexto canónico ni infraestructura de crossfade. La proyección Timeline y pruebas
+son Aurelis propias. Se conservan GPLv3/atribuciones existentes de UI/cola en NOTICE.
+Cabeceras propias en archivos nuevos; comentario XML después de declaración, no
+antes. Sin dependencias/recursos gráficos/binarios ni cambio de LICENSE.

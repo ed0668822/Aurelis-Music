@@ -121,8 +121,11 @@ internal class QueueTracks(
     companion object { val EMPTY = QueueTracks(null, emptyList(), emptyList(), emptyList()) }
 }
 
-internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: Boolean = false, groupByTier: Boolean = true): QueueTracks {
+internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: Boolean = false, groupByTier: Boolean = true, playbackOrder: List<Int>? = null): QueueTracks {
     if (currentIndex !in queue.indices) return QueueTracks.EMPTY
+    val order = playbackOrder ?: queue.indices.toList()
+    if (order.size != queue.size || order.toSet() != queue.indices.toSet()) return QueueTracks.EMPTY
+    val cursor = order.indexOf(currentIndex)
     val seen = HashMap<String, Int>()
     val occurrence = IntArray(queue.size) { i -> val id = queue[i].id; seen.getOrDefault(id, 0).also { seen[id] = it + 1 } }
     val usedKeys = HashSet<String>()
@@ -137,14 +140,14 @@ internal fun splitQueue(queue: List<LocalSong>, currentIndex: Int, showHistory: 
     val user = ArrayList<QueueTrack>()
     val context = ArrayList<QueueTrack>()
     val autoplay = ArrayList<QueueTrack>()
-    for (index in currentIndex + 1 until queue.size) {
+    for (index in order.drop(cursor + 1)) {
         if (!groupByTier) context += track(index, "context") else when (queue[index].queueTier) {
             QueueTier.USER_QUEUE -> user += track(index, "user")
             QueueTier.CONTEXT -> context += track(index, "context")
             QueueTier.AUTOPLAY -> autoplay += track(index, "autoplay")
         }
     }
-    val history = if (showHistory) (0 until currentIndex).map { track(it, "history") } else emptyList()
+    val history = if (showHistory) order.take(cursor).map { track(it, "history") } else emptyList()
     return QueueTracks(track(currentIndex, "np"), user, context, autoplay, history)
 }
 
@@ -173,16 +176,18 @@ internal fun InlineQueue(
     groupByTier: Boolean = true,
     listState: LazyListState = rememberLazyListState(),
     scrollToCurrentOnAttach: Boolean = true,
+    playbackOrder: List<Int>? = null,
+    canReorder: Boolean = true,
 ) {
     val reduceMotion = LocalReduceMotion.current
     LaunchedEffect(listState) { snapshotFlow { listState.isScrollInProgress }.collect(onScrollingChange) }
     val keepScroll = remember(listState) { keepScrollInList(listState) }
 
     val showHistory by SettingsRepository.showQueueHistory.collectAsStateWithLifecycle()
-    val tracks = remember(queue, currentIndex, showHistory, groupByTier) { splitQueue(queue, currentIndex, showHistory, groupByTier) }
+    val tracks = remember(queue, currentIndex, showHistory, groupByTier, playbackOrder) { splitQueue(queue, currentIndex, showHistory, groupByTier, playbackOrder) }
     val drag = rememberQueueDrag(listState, tracks, onMove, onDragActiveChange)
     val nowPlaying = tracks.nowPlaying
-    LaunchedEffect(controlsLocked) { if (controlsLocked) drag.held?.let { drag.end(it.key) } }
+    LaunchedEffect(controlsLocked, canReorder) { if (controlsLocked || !canReorder) drag.held?.let { drag.end(it.key) } }
 
     val contextSong = tracks.context.firstOrNull()?.song
     val contextTitle = contextSong?.albumName?.takeIf { groupByTier && it.isNotBlank() }
@@ -226,7 +231,7 @@ internal fun InlineQueue(
                     item(key = nowPlaying.key) {
                         InlineQueueRow(nowPlaying.song, true, { onJumpTo(nowPlaying.timelineIndex) }, { onRemove(nowPlaying.timelineIndex) },
                             locked = controlsLocked, modifier = Modifier.queueMotion(this, reduceMotion).semantics {
-                                if (!controlsLocked) customActions = buildList {
+                                if (!controlsLocked && canReorder) customActions = buildList {
                                     if (currentIndex > 0) add(CustomAccessibilityAction("Subir en la cola") {
                                         onMove(currentIndex, currentIndex - 1); true
                                     })
@@ -243,17 +248,17 @@ internal fun InlineQueue(
                             QueueClearButton(MaterialTheme.typography.labelLarge, controlsLocked, onClear)
                         }
                     }
-                    queueSection(tracks.user, QueueSection.USER, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
+                    queueSection(tracks.user, QueueSection.USER, drag, controlsLocked, onJumpTo, onRemove, reduceMotion, canReorder)
                 }
                 if (tracks.context.isNotEmpty()) {
                     item(key = "header-context") {
                         QueueHeading(if (contextTitle != null) stringResource(R.string.next_from, contextTitle) else stringResource(R.string.queue), Modifier.padding(top = 16.dp, bottom = 6.dp).queueMotion(this, reduceMotion))
                     }
-                    queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
+                    queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, onRemove, reduceMotion, canReorder)
                 }
                 if (autoplayEnabled || tracks.autoplay.isNotEmpty()) {
                     item(key = "autoplay-heading") { AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = Modifier.queueMotion(this, reduceMotion)) }
-                    queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, onRemove, reduceMotion)
+                    queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, onRemove, reduceMotion, canReorder)
                 }
             }
             drag.held?.let { held ->
@@ -266,16 +271,16 @@ internal fun InlineQueue(
 }
 
 private fun LazyListScope.queueSection(
-    rows: List<QueueTrack>, section: QueueSection, drag: QueueDrag, locked: Boolean, onJumpTo: (Int) -> Unit, onRemove: (Int) -> Unit, reduceMotion: Boolean
+    rows: List<QueueTrack>, section: QueueSection, drag: QueueDrag, locked: Boolean, onJumpTo: (Int) -> Unit, onRemove: (Int) -> Unit, reduceMotion: Boolean, canReorder: Boolean
 ) {
     items(rows, key = { it.key }) { track ->
         val held = drag.held?.key == track.key
         if (held) DisposableEffect(Unit) { onDispose { drag.end(track.key) } }
         InlineQueueRow(
             track.song, false, { onJumpTo(track.timelineIndex) }, { onRemove(track.timelineIndex) }, locked = locked,
-            draggable = !locked, onDragStart = { drag.start(track.key, section) }, onDrag = drag::drag, onDragEnd = { drag.end(track.key) },
+            draggable = !locked && canReorder, onDragStart = { drag.start(track.key, section) }, onDrag = drag::drag, onDragEnd = { drag.end(track.key) },
             modifier = (if (held) Modifier.alpha(0f) else Modifier.queueMotion(this, reduceMotion)).semantics {
-                if (!locked) {
+                if (!locked && canReorder) {
                     val rowIndex = rows.indexOfFirst { it.key == track.key }
                     customActions = buildList {
                         if (rowIndex > 0) add(CustomAccessibilityAction("Subir en la cola") {

@@ -464,3 +464,13 @@ effects preference change. Existing track/history changes still update focus.
 Palette loading is omitted when the mesh is disabled. Existing BitChord-derived
 player/queue/mesh provenance remains applicable; no new upstream code is copied.
 No audio/controller/media objects are serialized. See B05_3B_CONTINUITY.md.
+
+B06.1-a — verified visible shuffle order
+Reference reviewed: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/playback/QueueShuffle.kt (visible/reversible
+order intent). Existing BitChord GPLv3 contributor notices remain applicable.
+Aurelis uses its existing Media3 Timeline shuffle order instead of copying the
+upstream global canonical-context/crossfade shuffle object or physically editing
+the playlist. Index projection, validation, state wiring and fixtures are Aurelis
+contributions. No second player/service, remote functions or new dependency.
+Detailed limits and source hash: docs/migration/beta-local/B06_1A_SHUFFLE_VIEW.md.

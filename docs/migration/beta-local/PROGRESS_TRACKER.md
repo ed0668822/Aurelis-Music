@@ -5,7 +5,20 @@
 
 ## Continuación actual — primera entrega documental
 
-### B05.3-b — continuidad de tamaño y fondos (CI pendiente)
+### B06.1-a — orden aleatorio visible (CI pendiente)
+
+«Continúa» confirma B05.3-b y autoriza esta entrega; base2e85dc59, misma rama/PR1.
+Once archivos de máximo30 según [B06_1A_SHUFFLE_VIEW](B06_1A_SHUFFLE_VIEW.md).
+Se proyecta el orden real de Timeline Media3, conservando índices físicos para
+jump/remove y ocurrencias duplicadas; desactivar muestra orden original sin reset.
+Orden no verificable se avisa; reordenación bajo shuffle se bloquea y explica,
+selección/eliminación disponibles. Algoritmo global de QueueShuffle BitChord no
+copiado, solo objetivo adaptado; pinning/Play Next/sucesor quedan para B06.1-b.
+Seis regresiones para Actions (incluyen ExoPlayer y MediaSession/Controller), dos
+revisiones del mismo agente, diff --check y XML válido. Sin Gradle/Android locales;
+nuevo CI/audio físico pendientes. Avisar tras push y esperar antes del siguiente.
+
+### B05.3-b — resultado aceptado por el usuario; físico/GPU pendiente
 
 «Continúa» acepta B05.3-a y autoriza esta entrega, basec5139134. Misma rama/PR1,
 sin descargar ZIP. Estado de scroll compartido/guardable de cola entre lateral y

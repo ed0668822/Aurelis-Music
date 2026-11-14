@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui
 
 import android.Manifest
@@ -86,6 +87,30 @@ class PlayerIntegrationTest {
         compose.onNode(hasText("Álbum local") and hasClickAction()).performClick()
         compose.onNodeWithText(app.getString(R.string.collection_play)).assertIsDisplayed()
         compose.runOnIdle { assertEquals(listOf("Álbum"), LocalSearchHistory(app).entries) }
+    }
+
+    @Test fun shuffleQueueKeepsSelectionAndDisablingItDoesNotReplacePlayback() {
+        start()
+        compose.runOnIdle { vm.toggleShuffle() }
+        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithText(app.getString(R.string.queue_shuffle_reorder)).assertIsDisplayed()
+        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions) and
+            hasAnyAncestor(hasTestTag("playback-queue"))).assertDoesNotExist()
+        compose.onNode(hasText("Canción local 2") and hasAnyAncestor(hasTestTag("playback-queue"))).performClick()
+        compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); player.pause() }
+        val current = vm.state.value.currentSong
+        val position = vm.state.value.positionMs
+        val prepares = player.prepares; val replacements = player.replacements
+        compose.onNodeWithContentDescription("Cerrar").performClick()
+        compose.onNodeWithContentDescription("Aleatorio").performScrollTo().performClick()
+        compose.runOnIdle {
+            assertFalse(vm.state.value.shuffleEnabled)
+            assertEquals(listOf(0, 1, 2), vm.state.value.queuePlaybackOrder)
+            assertEquals(current, vm.state.value.currentSong); assertEquals(position, vm.state.value.positionMs)
+            assertEquals(prepares, player.prepares); assertEquals(replacements, player.replacements)
+            assertFalse(player.playWhenReady)
+        }
     }
 
     @Test fun miniPlayerSwipeOpensAndHeaderSwipeClosesWithoutChangingTheQueue() {

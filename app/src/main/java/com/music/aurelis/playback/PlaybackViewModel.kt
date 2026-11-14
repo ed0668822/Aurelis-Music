@@ -79,6 +79,7 @@ data class PlaybackState(
     val positionDiscontinuity: Int = 0,
     val durationMs: Long = 0L,
     val queue: List<LocalSong> = emptyList(),
+    val queuePlaybackOrder: List<Int>? = null,
     val currentIndex: Int = -1,
     val isConnected: Boolean = false,
     val canEditQueue: Boolean = false,
@@ -153,7 +154,7 @@ class PlaybackViewModel internal constructor(
                     controller = null
                     stopPositionPolling()
                     _state.update { it.copy(isConnected = false, canEditQueue = false, isPlaying = false, isPlayRequested = false,
-                        isLoading = false, canSeek = false, canNext = false, canPrevious = false,
+                        isLoading = false, canSeek = false, canNext = false, canPrevious = false, queuePlaybackOrder = null,
                         errorMessage = getApplication<Application>().getString(R.string.playback_connection_error)) }
                 }
                 controller = player
@@ -349,7 +350,7 @@ class PlaybackViewModel internal constructor(
                 positionMs = ctrl.currentPosition.coerceAtLeast(0L),
                 positionDiscontinuity = it.positionDiscontinuity + if (discontinuous) 1 else 0,
                 durationMs = duration(ctrl),
-                queue = queueSongs,
+                queue = queueSongs, queuePlaybackOrder = queuePlaybackOrder(ctrl),
                 repeatMode = ctrl.repeatMode, shuffleEnabled = ctrl.shuffleModeEnabled,
                 canSeek = ctrl.isCommandAvailable(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) && duration(ctrl) > 0,
                 canNext = ctrl.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM) && ctrl.hasNextMediaItem(),

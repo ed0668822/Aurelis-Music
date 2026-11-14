@@ -100,7 +100,10 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
 
         if (state.queue.isEmpty()) {
             Text("La cola está vacía.", color = Color.White)
+        } else if (state.shuffleEnabled && state.queuePlaybackOrder == null) {
+            Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_shuffle_unavailable), color = Color.White)
         } else {
+            if (state.shuffleEnabled) Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_shuffle_reorder), color = Color.White)
             InlineQueue(
                 queue = state.queue,
                 currentIndex = state.currentIndex,
@@ -115,6 +118,8 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
                 groupByTier = false, // Display the actual Media3 playback order.
                 listState = queueListState,
                 scrollToCurrentOnAttach = listState == null,
+                playbackOrder = state.queuePlaybackOrder,
+                canReorder = !state.shuffleEnabled,
             )
         }
     }
