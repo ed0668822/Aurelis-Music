@@ -315,3 +315,16 @@ No se copian skeletons, datos remotos ni archivos completos. El wiring del flag
 isRefreshing y las pruebas controladas son aportaciones Aurelis. Prueba y documento
 propios nuevos tienen la cabecera solicitada. No se eliminan licencias/avisos
 ni se añaden dependencias, recursos de terceros o binarios.
+
+## B04-a — orden visible y restauración de selección
+
+Consulta local de BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/screens/LocalFolder.kt,
+SHA256 177dd478a46ad1ec78a07a36e14d92955e412990a36001dea9eeae056b6db5db.
+Se contrastan LocalFolderState/LocalFolderSelectionBar (IDs resueltos contra las
+canciones de la vista). No se trasplanta el archivo ni funciones remotas/de caché.
+La corrección de orden y el saver de IDs pertenecen a Aurelis; no se atribuye
+al upstream esta persistencia nueva. NOTICE conserva contribuyentes y GPLv3 del
+material de referencia. Archivo propio modificado, prueba y documento nuevos
+llevan la cabecera Aurelis solicitada, sin retirar atribuciones de terceros.
+Sin dependencias, recursos, modelos ni binarios nuevos. LICENSE intacto.

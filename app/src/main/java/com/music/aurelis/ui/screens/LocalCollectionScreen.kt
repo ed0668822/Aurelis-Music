@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.layout.*
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,11 +91,14 @@ fun LocalCollectionScreen(
     }
     var grid by rememberSaveable { mutableStateOf(false) }
     var selectionMode by rememberSaveable(route) { mutableStateOf(false) }
-    var selected by remember(route) { mutableStateOf(emptySet<String>()) }
+    var selected by rememberSaveable(route, stateSaver = listSaver<Set<String>, String>(
+        save = { it.toList() }, restore = { it.toSet() },
+    )) { mutableStateOf(emptySet<String>()) }
     var bulkPlaylist by remember { mutableStateOf(false) }
-    val selectedSongs = songs.filter { it.id in selected }
     var descending by rememberSaveable(route) { mutableStateOf(false) }
     val displaySongs = if (descending) songs.sortedByDescending { LocalSearch.normalize(it.title) } else songs
+    // Resolve saved IDs against the current visible ordering, never stale media.
+    val selectedSongs = displaySongs.filter { it.id in selected }
     var orderSong by remember { mutableStateOf<String?>(null) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }

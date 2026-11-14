@@ -404,3 +404,15 @@ flag. Aurelis keeps local models, real permission/settings callbacks and its
 existing scanner. No remote feed or source-of-truth replacement is imported.
 Spinner/progress and controlled local test fixtures are Aurelis additions.
 Source hashes and validation limits: docs/migration/beta-local/B03_3A_RECOVERY.md.
+
+B04-a — current visible ordering and saved local selection
+--------------------------------------------------------
+Reference reviewed: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898,
+app/src/main/java/com/music/bitchord/ui/screens/LocalFolder.kt,
+LocalFolderState and LocalFolderSelectionBar (resolve selected IDs against songs).
+Original BitChord contributors, GPLv3 per upstream LICENSE; prior notices retained.
+Aurelis corrections resolve multi-selection against its current displayed order
+and save only ID strings across recreation. They retain the existing Aurelis
+screen, local catalogue, playlist membership and playback callback; no whole
+upstream file or remote/cache/upload feature is copied. Selection persistence
+and fixtures are Aurelis contributions. Details: docs/migration/beta-local/B04_A_SELECTION.md.

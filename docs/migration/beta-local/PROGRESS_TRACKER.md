@@ -5,7 +5,21 @@
 
 ## Continuación actual — primera entrega documental
 
-### B03.3-a — estados y recuperación accesibles (CI pendiente)
+### B04-a — comprobación incremental y selección (CI pendiente)
+
+«Continúa» confirma el resultado bueno de B03.3-a y autoriza esta entrega;
+no se descargan informes ni se afirma una nueva lectura de su CI. Base5fde06ac,
+misma rama/PR1. Revisión estática de los flujos existentes de géneros/búsqueda/
+carpetas/biblioteca: se conservan, sin rehacerlos. Brechas corregidas en selección:
+acciones múltiples siguen el orden visible y IDs seleccionados se restauran junto
+al modo/orden. Solo IDs en Bundle; medios ausentes se excluyen de las acciones,
+referencias privadas y playlists conservadas. Seis rutas de máximo30, manifiesto
+en [B04_A_SELECTION](B04_A_SELECTION.md); tres pruebas nuevas para Actions,
+dos revisiones del mismo agente y git diff --check. Sin Gradle/Android locales.
+Nuevo CI y comprobaciones físicas/visuales pendientes; avisar tras push y esperar
+respuesta. No se inicia B05/B09 ni otra entrega en este bloque.
+
+### B03.3-a — resultado aceptado por el usuario; físico/visual pendiente
 
 «Continúa con el siguiente bloque» confirma el éxito previo y autoriza esta
 entrega. Base14e4567c, misma rama/PR1; siete rutas de máximo30 según el manifiesto
