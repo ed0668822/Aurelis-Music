@@ -1,6 +1,12 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.unit.dp
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,10 +24,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], application = AurelisApplication::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PlayerChromeTest {
     @get:Rule(order = 0) val registerActivity = RobolectricActivityRule()
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -58,4 +66,28 @@ class PlayerChromeTest {
         compose.onNodeWithContentDescription("Reproducir").performClick()
         compose.runOnIdle { assertEquals(0, next); assertEquals(0, previous); assertEquals(1, play) }
     }
+
+    @Test fun enabledChromeAlsoDrawsOnASoftwareBitmapCanvas() {
+        var draws = 0
+        compose.setContent {
+            Box(Modifier.size(48.dp).playerAdditiveChrome(true).drawBehind {
+                draws++
+                drawRect(Color.White.copy(alpha = 0.58f))
+            })
+        }
+        compose.runOnIdle {
+            val view = compose.activity.window.decorView
+            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+            try {
+                val canvas = Canvas(bitmap)
+                assertFalse(canvas.isHardwareAccelerated)
+                val before = draws
+                view.draw(canvas)
+                assertTrue("Software capture must draw the enabled chrome", draws > before)
+            } finally {
+                bitmap.recycle()
+            }
+        }
+    }
+
 }

@@ -7,6 +7,13 @@
 
 ### B05.2-b — contraste de transporte (CI pendiente)
 
+**Reparación run127 autorizada:** ZIP válido leído. Debug320/324, cuatro errores
+RenderNode al capturar Canvas software; Release324/324. Se reemplaza GraphicsLayer
+por Canvas.saveLayer/Plus acotado con restore en finally, sin eliminar el efecto
+ni modificar tests previos/puertasCI. Regresión de captura software en memoria,
+sin guardar imágenes. Cuatro rutas existentes; ocho acumuladas de este bloque,
+once entre ambos. Dos revisiones del mismo agente y diff --check; nuevo CI pendiente.
+
 Segundo bloque autorizado junto a B05.2-a, base668daa36. Adaptación parcial del
 delta aprobado acf219a7: tinta aditiva limitada a iconos skip con hardware y sin
 reduceBlur; fallback sólido del tema y atenuación de controles sin capacidad.

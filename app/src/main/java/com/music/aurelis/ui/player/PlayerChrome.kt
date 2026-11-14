@@ -6,15 +6,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Paint
 
 /** Only enable over the player backdrop on a hardware-rendered view. */
 internal fun Modifier.playerAdditiveChrome(enabled: Boolean): Modifier =
     if (!enabled) this else drawWithCache {
-        val layer = obtainGraphicsLayer().apply { blendMode = BlendMode.Plus }
+        // Canvas layers work for both hardware rendering and bitmap captures.
+        // A View can be accelerated while its current capture Canvas is software.
+        val paint = Paint().apply { blendMode = BlendMode.Plus }
         onDrawWithContent {
-            layer.record { this@onDrawWithContent.drawContent() }
-            drawLayer(layer)
+            val canvas = drawContext.canvas
+            canvas.saveLayer(Rect(Offset.Zero, size), paint)
+            try {
+                drawContent()
+            } finally {
+                canvas.restore()
+            }
         }
     }
 

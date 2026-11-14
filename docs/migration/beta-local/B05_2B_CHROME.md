@@ -39,3 +39,28 @@ Gradle/Lint/APK/tests Android locales. Las dos entregas suman once rutas distint
 Se publican en un push con dos commits; Actions del SHA final validará el conjunto.
 Pendiente CI y fidelidad física/GPU; no se declara B05 completo ni se inicia B05.3,
 B06 o B09. Tras envío avisar y esperar resultado comunicado por el usuario.
+
+
+## Reparación autorizada — run127
+
+ZIP Aurelis-Informes-B01-B06-127.zip aportado, integridad verificada. SHA d3194eda,
+run43572562265: B01/B02/B05 success, B03 failure y B04 skipped; puerta B06 falla.
+results.json y XML: Debug320/324 aprobadas, cuatro fallidas; Release324/324,
+cero fallos. Las cuatro excepciones de PlayerIntegrationTest coinciden en
+PlayerChrome.kt:17, Software rendering doesn't support drawRenderNode.
+Kover NOT_MEASURED/COVERAGE_XML_UNAVAILABLE tras el fallo de suites.
+
+El guard LocalView.isHardwareAccelerated no acredita el Canvas de una captura:
+view.draw(Canvas(bitmap)) usa software aunque la View esté acelerada. Se retira
+obtainGraphicsLayer/drawLayer (RenderNode) y se usa Canvas.saveLayer con Paint
+BlendMode.Plus, limitada al rectángulo del icono y restaurada mediante finally.
+Se conserva mezcla, tinta, capacidades y fallback por preferencias existentes;
+no se desactivan detectores, gráficos nativos de tests ni controles de CI.
+
+Regresión nueva fuerza el efecto habilitado y dibuja en Canvas(bitmap) software,
+comprueba que el contenido se dibujó y recicla el bitmap, sin exportar capturas.
+Se conserva PlayerIntegrationTest y sus aserciones originales. Dos revisiones del
+mismo agente: causa/XML/ciclo de Canvas y diff/imports/restauración/alcance.
+git diff --check local; no Gradle/Lint/Android locales. Cuatro rutas ya incluidas
+en B05.2-b (ocho acumuladas), once entre ambas entregas, dentro de30. Nuevo CI
+pendiente; no avanzar B05.3 ni declarar GPU/fidelidad física verificada.
