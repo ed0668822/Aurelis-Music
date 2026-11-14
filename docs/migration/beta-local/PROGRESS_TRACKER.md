@@ -7,6 +7,14 @@
 
 ### B06.1-b — Play Next/edición con shuffle (CI pendiente)
 
+Run133 FAILURE en compileDebugKotlin: dos SessionResult.Code colocadas en destinos
+no permitidos (función/parámetro). Corregidas como anotaciones del tipo Int; también
+se declara el tipo del código local. Evidencia: ZIP oficial de logs verificado;
+B02/B03/B04/B05 omitidos, sin pruebas ejecutadas. Tres archivos ya incluidos, quince
+distintos acumulados. Dos revisiones del mismo agente y diff --check correcto;
+nueva compilación y validaciones pendientes de Actions. Detalle en informe B06_1B.
+
+
 «Continúa» confirma la reparación80dcae7a y autoriza este bloque. Quince archivos
 de máximo30, dos revisiones estáticas del mismo agente; sin descarga de ZIP previo.
 La sesión existente aplica inserciones/movimientos a la permutación nativa y vacía

@@ -83,3 +83,23 @@ UI/accessibilidad, fixtures, manifiesto de15 y atribuciones. XML parseado y
 `git diff --check` correcto. javap solo inspecciona dependencias existentes1.11.1;
 sin Gradle/Lint/compilación/APK/pruebas Android locales. Todo eso queda para Actions.
 Tras push avisar con SHA y enlace; esperar respuesta antes de otro bloque.
+
+
+## Reparación de run133
+
+Run43637377039 del commit0febb9096b063e3e1665401a5958600c3c982ea3 falló en B01,
+compileDebugKotlin. B02/B03/B04/B05 SKIPPED, B06 FAILURE por puerta final.
+Los informes de artefactos se bloquean en productionresultssa7.blob.core.windows.net;
+el ZIP oficial de logs del run sí pudo descargarse y verificarse íntegro.
+En B01/14_Compile and assemble Debug APK.txt:539–540 constan dos errores Kotlin en
+ShuffleQueueEdits.kt:59 y117: SessionResult.Code no admite member function ni value
+parameter; sus destinos son type usage/expression. Se mueven ambas anotaciones al
+Int de retorno/parámetro y se anota también el tipo del resultado local del callback.
+Se conserva el contrato de códigos y no se elimina ni suprime la comprobación.
+Sin cambios al algoritmo, permisos, límites, pruebas ni workflow.
+
+Tres archivos ya incluidos (código, este informe, tracker); quince distintos
+acumulados de máximo30. Dos revisiones estáticas del mismo agente: diagnóstico y
+metadatos de la anotación en dependencia; después diff/call sites/alcance. Pasa
+`git diff --check`. Sin Gradle/Lint/compilación ni pruebas Android locales. Nueve
+regresiones y nuevo CI pendientes, no se afirma aprobación de fases omitidas.

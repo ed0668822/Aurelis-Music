@@ -56,8 +56,7 @@ internal object ShuffleQueueEdits {
         return (player as MediaController).sendCustomCommand(command, args)
     }
 
-    @SessionResult.Code
-    internal fun execute(player: ExoPlayer, args: Bundle): Int {
+    internal fun execute(player: ExoPlayer, args: Bundle): @SessionResult.Code Int {
         if (!player.shuffleModeEnabled) return SessionResult.RESULT_ERROR_INVALID_STATE
         val order = queuePlaybackOrder(player) ?: return SessionResult.RESULT_ERROR_INVALID_STATE
         val current = player.currentMediaItemIndex
@@ -114,7 +113,7 @@ internal object ShuffleQueueEdits {
         }
     }
 
-    private fun result(@SessionResult.Code code: Int) = Futures.immediateFuture(SessionResult(code))
+    private fun result(code: @SessionResult.Code Int) = Futures.immediateFuture(SessionResult(code))
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -131,7 +130,7 @@ internal class ShuffleQueueCallback(private val player: ExoPlayer, private val o
 
     override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo,
         customCommand: SessionCommand, args: Bundle): ListenableFuture<SessionResult> {
-        val code = when {
+        val code: @SessionResult.Code Int = when {
             !owns(controller) -> SessionResult.RESULT_ERROR_PERMISSION_DENIED
             customCommand != ShuffleQueueEdits.command -> SessionResult.RESULT_ERROR_NOT_SUPPORTED
             else -> ShuffleQueueEdits.execute(player, args)
