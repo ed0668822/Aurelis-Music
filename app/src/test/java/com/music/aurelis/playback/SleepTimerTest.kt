@@ -42,7 +42,8 @@ class SleepTimerTest {
             assertTrue(condition())
         }
         try {
-            val future = androidx.media3.session.MediaController.Builder(app, session.token).buildAsync()
+            val future = androidx.media3.session.MediaController.Builder(app, session.token)
+                .setListener(PlayerConnection.controllerListener {}).buildAsync()
             await { future.isDone }; val connected = future.get(); controller = connected
             assertTrue(connected.isSessionCommandAvailable(LocalPlaybackCoordinator.COMMAND))
             val vm = PlaybackViewModel(app as AurelisApplication) { connected }
@@ -50,8 +51,8 @@ class SleepTimerTest {
             await { vm.state.value.canUsePlaybackTools }
             vm.setSleepTimer(1000L)
             await { connected.sessionExtras.getLong("sleep_deadline") > 0 && vm.state.value.sleepRemainingMs > 0 }
-            vm.setSleepTimer()
-            await { connected.sessionExtras.getLong("sleep_deadline") == 0L }
+            controls.execute(android.os.Bundle().apply { putString("action", "sleep_cancel") })
+            await { connected.sessionExtras.getLong("sleep_deadline") == 0L && vm.state.value.sleepRemainingMs == 0L }
             vm.setSleepTimer(1000L)
             await { connected.sessionExtras.getLong("sleep_deadline") > 0 }
             store.clear(); controller = null

@@ -39,6 +39,7 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
     private fun publish() {
         session?.setSessionExtras(Bundle().apply {
             putLong("sleep_deadline", timer.deadlineMs)
+            putLong("control_observed_at", android.os.SystemClock.elapsedRealtime())
             putBoolean("sleep_after_track", timer.afterTrack)
             putBoolean("autoplay", com.music.aurelis.data.SettingsRepository.autoplay.value)
             putBoolean("autoplay_available", autoplay != null && !com.music.aurelis.data.ProfileRepository.state.value.readOnly)
@@ -74,7 +75,7 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
         }
         publish()
         return if (success) SessionResult(SessionResult.RESULT_SUCCESS)
-        else SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+        else SessionResult(androidx.media3.session.SessionError.ERROR_BAD_VALUE)
     }
     fun close() { autoplay?.close(); autoplay = null; player.removeListener(this); timer.close(); session = null }
 }

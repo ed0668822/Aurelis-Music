@@ -1,0 +1,13 @@
+// Aurelis © 2026. GPL-3.0-or-later
+// CI-only progress markers: a stuck worker leaves its active test in the log.
+// No tests, assertions or coverage requirements are disabled here.
+gradle.allprojects {
+    tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+        beforeTest { descriptor ->
+            logger.lifecycle("AURELIS_TEST_START class=${descriptor.className} test=${descriptor.name}")
+        }
+        afterTest { descriptor, result ->
+            logger.lifecycle("AURELIS_TEST_END class=${descriptor.className} test=${descriptor.name} result=${result.resultType}")
+        }
+    }
+}

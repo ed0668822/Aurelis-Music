@@ -32,6 +32,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.currentCoroutineContext
 import com.music.aurelis.data.LocalUserLibraryState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -178,10 +179,10 @@ class PlaybackViewModel internal constructor(
                 _state.update { it.copy(isConnected = true, errorMessage = null) }
                 syncState()
                 controlStateJob?.cancel()
+                syncControlState(player)
                 controlStateJob = viewModelScope.launch {
-                    while (isActive && controller === player) {
-                        syncControlState(player)
-                        delay(1000)
+                    PlayerConnection.sessionChanges.collect { changed ->
+                        if (changed === player && controller === player) syncControlState(player)
                     }
                 }
                 if (player.isPlaying) startPositionPolling()
@@ -426,6 +427,7 @@ class PlaybackViewModel internal constructor(
 
     private fun syncState(discontinuous: Boolean = false) {
         val ctrl = controller ?: return
+        syncControlState(ctrl)
         val currentIndex = ctrl.currentMediaItemIndex
         val mediaItem = ctrl.currentMediaItem
         val song = mediaItem?.toLocalSong()

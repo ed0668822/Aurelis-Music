@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback
 
 import android.os.Looper
@@ -60,6 +61,15 @@ class PlaybackIntegrationTest {
     }
     private fun settle() { dispatcher.scheduler.runCurrent(); shadowOf(Looper.getMainLooper()).idle(); dispatcher.scheduler.runCurrent() }
     private fun play() { vm.playSongs(listOf(song("1"), song("2"), song("3"))); settle() }
+
+    @Test fun pausedControllerHasNoRepeatingControlPollToKeepTheSchedulerBusy() {
+        play(); player.pause(); settle()
+        val before = dispatcher.scheduler.currentTime
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(before, dispatcher.scheduler.currentTime)
+        assertTrue(vm.state.value.isConnected)
+        assertFalse(player.playWhenReady)
+    }
 
     @Test fun replacedModelIoFinalizerFinishesBeforeMainCanBeReset() {
         val entered = CompletableDeferred<Unit>()

@@ -5,6 +5,18 @@
 
 ## Continuación actual — primera entrega documental
 
+### Reparación CI136 antes de B06.3
+
+B01/B05 aprobados; B02 falló WrongConstant de SessionResult/SessionError. B03 compiló
+Debug pero no terminó testDebugUnitTest en unos30min; Release no comenzó. Run
+cancelado para recuperar logs oficiales, sin declarar pruebas aprobadas. Constante
+corregida, sondeo infinito de controles sustituido por eventos de sesión (causa única
+del atasco aún no demostrada). Regresión de scheduler pausado y notificación de
+cancelación. CI registra cada prueba y limita cada variante12min con fallo real.
+Dos revisiones del mismo agente, YAML/Bash/diff --check; sin Android local. No B06.3
+hasta validar. Push siguiente incluye también B06.2-b/-c ya autorizados/preparados,
+sin reescribir historia; unión completa de archivos debe permanecer≤30.
+
 ### B06.2-c — continuación automática local (CI pendiente)
 
 Autorización acumulada terminar B06. Trece archivos de máximo30. Al finalizar cola

@@ -24,7 +24,10 @@ internal class SleepTimer(
         override fun run() {
             if (closed || deadlineMs == 0L) return
             val remaining = deadlineMs - clock()
-            if (remaining <= 0) expire() else handler.postDelayed(this, remaining.coerceAtMost(1000L))
+            if (remaining <= 0) expire() else {
+                onChange()
+                handler.postDelayed(this, remaining.coerceAtMost(1000L))
+            }
         }
     }
     init { player.addListener(this) }

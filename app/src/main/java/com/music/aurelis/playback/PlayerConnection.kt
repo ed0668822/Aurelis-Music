@@ -10,13 +10,24 @@ import com.music.aurelis.data.model.LocalSong
 import kotlinx.coroutines.guava.await
 
 object PlayerConnection {
+    // Notifications only; the connected controller remains the source of truth.
+    internal val sessionChanges = kotlinx.coroutines.flow.MutableSharedFlow<MediaController>(extraBufferCapacity = 16)
+
+
+    internal fun controllerListener(onDisconnected: () -> Unit): MediaController.Listener = object : MediaController.Listener {
+        override fun onDisconnected(controller: MediaController) = onDisconnected()
+        override fun onExtrasChanged(controller: MediaController, extras: android.os.Bundle) {
+            sessionChanges.tryEmit(controller)
+        }
+        override fun onAvailableSessionCommandsChanged(controller: MediaController, commands: androidx.media3.session.SessionCommands) {
+            sessionChanges.tryEmit(controller)
+        }
+    }
 
     suspend fun connect(context: Context, onDisconnected: () -> Unit = {}): MediaController {
         val sessionToken = SessionToken(context, ComponentName(context, AurelisPlaybackService::class.java))
         val future = MediaController.Builder(context, sessionToken)
-            .setListener(object : MediaController.Listener {
-                override fun onDisconnected(controller: MediaController) = onDisconnected()
-            }).buildAsync()
+            .setListener(controllerListener(onDisconnected)).buildAsync()
         return try { future.await() } catch (error: kotlinx.coroutines.CancellationException) {
             MediaController.releaseFuture(future)
             throw error
