@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback
 
 import android.os.SystemClock
@@ -13,6 +14,7 @@ internal class ServicePlaybackRecorder(
     private val library: LocalUserLibrary,
     private val queue: LocalQueueStore,
     scope: CoroutineScope,
+    private val canSaveEmpty: () -> Boolean = { true },
     private val clock: () -> Long = SystemClock::elapsedRealtime,
 ) : Player.Listener {
     private var lastTick = clock()
@@ -42,11 +44,19 @@ internal class ServicePlaybackRecorder(
         saveQueue()
     }
     private fun saveQueue() {
-        // Do not erase a saved queue while an asynchronous restore is reading MediaStore.
-        if (player.mediaItemCount > 0) queue.save(SavedLocalQueue(
-            (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId },
-            player.currentMediaItemIndex.coerceAtLeast(0), player.currentPosition.coerceAtLeast(0),
-            player.repeatMode, player.shuffleModeEnabled))
+        // Only an explicit queue edit may replace a recoverable pending restore with empty.
+        if (player.mediaItemCount > 0 || canSaveEmpty()) {
+            val items = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
+            val entries = items.mapNotNull { it.queueEntryId?.takeIf { value -> value.isNotBlank() } }
+            val stableEntries = if (entries.size == items.size && entries.toSet().size == items.size) entries else emptyList()
+            // External controllers may provide URI-only items without a local MediaStore ID.
+            // Preserve the last recoverable snapshot rather than crash or shift its indices.
+            if (items.all { it.mediaId.isNotBlank() }) queue.save(SavedLocalQueue(items.map { it.mediaId },
+                if (items.isEmpty()) 0 else player.currentMediaItemIndex.coerceIn(items.indices),
+                player.currentPosition.coerceAtLeast(0), player.repeatMode, player.shuffleModeEnabled,
+                stableEntries, items.map { it.queueTier },
+                if (player.shuffleModeEnabled) queuePlaybackOrder(player).orEmpty() else emptyList()))
+        }
         lastSave = clock()
     }
     fun close() { tick(); saveQueue(); library.flush(); player.removeListener(this); job.cancel() }

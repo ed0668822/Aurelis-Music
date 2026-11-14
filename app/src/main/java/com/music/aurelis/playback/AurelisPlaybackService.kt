@@ -29,7 +29,6 @@ class AurelisPlaybackService : MediaSessionService() {
     private var coordinator: LocalPlaybackCoordinator? = null
     private var dspChain: DspChain? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var profiles: ProfilePlaybackBinding? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -91,7 +90,7 @@ class AurelisPlaybackService : MediaSessionService() {
             .setCallback(ShuffleQueueCallback(player, packageName, controls))
             .build()
         controls.bind(requireNotNull(mediaSession))
-        profiles = ProfilePlaybackBinding(this, player, serviceScope)
+        controls.bindProfile(this, serviceScope)
         controls.bindAutoplay(serviceScope) {
             withContext(Dispatchers.IO) {
                 if (com.music.aurelis.data.AudioPermission.isGranted(this@AurelisPlaybackService))
@@ -117,7 +116,6 @@ class AurelisPlaybackService : MediaSessionService() {
     override fun onDestroy() {
         if (BuildConfig.DEBUG) Log.d("P3Media3Service", "onDestroy playback service")
         coordinator?.close(); coordinator = null
-        profiles?.close(); profiles = null
         serviceScope.cancel()
         mediaSession?.run { player.release(); release() }
         mediaSession = null

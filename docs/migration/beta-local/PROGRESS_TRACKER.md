@@ -5,6 +5,18 @@
 
 ## Continuación actual — primera entrega documental
 
+### B06.3-a — snapshot v2 y barrera de restauración (CI pendiente)
+
+«Continúa» confirma869ffe6a por el usuario; no descarga ZIP ni auditoría repetida.
+Doce archivos de máximo30. IDs de ocurrencia/tiers/permutación en v2, lector v1 sin
+borrar bytes antiguos, ausentes remapeados y restauración pausada. Vaciado real se
+guarda vacío, cancelar una carga pendiente no borra snapshot recuperable. Coordinador
+del servicio posee binding; comandos remotos y cambios de cola cancelan cargas tardías.
+Doce regresiones nuevas para Actions (cinco codec/siete binding, incluyendo ExoPlayer
+y comando MediaController real). Dos revisiones del mismo agente y diff --check;
+sin Gradle/Android locales. Físico/CI nuevo pendientes; B06 sigue abierto.
+[B06_3A_RESTORE](B06_3A_RESTORE.md).
+
 ### Reparación CI136 antes de B06.3
 
 B01/B05 aprobados; B02 falló WrongConstant de SessionResult/SessionError. B03 compiló

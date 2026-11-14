@@ -423,3 +423,11 @@ Aurelis. NOTICE conserva atribuciones existentes; sin copiar decks ni dependenci
 Selector determinista/binding y pruebas propios Aurelis. Se preservan atribuciones
 BitChord existentes de identidad/tier; no se importa radio/red/JS ni otro motor.
 Sin dependencias, recursos binarios o cambios de licencia. Cabeceras propias.
+
+
+## B06.3-a — snapshot y restauración
+
+Codec v2, remapeo y barrera de comandos propios Aurelis; se reutilizan metadatos de
+ocurrencia/tier ya atribuidos en NOTICE sin copiar nuevo código de BitChord. Cabecera
+Aurelis en archivos propios modificados que carecían de ella y nuevas pruebas/docs.
+Sin dependencias, binarios ni cambios de LICENSE. Se conserva referencia fija b690dc1.

@@ -24,6 +24,14 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
         publish()
     }
     override fun onSkipSilenceEnabledChanged(skipSilenceEnabled: Boolean) { publish() }
+    private var profileBinding: ProfilePlaybackBinding? = null
+    fun bindProfile(context: android.content.Context, scope: kotlinx.coroutines.CoroutineScope,
+        songs: (suspend () -> List<com.music.aurelis.data.model.LocalSong>)? = null) {
+        profileBinding?.close()
+        profileBinding = if (songs == null) ProfilePlaybackBinding(context, player, scope)
+            else ProfilePlaybackBinding(context, player, scope, songs = songs)
+    }
+    fun onUserQueueCommand() { profileBinding?.cancelRestore() }
     private var autoplay: LocalAutoplayBinding? = null
     private var autoplayStatus: String? = null
     fun bindAutoplay(scope: kotlinx.coroutines.CoroutineScope, load: suspend () -> List<com.music.aurelis.data.model.LocalSong>) {
@@ -77,7 +85,7 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
         return if (success) SessionResult(SessionResult.RESULT_SUCCESS)
         else SessionResult(androidx.media3.session.SessionError.ERROR_BAD_VALUE)
     }
-    fun close() { autoplay?.close(); autoplay = null; player.removeListener(this); timer.close(); session = null }
+    fun close() { profileBinding?.close(); profileBinding = null; autoplay?.close(); autoplay = null; player.removeListener(this); timer.close(); session = null }
 }
 
 /** The existing sink uses its float path for these encodings, bypassing Sonic/silence. */

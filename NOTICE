@@ -504,3 +504,9 @@ AutoplayEngine and LocalAutoplayBinding are Aurelis contributions. They extend t
 single local Media3 queue using MediaStore metadata and new AUTOPLAY occurrences.
 No upstream network/radio/recommendation engine, model output or remote source is
 copied. Existing BitChord-derived queue tier and identity notices remain applicable.
+
+B06.3-a — local queue snapshot v2 and restore command barrier
+Snapshot codec, missing-item remapping, empty-queue persistence and service restore
+coordination are Aurelis contributions. Existing BitChord-derived occurrence/tier
+metadata credits remain applicable. No upstream service replacement, URI persistence
+or global playback state copied. Legacy v1 bytes and third-party notices preserved.

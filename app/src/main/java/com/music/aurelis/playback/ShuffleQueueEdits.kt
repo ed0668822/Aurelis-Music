@@ -132,10 +132,24 @@ internal class ShuffleQueueCallback(private val player: ExoPlayer, private val o
             .setAvailableSessionCommands(commands.build()).build()
     }
 
+    override fun onPlayerCommandRequest(session: MediaSession, controller: MediaSession.ControllerInfo, playerCommand: Int): Int {
+        when (playerCommand) {
+            Player.COMMAND_PLAY_PAUSE, Player.COMMAND_PREPARE, Player.COMMAND_STOP,
+            Player.COMMAND_SET_MEDIA_ITEM, Player.COMMAND_CHANGE_MEDIA_ITEMS,
+            Player.COMMAND_SET_REPEAT_MODE, Player.COMMAND_SET_SHUFFLE_MODE,
+            Player.COMMAND_SEEK_TO_DEFAULT_POSITION, Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_MEDIA_ITEM, Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_PREVIOUS, Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_NEXT, Player.COMMAND_SEEK_BACK, Player.COMMAND_SEEK_FORWARD -> controls?.onUserQueueCommand()
+        }
+        return SessionResult.RESULT_SUCCESS
+    }
+
     override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo,
         customCommand: SessionCommand, args: Bundle): ListenableFuture<SessionResult> {
         if (owns(controller) && controls != null && customCommand == LocalPlaybackCoordinator.COMMAND)
             return Futures.immediateFuture(controls.execute(args))
+        if (owns(controller) && customCommand == ShuffleQueueEdits.command) controls?.onUserQueueCommand()
         val code: @SessionResult.Code Int = when {
             !owns(controller) -> SessionResult.RESULT_ERROR_PERMISSION_DENIED
             customCommand != ShuffleQueueEdits.command -> SessionResult.RESULT_ERROR_NOT_SUPPORTED
