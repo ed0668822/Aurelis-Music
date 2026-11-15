@@ -88,7 +88,8 @@ fun SearchScreen(
                 focusRequester = focusRequester,
                 placeholder = "Buscar canciones, artistas, álbumes…",
             ) }, actions = { onOpenProfile?.let { LocalProfileButton(it) } })
-        Column(modifier = Modifier.then(contentBackdropModifier).padding(top = topPadding)) {
+        Column(modifier = Modifier.weight(1f).fillMaxWidth()
+            .then(contentBackdropModifier).padding(top = topPadding)) {
             if (results != null) LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(LocalSearchCategory.entries.toList()) { _, item ->
@@ -119,54 +120,53 @@ fun SearchScreen(
                     )
                 }
             }
-        }
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.weight(1f).fillMaxWidth().testTag("local-search-results"),
-            contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
-        ) {
-            itemsIndexed(destinations) { _, destination ->
-                Column(Modifier.fillMaxWidth().clickable(onClick = destination.onOpen)
-                    .padding(horizontal = PAGE_GUTTER, vertical = 12.dp)) {
-                    Text(destination.title, style = MaterialTheme.typography.titleMedium)
-                    Text(destination.detail, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            when {
-                results == null && query.isEmpty() -> {
-                    if (history.isEmpty()) {
-                        item { MessageState("Busca tu música local") }
-                    } else {
-                        recentSearches(
-                            history = history,
-                            onClick = onHistoryClick,
-                            onRemove = onHistoryRemove,
-                            onClear = onHistoryClear,
-                        )
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(1f).fillMaxWidth().testTag("local-search-results"),
+                contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
+            ) {
+                itemsIndexed(destinations) { _, destination ->
+                    Column(Modifier.fillMaxWidth().clickable(onClick = destination.onOpen)
+                        .padding(horizontal = PAGE_GUTTER, vertical = 12.dp)) {
+                        Text(destination.title, style = MaterialTheme.typography.titleMedium)
+                        Text(destination.detail, style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                results == null -> item { MessageState("Escribe para buscar") }
-                results.isEmpty() && destinations.isEmpty() -> item {
-                    MessageState("No hay resultados para \"$query\"")
-                }
-                else -> {
-                    itemsIndexed(results, key = { index, song -> "${song.id}_$index" }) { index, song ->
-                        SongRow(
-                            song = song,
-                            onClick = { onSongClick(results, index) },
-                            onLongPress = { onSongLongPress(song) },
-                            isCurrent = currentSong?.id == song.id,
-                            isPlaying = isPlaying && currentSong?.id == song.id,
-                            searchPlayingStyle = true,
-                            activeTint = PlayingAccent,
-                        )
-                        if (index < results.lastIndex) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(start = ROW_DIVIDER_INSET),
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outline,
+                when {
+                    results == null && query.isEmpty() -> {
+                        if (history.isEmpty()) {
+                            item { MessageState("Busca tu música local") }
+                        } else {
+                            recentSearches(
+                                history = history,
+                                onClick = onHistoryClick,
+                                onRemove = onHistoryRemove,
+                                onClear = onHistoryClear,
                             )
+                        }
+                    }
+                    results == null -> item { MessageState("Escribe para buscar") }
+                    results.isEmpty() && destinations.isEmpty() -> item {
+                        MessageState("No hay resultados para \"$query\"")
+                    }
+                    else -> {
+                        itemsIndexed(results, key = { index, song -> "${song.id}_$index" }) { index, song ->
+                            SongRow(
+                                song = song,
+                                onClick = { onSongClick(results, index) },
+                                onLongPress = { onSongLongPress(song) },
+                                isCurrent = currentSong?.id == song.id,
+                                isPlaying = isPlaying && currentSong?.id == song.id,
+                                searchPlayingStyle = true,
+                                activeTint = PlayingAccent,
+                            )
+                            if (index < results.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = ROW_DIVIDER_INSET),
+                                    thickness = 0.5.dp,
+                                    color = MaterialTheme.colorScheme.outline,
+                                )
+                            }
                         }
                     }
                 }

@@ -85,6 +85,16 @@ class RealSettingsNavigationInstrumentedTest {
         throw AssertionError("Settings navigation: Back left the profile visible: " + label)
     }
 
+    private fun awaitSearchField() {
+        val deadline = SystemClock.elapsedRealtime() + 15_000
+        while (SystemClock.elapsedRealtime() < deadline) {
+            if (rows().any { it.className?.toString() == "android.widget.EditText" && it.isEnabled }) return
+            SystemClock.sleep(150)
+        }
+        throw AssertionError("Settings navigation: Search field missing; visible=" +
+            rows().map { "${it.text}|${it.contentDescription}" })
+    }
+
     private fun evidence(stage: String) {
         val folder = File(context.getExternalFilesDir(null), "settings-navigation").apply { mkdirs() }
         File(folder, "$stage.txt").writeText(rows().joinToString("\n") { "${it.text}|${it.contentDescription}" })
@@ -158,6 +168,13 @@ class RealSettingsNavigationInstrumentedTest {
             instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
             awaitAbsent(context.getString(R.string.settings_photo_hint))
             await(library)
+            await(context.getString(R.string.search), click = true)
+            awaitSearchField()
+            evidence("$prefix-search")
+            activity.recreate()
+            awaitSearchField()
+            await(context.getString(R.string.home), click = true)
+            await(context.getString(R.string.settings_profile_action))
             assertEquals("Opening Settings must preserve the single local profile", before, ProfileRepository.state.value.profile)
             assertEquals(Lifecycle.State.RESUMED, activity.state)
             if (withPlayback) onMain {

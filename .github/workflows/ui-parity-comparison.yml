@@ -41,6 +41,12 @@ jobs:
           retention-days: 3
   settings-navigation:
     needs: aurelis
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [35, 36]
+    env:
+      UI_SETTINGS_ANDROID_API: ${{ matrix.api }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -58,7 +64,7 @@ jobs:
       - name: Exercise both Settings entrances on the real Activity
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: 35
+          api-level: ${{ matrix.api }}
           target: google_apis
           arch: x86_64
           profile: pixel_5
@@ -71,7 +77,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: Aurelis-Settings-Navigation-${{ github.run_number }}
+          name: Aurelis-Settings-Navigation-${{ github.run_number }}-api${{ matrix.api }}
           path: ci-ui-comparison/
           retention-days: 14
           if-no-files-found: error

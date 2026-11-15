@@ -105,4 +105,27 @@ class ChromeContractTest {
             .assert(!hasAnyDescendant(hasContentDescription("Atrás")))
         compose.onNodeWithContentDescription("Atrás").assertIsDisplayed()
     }
+
+    @Test fun emptyAndFilteredSearchRecordTheirListOutsideTheGlassHeader() {
+        var query by mutableStateOf("")
+        compose.setContent { AurelisTheme {
+            com.music.aurelis.ui.screens.SearchScreen(
+                query = query, onQueryChange = { query = it },
+                results = if (query.isBlank()) null else emptyList(),
+                listState = androidx.compose.foundation.lazy.rememberLazyListState(),
+                focusRequested = false, onFocusHandled = {},
+                onSongClick = { _, _ -> }, onSongLongPress = {}, history = emptyList(),
+                onSubmit = {}, onHistoryClick = {}, onHistoryRemove = {}, onHistoryClear = {},
+                currentSong = null, isPlaying = false,
+                contentPadding = PaddingValues(bottom = 80.dp), topPadding = 12.dp,
+                contentBackdropModifier = Modifier.testTag("search-body-backdrop"))
+        } }
+        val body = compose.onNodeWithTag("search-body-backdrop", useUnmergedTree = true)
+        body.assert(hasAnyDescendant(hasText("Busca tu música local")))
+            .assert(!hasAnyDescendant(hasSetTextAction()))
+        assertTrue("Empty search must still record a non-empty body", body.fetchSemanticsNode().boundsInRoot.height > 0f)
+        compose.onNode(hasSetTextAction()).performTextInput("missing")
+        body.assert(hasAnyDescendant(hasText("No hay resultados para \"missing\"")))
+            .assert(!hasAnyDescendant(hasSetTextAction()))
+    }
 }

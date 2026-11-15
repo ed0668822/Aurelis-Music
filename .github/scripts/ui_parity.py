@@ -307,6 +307,18 @@ def record_state(result, app, theme, name, reached, reason=""):
         (folder / "hierarchy.xml").write_text(xml)
         labels = [n["label"] for n in nodes(xml)]
         current = foreground(PACKAGES[app], folder)
+        if not current:
+            # Preserve the tested app's exit reason before the next force-stop.
+            for filename, command in (
+                ("exit-info.txt", ("dumpsys", "activity", "exit-info", PACKAGES[app])),
+                ("crash-buffer.txt", ("logcat", "-d", "-b", "crash", "-v", "threadtime")),
+            ):
+                try:
+                    diagnostic = shell(*command)
+                    (folder / filename).write_text(diagnostic)
+                    print(f"UI foreground failure {app}/{theme}/{name} {filename}:\n" + diagnostic[-16000:], flush=True)
+                except RuntimeError as error:
+                    print("UI foreground diagnostic unavailable: " + str(error), flush=True)
         dimensions = screenshot(folder)
         orientation_ok = dimensions[0] > dimensions[1] if name == "player-landscape" else dimensions[0] < dimensions[1]
         if not orientation_ok:
@@ -379,11 +391,28 @@ def launch_scenario(app, theme, rotation):
         raise ValueError("Unsupported comparison orientation")
     package = PACKAGES[app]
     shell("am", "force-stop", package)
-    shell("settings", "put", "system", "user_rotation", str(rotation))
     preferences = seed_preferences(app, theme)
+    shell("wm", "fixed-to-user-rotation", "enabled")
+    shell("wm", "user-rotation", "lock", str(rotation))
+    lock = shell("wm", "user-rotation")
+    if lock != "lock " + str(rotation):
+        raise RuntimeError("WindowManager rotation lock was not verified: " + lock)
     preferences["rotation"] = rotation
+    preferences["window_rotation_lock"] = lock
     launch(package)
     return preferences
+
+
+def local_library_fixture(rows):
+    if matches(rows, ("Parity Track 01",)):
+        return True
+    # Preserve the initial viewport: a large header can put songs below the fold.
+    # Indexing already verified all three fixtures; require the collection header,
+    # its real count, transport and category controls rather than a Library summary.
+    return all(matches(rows, labels) for labels in (
+        ("Local Music", "Música local"), ("Play", "Reproducir"),
+        ("Shuffle", "Aleatorio"), ("Artists", "Artistas"), ("Albums", "Álbumes"),
+    )) and any(re.fullmatch(r"3 (?:songs|canciones)(?:\s*[·•]\s*.+)?", row["label"], re.I) for row in rows)
 
 
 def pause_fixture(package, local):
@@ -506,7 +535,8 @@ def capture():
                 record_state(result, app, theme, "search", search and any(n["class"].endswith("EditText") for n in search_nodes))
                 shell("am", "force-stop", package); launch(package)
                 local = tap(LABELS["library"]) and tap(LABELS["songs"], scroll=True)
-                record_state(result, app, theme, "local-songs", local and bool(matches(nodes(tree()), ("Parity Track 01",))))
+                record_state(result, app, theme, "local-songs", local and local_library_fixture(nodes(tree())),
+                    "Initial viewport: fixture title or local header with three indexed tracks required")
                 paused = pause_fixture(package, local)
                 mini = paused and bool(mini_player_rows(nodes(tree())))
                 record_state(result, app, theme, "miniplayer", mini)
@@ -560,6 +590,18 @@ def settings_navigation():
     OUT.mkdir(exist_ok=True)
     result = {"source_sha": os.environ.get("GITHUB_SHA"), "cases": [], "passed": False}
     try:
+        expected_api = os.environ.get("UI_SETTINGS_ANDROID_API", "35")
+        if expected_api not in {"35", "36"}:
+            raise ValueError("Unsupported Settings regression API: " + expected_api)
+        result["device"] = {"expected_api": expected_api,
+                            "api": shell("getprop", "ro.build.version.sdk")}
+        if result["device"]["api"] != expected_api:
+            raise ValueError("Settings regression requires Android API " + expected_api +
+                             "; actual API: " + result["device"]["api"])
+        result["device"].update({"model": shell("getprop", "ro.product.model"),
+                                  "abis": shell("getprop", "ro.product.cpu.abilist"),
+                                  "fingerprint": shell("getprop", "ro.build.fingerprint"),
+                                  "physical_hyperos_verified": False})
         package = PACKAGES["aurelis"]
         verify_apk(Path("app/build/outputs/apk/debug/app-debug.apk"), package)
         adb("install", "-r", "app/build/outputs/apk/debug/app-debug.apk")

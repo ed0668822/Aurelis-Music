@@ -9,6 +9,47 @@
 
 ## Continuación actual — primera entrega documental
 
+### Dispositivo confirmado — regresión de Ajustes en Android 15 y 16
+
+El usuario confirma Redmi Note 14 Pro 5G, Android16 y HyperOS3. Se amplía solo el
+job independiente settings-navigation a API35/API36, fail-fast false y artefactos
+distintos por API. Los APK inmutables proceden del B01 del mismo SHA; la prueba
+rechaza una versión Android diferente antes de instalar o ejecutar casos y guarda
+API esperada/real, modelo, ABI y fingerprint. Conserva ambos recorridos, recreación,
+perfil y reproducción real con hardware/Liquid Glass. El emulador no acredita
+HyperOS ni sustituye la prueba física del Redmi. Comparación visual conserva API35
+idéntica para ambas apps; no se alteran SDK/ABI/firmas de la app.
+
+Run161/43758688762 de d2e84316 SUCCESS en B01–B06: logs oficiales acreditan420
+SUCCESS Debug y420 Release, tareas realmente ejecutadas y cobertura90,17%≥80%.
+Job settings-navigation de comparación43758688750 también SUCCESS. Sus capturas
+plain/glass FALLAN:26/33 estados recogidos, ambas alcanzan letras y player vertical
+de Aurelis en ambos temas. No equivalen a26/33 estados aprobados. En plain la fila
+de canción queda debajo de la cabecera local inicial; en glass Buscar vuelve al
+launcher; horizontal conserva dimensiones verticales. BitChord termina en timeout
+ADB en horizontal oscuro/plain y player vertical claro/glass. ZIP de logs válido;
+ambos ZIP de imágenes devuelven403. Sin causa host/GPU/OOM ni del cierre de Buscar
+demostrada por esos logs, no se inventa una traza.
+
+La fuente de Buscar estaba en la columna de filtros, vacía/altura0 sin consulta,
+dejando la lista fuera del backdrop. Se graba todo el cuerpo con peso y la cabecera
+fuera. Regresión de estructura para vacío/resultados y ampliación de ambos casos
+Android con Buscar/recreación/retorno y reproducción preservada. La captura imprime
+exit-info/buffer crash si pierde foreground, antes del siguiente force-stop.
+La orientación usa comandos WindowManager documentados y exige lectura lock0/1,
+además de dimensiones PNG correctas. Misma política estática para ambas apps, sin
+certificar rotación continua. La colección local se acredita por título de fixture
+visible o cabecera local con conteo exacto3, transporte y categorías; no se desplaza
+la vista inicial para esconder diferencias de altura. Las tres pistas ya fueron
+verificadas en MediaStore. No basta una tarjeta resumen de Biblioteca.
+
+40 regresiones Python PASAN por material; actionlint con ShellCheck, parser Kotlin
+de los tres archivos y diff correctos. Nueva validación Android/API36 y UI pendiente
+de Actions. Dos revisiones del mismo agente, no independientes: fuente/estado/API
+y comandos/gates/consumidores/casos/artifactos/rutas. Siete rutas ya incluidas;
+acumulado62. Sin pruebas Android locales. B07 preparado con sus huecos reales;
+la puerta visual todavía no se declara cerrada.
+
 ### Cierre UI autorizado antes de B07 — escenarios de captura independientes
 
 El usuario autoriza completar los pendientes de UI, cerrar esta corrección y abrir

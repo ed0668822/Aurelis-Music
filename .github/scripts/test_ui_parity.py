@@ -18,16 +18,37 @@ class ParityEvidenceTest(unittest.TestCase):
     def test_static_scenario_stops_before_rotation_and_resets_both_apps_equally(self):
         for app in parity.PACKAGES:
             calls = []
-            with patch.object(parity, 'shell', side_effect=lambda *args: calls.append(args)), \
+            def shell(*args):
+                calls.append(args)
+                return 'lock 1' if args == ('wm', 'user-rotation') else ''
+            with patch.object(parity, 'shell', side_effect=shell), \
                  patch.object(parity, 'seed_preferences', side_effect=lambda app, theme: calls.append(('seed',app,theme)) or {'theme':theme}), \
                  patch.object(parity, 'launch', side_effect=lambda package: calls.append(('launch',package))):
-                self.assertEqual({'theme':'dark','rotation':1},parity.launch_scenario(app,'dark',1))
+                self.assertEqual({'theme':'dark','rotation':1,'window_rotation_lock':'lock 1'},parity.launch_scenario(app,'dark',1))
             package=parity.PACKAGES[app]
-            self.assertEqual([('am','force-stop',package),('settings','put','system','user_rotation','1'),
-                              ('seed',app,'dark'),('launch',package)],calls)
+            self.assertEqual([('am','force-stop',package),('seed',app,'dark'),
+                              ('wm','fixed-to-user-rotation','enabled'),('wm','user-rotation','lock','1'),
+                              ('wm','user-rotation'),('launch',package)],calls)
         with patch.object(parity,'shell') as shell:
             with self.assertRaises(ValueError):parity.launch_scenario('aurelis','dark',3)
             shell.assert_not_called()
+
+    def test_rotation_readback_failure_does_not_launch_or_certify_an_orientation(self):
+        with patch.object(parity, 'shell', return_value='free'), \
+             patch.object(parity, 'seed_preferences', return_value={}), patch.object(parity, 'launch') as launch:
+            with self.assertRaisesRegex(RuntimeError, 'rotation lock was not verified'):
+                parity.launch_scenario('aurelis', 'dark', 1)
+            launch.assert_not_called()
+
+    def test_local_header_requires_fixture_count_transport_and_categories(self):
+        def rows(labels):
+            return [{'label': label, 'labels': [label]} for label in labels]
+        header = ['Local Music', 'Play', 'Shuffle', 'Artistas', 'Álbumes']
+        self.assertTrue(parity.local_library_fixture(rows(header + ['3 canciones · 3 min'])))
+        self.assertTrue(parity.local_library_fixture(rows(['Parity Track 01'])))
+        self.assertFalse(parity.local_library_fixture(rows(header + ['2 canciones · 2 min'])))
+        self.assertFalse(parity.local_library_fixture(rows(['Local Music', '3 songs'])))
+        self.assertFalse(parity.local_library_fixture(rows(['Play', 'Shuffle', '3 songs'])))
 
     def test_player_expansion_requires_paused_session_and_visible_title_and_controls(self):
         with patch.object(parity,'tree') as tree:
@@ -158,13 +179,33 @@ class ParityEvidenceTest(unittest.TestCase):
         import subprocess
         failed = subprocess.CompletedProcess([], 0, 'INSTRUMENTATION_FAILED: Process crashed\n', '')
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
-             patch.object(parity, "verify_apk"), patch.object(parity, "adb"), patch.object(parity, "shell", return_value=""), \
+             patch.dict(os.environ, UI_SETTINGS_ANDROID_API="35"), \
+             patch.object(parity, "verify_apk"), patch.object(parity, "adb"), \
+             patch.object(parity, "shell", side_effect=lambda *args: "35" if args == ("getprop", "ro.build.version.sdk") else ""), \
              patch.object(parity.subprocess, "run", return_value=failed), redirect_stdout(io.StringIO()):
             self.assertEqual(1, parity.settings_navigation())
             result = json.loads((Path(temp) / 'settings-navigation.json').read_text())
             self.assertFalse(result['passed'])
             self.assertEqual(2, len(result['cases']))
             self.assertTrue(all('ANDROID_RUNNER_REPORTED_FAILURE' in row['problems'] for row in result['cases']))
+
+    def test_settings_runner_rejects_wrong_android_before_install_or_instrumentation(self):
+        for expected, actual in (("35", "36"), ("36", "35")):
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as temp, \
+                 patch.object(parity, "OUT", Path(temp)), \
+                 patch.dict(os.environ, UI_SETTINGS_ANDROID_API=expected), \
+                 patch.object(parity, "shell", return_value=actual), \
+                 patch.object(parity, "verify_apk") as verify, patch.object(parity, "adb") as adb, \
+                 patch.object(parity.subprocess, "run") as instrument, redirect_stdout(io.StringIO()):
+                self.assertEqual(1, parity.settings_navigation())
+                result = json.loads((Path(temp) / "settings-navigation.json").read_text())
+                self.assertEqual({"expected_api": expected, "api": actual}, result["device"])
+                self.assertFalse(result["passed"])
+                self.assertEqual([], result["cases"])
+                self.assertIn("requires Android API " + expected, result["error"])
+                verify.assert_not_called()
+                adb.assert_not_called()
+                instrument.assert_not_called()
 
     def test_expand_uses_the_transport_band_even_if_a_library_title_is_lower(self):
         xml = '''<hierarchy>
@@ -318,6 +359,21 @@ class ParityEvidenceTest(unittest.TestCase):
             self.assertIn("NOT REACHED", text)
             self.assertNotIn("REACHED — review pending", text)
             self.assertEqual("NOT_REVIEWED", json.loads((Path(temp) / "results.json").read_text())["visual_verdict"])
+
+    def test_foreground_failure_preserves_exit_diagnostics_without_becoming_reached(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
+             patch.object(parity, "tree", return_value="<hierarchy/>"), \
+             patch.object(parity, "foreground", return_value=False), \
+             patch.object(parity, "screenshot", return_value=[1080, 1920]), \
+             patch.object(parity, "shell", side_effect=lambda *args: "APP CRASH(NATIVE)" if args[:2] == ("dumpsys", "activity") else "Fatal signal 11") as shell, \
+             redirect_stdout(io.StringIO()):
+            result = {"screens": []}
+            parity.record_state(result, "aurelis", "dark", "search", True)
+            self.assertFalse(result["screens"][0]["reached"])
+            folder = Path(temp) / "aurelis/dark/search"
+            self.assertEqual("APP CRASH(NATIVE)", (folder / "exit-info.txt").read_text())
+            self.assertEqual("Fatal signal 11", (folder / "crash-buffer.txt").read_text())
+            self.assertEqual(("dumpsys", "activity", "exit-info", "com.music.aurelis"), shell.call_args_list[0].args)
 
     def test_landscape_capture_requires_actual_landscape_dimensions(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
