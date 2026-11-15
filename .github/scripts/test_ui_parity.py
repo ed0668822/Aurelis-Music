@@ -15,6 +15,30 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_static_scenario_stops_before_rotation_and_resets_both_apps_equally(self):
+        for app in parity.PACKAGES:
+            calls = []
+            with patch.object(parity, 'shell', side_effect=lambda *args: calls.append(args)), \
+                 patch.object(parity, 'seed_preferences', side_effect=lambda app, theme: calls.append(('seed',app,theme)) or {'theme':theme}), \
+                 patch.object(parity, 'launch', side_effect=lambda package: calls.append(('launch',package))):
+                self.assertEqual({'theme':'dark','rotation':1},parity.launch_scenario(app,'dark',1))
+            package=parity.PACKAGES[app]
+            self.assertEqual([('am','force-stop',package),('settings','put','system','user_rotation','1'),
+                              ('seed',app,'dark'),('launch',package)],calls)
+        with patch.object(parity,'shell') as shell:
+            with self.assertRaises(ValueError):parity.launch_scenario('aurelis','dark',3)
+            shell.assert_not_called()
+
+    def test_player_expansion_requires_paused_session_and_visible_title_and_controls(self):
+        with patch.object(parity,'tree') as tree:
+            self.assertFalse(parity.expand_fixture(False))
+            tree.assert_not_called()
+        controls=parity.nodes('<hierarchy><node text="Lyrics" bounds="[1,1][20,20]"/></hierarchy>')
+        with patch.object(parity,'tap',return_value=True),patch.object(parity,'inspect_until',return_value=controls):
+            self.assertFalse(parity.expand_fixture(True))
+            controls+=parity.nodes('<hierarchy><node text="Parity Track 01" bounds="[1,21][50,40]"/></hierarchy>')
+            self.assertTrue(parity.expand_fixture(True))
+
     def setUp(self):
         # Reports made from synthetic fixtures must never pollute the real CI summary.
         self.enterContext(patch.dict(os.environ))

@@ -9,6 +9,29 @@
 
 ## Continuación actual — primera entrega documental
 
+### Cierre UI autorizado antes de B07 — escenarios de captura independientes
+
+El usuario autoriza completar los pendientes de UI, cerrar esta corrección y abrir
+B07 después. Techo62 vigente, sin nuevas rutas. 23f8ba18/run160/43755440162 SUCCESS
+en las seis fases,420/420 Debug y420/420 Release, cobertura modificada90,17%.
+
+Comparación43754259741: settings-navigation SUCCESS en ambos recorridos reales;
+plain/glass alcanzan ocho estados de BitChord oscuro, incluidos player vertical/
+horizontal. Fallan en el paso de letras tras volver a vertical: closed/timeout
+ADB. Artefactos ZIP bloqueados por proxy. No se inventa causa GPU/OOM ni se edita
+la referencia. Se separan capturas estáticas de orientación: fuerza stop antes de
+girar, reinicia datos sintéticos por orientación y reproduce/pausa la misma pista
+antes de acreditar el player horizontal. Letras se captura en vertical antes.
+Aurelis se captura primero para conservar evidencia aunque falle el origen.
+Se mantienen36 estados exigidos por material; rotación continua queda expresamente
+fuera de esta captura, además de gestos/movimiento/dispositivo físico/identidad.
+El diagnóstico del kernel usa grep disponible en lugar de rg ausente en el runner.
+
+36 regresiones Python aprobadas en plain/glass; actionlint con ShellCheck y diff
+correctos. Dos revisiones del mismo agente. Nueva validación Actions pendiente.
+Se solicitó modelo/Android para la comprobación física; no se certifica sin prueba.
+Esta autorización no convierte todavía en PASS la puerta visual ni cierra B07.
+
 ### Parche de contratos de idioma autorizado — techo62
 
 El usuario concede explícitamente62 archivos. Se aplica el parche ya revisable a

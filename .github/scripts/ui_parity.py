@@ -373,6 +373,35 @@ def launch(package):
     time.sleep(4)
 
 
+def launch_scenario(app, theme, rotation):
+    """Static screenshots: configure orientation before starting either app."""
+    if rotation not in (0, 1):
+        raise ValueError("Unsupported comparison orientation")
+    package = PACKAGES[app]
+    shell("am", "force-stop", package)
+    shell("settings", "put", "system", "user_rotation", str(rotation))
+    preferences = seed_preferences(app, theme)
+    preferences["rotation"] = rotation
+    launch(package)
+    return preferences
+
+
+def pause_fixture(package, local):
+    for _ in range(2 if local else 0):
+        if tap(("Play", "Reproducir")) and wait_fixture_session(package, (3,)):
+            return tap(("Pause", "Pausar", "Pausa"), bottom=True) and wait_fixture_session(package, (2,))
+    return False
+
+
+def expand_fixture(paused):
+    if not paused:
+        return False
+    expanded = paused and (tap(("Abrir reproductor", "Open player", "Expand player")) or expand_miniplayer())
+    markers = LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola", "Up next", "Cerrar reproductor")
+    rows = inspect_until(lambda current: bool(matches(current, markers)))
+    return expanded and bool(matches(rows, markers)) and bool(matches(rows, ("Parity Track 01",)))
+
+
 def verify_apk(path, package):
     if abis(path) != {"arm64-v8a"}:
         raise ValueError("APK must contain only ARM64 native libraries")
@@ -393,7 +422,7 @@ def capture():
     logcat_stream = None
     result = {"schema": 1, "aurelis_commit": os.environ.get("GITHUB_SHA"), "reference_commit": REFERENCE_SHA,
         "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
-        "not_tested": ["widgets on a launcher", "gestures and animations in motion", "physical device", "pixel identity"],
+        "not_tested": ["widgets on a launcher", "gestures and animations in motion", "continuous rotation with player open", "physical device", "pixel identity"],
         "font_policy": "Original reference default; Aurelis authorized system font. Difference remains visible.",
         "fixture_preferences": "Disposable emulator only: reset app/theme; matched material and reduced motion, explicit locale; skip reference remote onboarding",
         "material_mode": material_mode(),
@@ -405,7 +434,7 @@ def capture():
         provenance = json.loads(Path("comparison-reference/reference.json").read_text())
         if provenance.get("commit") != REFERENCE_SHA or provenance.get("sha256") != digest(reference):
             raise ValueError("Reference provenance mismatch")
-        apks = {"bitchord": reference, "aurelis": Path("app/build/outputs/apk/debug/app-debug.apk")}
+        apks = {"aurelis": Path("app/build/outputs/apk/debug/app-debug.apk"), "bitchord": reference}
         primary = json.loads(Path("comparison-aurelis/primary-run.json").read_text())
         result["aurelis_build_source"] = {key: primary[key] for key in ("id", "run_number", "run_attempt", "head_sha", "path")}
         result["apks"] = {app: verify_apk(path, PACKAGES[app]) for app, path in apks.items()}
@@ -459,9 +488,7 @@ def capture():
             package = PACKAGES[app]
             for theme in ("dark", "light"):
                 result["stage"] = "capture:" + app + "/" + theme
-                shell("settings", "put", "system", "user_rotation", "0")
-                result["scenario_preferences"][app + "/" + theme] = seed_preferences(app, theme)
-                launch(package)
+                result["scenario_preferences"][app + "/" + theme] = launch_scenario(app, theme, 0)
                 labels = nodes(tree())
                 home = bool(matches(labels, LABELS["home"]) and matches(labels, LABELS["library"]))
                 record_state(result, app, theme, "home", home)
@@ -480,32 +507,24 @@ def capture():
                 shell("am", "force-stop", package); launch(package)
                 local = tap(LABELS["library"]) and tap(LABELS["songs"], scroll=True)
                 record_state(result, app, theme, "local-songs", local and bool(matches(nodes(tree()), ("Parity Track 01",))))
-                playing = False
-                for _ in range(2 if local else 0):
-                    # Use the visible header action, not a row clipped under floating bars.
-                    if tap(("Play", "Reproducir")) and wait_fixture_session(package, (3,)):
-                        playing = True
-                        break
-                paused = playing and tap(("Pause", "Pausar", "Pausa"), bottom=True) and wait_fixture_session(package, (2,))
+                paused = pause_fixture(package, local)
                 mini = paused and bool(mini_player_rows(nodes(tree())))
                 record_state(result, app, theme, "miniplayer", mini)
                 result["stage"] = "capture:" + app + "/" + theme + "/player-portrait"
-                expanded = mini and (tap(("Abrir reproductor", "Open player", "Expand player")) or expand_miniplayer())
-                player_markers = LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola", "Up next", "Cerrar reproductor")
-                player_labels = inspect_until(lambda rows: bool(matches(rows, player_markers)))
-                verified = bool(matches(player_labels, player_markers))
-                record_state(result, app, theme, "player-portrait", expanded and verified)
-                result["stage"] = "capture:" + app + "/" + theme + "/player-landscape"
-                if expanded and verified:
-                    shell("settings", "put", "system", "user_rotation", "1"); time.sleep(2)
-                record_state(result, app, theme, "player-landscape", expanded and verified and bool(matches(nodes(tree()), ("Parity Track 01",))) and bool(matches(nodes(tree()), player_markers)))
-                shell("settings", "put", "system", "user_rotation", "0"); time.sleep(2)
+                expanded = expand_fixture(mini)
+                record_state(result, app, theme, "player-portrait", expanded)
                 result["stage"] = "capture:" + app + "/" + theme + "/lyrics"
-                lyrics = expanded and tap(LABELS["lyrics"], scroll=True)
+                visible_lyrics = any("Parity line" in n["label"] for n in nodes(tree()))
+                lyrics = expanded and (visible_lyrics or tap(LABELS["lyrics"], scroll=True))
                 lyric_nodes = inspect_until(lambda rows: any("Parity line" in n["label"] for n in rows))
                 text = [n["label"] for n in lyric_nodes]
                 record_state(result, app, theme, "lyrics", lyrics and any("Parity line" in label for label in text),
                     "Requires visible local fixture lyrics; a lyrics button alone is insufficient")
+                result["stage"] = "capture:" + app + "/" + theme + "/player-landscape"
+                result["scenario_preferences"][app + "/" + theme + "/landscape"] = launch_scenario(app, theme, 1)
+                local = tap(LABELS["library"]) and tap(LABELS["songs"], scroll=True)
+                record_state(result, app, theme, "player-landscape", expand_fixture(pause_fixture(package, local)))
+                shell("am", "force-stop", package)
             shell("am", "force-stop", package)
         (OUT / "widget-registration.txt").write_text(shell("dumpsys", "appwidget"))
         result["capture_complete"] = len(result["screens"]) == 36 and all(row["reached"] for row in result["screens"])
