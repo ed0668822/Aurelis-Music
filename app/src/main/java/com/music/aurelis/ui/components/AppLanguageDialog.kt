@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.music.aurelis.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,10 +22,10 @@ fun AppLanguageDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Idioma de la aplicación") },
+        title = { Text(stringResource(R.string.settings_app_language)) },
         text = { Column {
             val selected = AppCompatDelegate.getApplicationLocales().toLanguageTags()
-            listOf("" to "Sistema", "en" to "English", "es" to "Español", "pt" to "Português",
+            listOf("" to stringResource(R.string.settings_system), "en" to "English", "es" to "Español", "pt" to "Português",
                 "fr" to "Français", "de" to "Deutsch", "ja" to "日本語").forEach { (tag, label) ->
                 SettingsRow(title = label, onClick = {
                     AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
@@ -33,7 +35,7 @@ fun AppLanguageDialog(
         } },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("OK")
+                Text(stringResource(android.R.string.ok))
             }
         }
     )

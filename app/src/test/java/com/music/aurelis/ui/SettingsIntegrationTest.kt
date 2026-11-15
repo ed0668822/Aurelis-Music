@@ -46,7 +46,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "w360dp-h800dp-mdpi", application = AurelisApplication::class)
+@Config(sdk = [33], qualifiers = "es-rES-w360dp-h800dp-mdpi", application = AurelisApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SettingsIntegrationTest {
     @get:org.junit.Rule(order = 0) val registerActivity = com.music.aurelis.ui.RobolectricActivityRule()
@@ -247,6 +247,60 @@ class SettingsIntegrationTest {
         compose.onNodeWithText("Guardar").performClick()
         compose.runOnIdle { assertEquals("https://translation.example", SettingsRepository.translationEndpoint.value) }
         compose.onNodeWithText("Traducción").assertIsDisplayed()
+    }
+
+    @Test fun searchShowsOnlyMatchingControlsAndReportsAnEmptyResult() {
+        compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
+        compose.onNode(hasSetTextAction()).performTextInput("Tema")
+        compose.onNodeWithText("Tema").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Respuesta háptica").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Liquid Glass").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).performTextReplacement("no-existe-este-ajuste")
+        compose.onNodeWithText("Sin resultados para «no-existe-este-ajuste»").assertIsDisplayed()
+    }
+
+    @Test fun normalizedSearchFindsTheTranslationControlWithoutUnrelatedAudioRows() {
+        compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
+        compose.onNode(hasSetTextAction()).performTextInput("TRADUCCION")
+        compose.onNodeWithText("Traducción").assertIsDisplayed()
+        compose.onNodeWithText("Equalizer").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Buscar letras en LRCLIB").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h800dp-mdpi")
+    fun englishSettingsUseLocalizedCategoriesAndSearchRows() {
+        compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
+        compose.onNodeWithText("Settings").assertIsDisplayed()
+        compose.onNodeWithText("Playback").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("Haptic")
+        compose.onNodeWithContentDescription("Haptic feedback").assertIsDisplayed()
+        compose.onNodeWithText("Theme").assertDoesNotExist()
+        compose.onNodeWithText("Respuesta háptica").assertDoesNotExist()
+    }
+
+    @Test fun secondaryCategoriesExposeRealLocalActionsAndReturnToTheRoot() {
+        var replayOpened = false
+        compose.setContent { AurelisTheme { SettingsScreen(true, {}, onOpenReplay = { replayOpened = true }) } }
+        fun backToCategories() = compose.onNodeWithContentDescription("Atrás").performClick()
+        compose.onNodeWithText("Almacenamiento").performScrollTo().performClick()
+        compose.onNodeWithText("0 canciones").assertIsDisplayed()
+        backToCategories()
+        compose.onNodeWithText("Tus datos").performScrollTo().performClick()
+        compose.onNodeWithText("Replay y estadísticas").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(replayOpened) }
+        backToCategories()
+        compose.onNodeWithText("Idioma").performScrollTo().performClick()
+        compose.onNodeWithText("Idioma de la aplicación").performScrollTo().performClick()
+        compose.onNodeWithText("English").assertIsDisplayed()
+        compose.onNodeWithText(RuntimeEnvironment.getApplication().getString(android.R.string.ok)).performClick()
+        backToCategories()
+        compose.onNodeWithText("Avanzado").performScrollTo().performClick()
+        compose.onNodeWithText("Música local").performScrollTo().performClick()
+        compose.onNodeWithText("Elegir carpeta local").performScrollTo().assertIsDisplayed()
+        backToCategories()
+        compose.onNodeWithText("Acerca de").performScrollTo().performClick()
+        compose.onNodeWithText(com.music.aurelis.BuildConfig.VERSION_NAME).assertIsDisplayed()
     }
     private fun capture(name: String) {
         val bitmap = compose.runOnIdle { val view = compose.activity.window.decorView

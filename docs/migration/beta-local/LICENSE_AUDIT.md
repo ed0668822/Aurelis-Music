@@ -517,3 +517,16 @@ Vectores geométricos nuevos propios Aurelis; Material mantiene su licencia apli
 Registro/binding de widgets y barrera de publicación propios Aurelis sobre clases
 ya existentes; se conservan sus atribuciones anteriores. No se elimina LICENSE,
 avisos de terceros o autorías, ni se incorpora una dependencia de símbolos Apple.
+
+## Reparación de Ajustes — recursos en inglés
+
+183 claves compatibles adaptadas selectivamente de
+`app/src/main/res/values/strings.xml`, BitChord
+`b690dc146009d4815825fa4a20815ef2e4ee8898`, GPLv3. SHA256 fuente:
+`7c89ab1a30354cad72082205c8031fe8268eed0ec15edad12ae77d5919cc136b`. Destino:
+`app/src/main/res/values-en/strings.xml`. Se conservan atribuciones en NOTICE;
+la cabecera Aurelis identifica contribuciones propias, no cambia la licencia del
+material de origen. Traducciones de estados/datos locales y nuevos controles
+propias. No se copia el archivo entero, fuentes ni medios. Se preservan contratos
+de formato y textos locales cuando el origen describe funciones fuera de alcance.
+El inventario exacto está en la evidencia de entrega english-reference.json.

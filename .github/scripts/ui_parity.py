@@ -177,7 +177,7 @@ def raw_tree():
             return shell("cat", "/sdcard/ui-parity.xml")
         except RuntimeError as error:
             # Retry only known transient snapshot errors. A dead device still fails.
-            if attempt == 2 or not re.search(r"could not get idle state|null root node|could not get root node", str(error), re.I):
+            if attempt == 2 or not re.search(r"could not get idle state|null root node|could not get root node|ui-parity\.xml: No such file or directory", str(error), re.I):
                 raise
             time.sleep(0.75)
 
@@ -566,13 +566,19 @@ def settings_navigation():
             print(f"Settings navigation {method}: {'PASS' if passed else 'FAIL'}\n" + log[-16000:], flush=True)
             # Keep each case's Android exception before the next process starts.
             try:
-                runtime = shell("logcat", "-d", "-b", "all", "-v", "threadtime", "-s",
-                                "AndroidRuntime:E", "libc:F", "DEBUG:F", "System.err:W", "*:S")
+                runtime = shell("logcat", "-d", "-b", "all", "-v", "threadtime")
                 (OUT / (method + "-android-runtime.txt")).write_text(runtime)
-                print(runtime[-32000:], flush=True)
+                # Instrumentation installs its own exception handler: Java stacks may
+                # use MonitoringInstr/TestRunner rather than AndroidRuntime.
+                relevant = "\n".join(line for line in runtime.splitlines() if re.search(
+                    r"\b(?:AndroidRuntime|AndroidJUnitRunner|AndroidJUnit4|MonitoringInstr|InstrumentationResultPrinter|TestRunner|libc|DEBUG|System\.err)\s*:|com\.music\.aurelis", line))
+                print(relevant[-48000:], flush=True)
                 exits = shell("dumpsys", "activity", "exit-info", package)
                 (OUT / (method + "-exit-info.txt")).write_text(exits)
                 print(exits[-16000:], flush=True)
+                if not passed:
+                    diagnostic = (relevant[-24000:] + "\n" + exits[-8000:]).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+                    print("::error title=Settings navigation failure::" + diagnostic, flush=True)
                 adb("pull", "/sdcard/Android/data/com.music.aurelis/files/settings-navigation", OUT / "screens")
             except RuntimeError as error:
                 result.setdefault("diagnostic_errors", []).append(str(error))

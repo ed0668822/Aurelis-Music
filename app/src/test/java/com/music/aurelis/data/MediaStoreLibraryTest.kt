@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.data
 
 import android.content.ContentProvider
@@ -25,7 +26,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowContentResolver
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], manifest = Config.NONE, application = AurelisApplication::class)
+@Config(sdk = [33], qualifiers = "es-rES", manifest = Config.NONE, application = AurelisApplication::class)
 class MediaStoreLibraryTest {
     private val context get() = RuntimeEnvironment.getApplication()
     private lateinit var provider: CatalogueProvider

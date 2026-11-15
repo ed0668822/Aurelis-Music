@@ -121,6 +121,15 @@ class ParityEvidenceTest(unittest.TestCase):
             self.assertEqual(1, sum(call.args[:1] == ("cat",) for call in shell.call_args_list))
             self.assertEqual(2, sum(call.args[:2] == ("rm", "-f") for call in shell.call_args_list))
 
+    def test_missing_snapshot_is_bounded_and_does_not_reuse_an_old_file(self):
+        missing = RuntimeError('cat: /sdcard/ui-parity.xml: No such file or directory')
+        with patch.object(parity, 'shell', side_effect=['', '', missing, '', 'dumped', '<hierarchy/>']) as shell, patch.object(parity.time, 'sleep'):
+            self.assertEqual('<hierarchy/>', parity.raw_tree())
+            self.assertEqual(2, sum(call.args[:2] == ('rm', '-f') for call in shell.call_args_list))
+        with patch.object(parity, 'shell', side_effect=['', '', missing] * 3) as shell, patch.object(parity.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'No such file'): parity.raw_tree()
+            self.assertEqual(3, sum(call.args[:2] == ('rm', '-f') for call in shell.call_args_list))
+
     def test_settings_runner_rejects_runner_failure_even_when_adb_exits_zero(self):
         import subprocess
         failed = subprocess.CompletedProcess([], 0, 'INSTRUMENTATION_FAILED: Process crashed\n', '')

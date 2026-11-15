@@ -44,7 +44,9 @@ class RealSettingsNavigationInstrumentedTest {
     }
 
     private fun labeled(node: AccessibilityNodeInfo, text: String) =
-        listOf(node.text, node.contentDescription).any { it?.toString()?.equals(text, ignoreCase = true) == true }
+        listOf(node.text, node.contentDescription).any { label ->
+            label?.toString()?.lineSequence()?.any { it.equals(text, ignoreCase = true) } == true
+        }
 
     private fun await(label: String, click: Boolean = false) {
         val deadline = SystemClock.elapsedRealtime() + 15_000
@@ -108,7 +110,7 @@ class RealSettingsNavigationInstrumentedTest {
             val settings = context.getString(R.string.navigation_settings)
             val library = context.getString(R.string.library)
             val prefix = if (withPlayback) "playing" else "idle"
-            await("Perfil", click = true)
+            await(context.getString(R.string.settings_profile_action), click = true)
             await(settings)
             await(before.name)
             evidence("$prefix-profile")

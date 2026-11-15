@@ -80,8 +80,9 @@ fun topBarContentPadding(): Dp = topBarHeight() + TopBarContentGap
 @Composable
 fun LocalProfileButton(onClick: () -> Unit) {
     val profile by ProfileRepository.state.collectAsStateWithLifecycle()
+    val profileLabel = stringResource(com.music.aurelis.R.string.settings_profile_action)
     IconButton(onClick = onClick, modifier = Modifier.size(48.dp)
-        .semantics { contentDescription = "Perfil" }) {
+        .semantics { contentDescription = profileLabel }) {
         val avatar = profile.profile.avatar
         if (avatar == null) Icon(AurelisIcons.Artist, contentDescription = null)
         else AsyncImage(avatar, null, Modifier.size(32.dp).clip(CircleShape), contentScale = ContentScale.Crop)

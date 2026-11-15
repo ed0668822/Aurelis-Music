@@ -7,6 +7,32 @@
 
 ## Continuación actual — primera entrega documental
 
+### Ajustes — búsqueda por control e idioma, cierre real aún en investigación
+
+221bebf5/43749820078 reproduce Process crashed en las dos pruebas Android reales
+de Perfil/Biblioteca→Ajustes, con/sin playback. No hay stack Java en el filtro
+AndroidRuntime; no se atribuye aún a un shader, biblioteca o permiso. 299cdcd7
+amplía a buffers nativos y dumpsys activity exit-info. Se publica el diagnóstico
+como anotación cuando falla, además de logs/artefactos, para leerlo sin ZIP.
+
+La adaptación preparada filtra controles individuales, omite grupos sin resultados,
+muestra vacío explícito y reinicia scroll al cambiar consulta sin borrar la
+restauración. Conserva categorías/acciones reales. Ajustes/perfil/selector de idioma
+usan recursos; inglés/español. 398 entradas de recursos existentes y nuevos tienen
+contrapartida inglesa, tipos/plurales y placeholders comprobados. 183 etiquetas
+compatibles proceden del commit BitChord fijado; NOTICE/LICENSE_AUDIT registran la
+adaptación. Otros idiomas declarados conservan fallback; no se certifica traducción
+integral de todos los textos hardcoded de otras pantallas o diálogos.
+
+Pruebas históricas declaran español y las nuevas cubren búsqueda por fila, acentos,
+vacío e inglés explícito. El helper de Activity respeta idioma indicado por el test;
+el contrato MediaStore declara español para su fallback de artista. No se retiran
+assertions ni se ejecuta Android local. Parser estático sin errores nuevos salvo
+limitación ya presente en SettingsScreen; XML/diff y actionlint+ShellCheck correctos.
+Dos revisiones del mismo agente. Unión de toda la entrega: 60 rutas distintas de 60.
+No se declara el cierre corregido ni la UI idéntica hasta validar la excepción y
+los casos Android. B07 sigue detenido en esta puerta.
+
 ### Cierre Perfil/Ajustes reportado — reproducción Android antes de atribuir causa
 
 El usuario autoriza «Empezamos, corrige todo eso». Ambos accesos llaman openSettings

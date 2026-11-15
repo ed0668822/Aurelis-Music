@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import com.music.aurelis.R
 import com.music.aurelis.BuildConfig
 import com.music.aurelis.data.ProfileAvatars
 import kotlinx.coroutines.launch
@@ -56,13 +57,22 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         else { localSection = next; query = "" }
     }
     BackHandler(section == null && localSection != null) { localSection = null }
-    fun shows(value: SettingsCategory): Boolean = category == value ||
-        (category == null && query.isNotBlank() && settingsKeywords(value).contains(com.music.aurelis.data.LocalSearch.normalize(query)))
     val context = LocalContext.current
     val profileState by ProfileRepository.state.collectAsState()
     val active = profileState.profile
     val name = active.name
     val photo = active.avatar
+    val matchingRows = LocalSetting.entries.filter {
+        (it != LocalSetting.REMOVE_PHOTO || photo != null) && it.matches(context.resources, query)
+    }.toSet()
+    fun shows(value: SettingsCategory): Boolean = category == value ||
+        (category == null && query.isNotBlank() && matchingRows.any { it.category == value })
+    fun showRow(value: LocalSetting): Boolean = category != null || query.isBlank() || value in matchingRows
+    val scrollState = rememberScrollState()
+    var lastQuery by rememberSaveable { mutableStateOf(query) }
+    LaunchedEffect(query) {
+        if (lastQuery != query) { scrollState.scrollTo(0); lastQuery = query }
+    }
     val scope = rememberCoroutineScope()
     var editing by remember { mutableStateOf(false) }
     var translation by remember { mutableStateOf(false) }
@@ -70,22 +80,22 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     var importing by remember { mutableStateOf(false) }
     var photoProfile by rememberSaveable { mutableStateOf(active.id.value) }
     fun change(action: () -> Unit) {
-        try { action(); profileError = null } catch (error: Exception) { profileError = error.message ?: "No se pudo guardar el perfil." }
+        try { action(); profileError = null } catch (error: Exception) { profileError = error.message ?: context.getString(R.string.settings_profile_save_error) }
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             importing = true
             try { ProfileAvatars.import(context, ProfileId(photoProfile), uri); profileError = null }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { profileError = error.message ?: "No se pudo guardar la imagen." }
+            catch (error: Exception) { profileError = error.message ?: context.getString(R.string.settings_photo_save_error) }
             finally { importing = false }
         }
     }
     if (profileState.readOnly) {
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
-            Text("Perfil en modo de solo lectura", style = MaterialTheme.typography.titleLarge)
-            Text(profileState.error ?: "Reinicia la app para volver a intentarlo. Los datos se han conservado.")
-            TextButton(onClick = onDismiss) { Text("Atrás") }
+            Text(context.getString(R.string.settings_profile_read_only), style = MaterialTheme.typography.titleLarge)
+            Text(profileState.error ?: context.getString(R.string.settings_profile_read_only_hint))
+            TextButton(onClick = onDismiss) { Text(context.getString(R.string.settings_back)) }
         }
         return
     }
@@ -95,7 +105,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     val chosenFolders by SettingsRepository.localMusicFolders.collectAsState()
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) try { com.music.aurelis.data.LocalFolderRepository.add(context, uri); libraryError = null }
-        catch (error: Exception) { libraryError = error.message ?: "No se pudo seleccionar la carpeta." }
+        catch (error: Exception) { libraryError = error.message ?: context.getString(R.string.settings_folder_error) }
     }
     val appFont by SettingsRepository.appFont.collectAsState()
     val mode by SettingsRepository.themeMode.collectAsState()
@@ -111,116 +121,126 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         .navigationBarsPadding().then(if (editing || translation || browsingFolders || language) Modifier.clearAndSetSemantics { } else Modifier)
-        .verticalScroll(rememberScrollState()).padding(top = topBarContentPadding())) {
-        Text(category?.let(::settingsTitle) ?: "Ajustes", style = MaterialTheme.typography.displayLarge,
+        .verticalScroll(scrollState).padding(top = topBarContentPadding())) {
+        Text(category?.let { settingsTitle(it, context.resources) } ?: context.getString(R.string.navigation_settings), style = MaterialTheme.typography.displayLarge,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         if (category == null) SearchField(query, { query = it }, onSubmit = {},
-            placeholder = "Buscar ajustes", modifier = Modifier.padding(horizontal = 20.dp))
+            placeholder = context.getString(R.string.settings_search), modifier = Modifier.padding(horizontal = 20.dp))
         (profileError ?: profileState.error)?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
         if (category == null && query.isBlank() || shows(SettingsCategory.GENERAL)) {
-        SettingsGroup(header = "Perfil del dispositivo", topSpacing = 0.dp) {
-            Row(Modifier.fillMaxWidth().clickable(enabled = !importing) { photoProfile = active.id.value; picker.launch(arrayOf("image/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        SettingsGroup(header = context.getString(R.string.settings_profile_group), topSpacing = 0.dp) {
+            if (showRow(LocalSetting.PHOTO)) Row(Modifier.fillMaxWidth().clickable(enabled = !importing) { photoProfile = active.id.value; picker.launch(arrayOf("image/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Person, null)
                     if (photo != null) AsyncImage(photo, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
-                Column(Modifier.padding(start = 16.dp)) { Text(name, style = MaterialTheme.typography.titleLarge); Text("Toca para cambiar foto", style = MaterialTheme.typography.bodySmall) }
+                Column(Modifier.padding(start = 16.dp)) { Text(name, style = MaterialTheme.typography.titleLarge); Text(context.getString(R.string.settings_photo_hint), style = MaterialTheme.typography.bodySmall) }
             }
-            if (importing) Text("Guardando imagen…", Modifier.padding(16.dp))
-            if (photo != null) SettingsRow(Icons.Rounded.Delete, "Quitar foto", onClick = { change { ProfileAvatars.remove(active.id) } })
-            SettingsRow(Icons.Rounded.Edit, "Nombre", value = name, onClick = { editing = true })
+            if (importing) Text(context.getString(R.string.settings_photo_saving), Modifier.padding(16.dp))
+            if (photo != null && showRow(LocalSetting.REMOVE_PHOTO)) SettingsRow(Icons.Rounded.Delete, context.getString(R.string.settings_photo_remove), onClick = { change { ProfileAvatars.remove(active.id) } })
+            if (showRow(LocalSetting.NAME)) SettingsRow(Icons.Rounded.Edit, context.getString(R.string.settings_name), value = name, onClick = { editing = true })
         }
         }
         if (shows(SettingsCategory.AUDIO)) {
-        SettingsGroup(header = "Audio local") {
-            SettingsRow(AurelisIcons.Lyrics, "Letras", onClick = { openCategory(SettingsCategory.LYRICS) })
-            SettingsRow(AurelisIcons.Equalizer, "Equalizer", "Ecualizador, balance y amplitud estéreo", onClick = onOpenEqualizer)
-            SettingsRow(Icons.Rounded.AudioFile, "Calidad del archivo", "Se reproduce el archivo disponible. Cambiar una preferencia no convierte su calidad ni garantiza Dolby Atmos.")
-            SettingsRow(Icons.Rounded.Shuffle, "AutoMix local", "Crea una cola desde Inicio con tu biblioteca e historial. Crossfade y reproducción continua automática no están activados.")
+        SettingsGroup(header = context.getString(R.string.settings_playback)) {
+            if (showRow(LocalSetting.AUDIO_LYRICS)) SettingsRow(AurelisIcons.Lyrics, context.getString(R.string.settings_lyrics), onClick = { openCategory(SettingsCategory.LYRICS) })
+            if (showRow(LocalSetting.EQUALIZER)) SettingsRow(AurelisIcons.Equalizer, context.getString(R.string.settings_equalizer), context.getString(R.string.settings_equalizer_hint), onClick = onOpenEqualizer)
+            if (showRow(LocalSetting.FILE_QUALITY)) SettingsRow(Icons.Rounded.AudioFile, context.getString(R.string.settings_file_quality), context.getString(R.string.settings_file_quality_hint))
+            if (showRow(LocalSetting.AUTOMIX)) SettingsRow(Icons.Rounded.Shuffle, context.getString(R.string.settings_automix), context.getString(R.string.settings_automix_hint))
         }
         }
         if (shows(SettingsCategory.APPEARANCE)) {
-        SettingsGroup(header = "Apariencia") {
-            Column(Modifier.padding(16.dp)) {
-                Text("Tipografía", style = MaterialTheme.typography.bodyLarge)
-                SegmentedControl(listOf("Sistema", "Vazirmatn"), appFont.ordinal, onSelect = { SettingsRepository.setAppFont(com.music.aurelis.data.AppFont.entries[it]) })
-                Text("Tema", style = MaterialTheme.typography.bodyLarge)
-                SegmentedControl(listOf("Sistema", "Claro", "Oscuro"), mode, SettingsRepository::setThemeMode)
+        SettingsGroup(header = context.getString(R.string.settings_appearance)) {
+            if (showRow(LocalSetting.FONT) || showRow(LocalSetting.THEME)) Column(Modifier.padding(16.dp)) {
+                if (showRow(LocalSetting.FONT)) {
+                Text(context.getString(R.string.settings_font), style = MaterialTheme.typography.bodyLarge)
+                SegmentedControl(listOf(context.getString(R.string.settings_system), "Vazirmatn"), appFont.ordinal, onSelect = { SettingsRepository.setAppFont(com.music.aurelis.data.AppFont.entries[it]) })
+                }
+                if (showRow(LocalSetting.THEME)) {
+                Text(context.getString(R.string.settings_theme), style = MaterialTheme.typography.bodyLarge)
+                SegmentedControl(listOf(context.getString(R.string.settings_system), context.getString(R.string.settings_light), context.getString(R.string.settings_dark)), mode, SettingsRepository::setThemeMode)
+                }
             }
-            SettingsToggle("Respuesta háptica", "Vibración al usar los controles. También respeta la configuración de Android.", hapticFeedback) { enabled ->
+            if (showRow(LocalSetting.HAPTICS)) SettingsToggle(context.getString(R.string.settings_haptics), context.getString(R.string.settings_haptics_hint), hapticFeedback) { enabled ->
                 change { SettingsRepository.setHapticFeedback(enabled) }
             }
-            SettingsToggle("Liquid Glass", "Superficies translúcidas y reflejos ligeros; se desactiva al reducir desenfoque.", glass, SettingsRepository::setLiquidGlass)
+            if (showRow(LocalSetting.GLASS)) SettingsToggle(context.getString(R.string.settings_glass), context.getString(R.string.settings_glass_hint), glass, SettingsRepository::setLiquidGlass)
         }
         }
-        if (shows(SettingsCategory.PERFORMANCE)) SettingsGroup(header = "Rendimiento") {
-            SettingsToggle("Reducir animaciones", "Detiene los efectos continuos y elimina transiciones del reproductor.", motion, SettingsRepository::setReduceAnimation)
-            SettingsToggle("Reducir desenfoque", "Usa superficies sólidas y evita desenfoques dinámicos.", reduceBlur, SettingsRepository::setReduceDynamicBlur)
+        if (shows(SettingsCategory.PERFORMANCE)) SettingsGroup(header = context.getString(R.string.settings_performance)) {
+            if (showRow(LocalSetting.MOTION)) SettingsToggle(context.getString(R.string.settings_reduce_motion), context.getString(R.string.settings_reduce_motion_hint), motion, SettingsRepository::setReduceAnimation)
+            if (showRow(LocalSetting.BLUR)) SettingsToggle(context.getString(R.string.settings_reduce_blur), context.getString(R.string.settings_reduce_blur_hint), reduceBlur, SettingsRepository::setReduceDynamicBlur)
         }
         if (shows(SettingsCategory.LYRICS)) {
-        SettingsGroup(header = "Letras") {
-            SettingsToggle("Letras sincronizadas", "Resalta y sigue las líneas cuando hay marcas de tiempo.", sync, SettingsRepository::setSyncedLyrics)
-            SettingsToggle("Desenfocar líneas inactivas", "Solo durante seguimiento sincronizado y sin reducción de desenfoque.", lyricBlur, SettingsRepository::setBlurUnfocusedLyrics)
-            SettingsToggle("Buscar letras en LRCLIB", "La búsqueda se inicia manualmente desde el reproductor y envía título y artista.", LyricsSource.LRCLIB in sources) {
+        SettingsGroup(header = context.getString(R.string.settings_lyrics)) {
+            if (showRow(LocalSetting.SYNC)) SettingsToggle(context.getString(R.string.settings_synced_lyrics), context.getString(R.string.settings_synced_lyrics_hint), sync, SettingsRepository::setSyncedLyrics)
+            if (showRow(LocalSetting.LYRIC_BLUR)) SettingsToggle(context.getString(R.string.settings_lyric_blur), context.getString(R.string.settings_lyric_blur_hint), lyricBlur, SettingsRepository::setBlurUnfocusedLyrics)
+            if (showRow(LocalSetting.LRCLIB)) SettingsToggle(context.getString(R.string.settings_lrclib), context.getString(R.string.settings_lrclib_hint), LyricsSource.LRCLIB in sources) {
                 SettingsRepository.setLyricsSources(if (it) sources + LyricsSource.LRCLIB else sources - LyricsSource.LRCLIB)
             }
-            SettingsRow(Icons.Rounded.Translate, "Traducción", "Configura servidor e idiomas. Guardar aquí no envía letras.", onClick = { translation = true })
+            if (showRow(LocalSetting.TRANSLATION)) SettingsRow(Icons.Rounded.Translate, context.getString(R.string.settings_translation), context.getString(R.string.settings_translation_hint), onClick = { translation = true })
         }
         }
         if (shows(SettingsCategory.LIBRARY)) {
-        SettingsGroup(header = "Biblioteca") {
-            SettingsToggle("Usar todas las carpetas de audio", "Biblioteca de audio indexada por Android.", allFolders) {
+        SettingsGroup(header = context.getString(R.string.settings_local_music)) {
+            if (showRow(LocalSetting.ALL_FOLDERS)) SettingsToggle(context.getString(R.string.settings_all_folders), context.getString(R.string.settings_all_folders_hint), allFolders) {
                 try { SettingsRepository.setLocalFolderSelection(chosenFolders, it); libraryError = null }
                 catch (error: Exception) { libraryError = error.message }
             }
-            SettingsRow(Icons.Rounded.Folder, "Elegir carpeta local", "Solo música indexada por Android en el dispositivo o tarjeta SD.", onClick = { folderPicker.launch(null) })
+            if (showRow(LocalSetting.ADD_FOLDER)) SettingsRow(Icons.Rounded.Folder, context.getString(R.string.settings_add_folder), context.getString(R.string.settings_add_folder_hint), onClick = { folderPicker.launch(null) })
+            if (showRow(LocalSetting.SELECTED_FOLDERS)) {
             chosenFolders.sorted().forEach { uri ->
                 val label = com.music.aurelis.data.LocalFolderRepository.label(uri)
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(label, Modifier.weight(1f))
                     IconButton(onClick = { try { com.music.aurelis.data.LocalFolderRepository.remove(context, uri); libraryError = null }
-                        catch (error: Exception) { libraryError = error.message } }) { Icon(Icons.Rounded.Close, "Dejar de usar $label") }
+                        catch (error: Exception) { libraryError = error.message } }) { Icon(Icons.Rounded.Close, context.getString(R.string.settings_folder_remove, label)) }
                 }
             }
-            if (!allFolders && chosenFolders.isEmpty()) Text("No hay carpetas seleccionadas.", Modifier.padding(16.dp))
+            if (!allFolders && chosenFolders.isEmpty()) Text(context.getString(R.string.settings_no_folders), Modifier.padding(16.dp))
+            }
             libraryError?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
-            SettingsRow(Icons.Rounded.FolderOpen, "Ver carpetas de la biblioteca", onClick = { browsingFolders = true })
-            SettingsToggle("Filtrar audio no musical", "Oculta clips, notas de voz y sonidos del sistema.", filter, SettingsRepository::setFilterNonMusicAudio)
+            if (showRow(LocalSetting.BROWSE_FOLDERS)) SettingsRow(Icons.Rounded.FolderOpen, context.getString(R.string.settings_browse_folders), onClick = { browsingFolders = true })
+            if (showRow(LocalSetting.FILTER_AUDIO)) SettingsToggle(context.getString(R.string.settings_filter_audio), context.getString(R.string.settings_filter_audio_hint), filter, SettingsRepository::setFilterNonMusicAudio)
         }
         }
         if (shows(SettingsCategory.ABOUT)) {
-        SettingsGroup(header = "Acerca de") {
+        SettingsGroup(header = context.getString(R.string.settings_about)) {
             Column(Modifier.padding(16.dp)) {
-                Text("Aurelis Music", fontWeight = FontWeight.Bold)
+                Text(context.getString(R.string.app_name), fontWeight = FontWeight.Bold)
                 Text(BuildConfig.VERSION_NAME, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Aurelis © 2026. GPL-3.0-or-later", style = MaterialTheme.typography.bodySmall)
             }
         }
         }
         if (category == null && query.isBlank()) SettingsGroup {
-            settingsCategories.forEach { item ->
-                SettingsRow(settingsIcon(item), settingsTitle(item), onClick = { openCategory(item) })
+            settingsCategories.forEachIndexed { index, item ->
+                if (index > 0) RowDivider()
+                SettingsRow(settingsIcon(item), settingsTitle(item, context.resources), onClick = { openCategory(item) })
             }
         }
-        if (shows(SettingsCategory.STORAGE)) SettingsGroup(header = "Almacenamiento") {
+        if (shows(SettingsCategory.STORAGE)) SettingsGroup(header = context.getString(R.string.settings_storage)) {
             val known = localSongs.filter { it.sizeBytesKnown }
-            Text("${localSongs.size} canciones", Modifier.padding(16.dp))
-            Text("${known.size} archivos con tamaño conocido · " + android.text.format.Formatter.formatFileSize(context,
-                known.sumOf { it.sizeBytes.coerceAtLeast(0) }), Modifier.padding(16.dp))
+            Text(context.resources.getQuantityString(R.plurals.settings_song_count, localSongs.size, localSongs.size), Modifier.padding(16.dp))
+            Text(context.resources.getQuantityString(R.plurals.settings_known_files, known.size, known.size,
+                android.text.format.Formatter.formatFileSize(context, known.sumOf { it.sizeBytes.coerceAtLeast(0) })), Modifier.padding(16.dp))
         }
-        if (shows(SettingsCategory.YOUR_DATA)) SettingsGroup(header = "Tus datos") {
-            SettingsRow(AurelisIcons.Clock, "Replay y estadísticas", enabled = onOpenReplay != null, onClick = onOpenReplay)
+        if (shows(SettingsCategory.YOUR_DATA)) SettingsGroup(header = context.getString(R.string.settings_your_data)) {
+            SettingsRow(AurelisIcons.Clock, context.getString(R.string.settings_replay), enabled = onOpenReplay != null, onClick = onOpenReplay)
         }
-        if (shows(SettingsCategory.LANGUAGE)) SettingsGroup(header = "Idioma") {
-            SettingsRow(AurelisIcons.Language, "Idioma de la aplicación", onClick = { language = true })
+        if (shows(SettingsCategory.LANGUAGE)) SettingsGroup(header = context.getString(R.string.settings_language)) {
+            SettingsRow(AurelisIcons.Language, context.getString(R.string.settings_app_language), onClick = { language = true })
         }
-        if (shows(SettingsCategory.ADVANCED)) SettingsGroup(header = "Avanzado") {
-            Text("La biblioteca muestra los archivos que has permitido leer. Puedes elegir las carpetas que quieres mostrar en Música local.", Modifier.padding(16.dp))
-            SettingsRow(AurelisIcons.Folder, "Música local", onClick = { openCategory(SettingsCategory.LIBRARY) })
+        if (shows(SettingsCategory.ADVANCED)) SettingsGroup(header = context.getString(R.string.settings_advanced)) {
+            Text(context.getString(R.string.settings_library_hint), Modifier.padding(16.dp))
+            SettingsRow(AurelisIcons.Folder, context.getString(R.string.settings_local_music), onClick = { openCategory(SettingsCategory.LIBRARY) })
+        }
+        if (category == null && query.isNotBlank() && matchingRows.isEmpty()) {
+            Text(context.getString(R.string.settings_no_results, query), Modifier.padding(20.dp))
         }
         Spacer(Modifier.height(24.dp))
     }
-    FrostedTopBar("Ajustes", { false }, transparentBackdrop = true, artworkPageChrome = true,
+    FrostedTopBar(category?.let { settingsTitle(it, context.resources) } ?: context.getString(R.string.navigation_settings), { scrollState.value > 0 }, transparentBackdrop = true, artworkPageChrome = false,
         onBack = { if (category != null) openCategory(null) else onDismiss() })
     }
     }
@@ -229,23 +249,23 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         var draft by remember { mutableStateOf(name) }
         var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
-            onDismissRequest = { editing = false }, title = { Text("Editar nombre") },
-            text = { Column { OutlinedTextField(draft, { draft = it.take(60) }, singleLine = true, label = { Text("Nombre del perfil") }); error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
+            onDismissRequest = { editing = false }, title = { Text(context.getString(R.string.settings_edit_name)) },
+            text = { Column { OutlinedTextField(draft, { draft = it.take(60) }, singleLine = true, label = { Text(context.getString(R.string.settings_profile_name)) }); error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
             confirmButton = { TextButton(enabled = draft.isNotBlank(), onClick = {
                 try {
                     ProfileRepository.rename(draft)
                     editing = false
-                } catch (failure: Exception) { error = failure.message ?: "No se pudo guardar." }
-            }) { Text("Guardar") } },
-            dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancelar") } })
+                } catch (failure: Exception) { error = failure.message ?: context.getString(R.string.settings_save_error) }
+            }) { Text(context.getString(R.string.settings_save)) } },
+            dismissButton = { TextButton(onClick = { editing = false }) { Text(context.getString(R.string.settings_cancel)) } })
     }
     if (browsingFolders) AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
-        onDismissRequest = { browsingFolders = false }, title = { Text("Carpetas de la biblioteca") },
+        onDismissRequest = { browsingFolders = false }, title = { Text(context.getString(R.string.settings_library_folders)) },
         text = { Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
             val folders = com.music.aurelis.data.LocalFolderRepository.groups(localSongs)
-            if (folders.isEmpty()) Text("No hay canciones indexadas en la biblioteca seleccionada.")
+            if (folders.isEmpty()) Text(context.getString(R.string.settings_no_indexed))
             folders.forEach { folder -> TextButton(onClick = { browsingFolders = false; onOpenFolder(folder.key) }) { Text("${folder.label} · ${folder.songs.size}") } }
-        } }, confirmButton = { TextButton(onClick = { browsingFolders = false }) { Text("Cerrar") } })
+        } }, confirmButton = { TextButton(onClick = { browsingFolders = false }) { Text(context.getString(R.string.settings_close)) } })
     if (translation) TranslationLanguageDialog(onDismiss = { translation = false }, onTranslate = { translation = false }, sendOnConfirm = false)
 }
 
