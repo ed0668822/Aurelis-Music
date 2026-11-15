@@ -1,6 +1,40 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # Comparación ejecutable previa a B07
 
+## Reparación posterior a UI9
+
+Principal152/43739187894 del SHA0786e3bc: seis fases SUCCESS. Comparación9/
+43739187866: ambos jobs fallidos. El ZIP glass original aportado por el usuario
+abre/CRC válido; SHA256 `95199fc9e3d68bdb2c1f9751222d5ba20e693516b7bf5cfc498fec3fa0e8f111`.
+Los 36 XML/PNG muestran el diálogo Android «Pixel Launcher isn't responding»
+sobre las apps. No se alcanzó ningún estado. La causa del launcher no se conoce;
+no se atribuye ese ANR a Aurelis o BitChord. Plain alcanza seis estados y pierde
+ADB al abrir player: exit255, puerto5554 rechazado. Logs oficiales leídos; descarga
+de su artefacto bloqueada por proxy, sin causa host/GPU/OOM demostrada.
+
+El capturador conserva el XML/PNG original en `system-dialogs/<n>` y eventos en
+`system-dialog-events.json`/`results.json`/resumen. Solo admite cerrar una vez el
+ANR exacto de Pixel Launcher, tras verificar el HOME nexuslauncher y el botón
+Android `aerr_close` habilitado, con límites válidos leídos del XML. Relee el
+árbol tras cerrar. Si el diálogo persiste/reaparece, el run falla. ANR/crash de
+las apps comparadas o un diálogo desconocido nunca se cierra automáticamente.
+La comprobación de foreground exige también `mCurrentFocus` del paquete; una
+actividad resumed detrás de otra ventana deja de contar como foreground.
+
+Los fixtures de unittest aíslan GITHUB_STEP_SUMMARY. Los resúmenes repetidos de
+«Capture never produced results» y «Other screen» procedían de esos fixtures,
+no de otro intento real de captura. El informe conserva el resultado auténtico.
+Un paso `always()` guarda memoria/disco/procesos/kernel del host tras la salida
+del emulador para investigar la desconexión, sin cambiar su GPU/SDK/ABI ni ocultar
+su fallo. Se mantienen ambos materiales, los 36 estados exigidos por modo y los
+APKs originales. No se modifica producción ni el checkout de BitChord.
+
+31 regresiones Python pasan bajo plain/glass; un summary centinela permanece
+intacto durante toda la suite. actionlint, py_compile y diff --check correctos;
+dos revisiones estáticas del mismo agente, no independientes. Cinco rutas de
+esta reparación, 54 acumuladas de 60. Android/Gradle solo Actions. Validación del
+nuevo SHA pendiente: esto no demuestra reparación de la pérdida de ADB ni paridad.
+
 ## Condición de captura vigente — después de run151
 
 El principal 43726486169/b60c9d5e terminó SUCCESS en las seis fases. La comparación

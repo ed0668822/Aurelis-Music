@@ -124,6 +124,16 @@ jobs:
           disable-animations: false
           emulator-options: '-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none'
           script: python3 .github/scripts/ui_parity.py capture
+      - name: Preserve host diagnostics after emulator exit
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p ci-ui-comparison/host
+          free -m > ci-ui-comparison/host/memory.txt
+          df -h > ci-ui-comparison/host/disk.txt
+          ps -eo pid,ppid,stat,rss,comm > ci-ui-comparison/host/processes.txt
+          sudo dmesg --ctime > ci-ui-comparison/host/kernel.txt 2> ci-ui-comparison/host/kernel-error.txt || true
+          rg -i 'out of memory|oom-kill|killed process|segfault|trap' ci-ui-comparison/host/kernel.txt || true
       - name: Build comparison gallery without claiming visual equivalence
         if: always()
         run: python3 .github/scripts/ui_parity.py report

@@ -7,6 +7,34 @@
 
 ## Continuación actual — primera entrega documental
 
+### Reparación de comparación UI9 — diálogo del launcher y diagnósticos
+
+0786e3bc/run43739187894 (principal152): B01/B02/B03/B04/B05/B06 SUCCESS,
+verificados por API. Comparación43739187866 falla en ambos materiales. ZIP glass
+aportado por el usuario, CRC válido, SHA256
+`95199fc9e3d68bdb2c1f9751222d5ba20e693516b7bf5cfc498fec3fa0e8f111`.
+Las 36 capturas están bloqueadas por «Pixel Launcher isn't responding»; cero
+estados alcanzados. No son evidencia comparable de las pantallas. El resumed
+activity seguía perteneciendo a la app detrás del diálogo; no acredita foco.
+Plain alcanza seis estados, después pierde ADB al abrir player; puerto5554
+rechazado. ZIP plain bloqueado por proxy. No se atribuye a GPU/OOM sin evidencia.
+
+El capturador retiene XML/PNG/eventos del diálogo y admite una sola recuperación
+del ANR exacto de Pixel Launcher, verificando también el HOME predeterminado y
+el botón del sistema. Relee la jerarquía; error persistente/recurrente o de
+Aurelis/BitChord/desconocido conserva fallo y nunca se cierra automáticamente.
+La pantalla exige actividad resumed y ventana con foco de su propio paquete.
+Las pruebas Python aíslan GITHUB_STEP_SUMMARY: sus fixtures ya no insertan
+resúmenes como «Capture never produced results» en la ejecución real. Se guardan
+memoria, procesos, disco y kernel del host tras el emulador para la desconexión.
+
+31 pruebas Python pasan en plain/glass; comprobada también la integridad de un
+summary real preexistente. actionlint, py_compile y diff --check correctos. Dos
+revisiones del mismo agente; cinco rutas de reparación, 54 acumuladas de 60.
+No SDK/ABI/GPU, configuración de producción ni código de BitChord modificados.
+Nueva validación Android/captura pendiente; no se declara arreglada la desconexión
+ni cerrada la fidelidad visual. B07 no avanza.
+
 ### Pre-B07 — run151 aprobado; captura estática separada por material
 
 b60c9d5e/run43726486169 SUCCESS: B01/B02/B03/B04/B05/B06 aprobados, verificados

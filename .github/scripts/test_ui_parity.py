@@ -15,6 +15,66 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def setUp(self):
+        # Reports made from synthetic fixtures must never pollute the real CI summary.
+        self.enterContext(patch.dict(os.environ))
+        os.environ.pop("GITHUB_STEP_SUMMARY", None)
+        self.enterContext(patch.object(parity, "SYSTEM_DIALOG_EVENTS", []))
+
+    def error_dialog(self, title="Pixel Launcher isn't responding", bounds="[71,916][1009,1048]", enabled="true"):
+        return f'''<hierarchy><node package="android" resource-id="android:id/alertTitle"
+            text="{title}" bounds="[137,808][943,875]"/>
+            <node package="android" resource-id="android:id/aerr_close" text="Close app"
+            enabled="{enabled}" bounds="{bounds}"/></hierarchy>'''
+
+    def test_launcher_recovery_retains_original_evidence_and_rechecks_tree(self):
+        original = self.error_dialog()
+        recovered = '<hierarchy><node package="com.music.bitchord" text="Home"/></hierarchy>'
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
+             patch.object(parity, "raw_tree", side_effect=[original, recovered]), \
+             patch.object(parity, "screenshot", return_value=[1080, 1920]) as screenshot, \
+             patch.object(parity, "shell", return_value="com.google.android.apps.nexuslauncher/.NexusLauncherActivity") as shell, \
+             patch.object(parity.time, "sleep"):
+            self.assertEqual(recovered, parity.tree())
+            self.assertEqual(original, (Path(temp) / 'system-dialogs/1/hierarchy.xml').read_text())
+            screenshot.assert_called_once_with(Path(temp) / 'system-dialogs/1')
+            shell.assert_any_call("input", "tap", 540, 982)
+            events = json.loads((Path(temp) / 'system-dialog-events.json').read_text())
+            self.assertEqual("close_verified_launcher_anr", events[0]["action"])
+            self.assertTrue(events[0]["resolved"])
+
+    def test_tested_app_and_unknown_system_errors_fail_without_dismissing(self):
+        for title in ("Aurelis Music isn't responding", "BitChord keeps stopping", "System UI isn't responding"):
+            with self.subTest(title=title), tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
+                 patch.object(parity, "raw_tree", return_value=self.error_dialog(title)), \
+                 patch.object(parity, "screenshot", return_value=[1080, 1920]), patch.object(parity, "shell") as shell:
+                with self.assertRaisesRegex(RuntimeError, "Blocking system error"):
+                    parity.tree()
+                shell.assert_not_called()
+                self.assertTrue((Path(temp) / "system-dialog-events.json").is_file())
+
+    def test_launcher_recovery_requires_owner_and_enabled_valid_bounds(self):
+        for owner, bounds, enabled in [("other.launcher/.Home", "[0,0][10,10]", "true"),
+                                      ("com.google.android.apps.nexuslauncher/.Home", "[0,0][0,0]", "true"),
+                                      ("com.google.android.apps.nexuslauncher/.Home", "[0,0][10,10]", "false")]:
+            with self.subTest(owner=owner, bounds=bounds, enabled=enabled), tempfile.TemporaryDirectory() as temp, \
+                 patch.object(parity, "OUT", Path(temp)), patch.object(parity, "SYSTEM_DIALOG_EVENTS", []), \
+                 patch.object(parity, "raw_tree", return_value=self.error_dialog(bounds=bounds, enabled=enabled)), \
+                 patch.object(parity, "screenshot"), patch.object(parity, "shell", return_value=owner) as shell:
+                with self.assertRaises(RuntimeError): parity.tree()
+                self.assertFalse(any(call.args[:2] == ("input", "tap") for call in shell.call_args_list))
+
+    def test_recurring_or_persistent_launcher_error_still_fails(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
+             patch.object(parity, "raw_tree", return_value=self.error_dialog()), \
+             patch.object(parity, "screenshot"), \
+             patch.object(parity, "shell", return_value="com.google.android.apps.nexuslauncher/.Home") as shell, \
+             patch.object(parity.time, "sleep"):
+            with self.assertRaisesRegex(RuntimeError, "remains after"): parity.tree()
+            self.assertFalse(parity.SYSTEM_DIALOG_EVENTS[0]["resolved"])
+            with self.assertRaisesRegex(RuntimeError, "recurred"): parity.tree()
+            self.assertEqual(1, sum(call.args[:2] == ("input", "tap") for call in shell.call_args_list))
+
     def test_timeout_preserves_partial_device_output(self):
         import subprocess
         error = subprocess.TimeoutExpired(["adb"], 60, output=b"waiting for accessibility", stderr=b"partial error")
@@ -177,10 +237,16 @@ class ParityEvidenceTest(unittest.TestCase):
         self.assertFalse(parity.matches(rows, ("Search",)))
 
     def test_foreground_requires_resumed_package_not_a_background_activity(self):
-        with patch.object(parity, "shell", return_value="ActivityRecord com.music.aurelis/.MainActivity\nmResumedActivity com.other/.Main"):
+        focus = "mCurrentFocus=Window{123 u0 com.music.aurelis/.MainActivity}"
+        resumed = "mResumedActivity com.music.aurelis/.MainActivity"
+        with patch.object(parity, "shell", side_effect=["ActivityRecord com.music.aurelis/.MainActivity\nmResumedActivity com.other/.Main", focus]):
             self.assertFalse(parity.foreground("com.music.aurelis"))
-        with patch.object(parity, "shell", return_value="mResumedActivity com.music.aurelis/.MainActivity"):
+        with patch.object(parity, "shell", side_effect=[resumed, focus]):
             self.assertTrue(parity.foreground("com.music.aurelis"))
+        for blocked in ("mCurrentFocus=Window{123 u0 Application Not Responding: com.google.android.apps.nexuslauncher}",
+                        "mFocusedApp=ActivityRecord com.music.aurelis/.MainActivity", "mCurrentFocus=null"):
+            with patch.object(parity, "shell", side_effect=[resumed, blocked]):
+                self.assertFalse(parity.foreground("com.music.aurelis"))
 
     def test_valid_png_header_is_required_before_storing_screenshot(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, "adb", return_value=b"not PNG"):

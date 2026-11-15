@@ -19,6 +19,7 @@ import zipfile
 REFERENCE_SHA = "b690dc146009d4815825fa4a20815ef2e4ee8898"
 OUT = Path("ci-ui-comparison")
 PACKAGES = {"bitchord": "com.music.bitchord", "aurelis": "com.music.aurelis"}
+SYSTEM_DIALOG_EVENTS = []
 LABELS = {
     "home": ("Home", "Inicio", "Listen Now", "Escuchar ahora"),
     "library": ("Library", "Biblioteca"),
@@ -165,7 +166,7 @@ def settings_root(rows):
         or matches(rows, ("Account & integrations", "Perfil del dispositivo"))))
 
 
-def tree():
+def raw_tree():
     # XML is inspected and retained: no guessed screen coordinates.
     for attempt in range(3):
         try:
@@ -176,6 +177,62 @@ def tree():
             if attempt == 2 or not re.search(r"could not get idle state|null root node|could not get root node", str(error), re.I):
                 raise
             time.sleep(0.75)
+
+
+def system_error_dialog(xml):
+    rows = list(ET.fromstring(xml).iter("node"))
+    close = [node for node in rows if node.get("package") == "android"
+             and node.get("resource-id") == "android:id/aerr_close"]
+    if not close:
+        return None
+    title = next((node.get("text", "") for node in rows
+                  if node.get("package") == "android" and node.get("resource-id") == "android:id/alertTitle"), "")
+    return {"title": title, "close": close[0]}
+
+
+def tree():
+    xml = raw_tree()
+    dialog = system_error_dialog(xml)
+    if dialog is None:
+        return xml
+    folder = OUT / "system-dialogs" / str(len(SYSTEM_DIALOG_EVENTS) + 1)
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "hierarchy.xml").write_text(xml)
+    event = {"title": dialog["title"], "resolved": False,
+             "evidence": str(folder.relative_to(OUT)), "action": None}
+    SYSTEM_DIALOG_EVENTS.append(event)
+    def save_events():
+        (OUT / "system-dialog-events.json").write_text(json.dumps(SYSTEM_DIALOG_EVENTS, indent=2) + "\n")
+    save_events()
+    screenshot(folder)
+    # Only the confirmed disposable Pixel Launcher ANR may be dismissed, once.
+    # Tested-app ANRs/crashes and unknown system errors must remain failures.
+    if dialog["title"].replace("’", "'") != "Pixel Launcher isn't responding":
+        raise RuntimeError("Blocking system error: " + dialog["title"])
+    if len(SYSTEM_DIALOG_EVENTS) != 1:
+        raise RuntimeError("Pixel Launcher ANR recurred; emulator is not healthy")
+    launcher = shell("cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN",
+                     "-c", "android.intent.category.HOME")
+    if not re.search(r"^com\.google\.android\.apps\.nexuslauncher/\S+$", launcher, re.M):
+        raise RuntimeError("Pixel Launcher ANR owner was not verified")
+    close = dialog["close"]
+    bounds = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", close.get("bounds", ""))
+    if not bounds or close.get("enabled") != "true":
+        raise RuntimeError("Pixel Launcher close action is unavailable")
+    left, top, right, bottom = map(int, bounds.groups())
+    if right <= left or bottom <= top:
+        raise RuntimeError("Pixel Launcher close action has invalid bounds")
+    event["action"] = "close_verified_launcher_anr"
+    save_events()
+    print("UI environment recovery: closing verified Pixel Launcher ANR once; original evidence retained", flush=True)
+    shell("input", "tap", (left + right) // 2, (top + bottom) // 2)
+    time.sleep(1)
+    xml = raw_tree()
+    if system_error_dialog(xml) is not None:
+        raise RuntimeError("System error remains after Pixel Launcher recovery")
+    event["resolved"] = True
+    save_events()
+    return xml
 
 
 def scroll_view(rows):
@@ -216,8 +273,12 @@ def tap(labels, bottom=False, scroll=False):
 
 def foreground(package):
     state = shell("dumpsys", "activity", "activities")
-    return any(package + "/" in line for line in state.splitlines()
-               if "mResumedActivity" in line or "topResumedActivity" in line)
+    resumed = any(re.search(r"\b" + re.escape(package) + r"/", line) for line in state.splitlines()
+                  if "mResumedActivity" in line or "topResumedActivity" in line)
+    focus = shell("dumpsys", "window", "windows")
+    focused = any(re.search(r"\b" + re.escape(package) + r"/", line)
+                  for line in focus.splitlines() if "mCurrentFocus=" in line)
+    return resumed and focused
 
 
 def screenshot(folder):
@@ -317,6 +378,7 @@ def verify_apk(path, package):
 
 def capture():
     OUT.mkdir(exist_ok=True)
+    SYSTEM_DIALOG_EVENTS.clear()
     logcat = None
     logcat_stream = None
     result = {"schema": 1, "aurelis_commit": os.environ.get("GITHUB_SHA"), "reference_commit": REFERENCE_SHA,
@@ -441,6 +503,7 @@ def capture():
         result["error"] = str(error)
         print(f"UI capture FAILED at {result['stage']}: {error}", flush=True)
     finally:
+        result["system_dialog_events"] = SYSTEM_DIALOG_EVENTS.copy()
         if logcat is not None:
             logcat.terminate()
             try:
@@ -468,7 +531,7 @@ def report():
     result = json.loads(path.read_text()) if path.exists() else {"error": "Capture never produced results", "screens": []}
     result["visual_verdict"] = "NOT_REVIEWED"
     save(result)
-    summary = {key: result.get(key) for key in ("stage", "error", "capture_complete", "visual_verdict")}
+    summary = {key: result.get(key) for key in ("stage", "error", "capture_complete", "visual_verdict", "system_dialog_events")}
     summary["captured_states"] = len(result.get("screens", []))
     summary["unreached"] = [{key: row.get(key) for key in ("app", "theme", "state", "reason", "labels")}
                             for row in result.get("screens", []) if not row.get("reached")]
