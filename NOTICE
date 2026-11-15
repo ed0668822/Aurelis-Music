@@ -517,3 +517,11 @@ code is copied. New tests exercise the actual notification session token/transie
 focus in Android and model the noisy framework event under Robolectric. Original
 BitChord-derived service notices remain applicable. No extra session/focus manager,
 platform permission bypass, ABI/SDK/audio-sink change or hardware verification claim.
+
+B06.3-c — versioned listening event storage
+ListeningEvent, ListeningDatabase and ListeningEventStore are Aurelis contributions.
+They use Android SQLiteOpenHelper and existing coroutine dependencies; no BitChord
+Room/database implementation is copied and no new dependency is added. Existing
+GPLv3 contributor notices remain applicable to earlier adapted components.
+Legacy aggregate history is neither migrated into dated events nor overwritten.
+Service recording integration is a separate B06.3-d delivery, not claimed here.

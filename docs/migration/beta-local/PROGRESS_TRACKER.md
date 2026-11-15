@@ -5,7 +5,19 @@
 
 ## Continuación actual — primera entrega documental
 
-### B06.3-b — foco/noisy/controles del sistema (CI pendiente)
+### B06.3-c — almacenamiento versionado de eventos (CI pendiente)
+
+«Continúa» confirma la correcciónf7f3dd46. Nueve archivos de máximo30, misma rama/PR1,
+sin descargar informes previos. SQLiteOpenHelper privado por perfil, IO serializado
+fuera de main/audio, clave sesión/secuencia idempotente y conflictos atómicos sin
+sobrescribir. Ventanas temporales/paginación estable; futuro/corrupto preservados,
+sin borrar ni reconstruir historial. Totales antiguos intactos; integración desde
+servicio queda para B06.3-d (no afirmar registro activo aquí). Diez pruebas nativas
+SQLite bajo Robolectric preparadas para Actions; dos revisiones del mismo agente y
+diff --check correcto. Sin Gradle/Android locales, nuevo CI/hardware pendientes.
+[B06_3C_EVENT_STORE](B06_3C_EVENT_STORE.md). B06 sigue abierto.
+
+### B06.3-b — corrección aceptada por el usuario; físico pendiente
 
 Run139: B01/B03/B05 SUCCESS; B02/B06 FAILURE, B04 SKIPPED. Lint UseSdkSuppress por
 RequiresApi redundante en test instrumentado. Retirada esa anotación; permanece

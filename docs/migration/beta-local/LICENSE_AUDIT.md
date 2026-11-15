@@ -440,3 +440,11 @@ sin copiar código nuevo de BitChord. Se conservan atribuciones anteriores del s
 AOSP Android15 Manifest y Robolectric4.14.1 ShadowApplication se consultan únicamente
 para comprobar protección del broadcast/API de fixtures, sin incorporar sus archivos.
 Sin dependencias, binarios ni cambios de LICENSE; cabeceras Aurelis en archivos propios.
+
+
+## B06.3-c — almacén temporal SQLite
+
+Modelo/codec, SQLiteOpenHelper, API IO y pruebas nuevos propios Aurelis, con cabecera
+GPL-3.0-or-later. Arquitectura SQLite nativa del MASTER_PLAN; sin copiar una base
+Room de BitChord ni introducir Room/KSP/dependencias. Se conservan todas las licencias
+anteriores. NOTICE registra alcance y separación respecto a totales legacy.
