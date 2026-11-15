@@ -552,6 +552,7 @@ def settings_navigation():
                        "com.music.aurelis.playback." + klass + "#" + method,
                        "com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner"]
             shell("am", "force-stop", package)
+            shell("logcat", "-c")
             try:
                 run = subprocess.run(command, capture_output=True, text=True, timeout=150)
                 log, code = run.stdout + run.stderr, str(run.returncode)
@@ -565,9 +566,13 @@ def settings_navigation():
             print(f"Settings navigation {method}: {'PASS' if passed else 'FAIL'}\n" + log[-16000:], flush=True)
             # Keep each case's Android exception before the next process starts.
             try:
-                runtime = shell("logcat", "-d", "-v", "threadtime", "-s", "AndroidRuntime:E", "*:S")
+                runtime = shell("logcat", "-d", "-b", "all", "-v", "threadtime", "-s",
+                                "AndroidRuntime:E", "libc:F", "DEBUG:F", "System.err:W", "*:S")
                 (OUT / (method + "-android-runtime.txt")).write_text(runtime)
-                print(runtime[-16000:], flush=True)
+                print(runtime[-32000:], flush=True)
+                exits = shell("dumpsys", "activity", "exit-info", package)
+                (OUT / (method + "-exit-info.txt")).write_text(exits)
+                print(exits[-16000:], flush=True)
                 adb("pull", "/sdcard/Android/data/com.music.aurelis/files/settings-navigation", OUT / "screens")
             except RuntimeError as error:
                 result.setdefault("diagnostic_errors", []).append(str(error))
