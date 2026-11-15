@@ -16,7 +16,29 @@ concurrency:
   cancel-in-progress: false
 jobs:
   aurelis:
-    uses: ./.github/workflows/b01-compile-debug.yml
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Locate primary B01 APK from this exact commit
+        id: primary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/ui_parity_handoff.py resolve
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.primary.outputs.run_id }}
+          name: ${{ steps.primary.outputs.artifact }}
+          path: comparison-aurelis/ci-f3-handoff/
+      - run: python3 .github/scripts/ui_parity_handoff.py verify
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ui-aurelis-${{ github.run_number }}
+          path: comparison-aurelis/
+          retention-days: 3
   reference:
     runs-on: ubuntu-24.04
     timeout-minutes: 65
@@ -44,7 +66,7 @@ jobs:
           set -euo pipefail
           mkdir -p comparison-reference
           test "$(git -C reference rev-parse HEAD)" = b690dc146009d4815825fa4a20815ef2e4ee8898
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-37" "platforms;android-36" "build-tools;35.0.0" "cmake;3.22.1" > comparison-reference/sdk.log 2>&1
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-37.0" "platforms;android-36" "build-tools;35.0.0" "cmake;3.22.1" 2>&1 | tee comparison-reference/sdk.log
           cd reference
           bash gradlew :app:assembleProdDebug -Pbitchord.bundleWear=false --console=plain --max-workers=2 --no-daemon 2>&1 | tee ../comparison-reference/build.log
           cd ..
@@ -66,8 +88,8 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: b01-shared-apks-${{ github.run_number }}
-          path: ci-f3-handoff/
+          name: ui-aurelis-${{ github.run_number }}
+          path: comparison-aurelis/
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ui-reference-${{ github.run_number }}
@@ -76,7 +98,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/ci14_handoff.py restore --variant all
+          python3 .github/scripts/ui_parity_handoff.py restore
           python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0'
           command -v ffmpeg || { sudo apt-get update && sudo apt-get install -y ffmpeg; }
           python3 -m unittest discover -s .github/scripts -p test_ui_parity.py -v

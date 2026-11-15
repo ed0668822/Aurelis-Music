@@ -7,6 +7,9 @@ import unittest
 from unittest.mock import patch
 import zipfile
 import ui_parity as parity
+import ui_parity_handoff as external
+import ci14_handoff as handoff
+import os
 
 
 class ParityEvidenceTest(unittest.TestCase):
@@ -95,6 +98,44 @@ class ParityEvidenceTest(unittest.TestCase):
             parity.record_state(result, "aurelis", "dark", "player-landscape", True)
             self.assertFalse(result["screens"][0]["reached"])
             self.assertIn("orientation", result["screens"][0]["reason"])
+
+    def external_fixture(self, root):
+        sha = "a" * 40
+        for variant, (_, source) in handoff.FILES.items():
+            path = root / source; path.parent.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("AndroidManifest.xml", b"test fixture")
+                if variant == "debug": archive.writestr("lib/arm64-v8a/test.so", b"fixture")
+        with patch.dict(os.environ, {"GITHUB_SHA": sha, "GITHUB_RUN_ID": "900", "GITHUB_RUN_NUMBER": "144", "GITHUB_RUN_ATTEMPT": "1"}):
+            handoff.pack(root)
+        run = {"id": 900, "run_number": 144, "run_attempt": 1, "head_sha": sha,
+               "head_branch": external.BRANCH, "event": "push", "path": ".github/workflows/" + external.WORKFLOW}
+        (root / "primary-run.json").write_text(json.dumps(run))
+        return sha, run
+
+    def test_cross_run_handoff_keeps_primary_identity_without_using_ui_run_number(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); sha, _ = self.external_fixture(root)
+            with patch.dict(os.environ, {"GITHUB_RUN_ID": "901", "GITHUB_RUN_NUMBER": "1"}):
+                data = external.verify(root, sha)
+            self.assertEqual("144", data["run_number"])
+            self.assertEqual("900", data["run_id"])
+
+    def test_cross_run_rejects_other_workflow_branch_sha_and_attempt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); sha, original = self.external_fixture(root)
+            for key, wrong in (("path", ".github/workflows/other.yml"), ("head_branch", "main"),
+                               ("head_sha", "b" * 40), ("run_attempt", 2)):
+                (root / "primary-run.json").write_text(json.dumps({**original, key: wrong}))
+                with self.assertRaises(ValueError): external.verify(root, sha)
+
+    def test_cross_run_rejects_modified_apk_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); sha, _ = self.external_fixture(root)
+            apk = root / "ci-f3-handoff/debug/app-debug.apk"
+            with zipfile.ZipFile(apk, "a") as archive: archive.writestr("changed.txt", b"changed")
+            with self.assertRaisesRegex(ValueError, "checksum/size"):
+                external.verify(root, sha)
 
     def test_report_without_capture_is_explicitly_incomplete(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)):

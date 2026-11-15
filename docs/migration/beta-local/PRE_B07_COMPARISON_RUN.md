@@ -63,3 +63,30 @@ título/artista/álbum y LYRICS. No Gradle/Lint/Android local. Dos revisiones es
 del mismo agente: primero identidad/artefactos/permisos/aislamiento de la referencia;
 después navegación/evidencia, errores, límites y documentación. Resultado de la
 nueva ejecución GitHub pendiente; no publicar afirmación de identidad.
+
+
+## Reparación de la primera ejecución de comparación
+
+Run43679318406/7da39774 FAILURE: Aurelis/B01 falla en V1 con «Invalid green-build
+count or run number»: el workflow nuevo tiene run_number1, por debajo del ancla101
+válida del pipeline principal. No se altera V1. La comparación localiza el B01 del
+pipeline principal con mismo SHA/rama/workflow y copia su artefacto antes de limpieza.
+Verifica SHA, run, intento, formatos, ZIP, ABI, tamaños y hashes, conserva bytes y
+registra la identidad primaria en el resultado. No recompila Aurelis en este proceso.
+Un nuevo script ui_parity_handoff.py aumenta el manifiesto acumulado a15 rutas≤30.
+
+La referencia falla antes de Gradle en sdkmanager. sdk.log queda en el artefacto;
+su descarga está bloqueada por proxy a productionresultssa15.blob.core.windows.net.
+El ZIP de logs completo sí se descargó y validó, pero no contiene el texto redirigido
+a sdk.log. El catálogo oficial repository2-3.xml consultado confirma que no existe
+el paquete platforms;android-37 solicitado y sí platforms;android-37.0, API37.0 base.
+Se usa ese nombre oficial, sin editar compileSdk37 del origen, filtros ABI o firmas.
+Se muestra sdkmanager mediante tee con pipefail para conservar diagnóstico y fallo
+real. No se afirma que esta sea la única causa SDK sin leer su log original.
+
+Tres regresiones Python nuevas de transferencia entre runs: contador UI1 ajeno al
+primario144, identidad incorrecta y bytes alterados. Doce tests totales aprobados,
+actionlint, py_compile y diff --check correctos. Dos revisiones estáticas del mismo
+agente: identidad/transferencia/retención; después workflow, errores y documentación.
+No Gradle/Android local. Nueva comparación y build de referencia pendientes de CI;
+no declarar similitud o pantallas verificadas con estos cambios de preparación.

@@ -5,6 +5,18 @@
 
 ## Continuación actual — primera entrega documental
 
+### Pre-B07 — reparación de comparación, nuevo CI pendiente
+
+Run43679318406 falló en la preparación: V1 recibió el contador1 del workflow nuevo;
+sdkmanager falló antes de Gradle. Logs ZIP oficial leído; sdk.log original no accesible
+por proxy. La comparación reutiliza el APK B01 del pipeline principal del mismo SHA,
+con run/intento/tamaños/hashes verificados, sin modificar V1. Catálogo oficial no
+ofrece android-37 y sí android-37.0; nombre de instalación corregido, compileSdk37
+intacto y salida SDK visible con tee/pipefail. No se afirma causa única del SDK.
+Doce tests Python aprobados y dos revisiones del mismo agente, actionlint/py_compile/
+diff correctos; quince archivos distintos acumulados. Gradle/Android solo Actions.
+No B07, no capturas aún validadas. Detalle en PRE_B07_COMPARISON_RUN.md.
+
 ### Pre-B07 — comparación ejecutable preparada; resultado nuevo pendiente
 
 Run43670279287/b8ee8147 terminó SUCCESS; B06.3-d tiene pipeline aprobado. No acredita

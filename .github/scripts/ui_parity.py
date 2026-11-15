@@ -206,6 +206,8 @@ def capture():
         if provenance.get("commit") != REFERENCE_SHA or provenance.get("sha256") != digest(reference):
             raise ValueError("Reference provenance mismatch")
         apks = {"bitchord": reference, "aurelis": Path("app/build/outputs/apk/debug/app-debug.apk")}
+        primary = json.loads(Path("comparison-aurelis/primary-run.json").read_text())
+        result["aurelis_build_source"] = {key: primary[key] for key in ("id", "run_number", "run_attempt", "head_sha", "path")}
         result["apks"] = {app: verify_apk(path, PACKAGES[app]) for app, path in apks.items()}
         if shell("getprop", "ro.build.version.sdk") != "35":
             raise ValueError("Expected API35")
