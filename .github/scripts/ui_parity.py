@@ -417,7 +417,7 @@ def local_library_fixture(rows):
 
 def pause_fixture(package, local):
     for _ in range(2 if local else 0):
-        if tap(("Play", "Reproducir")) and wait_fixture_session(package, (3,)):
+        if tap(("Play", "Reproducir"), scroll=True) and wait_fixture_session(package, (3,)):
             return tap(("Pause", "Pausar", "Pausa"), bottom=True) and wait_fixture_session(package, (2,))
     return False
 

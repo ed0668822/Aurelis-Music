@@ -33,6 +33,18 @@ class ParityEvidenceTest(unittest.TestCase):
             with self.assertRaises(ValueError):parity.launch_scenario('aurelis','dark',3)
             shell.assert_not_called()
 
+    def test_offscreen_play_is_scrolled_into_view_before_real_session_verification(self):
+        top = '<hierarchy><node scrollable="true" bounds="[20,40][220,240]"/></hierarchy>'
+        play = '<hierarchy><node content-desc="Play" bounds="[80,100][160,180]"/></hierarchy>'
+        pause = '<hierarchy><node content-desc="Pause" bounds="[80,180][160,240]"/></hierarchy>'
+        with patch.object(parity, 'tree', side_effect=[top, play, pause]), \
+             patch.object(parity, 'shell') as shell, patch.object(parity.time, 'sleep'), \
+             patch.object(parity, 'wait_fixture_session', return_value=True) as session:
+            self.assertTrue(parity.pause_fixture('com.music.aurelis', True))
+            self.assertEqual(('input', 'swipe', 120, 190, 120, 90, 350), shell.call_args_list[0].args)
+            self.assertEqual([('com.music.aurelis', (3,)), ('com.music.aurelis', (2,))],
+                             [call.args for call in session.call_args_list])
+
     def test_rotation_readback_failure_does_not_launch_or_certify_an_orientation(self):
         with patch.object(parity, 'shell', return_value='free'), \
              patch.object(parity, 'seed_preferences', return_value={}), patch.object(parity, 'launch') as launch:

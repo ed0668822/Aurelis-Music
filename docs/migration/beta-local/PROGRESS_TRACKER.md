@@ -9,6 +9,31 @@
 
 ## Continuación actual — primera entrega documental
 
+### Resultado de fe942152 — compilación y navegación aprobadas; botón fuera de vista en horizontal
+
+Run162/43761495777 SUCCESS en B01–B06. Logs oficiales:421 SUCCESS Debug y421
+Release, tareas ejecutadas y cobertura90,13%≥80%. Comparación18/43761495814:
+ambos casos Android PASS en API35 yAPI36, incluyendo Buscar/recreación/Atrás y
+reproducción. El usuario confirma Redmi Note14 Pro5G, Android16/HyperOS3; se ofrece
+el artefacto ARM64 de Actions para prueba física, respuesta pendiente.
+
+Plain/glass recogen36 estados cada uno,32 alcanzados: Home/Biblioteca/Ajustes/
+Buscar/música local/MiniPlayer/player vertical/letras de ambas apps y temas. Solo
+fallan los cuatro player-landscape por material: PNG ahora horizontal correcto,
+foreground de la app correcto, pero sigue en la colección local y Play queda fuera
+de la vista inicial. No hay timeout ADB en este run. No equivale a paridad visual.
+La pulsación de Play admite desplazar el contenedor real de accesibilidad antes
+de verificar sesión PLAYING→PAUSED y expandir. Se mantienen ambas comprobaciones,
+título/controles reales, orientación y36 estados; no se declara player por ver la
+colección. Regresión reproduce el botón oculto y comprueba gesto y sesión propia.
+
+41 pruebas Python PASAN por material y diff correcto; dos revisiones del mismo
+agente, no independientes. Tres rutas ya incluidas; acumulado62. Sin cambios app/
+pruebas Android respecto a fe942152; nueva captura y CI del SHA nuevo pendientes.
+ZIP de imágenes todavía bloqueados por dominios Azure variables; se solicitó
+permitirlos y se explicó el patrón de subdominios. B07 conserva preparación,
+sin declarar cerradas revisión visual/widgets/gestos ni prueba física de HyperOS.
+
 ### Dispositivo confirmado — regresión de Ajustes en Android 15 y 16
 
 El usuario confirma Redmi Note 14 Pro 5G, Android16 y HyperOS3. Se amplía solo el
