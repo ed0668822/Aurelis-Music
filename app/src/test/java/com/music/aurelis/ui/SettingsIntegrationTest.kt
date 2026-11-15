@@ -252,7 +252,7 @@ class SettingsIntegrationTest {
     @Test fun searchShowsOnlyMatchingControlsAndReportsAnEmptyResult() {
         compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
         compose.onNode(hasSetTextAction()).performTextInput("Tema")
-        compose.onNodeWithText("Tema").assertIsDisplayed()
+        compose.onNode(hasText("Tema") and !hasSetTextAction()).assertIsDisplayed()
         compose.onNodeWithContentDescription("Respuesta háptica").assertDoesNotExist()
         compose.onNodeWithContentDescription("Liquid Glass").assertDoesNotExist()
         compose.onNode(hasSetTextAction()).performTextReplacement("no-existe-este-ajuste")

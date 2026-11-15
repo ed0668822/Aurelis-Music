@@ -18,6 +18,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.music.aurelis.MainActivity
 import com.music.aurelis.R
 import com.music.aurelis.data.ProfileRepository
+import com.music.aurelis.data.SettingsRepository
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,11 +49,25 @@ class RealSettingsNavigationInstrumentedTest {
             label?.toString()?.lineSequence()?.any { it.equals(text, ignoreCase = true) } == true
         }
 
+    private fun clickLabeledControl(node: AccessibilityNodeInfo): Boolean {
+        // Compose exposes some labels as children of their clickable tab/row.
+        // Use that actual ancestor's accessibility action, never guessed coordinates.
+        var target: AccessibilityNodeInfo? = node
+        repeat(12) {
+            val current = target ?: return false
+            if (current.packageName?.toString() != context.packageName || !current.isVisibleToUser) return false
+            if (current.isClickable && current.isEnabled &&
+                current.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
+            target = current.parent
+        }
+        return false
+    }
+
     private fun await(label: String, click: Boolean = false, scroll: Boolean = false) {
         val deadline = SystemClock.elapsedRealtime() + 15_000
         while (SystemClock.elapsedRealtime() < deadline) {
-            val node = rows().firstOrNull { labeled(it, label) && (!click || it.isClickable && it.isEnabled) }
-            if (node != null && (!click || node.performAction(AccessibilityNodeInfo.ACTION_CLICK))) return
+            val found = rows().filter { labeled(it, label) }
+            if (found.any { !click || clickLabeledControl(it) }) return
             if (scroll) rows().firstOrNull { it.isScrollable }
                 ?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
             SystemClock.sleep(150)
@@ -121,6 +136,10 @@ class RealSettingsNavigationInstrumentedTest {
             val settings = context.getString(R.string.navigation_settings)
             val library = context.getString(R.string.library)
             val prefix = if (withPlayback) "playing" else "idle"
+            await(context.getString(R.string.settings_profile_action))
+            activity.onActivity { assertTrue("Regression requires the hardware renderer", it.window.decorView.isHardwareAccelerated) }
+            assertTrue("Regression must retain Liquid Glass", SettingsRepository.liquidGlass.value)
+            assertFalse("Regression must not disable dynamic blur", SettingsRepository.reduceDynamicBlur.value)
             await(context.getString(R.string.settings_profile_action), click = true)
             await(settings)
             await(before.name)

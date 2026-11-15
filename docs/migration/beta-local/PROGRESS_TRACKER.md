@@ -7,6 +7,31 @@
 
 ## Continuación actual — primera entrega documental
 
+### Validación de 02bf90a5 — cierre nativo superado en Perfil; selectores y dos contratos de idioma
+
+Principal43752674100: B01/B02/B05 SUCCESS, B03 FAILURE, B04 SKIPPED y B06 FAILURE.
+Debug/Release ejecutan420 tests cada uno; tres fallos iguales: LibraryUpdatesTest
+espera «Varios artistas» fijo, PlaybackIntegrationTest espera un fragmento español
+del error de archivo, y el test nuevo de búsqueda confunde Tema con el EditText
+que contiene la consulta. Kover queda omitido por esas suites; no se atribuye el
+fallo primario a cobertura. Se distingue el control Tema de la consulta sin retirar
+assertions. Las otras dos correcciones están propuestas fuera del checkout:
+requieren dos archivos adicionales a las60 rutas ya entregadas, pendientes de
+autorización para62. No se cambia producción para ocultar el idioma en las pruebas.
+
+Settings Android43752808707: ambas pruebas abren Perfil, recrean y regresan a Home;
+no hay APP CRASH(NATIVE), solo finalización del runner tras AssertionError.
+Falla la pulsación de Library: el texto existe como hijo del nodo seleccionable.
+El selector usa ahora la acción del ancestro pulsable real, acotado al paquete,
+sin coordenadas inventadas. Mantiene comprobaciones de estado/perfil/playback y
+exige renderer hardware, Liquid Glass activo y blur no reducido. Se repite antes
+de acreditar Biblioteca→Ajustes. El run UI se canceló después del job Settings para
+retirar las comparaciones pendientes; no equivale a PASS. Las anotaciones muestran
+primero el fallo JUnit y un diagnóstico resumido, respetando su límite4096.
+
+34 pruebas Python y comprobaciones estáticas correctas; dos revisiones del mismo
+agente. Ninguna ruta nueva; acumulado60. Nueva validación real pendiente.
+
 ### Causa del cierre reproducido — ciclo de RenderNode en el fondo de cristal
 
 299cdcd7/43751201636: ambos casos Settings fallan. exit-info registra APP CRASH(NATIVE),

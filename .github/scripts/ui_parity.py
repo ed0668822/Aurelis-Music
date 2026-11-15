@@ -564,6 +564,10 @@ def settings_navigation():
             passed, problems = verdict(log, klass, method, code)
             result["cases"].append({"method": method, "passed": passed, "problems": problems, "exit_code": code})
             print(f"Settings navigation {method}: {'PASS' if passed else 'FAIL'}\n" + log[-16000:], flush=True)
+            if not passed:
+                first_error = (method + "\n" + ", ".join(problems) + "\n" + log[:3000])
+                escaped = first_error.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+                print("::error title=Settings test failure::" + escaped, flush=True)
             # Keep each case's Android exception before the next process starts.
             try:
                 runtime = shell("logcat", "-d", "-b", "all", "-v", "threadtime")
@@ -571,13 +575,15 @@ def settings_navigation():
                 # Instrumentation installs its own exception handler: Java stacks may
                 # use MonitoringInstr/TestRunner rather than AndroidRuntime.
                 relevant = "\n".join(line for line in runtime.splitlines() if re.search(
-                    r"\b(?:AndroidRuntime|AndroidJUnitRunner|AndroidJUnit4|MonitoringInstr|InstrumentationResultPrinter|TestRunner|libc|DEBUG|System\.err)\s*:|com\.music\.aurelis", line))
+                    r"\b(?:AndroidRuntime|AndroidJUnitRunner|AndroidJUnit4|MonitoringInstr|InstrumentationResultPrinter|TestRunner|libc|DEBUG|System\.err)\s*:", line))
                 print(relevant[-48000:], flush=True)
                 exits = shell("dumpsys", "activity", "exit-info", package)
                 (OUT / (method + "-exit-info.txt")).write_text(exits)
                 print(exits[-16000:], flush=True)
                 if not passed:
-                    diagnostic = (relevant[-24000:] + "\n" + exits[-8000:]).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+                    exit_lines = "\n".join(line for line in exits.splitlines() if re.search(r"process=|description=", line))
+                    critical = "\n".join(line for line in relevant.splitlines() if re.search(r"Fatal signal|FATAL EXCEPTION|Abort message|Caused by:|RenderNode::prepareTreeImpl", line))
+                    diagnostic = (method + "\n" + exit_lines[:1400] + "\n" + critical[:2000]).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
                     print("::error title=Settings navigation failure::" + diagnostic, flush=True)
                 adb("pull", "/sdcard/Android/data/com.music.aurelis/files/settings-navigation", OUT / "screens")
             except RuntimeError as error:
