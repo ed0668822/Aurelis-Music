@@ -259,7 +259,6 @@ class RealSessionResilienceInstrumentedTest {
     }
 
     @Test
-    @androidx.annotation.RequiresApi(26)
     @androidx.test.filters.SdkSuppress(minSdkVersion = 26)
     fun notificationTokenControlsAndTransientFocusShareThePlayer() {
         val wav = File(context.cacheDir, "p3-system-controls.wav")

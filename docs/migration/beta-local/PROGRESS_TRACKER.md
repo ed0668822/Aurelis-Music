@@ -7,6 +7,13 @@
 
 ### B06.3-b — foco/noisy/controles del sistema (CI pendiente)
 
+Run139: B01/B03/B05 SUCCESS; B02/B06 FAILURE, B04 SKIPPED. Lint UseSdkSuppress por
+RequiresApi redundante en test instrumentado. Retirada esa anotación; permanece
+SdkSuppress(minSdkVersion=26), guard API33 y todo el caso de notificación/foco.
+Tres archivos ya incluidos; catorce acumulados. Dos revisiones del mismo agente y
+diff --check, sin Android local. Nueva validación pendiente; ver informe B06_3B.
+
+
 «Continúa» confirma1a14927f. Catorce archivos de máximo30, misma rama/PR1, sin ZIP.
 Política de interrupciones Media3 compartida; quitar tarea no conserva servicio en
 IDLE/ENDED/error, pero sí intención READY con supresión transitoria. Dos pruebas

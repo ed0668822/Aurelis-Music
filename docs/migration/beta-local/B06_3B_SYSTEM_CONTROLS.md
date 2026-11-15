@@ -59,3 +59,20 @@ Dos nuevos casos Python comprueban falta del octavo caso y evidencia falsa/malfo
 Tres casos Android nuevos preparados para Actions: dos Robolectric, uno instrumentado.
 No se ejecutaron Gradle/Lint/APK/tests Android localmente. CI nuevo y hardware pendientes.
 B06.3-c/-d y B06.4 siguen pendientes; esta entrega no cierra B06 globalmente.
+
+
+## Reparación CI139 — anotación de test
+
+Run43658748680, commit92e82bf4dddcc9815cc1ae71d958f46c0ef2937c: B01/B03/B05 SUCCESS,
+B02/B06 FAILURE, B04 SKIPPED. ZIP oficial de logs descargado y verificado; ZIP de
+informes bloqueado en productionresultssa7. Lint identifica UseSdkSuppress en
+RealSessionResilienceInstrumentedTest.kt:262: no usar RequiresApi en tests, usar
+SdkSuppress. El método ya tenía SdkSuppress(minSdkVersion=26); se retira únicamente
+RequiresApi redundante. Se conserva test completo, restricción de ejecución y guard
+SDK33 del acceso Parcelable. No se cambia SDK, permisos, lógica ni puertas Lint/CI.
+
+Tres archivos ya incluidos (test, este informe y tracker); acumulado14 de máximo30.
+Dos revisiones del mismo agente: diagnóstico/alcance de anotaciones, después diff y
+conservación del selector/cuerpo/restricción de API. git diff --check correcto.
+Sin Gradle/Lint/Android locales. Nueva validación completa pendiente de Actions;
+no transferir el éxito B03/B05 de92e82bf4 al SHA de reparación sin evidencia.
