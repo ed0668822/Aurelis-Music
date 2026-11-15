@@ -132,7 +132,7 @@ jobs:
           free -m > ci-ui-comparison/host/memory.txt
           df -h > ci-ui-comparison/host/disk.txt
           ps -eo pid,ppid,stat,rss,comm > ci-ui-comparison/host/processes.txt
-          sudo dmesg --ctime > ci-ui-comparison/host/kernel.txt 2> ci-ui-comparison/host/kernel-error.txt || true
+          sudo dmesg --ctime |& tee ci-ui-comparison/host/kernel.txt > /dev/null || true
           rg -i 'out of memory|oom-kill|killed process|segfault|trap' ci-ui-comparison/host/kernel.txt || true
       - name: Build comparison gallery without claiming visual equivalence
         if: always()

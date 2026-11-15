@@ -1,6 +1,29 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # Comparación ejecutable previa a B07
 
+## Corrección del preflight después de cb83c974
+
+Principal153/43742631853 falla antes de Gradle en la auditoría obligatoria de
+workflows. Logs oficiales confirman actionlint rechazado; el ZIP del reporte está
+bloqueado por proxy. Reproducción local con actionlint1.7.12 + ShellCheck0.10.0:
+SC2024 en la redirección del nuevo `sudo dmesg`. La revisión anterior solo ejecutó
+actionlint porque ShellCheck no estaba instalado localmente; ese alcance era
+insuficiente para reproducir el preflight de Actions.
+
+La redirección se sustituye por `sudo dmesg --ctime |& tee ... > /dev/null`, sin
+supresión ni cambio de condiciones del emulador. Stdout/stderr quedan en kernel.txt.
+La auditoría F5 imprime actionlint.log si falla y conserva su salida1. Todos los
+workflows pasan actionlint con ShellCheck; script F5 pasa ShellCheck y bash -n;
+diff --check correcto. Dos revisiones del mismo agente; cuatro rutas de reparación,
+55 acumuladas de 60. No se repiten pruebas Python sin cambios ni se ejecuta Android
+local. CI y recuperación del launcher siguen pendientes del siguiente SHA.
+
+El ZIP UI-3 vuelto a aportar es histórico: SHA958b8c96, principal43683456015,
+anterior a UI1/UI2 y sus reparaciones. CRC válido, SHA256
+`00f979fe9d0ffca7a1a2e56b583ed7c9199fde8d1872375b02525a6e3cbae7e3`.
+Sus capturas no describen el estado actual y no justifican reaplicar cambios ya
+entregados ni afirmar que reproductores/letras se comprobaron correctamente.
+
 ## Reparación posterior a UI9
 
 Principal152/43739187894 del SHA0786e3bc: seis fases SUCCESS. Comparación9/

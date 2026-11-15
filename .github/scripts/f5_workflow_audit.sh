@@ -43,6 +43,7 @@ set -e
   echo "- Evidencia íntegra: zizmor-findings.json, zizmor.log y actionlint.log."
 } > ci-b01/workflow-audit.md
 if [ "$ACTIONLINT_CODE" -ne 0 ]; then
+  cat ci-b01/actionlint.log >&2
   echo "F5 FAIL: invalid workflow detected by actionlint" >&2
   exit 1
 fi

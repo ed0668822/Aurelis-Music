@@ -7,6 +7,25 @@
 
 ## Continuación actual — primera entrega documental
 
+### Reparación del preflight153 — ShellCheck SC2024
+
+cb83c974/run43742631853 falla en B01, «Enforce actionlint and record zizmor
+findings»; no llega a Gradle. B02/B03/B04/B05 SKIPPED, B06 FAILURE por puerta final.
+Logs oficiales verificados; reporte ZIP bloqueado por proxy. El actionlint local
+anterior no tenía ShellCheck disponible. Con actionlint1.7.12 y ShellCheck0.10.0
+se reproduce SC2024 en la nueva redirección de `sudo dmesg`. Se reemplaza por un
+pipe a tee sin supresión; conserva stdout/stderr del kernel. actionlint completo
+con ShellCheck, ShellCheck del script de auditoría, bash -n y diff --check pasan.
+F5 ahora imprime su actionlint.log al fallar, conservando archivo y salida1.
+No se rebajan puertas ni se declara validado Android con estas comprobaciones.
+Dos revisiones del mismo agente; cuatro rutas, 55 acumuladas de 60. CI nuevo pendiente.
+
+El usuario aporta además Aurelis-BitChord-UI-3.zip: CRC válido, SHA256
+`00f979fe9d0ffca7a1a2e56b583ed7c9199fde8d1872375b02525a6e3cbae7e3`.
+Procede de958b8c96/run principal146/43683456015, anterior a las correcciones UI.
+Se conserva como evidencia histórica; no se reaplican sus diferencias como si
+fueran nuevas ni se usa ese archivo para certificar el estado de cb83c974.
+
 ### Reparación de comparación UI9 — diálogo del launcher y diagnósticos
 
 0786e3bc/run43739187894 (principal152): B01/B02/B03/B04/B05/B06 SUCCESS,
