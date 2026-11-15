@@ -7,6 +7,15 @@
 
 ### B06.3-c — almacenamiento versionado de eventos (CI pendiente)
 
+Run141: B01/B03/B05 SUCCESS, B02/B06 FAILURE, B04 SKIPPED. B02 no llegó a ejecutar
+Lint: faltó resolver dos módulos Kover0.9.11 durante configuración. POM/JAR oficiales
+ahora200; causa entre publicación transitoria/caché negativa no demostrada. Reparado
+con un reintento acotado --refresh-dependencies solo para esa firma, conservando
+ambas ejecuciones y todas las puertas XML/resultado. Sin cambios de versión/SDK/ABI.
+Once tests Python B02 pasan, dos revisiones propias y sintaxis/diff correctos; nuevo
+CI pendiente. Seis archivos de reparación, doce distintos acumulados del bloque.
+
+
 «Continúa» confirma la correcciónf7f3dd46. Nueve archivos de máximo30, misma rama/PR1,
 sin descargar informes previos. SQLiteOpenHelper privado por perfil, IO serializado
 fuera de main/audio, clave sesión/secuencia idempotente y conflictos atómicos sin

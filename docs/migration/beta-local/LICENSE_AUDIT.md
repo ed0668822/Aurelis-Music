@@ -448,3 +448,10 @@ Modelo/codec, SQLiteOpenHelper, API IO y pruebas nuevos propios Aurelis, con cab
 GPL-3.0-or-later. Arquitectura SQLite nativa del MASTER_PLAN; sin copiar una base
 Room de BitChord ni introducir Room/KSP/dependencias. Se conservan todas las licencias
 anteriores. NOTICE registra alcance y separación respecto a totales legacy.
+
+
+### Reparación CI141 dentro de B06.3-c
+
+Runner Bash y fixtures Python propios con cabeceras Aurelis. Sin copiar dependencias
+ni cambiar Kover/licencias; se consulta disponibilidad de artefactos oficiales sin
+incorporarlos al repositorio. Política de atribuciones anterior intacta.

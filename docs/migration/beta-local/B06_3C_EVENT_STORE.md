@@ -70,3 +70,37 @@ después SQL ligado, tipos/cursores/cancelación/IO/límites/fixtures y nueve ru
 Pasa git diff --check. Sin compilar ni ejecutar Gradle, Lint, APK o Android local.
 Pruebas SQLite son Android/Robolectric y se ejecutarán exclusivamente en Actions.
 No equivalen a prueba física ni a integración del recorder. B06.3-d/B06.4 pendientes.
+
+
+## Reparación CI141 — resolución de Kover en B02
+
+Run43663021681 del commitc63b9f0c75f4ef140f9150c7181d20e789665983: B01/B03/B05
+SUCCESS, B02/B06 FAILURE, B04 SKIPPED. El ZIP original de logs se descargó y verificó;
+el ZIP consolidado se bloquea en productionresultssa32. No fallaron las pruebas
+SQLite ni el ensamblado. B02 abortó al configurar el proyecto, antes de tareas Lint,
+por ModuleVersionNotFoundException de kover-features-jvm y kover-jvm-agent0.9.11.
+
+Se comprobó disponibilidad actual en Maven Central oficial: POM y JAR de ambas
+coordenadas respondenHTTP200; POM/module del plugin0.9.11 también200. Esto no demuestra
+si la ausencia previa fue repositorio transitorio o caché negativa del runner.
+No se cambia versión ni repositorio para ocultarlo. El runner B02 permite un único
+reintento con --refresh-dependencies solo ante esa firma de configuración y módulos
+exactos de0.9.11, sin tareas/errores de Lint ya ejecutados. Segunda ejecución invoca
+las mismas tareas Debug/Release y argumentos. Si falla de nuevo, conserva código de
+error. Errores de Lint, otros módulos/versiones y otras fases no se reintentan.
+
+Se conserva lint.log agregado, lint-attempt-1.log y, si existe, lint-attempt-2.log.
+Resumen XML y puerta final siguen exigiendo ambas variantes y éxito real. Nada de
+supresiones de detector, reportes fabricados, cambios de SDK/ABI/firma o eliminación
+de evidencia. No ejecuta Gradle local en esta reparación; los tests Python solo
+usan un CLI ficticio para verificar control de flujo y logs.
+
+Seis archivos de corrección: .github/scripts/b02-run-lint.sh,
+.github/scripts/test_b02_run_lint.py, .github/workflows/b02-android-lint.yml, este
+informe, tracker y LICENSE_AUDIT. Acumulado B06.3-c12 rutas distintas de máximo30.
+Dos revisiones del mismo agente: diagnóstico/criterio acotado/salida de pipeline;
+después logs/consumidores, YAML/Bash/fixtures y alcance. Once pruebas Python B02
+aprobadas (seis nuevas y cinco anteriores), bash -n/YAML/diff --check correctos.
+Nuevo pipeline pendiente; no trasladar éxitos del SHA anterior al nuevo sin evidencia.
+Los directorios .gradle/, app/build/ y app/.cxx/ generados por la compilación local solicitada
+se preservan sin incluirlos en commits; APK previamente entregado no se modifica.

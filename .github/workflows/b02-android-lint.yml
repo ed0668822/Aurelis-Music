@@ -68,13 +68,10 @@ jobs:
         id: lint
         continue-on-error: true
         run: |
-          set -euo pipefail
-          ./gradlew :app:lintDebug :app:lintRelease --init-script .github/scripts/task-inputs.gradle --continue --build-cache --console=plain \
-            --stacktrace --no-daemon --no-configuration-cache --max-workers=2 \
-            2>&1 | tee ci-b02/lint.log
+          bash .github/scripts/b02-run-lint.sh
 
       - name: Test lint-report summary logic offline
-        run: python3 -m unittest discover -s .github/scripts -p 'test_b02_lint_summary.py' -v
+        run: python3 -m unittest discover -s .github/scripts -p 'test_b02_*.py' -v
 
       - name: Summarize Debug and Release lint independently
         if: always()
