@@ -26,7 +26,7 @@ LABELS = {
     "profile": ("Profile", "Account", "Perfil", "Cuenta", "Your profile", "Open account", "Account and settings", "Cuenta y ajustes", "Switch account", "Cambiar cuenta"),
     "songs": ("Local Music", "Música local", "Songs", "Canciones"),
     "search": ("Search", "Buscar"),
-    "lyrics": ("Lyrics", "Letras", "Show lyrics", "Mostrar letras"),
+    "lyrics": ("Lyrics", "Letras", "Show lyrics", "Mostrar letras", "Ver Letras", "Abrir letras", "Open lyrics"),
 }
 
 
@@ -82,12 +82,15 @@ def nodes(xml):
     root = ET.fromstring(xml)
     result = []
     for node in root.iter("node"):
-        label = node.get("text") or node.get("content-desc") or ""
+        labels = list(dict.fromkeys(value for value in (node.get("text", ""), node.get("content-desc", "")) if value))
+        label = labels[0] if labels else ""
+        editable = node.get("class", "").endswith("EditText")
+        scrollable = node.get("scrollable") == "true"
         bounds = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.get("bounds", ""))
-        if bounds and label and node.get("enabled", "true") == "true":
+        if bounds and (label or editable or scrollable) and node.get("enabled", "true") == "true":
             left, top, right, bottom = map(int, bounds.groups())
             if right > left and bottom > top:
-                result.append({"label": label, "bounds": [left, top, right, bottom], "class": node.get("class", "")})
+                result.append({"label": label, "bounds": [left, top, right, bottom], "class": node.get("class", ""), "labels": labels, "scrollable": scrollable})
     return result
 
 
@@ -97,7 +100,8 @@ def normalized(label):
 
 def matches(rows, labels):
     wanted = {normalized(x) for x in labels}
-    return [row for row in rows if normalized(row["label"]) in wanted]
+    return [row for row in rows if any(normalized(value) in wanted
+            for label in row.get("labels", [row["label"]]) for value in [label, *label.splitlines()])]
 
 
 def tree():
@@ -106,8 +110,33 @@ def tree():
     return shell("cat", "/sdcard/ui-parity.xml")
 
 
-def tap(labels, bottom=False):
-    found = matches(nodes(tree()), labels)
+def scroll_view(rows):
+    containers = [row for row in rows if row.get("scrollable")]
+    if not containers:
+        return False
+    row = max(containers, key=lambda n: (n["bounds"][2] - n["bounds"][0]) * (n["bounds"][3] - n["bounds"][1]))
+    left, top, right, bottom = row["bounds"]
+    shell("input", "swipe", (left + right) // 2, top + (bottom - top) * 3 // 4,
+          (left + right) // 2, top + (bottom - top) // 4, 350)
+    return True
+
+
+def inspect_until(predicate, scroll=False):
+    rows = []
+    for attempt in range(4 if scroll else 3):
+        rows = nodes(tree())
+        if predicate(rows):
+            return rows
+        if attempt < (3 if scroll else 2):
+            if scroll and not scroll_view(rows):
+                break
+            time.sleep(0.75)
+    return rows
+
+
+def tap(labels, bottom=False, scroll=False):
+    rows = inspect_until(lambda current: bool(matches(current, labels)), scroll=scroll)
+    found = matches(rows, labels)
     if not found:
         return False
     found.sort(key=lambda n: n["bounds"][1], reverse=bottom)
@@ -265,18 +294,21 @@ def capture():
                 record_state(result, app, theme, "home", home)
                 library = tap(LABELS["library"])
                 record_state(result, app, theme, "library", library and bool(matches(nodes(tree()), LABELS["songs"])))
-                settings = tap(LABELS["settings"])
-                if not settings and tap(LABELS["profile"]):
+                settings = tap(LABELS["profile"]) if app == "bitchord" else tap(LABELS["settings"], scroll=True)
+                markers = ("Appearance", "Apariencia", "Playback", "Audio local", "Nombre", "Sign in")
+                inspected = inspect_until(lambda rows: bool(matches(rows, markers)))
+                if settings and app == "bitchord" and not matches(inspected, markers):
                     settings = tap(LABELS["settings"])
-                verified = bool(matches(nodes(tree()), ("Appearance", "Apariencia", "Playback", "Audio local")))
+                    inspected = inspect_until(lambda rows: bool(matches(rows, markers)))
+                verified = bool(matches(inspected, markers))
                 record_state(result, app, theme, "settings", settings and verified)
                 # Reset navigation through a force-stop/launch without resetting library/preferences.
                 shell("am", "force-stop", package); launch(package)
                 search = tap(LABELS["search"])
-                search_nodes = nodes(tree())
+                search_nodes = inspect_until(lambda rows: any(n["class"].endswith("EditText") for n in rows))
                 record_state(result, app, theme, "search", search and any(n["class"].endswith("EditText") for n in search_nodes))
                 shell("am", "force-stop", package); launch(package)
-                local = tap(LABELS["library"]) and tap(LABELS["songs"])
+                local = tap(LABELS["library"]) and tap(LABELS["songs"], scroll=True)
                 record_state(result, app, theme, "local-songs", local and bool(matches(nodes(tree()), ("Parity Track 01",))))
                 playing = local and tap(("Parity Track 01",))
                 if playing:
@@ -285,14 +317,16 @@ def capture():
                     tap(("Pause", "Pausar", "Pausa"), bottom=True)
                 record_state(result, app, theme, "miniplayer", playing and bool(matches(nodes(tree()), ("Parity Track 01",))))
                 expanded = playing and (tap(("Abrir reproductor", "Open player", "Expand player")) or tap(("Parity Track 01",), bottom=True))
-                player_labels = nodes(tree())
-                verified = bool(matches(player_labels, LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola")))
+                player_markers = LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola", "Up next", "Cerrar reproductor")
+                player_labels = inspect_until(lambda rows: bool(matches(rows, player_markers)))
+                verified = bool(matches(player_labels, player_markers))
                 record_state(result, app, theme, "player-portrait", expanded and verified)
                 shell("settings", "put", "system", "user_rotation", "1"); time.sleep(2)
-                record_state(result, app, theme, "player-landscape", expanded and verified and bool(matches(nodes(tree()), ("Parity Track 01",))) and bool(matches(nodes(tree()), LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola"))))
+                record_state(result, app, theme, "player-landscape", expanded and verified and bool(matches(nodes(tree()), ("Parity Track 01",))) and bool(matches(nodes(tree()), player_markers)))
                 shell("settings", "put", "system", "user_rotation", "0"); time.sleep(2)
-                lyrics = expanded and tap(LABELS["lyrics"])
-                text = [n["label"] for n in nodes(tree())]
+                lyrics = expanded and tap(LABELS["lyrics"], scroll=True)
+                lyric_nodes = inspect_until(lambda rows: any("Parity line" in n["label"] for n in rows))
+                text = [n["label"] for n in lyric_nodes]
                 record_state(result, app, theme, "lyrics", lyrics and any("Parity line" in label for label in text),
                     "Requires visible local fixture lyrics; a lyrics button alone is insufficient")
             shell("am", "force-stop", package)
@@ -314,7 +348,7 @@ def report():
     save(result)
     summary = {key: result.get(key) for key in ("stage", "error", "capture_complete", "visual_verdict")}
     summary["captured_states"] = len(result.get("screens", []))
-    summary["unreached"] = [{key: row.get(key) for key in ("app", "theme", "state", "reason")}
+    summary["unreached"] = [{key: row.get(key) for key in ("app", "theme", "state", "reason", "labels")}
                             for row in result.get("screens", []) if not row.get("reached")]
     diagnostic = json.dumps(summary, ensure_ascii=False, indent=2)
     print("UI comparison diagnostic:\n" + diagnostic, flush=True)

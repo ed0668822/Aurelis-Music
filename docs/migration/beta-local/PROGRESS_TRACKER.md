@@ -5,6 +5,17 @@
 
 ## Continuación actual — primera entrega documental
 
+### Pre-B07 — compilación verificada; corrección de navegación de captura
+
+Run43683456015/958b8c96 SUCCESS: seis fases B01–B06 aprobadas. Comparación43683456052
+compila ambas apps y genera36 intentos, con19 pantallas no verificadas y error null.
+Logs oficiales leídos: fallo de cobertura de navegación, no build. Lector corregido
+para EditText vacíos, texto/descripción simultáneos y nodos agrupados; espera de
+controles/scroll acotados, acceso perfil y etiquetas reales del player/letras.
+Diecisiete tests UI pasan, py_compile/diff correctos, dos revisiones del mismo agente.
+Dieciséis rutas acumuladas, sin cambios de app/SDK/ABI/firma. Validación Android
+nueva pendiente; no afirmar paridad ni cerrar B07. Detalle PRE_B07_COMPARISON_RUN.
+
 ### Pre-B07 — diagnóstico de captura y activación B01–B06
 
 Confirmado: run43679804645/db9c2207 SUCCESS en las seis fases. La comparación del

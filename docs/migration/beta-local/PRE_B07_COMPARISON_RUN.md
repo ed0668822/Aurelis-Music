@@ -109,3 +109,36 @@ Dieciséis rutas distintas acumuladas≤30. Trece tests Python UI y nueve de gra
 aprobados; actionlint/diff correctos. Dos revisiones estáticas del mismo agente.
 Esta preparación permite reproducir y leer la causa de captura sin depender del ZIP;
 no representa aún una reparación demostrada de ese error Android ni paridad visual.
+
+
+### Reproducción con diagnóstico y corrección de selectores
+
+Run43683456015/958b8c96 SUCCESS en B01–B06, confirmado por API. La compilación
+principal sí se ejecuta. Run43683456052: ambas apps compilan, captura realiza36
+intentos (17 alcanzados/19 no verificados), error global null y capture_complete=false.
+Ya no es un fallo de build/preparación en esta reproducción. Los logs ZIP oficiales
+fueron descargados y verificados; ZIP de imágenes/XML sigue bloqueado por el proxy.
+No se ha visto ni revisado visualmente ninguna captura desde este entorno.
+
+Defectos estáticos confirmados en el lector de UI: descarta EditText vacíos al exigir
+label y pierde content-desc cuando hay text; los nodos de MiniPlayer con texto
+agrupado no pueden coincidir con un título individual. El flujo firmado fuera de
+cuenta de BitChord abre Settings directamente desde Switch account; no requiere
+pulsar otra vez el título. Aurelis abre letras mediante «Ver Letras» y el reproductor
+origen expone «Up next». Estos nombres se contrastaron en los archivos reales.
+
+Corrección: conservar ambos atributos y sus líneas semánticas (sin coincidencias
+parciales arbitrarias), mantener EditText vacíos, esperar controles habilitados,
+buscar dentro de contenedores scrollables (hasta cuatro observaciones), acceso de
+perfil directo en referencia y marcadores/acción de letras ajustados. Los gestos de
+scroll se calculan dentro de bounds del contenedor real; no hay taps a posiciones
+fijas. La captura conserva su requisito de36 estados, orientación/foreground y
+letras locales visibles. Fallos siguen rojos. Se incluyen etiquetas de estados no
+alcanzados en los logs para diagnóstico sin ZIP; no son verificación de fidelidad.
+
+Diecisiete pruebas Python UI aprobadas, cuatro nuevas de accesibilidad/scroll/espera;
+py_compile/diff correctos. Dos revisiones estáticas del mismo agente, primero
+semántica y consumidores, después límites/errores/evidencia. Dieciséis rutas distintas
+acumuladas≤30. Android solo Actions; nueva validación pendiente. No se inicia B07.
+La causa exacta del resultado inicial run43679804648 no se ha recuperado del ZIP;
+no atribuirla retrospectivamente a estos defectos ni afirmar que se reprodujo igual.

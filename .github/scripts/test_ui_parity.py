@@ -111,6 +111,35 @@ class ParityEvidenceTest(unittest.TestCase):
             self.assertIn("offline_configuration", output.getvalue())
             self.assertEqual("NOT_REVIEWED", json.loads((Path(temp) / "results.json").read_text())["visual_verdict"])
 
+    def test_blank_editable_field_remains_available_for_search_verification(self):
+        rows = parity.nodes('<hierarchy><node text="" class="android.widget.EditText" bounds="[0,20][100,60]"/>'
+                            '<node text="" class="android.view.View" bounds="[0,20][100,60]"/></hierarchy>')
+        self.assertEqual(1, len(rows)); self.assertTrue(rows[0]["class"].endswith("EditText"))
+        self.assertEqual([], parity.matches(rows, ("Search",)))
+
+    def test_text_description_and_multiline_merged_rows_can_all_be_matched(self):
+        rows = parity.nodes('<hierarchy><node text="Parity Track 01&#10;Parity Artist" content-desc="Open player" bounds="[0,20][100,60]"/></hierarchy>')
+        for target in ("Parity Track 01", "Parity Artist", "Open player"):
+            self.assertEqual(1, len(parity.matches(rows, (target,))))
+        self.assertEqual([], parity.matches(rows, ("Parity",)))
+
+    def test_tap_scrolls_within_actual_container_then_taps_the_visible_target(self):
+        first = '<hierarchy><node class="android.widget.ScrollView" scrollable="true" bounds="[10,100][210,500]"/></hierarchy>'
+        second = '<hierarchy><node text="Songs" bounds="[20,200][100,240]"/></hierarchy>'
+        with patch.object(parity, "tree", side_effect=[first, second]), \
+             patch.object(parity, "shell") as shell, patch.object(parity.time, "sleep"):
+            self.assertTrue(parity.tap(("Songs",), scroll=True))
+            self.assertEqual(("input", "swipe", 110, 400, 110, 200, 350), shell.call_args_list[0].args)
+            self.assertEqual(("input", "tap", 60, 220), shell.call_args_list[1].args)
+
+    def test_waits_for_an_enabled_control_without_tapping_a_disabled_one(self):
+        disabled = '<hierarchy><node text="Open player" enabled="false" bounds="[0,0][40,40]"/></hierarchy>'
+        enabled = '<hierarchy><node text="Open player" bounds="[0,0][40,40]"/></hierarchy>'
+        with patch.object(parity, "tree", side_effect=[disabled, enabled]), \
+             patch.object(parity, "shell") as shell, patch.object(parity.time, "sleep"):
+            self.assertTrue(parity.tap(("Open player",)))
+            shell.assert_called_once_with("input", "tap", 20, 20)
+
     def external_fixture(self, root):
         sha = "a" * 40
         for variant, (_, source) in handoff.FILES.items():
