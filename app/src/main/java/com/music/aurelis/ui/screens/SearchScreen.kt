@@ -63,6 +63,7 @@ fun SearchScreen(
     destinations: List<LocalSearchDestination> = emptyList(),
     category: LocalSearchCategory = LocalSearchCategory.ALL,
     onCategoryChange: (LocalSearchCategory) -> Unit = {},
+    onOpenProfile: (() -> Unit)? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -77,15 +78,16 @@ fun SearchScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(top = topPadding)) {
-            SearchField(
+        FrostedTopBar(title = stringResource(R.string.search), scrolled = { false },
+            transparentBackdrop = true, artworkPageChrome = true,
+            accessory = { SearchField(
                 query = query,
                 onQueryChange = onQueryChange,
                 onSubmit = onSubmit,
                 focusRequester = focusRequester,
                 placeholder = "Buscar canciones, artistas, álbumes…",
-                modifier = Modifier.padding(start = PAGE_GUTTER, end = PAGE_GUTTER, bottom = 4.dp),
-            )
+            ) }, actions = { onOpenProfile?.let { LocalProfileButton(it) } })
+        Column(modifier = Modifier.padding(top = topPadding)) {
             if (results != null) LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(LocalSearchCategory.entries.toList()) { _, item ->

@@ -107,6 +107,18 @@ fun GlassNavBar(
             .padding(horizontal = NAV_BAR_GUTTER)
             .padding(bottom = NAV_BAR_LIFT),
     ) {
+        song?.let { current ->
+            MiniPlayer(
+                title = current.title, artist = current.artist, artworkUri = current.artworkUri,
+                isPlaying = isPlaying, isLoading = isLoading,
+                onPlayPauseClick = onPlayPause, onNext = onNext,
+                onClick = onExpand, enabled = !controlsLocked,
+                canNext = canNext, canPrevious = canPrevious, onPrevious = onPrevious,
+                progress = progress, qualityLabel = qualityLabel,
+                songId = current.id, dock = dock, pull = pull,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            )
+        }
         CompositionLocalProvider(LocalGlassExport provides barGlass) {
             BoxWithConstraints(
                 modifier = Modifier
@@ -176,19 +188,6 @@ fun GlassNavBar(
                     }
                 }
             }
-        }
-
-        song?.let { current ->
-            MiniPlayer(
-                title = current.title, artist = current.artist, artworkUri = current.artworkUri,
-                isPlaying = isPlaying, isLoading = isLoading,
-                onPlayPauseClick = onPlayPause, onNext = onNext,
-                onClick = onExpand, enabled = !controlsLocked,
-                canNext = canNext, canPrevious = canPrevious, onPrevious = onPrevious,
-                progress = progress, qualityLabel = qualityLabel,
-                songId = current.id, dock = dock, pull = pull,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
         }
     }
 }

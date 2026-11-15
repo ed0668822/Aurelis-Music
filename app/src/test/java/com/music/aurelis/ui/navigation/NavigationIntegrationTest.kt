@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.navigation
 
 import androidx.activity.ComponentActivity
@@ -43,11 +44,24 @@ class NavigationIntegrationTest {
     private fun tab(label: String) = compose.onNode(isSelectable() and hasText(label))
     private fun back() = compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
 
+    @Test fun libraryHeadingClearsTheProfileHeaderAndProfileOpensLocalSettings() {
+        startApp()
+        tab("Biblioteca").performClick()
+        val heading = compose.onNode(hasText("Biblioteca") and !isSelectable()).fetchSemanticsNode().boundsInRoot
+        val profile = compose.onNodeWithContentDescription("Perfil").fetchSemanticsNode().boundsInRoot
+        assertTrue("Library must start below the shared header", heading.top >= profile.bottom)
+        compose.onNodeWithContentDescription("Perfil").performClick()
+        compose.onNodeWithText("Perfil del dispositivo").assertIsDisplayed()
+        tab("Biblioteca").assertIsDisplayed()
+        tab("Inicio").performClick().assertIsSelected()
+        compose.runOnIdle { assertFalse(navigator.canGoBack) }
+    }
+
     @Test fun realLibraryLinksAndNestedSettingsRespectAndroidBackAndRestore() {
         val restoration = startApp()
         tab("Biblioteca").performClick().assertIsSelected()
         compose.onNodeWithText("Ajustes").performClick()
-        tab("Biblioteca").assertDoesNotExist()
+        tab("Biblioteca").assertIsDisplayed().assertIsSelected()
         compose.onNodeWithText("Equalizer").performScrollTo().performClick()
         compose.onNodeWithText("Audio Equalizer & DSP").assertIsDisplayed()
         restoration.emulateSavedInstanceStateRestore()

@@ -7,6 +7,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -16,6 +19,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 private val RouteStateKeysSaver = listSaver<MutableSet<String>, String>(
     save = { it.toList() },
@@ -35,6 +42,8 @@ fun AppNavigationHost(
     routeContent: @Composable (AppRoute) -> Unit,
     bottomBar: @Composable BoxScope.() -> Unit,
     pageModifier: Modifier = Modifier,
+    pageBottomPadding: Dp = 0.dp,
+    topBar: @Composable BoxScope.() -> Unit = {},
     playbackOverlays: @Composable BoxScope.() -> Unit = {},
 ) {
     val stateHolder = rememberSaveableStateHolder()
@@ -62,12 +71,23 @@ fun AppNavigationHost(
                     }
                 } else {
                     requireNotNull(pageEntry.route.navigationKey) { "Destination is not wired in the local graph" }
-                    stateHolder.SaveableStateProvider(AppDestination.Route(pageEntry).key) { routeContent(pageEntry.route) }
+                    Box(Modifier.fillMaxSize().padding(bottom = pageBottomPadding)
+                        .consumeWindowInsets(PaddingValues(bottom = pageBottomPadding))) {
+                        stateHolder.SaveableStateProvider(AppDestination.Route(pageEntry).key) { routeContent(pageEntry.route) }
+                    }
                 }
             }
         }
-        if (route == null || (route == AppRoute.NowPlaying && pageEntry == null)) {
-            Box(Modifier.fillMaxSize().then(if (playbackPage) Modifier.clearAndSetSemantics { } else Modifier)) { bottomBar() }
+        // Chrome belongs to the app, including pushed library/settings pages.
+        // Keep it composed behind the player for the dock; hide its semantics there.
+        Box(Modifier.fillMaxSize().then(if (playbackPage) Modifier.clearAndSetSemantics { }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                }
+            } else Modifier)) {
+            topBar()
+            bottomBar()
         }
         playbackOverlays()
     }

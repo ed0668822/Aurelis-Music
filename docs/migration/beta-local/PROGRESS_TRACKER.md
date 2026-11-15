@@ -5,6 +5,22 @@
 
 ## Continuación actual — primera entrega documental
 
+### Pre-B07 UI1 — corrección de estructura común tras revisar UI-4
+
+Autorización «Entonces soluciona todo eso». Auditoría real de36 capturas/XML del
+ZIP UI-4 sobre d4fea913; API confirma principal43685163410 SUCCESS y UI43685163414
+FAILURE. Cabecera/insets conectados, perfil local en cabecera, chrome persistente
+en rutas, MiniPlayer encima de pestañas y altura inferior medida/teclado. El player
+retira semántica y bloquea toques a controles subyacentes conservados para el dock.
+Settings usa su glifo correcto; búsqueda recibe foco sin borrar consulta guardada.
+Captura reinicia datos desechables por app/tema, iguala cristal/locale y verifica
+transporte + sesión propia pausada; rechaza los cuatro falsos MiniPlayers de UI-4.
+Veintidós tests Python aprobados, cuatro regresiones Compose preparadas para
+Actions, sin Gradle/Android local. Dos revisiones del mismo agente. Quince rutas de
+UI1,26 distintas al sumar toda la comparación≤30. Nueva validación Android/visual
+pendiente. Ajustes completos, páginas, glifos/widgets y resto de contraste abiertos;
+no cierre de toda la UI ni inicio de otra entrega B07. Ver PRE_B07_UI1_LAYOUT.md.
+
 ### Pre-B07 — compilación verificada; corrección de navegación de captura
 
 Run43683456015/958b8c96 SUCCESS: seis fases B01–B06 aprobadas. Comparación43683456052

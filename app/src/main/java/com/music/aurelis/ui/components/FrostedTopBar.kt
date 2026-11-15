@@ -1,4 +1,6 @@
 // Aurelis © 2026. GPL-3.0-or-later
+// Insets and floating action/accessory layout adapted from BitChord b690dc1 (GPLv3).
+// Original project attribution and source details are retained in NOTICE.
 package com.music.aurelis.ui.components
 
 import androidx.compose.animation.AnimatedContent
@@ -46,6 +48,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.music.aurelis.ui.icons.AurelisIcons
+import com.music.aurelis.data.ProfileRepository
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.ui.theme.stableStatusBarInsets
@@ -66,6 +75,18 @@ fun topBarHeight(): Dp =
 
 @Composable
 fun topBarContentPadding(): Dp = topBarHeight() + TopBarContentGap
+
+/** The account affordance opens the single local profile and settings. */
+@Composable
+fun LocalProfileButton(onClick: () -> Unit) {
+    val profile by ProfileRepository.state.collectAsStateWithLifecycle()
+    IconButton(onClick = onClick, modifier = Modifier.size(48.dp)
+        .semantics { contentDescription = "Perfil" }) {
+        val avatar = profile.profile.avatar
+        if (avatar == null) Icon(AurelisIcons.Artist, contentDescription = null)
+        else AsyncImage(avatar, null, Modifier.size(32.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+    }
+}
 
 @Composable
 fun FrostedTopBar(
@@ -111,7 +132,7 @@ fun FrostedTopBar(
                 .windowInsetsPadding(stableStatusBarInsets())
                 .height(TopBarContentHeight),
         ) {
-            AnimatedContent(
+            if (!artworkPageChrome && accessory == null && scrolled()) AnimatedContent(
                 targetState = trailingTitle,
                 transitionSpec = {
                     (fadeIn(animationSpec = tween(260)) + slideInHorizontally(animationSpec = tween(260)) { it / 3 }) togetherWith
@@ -148,8 +169,32 @@ fun FrostedTopBar(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                } else Text(title, style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth())
+            }
+            if (onBack != null) {
+                IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)
+                    .padding(start = 14.dp).size(48.dp)
+                    .liquidGlass(RoundedCornerShape(percent = 50))) {
+                    Icon(AurelisIcons.ArrowBack, stringResource(com.music.aurelis.R.string.back))
                 }
             }
+            Row(Modifier.align(Alignment.CenterEnd)
+                .then(if (accessory != null) Modifier.fillMaxWidth().padding(start = 16.dp) else Modifier)
+                .padding(end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (accessory != null) {
+                    Box(Modifier.weight(1f).height(48.dp)
+                        .liquidGlass(RoundedCornerShape(percent = 50))) {
+                        CompositionLocalProvider(LocalSearchFieldOnSurface provides true) { accessory() }
+                    }
+                    Spacer(Modifier.width(ACCESSORY_GAP))
+                }
+                Row(Modifier.liquidGlass(RoundedCornerShape(percent = 50)),
+                    verticalAlignment = Alignment.CenterVertically) { actions() }
+            }
         }
+        if (!transparentBackdrop) HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
+        if (refreshing) CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally).size(24.dp))
     }
 }

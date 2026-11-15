@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.AppUpdateChecker
@@ -70,6 +74,10 @@ import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.ui.components.BottomTab
 import com.music.aurelis.ui.components.GlassNavBar
+import com.music.aurelis.ui.components.FrostedTopBar
+import com.music.aurelis.ui.components.LocalProfileButton
+import com.music.aurelis.ui.components.topBarContentPadding
+import com.music.aurelis.ui.components.TopBarContentGap
 import com.music.aurelis.ui.components.UpdateAvailableDialog
 import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.screens.HomeScreen
@@ -206,6 +214,17 @@ internal fun AurelisNavigationContent(
     val userState by userStore.state.collectAsState()
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
     val route = navigator.visibleRoute()
+    var bottomChromeHeight by remember { mutableIntStateOf(0) }
+    var searchFocusRequested by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val openSettings = {
+        focusManager.clearFocus()
+        keyboard?.hide()
+        navigator.push(AppRoute.Settings)
+    }
+    val bottomContentPadding = with(LocalDensity.current) { bottomChromeHeight.toDp() } + TopBarContentGap
+    val listPadding = PaddingValues(top = topBarContentPadding(), bottom = bottomContentPadding)
     val dock = remember { PlayerDock() }
     val panelScope = rememberCoroutineScope()
     val panelMotion = remember(navigator, dock, panelScope) {
@@ -259,6 +278,15 @@ internal fun AurelisNavigationContent(
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
             .onSizeChanged { dock.sheetTravel = it.height.toFloat() }.onGloballyPositioned { dock.reportHost(it) },
         pageModifier = Modifier.hazeSource(hazeState).then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier),
+        pageBottomPadding = bottomContentPadding,
+        topBar = {
+            if (route == null && navigator.selectedTab != AppTab.SEARCH) {
+                FrostedTopBar(title = tabs[navigator.selectedTab.ordinal].label, scrolled = { false },
+                    transparentBackdrop = true, artworkPageChrome = true,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    actions = { LocalProfileButton(openSettings) })
+            }
+        },
         tabContent = { tab ->
             when (tab) {
             AppTab.HOME -> {
@@ -279,7 +307,7 @@ internal fun AurelisNavigationContent(
                     onArtistClick = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
-                    contentPadding = PaddingValues(bottom = 180.dp),
+                    contentPadding = listPadding,
                     libraryState = libraryUiState.libraryState,
                     isRefreshing = libraryUiState.isRefreshing,
                     favorites = home.favorites,
@@ -316,7 +344,7 @@ internal fun AurelisNavigationContent(
                         genres.firstOrNull { it.key == genre.key }?.let {
                             navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key))
                         }
-                    }, PaddingValues(bottom = 180.dp))
+                    }, listPadding)
             }
             AppTab.LIBRARY -> {
                 val listState = rememberLazyListState()
@@ -329,13 +357,13 @@ internal fun AurelisNavigationContent(
                     LibraryLink(stringResource(R.string.home_favorites), AurelisIcons.Heart) { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
                     LibraryLink(stringResource(R.string.home_playlists), AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
                     LibraryLink(stringResource(R.string.replay), AurelisIcons.Clock) { navigator.push(AppRoute.Replay) },
-                    LibraryLink(stringResource(R.string.navigation_settings), AurelisIcons.Home) { navigator.push(AppRoute.Settings) },
+                    LibraryLink(stringResource(R.string.navigation_settings), AurelisIcons.Settings, openSettings),
                 )
                 LibraryScreen(
                     listState = listState,
                     links = links,
                     onShowAll = {},
-                    contentPadding = PaddingValues(bottom = 180.dp),
+                    contentPadding = listPadding,
                 )
             }
             AppTab.SEARCH -> {
@@ -376,8 +404,9 @@ internal fun AurelisNavigationContent(
                     results = if (results == null || searchCategory in listOf(LocalSearchCategory.ALL, LocalSearchCategory.SONGS)) results else emptyList(),
                     category = searchCategory, onCategoryChange = { searchCategory = it },
                     listState = searchListState,
-                    focusRequested = false,
-                    onFocusHandled = { },
+                    focusRequested = searchFocusRequested,
+                    onFocusHandled = { searchFocusRequested = false },
+                    onOpenProfile = openSettings,
                     onSongClick = { songs, index -> saveQuery(); playbackViewModel.playSongs(songs, index) },
                     onSongLongPress = { actionSong = it },
                     history = history,
@@ -388,8 +417,8 @@ internal fun AurelisNavigationContent(
                     onHistoryClear = { searchHistory.clear(); history = searchHistory.entries },
                     currentSong = playbackState.currentSong,
                     isPlaying = playbackState.isPlaying,
-                    contentPadding = PaddingValues(bottom = 180.dp),
-                    topPadding = 0.dp,
+                    contentPadding = PaddingValues(bottom = bottomContentPadding),
+                    topPadding = TopBarContentGap,
                 )
             }
             }
@@ -426,7 +455,7 @@ internal fun AurelisNavigationContent(
         bottomBar = {
             Column(
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                    .navigationBarsPadding(),
+                    .onSizeChanged { bottomChromeHeight = it.height }.navigationBarsPadding().imePadding(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (!playbackState.isConnected && playbackState.errorMessage != null) {
@@ -441,7 +470,11 @@ internal fun AurelisNavigationContent(
                 GlassNavBar(
                     tabs = tabs,
                     selectedIndex = navigator.selectedTab.ordinal,
-                    onTabSelected = { index -> AppTab.entries.getOrNull(index)?.let(navigator::selectTab) },
+                    onTabSelected = { index -> AppTab.entries.getOrNull(index)?.let { selected ->
+                        navigator.selectTab(selected)
+                        if (selected == AppTab.SEARCH) searchFocusRequested = true
+                        else { focusManager.clearFocus(); keyboard?.hide() }
+                    } },
                     song = playbackState.currentSong,
                     isPlaying = playbackState.isPlayRequested,
                     isLoading = playbackState.isLoading,
@@ -454,7 +487,9 @@ internal fun AurelisNavigationContent(
                     onPlayPause = { playbackViewModel.togglePlayPause() },
                     onNext = { playbackViewModel.next() },
                     onPrevious = { playbackViewModel.previous() },
-                    onExpand = { if (playbackState.currentSong != null) panelMotion.open() },
+                    onExpand = { if (playbackState.currentSong != null) {
+                        focusManager.clearFocus(); keyboard?.hide(); panelMotion.open()
+                    } },
                     dock = dock, pull = panelMotion,
                     modifier = Modifier.fillMaxWidth(),
                 )

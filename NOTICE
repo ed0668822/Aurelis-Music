@@ -1,6 +1,15 @@
 AURELIS MUSIC — AVISOS LEGALES Y ATRIBUCIONES
 ===========================================
 
+Pre-B07 UI1 — common layout adaptation:
+BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3, original project and
+contributors retained under the notices below. Source: ui/components/FrostedTopBar.kt,
+MainActivity.kt and ui/components/GlassNavBar.kt under app/src/main/java/com/music/bitchord/.
+Adapted measured top insets, floating header actions/accessory, persistent playback
+chrome and MiniPlayer-before-tabs order to Aurelis local profile and single session.
+No full-file replacement or font import. Exact glass fold/docking remains pending.
+Source hashes and scope: docs/migration/beta-local/LICENSE_AUDIT.md and PRE_B07_UI1_LAYOUT.md.
+
 Identificación del proyecto: Aurelis © 2026. GPL-3.0-or-later.
 Repositorio: https://github.com/ed0668822/Aurelis-Music
 

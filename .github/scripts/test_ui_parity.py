@@ -15,6 +15,67 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_fixture_session_requires_this_packages_state_and_metadata(self):
+        # Format observed in UI-4; another package's session must not leak into it.
+        dump = '''      package=com.music.bitchord
+      active=true
+      state=PlaybackState {state=NONE(0), position=0}
+      metadata: null
+      package=com.music.aurelis
+      active=true
+      state=PlaybackState {state=PAUSED(2), position=12321}
+      metadata: size=28, description=Parity Track 01, Parity Artist, Parity Album 1
+'''
+        self.assertFalse(parity.fixture_session(dump, "com.music.bitchord"))
+        self.assertTrue(parity.fixture_session(dump, "com.music.aurelis", (2,)))
+        self.assertFalse(parity.fixture_session(dump, "com.music.aurelis", (3,)))
+        self.assertFalse(parity.fixture_session(dump.replace("Parity Track 01", "Parity Track 02"), "com.music.aurelis"))
+
+    def test_song_row_and_distant_header_transport_are_not_a_miniplayer(self):
+        rows = parity.nodes('''<hierarchy>
+          <node text="Play" bounds="[200,1470][400,1560]"/>
+          <node text="Parity Track 01" bounds="[246,1847][551,1905]"/>
+        </hierarchy>''')
+        self.assertEqual([], parity.mini_player_rows(rows))
+        rows += parity.nodes('<hierarchy><node content-desc="Next" bounds="[820,1470][960,1560]"/></hierarchy>')
+        self.assertEqual([], parity.mini_player_rows(rows))
+        rows += parity.nodes('<hierarchy><node text="Parity Track 01&#10;Parity Artist" bounds="[180,1470][700,1560]"/></hierarchy>')
+        self.assertEqual(1, len(parity.mini_player_rows(rows)))
+
+    def test_settings_root_recognizes_reference_above_the_fold_without_appearance(self):
+        rows = parity.nodes('''<hierarchy><node text="Settings" bounds="[48,328][500,450]"/>
+          <node class="android.widget.EditText" bounds="[60,480][1000,630]"/>
+          <node text="Account &amp; integrations" bounds="[60,700][900,800]"/></hierarchy>''')
+        self.assertTrue(parity.settings_root(rows))
+        self.assertFalse(parity.settings_root(parity.nodes('<hierarchy><node text="Settings" bounds="[0,20][90,60]"/></hierarchy>')))
+
+    def test_capture_rechecks_miniplayer_instead_of_trusting_a_previous_tap(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
+             patch.object(parity, "tree", return_value='<hierarchy><node text="Parity Track 01" bounds="[246,1847][551,1905]"/></hierarchy>'), \
+             patch.object(parity, "foreground", return_value=True), \
+             patch.object(parity, "screenshot", return_value=[1080, 1920]), \
+             patch.object(parity, "shell", return_value="package=com.music.bitchord\n active=true\n state=PlaybackState {state=NONE(0)}\n metadata: null\n"):
+            result = {"screens": []}
+            parity.record_state(result, "bitchord", "dark", "miniplayer", True)
+            self.assertFalse(result["screens"][0]["reached"])
+            self.assertIn("paused fixture session", result["screens"][0]["reason"])
+
+    def test_reset_uses_same_glass_and_fresh_data_for_each_app_and_theme(self):
+        def response(*args, **kwargs):
+            if args[:2] == ("pm", "clear"): return "Success"
+            if args[:3] == ("cmd", "locale", "get-app-locales"): return "Locales are [en]"
+            return ""
+        with patch.object(parity, "shell", side_effect=response) as shell:
+            for app in parity.PACKAGES:
+                for theme in ("dark", "light"):
+                    prefs = parity.seed_preferences(app, theme)
+                    self.assertTrue(prefs["reset_app_data"])
+                    self.assertTrue(prefs["liquid_glass"])
+            bodies = [call.kwargs["input_data"] for call in shell.call_args_list if "input_data" in call.kwargs]
+            self.assertEqual(4, len(bodies))
+            self.assertTrue(all(b'name="liquid_glass" value="true"' in body for body in bodies))
+            self.assertEqual(4, sum(call.args[:2] == ("pm", "clear") for call in shell.call_args_list))
+
     def fixture(self, base, filters=None, output="original.apk", package="com.music.bitchord", abi="arm64-v8a"):
         base.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(base / "original.apk", "w") as archive:

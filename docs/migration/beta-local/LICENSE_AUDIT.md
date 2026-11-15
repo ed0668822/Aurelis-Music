@@ -474,3 +474,22 @@ CI, sin medios del usuario ni de BitChord. Pillow/FFmpeg son herramientas de pru
 no dependencias nuevas de la app. Se compila la referencia fija sin editarla, sin
 copiar fuentes/tipografías a Aurelis ni sustituir sus atribuciones. Los APK de prueba
 no son una Release ni certifican licencias de fuentes incorporadas por el origen.
+
+## Pre-B07 UI1 — estructura común tras auditoría visual
+
+Referencia inmutable BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3 según
+su LICENSE, conservando contribuyentes/atribuciones originales en NOTICE:
+
+| Fuente consultada | SHA256 |
+|---|---|
+| app/src/main/java/com/music/bitchord/ui/components/FrostedTopBar.kt | 58aefbaabffadaf172faee21b4e6b94ec1b48c782651fd2913eb9dc3d04f83c9 |
+| app/src/main/java/com/music/bitchord/MainActivity.kt | 90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2 |
+| app/src/main/java/com/music/bitchord/ui/components/GlassNavBar.kt | 73e76c658ad723955b6ab2ec6c2a55ee7e01371896de801d4cf6b4546a7fe191 |
+
+Se adapta el contrato de insets, acciones/accesorio/perfil, permanencia de barras y
+orden MiniPlayer/pestañas a los componentes y repositorios existentes de Aurelis.
+No se incorporan cuentas remotas, fuentes ni dependencias. No se copia GlassNavBar
+completo: el acoplamiento/fold exacto sigue pendiente. Se conservan también avisos
+previos Echo-Music/backdrop y otros terceros. Perfil, medición de reservas,
+verificadores Python, pruebas y documentos son aportaciones Aurelis con sus
+cabeceras. No se elimina ni reclasifica una licencia ajena.

@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.navigation
 
 import androidx.compose.foundation.layout.size
@@ -28,6 +29,33 @@ import org.robolectric.annotation.GraphicsMode
 class GlassNavigationTest {
     @get:Rule(order = 0) val registerActivity = com.music.aurelis.ui.RobolectricActivityRule()
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun currentTrackAppearsAboveTabsWithoutMovingTheirBottomAnchor() {
+        val fixture = com.music.aurelis.data.model.LocalSong(
+            "fixture", "Local fixture", "Test artist", null,
+            "content://media/external/audio/media/1", null, 120_000L, null, null, null)
+        var song by mutableStateOf<com.music.aurelis.data.model.LocalSong?>(null)
+        compose.setContent { AurelisTheme {
+            CompositionLocalProvider(com.music.aurelis.ui.components.LocalGlassHardware provides false,
+                LocalReduceMotion provides true) {
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier
+                    .size(360.dp, 640.dp)) {
+                    GlassNavBar(listOf(BottomTab("Home", Icons.Default.Home)), 0, {}, song,
+                        false, false, {}, {}, {}, {}, modifier = androidx.compose.ui.Modifier
+                            .align(androidx.compose.ui.Alignment.BottomCenter))
+                }
+            }
+        } }
+        val tab = compose.onNode(hasText("Home") and isSelectable())
+        val before = tab.fetchSemanticsNode().boundsInRoot
+        compose.runOnIdle { song = fixture }
+        val withTrack = tab.fetchSemanticsNode().boundsInRoot
+        val mini = compose.onNodeWithTag("mini-player").fetchSemanticsNode().boundsInRoot
+        assertEquals(before.bottom, withTrack.bottom, 0.5f)
+        assertTrue(mini.bottom < withTrack.top)
+        compose.runOnIdle { song = null }
+        assertEquals(before.bottom, tab.fetchSemanticsNode().boundsInRoot.bottom, 0.5f)
+    }
     @Test fun pillSelectionKeepsTabsAccessibleAndInvokesOneNavigationAction() {
         var selected by mutableIntStateOf(0)
         var clicks = 0

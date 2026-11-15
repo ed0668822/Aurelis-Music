@@ -75,7 +75,7 @@ fun MiniPlayer(
                 IconButton(onClick = onNext, enabled = enabled && canNext) {
                     Icon(Icons.Rounded.SkipNext, "Siguiente", modifier = Modifier.size(25.dp))
                 }
-                IconButton(onClick = onClick) { Icon(Icons.Rounded.ExpandLess, "Abrir reproductor") }
+                IconButton(onClick = onClick, enabled = enabled) { Icon(Icons.Rounded.ExpandLess, "Abrir reproductor") }
             }
             LinearProgressIndicator(progress = { progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f },
                 modifier = Modifier.fillMaxWidth().height(2.dp))

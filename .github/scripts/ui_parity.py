@@ -104,6 +104,47 @@ def matches(rows, labels):
             for label in row.get("labels", [row["label"]]) for value in [label, *label.splitlines()])]
 
 
+def fixture_session(dump, package, states=(2, 3)):
+    """Never borrow another package's active session or merely accept a tap."""
+    records = re.finditer(r"^\s*package=(\S+)[ \t]*\n(.*?)(?=^\s*package=|\Z)", dump, re.M | re.S)
+    for record in records:
+        if record[1] != package:
+            continue
+        body = record[2]
+        state = re.search(r"state=PlaybackState \{state=(?:[A-Z_]+\()?(\d+)", body)
+        title = re.search(r"metadata:.*?description=([^,\n]+)", body)
+        if (state and int(state[1]) in states and title and title[1].strip() == "Parity Track 01"
+                and re.search(r"^\s*active=true\s*$", body, re.M)):
+            return True
+    return False
+
+
+def wait_fixture_session(package, states):
+    for attempt in range(6):
+        if fixture_session(shell("dumpsys", "media_session"), package, states):
+            return True
+        if attempt < 5:
+            time.sleep(0.75)
+    return False
+
+
+def mini_player_rows(rows):
+    """A library title is insufficient: require adjacent transport controls."""
+    titles = matches(rows, ("Parity Track 01",))
+    transport = matches(rows, ("Play", "Pause", "Reproducir", "Pausar", "Pausa"))
+    next_controls = matches(rows, ("Next", "Siguiente"))
+    def overlaps(a, b):
+        return a["bounds"][1] < b["bounds"][3] and b["bounds"][1] < a["bounds"][3]
+    return [title for title in titles if any(overlaps(title, control) for control in transport)
+            and any(overlaps(title, control) for control in next_controls)]
+
+
+def settings_root(rows):
+    return bool(matches(rows, LABELS["settings"]) and (
+        any(row["class"].endswith("EditText") for row in rows)
+        or matches(rows, ("Account & integrations", "Perfil del dispositivo"))))
+
+
 def tree():
     # XML is inspected and retained: no guessed screen coordinates.
     shell("uiautomator", "dump", "/sdcard/ui-parity.xml")
@@ -173,7 +214,11 @@ def record_state(result, app, theme, name, reached, reason=""):
         if not orientation_ok:
             reason = "Requested orientation was not verified in screenshot dimensions"
         if name in {"miniplayer", "player-portrait", "player-landscape", "lyrics"}:
-            (folder / "media-session.txt").write_text(shell("dumpsys", "media_session"))
+            session = shell("dumpsys", "media_session")
+            (folder / "media-session.txt").write_text(session)
+            if name == "miniplayer" and not (mini_player_rows(nodes(xml)) and fixture_session(session, PACKAGES[app], (2,))):
+                reached = False
+                reason = "Requires visible MiniPlayer transport and this app's paused fixture session"
         result["screens"].append({"app": app, "theme": theme, "state": name,
             "reached": bool(reached and current and orientation_ok), "foreground": current, "dimensions": dimensions,
             "reason": reason if reached and current else reason or "Target navigation/foreground was not verified",
@@ -195,14 +240,24 @@ def seed_preferences(app, theme):
     # Synthetic, disposable emulator data only. Original app source is unchanged.
     package = PACKAGES[app]
     shell("am", "force-stop", package)
+    if shell("pm", "clear", package) != "Success":
+        raise RuntimeError("Disposable comparison app data could not be reset")
+    shell("pm", "grant", package, "android.permission.READ_MEDIA_AUDIO")
+    shell("pm", "grant", package, "android.permission.POST_NOTIFICATIONS")
+    shell("cmd", "locale", "set-app-locales", package, "--user", "0", "--locales", "en")
+    locale = shell("cmd", "locale", "get-app-locales", package, "--user", "0")
+    if "[en]" not in locale:
+        raise RuntimeError("Comparison app locale was not verified: " + locale)
     if app == "bitchord":
         filename = "bitchord_settings.xml"
-        body = f'<map><boolean name="onboarding_complete" value="true"/><string name="theme_mode">{theme.upper()}</string></map>'
+        body = f'<map><boolean name="onboarding_complete" value="true"/><boolean name="liquid_glass" value="true"/><string name="theme_mode">{theme.upper()}</string></map>'
     else:
         filename = "aurelis_settings.xml"
-        body = f'<map><int name="theme_mode" value="{1 if theme == "light" else 2}"/></map>'
+        body = f'<map><boolean name="liquid_glass" value="true"/><int name="theme_mode" value="{1 if theme == "light" else 2}"/></map>'
     shell("run-as", package, "mkdir", "-p", "shared_prefs")
     shell("run-as", package, "sh", "-c", f"cat > shared_prefs/{filename}", input_data=body.encode())
+    return {"reset_app_data": True, "liquid_glass": True, "locale": locale, "theme": theme,
+            "font_exception": "Reference default; Aurelis authorized system font"}
 
 
 def launch(package):
@@ -229,7 +284,8 @@ def capture():
         "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
         "not_tested": ["widgets on a launcher", "gestures and animations in motion", "physical device", "pixel identity"],
         "font_policy": "Original reference default; Aurelis authorized system font. Difference remains visible.",
-        "fixture_preferences": "Disposable emulator only: skip reference remote onboarding, set explicit theme",
+        "fixture_preferences": "Disposable emulator only: reset each app/theme; explicit theme, Liquid Glass and locale; skip reference remote onboarding",
+        "scenario_preferences": {},
         "scope": "Evidence gathering only; Android Auto/TV/Wear excluded"}
     save(result)
     try:
@@ -282,26 +338,21 @@ def capture():
             result["stage"] = "install:" + app
             package = PACKAGES[app]
             adb("install", "-r", path)
-            shell("pm", "grant", package, "android.permission.READ_MEDIA_AUDIO")
-            # Permission exists in both original manifests; this is fixture setup, not a source edit.
-            shell("pm", "grant", package, "android.permission.POST_NOTIFICATIONS")
             for theme in ("dark", "light"):
                 result["stage"] = "capture:" + app + "/" + theme
                 shell("settings", "put", "system", "user_rotation", "0")
-                seed_preferences(app, theme); launch(package)
+                result["scenario_preferences"][app + "/" + theme] = seed_preferences(app, theme)
+                launch(package)
                 labels = nodes(tree())
                 home = bool(matches(labels, LABELS["home"]) and matches(labels, LABELS["library"]))
                 record_state(result, app, theme, "home", home)
                 library = tap(LABELS["library"])
                 record_state(result, app, theme, "library", library and bool(matches(nodes(tree()), LABELS["songs"])))
-                settings = tap(LABELS["profile"]) if app == "bitchord" else tap(LABELS["settings"], scroll=True)
-                markers = ("Appearance", "Apariencia", "Playback", "Audio local", "Nombre", "Sign in")
-                inspected = inspect_until(lambda rows: bool(matches(rows, markers)))
-                if settings and app == "bitchord" and not matches(inspected, markers):
-                    settings = tap(LABELS["settings"])
-                    inspected = inspect_until(lambda rows: bool(matches(rows, markers)))
-                verified = bool(matches(inspected, markers))
-                record_state(result, app, theme, "settings", settings and verified)
+                settings = tap(LABELS["profile"])
+                if not settings:
+                    settings = tap(LABELS["settings"], scroll=True)
+                inspected = inspect_until(settings_root)
+                record_state(result, app, theme, "settings", settings and settings_root(inspected))
                 # Reset navigation through a force-stop/launch without resetting library/preferences.
                 shell("am", "force-stop", package); launch(package)
                 search = tap(LABELS["search"])
@@ -310,13 +361,16 @@ def capture():
                 shell("am", "force-stop", package); launch(package)
                 local = tap(LABELS["library"]) and tap(LABELS["songs"], scroll=True)
                 record_state(result, app, theme, "local-songs", local and bool(matches(nodes(tree()), ("Parity Track 01",))))
-                playing = local and tap(("Parity Track 01",))
-                if playing:
-                    # Pause near the start. The actual session position is retained, not claimed identical.
-                    time.sleep(1)
-                    tap(("Pause", "Pausar", "Pausa"), bottom=True)
-                record_state(result, app, theme, "miniplayer", playing and bool(matches(nodes(tree()), ("Parity Track 01",))))
-                expanded = playing and (tap(("Abrir reproductor", "Open player", "Expand player")) or tap(("Parity Track 01",), bottom=True))
+                playing = False
+                for _ in range(2 if local else 0):
+                    # Use the visible header action, not a row clipped under floating bars.
+                    if tap(("Play", "Reproducir")) and wait_fixture_session(package, (3,)):
+                        playing = True
+                        break
+                paused = playing and tap(("Pause", "Pausar", "Pausa"), bottom=True) and wait_fixture_session(package, (2,))
+                mini = paused and bool(mini_player_rows(nodes(tree())))
+                record_state(result, app, theme, "miniplayer", mini)
+                expanded = mini and (tap(("Abrir reproductor", "Open player", "Expand player")) or tap(("Parity Track 01",), bottom=True))
                 player_markers = LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola", "Up next", "Cerrar reproductor")
                 player_labels = inspect_until(lambda rows: bool(matches(rows, player_markers)))
                 verified = bool(matches(player_labels, player_markers))
