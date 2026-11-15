@@ -5,7 +5,29 @@
 
 > **Excepción posterior para estas correcciones UI:** máximo **60 archivos distintos**, incluyendo sus correcciones, pruebas y documentación. El usuario pidió esperar y posteriormente autorizó «Continúa y termina». La excepción se aplica a esta entrega; no altera el alcance ni acredita paridad visual por compilación.
 
+> **Ampliación autorizada posterior:** máximo **62 archivos distintos para estas correcciones UI**, incluidos todos los commits de reparación. Sustituye el techo60 de esta entrega; el límite general de otros bloques sigue en30. El usuario autorizó expresamente aplicar el parche de los dos contratos de idioma y entregar contexto detallado.
+
 ## Continuación actual — primera entrega documental
+
+### Parche de contratos de idioma autorizado — techo62
+
+El usuario concede explícitamente62 archivos. Se aplica el parche ya revisable a
+LibraryUpdatesTest y PlaybackIntegrationTest. La compilación de varios artistas
+se compara con library_various_artists del idioma activo; el error de archivo
+se compara exactamente con playback_file_missing. Se conservan número de álbumes,
+clave MediaStore, artistas, cola, preparación y recuperación. No se modifica
+producción ni se fuerza español para pasar estas dos pruebas.
+
+7343104d: job Android settings-navigation132935852132 del workflow43754259741
+SUCCESS. Sus dos casos verifican ambos accesos, Atrás/recreación y el perfil,
+con/sin WAV en la sesión real; exige renderer hardware, Liquid Glass activo y
+blur no reducido. Este verde sí acredita esos recorridos en el emulador, no una
+prueba física de todos los teléfonos ni la equivalencia visual completa.
+La corrección de mensajes se comprobará en Debug/Release por Actions en el SHA
+nuevo. Dos revisiones estáticas del mismo agente; XML, parser Kotlin y diff
+permitidos localmente. No Gradle/Lint/APK/pruebas Android locales. Total62 rutas
+contando toda la entrega desde7da39774^ y sus reparaciones, sin otra rama/Release.
+
 
 ### Validación de 02bf90a5 — cierre nativo superado en Perfil; selectores y dos contratos de idioma
 

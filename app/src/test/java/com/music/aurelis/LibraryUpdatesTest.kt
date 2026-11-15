@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis
 
 import android.Manifest
@@ -108,7 +109,7 @@ class LibraryUpdatesTest {
         model.onForeground(); runCurrent()
         val state = model.uiState.value.libraryState as LibraryState.Success
         assertEquals(1, state.albums.size)
-        assertEquals("Varios artistas", state.albums.single().artist)
+        assertEquals(app.getString(R.string.library_various_artists), state.albums.single().artist)
         assertEquals("media:10", state.albums.single().key)
         assertEquals(2, state.artists.size)
         SettingsRepository.setFilterNonMusicAudio(false)

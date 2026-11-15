@@ -180,7 +180,7 @@ class PlaybackIntegrationTest {
     @Test fun failedFileIsVisibleAndRetryPreparesSameQueue() {
         play(); player.publish(player.snapshot.buildUpon().setPlaybackState(Player.STATE_IDLE)
             .setPlayerError(PlaybackException("test missing", null, PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND)).build()); settle()
-        assertTrue(vm.state.value.errorMessage!!.contains("ya no está disponible"))
+        assertEquals(app.getString(com.music.aurelis.R.string.playback_file_missing), vm.state.value.errorMessage)
         val before = player.prepares; vm.retry(); settle()
         assertEquals(before + 1, player.prepares); assertNull(vm.state.value.errorMessage)
         assertEquals(3, vm.state.value.queue.size)

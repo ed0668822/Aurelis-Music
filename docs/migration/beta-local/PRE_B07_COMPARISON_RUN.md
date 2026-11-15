@@ -1,6 +1,124 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # Comparación ejecutable previa a B07
 
+
+## Contexto de continuidad — ampliación a 62 autorizada
+
+Actualización solicitada expresamente por el usuario tras autorizar el parche de
+los dos contratos de idioma. Esta sección resume el estado verificado antes de
+ese nuevo commit; los resultados posteriores deben consultarse en Actions por SHA.
+
+- Repositorio: ed0668822/Aurelis-Music. Checkout activo de esta sesión:
+  `/workspace/Aurelis-Music-b03-repair`; no asumir `/workspace/Aurelis-Music`.
+- Única rama remota: `feature/bitchord-local-migration`; PR1 abierto, título
+  `Aurelis Music Beta UI and components`. No main, merge, rebase, force push ni
+  nueva rama remota/Release oficial. Commit/push del parche ya autorizados.
+- Identidad local: ed0668822 / ed0668822@gmail.com; usuario, correo verificado y
+  permiso push comprobados antes de esta entrega. Revalidar antes de commits futuros.
+- Techo de esta corrección UI ampliado explícitamente de60 a62 rutas distintas,
+  contando todo el historial de entrega desde `7da39774^`, pruebas/docs/config y
+  reparaciones. Las demás entregas mantienen el límite general30 salvo autorización.
+- Referencia local de solo lectura: `/workspace/BitChord`, commit fijo
+  `b690dc146009d4815825fa4a20815ef2e4ee8898`. No tomar main indiscriminadamente.
+- Preservar Aurelis, com.music.aurelis, perfil único local, AurelisPlaybackService,
+  música local y Liquid Glass. Android Auto/TV/Wear/streaming y otros excluidos
+  siguen fuera; B07 no avanza por cerrar este fallo.
+
+### Cierre reportado por el usuario y causa demostrada
+
+Perfil y Biblioteca→Ajustes llaman a la misma SettingsScreen. Los casos Android
+reales de221bebf5/43749820078 reproducen Process crashed. El diagnóstico ampliado
+299cdcd7/43751201636 registra APP CRASH(NATIVE), status11 y repetición hasta los
+frames449/450 de RenderNode::prepareTreeImpl/SkiaDisplayList en libhwui.
+La página se grababa completa en appBackdrop e incluía la cabecera de cristal que
+volvía a leer esa capa: fuente y lector formaban un ciclo de RenderNode.
+
+02bf90a5 coloca la fuente en el cuerpo/lista de Settings, Música local y Search,
+con la cabecera como hermana fuera de la grabación. AppNavigationHost evita una
+segunda fuente envolvente. No se desactiva cristal/Haze/refraction ni se cambian
+SDK/ABI/firma. El perfil de solo lectura conserva una fuente segura.
+
+El ensayo de02bf90a5 supera Perfil/recreación/Atrás sin el crash nativo, pero su
+selector no podía pulsar el texto hijo Library. 7343104d usa la acción del ancestro
+pulsable del mismo paquete y mantiene todas las comprobaciones. La misma entrega
+distingue la etiqueta Tema del EditText que contiene esa palabra en el test.
+
+**Evidencia positiva confirmada:** SHA7343104de98d9ef48081aa576f6be20170f87b64,
+workflow43754259741, job132935852132 settings-navigation SUCCESS. Sus dos métodos
+profileAndLibrarySettingsSurviveRecreation/profileAndLibrarySettingsPreserveRealPlayback
+recorren ambos accesos, recreación y Atrás, preservan perfil y reproducción real
+con WAV original. Exigen hardware renderer, Liquid Glass activo y blur no reducido.
+No equivale a validación física en el teléfono ni a paridad visual de toda la app.
+
+### UI, búsqueda, idioma y evidencia de comparación
+
+38bfd26b filtra controles individuales en Ajustes, oculta grupos sin coincidencias,
+expresa el vacío y reinicia scroll al cambiar consulta respetando restauración.
+Categorías, perfil, nombre/foto, carpetas, letras y callbacks existentes se conservan.
+Ajustes y selector de idioma usan recursos. Inglés/español:398 entradas existentes
+más nuevas tienen claves/tipos/plurales/formatos coherentes;183 etiquetas inglesas
+compatibles se adaptan del commit BitChord fijado. Procedencia en NOTICE y
+LICENSE_AUDIT. Conservar GPL/avisos originales; no relicenciar material de terceros.
+Otros idiomas declarados conservan fallback y otras pantallas todavía contienen
+textos hardcoded: no dar toda la localización por terminada.
+
+El comparador conserva modos plain/glass,36 estados exigidos por modo, reducción de
+movimiento igual en ambas apps, dataset FLAC/art/LRC original, temas claro/oscuro,
+locale y APK B01 inmutable del mismo SHA. No certifica animaciones en movimiento,
+hápticos físicos, widgets colocados en launcher ni identidad por píxel.
+
+Reparaciones de captura ya entregadas: errores ADB con stdout, timeouts acotados,
+XML antiguo eliminado antes de cada dump y reintento solo por errores transitorios;
+foco comprobado con dumpsys window completo; evidencia XML/PNG/ventana/actividad;
+logcat continuo, motivos de salida y anotaciones JUnit concisas. Una recuperación
+limitada del ANR confirmado de Pixel Launcher conserva la evidencia original;
+ANR/crashes de Aurelis/BitChord o recurrentes conservan fallo.
+
+ZIP UI9-glass:36 capturas tapadas por el launcher; no comparables. ZIP UI3 volvió
+a aportarse, pero pertenece a958b8c96 y es histórico. No reaplicar sus diferencias.
+Persisten fallos de captura en referencia/player/letras que deben comprobarse en
+el run más reciente. No atribuirlos a GPU/OOM sin su evidencia concreta.
+
+### Parche autorizado de dos pruebas y resultado que falta comprobar
+
+Principal43754259793 de7343104d: B01/B02/B05 SUCCESS, B03 FAILURE, B04 SKIPPED y B06
+FAILURE. Debug/Release seguían pendientes de aprobar el conjunto completo; el verde
+del job Settings independiente no sustituye las puertas principales.
+
+El parche nuevo cambia exactamente estos contratos:
+- LibraryUpdatesTest: artista de álbum compilado se compara con el recurso
+  library_various_artists del idioma activo, conservando IDs/álbumes/artistas.
+- PlaybackIntegrationTest: el error de archivo se compara exactamente con
+  playback_file_missing, conservando cola, retry/preparación y recuperación.
+
+No se elimina ninguna prueba, no se fuerza idioma en producción y no se reduce
+ninguna puerta. La cabecera Aurelis se añade al test propio que carecía de ella.
+Ambos nuevos archivos llevan el acumulado de60 a62. PROGRESS_TRACKER también
+registra la autorización; estas dos páginas ya pertenecían al inventario.
+
+Dos revisiones del mismo agente, no independientes. Local: lectura/contratos,
+parser Kotlin y git diff --check; no Android/Gradle/Lint/APK local. Las34 pruebas
+Python del capturador ya habían aprobado ambos materiales; el parche no las cambia.
+El siguiente paso obligatorio es comprobar Debug/Release, Kover y B01–B06 del nuevo
+SHA, registrar resultado real y corregir fallos del mismo bloque antes de avanzar.
+La comparación visual, gestos, widgets y validación física siguen abiertos.
+
+### Herramientas y preservación del entorno
+
+Metadatos API y ZIP de logs de runs completos funcionan; ZIP de artefactos y logs
+individuales pueden redirigir a dominios Azure bloqueados con403. No evadir proxy/
+TLS ni exponer tokens o enlaces firmados. Usar Jobs/check-runs/anotaciones; las
+anotaciones tienen límite4096, de ahí el resumen JUnit al principio. Solicitar el
+artefacto adecuado al usuario si es imprescindible y sigue inaccesible.
+
+Evidencias fuera del checkout en `/workspace/aurelis-validation/settings-repair`:
+propuesta original, patches revisados, logs ZIP oficiales, trazas nativas,
+anotaciones, inventario y validaciones remotas. Pueden no transferirse a otro
+entorno. Preservar `.gradle/`, `app/.cxx/` y `app/build/` no seguidos; no añadirlos.
+Leer AGENTS/SECURITY y planes reales antes de futuras modificaciones; no repetir
+entregas terminadas ni dar B07/B12/B13 por cerrados a partir de esta reparación.
+
+
 ## Corrección del preflight después de cb83c974
 
 Principal153/43742631853 falla antes de Gradle en la auditoría obligatoria de
