@@ -15,6 +15,31 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_timeout_preserves_partial_device_output(self):
+        import subprocess
+        error = subprocess.TimeoutExpired(["adb"], 60, output=b"waiting for accessibility", stderr=b"partial error")
+        with patch.object(parity.subprocess, "run", side_effect=error):
+            with self.assertRaisesRegex(RuntimeError, "waiting for accessibility; stderr=partial error"):
+                parity.adb("shell", "uiautomator", "dump")
+
+    def test_material_modes_seed_identical_reduced_motion_in_both_apps(self):
+        def response(*args, **kwargs):
+            if args[:2] == ("pm", "clear"): return "Success"
+            if args[:3] == ("cmd", "locale", "get-app-locales"): return "Locales are [en]"
+            return ""
+        for mode in ("plain", "glass"):
+            with patch.dict(os.environ, {"UI_COMPARISON_MATERIAL": mode}), patch.object(parity, "shell", side_effect=response) as shell:
+                for app in parity.PACKAGES:
+                    prefs = parity.seed_preferences(app, "dark")
+                    self.assertEqual(mode == "glass", prefs["liquid_glass"])
+                    self.assertTrue(prefs["reduce_animation"])
+                bodies = [call.kwargs["input_data"] for call in shell.call_args_list if "input_data" in call.kwargs]
+                self.assertEqual(2, len(bodies))
+                self.assertTrue(all(b'name="reduce_animation" value="true"' in body for body in bodies))
+        with patch.dict(os.environ, {"UI_COMPARISON_MATERIAL": "unknown"}), patch.object(parity, "shell") as shell:
+            with self.assertRaises(ValueError): parity.seed_preferences("aurelis", "dark")
+            shell.assert_not_called()
+
     def test_adb_failure_preserves_stdout_diagnostics(self):
         import subprocess
         failed = subprocess.CompletedProcess(["adb"], 255, b"ERROR: could not get idle state.", b"")
@@ -91,7 +116,7 @@ class ParityEvidenceTest(unittest.TestCase):
             if args[:2] == ("pm", "clear"): return "Success"
             if args[:3] == ("cmd", "locale", "get-app-locales"): return "Locales are [en]"
             return ""
-        with patch.object(parity, "shell", side_effect=response) as shell:
+        with patch.dict(os.environ, {"UI_COMPARISON_MATERIAL": "glass"}), patch.object(parity, "shell", side_effect=response) as shell:
             for app in parity.PACKAGES:
                 for theme in ("dark", "light"):
                     prefs = parity.seed_preferences(app, theme)

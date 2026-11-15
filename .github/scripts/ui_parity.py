@@ -66,8 +66,14 @@ def select_reference(base, out):
 
 
 def adb(*args, binary=False, input_data=None):
-    result = subprocess.run(["adb", *map(str, args)], input=input_data,
-                            capture_output=True, timeout=60)
+    try:
+        result = subprocess.run(["adb", *map(str, args)], input=input_data,
+                                capture_output=True, timeout=60)
+    except subprocess.TimeoutExpired as error:
+        def partial(value):
+            return (value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value or "")[-4000:]
+        raise RuntimeError("adb timed out after 60 seconds: " + " ".join(map(str, args[:3])) +
+            "; stdout=" + partial(error.stdout) + "; stderr=" + partial(error.stderr)) from error
     if result.returncode:
         raise RuntimeError("adb command failed (exit " + str(result.returncode) + "): " +
                            " ".join(map(str, args[:3])) + ": stderr=" + result.stderr.decode("utf-8", errors="replace")[-4000:]
@@ -257,9 +263,19 @@ def save(result):
     (OUT / "results.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
 
 
+def material_mode():
+    mode = os.environ.get("UI_COMPARISON_MATERIAL", "glass")
+    if mode not in {"plain", "glass"}:
+        raise ValueError("Unknown comparison material mode")
+    return mode
+
+
 def seed_preferences(app, theme):
     # Synthetic, disposable emulator data only. Original app source is unchanged.
     package = PACKAGES[app]
+    mode = material_mode()
+    glass = mode == "glass"
+    common = f'<boolean name="liquid_glass" value="{str(glass).lower()}"/><boolean name="reduce_animation" value="true"/>'
     shell("am", "force-stop", package)
     if shell("pm", "clear", package) != "Success":
         raise RuntimeError("Disposable comparison app data could not be reset")
@@ -271,13 +287,13 @@ def seed_preferences(app, theme):
         raise RuntimeError("Comparison app locale was not verified: " + locale)
     if app == "bitchord":
         filename = "bitchord_settings.xml"
-        body = f'<map><boolean name="onboarding_complete" value="true"/><boolean name="liquid_glass" value="true"/><string name="theme_mode">{theme.upper()}</string></map>'
+        body = f'<map><boolean name="onboarding_complete" value="true"/>{common}<string name="theme_mode">{theme.upper()}</string></map>'
     else:
         filename = "aurelis_settings.xml"
-        body = f'<map><boolean name="liquid_glass" value="true"/><int name="theme_mode" value="{1 if theme == "light" else 2}"/></map>'
+        body = f'<map>{common}<int name="theme_mode" value="{1 if theme == "light" else 2}"/></map>'
     shell("run-as", package, "mkdir", "-p", "shared_prefs")
     shell("run-as", package, "sh", "-c", f"cat > shared_prefs/{filename}", input_data=body.encode())
-    return {"reset_app_data": True, "liquid_glass": True, "locale": locale, "theme": theme,
+    return {"reset_app_data": True, "liquid_glass": glass, "reduce_animation": True, "material_mode": mode, "locale": locale, "theme": theme,
             "font_exception": "Reference default; Aurelis authorized system font"}
 
 
@@ -307,7 +323,8 @@ def capture():
         "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
         "not_tested": ["widgets on a launcher", "gestures and animations in motion", "physical device", "pixel identity"],
         "font_policy": "Original reference default; Aurelis authorized system font. Difference remains visible.",
-        "fixture_preferences": "Disposable emulator only: reset each app/theme; explicit theme, Liquid Glass and locale; skip reference remote onboarding",
+        "fixture_preferences": "Disposable emulator only: reset app/theme; matched material and reduced motion, explicit locale; skip reference remote onboarding",
+        "material_mode": material_mode(),
         "scenario_preferences": {},
         "scope": "Evidence gathering only; Android Auto/TV/Wear excluded"}
     save(result)
@@ -400,15 +417,18 @@ def capture():
                 paused = playing and tap(("Pause", "Pausar", "Pausa"), bottom=True) and wait_fixture_session(package, (2,))
                 mini = paused and bool(mini_player_rows(nodes(tree())))
                 record_state(result, app, theme, "miniplayer", mini)
+                result["stage"] = "capture:" + app + "/" + theme + "/player-portrait"
                 expanded = mini and (tap(("Abrir reproductor", "Open player", "Expand player")) or expand_miniplayer())
                 player_markers = LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola", "Up next", "Cerrar reproductor")
                 player_labels = inspect_until(lambda rows: bool(matches(rows, player_markers)))
                 verified = bool(matches(player_labels, player_markers))
                 record_state(result, app, theme, "player-portrait", expanded and verified)
+                result["stage"] = "capture:" + app + "/" + theme + "/player-landscape"
                 if expanded and verified:
                     shell("settings", "put", "system", "user_rotation", "1"); time.sleep(2)
                 record_state(result, app, theme, "player-landscape", expanded and verified and bool(matches(nodes(tree()), ("Parity Track 01",))) and bool(matches(nodes(tree()), player_markers)))
                 shell("settings", "put", "system", "user_rotation", "0"); time.sleep(2)
+                result["stage"] = "capture:" + app + "/" + theme + "/lyrics"
                 lyrics = expanded and tap(LABELS["lyrics"], scroll=True)
                 lyric_nodes = inspect_until(lambda rows: any("Parity line" in n["label"] for n in rows))
                 text = [n["label"] for n in lyric_nodes]

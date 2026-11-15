@@ -1,6 +1,29 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # Comparación ejecutable previa a B07
 
+## Condición de captura vigente — después de run151
+
+El principal 43726486169/b60c9d5e terminó SUCCESS en las seis fases. La comparación
+43726486047 sí alcanzó ambos reproductores del origen, pero su siguiente lectura
+de accesibilidad durante letras agotó 60 s. Logs oficiales verificados. No hay
+evidencia suficiente para atribuir el timeout a GPU, memoria o muerte del emulador.
+
+La comparación ejecuta ahora dos jobs independientes `plain` y `glass`, con
+`reduce_animation=true` en las preferencias desechables de ambas apps. El origen
+usa esa misma clave; su modo high_performance está desactivado por defecto y no
+anula esta preferencia. Material, tema, locale y reducción quedan en results.json.
+Se conservan SDK/ABI/GPU, APKs originales y configuración de producción. No se
+modifica el checkout de BitChord ni se suprimen estados. Cada job exige 36 estados;
+si cualquiera falla, el workflow conserva el fallo. No certifica movimiento/hápticos
+ni el aspecto del estado animado. Es una prueba de diseño estático en ambos materiales.
+
+Artefactos: `Aurelis-BitChord-UI-<n>-plain` y `Aurelis-BitChord-UI-<n>-glass`.
+`fail-fast=false` permite terminar y conservar ambas galerías. ADB guarda stdout/
+stderr parcial en timeouts y registra la etapa exacta. No se supone que esta nueva
+condición resuelva el bloqueo hasta comprobar el siguiente run. 27 regresiones
+Python pasan tanto bajo plain como glass; actionlint/py_compile/diff correctos,
+dos revisiones estáticas del mismo agente, 54 archivos acumulados ≤ 60.
+
 Autorización «Continúa» tras propuesta de compilar/instalar BitChord y Aurelis en
 Actions para compararlos. Base Aurelis b8ee8147; run43670279287 SUCCESS confirmado.
 No implementación B07, Android Auto/TV/Wear excluidos. Incorporar los cambios de

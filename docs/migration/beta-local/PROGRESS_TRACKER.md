@@ -7,6 +7,25 @@
 
 ## Continuación actual — primera entrega documental
 
+### Pre-B07 — run151 aprobado; captura estática separada por material
+
+b60c9d5e/run43726486169 SUCCESS: B01/B02/B03/B04/B05/B06 aprobados, verificados
+por API. Se resuelven los fallos anteriores de pruebas; no se inicia B07 por ello.
+Comparación 43726486047: logs ZIP oficiales leídos y CRC correcto. Por primera vez
+MiniPlayer y reproductores vertical/horizontal del origen REACHED; el siguiente
+dump de accesibilidad durante el paso de letras agota 60 s. Eso no demuestra una
+caída del emulador ni identifica por sí solo la causa del bloqueo.
+
+Se separan dos capturas con material plain/glass y reducción de animación activa
+en ambas apps. Es configuración del emulador desechable, no producción ni edición
+de BitChord. Cada modo conserva 36 estados exigidos, JSON, galería y resultado real;
+fail-fast=false permite guardar la otra evidencia sin convertir un fallo en éxito.
+No se certifican gestos/animaciones ni equivalencia por reducir movimiento. El timeout
+ADB conserva también su salida parcial y la etapa distingue player/letras.
+27 tests Python aprobados bajo ambos entornos de material, actionlint, py_compile y
+diff --check; dos revisiones del mismo agente. Cinco archivos, 54 rutas acumuladas
+de 60. Nueva comparación y CI pendientes; no Gradle/Android local.
+
 ### Reparación UI2 — run150 y comparación7
 
 0a7dc77c/run43697636368: B01/B02/B05 SUCCESS; B03/B06 FAILURE, B04 SKIPPED.

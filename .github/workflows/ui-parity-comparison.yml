@@ -80,6 +80,12 @@ jobs:
           retention-days: 3
   compare:
     needs: [aurelis, reference]
+    strategy:
+      fail-fast: false
+      matrix:
+        material: [plain, glass]
+    env:
+      UI_COMPARISON_MATERIAL: ${{ matrix.material }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -124,7 +130,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: Aurelis-BitChord-UI-${{ github.run_number }}
+          name: Aurelis-BitChord-UI-${{ github.run_number }}-${{ matrix.material }}
           path: ci-ui-comparison/
           retention-days: 14
           if-no-files-found: error
