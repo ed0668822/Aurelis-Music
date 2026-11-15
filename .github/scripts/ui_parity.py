@@ -280,6 +280,8 @@ def verify_apk(path, package):
 
 def capture():
     OUT.mkdir(exist_ok=True)
+    logcat = None
+    logcat_stream = None
     result = {"schema": 1, "aurelis_commit": os.environ.get("GITHUB_SHA"), "reference_commit": REFERENCE_SHA,
         "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
         "not_tested": ["widgets on a launcher", "gestures and animations in motion", "physical device", "pixel identity"],
@@ -300,6 +302,10 @@ def capture():
         result["stage"] = "device_configuration"
         if shell("getprop", "ro.build.version.sdk") != "35":
             raise ValueError("Expected API35")
+        # Stream before navigating: a dead emulator cannot answer a final logcat dump.
+        logcat_stream = (OUT / "device-logcat.txt").open("wb")
+        logcat = subprocess.Popen(["adb", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash"],
+                                  stdout=logcat_stream, stderr=subprocess.STDOUT)
         shell("wm", "size", "1080x1920"); shell("wm", "density", "480")
         shell("settings", "put", "system", "font_scale", "1.0")
         shell("settings", "put", "system", "accelerometer_rotation", "0")
@@ -390,6 +396,15 @@ def capture():
         result["error"] = str(error)
         print(f"UI capture FAILED at {result['stage']}: {error}", flush=True)
     finally:
+        if logcat is not None:
+            logcat.terminate()
+            try:
+                logcat.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                logcat.kill()
+                logcat.wait(timeout=5)
+        if logcat_stream is not None:
+            logcat_stream.close()
         save(result)
     return 0 if result["capture_complete"] else 1
 

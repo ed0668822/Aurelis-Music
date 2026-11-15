@@ -5,6 +5,24 @@
 
 ## Continuación actual — primera entrega documental
 
+### Corrección de UI1 — run148 y comparación5
+
+Límite posterior del usuario:60 archivos distintos para estas correcciones.
+Run43689886654/9aeefaaa: B01/B02/B05 SUCCESS, B03/B06 FAILURE y B04 SKIPPED.
+ZIP oficial de logs descargado y CRC verificado; Debug y Release ejecutan406
+tests cada uno, con un fallo en ambos: NavigationIntegrationTest.kt:54 espera
+«Perfil del dispositivo», pero SettingsGroup usa uppercase(Locale.ROOT).
+Se corrige el texto esperado y se exige además la ruta Settings; no se elimina
+ni desactiva el test. Kover se omitió por fallar las suites, no causa raíz probada.
+Comparación43689886636 alcanza MiniPlayer pausado del origen, pero no verifica
+player y pierde ADB al girar: error closed y puerto5554 connection refused.
+ZIP UI5 bloqueado por proxy; no se atribuye la caída a GPU/RAM ni a Aurelis.
+Se añade logcat continuo conservado aun si muere el emulador; es diagnóstico,
+no una reparación demostrada de esa caída.22 pruebas Python aprobadas, revisión
+doble del mismo agente y diff --check; Android nuevo pendiente en Actions.
+Tres archivos de reparación,15 distintos de UI1 y26 de la comparación acumulada.
+No se inicia el siguiente grupo visual ni se declara toda la UI corregida.
+
 ### Pre-B07 UI1 — corrección de estructura común tras revisar UI-4
 
 Autorización «Entonces soluciona todo eso». Auditoría real de36 capturas/XML del

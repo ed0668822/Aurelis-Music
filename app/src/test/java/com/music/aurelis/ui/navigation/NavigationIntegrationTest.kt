@@ -51,7 +51,9 @@ class NavigationIntegrationTest {
         val profile = compose.onNodeWithContentDescription("Perfil").fetchSemanticsNode().boundsInRoot
         assertTrue("Library must start below the shared header", heading.top >= profile.bottom)
         compose.onNodeWithContentDescription("Perfil").performClick()
-        compose.onNodeWithText("Perfil del dispositivo").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(AppRoute.Settings, navigator.visibleRoute()) }
+        // SettingsGroup renders section headers in uppercase with Locale.ROOT.
+        compose.onNodeWithText("PERFIL DEL DISPOSITIVO").assertIsDisplayed()
         tab("Biblioteca").assertIsDisplayed()
         tab("Inicio").performClick().assertIsSelected()
         compose.runOnIdle { assertFalse(navigator.canGoBack) }
