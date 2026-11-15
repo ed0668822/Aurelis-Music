@@ -20,6 +20,7 @@ internal fun PlaybackToolsDialog(state: PlaybackState, onTimer: (Long, Boolean) 
                 Text(if (state.autoplayEnabled) "Desactivar continuación local" else "Activar continuación local")
             }
             state.autoplayStatus?.let { Text(it) }
+            state.listeningHistoryMessage?.let { Text(it) }
             Text("Velocidad: ${state.playbackSpeed}×")
             for (speed in listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)) TextButton(
                 onClick = { onSpeed(speed) }, enabled = state.canUsePlaybackTools && state.canSetPlaybackSpeed,

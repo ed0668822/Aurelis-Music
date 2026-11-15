@@ -455,3 +455,12 @@ anteriores. NOTICE registra alcance y separación respecto a totales legacy.
 Runner Bash y fixtures Python propios con cabeceras Aurelis. Sin copiar dependencias
 ni cambiar Kover/licencias; se consulta disponibilidad de artefactos oficiales sin
 incorporarlos al repositorio. Política de atribuciones anterior intacta.
+
+
+## B06.3-d — registro desde servicio y recuperación
+
+Diario AtomicFile, escritor IO acotado, conexión con el recorder y pruebas propios
+Aurelis, cabeceras GPL-3.0-or-later. Se reutiliza la identidad de ocurrencia de cola
+ya atribuida a BitChord; no se copian nuevos archivos del origen ni se sustituye
+su servicio. Sin dependencias nuevas, binarios o cambios de LICENSE. Se conservan
+las atribuciones anteriores y la separación entre eventos nuevos y totales legacy.

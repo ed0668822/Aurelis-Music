@@ -7,6 +7,7 @@ import com.music.aurelis.AurelisApplication
 import com.music.aurelis.data.*
 import com.music.aurelis.data.model.LocalSong
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 
 /** Restores and records the sole local profile. Owned by the existing service. */
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -14,12 +15,22 @@ internal class ProfilePlaybackBinding(
     private val context: Context,
     private val player: Player,
     private val scope: CoroutineScope,
+    private val captureStatus: (com.music.aurelis.data.stats.ListeningCaptureStatus) -> Unit = {},
     private val library: () -> LocalUserLibrary = { (context.applicationContext as AurelisApplication).userLibrary },
     private val songs: suspend () -> List<LocalSong> = {
         if (AudioPermission.isGranted(context)) LocalMediaRepository.getLibrarySongs(context, SettingsRepository.filterNonMusicAudio.value)
         else emptyList()
     },
 ) : Player.Listener {
+    private companion object {
+        fun writer(context: Context, profile: com.music.aurelis.data.model.ProfileId) =
+            com.music.aurelis.data.stats.ListeningEventWriter(
+                com.music.aurelis.data.stats.ListeningEventStore(context.applicationContext, profile),
+                com.music.aurelis.data.stats.ListeningEventJournal(context.applicationContext, profile),
+                writeAllowed = { !ProfileRepository.state.value.readOnly && ProfileRepository.profileId == profile })
+    }
+    private val events = writer(context.applicationContext, ProfileRepository.profileId)
+    private val statusJob = scope.launch { events.status.collect { captureStatus(it) } }
     private var recorder: ServicePlaybackRecorder? = null
     private var restoreJob: Job? = null
     private var closed = false
@@ -42,7 +53,7 @@ internal class ProfilePlaybackBinding(
         val active = ProfileRepository.profileId
         val store = LocalQueueStore(context, active)
         val snapshot = store.read()
-        recorder = ServicePlaybackRecorder(player, library(), store, scope, canSaveEmpty = { queueEdited })
+        recorder = ServicePlaybackRecorder(player, library(), store, scope, canSaveEmpty = { queueEdited }, event = { events.record(it) })
         restoreJob = scope.launch {
             if (snapshot == null) return@launch
             try {
@@ -69,10 +80,12 @@ internal class ProfilePlaybackBinding(
             catch (_: Exception) { /* Keep the snapshot when permissions/provider are unavailable. */ }
         }
     }
-    fun close() {
-        if (closed) return
-        closed = true
-        player.removeListener(this)
-        restoreJob?.cancel(); recorder?.close(); recorder = null
+    fun close(): Job {
+        if (!closed) {
+            closed = true
+            player.removeListener(this)
+            restoreJob?.cancel(); recorder?.close(); recorder = null; statusJob.cancel()
+        }
+        return events.close()
     }
 }

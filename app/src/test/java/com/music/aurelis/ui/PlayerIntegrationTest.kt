@@ -97,9 +97,10 @@ class PlayerIntegrationTest {
         var afterTrack = false
         compose.setContent { AurelisTheme {
             com.music.aurelis.ui.components.PlaybackToolsDialog(
-                PlaybackState(canUsePlaybackTools = true, canSetPlaybackSpeed = true, canSkipSilence = true, canSetAutoplay = true),
+                PlaybackState(canUsePlaybackTools = true, canSetPlaybackSpeed = true, canSkipSilence = true, canSetAutoplay = true, listeningHistoryMessage = "Algunos intervalos de escucha no se pudieron guardar."),
                 { millis, after -> duration = millis; afterTrack = after }, { speed = it }, { silence = it }, { autoplay = it }, {})
         } }
+        compose.onNodeWithText("Algunos intervalos de escucha no se pudieron guardar.").assertExists()
         compose.onNodeWithText("Activar continuación local").performScrollTo().performClick()
         compose.onNodeWithText("1.5×").performScrollTo().performClick()
         compose.onNodeWithText("Activar salto de silencio").performScrollTo().performClick()

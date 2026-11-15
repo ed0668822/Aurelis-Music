@@ -35,7 +35,7 @@ class ProfilePlaybackTest {
                     assertEquals("2", player.currentMediaItem?.mediaId); assertEquals(3456L, player.currentPosition)
                     assertFalse(player.playWhenReady); assertEquals(Player.REPEAT_MODE_ONE, player.repeatMode)
                     assertTrue(player.shuffleModeEnabled)
-                } finally { binding.close(); binding.close(); player.release() }
+                } finally { stop(binding); stop(binding); player.release() }
             }
         } finally { scope.cancel() }
     }
@@ -47,11 +47,18 @@ class ProfilePlaybackTest {
             withContext(NonCancellable) { gate.await() }; listOf(song("1"))
         })
         try {
-            dispatcher.scheduler.runCurrent(); binding.close(); gate.complete(Unit)
+            dispatcher.scheduler.runCurrent(); stop(binding); gate.complete(Unit)
             dispatcher.scheduler.runCurrent(); shadowOf(Looper.getMainLooper()).idle()
             assertEquals(0, player.mediaItemCount); assertEquals(saved, LocalQueueStore(app).read())
-        } finally { binding.close(); scope.cancel(); player.release() }
+        } finally { stop(binding); scope.cancel(); player.release() }
     }
+    private fun stop(binding: ProfilePlaybackBinding) {
+        runBlocking { withTimeout(10_000) { binding.close().join() } }
+    }
+    private fun stop(controls: LocalPlaybackCoordinator) {
+        runBlocking { withTimeout(10_000) { controls.close()?.join() } }
+    }
+
     private fun settle(dispatcher: kotlinx.coroutines.test.TestDispatcher) {
         dispatcher.scheduler.runCurrent(); shadowOf(Looper.getMainLooper()).idle(); dispatcher.scheduler.runCurrent()
     }
@@ -71,7 +78,7 @@ class ProfilePlaybackTest {
             assertEquals(listOf(2, 0, 1), queuePlaybackOrder(player))
             assertFalse(player.playWhenReady); assertEquals(Player.STATE_IDLE, player.playbackState)
             assertEquals(saved, LocalQueueStore(app).read())
-        } finally { binding.close(); scope.cancel(); player.release() }
+        } finally { stop(binding); scope.cancel(); player.release() }
     }
 
     @Test fun clearingARestoredQueuePersistsEmptyInsteadOfResurrectingItOnRestart() {
@@ -83,11 +90,11 @@ class ProfilePlaybackTest {
             settle(dispatcher); assertEquals(1, player.mediaItemCount)
             player.clearMediaItems(); settle(dispatcher)
             assertTrue(requireNotNull(LocalQueueStore(app).read()).ids.isEmpty())
-        } finally { binding.close(); player.release() }
+        } finally { stop(binding); player.release() }
         val next = RecordingPlayer()
         val restarted = ProfilePlaybackBinding(app, next, scope, songs = { listOf(song("1")) })
         try { settle(dispatcher); assertEquals(0, next.mediaItemCount); assertFalse(next.playWhenReady) }
-        finally { restarted.close(); scope.cancel(); next.release() }
+        finally { stop(restarted); scope.cancel(); next.release() }
     }
 
     @Test fun aUserCommandCancelsALateRestoreEvenWhenThePlayerRemainsEmpty() {
@@ -101,9 +108,9 @@ class ProfilePlaybackTest {
         try {
             settle(dispatcher); binding.cancelRestore(); gate.complete(Unit); settle(dispatcher)
             assertEquals(0, player.mediaItemCount); assertFalse(player.playWhenReady)
-            binding.close()
+            stop(binding)
             assertEquals(saved, LocalQueueStore(app).read())
-        } finally { binding.close(); scope.cancel(); player.release() }
+        } finally { stop(binding); scope.cancel(); player.release() }
     }
 
     @Test fun replacingQueueWhileCatalogIsLoadingPreservesNewPlaybackAndIgnoresTheLateResult() {
@@ -122,7 +129,7 @@ class ProfilePlaybackTest {
             assertEquals("new", player.currentMediaItem!!.mediaId)
             assertEquals(current, player.currentMediaItem!!.queueEntryId); assertEquals(4321L, player.currentPosition)
             assertTrue(player.playWhenReady); assertEquals(1, player.replacements)
-        } finally { binding.close(); scope.cancel(); player.release() }
+        } finally { stop(binding); scope.cancel(); player.release() }
     }
 
     @Test fun missingCurrentStartsTheNearestRemainingTrackAtZeroAndAnUnavailableCatalogKeepsTheSnapshot() {
@@ -132,12 +139,12 @@ class ProfilePlaybackTest {
         val player = RecordingPlayer()
         val binding = ProfilePlaybackBinding(app, player, scope, songs = { listOf(song("2")) })
         try { settle(dispatcher); assertEquals("2", player.currentMediaItem!!.mediaId); assertEquals(0L, player.currentPosition) }
-        finally { binding.close(); player.release() }
+        finally { stop(binding); player.release() }
         LocalQueueStore(app).save(saved)
         val empty = RecordingPlayer()
         val unavailable = ProfilePlaybackBinding(app, empty, scope, songs = { emptyList() })
-        try { settle(dispatcher); unavailable.close(); assertEquals(saved, LocalQueueStore(app).read()) }
-        finally { unavailable.close(); scope.cancel(); empty.release() }
+        try { settle(dispatcher); stop(unavailable); assertEquals(saved, LocalQueueStore(app).read()) }
+        finally { stop(unavailable); scope.cancel(); empty.release() }
     }
 
     @Test fun remotePreferenceCommandCancelsPendingRestoreWithoutErasingRecoverableQueue() {
@@ -165,9 +172,9 @@ class ProfilePlaybackTest {
             gate.complete(Unit); settle(dispatcher)
             assertEquals(0, player.mediaItemCount); assertFalse(player.playWhenReady)
             assertEquals(Player.REPEAT_MODE_ONE, player.repeatMode)
-            controls.close()
+            stop(controls)
             assertEquals(saved, LocalQueueStore(app).read())
-        } finally { gate.complete(Unit); controller?.release(); controls.close(); scope.cancel(); settle(dispatcher); session.release(); player.release() }
+        } finally { gate.complete(Unit); controller?.release(); stop(controls); scope.cancel(); settle(dispatcher); session.release(); player.release() }
     }
 
     @Test fun externalUriOnlyItemsDoNotCrashOrOverwriteTheRecoverableLocalSnapshot() {
@@ -178,9 +185,9 @@ class ProfilePlaybackTest {
         try {
             settle(dispatcher)
             player.setMediaItems(listOf(androidx.media3.common.MediaItem.Builder().setUri("content://media/external/42").build()))
-            settle(dispatcher); binding.close()
+            settle(dispatcher); stop(binding)
             assertEquals(saved, LocalQueueStore(app).read())
-        } finally { binding.close(); scope.cancel(); player.release() }
+        } finally { stop(binding); scope.cancel(); player.release() }
     }
 
 }

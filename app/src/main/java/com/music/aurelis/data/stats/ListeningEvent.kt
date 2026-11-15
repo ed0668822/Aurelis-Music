@@ -26,3 +26,9 @@ internal sealed interface ListeningStoreResult<out T> {
     data class Success<T>(val value: T) : ListeningStoreResult<T>
     data class Failure(val issue: ListeningStoreIssue) : ListeningStoreResult<Nothing>
 }
+
+
+internal interface ListeningEventSink {
+    suspend fun append(events: List<ListeningEvent>): ListeningStoreResult<ListeningAppendResult>
+    suspend fun close()
+}

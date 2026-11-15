@@ -525,3 +525,11 @@ Room/database implementation is copied and no new dependency is added. Existing
 GPLv3 contributor notices remain applicable to earlier adapted components.
 Legacy aggregate history is neither migrated into dated events nor overwritten.
 Service recording integration is a separate B06.3-d delivery, not claimed here.
+
+B06.3-d — measured service events and recoverable pending journal
+ListeningEventJournal and ListeningEventWriter are Aurelis contributions, together
+with service recorder wiring, session health reporting and new regression tests.
+Android AtomicFile/SQLiteOpenHelper and existing coroutines are used without adding
+a dependency or copying new BitChord code. Earlier queue/session attribution stays
+applicable. Only newly measured intervals enter SQLite; no legacy totals are
+converted into fabricated dated events. Retries preserve original event identities.

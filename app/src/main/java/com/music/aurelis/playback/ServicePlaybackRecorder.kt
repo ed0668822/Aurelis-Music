@@ -15,12 +15,18 @@ internal class ServicePlaybackRecorder(
     private val queue: LocalQueueStore,
     scope: CoroutineScope,
     private val canSaveEmpty: () -> Boolean = { true },
+    private val event: (com.music.aurelis.data.stats.ListeningEvent) -> Unit = {},
+    private val wallClock: () -> Long = System::currentTimeMillis,
     private val clock: () -> Long = SystemClock::elapsedRealtime,
 ) : Player.Listener {
     private var lastTick = clock()
     private var lastSave = lastTick
     private var song = player.currentMediaItem?.toLocalSong()
     private var advancing = player.isPlaying
+    private var sessionId = java.util.UUID.randomUUID().toString()
+    private var occurrence = song?.queueEntryId?.takeIf { it.isNotBlank() } ?: java.util.UUID.randomUUID().toString()
+    private var sequence = 0L
+    private var closed = false
     private val job: Job
     init {
         library.startListeningSession(song?.id)
@@ -28,17 +34,44 @@ internal class ServicePlaybackRecorder(
         job = scope.launch { while (isActive) { delay(1000); tick() } }
     }
     internal fun tick() {
+        if (closed) return
         val now = clock()
         val elapsed = now - lastTick
-        if (advancing && elapsed in 1..5000) song?.let { library.recordListening(it, elapsed, false) }
-        lastTick = now
+        lastTick = now // Baseline first: reentrant callbacks cannot count the interval twice.
+        if (advancing && elapsed in 1..5000) song?.let { current ->
+            library.recordListening(current, elapsed, false)
+            val scheme = android.net.Uri.parse(current.contentUri).scheme
+            if (scheme == "content" || scheme == "file") event(com.music.aurelis.data.stats.ListeningEvent(
+                sessionId, sequence++, current.id, occurrence, wallClock(), elapsed, current.durationMs.coerceAtLeast(0)))
+        }
         if (now - lastSave >= 15_000) saveQueue()
     }
+    private fun newSession(current: com.music.aurelis.data.model.LocalSong?) {
+        song = current
+        sessionId = java.util.UUID.randomUUID().toString(); sequence = 0
+        occurrence = current?.queueEntryId?.takeIf { it.isNotBlank() } ?: java.util.UUID.randomUUID().toString()
+        library.startListeningSession(current?.id)
+    }
+    override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+        if (closed) return
+        tick(); newSession(mediaItem?.toLocalSong()); advancing = player.isPlaying
+    }
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        if (closed) return
+        tick(); advancing = isPlaying
+    }
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        if (closed) return
+        tick(); advancing = player.isPlaying
+    }
+    override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+        if (!closed) tick() // Measured time only, never the old/new position difference.
+    }
     override fun onEvents(player: Player, events: Player.Events) {
+        if (closed) return
         tick()
         val current = player.currentMediaItem?.toLocalSong()
-        if (current?.id != song?.id || events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) library.startListeningSession(current?.id)
-        song = current
+        if (current?.id != song?.id || current?.queueEntryId != song?.queueEntryId) newSession(current) else song = current
         advancing = player.isPlaying
         if (!advancing) library.flush()
         saveQueue()
@@ -59,5 +92,8 @@ internal class ServicePlaybackRecorder(
         }
         lastSave = clock()
     }
-    fun close() { tick(); saveQueue(); library.flush(); player.removeListener(this); job.cancel() }
+    fun close() {
+        if (closed) return
+        tick(); closed = true; saveQueue(); library.flush(); player.removeListener(this); job.cancel()
+    }
 }

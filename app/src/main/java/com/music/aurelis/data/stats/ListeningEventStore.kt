@@ -19,7 +19,7 @@ internal class ListeningEventStore(
     context: Context,
     profileId: ProfileId = ProfileRepository.profileId,
     private val writeAllowed: () -> Boolean = { !ProfileRepository.state.value.readOnly && ProfileRepository.profileId == profileId },
-) {
+) : ListeningEventSink {
     internal val databaseFile = context.applicationContext.getDatabasePath(ListeningDatabase.fileName(profileId))
     private val helper = ListeningDatabase(context.applicationContext, profileId)
     private val mutex = Mutex()
@@ -45,7 +45,7 @@ internal class ListeningEventStore(
             }
         }
 
-    suspend fun append(events: List<ListeningEvent>): ListeningStoreResult<ListeningAppendResult> {
+    override suspend fun append(events: List<ListeningEvent>): ListeningStoreResult<ListeningAppendResult> {
         val batch = events.toList()
         if (batch.any { !it.valid() }) return ListeningStoreResult.Failure(ListeningStoreIssue.INVALID_EVENT)
         return access(write = true) {
@@ -136,7 +136,7 @@ internal class ListeningEventStore(
         }
     }
 
-    suspend fun close() = withContext(NonCancellable + Dispatchers.IO) {
+    override suspend fun close(): Unit = withContext(NonCancellable + Dispatchers.IO) {
         mutex.withLock { if (!closed) { closed = true; helper.close() } }
     }
     private fun validRange(from: Long, until: Long?, limit: Int) = from >= 0 && (until == null || until >= from) && limit in 1..1000

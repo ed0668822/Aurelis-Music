@@ -25,11 +25,24 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
     }
     override fun onSkipSilenceEnabledChanged(skipSilenceEnabled: Boolean) { publish() }
     private var profileBinding: ProfilePlaybackBinding? = null
+    private var historyDrain: kotlinx.coroutines.Job? = null
+    private var historyMessage: String? = null
+    private fun historyStatus(status: com.music.aurelis.data.stats.ListeningCaptureStatus) {
+        historyMessage = when {
+            status.issue == com.music.aurelis.data.stats.ListeningStoreIssue.NEWER_SCHEMA -> "El historial usa una versión más reciente; no se registran nuevas escuchas."
+            status.issue == com.music.aurelis.data.stats.ListeningStoreIssue.CORRUPT -> "No se puede registrar el historial. Sus datos se conservan para recuperarlos."
+            status.issue == com.music.aurelis.data.stats.ListeningStoreIssue.PROFILE_READ_ONLY -> "El historial está en modo de solo lectura."
+            status.missed > 0 -> "Algunos intervalos de escucha no se pudieron guardar."
+            status.issue != null -> "Hay escuchas pendientes que no se han podido guardar."
+            else -> null
+        }
+        publish()
+    }
     fun bindProfile(context: android.content.Context, scope: kotlinx.coroutines.CoroutineScope,
         songs: (suspend () -> List<com.music.aurelis.data.model.LocalSong>)? = null) {
-        profileBinding?.close()
-        profileBinding = if (songs == null) ProfilePlaybackBinding(context, player, scope)
-            else ProfilePlaybackBinding(context, player, scope, songs = songs)
+        historyDrain = profileBinding?.close() ?: historyDrain
+        profileBinding = if (songs == null) ProfilePlaybackBinding(context, player, scope, captureStatus = ::historyStatus)
+            else ProfilePlaybackBinding(context, player, scope, captureStatus = ::historyStatus, songs = songs)
     }
     fun onUserQueueCommand() { profileBinding?.cancelRestore() }
     private var autoplay: LocalAutoplayBinding? = null
@@ -49,6 +62,7 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
             putLong("sleep_deadline", timer.deadlineMs)
             putLong("control_observed_at", android.os.SystemClock.elapsedRealtime())
             putBoolean("sleep_after_track", timer.afterTrack)
+            putString("listening_history_message", historyMessage)
             putBoolean("autoplay", com.music.aurelis.data.SettingsRepository.autoplay.value)
             putBoolean("autoplay_available", autoplay != null && !com.music.aurelis.data.ProfileRepository.state.value.readOnly)
             putString("autoplay_status", autoplayStatus)
@@ -85,7 +99,11 @@ internal class LocalPlaybackCoordinator(private val player: Player) : Player.Lis
         return if (success) SessionResult(SessionResult.RESULT_SUCCESS)
         else SessionResult(androidx.media3.session.SessionError.ERROR_BAD_VALUE)
     }
-    fun close() { profileBinding?.close(); profileBinding = null; autoplay?.close(); autoplay = null; player.removeListener(this); timer.close(); session = null }
+    fun close(): kotlinx.coroutines.Job? {
+        historyDrain = profileBinding?.close() ?: historyDrain
+        profileBinding = null; autoplay?.close(); autoplay = null; player.removeListener(this); timer.close(); session = null
+        return historyDrain
+    }
 }
 
 /** The existing sink uses its float path for these encodings, bypassing Sonic/silence. */

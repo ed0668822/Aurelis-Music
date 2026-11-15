@@ -5,7 +5,25 @@
 
 ## Continuación actual — primera entrega documental
 
-### B06.3-c — almacenamiento versionado de eventos (CI pendiente)
+### B06.3-d — registro desde el servicio (CI nuevo pendiente)
+
+«Continúa» acepta la reparación e17c6db4 de B06.3-c; no se descargan informes previos.
+Dieciocho archivos de máximo30, misma rama y PR1. Un recorder mide tiempo monotónico
+solo mientras isPlaying, conserva ocurrencia y crea sesión por transición/repeat;
+seek, pausa, buffering y supresión de foco no añaden distancia/tiempo suspendido.
+Diario AtomicFile privado antes de SQLite; reintentos con mismas claves y UTC,
+replay idempotente tras commit sin confirmación. IO separado, cierre asíncrono
+acotado en memoria, serialización por ruta entre cierre y reapertura. Saturación/
+fallos se informan mediante extras de la sesión y herramientas del reproductor;
+no detienen audio ni borran diarios desconocidos/corruptos. Totales legacy siguen
+su único recorder; no se importan como eventos fechados.
+Diecinueve pruebas nuevas preparadas y una comprobación UI ampliada; no ejecutadas
+aquí. Dos revisiones estáticas del mismo agente y diff --check; Gradle, Lint, suites
+Android y verificación APK corresponden a Actions. No afirmar éxito de esas pruebas
+ni funcionamiento físico. Límites de pérdida tras muerte abrupta documentados en
+[B06_3D_SERVICE_EVENTS](B06_3D_SERVICE_EVENTS.md). B06.4 sigue pendiente: B06 abierto.
+
+### B06.3-c — corrección aceptada por el usuario; físico pendiente
 
 Run141: B01/B03/B05 SUCCESS, B02/B06 FAILURE, B04 SKIPPED. B02 no llegó a ejecutar
 Lint: faltó resolver dos módulos Kover0.9.11 durante configuración. POM/JAR oficiales
