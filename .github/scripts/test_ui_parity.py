@@ -15,6 +15,21 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_adb_failure_preserves_stdout_diagnostics(self):
+        import subprocess
+        failed = subprocess.CompletedProcess(["adb"], 255, b"ERROR: could not get idle state.", b"")
+        with patch.object(parity.subprocess, "run", return_value=failed):
+            with self.assertRaisesRegex(RuntimeError, "stdout=ERROR: could not get idle state"):
+                parity.adb("shell", "uiautomator", "dump")
+
+    def test_tree_retries_idle_snapshot_error_but_not_device_disconnect(self):
+        with patch.object(parity, "shell", side_effect=[RuntimeError("ERROR: could not get idle state"), "dumped", "<hierarchy/>"]) as shell, patch.object(parity.time, "sleep"):
+            self.assertEqual("<hierarchy/>", parity.tree())
+            self.assertEqual(3, shell.call_count)
+        with patch.object(parity, "shell", side_effect=RuntimeError("device offline")) as shell:
+            with self.assertRaisesRegex(RuntimeError, "device offline"): parity.tree()
+            self.assertEqual(1, shell.call_count)
+
     def test_expand_uses_the_transport_band_even_if_a_library_title_is_lower(self):
         xml = '''<hierarchy>
           <node text="Parity Track 01" bounds="[200,1600][600,1700]"/>

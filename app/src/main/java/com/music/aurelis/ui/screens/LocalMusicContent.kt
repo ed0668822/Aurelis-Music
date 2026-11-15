@@ -55,7 +55,7 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
         LazyColumn(state = list, modifier = Modifier.fillMaxSize().testTag("local-music-list"),
             contentPadding = bottomPadding) {
             item(key = "header") {
-                if (success != null) LocalDetailHeader("Local Music", "Archivos de audio en el dispositivo",
+                if (success != null && !search) LocalDetailHeader("Local Music", "Archivos de audio en el dispositivo",
                     "${songs.size} canciones · ${songs.sumOf { it.durationMs.coerceAtLeast(0) } / 60_000} min",
                     sleeve, null, AurelisIcons.Folder, { onPlay(filtered, 0) },
                     { onPlay(filtered.shuffled(), 0) }, filtered.isNotEmpty())
@@ -105,10 +105,23 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                     }
                 }
             }
+            if (success != null && selected in 1..2) {
+                val empty = if (selected == 1) success.artists.none { artist -> artist.songs.any { it.id in visibleIds } }
+                    else success.albums.none { album -> album.songs.any { it.id in visibleIds } }
+                if (empty) item(key = "empty-category") {
+                    Text(if (query.isNotBlank()) "Sin resultados" else if (selected == 1) "No hay artistas" else "No hay álbumes",
+                        Modifier.padding(24.dp))
+                }
+            }
         }
         FrostedTopBar("Local Music", { false }, transparentBackdrop = true, artworkPageChrome = true,
             onBack = onBack, actions = {
-                IconButton(onClick = { search = !search; if (!search) query = "" }) { Icon(AurelisIcons.Search, "Buscar") }
+                IconButton(onClick = {
+                    search = !search
+                    if (!search) query = ""
+                    else scope.launch { list.scrollToItem(0) }
+                }) { Icon(if (search) AurelisIcons.Close else AurelisIcons.Search,
+                    if (search) "Cerrar búsqueda de esta lista" else "Buscar en esta lista") }
                 Box {
                     IconButton(onClick = { sorting = true }) { Icon(AurelisIcons.Sort, "Ordenar") }
                     DropdownMenu(sorting, { sorting = false }) {

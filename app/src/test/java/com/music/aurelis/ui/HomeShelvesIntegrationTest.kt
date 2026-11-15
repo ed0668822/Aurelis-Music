@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui
 
 import android.Manifest
@@ -58,6 +59,12 @@ class HomeShelvesIntegrationTest {
             assertEquals(listOf("3", "4"), (0 until recording.mediaItemCount).map { recording.getMediaItemAt(it).mediaId })
             assertEquals("4", recording.currentMediaItem?.mediaId)
         }
+        // Playback adds the floating MiniPlayer. Put the held card above its overlay
+        // before injecting a real touch, rather than relying on its old coordinates.
+        compose.onNodeWithTag("local-home").performScrollToKey("favorites")
+        val target = compose.onNode(favorite).fetchSemanticsNode().boundsInRoot.center
+        val mini = compose.onNodeWithTag("mini-player").fetchSemanticsNode().boundsInRoot
+        assertFalse("Hold must target the card, not the floating player", mini.contains(target))
         compose.onNode(favorite).performTouchInput { longClick() }
         compose.onNodeWithText("Quitar de favoritos").assertIsDisplayed()
         compose.onNodeWithText("Cerrar").performScrollTo().performClick()

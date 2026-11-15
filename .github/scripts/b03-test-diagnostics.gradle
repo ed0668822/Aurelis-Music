@@ -3,6 +3,12 @@
 // No tests, assertions or coverage requirements are disabled here.
 gradle.allprojects {
     tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+        testLogging {
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+        }
         beforeTest { descriptor ->
             logger.lifecycle("AURELIS_TEST_START class=${descriptor.className} test=${descriptor.name}")
         }

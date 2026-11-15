@@ -72,7 +72,7 @@ class PlayerIntegrationTest {
 
     @Test fun localSearchOpensAnAlbumAndRecordsTheSubmittedQuery() {
         start()
-        compose.onNode(hasText(app.getString(R.string.search)) and isSelectable()).performClick()
+        compose.onNode((hasText(app.getString(R.string.search)) or hasContentDescription(app.getString(R.string.search))) and isSelectable()).performClick()
         compose.onNode(hasSetTextAction()).performTextInput("Álbum")
         val songResult = hasText("Canción local 1") and
             hasAnyAncestor(hasTestTag("local-search-results"))

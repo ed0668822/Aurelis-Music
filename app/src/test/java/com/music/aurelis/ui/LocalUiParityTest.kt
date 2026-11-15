@@ -32,6 +32,22 @@ class LocalUiParityTest {
     private val songs = (1..30).map { LocalSong("$it", "Track $it", "Artist", "Album", "content://media/$it",
         null, 60_000L, null, it, null, volumeName = "external_primary", relativePath = "Music/Test/") }
 
+    @Test fun listSearchKeepsTheEditorAndEmptyArtistAlbumResultsVisible() {
+        val state = LibraryState.Success(songs,
+            albums = listOf(LocalAlbum("Album", "Artist", null, songs.size, songs)),
+            artists = listOf(LocalArtist("Artist", null, songs.size, 1, songs)))
+        compose.setContent { AurelisTheme { Box(Modifier.size(360.dp, 640.dp)) {
+            LocalMusicContent(state, songs, emptyList(), null, false, SortOption.TITLE_ASC, {},
+                {}, {}, {}, { _, _ -> }, {}, {}, {})
+        } } }
+        compose.onNodeWithContentDescription("Buscar en esta lista").performClick()
+        compose.onNode(hasSetTextAction()).assertIsDisplayed().performTextInput("not-in-library")
+        compose.onNode(isSelectable() and hasText("Artistas")).performScrollTo().performClick()
+        compose.onNodeWithText("Sin resultados").assertIsDisplayed()
+        compose.onNode(isSelectable() and hasText("Álbumes")).performScrollTo().performClick()
+        compose.onNodeWithText("Sin resultados").assertIsDisplayed()
+    }
+
     @Test fun restoringTheLocalListDoesNotResetItsSavedScrollToTheHeader() {
         val restore = StateRestorationTester(compose)
         restore.setContent { AurelisTheme {

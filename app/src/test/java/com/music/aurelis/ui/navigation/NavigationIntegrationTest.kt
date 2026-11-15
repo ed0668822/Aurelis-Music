@@ -110,7 +110,7 @@ class NavigationIntegrationTest {
         compose.runOnIdle { assertEquals(AppRoute.LocalMusic, navigator.visibleRoute()) }
         compose.onNodeWithText("Permiso de acceso a música no concedido. " +
             "Concédelo en Ajustes para escanear el dispositivo.").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Buscar").performClick()
+        compose.onNodeWithContentDescription("Buscar en esta lista").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("audio local")
         restoration.emulateSavedInstanceStateRestore()
         compose.onNode(hasSetTextAction()).assertTextEquals("audio local")

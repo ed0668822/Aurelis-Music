@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui
 
 import android.Manifest
@@ -49,6 +50,7 @@ class LibraryCatalogueIntegrationTest {
                 AurelisNavigationContent(navigator, player, library)
             } }
             compose.runOnIdle { library.loadLibrary(); navigator.push(AppRoute.Settings) }
+            compose.onNodeWithText("Música local").performScrollTo().performClick()
             compose.onNodeWithText("Ver carpetas de la biblioteca").performScrollTo().performClick()
             compose.onNodeWithText("Music/Jazz · 1").performClick()
             compose.onNodeWithText("Árbol").assertIsDisplayed().performClick()
@@ -74,7 +76,7 @@ class LibraryCatalogueIntegrationTest {
         compose.runOnIdle { library.loadLibrary() }
         compose.onNode(isSelectable() and hasText("Biblioteca")).performClick()
         compose.onNodeWithText("Canciones").performClick()
-        compose.onNodeWithContentDescription("Buscar").performClick()
+        compose.onNodeWithContentDescription("Buscar en esta lista").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("arbol")
         compose.onNode(isSelectable() and hasText("Álbumes")).performClick()
         compose.onNodeWithText("Disco local").assertIsDisplayed()

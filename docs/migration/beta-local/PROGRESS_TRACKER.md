@@ -7,6 +7,28 @@
 
 ## Continuación actual — primera entrega documental
 
+### Reparación UI2 — run150 y comparación7
+
+0a7dc77c/run43697636368: B01/B02/B05 SUCCESS; B03/B06 FAILURE, B04 SKIPPED.
+ZIP de logs oficial descargado/verificado. Debug y Release ejecutaron414 tests,
+cinco fallos en cada suite. Las ocho regresiones nuevas UI2 sí aprobaron ambas
+variantes. Fallos: acceso antiguo a carpetas desde Settings raíz, búsqueda global
+solo por texto, búsqueda local con etiqueta ambigua, resultados vacíos y pulsación
+larga de favoritos después de aparecer el MiniPlayer. Se actualizan los accesos
+sin retirar las comprobaciones, y el gesto físico exige un objetivo fuera del dock.
+La búsqueda local tiene cabecera compacta y etiqueta «Buscar en esta lista»;
+artistas/álbumes vacíos muestran Sin resultados. Se añade una regresión de ventana
+baja. B03 imprime excepciones completas para leer el fallo real sin el ZIP de XML.
+
+Comparación43697636356: MiniPlayer origen alcanzado; uiautomator termina255 sin
+stderr. Este run no acredita por sí mismo muerte del emulador. adb omitía stdout
+en su error: ahora lo conserva, con dos regresiones Python; árbol reintenta solo
+errores transitorios de idle/raíz y falla ante desconexión u otros errores.
+ZIP de capturas/XML bloqueado por proxy. No cambiar GPU, SDK, ABI, app de referencia
+ni puertas por una causa no demostrada.25 tests Python aprobados, doble revisión
+del mismo agente; ninguna ejecución Gradle/Android local. Validación nueva pendiente.
+La unión completa permanece bajo60 rutas. No se inicia otra entrega funcional.
+
 ### Pre-B07 UI2 — páginas locales, categorías, iconografía y widgets
 
 «Continúa y termina» autoriza completar las correcciones de la auditoría. Base

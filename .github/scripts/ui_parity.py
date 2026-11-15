@@ -70,7 +70,8 @@ def adb(*args, binary=False, input_data=None):
                             capture_output=True, timeout=60)
     if result.returncode:
         raise RuntimeError("adb command failed (exit " + str(result.returncode) + "): " +
-                           " ".join(map(str, args[:3])) + ": " + result.stderr.decode("utf-8", errors="replace")[-4000:])
+                           " ".join(map(str, args[:3])) + ": stderr=" + result.stderr.decode("utf-8", errors="replace")[-4000:]
+                           + "; stdout=" + result.stdout.decode("utf-8", errors="replace")[-4000:])
     return result.stdout if binary else result.stdout.decode("utf-8", errors="replace").strip()
 
 
@@ -160,8 +161,15 @@ def settings_root(rows):
 
 def tree():
     # XML is inspected and retained: no guessed screen coordinates.
-    shell("uiautomator", "dump", "/sdcard/ui-parity.xml")
-    return shell("cat", "/sdcard/ui-parity.xml")
+    for attempt in range(3):
+        try:
+            shell("uiautomator", "dump", "/sdcard/ui-parity.xml")
+            return shell("cat", "/sdcard/ui-parity.xml")
+        except RuntimeError as error:
+            # Retry only known transient snapshot errors. A dead device still fails.
+            if attempt == 2 or not re.search(r"could not get idle state|null root node|could not get root node", str(error), re.I):
+                raise
+            time.sleep(0.75)
 
 
 def scroll_view(rows):
