@@ -5,7 +5,20 @@
 
 ## Continuación actual — primera entrega documental
 
-### B06.3-a — snapshot v2 y barrera de restauración (CI pendiente)
+### B06.3-b — foco/noisy/controles del sistema (CI pendiente)
+
+«Continúa» confirma1a14927f. Catorce archivos de máximo30, misma rama/PR1, sin ZIP.
+Política de interrupciones Media3 compartida; quitar tarea no conserva servicio en
+IDLE/ENDED/error, pero sí intención READY con supresión transitoria. Dos pruebas
+Robolectric de receptor noisy real sin prepare; nueva octava instrumentación exige
+token de notificación pause/play y foco transitorio con supresión/recuperación del
+mismo Player. Gates/reportes exigen identidad del octavo caso, sin inferir físico.
+18 pruebas Python de parser/informe aprobadas; YAML/Bash/diff --check correctos.
+Dos revisiones del mismo agente. Tres pruebas Android nuevas pendientes de Actions;
+auriculares/pantalla bloqueada/sonido físicos pendientes. B06 aún abierto.
+[B06_3B_SYSTEM_CONTROLS](B06_3B_SYSTEM_CONTROLS.md).
+
+### B06.3-a — resultado aceptado por el usuario; físico pendiente
 
 «Continúa» confirma869ffe6a por el usuario; no descarga ZIP ni auditoría repetida.
 Doce archivos de máximo30. IDs de ocurrencia/tiers/permutación en v2, lector v1 sin

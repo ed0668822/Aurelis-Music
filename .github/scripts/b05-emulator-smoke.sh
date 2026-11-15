@@ -105,11 +105,11 @@ if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
   cat "$OUT/p3-permission-grant.log"
   exit 1
 fi
-# Seven separate AndroidJUnitRunner commands, all run even if one fails.
+# Eight separate AndroidJUnitRunner commands, all run even if one fails.
 mkdir -p "$OUT/p3-tests"
 mapfile -t CASE_SELECTORS < <(python3 .github/scripts/b05_case_results.py list)
-if [ "${#CASE_SELECTORS[@]}" -ne 7 ]; then
-  echo 'P3: expected seven independent test selectors'
+if [ "${#CASE_SELECTORS[@]}" -ne 8 ]; then
+  echo 'P3: expected eight independent test selectors'
   exit 1
 fi
 : > "$OUT/p3-instrumentation.log"
@@ -135,7 +135,7 @@ for entry in "${CASE_SELECTORS[@]}"; do
     ExoPlayerImplInternal:E AudioTrack:E AndroidRuntime:E '*:S' \
     > "$OUT/p3-tests/${case_id}-logcat.txt" 2>&1 || true
 done
-# Failing any one case fails B05 after preserving the other six.
+# Failing any one case fails B05 after preserving every other result.
 python3 .github/scripts/b05_case_results.py summarize "$OUT"
 
-echo 'B05: seven real Media3 Android tests passed (WAV, queue, repeat modes, recovery, recreation, continuous decode).'
+echo 'B05: eight real Media3 Android tests passed (WAV, queue, repeat modes, recovery, recreation, continuous decode, notification token and transient focus).'

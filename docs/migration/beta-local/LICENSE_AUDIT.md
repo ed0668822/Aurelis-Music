@@ -431,3 +431,12 @@ Codec v2, remapeo y barrera de comandos propios Aurelis; se reutilizan metadatos
 ocurrencia/tier ya atribuidos en NOTICE sin copiar nuevo código de BitChord. Cabecera
 Aurelis en archivos propios modificados que carecían de ella y nuevas pruebas/docs.
 Sin dependencias, binarios ni cambios de LICENSE. Se conserva referencia fija b690dc1.
+
+
+## B06.3-b — controles del sistema
+
+Extracción de configuración Aurelis existente y pruebas/informes nuevos propios;
+sin copiar código nuevo de BitChord. Se conservan atribuciones anteriores del servicio.
+AOSP Android15 Manifest y Robolectric4.14.1 ShadowApplication se consultan únicamente
+para comprobar protección del broadcast/API de fixtures, sin incorporar sus archivos.
+Sin dependencias, binarios ni cambios de LICENSE; cabeceras Aurelis en archivos propios.

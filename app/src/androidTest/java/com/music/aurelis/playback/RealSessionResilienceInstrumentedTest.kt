@@ -258,6 +258,66 @@ class RealSessionResilienceInstrumentedTest {
         }
     }
 
+    @Test
+    @androidx.annotation.RequiresApi(26)
+    @androidx.test.filters.SdkSuppress(minSdkVersion = 26)
+    fun notificationTokenControlsAndTransientFocusShareThePlayer() {
+        val wav = File(context.cacheDir, "p3-system-controls.wav")
+        originalWav(wav, 30, 440.0)
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        val focus = android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            .setAudioAttributes(android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            .setOnAudioFocusChangeListener({}, android.os.Handler(android.os.Looper.getMainLooper())).build()
+        var focusHeld = false
+        try {
+            withRealSession { controller, _ ->
+                onMain { controller.setMediaItem(track(wav, "p3-system-controls")); controller.prepare(); controller.play() }
+                until(controller, "system controls advancing") { it.isPlaying && it.currentPosition > 300 && it.playerError == null }
+                val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                var system: android.media.session.MediaController? = null
+                until(controller, "notification session token") {
+                    val token = notifications.activeNotifications.asSequence()
+                        .filter { item -> item.packageName == context.packageName }
+                        .mapNotNull { item ->
+                            if (android.os.Build.VERSION.SDK_INT >= 33)
+                                item.notification.extras.getParcelable(android.app.Notification.EXTRA_MEDIA_SESSION, android.media.session.MediaSession.Token::class.java)
+                            else {
+                                @Suppress("DEPRECATION")
+                                item.notification.extras.getParcelable<android.media.session.MediaSession.Token>(android.app.Notification.EXTRA_MEDIA_SESSION)
+                            }
+                        }.firstOrNull()
+                    if (token != null) system = android.media.session.MediaController(context, token)
+                    system != null
+                }
+                onMain { requireNotNull(system).transportControls.pause() }
+                until(controller, "notification-token pause") { !it.playWhenReady && !it.isPlaying && it.currentMediaItem?.mediaId == "p3-system-controls" }
+                var pausedAt = 0L
+                onMain { pausedAt = controller.currentPosition; requireNotNull(system).transportControls.play() }
+                until(controller, "notification-token resume") { it.isPlaying && it.currentPosition > pausedAt + 150 && it.mediaItemCount == 1 }
+                var granted = 0
+                onMain { granted = audio.requestAudioFocus(focus) }
+                focusHeld = granted == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+                assertEquals("Transient focus request must be granted in foreground", android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED, granted)
+                until(controller, "transient focus suppression") {
+                    it.playWhenReady && !it.isPlaying &&
+                        it.playbackSuppressionReason == Player.PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS
+                }
+                var suppressedAt = 0L
+                onMain { suppressedAt = controller.currentPosition; audio.abandonAudioFocusRequest(focus) }
+                focusHeld = false
+                until(controller, "same player resumes after focus returns") {
+                    it.isPlaying && it.currentPosition > suppressedAt + 150 &&
+                        it.currentMediaItem?.mediaId == "p3-system-controls" && it.mediaItemCount == 1 && it.playerError == null
+                }
+            }
+        } finally {
+            if (focusHeld) onMain { audio.abandonAudioFocusRequest(focus) }
+            wav.delete()
+        }
+    }
+
     private fun originalWav(file: File, seconds: Int, frequency: Double) {
         val sampleRate = 22_050
         val frames = sampleRate * seconds

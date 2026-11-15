@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Aurelis © 2026. GPL-3.0-or-later.
-"""Attest seven isolated Media3 AndroidJUnitRunner invocations, never infer a pass."""
+"""Attest registered isolated Media3 AndroidJUnitRunner invocations, never infer a pass."""
 from __future__ import annotations
 
 import json
@@ -24,6 +24,8 @@ CASES = (
      "repeatAllCyclesFromSecondOriginalWavBackToFirst", "p3-repeat-all-pass.txt"),
     ("continuous", "RealSessionResilienceInstrumentedTest",
      "continuousTwelveSecondDecodeAndSeekRemainStable", "p3-continuous-playback-pass.txt"),
+    ("system-controls", "RealSessionResilienceInstrumentedTest",
+     "notificationTokenControlsAndTransientFocusShareThePlayer", "p3-system-controls-pass.txt"),
 )
 
 
@@ -65,9 +67,9 @@ def summarize(folder: Path) -> dict:
         }
         if passed:
             (folder / marker).write_text(f"PASS: isolated {slug} Media3 test\n")
-    all_passed = len(results) == 7 and all(row["passed"] for row in results.values())
+    all_passed = len(results) == len(CASES) and all(row["passed"] for row in results.values())
     if all_passed:
-        (folder / "p3-instrumentation-pass.txt").write_text("PASS: all seven isolated real Media3 tests\n")
+        (folder / "p3-instrumentation-pass.txt").write_text(f"PASS: all {len(CASES)} isolated real Media3 tests\n")
     summary = {
         "schema_version": 1, "test_count": len(results),
         "passed_count": sum(1 for row in results.values() if row["passed"]),
@@ -85,7 +87,7 @@ def main() -> int:
         return 0
     if len(sys.argv) == 3 and sys.argv[1] == "summarize":
         result = summarize(Path(sys.argv[2]))
-        print(f"B05 per-case results: {result['passed_count']}/7 PASS")
+        print(f"B05 per-case results: {result['passed_count']}/{len(CASES)} PASS")
         return 0 if result["all_passed"] else 1
     print("Usage: b05_case_results.py list | summarize <folder>", file=sys.stderr)
     return 2

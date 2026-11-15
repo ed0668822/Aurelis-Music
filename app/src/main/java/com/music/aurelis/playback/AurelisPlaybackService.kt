@@ -6,8 +6,6 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
@@ -40,15 +38,7 @@ class AurelisPlaybackService : MediaSessionService() {
         val mediaSourceFactory = DefaultMediaSourceFactory(DefaultDataSource.Factory(this), DsdExtractorsFactory())
 
         val player = ExoPlayer.Builder(this, renderersFactory)
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                    .build(),
-                true,
-            )
-            .setHandleAudioBecomingNoisy(true)
-            .setWakeMode(C.WAKE_MODE_LOCAL)
+            .withLocalAudioPolicy()
             .setMediaSourceFactory(mediaSourceFactory)
             .build()
 
@@ -110,7 +100,10 @@ class AurelisPlaybackService : MediaSessionService() {
                 " count=" + mediaSession?.player?.mediaItemCount)
         }
         val player = mediaSession?.player
-        if (player == null || !player.playWhenReady || player.mediaItemCount == 0) stopSelf()
+        if (player == null || !player.playWhenReady || player.mediaItemCount == 0 ||
+            player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED ||
+            player.playerError != null) stopSelf()
+        // READY with transient focus suppression retains play intent for Media3 to resume.
     }
 
     override fun onDestroy() {

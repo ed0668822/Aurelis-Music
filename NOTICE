@@ -510,3 +510,10 @@ Snapshot codec, missing-item remapping, empty-queue persistence and service rest
 coordination are Aurelis contributions. Existing BitChord-derived occurrence/tier
 metadata credits remain applicable. No upstream service replacement, URI persistence
 or global playback state copied. Legacy v1 bytes and third-party notices preserved.
+
+B06.3-b — system transport and interruption evidence
+LocalAudioPolicy extracts the existing Aurelis Media3 configuration; no new upstream
+code is copied. New tests exercise the actual notification session token/transient
+focus in Android and model the noisy framework event under Robolectric. Original
+BitChord-derived service notices remain applicable. No extra session/focus manager,
+platform permission bypass, ABI/SDK/audio-sink change or hardware verification claim.

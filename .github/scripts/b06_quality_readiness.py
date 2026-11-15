@@ -18,6 +18,7 @@ AUDIO = (
     "automatic_track_advance", "repeat_one_mode", "missing_local_file_recovery",
     "activity_recreation", "repeat_all_mode", "continuous_playback_12s",
     "gapless_transition", "crossfade", "audio_output_route",
+    "system_notification_controls", "transient_audio_focus", "physical_headphone_disconnect", "physical_lock_screen",
 )
 
 
@@ -176,14 +177,14 @@ def report(package: Path, sha: str):
         audio["audio_scenarios"]["missing_local_file_recovery"] = (
             "EMULATOR_MEDIA3_REAL_MISSING_FILE_RECOVERY_VERIFIED"
         )
-    # Only the new, fully successful 7-case real instrumentation suite can
+    # Only the fully successful registered real instrumentation suite can
     # attest to persistence, repeat-all and bounded 12-second stability.
     resilience = (
         recovery
         and runtime.get("checks", {}).get("p3_activity_recreation_instrumentation_passed") is True
         and runtime.get("checks", {}).get("p3_repeat_all_instrumentation_passed") is True
         and runtime.get("checks", {}).get("p3_continuous_playback_instrumentation_passed") is True
-        and runtime["p3_test"].get("test_count") == 7
+        and runtime["p3_test"].get("test_count") in (7, 8)
         and runtime["p3_test"].get("session_resilience_test_class")
         == "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest"
         and runtime["p3_test"].get("activity_recreation_passed") is True
@@ -197,6 +198,25 @@ def report(package: Path, sha: str):
         audio["audio_scenarios"]["activity_recreation"] = "EMULATOR_SESSION_SURVIVED_ACTIVITY_RECREATE"
         audio["audio_scenarios"]["repeat_all_mode"] = "EMULATOR_REPEAT_ALL_AUTO_WRAP_VERIFIED"
         audio["audio_scenarios"]["continuous_playback_12s"] = "EMULATOR_12_SECOND_DECODE_VERIFIED"
+    system_details = runtime.get("p3_test")
+    system_details = system_details if isinstance(system_details, dict) else {}
+    cases = system_details.get("per_case_evidence")
+    cases = cases.get("tests") if isinstance(cases, dict) else None
+    system_case = cases.get("system-controls") if isinstance(cases, dict) else None
+    system_case = system_case if isinstance(system_case, dict) else {}
+    system_controls = (
+        resilience
+        and runtime.get("checks", {}).get("p3_all_registered_instrumentation_passed") is True
+        and runtime.get("checks", {}).get("p3_system_controls_instrumentation_passed") is True
+        and runtime["p3_test"].get("test_count") == 8
+        and runtime["p3_test"].get("system_controls_passed") is True
+        and system_case.get("passed") is True and system_case.get("exit_code") == "0"
+        and system_case.get("test") == "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest#notificationTokenControlsAndTransientFocusShareThePlayer"
+    )
+    audio["real_media3_system_controls"] = "MEDIA3_EMULATOR_NOTIFICATION_AND_FOCUS_VERIFIED" if system_controls else "NOT_VERIFIED"
+    if system_controls:
+        audio["audio_scenarios"]["system_notification_controls"] = "EMULATOR_NOTIFICATION_TOKEN_TRANSPORT_VERIFIED"
+        audio["audio_scenarios"]["transient_audio_focus"] = "EMULATOR_FOCUS_SUPPRESSION_AND_RESUME_VERIFIED"
     audio["audible_physical_output_verified"] = False
     # Real emulated playback cannot prove audible physical output or native DSP.
 
@@ -216,6 +236,8 @@ def report(package: Path, sha: str):
                    "- Transición automática y repeat-one reales: **" + audio["real_media3_auto_repeat"] + "**",
                    "- Recuperación de archivo local inaccesible: **" + audio["real_media3_missing_file_recovery"] + "**",
                    "- Persistencia, repeat-all y reproducción continua: **" + audio["real_media3_session_resilience"] + "**",
+                   "- Notificación y foco transitorio en emulador: **" + audio["real_media3_system_controls"] + "**",
+                   "- Auriculares/pantalla bloqueada físicos: **NOT_VERIFIED**",
                    "- Audio audible en dispositivo físico: **NOT_VERIFIED**",
                    "- Publicación pública aprobada: **NO**", ""]
     audio_lines += ["- " + name + ": " + audio["audio_scenarios"][name] for name in AUDIO]

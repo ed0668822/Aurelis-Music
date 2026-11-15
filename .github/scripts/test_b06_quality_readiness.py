@@ -255,5 +255,48 @@ class QualityReadinessTests(unittest.TestCase):
             self.assertEqual(audio["real_media3_session_resilience"], "NOT_VERIFIED")
             self.assertEqual(audio["audio_scenarios"]["repeat_all_mode"], "NOT_VERIFIED")
 
+    def test_system_controls_need_exact_eighth_case_and_never_attest_physical_hardware(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.create(root)
+            checks = {name: True for name in (
+                "p3_local_wav_instrumentation_passed", "p3_queue_transitions_instrumentation_passed",
+                "p3_auto_repeat_instrumentation_passed", "p3_error_recovery_instrumentation_passed",
+                "p3_activity_recreation_instrumentation_passed", "p3_repeat_all_instrumentation_passed",
+                "p3_continuous_playback_instrumentation_passed", "p3_all_registered_instrumentation_passed",
+                "p3_system_controls_instrumentation_passed")}
+            case = {"passed": True, "exit_code": "0", "test":
+                "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest#notificationTokenControlsAndTransientFocusShareThePlayer"}
+            evidence = {"commit": SHA, "pass": True,
+                "coverage": "INSTALL_LAUNCH_PROCESS_AND_LOCAL_WAV_INSTRUMENTATION", "checks": checks,
+                "p3_test": {"passed": True, "test_count": 8,
+                    "instrumentation_class": "com.music.aurelis.playback.RealLocalPlaybackInstrumentedTest",
+                    "queue_test_class": "com.music.aurelis.playback.RealQueueTransitionsInstrumentedTest",
+                    "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
+                    "error_recovery_test_class": "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest",
+                    "session_resilience_test_class": "com.music.aurelis.playback.RealSessionResilienceInstrumentedTest",
+                    "queue_transitions_passed": True, "auto_repeat_passed": True, "error_recovery_passed": True,
+                    "activity_recreation_passed": True, "repeat_all_passed": True, "continuous_playback_passed": True,
+                    "system_controls_passed": True, "per_case_evidence": {"tests": {"system-controls": case}}}}
+            put(root/"B05/Emulador/results.json", evidence)
+            _, audio = quality.report(root, SHA)
+            self.assertEqual(audio["real_media3_system_controls"], "MEDIA3_EMULATOR_NOTIFICATION_AND_FOCUS_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["physical_headphone_disconnect"], "NOT_VERIFIED")
+            self.assertEqual(audio["audio_scenarios"]["physical_lock_screen"], "NOT_VERIFIED")
+            for key, value in (("passed", False), ("exit_code", "1"), ("test", "otherTest")):
+                original = case[key]
+                case[key] = value
+                put(root/"B05/Emulador/results.json", evidence)
+                _, invalid = quality.report(root, SHA)
+                self.assertEqual(invalid["real_media3_system_controls"], "NOT_VERIFIED")
+                case[key] = original
+            for malformed in (None, [], "not-a-map"):
+                evidence["p3_test"]["per_case_evidence"] = malformed
+                put(root/"B05/Emulador/results.json", evidence)
+                _, invalid = quality.report(root, SHA)
+                self.assertEqual(invalid["real_media3_system_controls"], "NOT_VERIFIED")
+            self.assertFalse(audio["audible_physical_output_verified"])
+            self.assertEqual(audio["public_release_readiness"], "NOT_APPROVED")
+
 if __name__=="__main__":
     unittest.main()

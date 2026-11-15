@@ -144,7 +144,10 @@ jobs:
               "app_process_survived_15s": bool(read("process.txt")),
               "emulator_script_completed": bool(read("smoke-pass.txt")),
               "p3_local_wav_instrumentation_passed": bool(read("p3-local-wav-pass.txt")),
+              # Compatibility alias; aggregate marker now requires all eight registered cases.
               "p3_all_seven_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
+              "p3_all_registered_instrumentation_passed": bool(read("p3-instrumentation-pass.txt")),
+              "p3_system_controls_instrumentation_passed": bool(read("p3-system-controls-pass.txt")),
               "p3_queue_transitions_instrumentation_passed": bool(read("p3-queue-transitions-pass.txt")),
               "p3_auto_repeat_instrumentation_passed": bool(read("p3-auto-repeat-pass.txt")),
               "p3_error_recovery_instrumentation_passed": bool(read("p3-error-recovery-pass.txt")),
@@ -177,6 +180,7 @@ jobs:
                   "activity_recreation_passed": bool(read("p3-activity-recreation-pass.txt")),
                   "repeat_all_passed": bool(read("p3-repeat-all-pass.txt")),
                   "continuous_playback_passed": bool(read("p3-continuous-playback-pass.txt")),
+                  "system_controls_passed": bool(read("p3-system-controls-pass.txt")),
                   "error_recovery_test_class": "com.music.aurelis.playback.RealErrorRecoveryInstrumentedTest",
                   "error_recovery_passed": bool(read("p3-error-recovery-pass.txt")),
                   "auto_repeat_test_class": "com.music.aurelis.playback.RealAutoRepeatInstrumentedTest",
