@@ -170,7 +170,10 @@ def raw_tree():
     # XML is inspected and retained: no guessed screen coordinates.
     for attempt in range(3):
         try:
-            shell("uiautomator", "dump", "/sdcard/ui-parity.xml")
+            shell("rm", "-f", "/sdcard/ui-parity.xml")
+            output = shell("uiautomator", "dump", "/sdcard/ui-parity.xml")
+            if re.search(r"error|null root|could not get", output, re.I):
+                raise RuntimeError("UIAutomator snapshot failed: " + output)
             return shell("cat", "/sdcard/ui-parity.xml")
         except RuntimeError as error:
             # Retry only known transient snapshot errors. A dead device still fails.
@@ -271,13 +274,20 @@ def tap(labels, bottom=False, scroll=False):
     return True
 
 
-def foreground(package):
+def foreground(package, folder=None):
     state = shell("dumpsys", "activity", "activities")
     resumed = any(re.search(r"\b" + re.escape(package) + r"/", line) for line in state.splitlines()
                   if "mResumedActivity" in line or "topResumedActivity" in line)
-    focus = shell("dumpsys", "window", "windows")
+    # The windows-only subcommand omits per-display focus on some Android builds.
+    focus = shell("dumpsys", "window")
     focused = any(re.search(r"\b" + re.escape(package) + r"/", line)
                   for line in focus.splitlines() if "mCurrentFocus=" in line)
+    if folder is not None:
+        (folder / "activity.txt").write_text(state)
+        (folder / "window.txt").write_text(focus)
+    if not resumed or not focused:
+        print("Foreground check: " + package + f" resumed={resumed} focused={bool(focused)}; " +
+              " | ".join(line.strip() for line in focus.splitlines() if "mCurrentFocus" in line), flush=True)
     return resumed and focused
 
 
@@ -296,7 +306,7 @@ def record_state(result, app, theme, name, reached, reason=""):
         xml = tree()
         (folder / "hierarchy.xml").write_text(xml)
         labels = [n["label"] for n in nodes(xml)]
-        current = foreground(PACKAGES[app])
+        current = foreground(PACKAGES[app], folder)
         dimensions = screenshot(folder)
         orientation_ok = dimensions[0] > dimensions[1] if name == "player-landscape" else dimensions[0] < dimensions[1]
         if not orientation_ok:
@@ -525,6 +535,50 @@ def capture():
     return 0 if result["capture_complete"] else 1
 
 
+def settings_navigation():
+    """Independent real-Activity regression; a broken reference cannot skip it."""
+    from b05_case_results import verdict
+    OUT.mkdir(exist_ok=True)
+    result = {"source_sha": os.environ.get("GITHUB_SHA"), "cases": [], "passed": False}
+    try:
+        package = PACKAGES["aurelis"]
+        verify_apk(Path("app/build/outputs/apk/debug/app-debug.apk"), package)
+        adb("install", "-r", "app/build/outputs/apk/debug/app-debug.apk")
+        adb("install", "-r", "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk")
+        shell("pm", "grant", package, "android.permission.READ_MEDIA_AUDIO")
+        for method in ("profileAndLibrarySettingsSurviveRecreation", "profileAndLibrarySettingsPreserveRealPlayback"):
+            klass = "RealSettingsNavigationInstrumentedTest"
+            command = ["adb", "shell", "am", "instrument", "-w", "-r", "-e", "class",
+                       "com.music.aurelis.playback." + klass + "#" + method,
+                       "com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner"]
+            shell("am", "force-stop", package)
+            try:
+                run = subprocess.run(command, capture_output=True, text=True, timeout=150)
+                log, code = run.stdout + run.stderr, str(run.returncode)
+            except subprocess.TimeoutExpired as error:
+                def decode(value):
+                    return value.decode(errors="replace") if isinstance(value, bytes) else value or ""
+                log, code = decode(error.stdout) + decode(error.stderr), "TIMEOUT"
+            (OUT / (method + ".log")).write_text(log)
+            passed, problems = verdict(log, klass, method, code)
+            result["cases"].append({"method": method, "passed": passed, "problems": problems, "exit_code": code})
+            print(f"Settings navigation {method}: {'PASS' if passed else 'FAIL'}\n" + log[-16000:], flush=True)
+            # Keep each case's Android exception before the next process starts.
+            try:
+                runtime = shell("logcat", "-d", "-v", "threadtime", "-s", "AndroidRuntime:E", "*:S")
+                (OUT / (method + "-android-runtime.txt")).write_text(runtime)
+                print(runtime[-16000:], flush=True)
+                adb("pull", "/sdcard/Android/data/com.music.aurelis/files/settings-navigation", OUT / "screens")
+            except RuntimeError as error:
+                result.setdefault("diagnostic_errors", []).append(str(error))
+        result["passed"] = len(result["cases"]) == 2 and all(case["passed"] for case in result["cases"])
+    except Exception as error:
+        result["error"] = str(error)
+    (OUT / "settings-navigation.json").write_text(json.dumps(result, indent=2) + "\n")
+    print(json.dumps(result, indent=2), flush=True)
+    return 0 if result["passed"] else 1
+
+
 def report():
     OUT.mkdir(exist_ok=True)
     path = OUT / "results.json"
@@ -564,12 +618,14 @@ def report():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["select-reference", "capture", "report"])
+    parser.add_argument("command", choices=["select-reference", "capture", "report", "settings-navigation"])
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
     if args.command == "select-reference":
         select_reference(*map(Path, args.paths))
     elif args.command == "capture":
         raise SystemExit(capture())
+    elif args.command == "settings-navigation":
+        raise SystemExit(settings_navigation())
     else:
         report()

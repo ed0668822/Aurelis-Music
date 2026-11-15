@@ -39,6 +39,42 @@ jobs:
           name: ui-aurelis-${{ github.run_number }}
           path: comparison-aurelis/
           retention-days: 3
+  settings-navigation:
+    needs: aurelis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ui-aurelis-${{ github.run_number }}
+          path: comparison-aurelis/
+      - name: Restore both immutable B01 APKs
+        run: |
+          python3 .github/scripts/ui_parity_handoff.py restore
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Exercise both Settings entrances on the real Activity
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          ram-size: 4096M
+          cores: 2
+          emulator-boot-timeout: 900
+          disable-animations: false
+          emulator-options: '-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none'
+          script: python3 .github/scripts/ui_parity.py settings-navigation
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: Aurelis-Settings-Navigation-${{ github.run_number }}
+          path: ci-ui-comparison/
+          retention-days: 14
+          if-no-files-found: error
   reference:
     runs-on: ubuntu-24.04
     timeout-minutes: 65

@@ -82,14 +82,14 @@ def verify(root, sha):
 
 def restore():
     data = verify(ROOT, os.environ["GITHUB_SHA"])
-    relative, destination = handoff.FILES["debug"]
-    target = Path(destination)
-    if target.is_symlink():
-        raise ValueError("Symlinked APK destination")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(ROOT / "ci-f3-handoff" / relative, target)
-    if handoff.digest(target) != data["files"]["debug"]["sha256"]:
-        raise ValueError("Restored APK checksum mismatch")
+    for variant, (relative, destination) in handoff.FILES.items():
+        target = Path(destination)
+        if target.is_symlink():
+            raise ValueError("Symlinked APK destination")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / "ci-f3-handoff" / relative, target)
+        if handoff.digest(target) != data["files"][variant]["sha256"]:
+            raise ValueError("Restored APK checksum mismatch")
 
 
 if __name__ == "__main__":

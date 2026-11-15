@@ -108,12 +108,30 @@ class ParityEvidenceTest(unittest.TestCase):
                 parity.adb("shell", "uiautomator", "dump")
 
     def test_tree_retries_idle_snapshot_error_but_not_device_disconnect(self):
-        with patch.object(parity, "shell", side_effect=[RuntimeError("ERROR: could not get idle state"), "dumped", "<hierarchy/>"]) as shell, patch.object(parity.time, "sleep"):
+        with patch.object(parity, "shell", side_effect=["", RuntimeError("ERROR: could not get idle state"), "", "dumped", "<hierarchy/>"]) as shell, patch.object(parity.time, "sleep"):
             self.assertEqual("<hierarchy/>", parity.tree())
-            self.assertEqual(3, shell.call_count)
+            self.assertEqual(5, shell.call_count)
         with patch.object(parity, "shell", side_effect=RuntimeError("device offline")) as shell:
             with self.assertRaisesRegex(RuntimeError, "device offline"): parity.tree()
             self.assertEqual(1, shell.call_count)
+
+    def test_zero_exit_dump_error_is_retried_without_reading_stale_xml(self):
+        with patch.object(parity, "shell", side_effect=["", "ERROR: null root node returned", "", "dumped", "<hierarchy/>"]) as shell, patch.object(parity.time, "sleep"):
+            self.assertEqual("<hierarchy/>", parity.raw_tree())
+            self.assertEqual(1, sum(call.args[:1] == ("cat",) for call in shell.call_args_list))
+            self.assertEqual(2, sum(call.args[:2] == ("rm", "-f") for call in shell.call_args_list))
+
+    def test_settings_runner_rejects_runner_failure_even_when_adb_exits_zero(self):
+        import subprocess
+        failed = subprocess.CompletedProcess([], 0, 'INSTRUMENTATION_FAILED: Process crashed\n', '')
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
+             patch.object(parity, "verify_apk"), patch.object(parity, "adb"), patch.object(parity, "shell", return_value=""), \
+             patch.object(parity.subprocess, "run", return_value=failed), redirect_stdout(io.StringIO()):
+            self.assertEqual(1, parity.settings_navigation())
+            result = json.loads((Path(temp) / 'settings-navigation.json').read_text())
+            self.assertFalse(result['passed'])
+            self.assertEqual(2, len(result['cases']))
+            self.assertTrue(all('ANDROID_RUNNER_REPORTED_FAILURE' in row['problems'] for row in result['cases']))
 
     def test_expand_uses_the_transport_band_even_if_a_library_title_is_lower(self):
         xml = '''<hierarchy>

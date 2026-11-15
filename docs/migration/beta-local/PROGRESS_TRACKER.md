@@ -7,6 +7,26 @@
 
 ## Continuación actual — primera entrega documental
 
+### Cierre Perfil/Ajustes reportado — reproducción Android antes de atribuir causa
+
+El usuario autoriza «Empezamos, corrige todo eso». Ambos accesos llaman openSettings
+y SettingsScreen. Principal154/d36124c7 SUCCESS en seis fases; no acredita esos
+accesos en hardware. Sin excepción del teléfono todavía; no se inventa causa.
+Se prepara un job independiente de BitChord con MainActivity real, accesibilidad
+Android, dos entradas, Atrás/recreación y perfil conservado, sin/con reproducción
+Media3 de WAV original. No mocks de Activity/player. Reutiliza ambos APK B01 del
+mismo SHA, hashes verificados; falla por crash/timeout/identidad JUnit incorrecta.
+Conserva trazas AndroidRuntime y capturas de etapas. Android solo Actions.
+
+Comparación11/43742940458: plain tiene textos reales pero todos los foreground
+fallan; glass falla al leer XML inexistente. Se consulta dumpsys window completo
+para obtener foco por display, guarda actividad/ventana y publica diagnósticos.
+El dump elimina XML anterior y detecta errores de stdout aunque adb termine0;
+reintenta solo los transitorios conocidos. No rebaja checks ni declara paridad.
+33 pruebas Python pasan en plain/glass; actionlint con ShellCheck, diff --check y
+parser Kotlin estático correctos. Dos revisiones del mismo agente. Ejecución
+Android nueva pendiente; la reparación de Ajustes continúa con su resultado.
+
 ### Reparación del preflight153 — ShellCheck SC2024
 
 cb83c974/run43742631853 falla en B01, «Enforce actionlint and record zizmor
