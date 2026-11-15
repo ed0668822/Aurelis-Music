@@ -10,6 +10,8 @@ import ui_parity as parity
 import ui_parity_handoff as external
 import ci14_handoff as handoff
 import os
+import io
+from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
@@ -98,6 +100,16 @@ class ParityEvidenceTest(unittest.TestCase):
             parity.record_state(result, "aurelis", "dark", "player-landscape", True)
             self.assertFalse(result["screens"][0]["reached"])
             self.assertIn("orientation", result["screens"][0]["reason"])
+
+    def test_report_prints_actual_capture_error_when_artifact_is_unavailable(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)):
+            result = {"stage": "offline_configuration", "error": "actual fixture failure", "screens": []}
+            (Path(temp) / "results.json").write_text(json.dumps(result))
+            output = io.StringIO()
+            with redirect_stdout(output), patch.dict(os.environ, {}, clear=True): parity.report()
+            self.assertIn("actual fixture failure", output.getvalue())
+            self.assertIn("offline_configuration", output.getvalue())
+            self.assertEqual("NOT_REVIEWED", json.loads((Path(temp) / "results.json").read_text())["visual_verdict"])
 
     def external_fixture(self, root):
         sha = "a" * 40

@@ -69,7 +69,8 @@ def adb(*args, binary=False, input_data=None):
     result = subprocess.run(["adb", *map(str, args)], input=input_data,
                             capture_output=True, timeout=60)
     if result.returncode:
-        raise RuntimeError("adb command failed: " + " ".join(map(str, args[:3])))
+        raise RuntimeError("adb command failed (exit " + str(result.returncode) + "): " +
+                           " ".join(map(str, args[:3])) + ": " + result.stderr.decode("utf-8", errors="replace")[-4000:])
     return result.stdout if binary else result.stdout.decode("utf-8", errors="replace").strip()
 
 
@@ -152,6 +153,8 @@ def record_state(result, app, theme, name, reached, reason=""):
     except Exception as error:
         result["screens"].append({"app": app, "theme": theme, "state": name,
             "reached": False, "reason": str(error), "visual_verdict": "NOT_REVIEWED"})
+    row = result["screens"][-1]
+    print(f"UI state {app}/{theme}/{name}: {'REACHED' if row['reached'] else 'NOT_REACHED'}; {row.get('reason', '')}", flush=True)
     save(result)
 
 
@@ -194,7 +197,7 @@ def verify_apk(path, package):
 def capture():
     OUT.mkdir(exist_ok=True)
     result = {"schema": 1, "aurelis_commit": os.environ.get("GITHUB_SHA"), "reference_commit": REFERENCE_SHA,
-        "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False,
+        "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
         "not_tested": ["widgets on a launcher", "gestures and animations in motion", "physical device", "pixel identity"],
         "font_policy": "Original reference default; Aurelis authorized system font. Difference remains visible.",
         "fixture_preferences": "Disposable emulator only: skip reference remote onboarding, set explicit theme",
@@ -209,12 +212,14 @@ def capture():
         primary = json.loads(Path("comparison-aurelis/primary-run.json").read_text())
         result["aurelis_build_source"] = {key: primary[key] for key in ("id", "run_number", "run_attempt", "head_sha", "path")}
         result["apks"] = {app: verify_apk(path, PACKAGES[app]) for app, path in apks.items()}
+        result["stage"] = "device_configuration"
         if shell("getprop", "ro.build.version.sdk") != "35":
             raise ValueError("Expected API35")
         shell("wm", "size", "1080x1920"); shell("wm", "density", "480")
         shell("settings", "put", "system", "font_scale", "1.0")
         shell("settings", "put", "system", "accelerometer_rotation", "0")
         shell("settings", "put", "system", "user_rotation", "0")
+        result["stage"] = "offline_configuration"
         # No remote credentials/content are used. Internet access is disabled for captures.
         shell("cmd", "connectivity", "airplane-mode", "enable")
         shell("svc", "wifi", "disable"); shell("svc", "data", "disable")
@@ -227,6 +232,7 @@ def capture():
             "font_scale": shell("settings", "get", "system", "font_scale"),
             "locale": shell("getprop", "persist.sys.locale"), "api": "35",
             "abis": shell("getprop", "ro.product.cpu.abilist"), "hardware_audio_verified": False}
+        result["stage"] = "media_indexing"
         fixtures = Path("comparison-media")
         result["fixtures"] = json.loads((fixtures / "manifest.json").read_text())
         media = "/sdcard/Music/Parity"
@@ -244,12 +250,14 @@ def capture():
             raise RuntimeError("The three identical fixture songs were not indexed")
         (OUT / "media-catalog.txt").write_text(catalog)
         for app, path in apks.items():
+            result["stage"] = "install:" + app
             package = PACKAGES[app]
             adb("install", "-r", path)
             shell("pm", "grant", package, "android.permission.READ_MEDIA_AUDIO")
             # Permission exists in both original manifests; this is fixture setup, not a source edit.
             shell("pm", "grant", package, "android.permission.POST_NOTIFICATIONS")
             for theme in ("dark", "light"):
+                result["stage"] = "capture:" + app + "/" + theme
                 shell("settings", "put", "system", "user_rotation", "0")
                 seed_preferences(app, theme); launch(package)
                 labels = nodes(tree())
@@ -292,6 +300,7 @@ def capture():
         result["capture_complete"] = len(result["screens"]) == 36 and all(row["reached"] for row in result["screens"])
     except Exception as error:
         result["error"] = str(error)
+        print(f"UI capture FAILED at {result['stage']}: {error}", flush=True)
     finally:
         save(result)
     return 0 if result["capture_complete"] else 1
@@ -303,6 +312,15 @@ def report():
     result = json.loads(path.read_text()) if path.exists() else {"error": "Capture never produced results", "screens": []}
     result["visual_verdict"] = "NOT_REVIEWED"
     save(result)
+    summary = {key: result.get(key) for key in ("stage", "error", "capture_complete", "visual_verdict")}
+    summary["captured_states"] = len(result.get("screens", []))
+    summary["unreached"] = [{key: row.get(key) for key in ("app", "theme", "state", "reason")}
+                            for row in result.get("screens", []) if not row.get("reached")]
+    diagnostic = json.dumps(summary, ensure_ascii=False, indent=2)
+    print("UI comparison diagnostic:\n" + diagnostic, flush=True)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+            stream.write("## UI comparison — review pending\n\n```json\n" + diagnostic + "\n```\n")
     parts = ['<!doctype html><meta charset="utf-8"><title>BitChord / Aurelis</title>',
         '<style>body{font:16px system-ui;background:#eee;color:#111}section{margin:24px}.pair{display:flex;gap:16px}.pair figure{flex:1;min-width:0;margin:0}img{max-width:100%;vertical-align:top}pre{white-space:pre-wrap}</style>',
         '<h1>BitChord / Aurelis — visual review pending</h1>',

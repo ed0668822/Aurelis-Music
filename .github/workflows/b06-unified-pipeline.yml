@@ -23,6 +23,7 @@ on:
       - ".github/version-policy.json"
       - ".github/apk-audit-policy.json"
       - ".github/workflows/b0*.yml"
+      - ".github/workflows/ui-parity-comparison.yml"
   # The feature branch has a single push-driven pipeline per commit.
   # Avoid duplicating full builds for its open pull request.
   workflow_dispatch:

@@ -5,6 +5,16 @@
 
 ## Continuación actual — primera entrega documental
 
+### Pre-B07 — diagnóstico de captura y activación B01–B06
+
+Confirmado: run43679804645/db9c2207 SUCCESS en las seis fases. La comparación del
+mismo SHA compila ambas apps y falla después en captura, no compilación. Logs ZIP
+leídos; results.json bloqueado por proxy. Causa exacta aún no visible. Se imprime
+etapa/error en logs/resumen; filtro del principal incluye el workflow UI para que
+cambios solo en ese archivo también generen APK del mismo SHA. No se debilitan
+pruebas/gates. Dieciséis rutas acumuladas; trece tests UI y nueve de grafo pasan,
+actionlint/diff correctos; dos revisiones del mismo agente. Reproducción pendiente.
+
 ### Pre-B07 — reparación de comparación, nuevo CI pendiente
 
 Run43679318406 falló en la preparación: V1 recibió el contador1 del workflow nuevo;

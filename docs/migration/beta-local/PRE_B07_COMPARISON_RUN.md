@@ -90,3 +90,22 @@ actionlint, py_compile y diff --check correctos. Dos revisiones estáticas del m
 agente: identidad/transferencia/retención; después workflow, errores y documentación.
 No Gradle/Android local. Nueva comparación y build de referencia pendientes de CI;
 no declarar similitud o pantallas verificadas con estos cambios de preparación.
+
+
+## Segunda reparación — diagnóstico visible y activación del pipeline
+
+Run43679804645/db9c2207 SUCCESS, seis fases B01–B06; no falta compilación de ese SHA.
+Run43679318341 anterior CANCELLED tras nuevo push, conforme a concurrency del principal.
+Run43679804648 de comparación: aurelis/reference SUCCESS; compare FAILURE en captura.
+El emulador arrancó y el script salió1 tras5s; causa guardada solo en results.json,
+sin imprimirla. Informe bloqueado por proxy, logs ZIP oficial sí leído/verificado.
+No atribuirlo a GPU/adb/red ni a navegación sin leer el error concreto.
+
+Se añade diagnóstico de etapa/error a stdout y resumen Actions, manteniendo JSON y
+fallo real; stderr de comandos ADB limitado. Se corrige además el filtro de paths
+principal para que un cambio solo en ui-parity-comparison.yml también lance B01–B06:
+la comparación necesita un APK del mismo SHA. No se cambian gates ni versiones.
+Dieciséis rutas distintas acumuladas≤30. Trece tests Python UI y nueve de grafo
+aprobados; actionlint/diff correctos. Dos revisiones estáticas del mismo agente.
+Esta preparación permite reproducir y leer la causa de captura sin depender del ZIP;
+no representa aún una reparación demostrada de ese error Android ni paridad visual.
