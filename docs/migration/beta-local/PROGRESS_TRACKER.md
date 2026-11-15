@@ -7,6 +7,31 @@
 
 ## Continuación actual — primera entrega documental
 
+### Causa del cierre reproducido — ciclo de RenderNode en el fondo de cristal
+
+299cdcd7/43751201636: ambos casos Settings fallan. exit-info registra APP CRASH(NATIVE),
+incluido status11. La traza de libhwui repite RenderNode::prepareTreeImpl y
+SkiaDisplayList::prepareListAndChildren hasta los frames449/450. Evidencia oficial
+guardada. El run se cancela después de terminar Settings para retirar comparaciones
+ya sustituidas; no se presenta esa cancelación como PASS ni como fallo de compilación.
+
+Inspección: AppNavigationHost grababa toda SettingsScreen en appBackdrop. Su
+FrostedTopBar.liquidGlass volvía a dibujar ese mismo GraphicsLayer desde un hijo:
+el RenderNode de la fuente contenía un lector de sí mismo. Local Music y Search
+tenían la misma disposición. Se conserva el motor de cristal y se traslada la
+fuente a sus cuerpos/listas; la cabecera queda como hermana fuera de la grabación.
+El host no envuelve otra vez las páginas que graban su propio cuerpo. Se mantienen
+Haze, refraction, identidad de capas, reproducción y ABI/SDK. El perfil de solo
+lectura también publica su cuerpo sin introducir un lector en la fuente.
+
+Regresión de estructura comprueba que el cuerpo incluye Nombre y excluye Atrás,
+y que el host no crea una segunda fuente envolvente. Pruebas Android reales
+mantienen los dos accesos, recreación y playback; el acceso a Ajustes desde la
+lista usa desplazamiento de accesibilidad y verifica que Atrás retire el perfil.
+Dos revisiones del mismo agente, parser/diff/actionlint estáticos; 60 rutas
+acumuladas, ninguna nueva en esta corrección. Validación Android del nuevo SHA
+pendiente antes de declarar cerrado el bug o la fidelidad visual completa.
+
 ### Ajustes — búsqueda por control e idioma, cierre real aún en investigación
 
 221bebf5/43749820078 reproduce Process crashed en las dos pruebas Android reales

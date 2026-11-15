@@ -2,6 +2,7 @@
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.LibraryViewModel
@@ -23,6 +24,7 @@ fun LocalMusicScreen(
     onSongActions: (LocalSong) -> Unit = {},
     onProfile: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
+    contentBackdropModifier: Modifier = Modifier,
 ) {
     val uiState by libraryViewModel.uiState.collectAsState()
     val playback by playbackViewModel.state.collectAsState()
@@ -40,5 +42,5 @@ fun LocalMusicScreen(
                     (uiState.libraryState as? LibraryState.Success)?.artists?.firstOrNull { it.key == page.key }?.let { onArtistOpen?.invoke(it) }
                 else -> Unit
             }
-        }, onSongActions, onProfile, contentPadding)
+        }, onSongActions, onProfile, contentPadding, contentBackdropModifier)
 }

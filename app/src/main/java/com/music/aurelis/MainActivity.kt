@@ -280,6 +280,8 @@ internal fun AurelisNavigationContent(
         com.music.aurelis.ui.components.LocalLiquidGlassEnabled.current, reduceBlur,
         com.music.aurelis.ui.components.LocalGlassHardware.current,
     )
+    val pageBackdropModifier = Modifier.hazeSource(hazeState)
+        .then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier)
     androidx.compose.runtime.CompositionLocalProvider(
         com.music.aurelis.ui.components.LocalAppBackdrop provides appBackdrop,
         com.music.aurelis.ui.components.LocalAppHazeState provides hazeState,
@@ -288,7 +290,11 @@ internal fun AurelisNavigationContent(
         navigator = navigator,
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
             .onSizeChanged { dock.sheetTravel = it.height.toFloat() }.onGloballyPositioned { dock.reportHost(it) },
-        pageModifier = Modifier.hazeSource(hazeState).then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier),
+        pageModifier = pageBackdropModifier,
+        pageHandlesBackdrop = { page ->
+            page == AppRoute.Settings || page is AppRoute.SettingsSection || page == AppRoute.LocalMusic ||
+                page == null && navigator.selectedTab == AppTab.SEARCH
+        },
         pageBottomPadding = bottomContentPadding,
         routeHandlesBottomPadding = { it == AppRoute.LocalMusic },
         topBar = {
@@ -419,6 +425,7 @@ internal fun AurelisNavigationContent(
                     focusRequested = searchFocusRequested,
                     onFocusHandled = { searchFocusRequested = false },
                     onOpenProfile = openSettings,
+                    contentBackdropModifier = pageBackdropModifier,
                     onSongClick = { songs, index -> saveQuery(); playbackViewModel.playSongs(songs, index) },
                     onSongLongPress = { actionSong = it },
                     history = history,
@@ -447,6 +454,7 @@ internal fun AurelisNavigationContent(
                     onCollectionOpen = { navigator.push(it) },
                     onSongActions = { actionSong = it },
                     onProfile = openSettings,
+                    contentBackdropModifier = pageBackdropModifier,
                     contentPadding = PaddingValues(bottom = bottomContentPadding),
                 )
                 AppRoute.Settings, is AppRoute.SettingsSection -> SettingsScreen(
@@ -458,6 +466,7 @@ internal fun AurelisNavigationContent(
                     section = (page as? AppRoute.SettingsSection)?.category,
                     onOpenCategory = { navigator.push(AppRoute.SettingsSection(it)) },
                     onOpenReplay = { navigator.push(AppRoute.Replay) },
+                    contentBackdropModifier = pageBackdropModifier,
                 )
                 AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
                 AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() }, store = userStore,

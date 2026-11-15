@@ -38,7 +38,8 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
     currentSongId: String?, isPlaying: Boolean, sort: SortOption, onSort: (SortOption) -> Unit,
     onBack: () -> Unit, onRetry: () -> Unit, onPermission: () -> Unit,
     onPlay: (List<LocalSong>, Int) -> Unit, onOpen: (AppRoute.Collection) -> Unit,
-    onActions: (LocalSong) -> Unit, onProfile: () -> Unit, bottomPadding: PaddingValues = PaddingValues()) {
+    onActions: (LocalSong) -> Unit, onProfile: () -> Unit, bottomPadding: PaddingValues = PaddingValues(),
+    contentBackdropModifier: Modifier = Modifier) {
     var selected by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
     var search by rememberSaveable { mutableStateOf(false) }
@@ -52,7 +53,7 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
     val tabs = listOf("Canciones", "Artistas", "Álbumes", "Playlists", "Carpetas")
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val sleeve = (maxWidth * 0.76f).coerceAtMost(maxHeight * 0.5f)
-        LazyColumn(state = list, modifier = Modifier.fillMaxSize().testTag("local-music-list"),
+        LazyColumn(state = list, modifier = Modifier.fillMaxSize().then(contentBackdropModifier).testTag("local-music-list"),
             contentPadding = bottomPadding) {
             item(key = "header") {
                 if (success != null && !search) LocalDetailHeader("Local Music", "Archivos de audio en el dispositivo",

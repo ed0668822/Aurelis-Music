@@ -42,6 +42,7 @@ fun AppNavigationHost(
     routeContent: @Composable (AppRoute) -> Unit,
     bottomBar: @Composable BoxScope.() -> Unit,
     pageModifier: Modifier = Modifier,
+    pageHandlesBackdrop: (AppRoute?) -> Boolean = { false },
     pageBottomPadding: Dp = 0.dp,
     routeHandlesBottomPadding: (AppRoute) -> Boolean = { false },
     topBar: @Composable BoxScope.() -> Unit = {},
@@ -64,7 +65,10 @@ fun AppNavigationHost(
     BackHandler(enabled = navigator.canGoBack) { navigator.back() }
 
     Box(modifier.fillMaxSize()) {
-        Surface(Modifier.fillMaxSize().then(pageModifier).then(if (playbackPage) Modifier.clearAndSetSemantics { } else Modifier), color = MaterialTheme.colorScheme.background) {
+        // A page with its own glass header records its body, excluding the header.
+        // Recording a glass reader in its own source creates a native RenderNode cycle.
+        val sourceModifier = if (pageHandlesBackdrop(pageEntry?.route)) Modifier else pageModifier
+        Surface(Modifier.fillMaxSize().then(sourceModifier).then(if (playbackPage) Modifier.clearAndSetSemantics { } else Modifier), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize()) {
                 if (pageEntry == null) {
                     stateHolder.SaveableStateProvider("tab.${navigator.selectedTab.name}") {

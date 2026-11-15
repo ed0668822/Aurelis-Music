@@ -64,6 +64,7 @@ fun SearchScreen(
     category: LocalSearchCategory = LocalSearchCategory.ALL,
     onCategoryChange: (LocalSearchCategory) -> Unit = {},
     onOpenProfile: (() -> Unit)? = null,
+    contentBackdropModifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -87,7 +88,7 @@ fun SearchScreen(
                 focusRequester = focusRequester,
                 placeholder = "Buscar canciones, artistas, álbumes…",
             ) }, actions = { onOpenProfile?.let { LocalProfileButton(it) } })
-        Column(modifier = Modifier.padding(top = topPadding)) {
+        Column(modifier = Modifier.then(contentBackdropModifier).padding(top = topPadding)) {
             if (results != null) LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(LocalSearchCategory.entries.toList()) { _, item ->

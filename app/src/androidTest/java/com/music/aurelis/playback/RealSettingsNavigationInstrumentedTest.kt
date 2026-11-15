@@ -48,15 +48,26 @@ class RealSettingsNavigationInstrumentedTest {
             label?.toString()?.lineSequence()?.any { it.equals(text, ignoreCase = true) } == true
         }
 
-    private fun await(label: String, click: Boolean = false) {
+    private fun await(label: String, click: Boolean = false, scroll: Boolean = false) {
         val deadline = SystemClock.elapsedRealtime() + 15_000
         while (SystemClock.elapsedRealtime() < deadline) {
             val node = rows().firstOrNull { labeled(it, label) && (!click || it.isClickable && it.isEnabled) }
             if (node != null && (!click || node.performAction(AccessibilityNodeInfo.ACTION_CLICK))) return
+            if (scroll) rows().firstOrNull { it.isScrollable }
+                ?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
             SystemClock.sleep(150)
         }
         throw AssertionError("Settings navigation: missing " + label + "; visible=" +
             rows().map { "${it.text}|${it.contentDescription}" })
+    }
+
+    private fun awaitAbsent(label: String) {
+        val deadline = SystemClock.elapsedRealtime() + 15_000
+        while (SystemClock.elapsedRealtime() < deadline) {
+            if (rows().none { labeled(it, label) }) return
+            SystemClock.sleep(150)
+        }
+        throw AssertionError("Settings navigation: Back left the profile visible: " + label)
     }
 
     private fun evidence(stage: String) {
@@ -118,13 +129,15 @@ class RealSettingsNavigationInstrumentedTest {
             await(settings)
             await(before.name)
             instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+            awaitAbsent(context.getString(R.string.settings_photo_hint))
             await(library, click = true)
-            await(settings, click = true)
+            await(settings, click = true, scroll = true)
             await(before.name)
             evidence("$prefix-library-settings")
             activity.recreate()
             await(before.name)
             instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+            awaitAbsent(context.getString(R.string.settings_photo_hint))
             await(library)
             assertEquals("Opening Settings must preserve the single local profile", before, ProfileRepository.state.value.profile)
             assertEquals(Lifecycle.State.RESUMED, activity.state)

@@ -86,4 +86,23 @@ class ChromeContractTest {
         compose.onNodeWithContentDescription("Perfil").performClick()
         compose.runOnIdle { assertEquals(2, profiles) }
     }
+
+    @Test fun settingsGlassHeaderIsOutsideItsRecordedBodyAndHostDoesNotRecordItAgain() {
+        compose.setContent { AurelisTheme {
+            val nav = rememberAppNavigator()
+            SideEffect { nav.push(AppRoute.Settings) }
+            AppNavigationHost(nav,
+                pageModifier = Modifier.testTag("host-backdrop"),
+                pageHandlesBackdrop = { it == AppRoute.Settings },
+                tabContent = { Text("Root") },
+                routeContent = { com.music.aurelis.ui.screens.SettingsScreen(true, { nav.pop() },
+                    contentBackdropModifier = Modifier.testTag("body-backdrop")) },
+                bottomBar = {})
+        } }
+        compose.onNodeWithTag("host-backdrop").assertDoesNotExist()
+        compose.onNodeWithTag("body-backdrop", useUnmergedTree = true)
+            .assert(hasAnyDescendant(hasText("Nombre")))
+            .assert(!hasAnyDescendant(hasContentDescription("Atrás")))
+        compose.onNodeWithContentDescription("Atrás").assertIsDisplayed()
+    }
 }

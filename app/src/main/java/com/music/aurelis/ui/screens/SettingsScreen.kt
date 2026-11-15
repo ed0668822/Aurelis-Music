@@ -45,7 +45,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: () -> Unit = {},
     localSongs: List<com.music.aurelis.data.model.LocalSong> = emptyList(), onOpenFolder: (String) -> Unit = {},
     section: SettingsCategory? = null, onOpenCategory: ((SettingsCategory) -> Unit)? = null,
-    onOpenReplay: (() -> Unit)? = null) {
+    onOpenReplay: (() -> Unit)? = null, contentBackdropModifier: Modifier = Modifier) {
     if (!isVisible) return
     var localSection by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -92,7 +92,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         }
     }
     if (profileState.readOnly) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
+        Column(Modifier.fillMaxSize().then(contentBackdropModifier).statusBarsPadding().padding(24.dp)) {
             Text(context.getString(R.string.settings_profile_read_only), style = MaterialTheme.typography.titleLarge)
             Text(profileState.error ?: context.getString(R.string.settings_profile_read_only_hint))
             TextButton(onClick = onDismiss) { Text(context.getString(R.string.settings_back)) }
@@ -119,7 +119,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     val sources by SettingsRepository.lyricsSources.collectAsState()
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground) {
     Box(Modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+    Column(Modifier.fillMaxSize().then(contentBackdropModifier).background(MaterialTheme.colorScheme.background)
         .navigationBarsPadding().then(if (editing || translation || browsingFolders || language) Modifier.clearAndSetSemantics { } else Modifier)
         .verticalScroll(scrollState).padding(top = topBarContentPadding())) {
         Text(category?.let { settingsTitle(it, context.resources) } ?: context.getString(R.string.navigation_settings), style = MaterialTheme.typography.displayLarge,
