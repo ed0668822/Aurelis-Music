@@ -139,6 +139,19 @@ def mini_player_rows(rows):
             and any(overlaps(title, control) for control in next_controls)]
 
 
+def expand_miniplayer():
+    rows = inspect_until(lambda current: bool(mini_player_rows(current)))
+    candidates = mini_player_rows(rows)
+    if not candidates:
+        return False
+    # A song list may extend BELOW the dock. Never select the lowest title globally.
+    target = min(candidates, key=lambda row: (row["bounds"][2] - row["bounds"][0]) * (row["bounds"][3] - row["bounds"][1]))
+    left, top, right, bottom = target["bounds"]
+    shell("input", "tap", (left + right) // 2, (top + bottom) // 2)
+    time.sleep(1.5)
+    return True
+
+
 def settings_root(rows):
     return bool(matches(rows, LABELS["settings"]) and (
         any(row["class"].endswith("EditText") for row in rows)
@@ -344,6 +357,9 @@ def capture():
             result["stage"] = "install:" + app
             package = PACKAGES[app]
             adb("install", "-r", path)
+        (OUT / "widget-registration.txt").write_text(shell("dumpsys", "appwidget"))
+        for app in apks:
+            package = PACKAGES[app]
             for theme in ("dark", "light"):
                 result["stage"] = "capture:" + app + "/" + theme
                 shell("settings", "put", "system", "user_rotation", "0")
@@ -376,12 +392,13 @@ def capture():
                 paused = playing and tap(("Pause", "Pausar", "Pausa"), bottom=True) and wait_fixture_session(package, (2,))
                 mini = paused and bool(mini_player_rows(nodes(tree())))
                 record_state(result, app, theme, "miniplayer", mini)
-                expanded = mini and (tap(("Abrir reproductor", "Open player", "Expand player")) or tap(("Parity Track 01",), bottom=True))
+                expanded = mini and (tap(("Abrir reproductor", "Open player", "Expand player")) or expand_miniplayer())
                 player_markers = LABELS["lyrics"] + ("Queue", "Cola", "Abrir cola", "Up next", "Cerrar reproductor")
                 player_labels = inspect_until(lambda rows: bool(matches(rows, player_markers)))
                 verified = bool(matches(player_labels, player_markers))
                 record_state(result, app, theme, "player-portrait", expanded and verified)
-                shell("settings", "put", "system", "user_rotation", "1"); time.sleep(2)
+                if expanded and verified:
+                    shell("settings", "put", "system", "user_rotation", "1"); time.sleep(2)
                 record_state(result, app, theme, "player-landscape", expanded and verified and bool(matches(nodes(tree()), ("Parity Track 01",))) and bool(matches(nodes(tree()), player_markers)))
                 shell("settings", "put", "system", "user_rotation", "0"); time.sleep(2)
                 lyrics = expanded and tap(LABELS["lyrics"], scroll=True)
@@ -405,6 +422,14 @@ def capture():
                 logcat.wait(timeout=5)
         if logcat_stream is not None:
             logcat_stream.close()
+            path = OUT / "device-logcat.txt"
+            with path.open("rb") as stream:
+                stream.seek(max(0, path.stat().st_size - 262144))
+                tail = stream.read().decode("utf-8", errors="replace")
+            result["device_crash_lines"] = [line for line in tail.splitlines()
+                if re.search(r"Fatal signal|FATAL EXCEPTION|OutOfMemoryError|GPU.*(?:fault|hang)", line, re.I)][-40:]
+            if result["device_crash_lines"]:
+                print("Device crash diagnostics:\n" + "\n".join(result["device_crash_lines"]), flush=True)
         save(result)
     return 0 if result["capture_complete"] else 1
 

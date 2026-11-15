@@ -30,7 +30,14 @@ internal data class MediaWidgetSnapshot(
             hasNext = false,
         )
 
-        fun save(context: Context, snapshot: MediaWidgetSnapshot) {
+        private val publicationLock = Any()
+
+        internal fun publishIfCurrent(context: Context, expected: MediaWidgetSnapshot, publish: () -> Unit): Boolean =
+            synchronized(publicationLock) {
+                if (load(context) != expected) false else { publish(); true }
+            }
+
+        fun save(context: Context, snapshot: MediaWidgetSnapshot) = synchronized(publicationLock) {
             prefs(context).edit {
                 putString(KEY_MEDIA_ID, snapshot.mediaId)
                 putString(KEY_TITLE, snapshot.title)

@@ -10,6 +10,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
+import java.util.Locale
 
 @Composable
 fun AppLanguageDialog(
@@ -17,8 +20,17 @@ fun AppLanguageDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("App Language") },
-        text = { Text("Select your preferred display language.") },
+        title = { Text("Idioma de la aplicación") },
+        text = { Column {
+            val selected = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+            listOf("" to "Sistema", "en" to "English", "es" to "Español", "pt" to "Português",
+                "fr" to "Français", "de" to "Deutsch", "ja" to "日本語").forEach { (tag, label) ->
+                SettingsRow(title = label, onClick = {
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+                    onDismiss()
+                }, trailing = { if (selected == tag) Text("✓") })
+            }
+        } },
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("OK")

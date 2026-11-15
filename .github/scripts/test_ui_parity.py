@@ -15,6 +15,17 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_expand_uses_the_transport_band_even_if_a_library_title_is_lower(self):
+        xml = '''<hierarchy>
+          <node text="Parity Track 01" bounds="[200,1600][600,1700]"/>
+          <node content-desc="Play" bounds="[700,1600][800,1700]"/>
+          <node content-desc="Next" bounds="[850,1600][950,1700]"/>
+          <node text="Parity Track 01" bounds="[200,1847][600,1905]"/>
+        </hierarchy>'''
+        with patch.object(parity, "tree", return_value=xml), patch.object(parity, "shell") as shell, patch.object(parity.time, "sleep"):
+            self.assertTrue(parity.expand_miniplayer())
+            shell.assert_called_once_with("input", "tap", 400, 1650)
+
     def test_fixture_session_requires_this_packages_state_and_metadata(self):
         # Format observed in UI-4; another package's session must not leak into it.
         dump = '''      package=com.music.bitchord

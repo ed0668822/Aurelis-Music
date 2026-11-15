@@ -41,7 +41,7 @@ class NavigationIntegrationTest {
         return restoration
     }
 
-    private fun tab(label: String) = compose.onNode(isSelectable() and hasText(label))
+    private fun tab(label: String) = compose.onNode(isSelectable() and (hasText(label) or hasContentDescription(label)))
     private fun back() = compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
 
     @Test fun libraryHeadingClearsTheProfileHeaderAndProfileOpensLocalSettings() {
@@ -64,6 +64,7 @@ class NavigationIntegrationTest {
         tab("Biblioteca").performClick().assertIsSelected()
         compose.onNodeWithText("Ajustes").performClick()
         tab("Biblioteca").assertIsDisplayed().assertIsSelected()
+        compose.onNodeWithText("Reproducción").performScrollTo().performClick()
         compose.onNodeWithText("Equalizer").performScrollTo().performClick()
         compose.onNodeWithText("Audio Equalizer & DSP").assertIsDisplayed()
         restoration.emulateSavedInstanceStateRestore()
@@ -71,6 +72,8 @@ class NavigationIntegrationTest {
         back()
         // Settings scroll state survives both the child page and saved-state recreation.
         compose.onNodeWithText("Equalizer").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(AppRoute.SettingsSection(SettingsCategory.AUDIO), navigator.visibleRoute()) }
+        back()
         compose.runOnIdle { assertEquals(AppRoute.Settings, navigator.visibleRoute()) }
         back()
         tab("Biblioteca").assertIsSelected()

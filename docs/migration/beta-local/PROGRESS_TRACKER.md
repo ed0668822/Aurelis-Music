@@ -3,7 +3,32 @@
 
 > **Límite vigente solicitado:** máximo **30 archivos por bloque**, contando toda la entrega y todos sus commits, incluidos pruebas, recursos, documentación, configuración y eliminaciones. Esta regla posterior prevalece sobre el techo35 histórico de [PLAN_CONTINUATION](PLAN_CONTINUATION.md); los subbloques menores siguen permitidos. [PLAN_30_FILES](PLAN_30_FILES.md) conserva su registro histórico. No se cierran retrospectivamente B06/B07 ni se inicia B09 por registrar el plan.
 
+> **Excepción posterior para estas correcciones UI:** máximo **60 archivos distintos**, incluyendo sus correcciones, pruebas y documentación. El usuario pidió esperar y posteriormente autorizó «Continúa y termina». La excepción se aplica a esta entrega; no altera el alcance ni acredita paridad visual por compilación.
+
 ## Continuación actual — primera entrega documental
+
+### Pre-B07 UI2 — páginas locales, categorías, iconografía y widgets
+
+«Continúa y termina» autoriza completar las correcciones de la auditoría. Base
+baedcf57: run43692222152 SUCCESS; comparación43692222178 FAILURE, logs leídos:
+MiniPlayer sí alcanzado, player no verificado y ADB desconectado. Se corrige el
+fallback que elegía el título más bajo de toda la lista: usa el título de la banda
+de transporte verificada. No se gira una página que no sea el player; un estado
+omitido sigue fallando. Logcat continuo conserva/imprime errores fatales si aparecen.
+No se atribuye la caída del emulador a una causa que sus logs no demuestran.
+
+Cabecera local responsive dentro de la lista, cinco pestañas/categorías con datos
+existentes, duración total, acciones por pista, imágenes y filas accesibles.
+Settings activo con búsqueda y rutas de categorías restaurables; perfil único,
+preferencias/errores conservados. Home adapta el espacio de cuenta a perfil/datos
+locales y tarjetas3:4; búsqueda separada de la cápsula en modo cristal; glifos
+semánticos corregidos sin incorporar SF Symbols restringidos. Widgets Square,
+Wide y Pill registrados, snapshot desde el mismo player, IO serializado y rechazo
+de renders tardíos; sus botones abren el panel/controlan la sesión existente.
+Ocho regresiones Android nuevas preparadas y pruebas existentes ajustadas al
+flujo real, sin suprimirlas.23 tests Python aprobados y dos revisiones del mismo
+agente. No Gradle/Lint/Android local. Nuevo CI y revisión visual pendientes;
+no declarar paridad completa ni B12/B07 cerrados. Detalle PRE_B07_UI2_LOCAL.md.
 
 ### Corrección de UI1 — run148 y comparación5
 

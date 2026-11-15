@@ -67,7 +67,7 @@ class MediaWidgetPill : AppWidgetProvider() {
                 val cachedDisc = key?.let { MediaWidgetArt.peekCircle(it, discPx) }
                 val cachedBody = key?.let { MediaWidgetArt.peekPill(it, widthPx, heightPx) }
                 if (cachedDisc == null || cachedBody == null) {
-                    manager.push(id, views(context, snapshot, cachedDisc ?: lastDisc, cachedBody ?: lastBody[id]))
+                    manager.push(context, snapshot, id, views(context, snapshot, cachedDisc, cachedBody))
                 }
                 val drawn = withTimeoutOrNull(RENDER_TIMEOUT_MS) {
                     val disc = cachedDisc ?: key?.let { MediaWidgetArt.circle(context, snapshot.artworkUri, discPx, it) }
@@ -76,7 +76,7 @@ class MediaWidgetPill : AppWidgetProvider() {
                 val (disc, body) = drawn
                 lastDisc = disc
                 lastBody[id] = body
-                manager.push(id, views(context, snapshot, disc, body))
+                manager.push(context, snapshot, id, views(context, snapshot, disc, body))
             }
         }
 
@@ -124,11 +124,12 @@ class MediaWidgetPill : AppWidgetProvider() {
 
         private fun openPlayer(context: Context): PendingIntent {
             val intent = Intent(context, MainActivity::class.java)
+                .putExtra(MainActivity.EXTRA_OPEN_PLAYER, true)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             return PendingIntent.getActivity(context, REQUEST_OPEN_PLAYER, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }
 
-        private fun AppWidgetManager.push(id: Int, views: RemoteViews) { runCatching { updateAppWidget(id, views) } }
+        private fun AppWidgetManager.push(context: Context, snapshot: MediaWidgetSnapshot, id: Int, views: RemoteViews) { runCatching { MediaWidgetSnapshot.publishIfCurrent(context, snapshot) { updateAppWidget(id, views) } } }
 
         private val TRANSPORT = intArrayOf(R.id.widget_previous, R.id.widget_toggle, R.id.widget_next)
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

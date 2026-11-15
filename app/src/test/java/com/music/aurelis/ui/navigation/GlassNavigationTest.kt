@@ -65,7 +65,7 @@ class GlassNavigationTest {
                     selected, { selected = it; clicks++ }, null, false, false, {}, {}, {}, {})
             }
         } }
-        compose.onNode(hasText("Search") and isSelectable()).assertHeightIsAtLeast(48.dp).performClick().assertIsSelected()
+        compose.onNode((hasText("Search") or hasContentDescription("Search")) and isSelectable()).assertHeightIsAtLeast(48.dp).performClick().assertIsSelected()
         compose.onNode(hasText("Home") and isSelectable()).assertIsNotSelected()
         compose.runOnIdle { assertEquals(3, selected); assertEquals(1, clicks) }
     }
@@ -83,7 +83,7 @@ class GlassNavigationTest {
                 }
             }
         } }
-        compose.onNode(hasText("Search") and isSelectable()).performClick().assertIsSelected()
+        compose.onNode((hasText("Search") or hasContentDescription("Search")) and isSelectable()).performClick().assertIsSelected()
         compose.onNode(hasText("Home") and isSelectable()).performClick().assertIsSelected()
     }
 
@@ -118,7 +118,7 @@ class GlassNavigationTest {
                 compose.onNodeWithContentDescription("Reproducir").performClick()
                 compose.onNodeWithContentDescription("Siguiente").performClick()
                 compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-                compose.onNode(hasText("Search") and isSelectable()).performClick().assertIsSelected()
+                compose.onNode((hasText("Search") or hasContentDescription("Search")) and isSelectable()).performClick().assertIsSelected()
                 compose.onNode(hasText("Home") and isSelectable()).performClick().assertIsSelected()
             }
             compose.runOnIdle {

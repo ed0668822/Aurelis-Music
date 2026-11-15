@@ -9,4 +9,8 @@ enum class SettingsCategory {
     LIBRARY,
     ADVANCED,
     ABOUT,
+    PERFORMANCE,
+    STORAGE,
+    YOUR_DATA,
+    LANGUAGE,
 }

@@ -20,7 +20,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import com.music.aurelis.data.ProfileRepository
+import com.music.aurelis.ui.player.MeshGradientBackground
+import com.music.aurelis.ui.player.MeshPalette
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -96,7 +104,7 @@ fun HomeScreen(
             modifier = modifier.fillMaxSize().testTag("home-state"),
             contentPadding = homePadding,
         ) {
-            item(key = "title") { HomeTitle(stringResource(R.string.home)) }
+            item(key = "title") { HomeTitle() }
             item(key = "library-state") {
                 val announcement = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 when (libraryState) {
@@ -127,36 +135,54 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize().testTag("local-home"),
         contentPadding = homePadding,
     ) {
-        item(key = "title") { HomeTitle(stringResource(R.string.home)) }
+        item(key = "title") { HomeTitle() }
         if (isRefreshing) item(key = "refreshing") {
             LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER).testTag("home-refresh"))
         }
         if (collectionsReadOnly) item { Text(stringResource(R.string.collections_unavailable), Modifier.padding(16.dp)) }
 
         item(key = "local-actions") {
-            Row(Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onOpenFavorites, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.home_favorites)) }
-                OutlinedButton(onClick = onOpenPlaylists, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.home_playlists)) }
-            }
+            LocalWelcomeBanner(libraryState.songs.size, onOpenFavorites, onOpenPlaylists)
         }
 
         val hero = currentSong?.takeIf { current -> libraryState.songs.any { it.id == current.id } }
             ?: recentlyPlayed.firstOrNull() ?: recentlyAdded.firstOrNull() ?: libraryState.songs.firstOrNull()
         if (hero != null) {
             item(key = "hero") {
+                SectionHeader(stringResource(R.string.home_recommendations))
+                BoxWithConstraints {
+                    val cardWidth = (maxWidth * 0.60f).coerceAtMost(280.dp)
+                    androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        item(key = hero.id) {
                 HomeHero(
                     song = hero,
                     onPlayClick = {
                         if (hero.id == currentSong?.id) onOpenPlayer() else onSongClick(hero)
                     },
-                    modifier = Modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp),
+                    modifier = Modifier.width(cardWidth),
+                    portrait = true,
                     eyebrow = stringResource(if (hero.id == currentSong?.id) R.string.home_continue else R.string.home_listen),
                 )
+                        }
+                        item(key = "local-mix") {
+                            Column(Modifier.width(cardWidth).aspectRatio(0.75f)
+                                .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primaryContainer)
+                                .clickable(enabled = !isCreatingMix, onClick = onAutoMix).padding(20.dp),
+                                verticalArrangement = Arrangement.SpaceBetween) {
+                                Icon(AurelisIcons.Shuffle, null, Modifier.size(48.dp))
+                                Text(if (isCreatingMix) "Creando mezcla…" else stringResource(R.string.home_automix),
+                                    style = MaterialTheme.typography.headlineSmall)
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        item(key = "automix") {
-            Button(onClick = onAutoMix, enabled = !isCreatingMix, modifier = Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER)) {
+        if (hero == null) item(key = "automix") {
+            TextButton(onClick = onAutoMix, enabled = !isCreatingMix, modifier = Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER).heightIn(min = 48.dp)) {
+                Icon(AurelisIcons.Shuffle, null); Spacer(Modifier.width(8.dp))
                 Text(if (isCreatingMix) "Creando mezcla…" else stringResource(R.string.home_automix))
             }
         }
@@ -246,21 +272,41 @@ private fun HomeLoadingState(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun HomeTitle(title: String, modifier: Modifier = Modifier) {
+private fun HomeTitle(modifier: Modifier = Modifier) {
     // BitChord HomeTitle proportion, retaining the Aurelis icon and heading.
     val titleStyle = MaterialTheme.typography.displayLarge
     val markSize = with(LocalDensity.current) { (titleStyle.fontSize * 0.9f).toDp() }
     Column(modifier = modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp)) {
         Icon(
-            imageVector = AurelisIcons.Home,
-            contentDescription = null,
+            imageVector = AurelisIcons.MusicNote,
+            contentDescription = "Aurelis Music",
             tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 14.dp).size(markSize),
         )
-        Text(
-            text = title,
-            style = titleStyle,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+
+    }
+}
+
+/** Local counterpart of BitChord's account banner; no remote authentication. */
+@Composable
+private fun LocalWelcomeBanner(count: Int, onFavorites: () -> Unit, onPlaylists: () -> Unit) {
+    val profile by ProfileRepository.state.collectAsState()
+    val colors = MaterialTheme.colorScheme
+    Box(Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER, vertical = 8.dp)
+        .clip(RoundedCornerShape(22.dp))) {
+        MeshGradientBackground(MeshPalette(listOf(colors.primary, colors.secondary, colors.tertiary, colors.inverseSurface)),
+            modifier = Modifier.matchParentSize(), continuous = false, animated = false, blurRadius = 36.dp)
+        Column(Modifier.background(Color.Black.copy(alpha = 0.35f)).fillMaxWidth().padding(20.dp)) {
+            Text(profile.profile.name, style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold, color = Color.White)
+            Text("$count canciones en este dispositivo", color = Color.White)
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onFavorites, colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    containerColor = Color.White, contentColor = Color.Black)) { Text(stringResource(R.string.home_favorites)) }
+                TextButton(onClick = onPlaylists, colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    containerColor = Color.White, contentColor = Color.Black)) { Text(stringResource(R.string.home_playlists)) }
+            }
+        }
     }
 }

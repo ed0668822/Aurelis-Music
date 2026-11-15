@@ -107,27 +107,38 @@ import com.music.aurelis.ui.navigation.rememberAppNavigator
 import com.music.aurelis.ui.screens.EqualizerScreen
 
 class MainActivity : AppCompatActivity() {
+    private var playerRequest by mutableIntStateOf(0)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) playerRequest++
 
         setContent {
             AurelisTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    AurelisApp()
+                    AurelisApp(playerRequest)
                 }
             }
         }
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) playerRequest++
+    }
+    companion object {
+        const val EXTRA_OPEN_PLAYER = "com.music.aurelis.OPEN_PLAYER"
+    }
 }
 
 @Composable
-private fun AurelisApp() {
+private fun AurelisApp(playerRequest: Int = 0) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val playbackViewModel: PlaybackViewModel = viewModel()
     val libraryViewModel: LibraryViewModel = viewModel()
     val navigator = rememberAppNavigator()
+    LaunchedEffect(playerRequest) { if (playerRequest > 0) navigator.push(AppRoute.NowPlaying) }
     val hazeState = remember { HazeState() }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -245,10 +256,10 @@ internal fun AurelisNavigationContent(
         if (route == AppRoute.LocalMusic) libraryViewModel.refresh()
     }
     val tabs = listOf(
-        BottomTab(stringResource(R.string.home), Icons.Filled.Home),
-        BottomTab(stringResource(R.string.explore), Icons.Filled.Explore),
-        BottomTab(stringResource(R.string.library), Icons.Filled.LibraryMusic),
-        BottomTab(stringResource(R.string.search), Icons.Filled.Search),
+        BottomTab(stringResource(R.string.home), AurelisIcons.Home),
+        BottomTab(stringResource(R.string.explore), AurelisIcons.Explore),
+        BottomTab(stringResource(R.string.library), AurelisIcons.Library),
+        BottomTab(stringResource(R.string.search), AurelisIcons.Search),
     )
     val librarySuccess = libraryUiState.libraryState as? LibraryState.Success
     val allSongs = librarySuccess?.songs ?: emptyList()
@@ -279,6 +290,7 @@ internal fun AurelisNavigationContent(
             .onSizeChanged { dock.sheetTravel = it.height.toFloat() }.onGloballyPositioned { dock.reportHost(it) },
         pageModifier = Modifier.hazeSource(hazeState).then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier),
         pageBottomPadding = bottomContentPadding,
+        routeHandlesBottomPadding = { it == AppRoute.LocalMusic },
         topBar = {
             if (route == null && navigator.selectedTab != AppTab.SEARCH) {
                 FrostedTopBar(title = tabs[navigator.selectedTab.ordinal].label, scrolled = { false },
@@ -350,9 +362,9 @@ internal fun AurelisNavigationContent(
                 val listState = rememberLazyListState()
                 val links = listOf(
                     LibraryLink(stringResource(R.string.songs), AurelisIcons.MusicNote) { navigator.push(AppRoute.LocalMusic) },
-                    LibraryLink("Álbumes", AurelisIcons.MusicNote) { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUMS)) },
-                    LibraryLink("Artistas", AurelisIcons.MusicNote) { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTISTS)) },
-                    LibraryLink("Carpetas", AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDERS)) },
+                    LibraryLink("Álbumes", AurelisIcons.Album) { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUMS)) },
+                    LibraryLink("Artistas", AurelisIcons.Artist) { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTISTS)) },
+                    LibraryLink("Carpetas", AurelisIcons.Folder) { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDERS)) },
                     LibraryLink("Historial", AurelisIcons.Clock) { navigator.push(AppRoute.Collection(LocalCollectionKind.HISTORY)) },
                     LibraryLink(stringResource(R.string.home_favorites), AurelisIcons.Heart) { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
                     LibraryLink(stringResource(R.string.home_playlists), AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
@@ -432,13 +444,20 @@ internal fun AurelisNavigationContent(
                     onAlbumOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
                     onArtistOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) },
                     onRequestPermission = onRequestAudioPermission,
+                    onCollectionOpen = { navigator.push(it) },
+                    onSongActions = { actionSong = it },
+                    onProfile = openSettings,
+                    contentPadding = PaddingValues(bottom = bottomContentPadding),
                 )
-                AppRoute.Settings -> SettingsScreen(
+                AppRoute.Settings, is AppRoute.SettingsSection -> SettingsScreen(
                     isVisible = true,
                     onDismiss = { navigator.pop() },
                     onOpenEqualizer = { navigator.push(AppRoute.Equalizer) },
                     localSongs = allSongs,
                     onOpenFolder = { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDER, it)) },
+                    section = (page as? AppRoute.SettingsSection)?.category,
+                    onOpenCategory = { navigator.push(AppRoute.SettingsSection(it)) },
+                    onOpenReplay = { navigator.push(AppRoute.Replay) },
                 )
                 AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
                 AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() }, store = userStore,

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,13 +28,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.ui.icons.AurelisIcons
+import androidx.compose.material3.IconButton
 
 @Composable
 fun SongListItem(
     song: LocalSong,
     isPlaying: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onMore: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -55,7 +59,7 @@ fun SongListItem(
                     model = artwork,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 Text(
@@ -101,5 +105,8 @@ fun SongListItem(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (onMore != null) IconButton(onClick = onMore) {
+            Icon(AurelisIcons.MoreVert, "Opciones de ${song.title}")
+        }
     }
 }

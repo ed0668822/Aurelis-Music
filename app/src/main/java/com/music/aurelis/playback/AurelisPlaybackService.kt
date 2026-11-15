@@ -26,6 +26,7 @@ class AurelisPlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var coordinator: LocalPlaybackCoordinator? = null
     private var dspChain: DspChain? = null
+    private var widgetBinding: com.music.aurelis.widget.MediaWidgetBinding? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate() {
@@ -75,6 +76,7 @@ class AurelisPlaybackService : MediaSessionService() {
 
         val controls = LocalPlaybackCoordinator(player)
         coordinator = controls
+        widgetBinding = com.music.aurelis.widget.MediaWidgetBinding(this, player)
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivity)
             .setCallback(ShuffleQueueCallback(player, packageName, controls))
@@ -108,6 +110,7 @@ class AurelisPlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         if (BuildConfig.DEBUG) Log.d("P3Media3Service", "onDestroy playback service")
+        widgetBinding?.close(); widgetBinding = null
         coordinator?.close(); coordinator = null
         serviceScope.cancel()
         mediaSession?.run { player.release(); release() }

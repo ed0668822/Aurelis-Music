@@ -43,6 +43,7 @@ fun AppNavigationHost(
     bottomBar: @Composable BoxScope.() -> Unit,
     pageModifier: Modifier = Modifier,
     pageBottomPadding: Dp = 0.dp,
+    routeHandlesBottomPadding: (AppRoute) -> Boolean = { false },
     topBar: @Composable BoxScope.() -> Unit = {},
     playbackOverlays: @Composable BoxScope.() -> Unit = {},
 ) {
@@ -71,8 +72,9 @@ fun AppNavigationHost(
                     }
                 } else {
                     requireNotNull(pageEntry.route.navigationKey) { "Destination is not wired in the local graph" }
-                    Box(Modifier.fillMaxSize().padding(bottom = pageBottomPadding)
-                        .consumeWindowInsets(PaddingValues(bottom = pageBottomPadding))) {
+                    val bottom = if (routeHandlesBottomPadding(pageEntry.route)) 0.dp else pageBottomPadding
+                    Box(Modifier.fillMaxSize().padding(bottom = bottom)
+                        .consumeWindowInsets(PaddingValues(bottom = bottom))) {
                         stateHolder.SaveableStateProvider(AppDestination.Route(pageEntry).key) { routeContent(pageEntry.route) }
                     }
                 }

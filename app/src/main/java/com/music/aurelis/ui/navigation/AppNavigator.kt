@@ -49,6 +49,7 @@ enum class LocalCollectionKind { FAVORITES, PLAYLISTS, PLAYLIST, ALBUM, ARTIST, 
 internal val AppRoute.navigationKey: String?
     get() = when (this) {
         AppRoute.Settings -> "settings"
+        is AppRoute.SettingsSection -> "settings-section:${category.name}"
         AppRoute.Equalizer -> "equalizer"
         AppRoute.Replay -> "replay"
         AppRoute.LocalMusic -> "local-music"
@@ -65,7 +66,9 @@ private fun routeForKey(key: String): AppRoute? = when (key) {
     "local-music" -> AppRoute.LocalMusic
     "now-playing" -> AppRoute.NowPlaying
     "queue" -> AppRoute.Queue
-    else -> if (key.startsWith("collection:")) runCatching {
+    else -> if (key.startsWith("settings-section:")) runCatching {
+        AppRoute.SettingsSection(SettingsCategory.valueOf(key.removePrefix("settings-section:")))
+    }.getOrNull() else if (key.startsWith("collection:")) runCatching {
         val parts = key.split(':', limit = 3)
         val kind = LocalCollectionKind.valueOf(parts[1])
         val id = URLDecoder.decode(parts[2], "UTF-8")

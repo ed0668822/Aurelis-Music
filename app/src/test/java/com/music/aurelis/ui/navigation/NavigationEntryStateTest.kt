@@ -34,6 +34,19 @@ class NavigationEntryStateTest {
     private lateinit var navigator: AppNavigator
     private lateinit var registry: SaveableStateRegistry
 
+    @Test fun settingsCategoryEntriesSurviveRestoreWithIndependentBackEntries() {
+        val nav = AppNavigator()
+        nav.push(AppRoute.Settings)
+        nav.push(AppRoute.SettingsSection(SettingsCategory.AUDIO))
+        nav.push(AppRoute.SettingsSection(SettingsCategory.LYRICS))
+        val restored = requireNotNull(AppNavigator.restoreState(requireNotNull(nav.saveState())))
+        assertEquals(AppRoute.SettingsSection(SettingsCategory.LYRICS), restored.visibleRoute())
+        restored.back()
+        assertEquals(AppRoute.SettingsSection(SettingsCategory.AUDIO), restored.visibleRoute())
+        restored.back()
+        assertEquals(AppRoute.Settings, restored.visibleRoute())
+    }
+
     /** Real navigation host; lightweight fields make its state ownership observable. */
     private fun start(legacy: List<String>? = null): StateRestorationTester {
         val restoration = StateRestorationTester(compose)

@@ -6,38 +6,61 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 
 object AurelisIcons {
-    val MusicNote: ImageVector get() = Icons.Default.MusicNote
-    val Clock: ImageVector get() = Icons.Default.History
-    val Home: ImageVector get() = Icons.Default.Home
-    val Search: ImageVector get() = Icons.Default.Search
-    val Settings: ImageVector get() = Icons.Default.Settings
-    val Play: ImageVector get() = Icons.Default.PlayArrow
-    val Pause: ImageVector get() = Icons.Default.Pause
-    val SkipNext: ImageVector get() = Icons.Default.SkipNext
-    val SkipPrevious: ImageVector get() = Icons.Default.SkipPrevious
-    val Shuffle: ImageVector get() = Icons.Default.Shuffle
-    val Repeat: ImageVector get() = Icons.Default.Repeat
-    val Heart: ImageVector get() = Icons.Default.Favorite
-    val HeartBorder: ImageVector get() = Icons.Default.FavoriteBorder
+    val MusicNote: ImageVector get() = Icons.Rounded.MusicNote
+    val Clock: ImageVector get() = Icons.Rounded.History
+    // Original geometric glyphs; no SF Symbols paths or restricted dependency.
+    val Explore: ImageVector by lazy { glyph("M2,2h8v8H2z M14,2h8v8h-8z M2,14h8v8H2z M14,14h8v8h-8z") }
+    val Library: ImageVector by lazy { glyph("M6,1h12v2H6z M4,5h16v2H4z M3,9h18v14H3z") }
+    val Sort: ImageVector get() = Icons.Rounded.Sort
+    val Refresh: ImageVector get() = Icons.Rounded.Refresh
+    val Appearance: ImageVector get() = Icons.Rounded.Palette
+    val Performance: ImageVector get() = Icons.Rounded.Speed
+    val Storage: ImageVector get() = Icons.Rounded.Storage
+    val Language: ImageVector get() = Icons.Rounded.Language
+    val Info: ImageVector get() = Icons.Rounded.Info
+    val Home: ImageVector get() = Icons.Rounded.Home
+    val Search: ImageVector get() = Icons.Rounded.Search
+    val Settings: ImageVector get() = Icons.Rounded.Settings
+    val Play: ImageVector get() = Icons.Rounded.PlayArrow
+    val Pause: ImageVector get() = Icons.Rounded.Pause
+    val SkipNext: ImageVector get() = Icons.Rounded.SkipNext
+    val SkipPrevious: ImageVector get() = Icons.Rounded.SkipPrevious
+    val Shuffle: ImageVector get() = Icons.Rounded.Shuffle
+    val Repeat: ImageVector get() = Icons.Rounded.Repeat
+    val Heart: ImageVector get() = Icons.Rounded.Favorite
+    val HeartBorder: ImageVector get() = Icons.Rounded.FavoriteBorder
     val Queue: ImageVector get() = Icons.AutoMirrored.Filled.QueueMusic
-    val Lyrics: ImageVector get() = Icons.Default.Subtitles
-    val Equalizer: ImageVector get() = Icons.Default.Equalizer
+    val Lyrics: ImageVector get() = Icons.Rounded.Subtitles
+    val Equalizer: ImageVector get() = Icons.Rounded.Equalizer
     val Volume: ImageVector get() = Icons.AutoMirrored.Filled.VolumeUp
-    val Folder: ImageVector get() = Icons.Default.Folder
-    val Album: ImageVector get() = Icons.Default.Album
-    val Artist: ImageVector get() = Icons.Default.Person
+    val Folder: ImageVector get() = Icons.Rounded.Folder
+    val Album: ImageVector get() = Icons.Rounded.Album
+    val Artist: ImageVector get() = Icons.Rounded.Person
     val Playlist: ImageVector get() = Icons.AutoMirrored.Filled.PlaylistPlay
-    val MoreVert: ImageVector get() = Icons.Default.MoreVert
-    val ArrowBack: ImageVector get() = Icons.AutoMirrored.Filled.ArrowBack
-    val ChevronRight: ImageVector get() = Icons.Default.ChevronRight
-    val ChevronLeft: ImageVector get() = Icons.Default.ChevronLeft
-    val Close: ImageVector get() = Icons.Default.Close
-    val Check: ImageVector get() = Icons.Default.Check
-    val Add: ImageVector get() = Icons.Default.Add
-    val Delete: ImageVector get() = Icons.Default.Delete
-    val Share: ImageVector get() = Icons.Default.Share
+    val MoreVert: ImageVector get() = Icons.Rounded.MoreVert
+    val ArrowBack: ImageVector by lazy { glyph("M15,4 L7,12 L15,20", line = true, mirror = true) }
+    val ChevronRight: ImageVector get() = Icons.Rounded.ChevronRight
+    val ChevronLeft: ImageVector get() = Icons.Rounded.ChevronLeft
+    val Close: ImageVector get() = Icons.Rounded.Close
+    val Check: ImageVector get() = Icons.Rounded.Check
+    val Add: ImageVector get() = Icons.Rounded.Add
+    val Delete: ImageVector get() = Icons.Rounded.Delete
+    val Share: ImageVector get() = Icons.Rounded.Share
+    private fun glyph(data: String, line: Boolean = false, mirror: Boolean = false): ImageVector =
+        ImageVector.Builder("AurelisGlyph", 24.dp, 24.dp, 24f, 24f, autoMirror = mirror)
+            .addPath(PathParser().parsePathString(data).toNodes(),
+                fill = if (line) null else SolidColor(Color.Black),
+                stroke = if (line) SolidColor(Color.Black) else null,
+                strokeLineWidth = if (line) 3f else 0f,
+                strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round).build()
 }

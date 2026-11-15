@@ -1,6 +1,7 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -35,11 +36,28 @@ import com.music.aurelis.data.ProfileRepository
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.ui.components.*
+import com.music.aurelis.ui.navigation.SettingsCategory
+import com.music.aurelis.ui.icons.AurelisIcons
+import androidx.compose.ui.semantics.clearAndSetSemantics
 
 @Composable
 fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: () -> Unit = {},
-    localSongs: List<com.music.aurelis.data.model.LocalSong> = emptyList(), onOpenFolder: (String) -> Unit = {}) {
+    localSongs: List<com.music.aurelis.data.model.LocalSong> = emptyList(), onOpenFolder: (String) -> Unit = {},
+    section: SettingsCategory? = null, onOpenCategory: ((SettingsCategory) -> Unit)? = null,
+    onOpenReplay: (() -> Unit)? = null) {
     if (!isVisible) return
+    var localSection by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var language by remember { mutableStateOf(false) }
+    val category = section ?: localSection
+    fun openCategory(next: SettingsCategory?) {
+        if (next != null && onOpenCategory != null) onOpenCategory(next)
+        else if (section != null) onDismiss()
+        else { localSection = next; query = "" }
+    }
+    BackHandler(section == null && localSection != null) { localSection = null }
+    fun shows(value: SettingsCategory): Boolean = category == value ||
+        (category == null && query.isNotBlank() && settingsKeywords(value).contains(com.music.aurelis.data.LocalSearch.normalize(query)))
     val context = LocalContext.current
     val profileState by ProfileRepository.state.collectAsState()
     val active = profileState.profile
@@ -90,12 +108,16 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     val filter by SettingsRepository.filterNonMusicAudio.collectAsState()
     val sources by SettingsRepository.lyricsSources.collectAsState()
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground) {
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding()
-        .navigationBarsPadding().verticalScroll(rememberScrollState())) {
-        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás") }
-            Text("Ajustes", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        }
+    Box(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        .navigationBarsPadding().then(if (editing || translation || browsingFolders || language) Modifier.clearAndSetSemantics { } else Modifier)
+        .verticalScroll(rememberScrollState()).padding(top = topBarContentPadding())) {
+        Text(category?.let(::settingsTitle) ?: "Ajustes", style = MaterialTheme.typography.displayLarge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+        if (category == null) SearchField(query, { query = it }, onSubmit = {},
+            placeholder = "Buscar ajustes", modifier = Modifier.padding(horizontal = 20.dp))
+        (profileError ?: profileState.error)?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
+        if (category == null && query.isBlank() || shows(SettingsCategory.GENERAL)) {
         SettingsGroup(header = "Perfil del dispositivo", topSpacing = 0.dp) {
             Row(Modifier.fillMaxWidth().clickable(enabled = !importing) { photoProfile = active.id.value; picker.launch(arrayOf("image/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
@@ -106,14 +128,18 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             }
             if (importing) Text("Guardando imagen…", Modifier.padding(16.dp))
             if (photo != null) SettingsRow(Icons.Rounded.Delete, "Quitar foto", onClick = { change { ProfileAvatars.remove(active.id) } })
-            (profileError ?: profileState.error)?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
             SettingsRow(Icons.Rounded.Edit, "Nombre", value = name, onClick = { editing = true })
         }
+        }
+        if (shows(SettingsCategory.AUDIO)) {
         SettingsGroup(header = "Audio local") {
-            SettingsRow(Icons.Rounded.Tune, "Equalizer", "Ecualizador, balance y amplitud estéreo", onClick = onOpenEqualizer)
+            SettingsRow(AurelisIcons.Lyrics, "Letras", onClick = { openCategory(SettingsCategory.LYRICS) })
+            SettingsRow(AurelisIcons.Equalizer, "Equalizer", "Ecualizador, balance y amplitud estéreo", onClick = onOpenEqualizer)
             SettingsRow(Icons.Rounded.AudioFile, "Calidad del archivo", "Se reproduce el archivo disponible. Cambiar una preferencia no convierte su calidad ni garantiza Dolby Atmos.")
             SettingsRow(Icons.Rounded.Shuffle, "AutoMix local", "Crea una cola desde Inicio con tu biblioteca e historial. Crossfade y reproducción continua automática no están activados.")
         }
+        }
+        if (shows(SettingsCategory.APPEARANCE)) {
         SettingsGroup(header = "Apariencia") {
             Column(Modifier.padding(16.dp)) {
                 Text("Tipografía", style = MaterialTheme.typography.bodyLarge)
@@ -121,13 +147,17 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
                 Text("Tema", style = MaterialTheme.typography.bodyLarge)
                 SegmentedControl(listOf("Sistema", "Claro", "Oscuro"), mode, SettingsRepository::setThemeMode)
             }
-            SettingsToggle("Reducir animaciones", "Detiene los efectos continuos y elimina transiciones del reproductor.", motion, SettingsRepository::setReduceAnimation)
-            SettingsToggle("Reducir desenfoque", "Usa superficies sólidas y evita desenfoques dinámicos.", reduceBlur, SettingsRepository::setReduceDynamicBlur)
             SettingsToggle("Respuesta háptica", "Vibración al usar los controles. También respeta la configuración de Android.", hapticFeedback) { enabled ->
                 change { SettingsRepository.setHapticFeedback(enabled) }
             }
             SettingsToggle("Liquid Glass", "Superficies translúcidas y reflejos ligeros; se desactiva al reducir desenfoque.", glass, SettingsRepository::setLiquidGlass)
         }
+        }
+        if (shows(SettingsCategory.PERFORMANCE)) SettingsGroup(header = "Rendimiento") {
+            SettingsToggle("Reducir animaciones", "Detiene los efectos continuos y elimina transiciones del reproductor.", motion, SettingsRepository::setReduceAnimation)
+            SettingsToggle("Reducir desenfoque", "Usa superficies sólidas y evita desenfoques dinámicos.", reduceBlur, SettingsRepository::setReduceDynamicBlur)
+        }
+        if (shows(SettingsCategory.LYRICS)) {
         SettingsGroup(header = "Letras") {
             SettingsToggle("Letras sincronizadas", "Resalta y sigue las líneas cuando hay marcas de tiempo.", sync, SettingsRepository::setSyncedLyrics)
             SettingsToggle("Desenfocar líneas inactivas", "Solo durante seguimiento sincronizado y sin reducción de desenfoque.", lyricBlur, SettingsRepository::setBlurUnfocusedLyrics)
@@ -136,6 +166,8 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             }
             SettingsRow(Icons.Rounded.Translate, "Traducción", "Configura servidor e idiomas. Guardar aquí no envía letras.", onClick = { translation = true })
         }
+        }
+        if (shows(SettingsCategory.LIBRARY)) {
         SettingsGroup(header = "Biblioteca") {
             SettingsToggle("Usar todas las carpetas de audio", "Biblioteca de audio indexada por Android.", allFolders) {
                 try { SettingsRepository.setLocalFolderSelection(chosenFolders, it); libraryError = null }
@@ -155,6 +187,8 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
             SettingsRow(Icons.Rounded.FolderOpen, "Ver carpetas de la biblioteca", onClick = { browsingFolders = true })
             SettingsToggle("Filtrar audio no musical", "Oculta clips, notas de voz y sonidos del sistema.", filter, SettingsRepository::setFilterNonMusicAudio)
         }
+        }
+        if (shows(SettingsCategory.ABOUT)) {
         SettingsGroup(header = "Acerca de") {
             Column(Modifier.padding(16.dp)) {
                 Text("Aurelis Music", fontWeight = FontWeight.Bold)
@@ -162,9 +196,35 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
                 Text("Aurelis © 2026. GPL-3.0-or-later", style = MaterialTheme.typography.bodySmall)
             }
         }
+        }
+        if (category == null && query.isBlank()) SettingsGroup {
+            settingsCategories.forEach { item ->
+                SettingsRow(settingsIcon(item), settingsTitle(item), onClick = { openCategory(item) })
+            }
+        }
+        if (shows(SettingsCategory.STORAGE)) SettingsGroup(header = "Almacenamiento") {
+            val known = localSongs.filter { it.sizeBytesKnown }
+            Text("${localSongs.size} canciones", Modifier.padding(16.dp))
+            Text("${known.size} archivos con tamaño conocido · " + android.text.format.Formatter.formatFileSize(context,
+                known.sumOf { it.sizeBytes.coerceAtLeast(0) }), Modifier.padding(16.dp))
+        }
+        if (shows(SettingsCategory.YOUR_DATA)) SettingsGroup(header = "Tus datos") {
+            SettingsRow(AurelisIcons.Clock, "Replay y estadísticas", enabled = onOpenReplay != null, onClick = onOpenReplay)
+        }
+        if (shows(SettingsCategory.LANGUAGE)) SettingsGroup(header = "Idioma") {
+            SettingsRow(AurelisIcons.Language, "Idioma de la aplicación", onClick = { language = true })
+        }
+        if (shows(SettingsCategory.ADVANCED)) SettingsGroup(header = "Avanzado") {
+            Text("La biblioteca muestra los archivos que has permitido leer. Puedes elegir las carpetas que quieres mostrar en Música local.", Modifier.padding(16.dp))
+            SettingsRow(AurelisIcons.Folder, "Música local", onClick = { openCategory(SettingsCategory.LIBRARY) })
+        }
         Spacer(Modifier.height(24.dp))
     }
+    FrostedTopBar("Ajustes", { false }, transparentBackdrop = true, artworkPageChrome = true,
+        onBack = { if (category != null) openCategory(null) else onDismiss() })
     }
+    }
+    if (language) AppLanguageDialog { language = false }
     if (editing) {
         var draft by remember { mutableStateOf(name) }
         var error by remember { mutableStateOf<String?>(null) }

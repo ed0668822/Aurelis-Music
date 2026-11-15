@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
@@ -82,6 +84,8 @@ fun GlassNavBar(
     qualityLabel: String? = null,
     canPrevious: Boolean = false,
 ) {
+    val standaloneSearch = LocalLiquidGlassEnabled.current && tabs.size == 4
+    val pillTabs = if (standaloneSearch) tabs.dropLast(1) else tabs
     val contentColor = glassContentColor()
     val selectedColor = contentColor
     val unselectedColor = contentColor.copy(alpha = 0.65f)
@@ -119,6 +123,9 @@ fun GlassNavBar(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             )
         }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.weight(1f)) {
         CompositionLocalProvider(LocalGlassExport provides barGlass) {
             BoxWithConstraints(
                 modifier = Modifier
@@ -131,7 +138,7 @@ fun GlassNavBar(
             ) {
                 val density = LocalDensity.current
                 val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-                val tabWidth = (maxWidth - 16.dp - 4.dp * (tabs.size - 1)) / tabs.size
+                val tabWidth = (maxWidth - 16.dp - 4.dp * (pillTabs.size - 1)) / pillTabs.size
                 val widthPx = with(density) { maxWidth.toPx() }
                 val tabPx = with(density) { tabWidth.toPx() }
                 val gapPx = with(density) { 4.dp.toPx() }
@@ -140,7 +147,7 @@ fun GlassNavBar(
                 val heightPx = with(density) { 48.dp.toPx() }
                 val growPx = with(density) { 8.dp.toPx() }
                 SideEffect { motion.stepDp = tabWidth.value + 4f }
-                GlassSelectionPill(motion, glassIndicatorColor(), barGlass, tabRow,
+                if (selectedIndex in pillTabs.indices) GlassSelectionPill(motion, glassIndicatorColor(), barGlass, tabRow,
                     Modifier.matchParentSize().pillPlacement(
                         center = {
                             val x = insetPx + tabPx / 2f + (tabPx + gapPx) * motion.position
@@ -155,7 +162,7 @@ fun GlassNavBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    tabs.forEachIndexed { index, tab ->
+                    pillTabs.forEachIndexed { index, tab ->
                         val isSelected = index == selectedIndex
                         val tint = if (isSelected) selectedColor else unselectedColor
                         val onClick = {
@@ -184,10 +191,22 @@ fun GlassNavBar(
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        if (index < tabs.lastIndex) Spacer(modifier = Modifier.width(4.dp))
+                        if (index < pillTabs.lastIndex) Spacer(modifier = Modifier.width(4.dp))
                     }
                 }
             }
+        }
+        }
+        if (standaloneSearch) {
+            val tab = tabs.last()
+            Box(Modifier.size(56.dp).liquidGlass(RoundedCornerShape(percent = 50))
+                .selectable(selected = selectedIndex == tabs.lastIndex, role = Role.Tab) {
+                    if (selectedIndex != tabs.lastIndex) haptics.play(Haptic.Select)
+                    currentOnTabSelected(tabs.lastIndex)
+                }.semantics { contentDescription = tab.label }, contentAlignment = Alignment.Center) {
+                Icon(tab.icon, null, Modifier.size(TAB_ICON_SIZE), tint = if (selectedIndex == tabs.lastIndex) selectedColor else unselectedColor)
+            }
+        }
         }
     }
 }

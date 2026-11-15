@@ -493,3 +493,27 @@ completo: el acoplamiento/fold exacto sigue pendiente. Se conservan también avi
 previos Echo-Music/backdrop y otros terceros. Perfil, medición de reservas,
 verificadores Python, pruebas y documentos son aportaciones Aurelis con sus
 cabeceras. No se elimina ni reclasifica una licencia ajena.
+
+## Pre-B07 UI2 — páginas locales y widgets activos
+
+Referencia BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3; se conservan
+sus contribuyentes y avisos. Fuentes consultadas/adaptación selectiva:
+
+| Fuente | SHA256 | Uso |
+|---|---|---|
+| app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt | 21b88b74aff957481e54795b1ca069a07322aa4f28494d3b800cde5f61a66855 | Cabecera responsive dentro de la lista; geometría y jerarquía locales |
+| app/src/main/java/com/music/bitchord/ui/screens/LocalFolder.kt | 177dd478a46ad1ec78a07a36e14d92955e412990a36001dea9eeae056b6db5db | Cinco accesos locales sobre catálogo existente |
+| app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt | b77bd33f94c1ac83bcdb17da34908a563139efa9fe8cc018645db96a6569fe35 | Búsqueda, categorías y orden relativo compatible |
+| app/src/main/java/com/music/bitchord/ui/components/GlassNavBar.kt | 73e76c658ad723955b6ab2ec6c2a55ee7e01371896de801d4cf6b4546a7fe191 | Pestaña Buscar separada; sin copiar el archivo completo |
+| app/src/main/java/com/music/bitchord/ui/icons/SfIcons.kt | 30d6c0a5940ca8b752ff81300d99f98093db10c74a08c88f7845516139667a80 | Solo consulta; vectores SF Symbols NO importados por sus restricciones |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt | d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017 | Marca y jerarquía de Home |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/TopPicksShelf.kt | 808914fea081d0b7813dff8648e366d7ef1989f1d2ca7eee1e23ed33ba449de5 | Geometría3:4 y ancho60% hasta280dp |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/Common.kt | 9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e | Banner adaptado al perfil local |
+
+Home consulta sharedUi/.../screens/HomeScreen.kt y TopPicksShelf.kt y
+sharedUi/.../components/Common.kt: banner de cuenta adaptado a perfil/datos locales,
+tarjetas3:4 con geometría de TopPicks. Sin Google, redes, medios remotos o fuentes.
+Vectores geométricos nuevos propios Aurelis; Material mantiene su licencia aplicable.
+Registro/binding de widgets y barrera de publicación propios Aurelis sobre clases
+ya existentes; se conservan sus atribuciones anteriores. No se elimina LICENSE,
+avisos de terceros o autorías, ni se incorpora una dependencia de símbolos Apple.

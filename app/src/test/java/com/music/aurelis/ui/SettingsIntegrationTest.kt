@@ -81,6 +81,7 @@ class SettingsIntegrationTest {
                     }
                 }
             }
+            compose.onNodeWithText("Apariencia").performScrollTo().performClick()
             val originalHandles = compose.runOnIdle {
                 nativeHandle.performHapticFeedback(HapticFeedbackType.LongPress)
                 customHandle.play(Haptic.Tap)
@@ -172,6 +173,7 @@ class SettingsIntegrationTest {
         try {
             ReflectionHelpers.setField(SettingsRepository, "prefs", failingPrefs)
             compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
+            compose.onNodeWithText("Apariencia").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Respuesta háptica").performScrollTo().performClick()
             compose.runOnIdle {
                 assertEquals(originalValue, SettingsRepository.hapticFeedback.value)
@@ -190,6 +192,7 @@ class SettingsIntegrationTest {
             SideEffect { family = selected }
             SettingsScreen(true, {})
         } }
+        compose.onNodeWithText("Apariencia").performScrollTo().performClick()
         compose.onNode(isSelectable() and hasText("Vazirmatn")).performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(com.music.aurelis.ui.theme.VazirmatnFamily, family)
@@ -208,11 +211,14 @@ class SettingsIntegrationTest {
             SideEffect { glass = resolvedGlass; motion = resolvedMotion }
             SettingsScreen(true, {})
         } }
+        compose.onNodeWithText("Rendimiento").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(glass) }
         compose.onNodeWithContentDescription("Reducir desenfoque").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Reducir animaciones").performScrollTo().performClick()
         compose.runOnIdle { assertFalse(glass); assertTrue(motion) }
         capture("settings-light")
+        compose.onNodeWithContentDescription("Atrás").performClick()
+        compose.onNodeWithText("Apariencia").performScrollTo().performClick()
         compose.onNode(isSelectable() and hasText("Oscuro")).performScrollTo().performClick()
         capture("settings-dark")
         compose.runOnIdle { SettingsRepository.init(RuntimeEnvironment.getApplication()); assertEquals(2, SettingsRepository.themeMode.value); assertTrue(SettingsRepository.reduceDynamicBlur.value) }
@@ -234,6 +240,8 @@ class SettingsIntegrationTest {
     }
     @Test fun savingTranslationSettingsDoesNotRequestATranslation() {
         compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
+        compose.onNodeWithText("Reproducción").performScrollTo().performClick()
+        compose.onNodeWithText("Letras").performScrollTo().performClick()
         compose.onNodeWithText("Traducción").performScrollTo().performClick()
         compose.onNode(hasSetTextAction()).performTextInput("https://translation.example")
         compose.onNodeWithText("Guardar").performClick()

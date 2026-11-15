@@ -1,6 +1,15 @@
 AURELIS MUSIC — AVISOS LEGALES Y ATRIBUCIONES
 ===========================================
 
+Pre-B07 UI2 — local pages and widget integration:
+Selected layout patterns adapted from BitChord b690dc146009d4815825fa4a20815ef2e4ee8898
+(GPLv3): DetailScreen.kt, LocalFolder.kt, SettingsSheet.kt, GlassNavBar.kt and sharedUi
+HomeScreen.kt/TopPicksShelf.kt/Common.kt. Local data/profile, category navigation and
+the existing Aurelis session replace remote account/audio flows. Original project
+and contributor notices below remain applicable. SF Symbols paths are not imported;
+new geometric glyphs are Aurelis originals and Material icons retain their license.
+Source hashes and exact scope: docs/migration/beta-local/LICENSE_AUDIT.md.
+
 Pre-B07 UI1 — common layout adaptation:
 BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3, original project and
 contributors retained under the notices below. Source: ui/components/FrostedTopBar.kt,

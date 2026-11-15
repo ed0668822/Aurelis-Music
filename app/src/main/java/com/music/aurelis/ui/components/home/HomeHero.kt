@@ -36,22 +36,24 @@ fun HomeHero(
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
     eyebrow: String = "ESCUCHA AHORA",
+    portrait: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(if (portrait) 12.dp else 24.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .then(if (portrait) Modifier.aspectRatio(0.75f) else Modifier.height(200.dp))
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onPlayClick),
     ) {
         if (song?.artworkUri != null) {
             AsyncImage(
                 model = song.artworkUri,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().blur(48.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
 

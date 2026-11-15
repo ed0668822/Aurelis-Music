@@ -109,7 +109,7 @@ abstract class MediaWidget : AppWidgetProvider() {
             val size = measure(context, manager, id, fallbackWidthDp)
             val cached = MediaWidgetArt.peek(key, size.widthPx, size.heightPx, size.bandPx)
             if (cached == null) {
-                manager.push(id, views(context, snapshot, size, lastArt[id]))
+                manager.push(context, snapshot, id, views(context, snapshot, size, null))
             }
             val art = cached ?: MediaWidgetArt.render(
                 context = context,
@@ -121,7 +121,7 @@ abstract class MediaWidget : AppWidgetProvider() {
                 cornerRadiusPx = size.cornerRadiusPx,
             )
             lastArt[id] = art
-            manager.push(id, views(context, snapshot, size, art))
+            manager.push(context, snapshot, id, views(context, snapshot, size, art))
         }
 
         private fun views(
@@ -177,6 +177,7 @@ abstract class MediaWidget : AppWidgetProvider() {
 
         private fun openPlayer(context: Context): PendingIntent {
             val intent = Intent(context, MainActivity::class.java)
+                .putExtra(MainActivity.EXTRA_OPEN_PLAYER, true)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             return PendingIntent.getActivity(
                 context,
@@ -186,8 +187,8 @@ abstract class MediaWidget : AppWidgetProvider() {
             )
         }
 
-        private fun AppWidgetManager.push(id: Int, views: RemoteViews) {
-            runCatching { updateAppWidget(id, views) }
+        private fun AppWidgetManager.push(context: Context, snapshot: MediaWidgetSnapshot, id: Int, views: RemoteViews) {
+            runCatching { MediaWidgetSnapshot.publishIfCurrent(context, snapshot) { updateAppWidget(id, views) } }
         }
 
         private class WidgetSize(
