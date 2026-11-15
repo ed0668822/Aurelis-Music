@@ -1,3 +1,4 @@
+<!-- Aurelis © 2026. GPL-3.0-or-later -->
 # DECISIONS
 
 Decisiones aprobadas en el prompt y consulta posterior. No reinterpretar un ID
@@ -34,6 +35,13 @@ interno de persistencia como permiso para mantener múltiples cuentas activas.
 | D27 | Conservar los avances remotos, incluido f6309d29; sin sobrescribir integraciones previas ni aprobar por implicación NO/MÁS TARDE/no respondidas de otros anexos. |
 | D28 | Gradle/APK/suites Android exclusivamente en GitHub. Localmente inspección/estática/fixtures Python. Tras cada entrega publicada, avisar y esperar resultado comunicado por el usuario antes de la siguiente. |
 | D29 | Desarrollo B00–B13 y fases técnicas Actions B01–B06 son numeraciones distintas. Documentación sola no acredita un build nuevo; B09 permanece sin iniciar hasta sus previas y autorización de ejecución. |
+
+## Exclusión posterior de Android Auto
+
+El usuario confirma: «No queremos android auto ni TV ni eso». Android Auto queda
+excluido junto con TV y Wear. B06.4-a/-b se retiran del alcance, sin declararlos
+implementados y sin exigirlos para iniciar B07 tras validar las entregas previas.
+No se amplía esta exclusión a controles locales de sesión, notificación o Bluetooth.
 
 ## Nombres investigados
 

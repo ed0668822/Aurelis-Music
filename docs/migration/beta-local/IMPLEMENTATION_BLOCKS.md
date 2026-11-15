@@ -247,7 +247,7 @@ referencias/existentes/nuevos del padre, y alcance/aceptación limitan qué se e
 | B06.1 | Coordinador y cola | F08 F09 | Play Next inserta después de actual; reordenar conserva item/posición. |
 | B06.2 | Controles y temporizador | F08 | Timers/velocidad/silencio/autoplay local ejecutan su efecto. |
 | B06.3 | Sesión, restauración y eventos | F08 F18 | Registro nuevo con histórico previo; foco/notificación/bloqueo y restore coherentes. |
-| B06.4 | Android Auto compatible | F08 | Contrato de biblioteca/controladores autorizado y probado, no solo manifest. |
+| B06.4 | Excluido por decisión posterior del usuario | No aplica | No implementar Android Auto; no bloquea B07 una vez validadas las entregas previas. |
 
 Cada subunidad hereda los16 campos anteriores y LOCK; sus filas estrechan las
 referencias/existentes/nuevos del padre, y alcance/aceptación limitan qué se edita.

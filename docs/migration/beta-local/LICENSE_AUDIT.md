@@ -464,3 +464,13 @@ Aurelis, cabeceras GPL-3.0-or-later. Se reutiliza la identidad de ocurrencia de 
 ya atribuida a BitChord; no se copian nuevos archivos del origen ni se sustituye
 su servicio. Sin dependencias nuevas, binarios o cambios de LICENSE. Se conservan
 las atribuciones anteriores y la separación entre eventos nuevos y totales legacy.
+
+
+## Puerta pre-B07 — comparación ejecutable
+
+Workflow y scripts Python nuevos propios Aurelis con cabeceras GPL-3.0-or-later.
+Audio sintético, carátulas geométricas y letras de prueba originales generados en
+CI, sin medios del usuario ni de BitChord. Pillow/FFmpeg son herramientas de prueba,
+no dependencias nuevas de la app. Se compila la referencia fija sin editarla, sin
+copiar fuentes/tipografías a Aurelis ni sustituir sus atribuciones. Los APK de prueba
+no son una Release ni certifican licencias de fuentes incorporadas por el origen.

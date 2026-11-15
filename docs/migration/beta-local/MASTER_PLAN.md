@@ -74,7 +74,7 @@ USB/bit-perfect; AutoMix Beta; ajustes aplicables, idiomas, Replay y respaldos;
 widgets, enriquecimiento remoto opcional, Last.fm/ListenBrainz y etiquetas locales.
 
 Excluir WebDAV, SMB, firmas gráficas de artistas, Cast, escuchar juntos/servidor,
-Spotify, YouTube Music, JioSaavn, JavaScript sources, TV, Wear OS, web y selector
+Spotify, YouTube Music, JioSaavn, JavaScript sources, Android Auto, TV, Wear OS, web y selector
 de icono. Aplazar canvas externo, videoclips y presencia Discord fuera de la beta.
 Retirar del flujo activo referencias que contradigan exclusiones; no borrar en
 masa archivos legacy sin comprobar usos ni funciones propias compatibles.

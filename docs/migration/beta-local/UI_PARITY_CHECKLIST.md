@@ -1,3 +1,4 @@
+<!-- Aurelis © 2026. GPL-3.0-or-later -->
 # UI_PARITY_CHECKLIST
 
 Referencia: BitChord b690dc1. Identidad y tipografías autorizadas son diferencias
@@ -30,6 +31,32 @@ o explicar con precisión una incompatibilidad real. No simplificar por comodida
 Las capturas anteriores de ../screenshots son evidencia histórica de Aurelis,
 no sustituyen referencias ejecutables de BitChord ni pruebas de esta beta.
 
+
+## Puerta previa a B07 — instrucción posterior del usuario
+
+Antes de iniciar la siguiente entrega B07, contrastar toda la interfaz activa con
+la referencia y resolver diferencias dentro del alcance local. Incluye iconos y
+sus variantes, textos/tipografía autorizada, carátulas, widgets, navegación, menús,
+ajustes (acceso, ubicación, categorías y orden), MiniPlayer, ambos reproductores
+y presentación de letras. El historial de entregas no acredita paridad completa.
+
+Conservar el orden relativo y la presentación de las funciones compatibles del
+origen al retirar opciones excluidas. Sustituir autenticación por el único perfil
+local. No introducir streaming, Android Auto, TV ni Wear para reproducir su aspecto.
+No activar controles sin efecto ni duplicar motores/repositorios para copiar UI.
+Usar archivos/componentes reales donde corresponda, con procedencia y atribuciones.
+La referencia principal sigue en b690dc1; solo se admite el delta acf219a7 ya aprobado.
+No incorporar main indiscriminadamente. Mantener fuentes con licencia autorizada.
+
+El contraste estático inicial está en [PRE_B07_UI_PARITY](PRE_B07_UI_PARITY.md).
+No es una certificación visual ni cierre de widgets/letras/ajustes. Las tareas UI
+antes previstas en B11/B12 deben identificarse expresamente en esta puerta antes
+de adelantar su implementación; no se considera completo su backend por hacerlo.
+Cada entrega conserva máximo30 archivos, dos revisiones y Android solo Actions.
+Capturas de referencia verificables o ejecución comparable siguen siendo necesarias
+para cerrar la fidelidad. La autorización posterior «Continúa», tras la propuesta
+de comparar ambas aplicaciones, habilita el proceso separado documentado en
+[PRE_B07_COMPARISON_RUN](PRE_B07_COMPARISON_RUN.md); no modifica el smoke B05.
 
 ## Evidencia incremental B02
 

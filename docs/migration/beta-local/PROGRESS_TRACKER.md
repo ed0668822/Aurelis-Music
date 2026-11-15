@@ -5,6 +5,38 @@
 
 ## Continuación actual — primera entrega documental
 
+### Pre-B07 — comparación ejecutable preparada; resultado nuevo pendiente
+
+Run43670279287/b8ee8147 terminó SUCCESS; B06.3-d tiene pipeline aprobado. No acredita
+paridad visual/física. B06.4 excluido por decisión del usuario, no implementado.
+«Continúa» autoriza ejecutar la comparación propuesta entre las dos apps. Workflow
+separado: Aurelis usa B01; BitChord se compila en el commit fijo sin cambios y sin
+bundleWear, conservando SDK/ABI. Mismo emulador API35, dimensiones/escala, fixtures
+FLAC originales con carátulas/LRC incrustado, captura claro/oscuro y ambos layouts.
+Galería HTML, PNG/XML, condiciones, hashes y estados no alcanzados explícitos.
+No comparación completada ni igualdad certificada: widgets/movimiento/accesibilidad
+siguen pendientes y cada captura requiere revisión. No se inicia B07. Catorce rutas,
+dos revisiones estáticas del mismo agente, nueve fixtures Python aprobados, actionlint,
+py_compile y diff --check correctos. Fixtures reales generados/ffprobe comprobado
+localmente; ninguna compilación ni ejecución Android local. Ver PRE_B07_COMPARISON_RUN.
+
+### Prioridad posterior — fidelidad de toda la UI antes de B07
+
+El usuario pide verificar y adaptar la misma interfaz de referencia con música
+local: iconos, letras, carátulas, widgets y ubicación/orden de ajustes incluidos.
+Se abre puerta previa a B07, sin declarar cerradas las diferencias visuales por
+las entregas anteriores. Contraste estático inicial en PRE_B07_UI_PARITY.md;
+UI_PARITY_CHECKLIST.md registra criterios. Ajustes simplificados y registro de
+widgets siguen pendientes; no se han realizado cambios de código en esta revisión.
+
+### Cambio de alcance — Android Auto excluido
+
+Por indicación explícita del usuario, B06.4-a/-b quedan fuera del alcance, junto
+a TV y Wear. No se implementan ni se consideran completados mediante código.
+No bloquean el paso a B07. B06.3-d continúa pendiente del resultado de Actions;
+se mantienen las pruebas físicas pendientes de los bloques anteriores.
+
+
 ### B06.3-d — registro desde el servicio (CI nuevo pendiente)
 
 «Continúa» acepta la reparación e17c6db4 de B06.3-c; no se descargan informes previos.
@@ -21,7 +53,8 @@ Diecinueve pruebas nuevas preparadas y una comprobación UI ampliada; no ejecuta
 aquí. Dos revisiones estáticas del mismo agente y diff --check; Gradle, Lint, suites
 Android y verificación APK corresponden a Actions. No afirmar éxito de esas pruebas
 ni funcionamiento físico. Límites de pérdida tras muerte abrupta documentados en
-[B06_3D_SERVICE_EVENTS](B06_3D_SERVICE_EVENTS.md). B06.4 sigue pendiente: B06 abierto.
+[B06_3D_SERVICE_EVENTS](B06_3D_SERVICE_EVENTS.md). B06.4 está excluido por decisión posterior del usuario; cierre de implementación
+de B06 pendiente del resultado de B06.3-d.
 
 ### B06.3-c — corrección aceptada por el usuario; físico pendiente
 

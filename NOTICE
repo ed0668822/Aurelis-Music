@@ -533,3 +533,10 @@ Android AtomicFile/SQLiteOpenHelper and existing coroutines are used without add
 a dependency or copying new BitChord code. Earlier queue/session attribution stays
 applicable. Only newly measured intervals enter SQLite; no legacy totals are
 converted into fabricated dated events. Retries preserve original event identities.
+
+Pre-B07 — executable UI comparison evidence
+The comparison workflow, Python capture/report utilities and original synthetic
+FLAC/art/LRC fixtures are Aurelis contributions. The reference is an unchanged
+build of BitChord commit b690dc146009d4815825fa4a20815ef2e4ee8898, used only as a
+comparison app. Its existing GPL/contributor notices remain intact. No upstream
+UI source, fonts or media are newly copied into Aurelis in this delivery.

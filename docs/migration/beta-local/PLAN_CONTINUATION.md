@@ -50,8 +50,9 @@ final automático. Autoría nueva local al repositorio: ed0668822 y el correo
 ed0668822@gmail.com, verificado con GitHub antes de esta entrega.
 
 Excluidos streaming, Cast, WebDAV, SMB, escuchar juntos, servidor compartido,
-fuentes JavaScript, TV y Wear. Vídeos, carátulas animadas externas y Discord aplazados.
-Android Auto pertenece a B06.4 y no implica Android TV.
+fuentes JavaScript, Android Auto, TV y Wear. Vídeos, carátulas animadas externas y Discord aplazados.
+Decisión posterior del usuario: B06.4-a/-b quedan excluidos, sin implementación
+ni bloqueo para avanzar a B07 cuando las entregas previas estén validadas.
 
 ## Correspondencia de las 31 adaptaciones seleccionadas
 
@@ -66,7 +67,7 @@ Android Auto pertenece a B06.4 y no implica Android TV.
 | 07 | Shuffle visible y reversible | B06.1-a/-b |
 | 08 | Controles y temporizador | B06.2-a/-b/-c |
 | 09 | Sesión, restauración y eventos | B06.3-a/-b/-c/-d |
-| 10 | Android Auto | B06.4-a/-b |
+| 10 | Android Auto — excluido por el usuario | B06.4-a/-b retirados del alcance |
 | 11 | Efectos de letras | B07.2-a/-b |
 | 12 | Gestos y offset | B07.2-c |
 | 13 | Compartir letras | B07.3-a/-b |
@@ -131,7 +132,7 @@ dependencias y aceptación de las fichas originales, estrechadas por estas filas
 | B06.3-a | 6 | Restaurar cola/posición ante reinicio, ausentes y comandos concurrentes. |
 | B06.3-b | 6 | Foco/auriculares/notificación/bloqueo mediante la misma sesión. |
 | B06.3-c / -d | 6 | Primero almacenamiento versionado de eventos; después registro desde servicio y deduplicación/seek/recuperación. |
-| B06.4-a / -b | 6 | Primero catálogo/comandos Android Auto en servicio existente; después controladores autorizados y navegación local. |
+| B06.4-a / -b | No aplica | Excluidos por decisión posterior del usuario. No implementar Android Auto ni usarlo como requisito de cierre de B06. |
 
 ### B07–B08: letras
 
@@ -224,8 +225,8 @@ PCM previas ya confirmadas en el historial.
 - UI adaptada detrás de rutas activas, sin segundo estado musical. Conservar
   coordinador y timeline; cola visible igual al orden reproducido. Ocurrencias
   duplicadas conservan identidad al editar.
-- Android Auto extiende el servicio existente con contratos de biblioteca,
-  conservando su nombre y propietario de reproducción.
+- Android Auto, TV y Wear están excluidos. Se conserva el servicio local existente;
+  no añadir catálogo ni contratos destinados a Android Auto.
 - SQLiteOpenHelper para nuevos eventos/Replay, sin Room/KSP. Deduplicación y seek
   correctos; conservar totales antiguos sin inventar cronología.
 - Letras: un modelo/repositorio temporal activo para efectos y exportación;
