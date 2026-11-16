@@ -3,6 +3,19 @@
 
 ### F002 — barra inferior y Buscar separado (2026-11-16)
 
+**Reparación posterior CI180:** `ab09f2c5` falló en B03: 449 pruebas por variante,
+443 SUCCESS y6 FAILURE. Las seis nuevas de F002 aprobaron; los fallos son capturas
+software de Home/player: SharedBoundsNode.draw usa drawRenderNode sin soporte.
+B01/B02/B05 SUCCESS, B04 SKIPPED, B06 FAILURE. F5 carece de XML por ese fallo;
+no se reduce el umbral ni se omiten pruebas. Logs originales CRC válidos y SHA256
+en F002_NAVIGATION_BAR.md. Los ocho sharedElement y el overlay ahora requieren
+hardware y movimiento; se conservan Glass, poses, interacción y animaciones
+compartidas en la ruta soportada. Se añade regresión de dibujo software para ambas
+poses y preferencias, sin cambiar las capturas originales ni Gradle/CI.
+Cuatro archivos de reparación, todos dentro de las17 rutas de F002; máximo60.
+Dos revisiones del mismo agente y comprobaciones estáticas; nuevo CI PENDIENTE.
+
+
 Autorizado después de F001, base `4b60c176`. Se conecta la barra vendorizada real
 BitChord `b690dc14`, su plegado por scroll y accesorio de dos densidades, y la
 barra normal de cuatro pestañas. Se adaptan los cuatro vectores originales,

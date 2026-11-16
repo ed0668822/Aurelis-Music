@@ -84,6 +84,66 @@ no se atribuye a esta entrega. Tras el push se comunica SHA, archivos y ejecuci�
 real; se espera el resultado del usuario antes de F003. La prueba en Redmi Note
 14 Pro 5G con Android 16/HyperOS 3 y la comparación visual completa siguen pendientes.
 
+## Reparación posterior — CI180
+
+El usuario comunica el fallo y autoriza su investigación y reparación dentro de
+F002. Commit fallido `ab09f2c54e871859366c012523a8e4151f40b8a6`,
+[run180/43958082003](https://github.com/ed0668822/Aurelis-Music/actions/runs/43958082003).
+B01, B02 y B05 SUCCESS; B03 FAILURE, B04 SKIPPED y B06 FAILURE.
+Los APK Debug e instrumentación sí compilaron. No se acredita APK Release
+verificado porque B04 no se ejecutó.
+
+Los logs originales se descargan fuera del checkout y pasan CRC:
+`run180-logs.zip`, SHA256
+`c8b2e76b1e2f1490092ba4499fe10f93cae4cb02203722b228e9a8e75e0d28f5`.
+La descarga del informe consolidado (artefacto 14273561194) falla con403;
+la causa se obtiene del ZIP válido de logs, no de un informe inexistente.
+
+| Variante | Pruebas ejecutadas | SUCCESS | FAILURE |
+|---|---:|---:|---:|
+| Debug | 449 | 443 | 6 |
+| Release | 449 | 443 | 6 |
+
+Las seis regresiones nuevas de F002 sí aprueban en ambas variantes. Los fallos
+son el caso loadingPermissionEmptyFailureAndRetryRecoverToRealHome de
+HomeShelvesIntegrationTest y cinco capturas de PlayerIntegrationTest:
+lyricsSourceSelectionPersistsWithoutSendingAnyRequest,
+homeAutoMixKeepsCurrentItemAndPositionWhileReplacingUpcomingSongs,
+translationDialogCancelNeverSendsAndBilingualViewKeepsOriginal,
+playerHasUsableArtworkTimeControlsAndCompactBarAt360dp e
+importedLyricsHighlightAndSeekWithOffsetInTheRealPlayer.
+
+Todos registran IllegalArgumentException: Software rendering doesn't support
+drawRenderNode, desde SharedBoundsNode.draw → GraphicsLayer → Canvas.drawRenderNode.
+La barra instalaba sharedElement incluso sin hardware y con movimiento reducido;
+esos nodos requieren RenderNode también en reposo. Las capturas llaman View.draw
+sobre Canvas(Bitmap), que no dispone de GPU. No es un error de tipos ni se
+identifica un fallo de los parsers, AutoMix o reproducción en esos casos.
+Kover quedó omitido después de las suites fallidas; F5 rechazó
+COVERAGE_XML_UNAVAILABLE. No se atribuye el origen a un porcentaje bajo de cobertura.
+
+Corrección: los ocho puntos compartidos pasan por navigationSharedElement, que
+conserva el modificador original solo con LocalGlassHardware y sin movimiento
+reducido. El overlay compartido utiliza la misma condición. En las otras rutas
+se mantienen composiciones, geometría, selección, gestos, accesorio y transición
+normal sin nodos compartidos; no se desactiva Glass globalmente ni se toca el
+motor estable del backdrop. En hardware con movimiento permanecen los shared
+bounds originales. No cambian Gradle, SDK, ABI, secretos, workflows ni umbrales.
+
+Se añade una regresión con View.draw(Canvas(Bitmap)), sin capturar excepciones,
+que prueba ambas poses, con/sin canción, software con movimiento y movimiento
+reducido con la bandera de hardware habilitada; verifica después navegación.
+Se conservan las seis regresiones iniciales y todas las capturas que fallaron.
+Son siete casos añadidos por F002 en total; el caso nuevo queda pendiente de
+Actions y no acredita una GPU real por simular una bandera de composición.
+
+Dos revisiones del mismo agente: causa/trazas/cobertura de todos los puntos
+compartidos y, después, fallback/interacción/regresión/sintaxis/diff. Compilación
+y pruebas nuevas exclusivamente en GitHub Actions. La reparación modifica cuatro
+archivos ya incluidos en F002: implementación, prueba, este informe y tracker;
+el acumulado sigue en17 rutas distintas sobre la base4b60c176, máximo60.
+Nuevo CI de la reparación PENDIENTE. Esperar resultado del usuario antes de F003.
+
 ## Fuentes y SHA256
 
 | Fuente BitChord fijada | SHA256 |

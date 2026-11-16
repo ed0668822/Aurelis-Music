@@ -399,11 +399,8 @@ private fun SharedTransitionScope.InlineTab(
 ) {
     Box(
         modifier = modifier.testTag("navigation-group")
-            .sharedElement(
-                rememberSharedContentState("tabGroup"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                boundsTransform = navBoundsTransform(),
-                zIndexInOverlay = 1f
+            .navigationSharedElement(
+                this@InlineTab, "tabGroup", animatedVisibilityScope, zIndexInOverlay = 1f
             )
             .shadow(
                 shape = shapes.tabBarShape,
@@ -429,11 +426,8 @@ private fun SharedTransitionScope.InlineTab(
         Tab(
             icon = {
                 Box(
-                    Modifier.sharedElement(
-                        rememberSharedContentState("tab#${inlineTab.key}-icon"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = navBoundsTransform(),
-                zIndexInOverlay = 1f
+                    Modifier.navigationSharedElement(
+                        this@InlineTab, "tab#${inlineTab.key}-icon", animatedVisibilityScope, zIndexInOverlay = 1f
                     )
                 ) {
                     inlineTab.icon()
@@ -462,11 +456,8 @@ private fun SharedTransitionScope.InlineStandaloneTab(
         isInline = true,
         isStandalone = true,
         modifier = modifier
-            .sharedElement(
-                rememberSharedContentState("standaloneTab"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                boundsTransform = navBoundsTransform(),
-                zIndexInOverlay = 1f
+            .navigationSharedElement(
+                this@InlineStandaloneTab, "standaloneTab", animatedVisibilityScope, zIndexInOverlay = 1f
             )
             .shadow(
                 shape = shapes.standaloneTabShape,
@@ -502,10 +493,8 @@ private fun SharedTransitionScope.InlineAccessory(
             modifier = modifier
                 .then(
                     if (isAccessoryShared) {
-                        Modifier.sharedElement(
-                            rememberSharedContentState("accessory"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            boundsTransform = navBoundsTransform()
+                        Modifier.navigationSharedElement(
+                            this@InlineAccessory, "accessory", animatedVisibilityScope
                         )
                     } else {
                         Modifier.animateEnterExitAccessory(
@@ -623,10 +612,8 @@ private fun SharedTransitionScope.ExpandedAccessory(
         modifier = modifier
             .then(
                 if (isAccessoryShared) {
-                    Modifier.sharedElement(
-                        rememberSharedContentState("accessory"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = navBoundsTransform()
+                    Modifier.navigationSharedElement(
+                        this@ExpandedAccessory, "accessory", animatedVisibilityScope
                     )
                 } else {
                     Modifier.animateEnterExitAccessory(
@@ -744,11 +731,8 @@ private fun SharedTransitionScope.ExpandedTabs(
     // here, over the bar, rather than inside the bar's clip.
     Box(
         modifier = modifier.testTag("navigation-group")
-            .sharedElement(
-                rememberSharedContentState("tabGroup"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                boundsTransform = navBoundsTransform(),
-                zIndexInOverlay = 1f
+            .navigationSharedElement(
+                this@ExpandedTabs, "tabGroup", animatedVisibilityScope, zIndexInOverlay = 1f
             )
     ) {
         // The bar's glass is exported for the lens to refract.
@@ -849,11 +833,8 @@ private fun SharedTransitionScope.ExpandedTabs(
                             icon = {
                                 Box(
                                     modifier = (if (tab.key == inlineTab?.key) {
-                                        Modifier.sharedElement(
-                                            rememberSharedContentState("tab#${tab.key}-icon"),
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                            boundsTransform = navBoundsTransform(),
-                zIndexInOverlay = 1f
+                                        Modifier.navigationSharedElement(
+                                            this@ExpandedTabs, "tab#${tab.key}-icon", animatedVisibilityScope, zIndexInOverlay = 1f
                                         )
                                     } else {
                                         Modifier.animateEnterExitTab(
@@ -933,11 +914,8 @@ private fun SharedTransitionScope.ExpandedStandaloneTab(
         isInline = false,
         isStandalone = true,
         modifier = modifier
-            .sharedElement(
-                rememberSharedContentState("standaloneTab"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                boundsTransform = navBoundsTransform(),
-                zIndexInOverlay = 1f
+            .navigationSharedElement(
+                this@ExpandedStandaloneTab, "standaloneTab", animatedVisibilityScope, zIndexInOverlay = 1f
             )
             .shadow(
                 shape = shapes.standaloneTabShape,
@@ -986,21 +964,26 @@ private fun Tab(
 private fun Modifier.animateEnterExitAccessory(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
-): Modifier = with(sharedTransitionScope) {
-    with(animatedVisibilityScope) {
-        val animatedAlpha by transition.animateFloat { targetState ->
-            when (targetState) {
-                EnterExitState.Visible -> 1f
-                else -> 0f
+): Modifier {
+    // The shared overlay uses GraphicsLayer/RenderNode too; ordinary alpha is
+    // sufficient when there is no supported shared-element animation.
+    if (!LocalGlassHardware.current || LocalReduceMotion.current) return this
+    return with(sharedTransitionScope) {
+        with(animatedVisibilityScope) {
+            val animatedAlpha by transition.animateFloat { targetState ->
+                when (targetState) {
+                    EnterExitState.Visible -> 1f
+                    else -> 0f
+                }
             }
-        }
 
-        this@animateEnterExitAccessory
-            .renderInSharedTransitionScopeOverlay()
-            .graphicsLayer(
-                compositingStrategy = CompositingStrategy.ModulateAlpha,
-                alpha = animatedAlpha
-            )
+            this@animateEnterExitAccessory
+                .renderInSharedTransitionScopeOverlay()
+                .graphicsLayer(
+                    compositingStrategy = CompositingStrategy.ModulateAlpha,
+                    alpha = animatedAlpha
+                )
+        }
     }
 }
 
@@ -1141,4 +1124,24 @@ private data class FloatingTabBarTab(
 private fun navBoundsTransform(): BoundsTransform {
     val reduced = LocalReduceMotion.current
     return BoundsTransform { _, _ -> if (reduced) snap() else spring(stiffness = Spring.StiffnessMediumLow) }
+}
+
+/** SharedBoundsNode.draw uses drawRenderNode even at rest: require a GPU canvas
+ * path and actual motion, rather than installing it for every layout pose. */
+@Composable
+private fun Modifier.navigationSharedElement(
+    scope: SharedTransitionScope,
+    key: Any,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    zIndexInOverlay: Float = 0f,
+): Modifier {
+    if (!LocalGlassHardware.current || LocalReduceMotion.current) return this
+    return with(scope) {
+        this@navigationSharedElement.sharedElement(
+            rememberSharedContentState(key),
+            animatedVisibilityScope = animatedVisibilityScope,
+            boundsTransform = navBoundsTransform(),
+            zIndexInOverlay = zIndexInOverlay,
+        )
+    }
 }

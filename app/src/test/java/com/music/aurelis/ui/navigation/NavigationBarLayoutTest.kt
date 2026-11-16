@@ -1,6 +1,8 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.navigation
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +23,7 @@ import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.RobolectricActivityRule
 import com.music.aurelis.ui.components.*
 import com.music.aurelis.ui.components.floatingtabbar.rememberFloatingTabBarScrollConnection
+import com.music.aurelis.ui.components.floatingtabbar.FloatingTabBarScrollConnection
 import com.music.aurelis.ui.icons.AurelisNavigationIcons
 import com.music.aurelis.ui.theme.AurelisTheme
 import com.music.aurelis.ui.theme.LocalReduceMotion
@@ -43,6 +46,53 @@ class NavigationBarLayoutTest {
         BottomTab("Library", AurelisNavigationIcons.TabLibrary),
         BottomTab("Search", AurelisNavigationIcons.TabSearch))
     private fun tab(name: String) = compose.onNode(isSelectable() and (hasText(name) or hasContentDescription(name)))
+
+    @Test fun softwareCapturesKeepBothPosesUsableWithoutHardwareOrWithReducedMotion() {
+        var hardware by mutableStateOf(false)
+        var reduced by mutableStateOf(false)
+        var selected by mutableIntStateOf(0)
+        val fixture = LocalSong("fixture", "Software capture", "Test artist", null,
+            "content://media/external/audio/media/1", null, 120_000, null, null, null)
+        var song by mutableStateOf<LocalSong?>(fixture)
+        lateinit var scroll: FloatingTabBarScrollConnection
+        compose.setContent { AurelisTheme {
+            CompositionLocalProvider(LocalLiquidGlassEnabled provides true,
+                LocalGlassHardware provides hardware, LocalReduceMotion provides reduced) {
+                scroll = rememberFloatingTabBarScrollConnection()
+                Box(Modifier.fillMaxSize()) {
+                    GlassNavBar(tabs, selected, { selected = it }, song, false, false, {}, {}, {}, {},
+                        Modifier.align(Alignment.BottomCenter), scrollConnection = scroll)
+                }
+            }
+        } }
+        fun captureSoftware() {
+            compose.waitForIdle()
+            compose.runOnIdle {
+                val view = compose.activity.window.decorView
+                val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+                try {
+                    val canvas = Canvas(bitmap)
+                    assertFalse(canvas.isHardwareAccelerated)
+                    // Same drawing path as the six CI180 failures; no exception is suppressed.
+                    view.draw(canvas)
+                } finally { bitmap.recycle() }
+            }
+            tab("Search").assertIsDisplayed()
+        }
+        // Software with motion enabled, and reduced motion with the hardware flag enabled.
+        listOf(false to false, true to true).forEach { (gpu, reduce) ->
+            listOf(fixture, null).forEach { current ->
+                compose.runOnIdle { hardware = gpu; reduced = reduce; song = current; scroll.expand() }
+                tab("Explore").assertIsDisplayed()
+                captureSoftware()
+                compose.runOnIdle { scroll.inline() }
+                captureSoftware()
+                tab("Home").performClick()
+                tab("Library").performClick().assertIsSelected()
+                tab("Home").performClick().assertIsSelected()
+            }
+        }
+    }
 
     @Test fun glassSearchIsACircleOutsideTheGroupAndPlainModeKeepsFourTabs() {
         var glass by mutableStateOf(true)
