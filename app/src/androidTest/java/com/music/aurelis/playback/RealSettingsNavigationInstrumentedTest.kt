@@ -85,13 +85,13 @@ class RealSettingsNavigationInstrumentedTest {
         throw AssertionError("Settings navigation: Back left the profile visible: " + label)
     }
 
-    private fun awaitSearchField() {
+    private fun awaitEditor(stage: String) {
         val deadline = SystemClock.elapsedRealtime() + 15_000
         while (SystemClock.elapsedRealtime() < deadline) {
             if (rows().any { it.className?.toString() == "android.widget.EditText" && it.isEnabled }) return
             SystemClock.sleep(150)
         }
-        throw AssertionError("Settings navigation: Search field missing; visible=" +
+        throw AssertionError("Settings navigation: $stage editor missing; visible=" +
             rows().map { "${it.text}|${it.contentDescription}" })
     }
 
@@ -169,11 +169,15 @@ class RealSettingsNavigationInstrumentedTest {
             instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
             awaitAbsent(context.getString(R.string.settings_photo_hint))
             await(library)
+            await(context.getString(R.string.new_playlist), click = true, scroll = true)
+            awaitEditor("New playlist")
+            evidence("$prefix-new-playlist")
+            await(context.getString(R.string.cancel), click = true)
             await(context.getString(R.string.search), click = true)
-            awaitSearchField()
+            awaitEditor("Search")
             evidence("$prefix-search")
             activity.recreate()
-            awaitSearchField()
+            awaitEditor("Search")
             await(context.getString(R.string.home), click = true)
             await(context.getString(R.string.settings_profile_action))
             assertEquals("Opening Settings must preserve the single local profile", before, ProfileRepository.state.value.profile)

@@ -14,6 +14,27 @@
 
 ## Continuación actual — primera entrega documental
 
+### Reparación de run164 — tamaño del diálogo Nueva lista
+
+02a3cb1c/run164/43783063441: B01/B02/B05 SUCCESS, B03 FAILURE, B04 SKIPPED y
+B06 FAILURE por la puerta final. Debug yRelease ejecutan424 tests cada uno; solo
+falla libraryCreatesAndOpensAPlaylistInTheExistingLocalStore con AppNotIdleException
+al abrir el diálogo, antes de performTextInput (línea147). Kover no se genera tras
+ese fallo; cobertura no disponible no se interpreta como causa primaria.
+Los demás casos, incluido selector de fotos/cancelación y previews, pasan.
+Los dos recorridos reales settings-navigation también PASS en API35/API36.
+
+El diálogo nuevo usaba el ancho por defecto de plataforma. Los editores existentes
+de perfil/listas usan ancho320dp y usePlatformDefaultWidth=false tras la reparación
+del bucle de medida documentada en PROGRESS/BUILD_STATUS. Se aplica ese mismo
+contrato al diálogo nuevo, conservando todas las aserciones y el timeout original.
+Ambos recorridos Android añaden abrir/cancelar Nueva lista, con/sin reproducción,
+antes de Buscar y su recreación. No se cambia renderer, Glass, SDK/ABI ni puertas.
+
+Dos revisiones del mismo agente, no independientes; revisión de consumidores,
+contrato de tamaño/ciclo de vida/cancelación y parser/diff. Tres rutas ya incluidas;
+acumulado63. Sin Gradle/Lint/APK/Android local. Validación nueva pendiente de Actions.
+
 ### Propuesta posterior del usuario — Biblioteca y selector visual de fotos
 
 Nueva instrucción de UI: quitar Ajustes de la lista de Biblioteca y entrar por la

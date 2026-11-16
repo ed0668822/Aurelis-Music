@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
@@ -393,6 +394,8 @@ internal fun AurelisNavigationContent(
                     canCreatePlaylist = !userState.readOnly,
                 )
                 if (creatingPlaylist) androidx.compose.material3.AlertDialog(
+                    modifier = Modifier.width(320.dp),
+                    properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
                     onDismissRequest = { creatingPlaylist = false },
                     title = { Text(stringResource(R.string.new_playlist)) },
                     text = { Column {
