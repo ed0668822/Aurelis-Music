@@ -250,7 +250,7 @@ fun NowPlayingScreen(
                     else onOpenQueue()
                 }
                 val header: @Composable () -> Unit = {
-                    if (!landscape) Column(Modifier.fillMaxWidth().playerSwipeTrigger(1, closePlayer, panelMotion), horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (!landscape) Column(Modifier.fillMaxWidth().testTag("player-handle").playerSwipeTrigger(1, closePlayer, panelMotion), horizontalAlignment = Alignment.CenterHorizontally) {
                         IconButton(onClick = closePlayer, modifier = Modifier.height(28.dp)) {
                             Box(Modifier.size(38.dp, 5.dp).background(MaterialTheme.colorScheme.onSurface, CircleShape)
                                 .semantics { contentDescription = context.getString(R.string.player_close) })
@@ -380,7 +380,11 @@ fun NowPlayingScreen(
                                 PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
                                     enabled = state.isConnected && state.canSeek, showRemaining = true)
                             }
-
+                            if (compact) TextButton(onClick = { showQuality = true },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                                modifier = Modifier.align(Alignment.BottomCenter).height(24.dp)) {
+                                SourceQualityBadge(state.sourceQuality.formatLabel)
+                            }
                         }
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
                         transport(compact)

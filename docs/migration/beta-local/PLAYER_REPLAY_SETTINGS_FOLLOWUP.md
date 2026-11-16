@@ -104,3 +104,23 @@ Revisiones estáticas de tipo/recurso y de llamadas/casos de metadatos por el mi
 agente, no independientes; parser Kotlin y diff-check locales. Tres rutas de
 corrección ya pertenecían al inventario: siguen18 distintas acumuladas desde1da11b0f.
 Nuevo CI pendiente; esperar resultado comunicado por usuario después del push.
+
+## Corrección de B03 — Main174
+
+Run43903761249/0c6e765d FAILURE. Logs ZIP originales descargados y CRC válido.
+B01/B02/B05 SUCCESS; B04 SKIPPED y B06 FAILURE. Se ejecutaron435 pruebas por
+variante:431 SUCCESS y4 FAILED en cada una. Kover omitido tras fallo de suites;
+no se atribuye la causa raíz a cobertura.
+
+Dos pruebas de gestos no encontraban player-handle: se restaura la etiqueta en
+la columna vertical que conserva playerSwipeTrigger. La prueba horizontal detectó
+una regresión real: el badge que abre calidad solo se dibujaba cuando !compact;
+se restaura para compact en el espacio del slider, sin agrandar el deck. El caso
+de tiempos esperaba1:00, aunque el diseño ahora muestra restante-1:00: se comprueban
+0:00 transcurrido y-1:00 restante. Se conservan las pruebas de gesto completo,
+cancelación, cola intacta y salida no medida; no se borran ni deshabilitan casos.
+
+Las mismas3 rutas correctivas,18 acumuladas desde1da11b0f, máximo60. Dos revisiones
+estáticas del mismo agente: conexiones/variantes y contratos de tests/medidas.
+Parser Kotlin y diff-check; Android/Gradle no locales. Resultado nuevo pendiente,
+esperar respuesta del usuario después de avisar push antes de continuar.

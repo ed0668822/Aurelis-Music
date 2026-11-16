@@ -412,7 +412,8 @@ class PlayerIntegrationTest {
         capture("mini-player")
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_repeat)).assertIsDisplayed()
-        compose.onNodeWithText("1:00").assertIsDisplayed()
+        compose.onNodeWithText("0:00").assertIsDisplayed()
+        compose.onNodeWithText("-1:00").assertIsDisplayed()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).assertIsDisplayed()
         capture("now-playing")
     }
