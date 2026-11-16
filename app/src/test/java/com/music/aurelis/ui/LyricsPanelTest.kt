@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui
 
 import androidx.activity.ComponentActivity
@@ -142,6 +143,41 @@ class LyricsPanelTest {
         compose.onAllNodesWithText("مرحبا").assertCountEquals(1)
         compose.onNodeWithText("مرحبا").assertIsDisplayed().assertIsSelected().performClick()
         compose.runOnIdle { assertEquals(0L, seek) }
+    }
+
+    @Test fun instrumentalDotsRemainSeekableAndPickingVersesDoesNotSeek() {
+        val position = PlaybackPosition().apply { report(0) }
+        var seek = -1L
+        var picking by mutableStateOf(false)
+        var picks by mutableStateOf(emptySet<Int>())
+        var longPresses = 0
+        val lines = listOf(LyricLine(0, ""), LyricLine(5000, "Una línea para compartir"))
+        compose.setContent { AurelisTheme { Surface { SyncedLyricsPanel(
+            lines, "instrumental", position, true, false, { seek = it },
+            onLineLongClick = { longPresses++; picking = true; picks = setOf(it) },
+            picking = picking, picked = picks, onTogglePick = { index -> picks = if (index in picks) picks - index else picks + index }) } } }
+        compose.onNodeWithContentDescription("Instrumental").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(0L, seek); seek = -1L }
+        compose.onNodeWithTag("lyrics-line-1").performTouchInput { longClick() }
+        compose.onNodeWithTag("lyrics-line-1").assertIsSelected().performClick().assertIsNotSelected()
+        compose.runOnIdle { assertEquals(1, longPresses); assertEquals(-1L, seek); assertTrue(picks.isEmpty()) }
+    }
+
+    @Test fun onlyDirectReadingGesturesHideOrRevealPlaybackControls() {
+        lateinit var connection: androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+        var hidden = 0; var revealed = 0
+        compose.setContent { AurelisTheme {
+            connection = com.music.aurelis.ui.player.rememberPlayerControlsOnScroll(onReveal = { revealed++ }, onHide = { hidden++ })
+            androidx.compose.material3.Text("Gesture fixture")
+        } }
+        compose.runOnIdle {
+            connection.onPreScroll(androidx.compose.ui.geometry.Offset(0f, -100f), androidx.compose.ui.input.nestedscroll.NestedScrollSource.SideEffect)
+            assertEquals(0, hidden); assertEquals(0, revealed)
+            connection.onPreScroll(androidx.compose.ui.geometry.Offset(0f, -100f), androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput)
+            assertEquals(1, hidden)
+            connection.onPreScroll(androidx.compose.ui.geometry.Offset(0f, 100f), androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput)
+            assertEquals(1, revealed)
+        }
     }
 
 }

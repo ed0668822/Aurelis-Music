@@ -343,6 +343,29 @@ class PlayerIntegrationTest {
         } finally { compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(previousOffset) } }
     }
 
+    @Test fun changingSongsNeverRevealsTheAlreadyOpenPlayerAgain() {
+        start()
+        compose.runOnIdle { SettingsRepository.setReduceAnimation(false) }
+        try {
+            compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+            compose.mainClock.advanceTimeBy(2_000)
+            val initial = compose.onNodeWithTag("player-portrait").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+            val entries = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+            compose.mainClock.autoAdvance = false
+            compose.runOnIdle { vm.next() }
+            repeat(12) {
+                compose.mainClock.advanceTimeByFrame()
+                val bounds = compose.onNodeWithTag("player-portrait").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+                assertEquals(initial.top, bounds.top, 1f)
+                assertEquals(initial.bottom, bounds.bottom, 1f)
+            }
+            compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); assertEquals(entries, vm.state.value.queue.map { it.queueEntryId }) }
+        } finally {
+            compose.mainClock.autoAdvance = true
+            compose.runOnIdle { SettingsRepository.setReduceAnimation(true) }
+        }
+    }
+
     @Test fun cancellingAPartialHeaderDragPreservesTheOpenPlayerAndQueue() {
         start()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
@@ -493,7 +516,11 @@ class PlayerIntegrationTest {
             compose.runOnIdle { assertEquals(1500L, vm.state.value.positionMs) }
             compose.onNodeWithText("Segunda frase propia").assertIsSelected()
             val positionBeforeSharing = vm.state.value.positionMs
-            compose.onNodeWithTag("lyrics-line-0").performTouchInput { longClick() }
+            compose.onNodeWithTag("lyrics-line-0").performScrollTo().performTouchInput { longClick() }
+            compose.onNodeWithTag("lyrics-line-0").assertIsSelected()
+            compose.onNodeWithTag("lyrics-line-1").performClick().assertIsSelected()
+            compose.runOnIdle { assertEquals(positionBeforeSharing, vm.state.value.positionMs) }
+            compose.onNodeWithText(compose.activity.getString(R.string.share)).performClick()
             compose.onNodeWithText(compose.activity.getString(R.string.lyrics_share_title)).assertIsDisplayed()
             compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
             compose.onNodeWithText("Segunda frase propia").assertIsSelected()

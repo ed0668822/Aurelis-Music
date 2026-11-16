@@ -11,11 +11,22 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.rounded.AllInclusive
+import com.music.aurelis.ui.components.PlayerBottomGlyph
+import com.music.aurelis.ui.components.PlayerCircleGlyph
 import com.music.aurelis.ui.components.PlayerVolumeRow
 import androidx.compose.material.icons.rounded.IosShare
 import com.music.aurelis.ui.player.LyricsShareRequest
 import com.music.aurelis.ui.player.LyricsShareLine
 import com.music.aurelis.ui.player.AndroidLyricsShareSheet
+import com.music.aurelis.ui.player.rememberLyricsPicker
+import com.music.aurelis.ui.player.LyricsPickBar
+import com.music.aurelis.ui.haptics.rememberHaptics
+import com.music.aurelis.ui.icons.AurelisPlayerIcons
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.ui.platform.LocalContext
 import com.music.aurelis.AurelisApplication
@@ -26,6 +37,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -37,6 +50,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.stateDescription
@@ -114,6 +128,7 @@ import com.music.aurelis.playback.LyricsState
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.playback.TranslationState
 import com.music.aurelis.ui.components.AnimatedArtwork
+import com.music.aurelis.ui.components.lyricsSourceTitle
 import com.music.aurelis.ui.components.lyricsFailureText
 import com.music.aurelis.ui.components.LyricsSourcesDialog
 import com.music.aurelis.ui.components.PlayerControls
@@ -164,11 +179,12 @@ fun NowPlayingScreen(
     var showPlaybackTools by rememberSaveable { mutableStateOf(false) }
     var showQuality by rememberSaveable { mutableStateOf(false) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
+    var lyricsControlsOpen by rememberSaveable { mutableStateOf(true) }
     var showInlineQueue by rememberSaveable { mutableStateOf(false) }
     val queueListState = rememberLazyListState()
     var lyricsShareRequest by remember { mutableStateOf<LyricsShareRequest?>(null) }
     var showLyricsTools by remember { mutableStateOf(false) }
-    LaunchedEffect(song?.queueEntryId, song?.id, isVisible) { lyricsShareRequest = null; showLyricsTools = false }
+    LaunchedEffect(song?.queueEntryId, song?.id, isVisible) { lyricsShareRequest = null; showLyricsTools = false; lyricsControlsOpen = true }
     var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
@@ -186,7 +202,8 @@ fun NowPlayingScreen(
     val hazeState = remember { HazeState() }
     val closePlayer: () -> Unit = { if (panelMotion != null && song != null) panelMotion.close() else onDismiss() }
     BackHandler(enabled = isVisible && !showLyrics && !showInlineQueue) { closePlayer() }
-    LaunchedEffect(isVisible, song?.id, panelMotion) {
+    // A new track updates this already-open panel; it is not another presentation.
+    LaunchedEffect(isVisible, song != null, panelMotion) {
         if (isVisible && song != null) panelMotion?.reveal()
     }
 
@@ -229,6 +246,7 @@ fun NowPlayingScreen(
                     .hazeSource(hazeState),
             ) {
                 val landscape = maxWidth > maxHeight
+                val compactLyrics = maxHeight < 600.dp
                 val meshPalette = if (!reduceBlur) rememberArtworkColors(s.artworkUri?.let { Uri.parse(it) }) else null
                 if (meshPalette != null) MeshGradientBackground(
                     palette = meshPalette,
@@ -252,7 +270,7 @@ fun NowPlayingScreen(
                         ),
                 )
 
-                val openLyrics: () -> Unit = { showInlineQueue = false; showLyrics = !showLyrics }
+                val openLyrics: () -> Unit = { showInlineQueue = false; showLyrics = !showLyrics; lyricsControlsOpen = true }
                 val openQueue: () -> Unit = {
                     if (landscape) { showLyrics = false; showInlineQueue = !showInlineQueue }
                     else onOpenQueue()
@@ -305,22 +323,24 @@ fun NowPlayingScreen(
                     Row(Modifier.fillMaxWidth().padding(top = if (compact) 0.dp else 8.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(s.title, fontWeight = FontWeight.Bold, style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,
+                            Text(s.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge.copy(fontSize = if (compact) 16.sp else 20.sp, lineHeight = if (compact) 20.sp else 24.sp, letterSpacing = (-0.2).sp),
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(s.artist, style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(s.artist, style = MaterialTheme.typography.titleLarge.copy(fontSize = if (compact) 16.sp else 20.sp, lineHeight = if (compact) 20.sp else 24.sp, fontWeight = FontWeight.W500),
+                                color = Color.White.copy(alpha = 0.55f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             state.errorMessage?.let { message ->
                                 Text(message, maxLines = 2, style = MaterialTheme.typography.labelSmall)
                                 TextButton(onClick = playbackViewModel::retry) { Text(stringResource(R.string.player_retry)) }
                             }
                         }
-                        IconButton(onClick = { userStore.toggleFavorite(s.id) }) {
-                            val favorite = s.id in userLibraryState.favorites
-                            Icon(if (favorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                                stringResource(if (favorite) R.string.player_remove_favorite else R.string.player_add_favorite))
-                        }
-                        if (!landscape) IconButton(onClick = { showSongActions = true }) {
-                            Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions))
+                        Spacer(Modifier.width(10.dp))
+                        val favorite = s.id in userLibraryState.favorites
+                        PlayerCircleGlyph(if (favorite) AurelisPlayerIcons.StarFilled else AurelisPlayerIcons.Star,
+                            stringResource(if (favorite) R.string.player_remove_favorite else R.string.player_add_favorite),
+                            { userStore.toggleFavorite(s.id) }, active = favorite,
+                            haptic = if (favorite) com.music.aurelis.ui.haptics.Haptic.ToggleOff else com.music.aurelis.ui.haptics.Haptic.ToggleOn)
+                        if (!landscape) {
+                            Spacer(Modifier.width(8.dp))
+                            PlayerCircleGlyph(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions), { showSongActions = true })
                         }
                     }
                 }
@@ -334,9 +354,7 @@ fun NowPlayingScreen(
                     })
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween) {
-                        IconButton(onClick = openLyrics) {
-                            Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_lyrics), Modifier.size(25.dp))
-                        }
+                        PlayerBottomGlyph(AurelisPlayerIcons.LyricsQuote, stringResource(R.string.player_lyrics), openLyrics, highlighted = showLyrics)
                         androidx.compose.material3.Surface(shape = CircleShape,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)) {
                             Row {
@@ -359,9 +377,7 @@ fun NowPlayingScreen(
                                 }
                             }
                         }
-                        IconButton(onClick = openQueue) {
-                            Icon(Icons.AutoMirrored.Rounded.QueueMusic, stringResource(R.string.player_queue), Modifier.size(25.dp))
-                        }
+                        PlayerBottomGlyph(AurelisPlayerIcons.Queue, stringResource(R.string.player_queue), openQueue, highlighted = showInlineQueue)
                     }
                 }
                 val transport: @Composable (Boolean) -> Unit = { compact ->
@@ -370,17 +386,22 @@ fun NowPlayingScreen(
                         canNext = state.canNext, canPrevious = state.canPrevious, reduceAnimation = reduceAnimation,
                         blendChrome = !reduceBlur && LocalView.current.isHardwareAccelerated, compact = compact)
                 }
-                val deck: @Composable (Boolean) -> Unit = { compact ->
+                val deck: @Composable (Boolean, Boolean) -> Unit = { compact, lyricsMode ->
                     Column(Modifier.fillMaxWidth().testTag("player-control-deck"), horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (!compact) {
+                        if (!compact && !lyricsMode) {
                             val time = com.music.aurelis.ui.player.adjustedLyricsPosition(state.positionMs, lyricsOffset)
                             val line = (state.lyrics as? LyricsState.Loaded)?.lines?.takeIf { syncEnabled }
                                 ?.lastOrNull { it.timeMs <= time && !it.isGap }?.text
                             TextButton(onClick = openLyrics, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                                 modifier = Modifier.fillMaxWidth().height(32.dp)
                                 .semantics { contentDescription = context.getString(R.string.player_lyrics_preview) }) {
-                                Text(line ?: stringResource(R.string.player_no_lyrics_preview), maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.MusicNote, null, Modifier.size(18.dp), tint = Color.White.copy(alpha = 0.7f))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(line ?: stringResource(R.string.player_no_lyrics_preview), modifier = Modifier.weight(1f), maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis, color = Color.White.copy(alpha = 0.7f))
+                                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(18.dp), tint = Color.White.copy(alpha = 0.5f))
+                                }
                             }
                         }
                         Box(Modifier.fillMaxWidth()) {
@@ -397,13 +418,16 @@ fun NowPlayingScreen(
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
                         transport(compact)
                         Spacer(Modifier.height(if (compact) 0.dp else 6.dp))
-                        if (hideVolumeBar) Spacer(Modifier.fillMaxWidth().height(40.dp)) else PlayerVolumeRow()
+                        if (hideVolumeBar) Spacer(Modifier.fillMaxWidth().height(32.dp)) else PlayerVolumeRow()
                         actions()
-                        if (!compact) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        if (!compact && !lyricsMode) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             IconButton(onClick = { showPlaybackTools = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools)) }
                             TextButton(onClick = { showQuality = true }) { SourceQualityBadge(state.sourceQuality.formatLabel) }
                             IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
                         }
+                        if (!compact) Text(stringResource(R.string.player_local_device),
+                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
                     }
                 }
                 val lyricsContent: @Composable () -> Unit = {
@@ -412,6 +436,8 @@ fun NowPlayingScreen(
                     val lines = loadedLyrics?.lines.orEmpty()
                     val translation = loadedLyrics?.translation
                     val translated = (translation as? TranslationState.Done)?.lines
+                    val picker = rememberLyricsPicker(s, lines, translated, s.artworkUri, rememberHaptics(), { lyricsShareRequest = it })
+                    BackHandler(enabled = isVisible && showLyrics && picker.picking && lyricsShareRequest == null) { picker.cancel() }
 
                     androidx.compose.material3.Surface(
                         modifier = Modifier.fillMaxSize().testTag("lyrics-overlay"),
@@ -422,24 +448,20 @@ fun NowPlayingScreen(
                         if (meshPalette != null) MeshGradientBackground(meshPalette, Modifier.fillMaxSize(), trackKey = s.id, reduceAnimation = reduceAnimation)
                         else Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
                         Column(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                IconButton(onClick = { showLyrics = false }) {
-                                    Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.lyrics_ui_close), tint = Color.White)
+                            if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
+                                IconButton(onClick = { showLyrics = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(28.dp)) {
+                                    Box(Modifier.size(38.dp, 5.dp).background(Color.White, CircleShape)
+                                        .semantics { contentDescription = context.getString(R.string.lyrics_ui_close) })
                                 }
-                                Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                                    Text(s.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
-                                    Text(s.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Row(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    AnimatedArtwork(s.id, s.artworkUri, size = 56.dp, corner = 8.dp)
+                                    Spacer(Modifier.width(12.dp))
+                                    Box(Modifier.weight(1f)) { credits(true) }
                                 }
-                                IconButton(onClick = { showLyricsTools = !showLyricsTools }) { Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.lyrics_ui_tools)) }
-                                IconButton(onClick = { showLyricsOffset = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.lyrics_ui_offset)) }
-                                IconButton(onClick = { showTranslationLanguages = true }) {
-                                    Icon(Icons.Rounded.Translate, stringResource(R.string.lyrics_ui_translate), tint = Color.White)
-                                }
+                            } else Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { showLyrics = false }) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.lyrics_ui_close)) }
+                                Text(s.title, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
-
                             if (showLyricsTools || lines.isEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 TextButton(onClick = { importSongId = s.id; importLyrics.launch(arrayOf("text/*", "application/ttml+xml", "application/xml", "application/octet-stream", "application/x-subrip")) }) { Text(stringResource(R.string.lyrics_ui_import)) }
                                 TextButton(onClick = playbackViewModel::searchLyrics,
@@ -447,6 +469,7 @@ fun NowPlayingScreen(
                                     Text(stringResource(R.string.lyrics_search_lrclib))
                                 }
                             }
+                            if (showLyricsTools) TextButton(onClick = { showLyricsOffset = true }) { Text(stringResource(R.string.lyrics_ui_offset)) }
                             when (val lookup = state.lyricsLookup) {
                                 LyricsLookupState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(stringResource(R.string.lyrics_lookup_loading), modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
@@ -457,8 +480,6 @@ fun NowPlayingScreen(
                                 else -> Unit
                             }
                             val loaded = state.lyrics as? LyricsState.Loaded
-                            if (loaded != null) Text(loaded.source.label + if (loaded.cached) " · " + stringResource(R.string.lyrics_ui_cached) else "",
-                                modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelMedium)
                             when (translation) {
                                 TranslationState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(stringResource(R.string.lyrics_ui_translating), modifier = Modifier.weight(1f).padding(16.dp))
@@ -492,7 +513,7 @@ fun NowPlayingScreen(
                             } else {
                                 val lyricsTrackKey = s.queueEntryId ?: s.id
                                 val position = remember(lyricsTrackKey) { com.music.aurelis.playback.PlaybackPosition() }
-                                LaunchedEffect(state.positionMs, state.positionDiscontinuity, state.isPlaying) {
+                                LaunchedEffect(lyricsTrackKey, state.positionMs, state.positionDiscontinuity, state.isPlaying) {
                                     position.report(state.positionMs)
                                     position.advancing = state.isPlaying
                                     position.seeks = state.positionDiscontinuity
@@ -506,24 +527,37 @@ fun NowPlayingScreen(
                                     isPlaying = state.isPlaying,
                                     onSeekToLine = { playbackViewModel.seekTo(com.music.aurelis.ui.player.adjustedLyricsSeekTarget(it, lyricsOffset)) },
                                     offsetMs = lyricsOffset,
-                                    centerFocus = true,
+                                    centerFocus = landscape,
                                     isSynced = loaded?.isSynced == true,
                                     translatedLines = translated,
                                     syncEnabled = syncEnabled, blurUnfocused = blurLyrics && !reduceBlur,
-                                    onLineLongClick = { index -> lines.getOrNull(index)?.takeIf { !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }?.let { line ->
-                                        lyricsShareRequest = LyricsShareRequest(s, s.artworkUri, listOf(LyricsShareLine(line.text, translated?.getOrNull(index)?.text?.takeIf { it.length + line.text.length <= 250 })))
-                                    } },
+                                    onLineLongClick = { index -> lines.getOrNull(index)?.takeIf { !it.isGap }?.let { picker.pick(index) } },
+                                    picking = picker.picking, picked = picker.picks, onTogglePick = picker.toggle,
+                                    showFollowControls = false, controlsOpen = lyricsControlsOpen || landscape,
+                                    onRevealControls = { lyricsControlsOpen = true }, onHideControls = { if (!landscape) lyricsControlsOpen = false },
                                     modifier = Modifier.weight(1f),
                                 )
                             }
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { showInlineQueue = !showInlineQueue; showLyrics = false }) { Icon(Icons.AutoMirrored.Rounded.QueueMusic, stringResource(R.string.player_queue)) }
+                            if (picker.picking) LyricsPickBar(picker.picks.isNotEmpty(), picker.cancel, picker.share)
+                            if (picker.overBudget) Text(stringResource(R.string.lyrics_share_pick_limit), Modifier.padding(horizontal = 24.dp), color = Color.White)
+                            AnimatedVisibility(visible = lyricsControlsOpen || landscape,
+                                enter = if (reduceAnimation) androidx.compose.animation.EnterTransition.None else expandVertically(tween(420, easing = FastOutSlowInEasing)) + fadeIn(tween(420)),
+                                exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else shrinkVertically(tween(420, easing = FastOutSlowInEasing)) + fadeOut(tween(420))) {
+                                Column(Modifier.then(if (!lyricsControlsOpen && !landscape) Modifier.clearAndSetSemantics { } else Modifier)) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { showLyricsTools = !showLyricsTools }) { Icon(Icons.Rounded.Language, stringResource(R.string.lyrics_ui_tools)) }
+                                TextButton(onClick = { showLyricsSources = true }, modifier = Modifier.weight(1f)) {
+                                    Text(loaded?.let { lyricsSourceTitle(it.source) + if (it.cached) " · " + stringResource(R.string.lyrics_ui_cached) else "" } ?: stringResource(R.string.player_sources), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                        textDecoration = TextDecoration.Underline, color = Color.White.copy(alpha = 0.75f))
+                                }
+                                IconButton(onClick = { showTranslationLanguages = true }) { Icon(Icons.Rounded.Translate, stringResource(R.string.lyrics_ui_translate)) }
+                                IconButton(onClick = picker.beginPicking, enabled = lines.any { !it.isGap && it.text.isNotBlank() }) { Icon(Icons.Rounded.IosShare, stringResource(R.string.lyrics_share_title)) }
+                            }
+                            if (!landscape) Box(Modifier.padding(horizontal = 30.dp)) { deck(compactLyrics, true) }
+                            else Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.weight(1f)) { transport(true) }
-                                IconButton(enabled = lines.any { !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }, onClick = {
-                                    val index = lines.indexOfLast { it.timeMs <= com.music.aurelis.ui.player.adjustedLyricsPosition(state.positionMs, lyricsOffset) && !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }
-                                        .takeIf { it >= 0 } ?: lines.indexOfFirst { !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }
-                                    lines.getOrNull(index)?.takeIf { it.text.length <= 250 }?.let { line -> lyricsShareRequest = LyricsShareRequest(s, s.artworkUri, listOf(LyricsShareLine(line.text, translated?.getOrNull(index)?.text?.takeIf { it.length + line.text.length <= 250 }))) }
-                                }) { Icon(Icons.Rounded.IosShare, stringResource(R.string.lyrics_share_title)) }
+                            }
+                                }
                             }
                         }
                         }
@@ -547,7 +581,7 @@ fun NowPlayingScreen(
                                     Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                                         Column(Modifier.verticalScroll(rememberScrollState())) { credits(compact) }
                                     }
-                                    deck(true)
+                                    deck(true, false)
                                 }
                             },
                             lyricsPane = { Box(Modifier.fillMaxSize().testTag("landscape-lyrics")) { lyricsContent() } },
@@ -568,12 +602,16 @@ fun NowPlayingScreen(
                                 header()
                                 Spacer(Modifier.weight(1f))
                                 credits(false)
-                                deck(false)
+                                deck(false, false)
                             }
                         }
                     }
                 }
-                if (showLyrics && !landscape) lyricsContent()
+                AnimatedVisibility(visible = showLyrics && !landscape,
+                    enter = if (reduceAnimation) androidx.compose.animation.EnterTransition.None else fadeIn(tween(420, easing = FastOutSlowInEasing)),
+                    exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else fadeOut(tween(420, easing = FastOutSlowInEasing))) {
+                    Box(Modifier.fillMaxSize().then(if (!showLyrics) Modifier.clearAndSetSemantics { } else Modifier)) { lyricsContent() }
+                }
                 if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false }, listState = queueListState)
 
                 lyricsShareRequest?.let { request -> AndroidLyricsShareSheet(hazeState, request, { lyricsShareRequest = null }) }

@@ -32,7 +32,8 @@ import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.launch
 
 @Composable
-fun ReplayScreen(onBack: () -> Unit = {}, store: LocalUserLibrary, songs: List<LocalSong>, onPlay: (LocalSong) -> Unit) {
+fun ReplayScreen(onBack: () -> Unit = {}, store: LocalUserLibrary, songs: List<LocalSong>, onPlay: (LocalSong) -> Unit,
+    contentBackdropModifier: Modifier = Modifier, bottomPadding: PaddingValues = PaddingValues(bottom = 160.dp)) {
     val user by store.state.collectAsState()
     var confirm by remember { mutableStateOf(false) }
     val profile by ProfileRepository.state.collectAsState()
@@ -40,7 +41,8 @@ fun ReplayScreen(onBack: () -> Unit = {}, store: LocalUserLibrary, songs: List<L
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize().testTag("replay-page")) {
-        LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(top = topBarContentPadding(), bottom = 160.dp)) {
+        // Record only the scrolling body. A glass reader must not record itself.
+        LazyColumn(Modifier.fillMaxSize().then(contentBackdropModifier), state = list, contentPadding = PaddingValues(top = topBarContentPadding(), bottom = bottomPadding.calculateBottomPadding())) {
             item {
                 Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                     Text(stringResource(R.string.replay), style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.ExtraBold)

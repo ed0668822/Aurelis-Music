@@ -618,3 +618,12 @@ BitChord fijo b690dc146009d4815825fa4a20815ef2e4ee8898 GPLv3: disposición y
 medidas de PlayerLyrics/NowPlayingScreen y patrón de compartir sobre componentes
 locales ya adaptados. Fuentes y hashes en PLAYER_LYRICS_TRANSITIONS.md. Se conserva
 licencia y créditos; carga retenida, renderer PNG y traducciones son propios.
+
+## UI: Replay, ciclo del player y lectura
+
+Referencia fija BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3. Se portan
+porciones exactas de BitChordIcons (Queue/LyricsQuote/Star y helper), CircleGlyph/BottomGlyph y
+rememberPlayerControlsOnScroll; se adaptan medidas de PlayerLyrics/PlayerControls y
+selección existente. Nuevos archivos de partes portadas conservan aviso GPLv3 y
+autoría de contribuyentes, sin relabel or-later. Fuentes/hashes/deltas en
+UI_PLAYER_DEEP_AUDIT.md. Corrección propia de reveal y separación del backdrop.

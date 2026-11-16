@@ -294,11 +294,11 @@ internal fun AurelisNavigationContent(
             .onSizeChanged { dock.sheetTravel = it.height.toFloat() }.onGloballyPositioned { dock.reportHost(it) },
         pageModifier = pageBackdropModifier,
         pageHandlesBackdrop = { page ->
-            page == AppRoute.Settings || page is AppRoute.SettingsSection || page == AppRoute.LocalMusic ||
+            page == AppRoute.Settings || page is AppRoute.SettingsSection || page == AppRoute.LocalMusic || page == AppRoute.Replay ||
                 page == null && navigator.selectedTab == AppTab.SEARCH
         },
         pageBottomPadding = bottomContentPadding,
-        routeHandlesBottomPadding = { it == AppRoute.LocalMusic },
+        routeHandlesBottomPadding = { it == AppRoute.LocalMusic || it == AppRoute.Replay },
         topBar = {
             if (route == null && navigator.selectedTab != AppTab.SEARCH) {
                 FrostedTopBar(title = tabs[navigator.selectedTab.ordinal].label, scrolled = { false },
@@ -496,6 +496,7 @@ internal fun AurelisNavigationContent(
                 )
                 AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
                 AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() }, store = userStore,
+                    contentBackdropModifier = pageBackdropModifier, bottomPadding = listPadding,
                     songs = allSongs, onPlay = { playbackViewModel.playSongs(listOf(it)) })
                 is AppRoute.Collection -> LocalCollectionScreen(
                     page, libraryUiState.libraryState, userStore,

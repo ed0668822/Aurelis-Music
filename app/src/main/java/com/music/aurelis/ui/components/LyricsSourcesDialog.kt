@@ -35,7 +35,7 @@ fun LyricsSourcesDialog(
             Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.lyrics_sources_privacy))
-                currentSource?.let { Text(stringResource(R.string.lyrics_source_current, it.label)) }
+                currentSource?.let { Text(stringResource(R.string.lyrics_source_current, lyricsSourceTitle(it))) }
                 LyricsProviderRegistry.providers.forEach { provider ->
                     if (provider.availability == LyricsProviderRegistry.Availability.AVAILABLE) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

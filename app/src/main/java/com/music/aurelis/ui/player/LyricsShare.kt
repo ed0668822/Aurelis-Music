@@ -80,11 +80,12 @@ internal fun rememberLyricsPicker(
     onCard: (LyricsShareRequest) -> Unit,
 ): LyricsPicker {
     val cardFullMessage = stringResource(R.string.lyrics_share_pick_limit)
-    var picking by remember { mutableStateOf(false) }
-    var picks by remember { mutableStateOf<Set<Int>>(emptySet()) }
-    var overBudget by remember { mutableStateOf(false) }
+    val trackKey = song.queueEntryId ?: song.id
+    var picking by remember(trackKey, lines) { mutableStateOf(false) }
+    var picks by remember(trackKey, lines) { mutableStateOf<Set<Int>>(emptySet()) }
+    var overBudget by remember(trackKey, lines) { mutableStateOf(false) }
 
-    LaunchedEffect(song.id, lines) {
+    LaunchedEffect(trackKey, lines) {
         picking = false
         picks = emptySet()
         overBudget = false
@@ -94,8 +95,10 @@ internal fun rememberLyricsPicker(
         picks.sumOf { index -> lines.orEmpty().getOrNull(index)?.text?.length ?: 0 }
     }
     val toggle: (Int) -> Unit = { index ->
-        val text = lines.orEmpty().getOrNull(index)?.text
+        val line = lines.orEmpty().getOrNull(index)
+        val text = line?.text
         when {
+            line == null || line.isGap || text.isNullOrBlank() -> Unit
             index in picks -> {
                 picks = picks - index
                 overBudget = false
@@ -137,13 +140,15 @@ internal fun rememberLyricsPicker(
     val share: () -> Unit = {
         val source = lines.orEmpty()
         val chosen = picks.sorted()
+        var remainingSubChars = (SHARE_CARD_CHAR_BUDGET - usedChars()).coerceAtLeast(0)
         val picked = buildList {
             chosen.forEachIndexed { position, index ->
                 if (position > 0 && index > chosen[position - 1] + 1) {
                     add(LyricsShareLine(text = "", subText = null, isGap = true))
                 }
                 val line = source.getOrNull(index) ?: return@forEachIndexed
-                val sub = subLines?.getOrNull(index)?.text
+                val sub = subLines?.getOrNull(index)?.text?.takeIf { it.isNotBlank() && it != line.text && it.length <= remainingSubChars }
+                remainingSubChars -= sub?.length ?: 0
                 add(
                     LyricsShareLine(
                         text = line.text,

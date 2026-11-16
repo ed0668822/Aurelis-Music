@@ -5,6 +5,10 @@ import android.app.KeyguardManager
 import android.content.ComponentName
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.graphics.Rect
+import androidx.media3.common.MediaMetadata
+import com.music.aurelis.AurelisApplication
+import com.music.aurelis.data.model.LocalSong
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.SystemClock
@@ -139,6 +143,8 @@ class RealSettingsNavigationInstrumentedTest {
     }
 
     private fun exercise(withPlayback: Boolean) {
+        val previousMotion = SettingsRepository.reduceAnimation.value
+        SettingsRepository.setReduceAnimation(false)
         val fixture = File(context.cacheDir, "settings-navigation.wav")
         val before = ProfileRepository.state.value.profile
         val activity = ActivityScenario.launch(MainActivity::class.java)
@@ -161,8 +167,10 @@ class RealSettingsNavigationInstrumentedTest {
                 val controller = future.get(30, TimeUnit.SECONDS)
                 player = controller
                 onMain {
-                    controller.setMediaItem(MediaItem.Builder().setMediaId("settings-navigation")
-                        .setUri(Uri.fromFile(fixture)).setMimeType("audio/wav").build())
+                    controller.setMediaItems(listOf("settings-navigation", "settings-navigation-next").map { id ->
+                        MediaItem.Builder().setMediaId(id).setUri(Uri.fromFile(fixture)).setMimeType("audio/wav")
+                            .setMediaMetadata(MediaMetadata.Builder().setTitle(id).setArtist("CI PCM fixture").setAlbumTitle("CI local playback").build()).build()
+                    })
                     controller.repeatMode = Player.REPEAT_MODE_ONE
                     controller.prepare()
                     controller.play()
@@ -201,6 +209,22 @@ class RealSettingsNavigationInstrumentedTest {
             instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
             awaitAbsent(context.getString(R.string.settings_photo_hint))
             await(library)
+            // Explicit deterministic CI data in the disposable emulator, not inferred listening time.
+            onMain {
+                val history = (context.applicationContext as AurelisApplication).userLibrary
+                val replayFixture = LocalSong("replay-navigation", "CI Replay fixture", "CI", null,
+                    "content://ci/replay-fixture", null, 60_000, null, null, null)
+                repeat(12) { history.recordListening(replayFixture, 5000, false) }
+                history.flush()
+            }
+            await(context.getString(R.string.replay), click = true, scroll = true)
+            await(context.getString(R.string.top_songs))
+            evidence("$prefix-replay")
+            activity.recreate()
+            await(context.getString(R.string.top_songs))
+            assertEquals(Lifecycle.State.RESUMED, activity.state)
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+            await(library)
             await(context.getString(R.string.new_playlist), click = true, scroll = true)
             awaitEditor("New playlist")
             evidence("$prefix-new-playlist")
@@ -211,6 +235,44 @@ class RealSettingsNavigationInstrumentedTest {
                 await(context.getString(R.string.player_next))
                 await(context.getString(R.string.player_previous))
                 evidence("$prefix-player-portrait")
+                assertFalse("Track-transition regression requires animations", SettingsRepository.reduceAnimation.value)
+                fun advanceWithoutReopening(label: String, expectedId: String) {
+                    val closeLabel = context.getString(R.string.player_close)
+                    val beforeBounds = Rect()
+                    var stableSince = SystemClock.elapsedRealtime()
+                    val layoutDeadline = stableSince + 8_000
+                    while (SystemClock.elapsedRealtime() < layoutDeadline) {
+                        val bounds = Rect()
+                        rows().firstOrNull { labeled(it, closeLabel) }?.getBoundsInScreen(bounds)
+                        if (bounds.isEmpty || bounds != beforeBounds) {
+                            beforeBounds.set(bounds); stableSince = SystemClock.elapsedRealtime()
+                        } else if (SystemClock.elapsedRealtime() - stableSince >= 200) break
+                        SystemClock.sleep(16)
+                    }
+                    assertFalse("Player header must have settled before changing tracks", beforeBounds.isEmpty)
+                    assertTrue("Player did not settle", SystemClock.elapsedRealtime() - stableSince >= 200)
+                    await(label, click = true)
+                    val sampledFrom = SystemClock.elapsedRealtime()
+                    val samples = mutableListOf("elapsed_ms,header_top")
+                    val until = sampledFrom + 900
+                    while (SystemClock.elapsedRealtime() < until) {
+                        val close = rows().firstOrNull { labeled(it, closeLabel) }
+                            ?: throw AssertionError("Player disappeared while changing song")
+                        val bounds = Rect(); close.getBoundsInScreen(bounds)
+                        samples.add("${SystemClock.elapsedRealtime() - sampledFrom},${bounds.top}")
+                        assertEquals("Player header must not restart its opening slide", beforeBounds.top.toFloat(), bounds.top.toFloat(), 2f)
+                        SystemClock.sleep(16)
+                    }
+                    onMain { assertEquals(expectedId, player!!.currentMediaItem?.mediaId) }
+                    val folder = File(context.getExternalFilesDir(null), "settings-navigation").apply { mkdirs() }
+                    File(folder, "$prefix-transition-$expectedId.csv").writeText(samples.joinToString("\n") + "\n")
+                }
+                advanceWithoutReopening(context.getString(R.string.player_next), "settings-navigation-next")
+                // Previous from the start selects the preceding track rather than
+                // the Media3 restart-current behavior after several seconds.
+                onMain { player!!.seekTo(0) }
+                advanceWithoutReopening(context.getString(R.string.player_previous), "settings-navigation")
+                evidence("$prefix-player-track-transition")
                 await(context.getString(R.string.player_pause), click = true)
                 await(context.getString(R.string.player_play))
                 rotate(activity, true)
@@ -244,6 +306,7 @@ class RealSettingsNavigationInstrumentedTest {
             connection?.let { future -> onMain { MediaController.releaseFuture(future) } }
             activity.close()
             fixture.delete()
+            SettingsRepository.setReduceAnimation(previousMotion)
         }
     }
 

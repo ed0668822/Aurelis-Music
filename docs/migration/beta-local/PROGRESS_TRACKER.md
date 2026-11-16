@@ -18,6 +18,25 @@
 > eliminaciones de la entrega; múltiples commits no reinician su presupuesto.
 > El usuario autoriza continuar con la primera entrega del plan B05_UI_EVIDENCE_PLAN.
 
+### Investigación exhaustiva UI y dos regresiones reportadas — base30e78cf4
+
+ZIP177 CRC válido: B01–B06 PASS y439 por variante; ese verde pertenece a la base.
+UI31/38980bfc incompleta en referencia,24/36 por material, NOT_REVIEWED. Imágenes
+nuevas bloqueadas403; no se inventa revisión ni causa de ADB. Usuario confirma cierre
+de TODA la app al tocar minutos. Defecto de autorreferencia de grabación/cabecera de
+Replay corregido, con regresiones GL de API35/36. Reapertura de player vinculada a
+song.id en reveal: efecto cambia a presentación/disponibilidad; prueba de frames con
+animaciones y Next/Previous nativos. No desactivar Glass ni animaciones para ocultar.
+
+Se adaptan trazados y componentes reales de BitChord fijo, header/controles de letras
+compartidos,34/41sp+30/38sp, gutter30/duet44, puntos instrumentales y foco con primer
+vocal, controles por gesto20dp, multiselección real y labels ES/EN. Ver inventario,
+fuentes/hashes, discrepancias y pendientes en UI_PLAYER_DEEP_AUDIT.md. No afirmar
+copia completa de todos los módulos ni identidad visual; partículas/glow/collapse
+exacto, períodos Replay y prueba Redmi16/HyperOS3 siguen pendientes. B09 no iniciado.
+CI nuevo pendiente, Android solo Actions. Dos revisiones del mismo agente.
+Tras push avisar y ESPERAR resultado del usuario. Máximo60 por entrega/correcciones.
+
 ### Player/letras y parpadeo — base d181c97a
 
 Nueva petición autoriza presentación activa del reproductor/letras y transición

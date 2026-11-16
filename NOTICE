@@ -615,3 +615,11 @@ b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3), preserving original credits.
 Aurelis adds retained artwork/palette loading, stale-result protection, local
 wrapped PNG rendering and scoped exports. No remote playback/Canvas/Cast added.
 Sources, hashes and adaptation limits: docs/migration/beta-local/PLAYER_LYRICS_TRANSITIONS.md.
+
+UI deep audit: Replay, player lifecycle and lyric controls
+BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3), original contributors.
+Adapts exact Queue/LyricsQuote/Star paths, CircleGlyph/BottomGlyph, reading gesture connection,
+lyric dimensions/instrumental dots/selection and player control geometry. Aurelis
+keeps local Media3 callbacks, reduced motion and theme tint; excludes Cast/party.
+Source paths/hashes, actual changes and unverified parity are recorded in
+docs/migration/beta-local/UI_PLAYER_DEEP_AUDIT.md.

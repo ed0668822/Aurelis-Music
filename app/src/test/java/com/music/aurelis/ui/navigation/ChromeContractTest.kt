@@ -107,6 +107,27 @@ class ChromeContractTest {
         compose.onNodeWithContentDescription("Atrás").assertIsDisplayed()
     }
 
+    @Test fun replayHeaderIsExcludedFromItsOwnRecordedBodyWithActualListeningCards() {
+        val app = org.robolectric.RuntimeEnvironment.getApplication() as AurelisApplication
+        val song = com.music.aurelis.data.model.LocalSong("replay", "Replay fixture", "Artist", null, "content://media/replay", null, 60_000, null, null, null)
+        app.userLibrary.recordListening(song, 5000, true); app.userLibrary.flush()
+        compose.setContent { AurelisTheme {
+            val nav = rememberAppNavigator()
+            SideEffect { nav.push(AppRoute.Replay) }
+            AppNavigationHost(nav, pageModifier = Modifier.testTag("replay-host-backdrop"),
+                pageHandlesBackdrop = { it == AppRoute.Replay }, tabContent = { Text("Root") }, bottomBar = {},
+                routeContent = { com.music.aurelis.ui.screens.ReplayScreen(
+                    onBack = { nav.pop() }, store = app.userLibrary, songs = listOf(song), onPlay = {},
+                    contentBackdropModifier = Modifier.testTag("replay-body-backdrop")) })
+        } }
+        compose.onNodeWithTag("replay-host-backdrop").assertDoesNotExist()
+        compose.onNodeWithTag("replay-body-backdrop", useUnmergedTree = true)
+            .assert(hasAnyDescendant(hasText("Replay")))
+            .assert(!hasAnyDescendant(hasContentDescription("Atrás")))
+        compose.onNodeWithContentDescription("Atrás").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Root").assertIsDisplayed()
+    }
+
     @Test fun emptyAndFilteredSearchRecordTheirListOutsideTheGlassHeader() {
         var query by mutableStateOf("")
         compose.setContent { AurelisTheme {

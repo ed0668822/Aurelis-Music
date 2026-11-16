@@ -149,3 +149,12 @@ LyricsSourcesDialog y NowPlayingScreen para conectar selección, diagnósticos,
 cancelación y traducción; se amplían TranslationTest/PlaybackIntegrationTest/
 PlayerIntegrationTest. Véase B08_PROVIDERS.md y ../../qa/B08_PROVIDERS.json para rutas y hashes.
 No se copian clientes adicionales ni se conecta un segundo reproductor/repositorio.
+
+## UI — confirmación de flujos activos y defectos físicos reportados
+
+MainActivity → NowPlayingScreen → PlayerSheetMotion: reveal por presentación, no
+por canción. MainActivity → ReplayScreen graba solo contenido, no cabecera Glass.
+NowPlayingScreen conecta ui/player/SyncedLyricsPanel y rememberLyricsPicker; no
+LyricsScreen legacy. Se conectan PlayerControlsOnScroll (PlayerLyrics fijo),
+LyricsControlsGesture, PlayerCircleGlyph/PlayerBottomGlyph y cuatro trazados AurelisPlayerIcons
+extraídos del original. UI_PLAYER_DEEP_AUDIT.md registra fuentes, hashes y límites.

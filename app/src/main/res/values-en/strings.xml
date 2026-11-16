@@ -510,4 +510,7 @@
     <string name="lyrics_ui_loading">Loading lyrics…</string>
     <string name="lyrics_ui_missing">No local or saved lyrics. Import an LRC or search LRCLIB (sends title and artist).</string>
     <string name="lyrics_ui_translation_language">Translation: %1$s</string>
+    <string name="player_local_device">On this device</string>
+    <string name="lyrics_local_file_title">Local file</string>
+    <string name="lyrics_embedded_title">Embedded</string>
 </resources>

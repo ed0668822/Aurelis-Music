@@ -529,4 +529,7 @@
     <string name="lyrics_ui_loading">Buscando letras...</string>
     <string name="lyrics_ui_missing">No hay letras locales o guardadas. Importa un LRC o busca en LRCLIB (envía título y artista).</string>
     <string name="lyrics_ui_translation_language">Traducción: %1$s</string>
+    <string name="player_local_device">En este dispositivo</string>
+    <string name="lyrics_local_file_title">Archivo local</string>
+    <string name="lyrics_embedded_title">Incrustadas</string>
 </resources>

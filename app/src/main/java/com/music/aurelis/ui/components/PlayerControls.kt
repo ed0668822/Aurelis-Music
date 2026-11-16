@@ -48,7 +48,7 @@ fun PlayerControls(
     val haptics = rememberHaptics()
     val playTouch = if (compact) 76.dp else 92.dp
     val playSize = if (compact) 58.dp else 74.dp
-    val skipSize = if (compact) 44.dp else 50.dp
+    val skipSize = if (compact) 44.dp else 53.dp
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically) {
         TransportGlyph(R.drawable.ic_player_previous, stringResource(R.string.player_previous), skipSize, 56.dp,

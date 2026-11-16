@@ -55,7 +55,8 @@ fun PlayerVolumeRow(modifier: Modifier = Modifier) {
     }
     val label = stringResource(R.string.player_volume)
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.AutoMirrored.Rounded.VolumeDown, null, Modifier.size(20.dp))
+        Icon(Icons.AutoMirrored.Rounded.VolumeDown, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+        Spacer(Modifier.width(10.dp))
         Slider(value = if (maximum > 0) level.toFloat() / maximum else 0f,
             onValueChange = { value ->
                 if (available && value.isFinite()) {
@@ -63,7 +64,7 @@ fun PlayerVolumeRow(modifier: Modifier = Modifier) {
                     catch (_: RuntimeException) { available = false }
                     refresh()
                 }
-            }, enabled = available, modifier = Modifier.weight(1f).height(40.dp).semantics { contentDescription = label },
+            }, enabled = available, modifier = Modifier.weight(1f).height(32.dp).semantics { contentDescription = label },
             thumb = { Box(Modifier.size(6.dp)) },
             track = { slider ->
                 val ink = MaterialTheme.colorScheme.onSurface
@@ -75,6 +76,7 @@ fun PlayerVolumeRow(modifier: Modifier = Modifier) {
             colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.onSurface,
                 activeTrackColor = MaterialTheme.colorScheme.onSurface,
                 inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)))
-        Icon(Icons.AutoMirrored.Rounded.VolumeUp, null, Modifier.size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Icon(Icons.AutoMirrored.Rounded.VolumeUp, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
     }
 }
