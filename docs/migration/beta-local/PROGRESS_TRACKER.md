@@ -1,6 +1,71 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F001 — navegación por entradas: conservar y validar (2026-11-16)
+
+El usuario aprueba el inventario F001–F014 por funciones y autoriza únicamente
+F001 mediante «Implement the proposed plan». Los IDs F001–F200 del nuevo
+inventario no sustituyen los bloques históricos B00–B13 ni las fases CI B01–B06.
+La entrega F001 modifica exclusivamente este registro: un archivo, dentro del
+máximo de 60 archivos vigente. No inicia F002 ni vuelve a aplicar cambios anteriores.
+
+**Resultado: CONSERVAR.** Base auditada y rama/PR1 remotos:
+`4b5a14d9c08bfa32a854a713aef0d42fae9af680`. Se comparan AppNavigator y el patrón
+pageStates/pageKeysSeen de MainActivity del clon BitChord de solo lectura,
+referencia `b690dc146009d4815825fa4a20815ef2e4ee8898`, con AppNavigator,
+AppNavigationHost y sus consumidores activos de Aurelis. No se identifica un
+defecto nuevo que justifique modificar la implementación de F001.
+
+Se conservan RouteEntry e IDs, claves route:ID y compatibilidad de claves v1,
+snapshots v1/v2, estado independiente de pestañas, retirada de páginas cerradas,
+orden de Atrás y página subyacente a reproductor/cola. No se cambia ninguna API,
+ruta, clase de producción, prueba, servicio, recurso, dependencia ni workflow.
+Las rutas declaradas pero no conectadas no se presentan como nuevas funciones
+habilitadas. La fidelidad de barras/pantallas corresponde a las otras funciones.
+
+**Evidencia automatizada existente, ejecutada en GitHub Actions:**
+
+| Evidencia | Resultado y alcance real |
+|---|---|
+| [Run178, intento 2](https://github.com/ed0668822/Aurelis-Music/actions/runs/43928400200/attempts/2), mismo SHA | B03 SUCCESS; logs originales de sus pasos Debug/Release leídos y ZIP comprobado por CRC. El pipeline global de este intento fue FAILURE por B04; no se presenta como un verde completo. |
+| AppNavigatorTest | 13/13 SUCCESS en Debug y 13/13 en Release. |
+| NavigationEntryStateTest | 6/6 SUCCESS en Debug y 6/6 en Release. |
+| NavigationIntegrationTest | 6/6 SUCCESS en Debug y 6/6 en Release. |
+| Total de estas tres clases | 25/25 por variante, 50 eventos SUCCESS; métodos contrastados con el código base, sin faltantes, inesperados, duplicados ni omitidos. Las tareas testDebugUnitTest/testReleaseUnitTest ejecutaron; el Kover posterior UP-TO-DATE no se cuenta como otra ejecución. |
+| [Run179 completo](https://github.com/ed0668822/Aurelis-Music/actions/runs/43934048144), mismo SHA | API: SUCCESS en las seis fases B01–B06. El desglose individual de arriba procede del intento 2 de run178, no se atribuye al ZIP179. |
+
+Los casos acreditan visitas repetidas independientes, IDs tras recreación,
+descartar estados cerrados, conservar pestañas/búsqueda, compatibilidad v1/v2,
+rechazo de snapshots malformados, Atrás en páginas anidadas y cola → reproductor
+→ página/pestaña anterior, incluida restauración sin canción seleccionada.
+
+Procedencia de los logs: archivo externo al checkout
+`43928400200-attempt2-logs.zip`, SHA256
+`daaf8be2ff38c9c3bbd449980f6013791d20ef460df7ab27b743343a9c8f0ca4`.
+El checkout de B03 dentro del log y la API del intento coinciden con el SHA base;
+se leen los pasos individuales 8/9, sin duplicar sus copias del log agregado.
+La descarga del informe179 (artefacto 14260443599) falla con 403 Forbidden;
+`gh run view 43934048144 --repo ed0668822/Aurelis-Music --job 133537151687 --log`
+devuelve salida vacía, lo que no acredita
+ausencia de errores ni permite afirmar que se leyó su informe individual.
+
+Dos revisiones realizadas por el mismo agente, no independientes:
+
+1. Modelo, restauración, limpieza de estados, consumidores y referencia BitChord.
+2. CRC/procedencia de logs, correspondencia de métodos por variante y diff
+   limitado a este documento, comprobado con git diff --check.
+
+No se ejecutan Gradle ni pruebas Android localmente ni se añaden pruebas
+redundantes. El verde179 acredita el código base, no una ejecución nueva del
+commit documental. Los filtros paths de b06-unified-pipeline.yml y
+ui-parity-comparison.yml no incluyen este archivo de documentación; este push
+no inicia automáticamente esas compilaciones y no se solicita otra ejecución.
+La comprobación física en Redmi Note 14 Pro 5G con Android 16/HyperOS 3,
+la fidelidad visual completa y los bloques posteriores siguen
+pendientes. Después del push se avisa al usuario de los archivos enviados y
+del resultado real de GitHub; se espera su confirmación y autorización expresa
+antes de F002. Un fallo de la nueva entrega se investiga antes de avanzar.
+
 > **Límite vigente solicitado:** máximo **30 archivos por bloque**, contando toda la entrega y todos sus commits, incluidos pruebas, recursos, documentación, configuración y eliminaciones. Esta regla posterior prevalece sobre el techo35 histórico de [PLAN_CONTINUATION](PLAN_CONTINUATION.md); los subbloques menores siguen permitidos. [PLAN_30_FILES](PLAN_30_FILES.md) conserva su registro histórico. No se cierran retrospectivamente B06/B07 ni se inicia B09 por registrar el plan.
 
 > **Excepción posterior para estas correcciones UI:** máximo **60 archivos distintos**, incluyendo sus correcciones, pruebas y documentación. El usuario pidió esperar y posteriormente autorizó «Continúa y termina». La excepción se aplica a esta entrega; no altera el alcance ni acredita paridad visual por compilación.
