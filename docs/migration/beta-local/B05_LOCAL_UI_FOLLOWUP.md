@@ -73,6 +73,24 @@ ES/EN y contratos de formato comprobados. git diff --check pasó.
 
 ## Evidencia y siguientes pasos
 
+### Corrección de Main171
+
+Run43816340050 del commit4eb1ef89 terminó FAILURE. Logs originales descargados
+y ZIP validado: B01 compiló; en B03 se ejecutaron 432 pruebas por variante,
+con un fallo idéntico en Debug y Release. ChromeContractTest seguía buscando
+el texto antiguo `No hay resultados para "missing"` tras migrar SearchScreen
+al recurso traducido `search_library_no_results`. Kover se omitió después del
+fallo de las suites; la cobertura no es la causa raíz de esta reparación.
+
+La aserción usa ahora el recurso localizado con la consulta original, y la del
+estado vacío también usa su recurso. Se conservan la pertenencia al backdrop,
+la exclusión del campo de búsqueda y la comprobación de altura del cuerpo.
+No cambia código de producción ni se suprime la prueba. Se añade únicamente
+ChromeContractTest.kt al inventario: 19 rutas acumuladas de esta entrega, máximo60.
+Dos revisiones estáticas del mismo agente, no independientes; parser y diff-check
+locales, sin Gradle ni Android local. El nuevo resultado sigue pendiente de Actions
+y se esperará a que el usuario comunique si compiló correctamente o falló.
+
 La base Main170/43800278588 sí aprobó B01–B06; UI26/43800312810 terminó en
 FAILURE en la referencia. Aurelis alcanzó sus 18 estados por material y los casos
 nativos pasaron en API35/36; eso no demuestra identidad visual. Los ZIP actuales

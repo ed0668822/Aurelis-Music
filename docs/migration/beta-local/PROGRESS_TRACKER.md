@@ -20,6 +20,15 @@
 
 ### B05 — pendientes confirmados del ZIP: cápsulas y textos ES/EN
 
+Corrección posterior: Main171/43816340050 de4eb1ef89 FAILURE. B01 sí compiló;
+B03 ejecutó432 por variante y falló un caso en ambas: ChromeContractTest esperaba
+el antiguo literal de búsqueda sin resultados. Logs originales/CRC leídos antes
+de editar. Aserciones actualizadas a los recursos localizados, conservando el
+contrato backdrop/campo excluido/cuerpo no vacío. 19 archivos distintos acumulados,
+máximo60, sin cambios de producción ni supresión de pruebas. Dos revisiones del
+mismo agente y comprobaciones estáticas; no Android local. Nuevo CI pendiente,
+ESPERAR respuesta del usuario después del push. Detalles en B05_LOCAL_UI_FOLLOWUP.md.
+
 El usuario dice «Continúa» tras indicar que esperemos su resultado de GitHub; se
 continúa con entrega5 del plan, sin repetir MiniPlayer/reproductor. Base0f639624:
 Main170 SUCCESS B01–B06,429 por variante y90,35% confirmados en logs del turno

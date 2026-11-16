@@ -13,6 +13,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import com.music.aurelis.AurelisApplication
+import com.music.aurelis.R
 import com.music.aurelis.ui.RobolectricActivityRule
 import com.music.aurelis.ui.components.FrostedTopBar
 import com.music.aurelis.ui.components.LocalProfileButton
@@ -121,11 +122,11 @@ class ChromeContractTest {
                 contentBackdropModifier = Modifier.testTag("search-body-backdrop"))
         } }
         val body = compose.onNodeWithTag("search-body-backdrop", useUnmergedTree = true)
-        body.assert(hasAnyDescendant(hasText("Busca tu música local")))
+        body.assert(hasAnyDescendant(hasText(compose.activity.getString(R.string.local_search_start))))
             .assert(!hasAnyDescendant(hasSetTextAction()))
         assertTrue("Empty search must still record a non-empty body", body.fetchSemanticsNode().boundsInRoot.height > 0f)
         compose.onNode(hasSetTextAction()).performTextInput("missing")
-        body.assert(hasAnyDescendant(hasText("No hay resultados para \"missing\"")))
+        body.assert(hasAnyDescendant(hasText(compose.activity.getString(R.string.search_library_no_results, "missing"))))
             .assert(!hasAnyDescendant(hasSetTextAction()))
     }
 }
