@@ -31,6 +31,7 @@ fun AnimatedArtwork(
     size: androidx.compose.ui.unit.Dp = 180.dp,
     progressFraction: Float = 0f,
     modifier: Modifier = Modifier,
+    corner: androidx.compose.ui.unit.Dp = 10.dp,
 ) {
     val resolvedSize = size
     val gradientColors = if (progressFraction > 0.5f) {
@@ -47,7 +48,7 @@ fun AnimatedArtwork(
     Box(
         modifier = modifier
             .size(resolvedSize)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(corner))
             .background(Brush.verticalGradient(colors = gradientColors)),
         contentAlignment = Alignment.Center,
     ) {

@@ -1,44 +1,35 @@
 // Aurelis © 2026. GPL-3.0-or-later
+// Adapted from BitChord b690dc14 TransportRow (GPLv3); see NOTICE.
 package com.music.aurelis.ui.components
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.music.aurelis.R
+import com.music.aurelis.ui.haptics.Haptic
+import com.music.aurelis.ui.haptics.rememberHaptics
 import com.music.aurelis.ui.player.playerAdditiveChrome
 import com.music.aurelis.ui.player.playerControlTint
-import androidx.compose.ui.unit.dp
 
-/**
- * Controles de transporte: anterior, play/pausa, siguiente.
- *
- * - Iconos redondeados (más orgánico que los filled).
- * - Botón de play/pausa de 72dp con spring al pulsar.
- * - Skip buttons de 56dp con iconos de 36dp.
- */
+/** The same controller callbacks in both layouts; disabled skips keep their footprint. */
 @Composable
 fun PlayerControls(
     isPlaying: Boolean,
@@ -52,76 +43,42 @@ fun PlayerControls(
     canPrevious: Boolean = true,
     reduceAnimation: Boolean = false,
     blendChrome: Boolean = false,
+    compact: Boolean = false,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Anterior
-        IconButton(
-            onClick = onPrevious,
-            enabled = enabled && canPrevious,
-            modifier = Modifier.size(56.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.SkipPrevious,
-                contentDescription = "Anterior",
-                tint = playerControlTint(MaterialTheme.colorScheme.onSurface, enabled && canPrevious, blendChrome),
-                modifier = Modifier.size(36.dp).playerAdditiveChrome(blendChrome),
-            )
+    val haptics = rememberHaptics()
+    val playTouch = if (compact) 76.dp else 92.dp
+    val playSize = if (compact) 58.dp else 74.dp
+    val skipSize = if (compact) 44.dp else 50.dp
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically) {
+        TransportGlyph(R.drawable.ic_player_previous, stringResource(R.string.player_previous), skipSize, 56.dp,
+            enabled && canPrevious, reduceAnimation, blendChrome, squash = 0.85f) {
+            haptics.play(Haptic.SkipPrevious); onPrevious()
         }
-
-        Spacer(modifier = Modifier.width(24.dp))
-
-        // Buffering does not disable pause.
-        val interaction = remember { MutableInteractionSource() }
-        val pressed by interaction.collectIsPressedAsState()
-        val scale by animateFloatAsState(
-            targetValue = if (pressed) 0.92f else 1f,
-            animationSpec = if (reduceAnimation) androidx.compose.animation.core.snap() else spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium,
-            ),
-            label = "playButtonScale",
-        )
-
-        FilledIconButton(
-            onClick = onPlayPause,
-            enabled = enabled,
-            modifier = Modifier
-                .size(72.dp)
-                .scale(scale),
-            interactionSource = interaction,
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                if (isLoading) CircularProgressIndicator(Modifier.size(56.dp),
-                    color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                Icon(
-                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                    modifier = Modifier.size(40.dp),
-                )
-            }
+        TransportGlyph(if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play,
+            stringResource(if (isPlaying) R.string.player_pause else R.string.player_play), playSize, playTouch,
+            enabled, reduceAnimation, blendChrome, loading = isLoading) {
+            haptics.play(if (isPlaying) Haptic.Pause else Haptic.Resume); onPlayPause()
         }
-
-        Spacer(modifier = Modifier.width(24.dp))
-
-        // Siguiente
-        IconButton(
-            onClick = onNext,
-            enabled = enabled && canNext,
-            modifier = Modifier.size(56.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.SkipNext,
-                contentDescription = "Siguiente",
-                tint = playerControlTint(MaterialTheme.colorScheme.onSurface, enabled && canNext, blendChrome),
-                modifier = Modifier.size(36.dp).playerAdditiveChrome(blendChrome),
-            )
+        TransportGlyph(R.drawable.ic_player_next, stringResource(R.string.player_next), skipSize, 56.dp,
+            enabled && canNext, reduceAnimation, blendChrome, squash = 0.85f) {
+            haptics.play(Haptic.SkipNext); onNext()
         }
+    }
+}
+
+@Composable
+private fun TransportGlyph(@DrawableRes resource: Int, label: String, size: Dp, target: Dp,
+    enabled: Boolean, reduced: Boolean, blend: Boolean, squash: Float = 1f,
+    loading: Boolean = false, onClick: () -> Unit) {
+    val alpha by animateFloatAsState(if (enabled) 1f else 0.3f,
+        animationSpec = if (reduced) snap() else tween(180), label = "transportAvailability")
+    val ink = playerControlTint(MaterialTheme.colorScheme.onSurface, true, blend)
+    Box(Modifier.size(target).clickable(interactionSource = remember { MutableInteractionSource() },
+        indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+        .semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
+        if (loading) CircularProgressIndicator(Modifier.size(30.dp), color = ink, strokeWidth = 2.dp)
+        else Icon(painterResource(resource), null, tint = ink.copy(alpha = ink.alpha * alpha),
+            modifier = Modifier.size(size).graphicsLayer { scaleY = squash }.playerAdditiveChrome(blend))
     }
 }

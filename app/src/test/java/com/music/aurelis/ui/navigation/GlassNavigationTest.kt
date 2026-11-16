@@ -115,9 +115,9 @@ class GlassNavigationTest {
             listOf(true to false, true to true, false to false).forEach { (enabled, reduced) ->
                 compose.runOnIdle { glass = enabled; settings.setReduceDynamicBlur(reduced) }
                 compose.onNodeWithTag("mini-player").assertIsDisplayed()
-                compose.onNodeWithContentDescription("Reproducir").performClick()
-                compose.onNodeWithContentDescription("Siguiente").performClick()
-                compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+                compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_play)).performClick()
+                compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).performClick()
+                compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
                 compose.onNode((hasText("Search") or hasContentDescription("Search")) and isSelectable()).performClick().assertIsSelected()
                 compose.onNode(hasText("Home") and isSelectable()).performClick().assertIsSelected()
             }

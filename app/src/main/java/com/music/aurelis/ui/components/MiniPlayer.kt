@@ -15,6 +15,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.graphicsLayer
+import com.music.aurelis.R
+import com.music.aurelis.ui.haptics.Haptic
+import com.music.aurelis.ui.haptics.rememberHaptics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -45,40 +54,46 @@ fun MiniPlayer(
     onPrevious: () -> Unit = {},
 ) {
     val glass = LocalLiquidGlassEnabled.current
+    val openLabel = stringResource(R.string.player_open)
+    val playLabel = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play)
+    val haptics = rememberHaptics()
     val shape = RoundedCornerShape(percent = 50)
     val surface = if (glass) Modifier.liquidGlass(shape,
         fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh) else Modifier
-    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").miniPlayerGestures(pull, enabled, canNext, canPrevious, onNext, onPrevious, onClick).then(surface),
+    Surface(modifier = modifier.fillMaxWidth().testTag("mini-player").miniPlayerGestures(pull, enabled, canNext, canPrevious,
+        { haptics.play(Haptic.SkipNext); onNext() }, { haptics.play(Haptic.SkipPrevious); onPrevious() }, onClick)
+        .semantics {
+            contentDescription = openLabel
+            stateDescription = qualityLabel.orEmpty()
+            progressBarRangeInfo = ProgressBarRangeInfo(progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f, 0f..1f)
+        }.then(surface),
         shape = shape, color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (glass) 0.dp else 4.dp, onClick = onClick) {
-        Column {
-            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 12.dp),
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).playerDockArtwork(dock, songId, mini = true).clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.MusicNote, null, Modifier.size(24.dp))
                     AsyncImage(artworkUri, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
-                Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                    Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleSmall)
-                    qualityLabel?.let { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.labelSmall) }
-                    Text(artist, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+                    Text(artist, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 // The full screen exposes previous; keep the compact bar usable at 320dp.
-                IconButton(onClick = onPlayPauseClick, enabled = enabled,
-                    modifier = Modifier.semantics { contentDescription = if (isPlaying) "Pausar" else "Reproducir" }) {
+                IconButton(onClick = { haptics.play(if (isPlaying) Haptic.Pause else Haptic.Resume); onPlayPauseClick() }, enabled = enabled,
+                    modifier = Modifier.size(40.dp).semantics { contentDescription = playLabel }) {
                     if (isLoading) CircularProgressIndicator(Modifier.size(22.dp))
                     else Icon(if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         null, modifier = Modifier.size(32.dp))
                 }
-                IconButton(onClick = onNext, enabled = enabled && canNext) {
-                    Icon(Icons.Rounded.SkipNext, "Siguiente", modifier = Modifier.size(25.dp))
+                Spacer(Modifier.width(8.dp))
+                IconButton(onClick = { haptics.play(Haptic.SkipNext); onNext() }, enabled = enabled && canNext, modifier = Modifier.size(40.dp)) {
+                    Icon(painterResource(R.drawable.ic_player_next), stringResource(R.string.player_next),
+                        modifier = Modifier.size(25.dp).graphicsLayer { scaleY = 0.85f })
                 }
-                IconButton(onClick = onClick, enabled = enabled) { Icon(Icons.Rounded.ExpandLess, "Abrir reproductor") }
             }
-            LinearProgressIndicator(progress = { progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f },
-                modifier = Modifier.fillMaxWidth().height(2.dp))
-        }
     }
 }

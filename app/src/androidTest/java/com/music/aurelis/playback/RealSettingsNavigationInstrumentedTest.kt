@@ -3,6 +3,8 @@ package com.music.aurelis.playback
 
 import android.app.KeyguardManager
 import android.content.ComponentName
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.SystemClock
@@ -128,6 +130,14 @@ class RealSettingsNavigationInstrumentedTest {
 
     private fun onMain(action: () -> Unit) = instrumentation.runOnMainSync { action() }
 
+    private fun rotate(activity: ActivityScenario<MainActivity>, landscape: Boolean) {
+        activity.onActivity { it.requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
+        val expected = if (landscape) Configuration.ORIENTATION_LANDSCAPE else Configuration.ORIENTATION_PORTRAIT
+        val deadline = SystemClock.elapsedRealtime() + 15_000
+        while (context.resources.configuration.orientation != expected && SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(150)
+        assertEquals("Device must apply the requested player orientation", expected, context.resources.configuration.orientation)
+    }
+
     private fun exercise(withPlayback: Boolean) {
         val fixture = File(context.cacheDir, "settings-navigation.wav")
         val before = ProfileRepository.state.value.profile
@@ -195,6 +205,26 @@ class RealSettingsNavigationInstrumentedTest {
             awaitEditor("New playlist")
             evidence("$prefix-new-playlist")
             await(context.getString(R.string.cancel), click = true)
+            if (withPlayback) {
+                await(context.getString(R.string.player_open), click = true)
+                await(context.getString(R.string.player_pause))
+                await(context.getString(R.string.player_next))
+                await(context.getString(R.string.player_previous))
+                evidence("$prefix-player-portrait")
+                await(context.getString(R.string.player_pause), click = true)
+                await(context.getString(R.string.player_play))
+                rotate(activity, true)
+                await(context.getString(R.string.player_play))
+                await(context.getString(R.string.player_next))
+                await(context.getString(R.string.player_previous))
+                evidence("$prefix-player-landscape")
+                await(context.getString(R.string.player_play), click = true)
+                await(context.getString(R.string.player_pause))
+                rotate(activity, false)
+                await(context.getString(R.string.player_pause))
+                await(context.getString(R.string.player_close), click = true)
+                await(context.getString(R.string.player_open))
+            }
             await(context.getString(R.string.search), click = true)
             awaitEditor("Search")
             evidence("$prefix-search")

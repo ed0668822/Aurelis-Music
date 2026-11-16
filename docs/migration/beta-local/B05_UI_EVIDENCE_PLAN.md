@@ -11,9 +11,10 @@ configuración, renombres y eliminaciones de la entrega; varios commits del mism
 mensaje no reinician su presupuesto. Objetivo habitual20–35, reservando margen de
 corrección hasta60. Publicar inventario real antes de cada entrega.
 
-El usuario autoriza continuar. Se ejecuta la primera entrega de evidencia/gates;
-MiniPlayer y layouts se implementan en entregas posteriores autorizadas. Planificar
-B09 no autoriza iniciarlo. Avisar tras cada push y registrar resultados reales.
+La primera entrega de evidencia/gates se publicó en18950a40. El usuario autoriza
+ahora terminar MiniPlayer y pantalla de reproducción, vertical/horizontal, juntos
+dentro de60 archivos. El resto del plan conserva su orden y autorización por entrega.
+Planificar B09 no autoriza iniciarlo. Avisar tras cada push y registrar resultados reales.
 
 ## Base y referencia
 

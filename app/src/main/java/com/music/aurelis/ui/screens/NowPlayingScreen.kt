@@ -6,6 +6,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.AllInclusive
+import com.music.aurelis.ui.components.PlayerVolumeRow
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.ui.platform.LocalContext
 import com.music.aurelis.AurelisApplication
@@ -132,7 +137,9 @@ fun NowPlayingScreen(
         if (uri != null) playbackViewModel.importLyrics(uri, importSongId)
     }
     val song = state.currentSong
-    val userStore by (LocalContext.current.applicationContext as AurelisApplication).libraries.collectAsState()
+    val context = LocalContext.current
+    val application = context.applicationContext as AurelisApplication
+    val userStore by application.libraries.collectAsState()
     var showSongActions by remember { mutableStateOf(false) }
     val themeViewModel: DynamicThemeViewModel = viewModel()
 
@@ -172,9 +179,9 @@ fun NowPlayingScreen(
     }
 
     if (showQuality && isVisible && song != null) androidx.compose.material3.AlertDialog(
-        onDismissRequest = { showQuality = false }, title = { Text("Información de audio") },
-        text = { Text("Origen: ${state.sourceQuality.details}\nDatos: ${state.sourceQuality.originLabel}\nSalida del dispositivo: no medida") },
-        confirmButton = { androidx.compose.material3.TextButton(onClick = { showQuality = false }) { Text("Cerrar") } },
+        onDismissRequest = { showQuality = false }, title = { Text(stringResource(R.string.player_audio_info)) },
+        text = { Text(stringResource(R.string.player_audio_details, state.sourceQuality.details, state.sourceQuality.originLabel)) },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = { showQuality = false }) { Text(stringResource(R.string.player_close_dialog)) } },
     )
 
     AnimatedVisibility(
@@ -233,47 +240,30 @@ fun NowPlayingScreen(
                         ),
                 )
 
+                val openLyrics: () -> Unit = { showInlineQueue = false; showLyrics = !showLyrics }
+                val openQueue: () -> Unit = {
+                    if (landscape) { showLyrics = false; showInlineQueue = !showInlineQueue }
+                    else onOpenQueue()
+                }
                 val header: @Composable () -> Unit = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().testTag("player-handle").playerSwipeTrigger(1, closePlayer, panelMotion),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                    Row(Modifier.fillMaxWidth().height(48.dp).testTag("player-handle")
+                        .playerSwipeTrigger(1, closePlayer, panelMotion), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = closePlayer) {
-                            Icon(
-                                imageVector = Icons.Rounded.KeyboardArrowDown,
-                                contentDescription = "Cerrar reproductor",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(32.dp),
-                            )
+                            Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.player_close), Modifier.size(28.dp))
                         }
-                        Spacer(modifier = Modifier.weight(1f))
-                        IconButton(onClick = { showSongActions = true }) {
-                            Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, "Opciones de canción")
+                        Spacer(Modifier.weight(1f))
+                        val timerState = if (state.sleepRemainingMs > 0 || state.sleepAfterTrack)
+                            stringResource(R.string.player_timer_active) else stringResource(R.string.player_disabled)
+                        IconButton(onClick = { showPlaybackTools = true }, modifier = Modifier.semantics { stateDescription = timerState }) {
+                            Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools))
                         }
                         IconButton(onClick = { showLyricsSources = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.MoreHoriz,
-                                contentDescription = "Fuentes de letras",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(26.dp),
-                            )
+                            Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources))
                         }
-                        if (landscape) IconButton(onClick = { showInlineQueue = false; showLyrics = !showLyrics }) {
-                            Icon(Icons.AutoMirrored.Rounded.Subject, "Abrir letras")
-                        }
-                        IconButton(onClick = {
-                            if (landscape) { showLyrics = false; showInlineQueue = !showInlineQueue }
-                            else onOpenQueue()
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-                                contentDescription = "Abrir cola",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(28.dp),
-                            )
+                        IconButton(onClick = { showSongActions = true }) {
+                            Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions), Modifier.size(26.dp))
                         }
                     }
-
                 }
                 val artwork: @Composable (Modifier, Dp) -> Unit = { artworkModifier, artworkSize ->
                     val progressFraction = if (state.durationMs > 0) {
@@ -285,100 +275,104 @@ fun NowPlayingScreen(
                         artworkUri = s.artworkUri,
                         title = s.title,
                         size = artworkSize,
-                        modifier = artworkModifier.playerDockArtwork(dock, s.id, mini = false),
+                        modifier = artworkModifier.testTag("player-artwork").playerDockArtwork(dock, s.id, mini = false),
                         progressFraction = progressFraction,
                     )
 
                 }
-                val controls: @Composable () -> Unit = {
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(
-                                modifier = Modifier.weight(1f),
-                                text = s.title,
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            androidx.compose.material3.TextButton(onClick = { showQuality = true }) {
+                val credits: @Composable (Boolean) -> Unit = { compact ->
+                    Row(Modifier.fillMaxWidth().padding(top = if (compact) 0.dp else 8.dp, bottom = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(s.title, style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(s.artist, style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            state.errorMessage?.let { message ->
+                                Text(message, maxLines = 2, style = MaterialTheme.typography.labelSmall)
+                                TextButton(onClick = playbackViewModel::retry) { Text(stringResource(R.string.player_retry)) }
+                            }
+                        }
+                        IconButton(onClick = { application.userLibrary.toggleFavorite(s.id) }) {
+                            val favorite = s.id in userStore.favorites
+                            Icon(if (favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                stringResource(if (favorite) R.string.player_remove_favorite else R.string.player_add_favorite))
+                        }
+                    }
+                }
+                val actions: @Composable () -> Unit = {
+                    val activeLabel = stringResource(R.string.player_enabled)
+                    val inactiveLabel = stringResource(R.string.player_disabled)
+                    val repeatLabel = stringResource(when (state.repeatMode) {
+                        Player.REPEAT_MODE_ALL -> R.string.player_repeat_all
+                        Player.REPEAT_MODE_ONE -> R.string.player_repeat_one
+                        else -> R.string.player_repeat_off
+                    })
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween) {
+                        IconButton(onClick = openLyrics) {
+                            Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_lyrics), Modifier.size(25.dp))
+                        }
+                        androidx.compose.material3.Surface(shape = CircleShape,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)) {
+                            Row {
+                                IconButton(onClick = playbackViewModel::toggleShuffle, enabled = state.isConnected,
+                                    modifier = Modifier.size(40.dp).semantics { stateDescription = if (state.shuffleEnabled) activeLabel else inactiveLabel }) {
+                                    Icon(Icons.Rounded.Shuffle, stringResource(R.string.player_shuffle),
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (state.shuffleEnabled) 1f else 0.55f))
+                                }
+                                IconButton(onClick = playbackViewModel::cycleRepeat, enabled = state.isConnected,
+                                    modifier = Modifier.size(40.dp).semantics { stateDescription = repeatLabel }) {
+                                    Icon(if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                                        stringResource(R.string.player_repeat),
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (state.repeatMode == Player.REPEAT_MODE_OFF) 0.55f else 1f))
+                                }
+                                IconButton(onClick = { playbackViewModel.setAutoplay(!state.autoplayEnabled) },
+                                    enabled = state.canSetAutoplay, modifier = Modifier.size(40.dp).semantics {
+                                        stateDescription = if (state.autoplayEnabled) activeLabel else inactiveLabel
+                                    }) {
+                                    Icon(Icons.Rounded.AllInclusive, stringResource(R.string.player_autoplay))
+                                }
+                            }
+                        }
+                        IconButton(onClick = openQueue) {
+                            Icon(Icons.AutoMirrored.Rounded.QueueMusic, stringResource(R.string.player_queue), Modifier.size(25.dp))
+                        }
+                    }
+                }
+                val transport: @Composable (Boolean) -> Unit = { compact ->
+                    PlayerControls(state.isPlayRequested, state.isLoading, playbackViewModel::togglePlayPause,
+                        playbackViewModel::next, playbackViewModel::previous, enabled = state.isConnected,
+                        canNext = state.canNext, canPrevious = state.canPrevious, reduceAnimation = reduceAnimation,
+                        blendChrome = !reduceBlur && LocalView.current.isHardwareAccelerated, compact = compact)
+                }
+                val deck: @Composable (Boolean) -> Unit = { compact ->
+                    Column(Modifier.fillMaxWidth().testTag("player-control-deck"), horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (!compact) {
+                            val time = com.music.aurelis.ui.player.adjustedLyricsPosition(state.positionMs, lyricsOffset)
+                            val line = (state.lyrics as? LyricsState.Loaded)?.lines?.lastOrNull { it.timeMs <= time && !it.isGap }?.text
+                            TextButton(onClick = openLyrics, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                                modifier = Modifier.fillMaxWidth().height(32.dp)
+                                .semantics { contentDescription = context.getString(R.string.player_lyrics_preview) }) {
+                                Text(line ?: stringResource(R.string.player_no_lyrics_preview), maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Box(Modifier.fillMaxWidth()) {
+                            key(s.queueEntryId ?: s.id) {
+                                PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
+                                    enabled = state.isConnected && state.canSeek)
+                            }
+                            TextButton(onClick = { showQuality = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                                modifier = Modifier.align(Alignment.BottomCenter).height(24.dp)) {
                                 SourceQualityBadge(state.sourceQuality.formatLabel)
                             }
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = s.artist,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        androidx.compose.material3.TextButton(onClick = { showPlaybackTools = true }) {
-                            Text(if (state.sleepRemainingMs > 0 || state.sleepAfterTrack) "Controles · temporizador activo" else "Controles de reproducción")
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { showInlineQueue = false; showLyrics = true },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                            shape = CircleShape,
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.Subject,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Ver Letras")
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        state.errorMessage?.let { message ->
-                            Text(message, color = MaterialTheme.colorScheme.error)
-                            androidx.compose.material3.TextButton(onClick = playbackViewModel::retry) { Text("Reintentar") }
-                        }
-                        key(s.id) {
-                            PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
-                                enabled = state.isConnected && state.canSeek)
-                        }
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            IconButton(onClick = playbackViewModel::toggleShuffle, enabled = state.isConnected,
-                                modifier = Modifier.semantics { stateDescription = if (state.shuffleEnabled) "Activado" else "Desactivado" }) {
-                                Icon(Icons.Rounded.Shuffle, "Aleatorio",
-                                    tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                            }
-                            val repeatDescription = when (state.repeatMode) {
-                                Player.REPEAT_MODE_ALL -> "Repetir todas"
-                                Player.REPEAT_MODE_ONE -> "Repetir una"
-                                else -> "Repetición desactivada"
-                            }
-                            IconButton(onClick = playbackViewModel::cycleRepeat, enabled = state.isConnected,
-                                modifier = Modifier.semantics { stateDescription = repeatDescription }) {
-                                Icon(if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
-                                    "Repetición", tint = if (state.repeatMode != Player.REPEAT_MODE_OFF)
-                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                            }
-                        }
-                        PlayerControls(
-                            isPlaying = state.isPlayRequested,
-                            isLoading = state.isLoading,
-                            onPlayPause = { playbackViewModel.togglePlayPause() },
-                            onNext = { playbackViewModel.next() },
-                            onPrevious = { playbackViewModel.previous() },
-                            enabled = state.isConnected, canNext = state.canNext, canPrevious = state.canPrevious,
-                            reduceAnimation = reduceAnimation,
-                            blendChrome = !reduceBlur && LocalView.current.isHardwareAccelerated,
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
+                        transport(compact)
+                        Spacer(Modifier.height(if (compact) 0.dp else 6.dp))
+                        PlayerVolumeRow()
+                        actions()
                     }
                 }
                 val lyricsContent: @Composable () -> Unit = {
@@ -487,51 +481,47 @@ fun NowPlayingScreen(
 
                 BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { dock?.reportPanel(it) }
                     .then(if ((showLyrics || showInlineQueue) && !landscape) Modifier.clearAndSetSemantics { } else Modifier)) {
-                    val portraitArtworkSize = (maxWidth - 48.dp).coerceIn(160.dp, 320.dp)
                     SideEffect { dock?.attached = isVisible && !reduceAnimation && maxWidth <= maxHeight }
-                    if (maxWidth > maxHeight) {
+                    if (landscape) {
                         LandscapePlayerLayout(
                             pane = when { showLyrics -> PlayerPane.Lyrics; showInlineQueue -> PlayerPane.Queue; else -> PlayerPane.Main },
-                            background = {},
-                            modifier = Modifier.testTag("player-landscape"),
-                            reduceMotion = reduceAnimation,
-                            artwork = { artwork(it, 320.dp) }, actions = {
-                                Column(Modifier.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    header()
-                                    if (showLyrics || showInlineQueue) PlayerControls(
-                                        state.isPlayRequested, state.isLoading, playbackViewModel::togglePlayPause,
-                                        playbackViewModel::next, playbackViewModel::previous,
-                                        enabled = state.isConnected, canNext = state.canNext,
-                                        canPrevious = state.canPrevious, reduceAnimation = reduceAnimation,
-                                        blendChrome = !reduceBlur && LocalView.current.isHardwareAccelerated)
+                            background = {}, modifier = Modifier.testTag("player-landscape"), reduceMotion = reduceAnimation,
+                            artwork = { artwork(it, 320.dp) },
+                            actions = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                if (showLyrics || showInlineQueue) { transport(true); actions() }
+                                header()
+                            } },
+                            mainPane = { compact ->
+                                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                        Column(Modifier.verticalScroll(rememberScrollState())) { credits(compact) }
+                                    }
+                                    deck(true)
                                 }
                             },
-                            mainPane = {
-                                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                                    horizontalAlignment = Alignment.CenterHorizontally) {
-                                    controls()
-                                }
-                            }, lyricsPane = {
-                                Box(Modifier.fillMaxSize().testTag("landscape-lyrics")) { lyricsContent() }
-                            }, queuePane = {
-                                Box(Modifier.fillMaxSize().testTag("landscape-queue")) {
-                                    QueueScreen(playbackViewModel, true, { showInlineQueue = false }, embedded = true, listState = queueListState)
-                                }
-                            },
+                            lyricsPane = { Box(Modifier.fillMaxSize().testTag("landscape-lyrics")) { lyricsContent() } },
+                            queuePane = { Box(Modifier.fillMaxSize().testTag("landscape-queue")) {
+                                QueueScreen(playbackViewModel, true, { showInlineQueue = false }, embedded = true, listState = queueListState)
+                            } },
                         )
                     } else {
-                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
-                            .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)
+                        // Measure the deck at its natural height first; artwork receives
+                        // the remaining space. Transport never depends on scrolling.
+                        Column(Modifier.align(Alignment.Center).widthIn(max = 560.dp).fillMaxSize()
+                            .statusBarsPadding().navigationBarsPadding().padding(horizontal = 30.dp)
                             .testTag("player-portrait"), horizontalAlignment = Alignment.CenterHorizontally) {
                             header()
-                            Spacer(Modifier.height(24.dp))
-                            artwork(Modifier, portraitArtworkSize)
-                            Spacer(Modifier.height(32.dp))
-                            controls()
+                            Column(Modifier.weight(1f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    val side = minOf(maxWidth, maxHeight).coerceAtLeast(0.dp)
+                                    if (side > 0.dp) artwork(Modifier, side)
+                                }
+                                credits(false)
+                            }
+                            deck(false)
                         }
                     }
                 }
-
                 if (showLyrics && !landscape) lyricsContent()
                 if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false }, listState = queueListState)
 

@@ -576,3 +576,17 @@ sharedUi LibraryScreen.kt/HomeScreen.kt; Replay placement from Android
 LibraryPhoneParts.kt/ReplayScreen.kt. Aurelis uses its existing local albums,
 playlists, listening totals, local profile and permitted icons/fonts. Original
 project license and existing third-party attributions remain applicable.
+
+B05 — local MiniPlayer and responsive player layouts
+Adapted from BitChord commit b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3):
+Android MiniPlayer.kt row geometry and two-line credits; sharedUi NowPlayingScreen.kt
+bottom-anchored control-deck/artwork allocation; PlayerControls.kt TransportRow
+geometry and glyph interaction; existing LandscapePlayerLayout split-pane pattern.
+The four ic_player_play/pause/next/previous XML vectors are copied from sharedUi
+composeResources/drawable, with provenance comments and Compose-controlled tint.
+Original BitChord contributors and GPLv3 terms remain applicable. Aurelis notices
+cover Aurelis contributions and do not relicense upstream material as or-later.
+Local adaptation keeps a single Media3 controller/service, real device music volume,
+local favorites, local queue/lyrics, source-quality disclosure and existing tools.
+Streaming/video/party/output-server logic is excluded. No fonts/media are copied.
+Original upstream hashes and exact scope are in docs/migration/beta-local/LICENSE_AUDIT.md.

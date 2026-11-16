@@ -409,4 +409,36 @@
     <string name="lyrics_retry_translation">Retry translation</string>
     <string name="library_playlist_local_hint">Saved on this device</string>
     <string name="library_playlist_save_error">Could not save the playlist. Try again.</string>
+
+    <!-- Local player chrome and accessibility. -->
+    <string name="player_open">Open player</string>
+    <string name="player_close">Close player</string>
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_next">Next</string>
+    <string name="player_previous">Previous</string>
+    <string name="player_seek">Playback position</string>
+    <string name="player_volume">Media volume</string>
+    <string name="player_queue">Up next</string>
+    <string name="player_lyrics">Open lyrics</string>
+    <string name="player_tools">Playback tools</string>
+    <string name="player_song_actions">Song options</string>
+    <string name="player_sources">Lyrics sources</string>
+    <string name="player_shuffle">Shuffle</string>
+    <string name="player_repeat">Repeat</string>
+    <string name="player_enabled">On</string>
+    <string name="player_disabled">Off</string>
+    <string name="player_repeat_all">Repeat all</string>
+    <string name="player_repeat_one">Repeat one</string>
+    <string name="player_repeat_off">Repeat off</string>
+    <string name="player_autoplay">Local autoplay</string>
+    <string name="player_add_favorite">Add to favorites</string>
+    <string name="player_remove_favorite">Remove from favorites</string>
+    <string name="player_audio_info">Audio information</string>
+    <string name="player_audio_details">Source: %1$s\nData: %2$s\nDevice output: not measured</string>
+    <string name="player_close_dialog">Close</string>
+    <string name="player_retry">Retry</string>
+    <string name="player_no_lyrics_preview">Show lyrics</string>
+    <string name="player_lyrics_preview">Current lyric</string>
+    <string name="player_timer_active">Sleep timer active</string>
 </resources>

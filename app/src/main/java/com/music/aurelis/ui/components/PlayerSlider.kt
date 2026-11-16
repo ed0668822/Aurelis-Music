@@ -1,6 +1,18 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.res.stringResource
+import com.music.aurelis.R
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,6 +35,7 @@ import androidx.compose.ui.unit.dp
  * Slider de progreso del reproductor con etiquetas de tiempo.
  * Muestra posición actual / duración total.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerSlider(
     positionMs: Long,
@@ -31,6 +44,7 @@ fun PlayerSlider(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val seekLabel = stringResource(R.string.player_seek)
     var isDragging by remember { mutableStateOf(false) }
     var dragValue by remember { mutableFloatStateOf(0f) }
 
@@ -50,7 +64,18 @@ fun PlayerSlider(
                 onSeek(dragValue.toLong().coerceIn(0, durationMs.coerceAtLeast(0)))
             },
             enabled = enabled && durationMs > 0,
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Posición de reproducción" },
+            modifier = Modifier.fillMaxWidth().height(32.dp).semantics { contentDescription = seekLabel },
+            thumb = { Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.onSurface, CircleShape)) },
+            track = { state ->
+                val ink = MaterialTheme.colorScheme.onSurface
+                Canvas(Modifier.fillMaxWidth().height(6.dp)) {
+                    val y = size.height / 2
+                    drawLine(ink.copy(alpha = 0.2f), androidx.compose.ui.geometry.Offset(0f, y),
+                        androidx.compose.ui.geometry.Offset(size.width, y), size.height, StrokeCap.Round)
+                    drawLine(ink, androidx.compose.ui.geometry.Offset(0f, y),
+                        androidx.compose.ui.geometry.Offset(size.width * state.value.coerceIn(0f, 1f), y), size.height, StrokeCap.Round)
+                }
+            },
             colors = SliderDefaults.colors(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -68,6 +93,7 @@ fun PlayerSlider(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.weight(1f))
             Text(
                 text = formatTime(durationMs),
                 style = MaterialTheme.typography.bodySmall,

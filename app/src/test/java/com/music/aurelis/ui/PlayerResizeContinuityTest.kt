@@ -80,13 +80,13 @@ class PlayerResizeContinuityTest {
         compose.runOnIdle { library.loadLibrary(); vm.playSongs(rows) }
         compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.isConnected && vm.state.value.queue.size == rows.size } }
         compose.runOnIdle { player.pause(); vm.seekTo(12345) }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         return restoration
     }
 
     @Test fun queueScrollAndPlaybackSurviveResizeAndSavedStateRestoration() {
         val restoration = start()
-        compose.onNodeWithContentDescription("Abrir cola").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithTag("landscape-queue").assertIsDisplayed()
         compose.onNode(hasScrollToIndexAction() and hasAnyAncestor(hasTestTag("playback-queue")))
             .performScrollToNode(hasText("Tema 25"))
@@ -94,7 +94,7 @@ class PlayerResizeContinuityTest {
         val prepares = player.prepares; val replacements = player.replacements
         compose.runOnIdle { wide = false }
         compose.onNodeWithTag("landscape-queue").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Cerrar reproductor").assertDoesNotExist()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).assertDoesNotExist()
         compose.onNode(hasText("Tema 25") and hasAnyAncestor(hasTestTag("playback-queue"))).assertIsDisplayed()
         compose.runOnIdle { wide = true }
         compose.onNodeWithTag("landscape-queue").assertIsDisplayed()
@@ -112,7 +112,7 @@ class PlayerResizeContinuityTest {
 
     @Test fun lyricsPaneSurvivesEffectsChangesResizeAndRestorationWithoutRestartingPlayback() {
         val restoration = start(mesh = true)
-        compose.onNodeWithContentDescription("Abrir letras").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
         compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
         compose.onNodeWithTag("player-mesh-background").assertExists()
         val queue = vm.state.value.queue.map { it.id to it.queueEntryId }

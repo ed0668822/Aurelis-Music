@@ -428,4 +428,36 @@
     </plurals>
     <string name="library_playlist_local_hint">Guardada en este dispositivo</string>
     <string name="library_playlist_save_error">No se pudo guardar la lista. Inténtalo de nuevo.</string>
+
+    <!-- Local player chrome and accessibility. -->
+    <string name="player_open">Abrir reproductor</string>
+    <string name="player_close">Cerrar reproductor</string>
+    <string name="player_play">Reproducir</string>
+    <string name="player_pause">Pausar</string>
+    <string name="player_next">Siguiente</string>
+    <string name="player_previous">Anterior</string>
+    <string name="player_seek">Posición de reproducción</string>
+    <string name="player_volume">Volumen multimedia</string>
+    <string name="player_queue">Abrir cola</string>
+    <string name="player_lyrics">Abrir letras</string>
+    <string name="player_tools">Controles de reproducción</string>
+    <string name="player_song_actions">Opciones de canción</string>
+    <string name="player_sources">Fuentes de letras</string>
+    <string name="player_shuffle">Aleatorio</string>
+    <string name="player_repeat">Repetición</string>
+    <string name="player_enabled">Activado</string>
+    <string name="player_disabled">Desactivado</string>
+    <string name="player_repeat_all">Repetir todas</string>
+    <string name="player_repeat_one">Repetir una</string>
+    <string name="player_repeat_off">Repetición desactivada</string>
+    <string name="player_autoplay">Continuación local</string>
+    <string name="player_add_favorite">Añadir a favoritos</string>
+    <string name="player_remove_favorite">Quitar de favoritos</string>
+    <string name="player_audio_info">Información de audio</string>
+    <string name="player_audio_details">Origen: %1$s\nDatos: %2$s\nSalida del dispositivo: no medida</string>
+    <string name="player_close_dialog">Cerrar</string>
+    <string name="player_retry">Reintentar</string>
+    <string name="player_no_lyrics_preview">Ver Letras</string>
+    <string name="player_lyrics_preview">Letra actual</string>
+    <string name="player_timer_active">Temporizador activo</string>
 </resources>

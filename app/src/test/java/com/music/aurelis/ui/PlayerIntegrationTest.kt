@@ -30,7 +30,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @UnstableApi
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "w360dp-h800dp-mdpi", application = AurelisApplication::class)
+@Config(sdk = [33], qualifiers = "es-rES-w360dp-h800dp-mdpi", application = AurelisApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PlayerIntegrationTest {
     @get:org.junit.Rule(order = 0) val registerActivity = com.music.aurelis.ui.RobolectricActivityRule()
@@ -42,7 +42,7 @@ class PlayerIntegrationTest {
     private fun song(id: String) = LocalSong(id, "Canción local $id", "Artista local", "Álbum local",
         "content://media/external/audio/media/$id", null, 60_000, null, 1, 2026)
     @After fun cleanup() { compose.runOnIdle { store.clear() } }
-    private fun start() {
+    private fun start(fontScale: Float? = null) {
         SettingsRepository.setReduceAnimation(true)
         SettingsRepository.setShowQueueHistory(false)
         SettingsRepository.lyricsSources.value = emptySet()
@@ -51,12 +51,66 @@ class PlayerIntegrationTest {
         shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
         val library = LibraryViewModel(app, LocalLibrarySource { listOf(song("1"), song("2"), song("3")) }); store.put("library", library)
         compose.setContent { AurelisTheme {
-            AurelisNavigationContent(rememberAppNavigator(), vm, library)
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides
+                androidx.compose.ui.unit.Density(density.density, fontScale ?: density.fontScale)) {
+                AurelisNavigationContent(rememberAppNavigator(), vm, library)
+            }
         } }
         compose.runOnIdle { library.loadLibrary(); vm.playSongs(listOf(song("1"), song("2"), song("3"))) }
         compose.waitForIdle()
         compose.runOnIdle { player.pause() }
     }
+    private fun assertPrimaryTransportInsidePlayer(tag: String) {
+        val bounds = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+        for (key in listOf(R.string.player_play, R.string.player_next, R.string.player_previous)) {
+            val node = compose.onNodeWithContentDescription(compose.activity.getString(key)).assertIsDisplayed()
+            val control = node.fetchSemanticsNode().boundsInRoot
+            assertTrue("Transport must fit the initial viewport: $key", control.top >= bounds.top && control.bottom <= bounds.bottom && control.left >= bounds.left && control.right <= bounds.right)
+        }
+    }
+
+    @Test
+    @Config(sdk = [33], qualifiers = "es-rES-w320dp-h568dp-mdpi", application = AurelisApplication::class)
+    fun compactPortraitWithLargeTextKeepsTransportVisibleAndUsesTheExistingQueue() {
+        start(fontScale = 1.5f)
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+        assertPrimaryTransportInsidePlayer("player-portrait")
+        val queue = vm.state.value.queue.map { it.queueEntryId }
+        val replacements = player.replacements
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_next)).performClick()
+        compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id) }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_previous)).performClick()
+        compose.runOnIdle {
+            assertEquals("1", vm.state.value.currentSong?.id)
+            assertEquals(queue, vm.state.value.queue.map { it.queueEntryId })
+            assertEquals(replacements, player.replacements)
+        }
+    }
+
+    @Test
+    @Config(sdk = [33], qualifiers = "es-rES-w640dp-h320dp-land-mdpi", application = AurelisApplication::class)
+    fun shortLandscapeKeepsPrimaryTransportVisibleWithLargeText() {
+        start(fontScale = 1.5f)
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+        assertPrimaryTransportInsidePlayer("player-landscape")
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_play)).performClick()
+        compose.runOnIdle { assertTrue(player.playWhenReady) }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_pause)).performClick()
+        compose.runOnIdle { assertFalse(player.playWhenReady); assertEquals("1", vm.state.value.currentSong?.id) }
+    }
+
+    @Test fun volumeSliderChangesTheRealMusicStreamAndReadsItsActualLevel() {
+        val audio = app.getSystemService(android.media.AudioManager::class.java)
+        val maximum = audio.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+        assertTrue(maximum > 0)
+        audio.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, 1, 0)
+        compose.setContent { AurelisTheme { com.music.aurelis.ui.components.PlayerVolumeRow() } }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_volume))
+            .assertIsEnabled().performSemanticsAction(SemanticsActions.SetProgress) { it(0.5f) }
+        compose.runOnIdle { assertEquals((maximum * 0.5f + 0.5f).toInt(), audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)) }
+    }
+
     @Test fun exploreUnknownGenreResolvesRealSongsAndBulkFavorites() {
         start()
         compose.onNode(hasText(app.getString(R.string.explore)) and isSelectable()).performClick()
@@ -115,8 +169,8 @@ class PlayerIntegrationTest {
     @Test fun timerDialogExplainsUnavailableServiceWithoutChangingPlayback() {
         start()
         val current = vm.state.value.currentSong?.queueEntryId
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithText("Controles de reproducción").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_tools)).performClick()
         compose.onNodeWithText("El servicio conectado no ofrece este control.").assertExists()
         compose.onNodeWithText("1.5×").assertIsNotEnabled()
         compose.onNodeWithText("Activar salto de silencio").assertIsNotEnabled()
@@ -135,8 +189,8 @@ class PlayerIntegrationTest {
         }
         compose.waitForIdle()
         val current = vm.state.value.currentSong?.queueEntryId
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithText(app.getString(R.string.queue_clear_user)).performClick()
         compose.runOnIdle {
             assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id })
@@ -150,8 +204,8 @@ class PlayerIntegrationTest {
     @Test fun shuffleQueueKeepsSelectionAndDisablingItDoesNotReplacePlayback() {
         start()
         compose.runOnIdle { vm.toggleShuffle() }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithText(app.getString(R.string.queue_shuffle_reorder)).assertIsDisplayed()
         compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions) and
             hasAnyAncestor(hasTestTag("playback-queue"))).assertDoesNotExist()
@@ -161,7 +215,7 @@ class PlayerIntegrationTest {
         val position = vm.state.value.positionMs
         val prepares = player.prepares; val replacements = player.replacements
         compose.onNodeWithContentDescription("Cerrar").performClick()
-        compose.onNodeWithContentDescription("Aleatorio").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_shuffle)).performClick()
         compose.runOnIdle {
             assertFalse(vm.state.value.shuffleEnabled)
             assertEquals(listOf(0, 1, 2), vm.state.value.queuePlaybackOrder)
@@ -189,29 +243,29 @@ class PlayerIntegrationTest {
     }
 
     @Test
-    @Config(sdk = [33], qualifiers = "w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
+    @Config(sdk = [33], qualifiers = "es-rES-w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
     fun landscapeControlsUseTheSameQueueAndQualityIsExplicitlyInputOnly() {
         start()
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         compose.onNodeWithTag("player-landscape").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Siguiente").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).performClick()
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); assertEquals(3, player.mediaItemCount) }
-        compose.onNodeWithText("Formato desconocido").performScrollTo().performClick()
+        compose.onNodeWithText("Formato desconocido").performClick()
         compose.onNode(hasText("Salida del dispositivo: no medida", substring = true)).assertIsDisplayed()
         compose.onNodeWithText("Cerrar").performClick()
-        compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
     }
 
     @Test
-    @Config(sdk = [33], qualifiers = "w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
+    @Config(sdk = [33], qualifiers = "es-rES-w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
     fun landscapeQueueAndLyricsUseSidePanesAndTheSameController() {
         start()
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         val thirdEntry = vm.state.value.queue[2].queueEntryId
-        compose.onNodeWithContentDescription("Abrir cola").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithTag("landscape-queue").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).assertIsDisplayed()
         compose.onNode(hasText("Canción local 2") and hasAnyAncestor(hasTestTag("playback-queue"))).performClick()
         compose.onNode(hasContentDescription(app.getString(R.string.remove_from_queue)) and
             hasAnyAncestor(hasTestTag("queue-entry-$thirdEntry")), useUnmergedTree = true)
@@ -219,10 +273,10 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); assertEquals(listOf("1", "2"), vm.state.value.queue.map { it.id }) }
         val prepares = player.prepares
         val replacements = player.replacements
-        compose.onNodeWithContentDescription("Abrir letras").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
         compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
         compose.onNodeWithTag("landscape-queue").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).assertIsDisplayed()
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithTag("player-landscape").assertIsDisplayed()
         compose.onNodeWithTag("landscape-lyrics").assertDoesNotExist()
@@ -230,7 +284,7 @@ class PlayerIntegrationTest {
     }
 
     @Test
-    @Config(sdk = [33], qualifiers = "w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
+    @Config(sdk = [33], qualifiers = "es-rES-w800dp-h360dp-land-mdpi", application = AurelisApplication::class)
     fun landscapeImportedLyricsSeekWithTheExistingOffsetWithoutReplacingTheQueue() {
         start()
         val previousOffset = SettingsRepository.lyricsOffsetMs.value
@@ -245,8 +299,8 @@ class PlayerIntegrationTest {
             val queue = vm.state.value.queue.map { it.id to it.queueEntryId }
             val prepares = player.prepares
             val replacements = player.replacements
-            compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-            compose.onNodeWithContentDescription("Abrir letras").performClick()
+            compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+            compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
             compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
             compose.onNodeWithText("Segunda frase horizontal").performScrollTo().performClick()
             compose.runOnIdle {
@@ -262,23 +316,23 @@ class PlayerIntegrationTest {
 
     @Test fun cancellingAPartialHeaderDragPreservesTheOpenPlayerAndQueue() {
         start()
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         compose.onNodeWithTag("player-handle").performTouchInput {
             down(center); moveBy(androidx.compose.ui.geometry.Offset(0f, 120f)); cancel()
         }
         compose.onNodeWithTag("player-portrait").assertIsDisplayed()
         compose.runOnIdle { assertEquals(3, player.mediaItemCount); assertEquals("1", vm.state.value.currentSong?.id) }
-        compose.onNodeWithContentDescription("Cerrar reproductor").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
     }
 
     @Test fun editingTheSingleProfilePreservesPlayerNavigationAndCollections() {
         start()
         compose.runOnIdle { app.userLibrary.toggleFavorite("1") }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).assertIsDisplayed()
         compose.runOnIdle { ProfileRepository.rename("Nombre nuevo") }
-        compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).assertIsDisplayed()
         compose.runOnIdle {
             assertEquals(setOf("1"), app.userLibrary.state.value.favorites)
             assertEquals("1", vm.state.value.currentSong?.id)
@@ -290,16 +344,16 @@ class PlayerIntegrationTest {
         start()
         val previousEntry = vm.state.value.queue.first().queueEntryId
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Abrir reproductor").assertIsDisplayed().performClick()
-        compose.onNodeWithContentDescription("Cerrar reproductor").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Aleatorio").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_shuffle)).performClick()
         compose.runOnIdle { assertTrue(player.shuffleModeEnabled) }
-        compose.onNodeWithContentDescription("Repetición").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_repeat)).performClick()
         compose.runOnIdle { assertEquals(Player.REPEAT_MODE_ALL, player.repeatMode) }
-        compose.onNodeWithContentDescription("Posición de reproducción").performScrollTo()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_seek))
             .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(0.5f) }
         compose.runOnIdle { assertEquals(30_000, vm.state.value.positionMs) }
-        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithText("Canción local 2").performClick()
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); player.pause() }
         val playingEntry = vm.state.value.currentSong!!.queueEntryId
@@ -320,43 +374,43 @@ class PlayerIntegrationTest {
             assertFalse(player.playWhenReady)
         }
         compose.onNodeWithContentDescription("Cerrar").performClick()
-        compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
         compose.onNodeWithTag("mini-player").assertTextContains("Canción local 2")
     }
     @Test fun playerHasUsableArtworkTimeControlsAndCompactBarAt360dp() {
         start()
         capture("mini-player")
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Repetición").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_repeat)).assertIsDisplayed()
         compose.onNodeWithText("1:00").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Siguiente").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).assertIsDisplayed()
         capture("now-playing")
     }
     @Test
-    @Config(qualifiers = "w640dp-h360dp-mdpi")
-    fun landscapeKeepsTransportAccessibleByScrolling() {
+    @Config(qualifiers = "es-rES-w640dp-h360dp-mdpi")
+    fun landscapeKeepsTransportVisibleWithoutScrolling() {
         start()
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Repetición").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithContentDescription("Siguiente").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_repeat)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).performClick()
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id) }
-        compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
     }
     @Test fun songActionsPersistFavoritePlaylistAndAppendWithoutRestartingQueue() {
         start()
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_song_actions)).performClick()
         compose.onNodeWithText("Añadir a favoritos").performClick()
         compose.runOnIdle { assertEquals(setOf("1"), app.userLibrary.state.value.favorites) }
         compose.onNode(hasSetTextAction()).performTextInput("Mi lista")
         compose.onNodeWithText("Crear playlist con esta canción").performClick()
         compose.runOnIdle { assertEquals(listOf("1"), app.userLibrary.state.value.playlists.single().songIds) }
-        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_song_actions)).performClick()
         compose.onNodeWithText("Añadir a la cola").performClick()
         compose.runOnIdle { assertEquals(listOf("1", "2", "3", "1"), vm.state.value.queue.map { it.id }) }
-        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         val playingEntry = vm.state.value.currentSong!!.queueEntryId
         val actions = compose.onNodeWithTag("queue-entry-$playingEntry")
             .fetchSemanticsNode().config[SemanticsActions.CustomActions]
@@ -399,8 +453,8 @@ class PlayerIntegrationTest {
             val playingSong = vm.state.value.currentSong
             val prepares = player.prepares
             val replacements = player.replacements
-            compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-            compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
+            compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+            compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
             compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertIsDisplayed()
             compose.onNodeWithText("Primera frase propia").assertIsSelected()
             compose.onNodeWithText("Segunda frase propia").performClick()
@@ -434,8 +488,8 @@ class PlayerIntegrationTest {
             com.music.aurelis.data.lyrics.LyricsTranslation.Result.Translated(original.mapIndexed { index, line -> line.copy(text = "Traducción de prueba $index") }, "en", false) }
         SettingsRepository.setTranslationService("https://translation.example", "en")
         SettingsRepository.setTranslationLanguage("es")
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
         compose.onNodeWithContentDescription("Traducir").performClick()
         compose.onNodeWithText("Cancelar").performClick()
         compose.runOnIdle { assertEquals(0, requests) }
@@ -473,8 +527,8 @@ class PlayerIntegrationTest {
         start()
         var requests = 0
         vm.remoteLyricsRequest = { requests++; error("Selecting a provider must not send metadata") }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Fuentes de letras").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_sources)).performClick()
         compose.onNodeWithTag("lyrics-provider-LRCLIB").performScrollTo().assertIsOff().performClick().assertIsOn()
         compose.onNodeWithTag("lyrics-provider-BETTER_LYRICS-disabled").assertExists()
         compose.onNodeWithTag("lyrics-provider-BINI_LYRICS-disabled").assertExists()
@@ -482,7 +536,7 @@ class PlayerIntegrationTest {
         capture("lyrics-source-registry")
         compose.onNodeWithText("Cerrar").performClick()
         compose.runOnIdle { SettingsRepository.init(app); assertEquals(setOf(com.music.aurelis.data.lyrics.LyricsSource.LRCLIB), SettingsRepository.lyricsSources.value); assertEquals(0, requests) }
-        compose.onNodeWithContentDescription("Fuentes de letras").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_sources)).performClick()
         compose.onNodeWithTag("lyrics-provider-LRCLIB").performScrollTo().assertIsOn()
         compose.onNodeWithText("Cerrar").performClick()
     }
@@ -490,8 +544,8 @@ class PlayerIntegrationTest {
         start(); importTranslationFixture()
         var requests = 0
         vm.remoteLyricsRequest = { requests++; error("Disabled lookup must not send metadata") }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithText("Ver Letras").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
         compose.onNodeWithText("Buscar en LRCLIB").performClick()
         compose.onNodeWithText("Source line A").assertIsDisplayed()
         compose.runOnIdle {
@@ -519,8 +573,8 @@ class PlayerIntegrationTest {
             assertEquals(setOf("1", "2", "3"), vm.state.value.queue.map { it.id }.toSet())
             assertFalse(player.shuffleModeEnabled); assertTrue(player.playWhenReady)
         }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithText("Canción local 2").assertIsDisplayed()
         capture("automix-queue")
     }
@@ -544,8 +598,8 @@ class PlayerIntegrationTest {
         start()
         compose.runOnIdle { player.seekTo(12_345) }
         val originalEntry = vm.state.value.currentSong!!.queueEntryId
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_song_actions)).performClick()
         compose.onNodeWithText("Reproducir después").performScrollTo().performClick()
         compose.onNode(isPopup()).assertDoesNotExist()
         compose.runOnIdle {
@@ -554,7 +608,7 @@ class PlayerIntegrationTest {
             assertEquals(12_345L, vm.state.value.positionMs)
             assertFalse(player.playWhenReady)
         }
-        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithTag("playback-queue").assertIsDisplayed()
         compose.onAllNodesWithContentDescription(app.getString(R.string.drag_to_reorder)).assertCountEquals(3)
         val duplicateEntry = vm.state.value.queue[1].queueEntryId
@@ -573,8 +627,8 @@ class PlayerIntegrationTest {
         val current = vm.state.value.currentSong!!.queueEntryId
         val dragged = vm.state.value.queue[1].queueEntryId
         val target = vm.state.value.queue[2].queueEntryId
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Abrir cola").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithTag("queue-drag-$dragged", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("queue-drag-$target", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         val from = compose.onNodeWithTag("queue-drag-$dragged", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.center
@@ -598,8 +652,8 @@ class PlayerIntegrationTest {
         val current = vm.state.value.currentSong?.queueEntryId
         val before = Triple(player.replacements, player.prepares, player.seeks)
         compose.runOnIdle { assertFalse(vm.state.value.canEditShuffleQueue) }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-        compose.onNodeWithContentDescription("Opciones de canción").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_song_actions)).performClick()
         compose.onNodeWithText("Reproducir después").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Desactiva el modo aleatorio para elegir la siguiente canción.").assertExists()
         compose.onNodeWithText("Añadir a la cola").performScrollTo().assertIsEnabled().performClick()

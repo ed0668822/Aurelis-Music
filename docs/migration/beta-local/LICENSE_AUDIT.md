@@ -560,3 +560,31 @@ Fuentes de solo lectura:
 - `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt` SHA256 `d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017`.
 - `app/src/main/java/com/music/bitchord/ui/screens/LibraryPhoneParts.kt` SHA256 `ffe9d6c50375f79f897520aa84c0e235c1c7c2c52ea2fa2b16638edcd2ddc45d`.
 - `app/src/main/java/com/music/bitchord/ui/replay/ReplayScreen.kt` SHA256 `310d8d9f23e834b81b68d4a0f9661b839f36ed280004dad15acec5e9454b53a5`.
+
+## B05 — MiniPlayer y reproductor adaptable, continuación autorizada
+
+Referencia fija BitChord `b690dc146009d4815825fa4a20815ef2e4ee8898`, solo lectura, GPLv3;
+conservar autores originales y sus condiciones. Cabeceras de Aurelis se refieren
+solo a sus contribuciones, sin atribuir or-later al material upstream.
+
+| Fuente original en BitChord | SHA256 |
+|---|---|
+| `app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt` | `f294dfd1b75d1808fb86df2a93580efc87783daef5bc774f4ff9c3f6f7317b69` |
+| `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/NowPlayingScreen.kt` | `1d5ceae1f1c045881a49601f3fa535ecd4cf8efe45837fc97990045e3ed9024e` |
+| `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/PlayerControls.kt` | `cfd2de8f97375f7c697c590d7984de596408c734ef055b17565b47abbfb4742f` |
+| `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/LandscapePlayer.kt` | `04ccd317d0e37822dbc0fd3b5ea041c36a296c396af20c3e91f7d15774ca013d` |
+| `sharedUi/src/commonMain/composeResources/drawable/ic_player_play.xml` | `f2b702566a74bb38587e024b28f01e9c8b58bc9ca413bd75e966ce31225bf775` |
+| `sharedUi/src/commonMain/composeResources/drawable/ic_player_pause.xml` | `2cc9323997bff6e3497c910bfb2728908d9bb9955db9be0fc233ed2c5d19eb6c` |
+| `sharedUi/src/commonMain/composeResources/drawable/ic_player_next.xml` | `4d8ed3715313f148ede007192c124aa3cbd3f93bed6ce185d50ca5f54c84c3b6` |
+| `sharedUi/src/commonMain/composeResources/drawable/ic_player_previous.xml` | `620f786251c187bbf8f4cd5e4947349073104ca3dba620442bd7d4fe674b9670` |
+
+Adaptados: fila/art40dp, padding12/8dp, texto a dos líneas, hueco8dp entre botones,
+next25dp/escalaY0,85, pill50%; TransportRow con tamaños92/76dp y glyphs74/58dp,
+skips56dp/50–44dp y asignación natural del deck al pie, carátula en espacio restante.
+NowPlayingScreen.kt y PlayerControls.kt locales conservan controlador y callbacks.
+LandscapePlayer.kt local se reutiliza sin sustituirlo. Los cuatro XML de glyphs
+conservan pathData; se añaden comentarios y tint se aplica en Compose. No se añade
+cabecera de autoría Aurelis a esos gráficos upstream. PlayerVolumeRow y textos ES/EN
+son aportes propios; volumen Android STREAM_MUSIC, sin nueva dependencia/host falso.
+No se portan fuentes, video, servidor, streaming, party, TV, Wear o Auto. Ninguna
+limpieza masiva de licencias. Pruebas nuevas solo Actions para validación Android.

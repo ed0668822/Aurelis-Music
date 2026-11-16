@@ -67,7 +67,7 @@ class HomeLocalTest {
             onAutoMix = { mixes++ }, onOpenFavorites = { favorites++ },
         ) } } }
         compose.onNodeWithText("CONTINUAR ESCUCHANDO").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Reproducir").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_play)).performClick()
         compose.onNode(hasText("Favoritos") and hasClickAction()).performClick()
         compose.onNodeWithText("AutoMix · Selección local").performClick()
         compose.runOnIdle { assertEquals(1, openedPlayer); assertEquals(0, restarted); assertEquals(1, mixes); assertEquals(1, favorites) }

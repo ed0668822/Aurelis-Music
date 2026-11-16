@@ -110,20 +110,30 @@ class MiniPlayerInteractionTest {
                 }
             }
         } }
-        for (label in listOf("Reproducir", "Siguiente", "Abrir reproductor")) {
+        for (label in listOf(com.music.aurelis.R.string.player_play, com.music.aurelis.R.string.player_next).map { compose.activity.getString(it) }) {
             // Material's visual state layer is 40dp; verify the expanded hit target.
             compose.onNodeWithContentDescription(label)
                 .assertTouchWidthIsEqualTo(48.dp)
                 .assertTouchHeightIsEqualTo(48.dp)
         }
-        compose.onNodeWithContentDescription("Reproducir").performClick()
-        compose.onNodeWithContentDescription("Siguiente").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_play)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).performClick()
         compose.runOnIdle { assertEquals(1, plays); assertEquals(1, next); assertEquals(0, opened) }
-        compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).assertWidthIsEqualTo(320.dp).performClick()
         compose.onNodeWithTag("mini-player").performTouchInput {
             swipe(center, center + Offset(0f, -180f), durationMillis = 400)
         }
         compose.runOnIdle { assertEquals(2, opened); assertEquals(1, plays); assertEquals(1, next) }
+    }
+
+    @Test fun bufferingKeepsPauseActionAndDoesNotTurnItIntoExpansion() {
+        var pauses = 0
+        var opened = 0
+        compose.setContent { AurelisTheme {
+            MiniPlayer("Tema", "Artista", true, { pauses++ }, { opened++ }, isLoading = true)
+        } }
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_pause)).assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(1, pauses); assertEquals(0, opened) }
     }
 
     @Test fun progressRemainsFiniteAndBoundedWithoutInventingQualityFromTheTitle() {

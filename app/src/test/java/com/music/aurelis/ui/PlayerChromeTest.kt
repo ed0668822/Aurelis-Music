@@ -61,9 +61,9 @@ class PlayerChromeTest {
             PlayerControls(false, false, { play++ }, { next++ }, { previous++ },
                 canNext = false, canPrevious = false, reduceAnimation = true)
         } }
-        compose.onNodeWithContentDescription("Siguiente").assertIsNotEnabled().performTouchInput { click() }
-        compose.onNodeWithContentDescription("Anterior").assertIsNotEnabled().performTouchInput { click() }
-        compose.onNodeWithContentDescription("Reproducir").performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).assertIsNotEnabled().performTouchInput { click() }
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_previous)).assertIsNotEnabled().performTouchInput { click() }
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_play)).performClick()
         compose.runOnIdle { assertEquals(0, next); assertEquals(0, previous); assertEquals(1, play) }
     }
 
