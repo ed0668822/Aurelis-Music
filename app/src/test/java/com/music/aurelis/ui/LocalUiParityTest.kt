@@ -65,12 +65,12 @@ class LocalUiParityTest {
             LocalMusicContent(LibraryState.Success(songs), songs, emptyList(), null, false, SortOption.TITLE_ASC, {},
                 {}, {}, {}, { _, _ -> }, {}, { more = it.id }, {})
         } } }
-        val first = compose.onAllNodesWithText("Local Music").onFirst().fetchSemanticsNode().boundsInRoot.top
+        val first = compose.onAllNodesWithText(compose.activity.getString(com.music.aurelis.R.string.local_music)).onFirst().fetchSemanticsNode().boundsInRoot.top
         compose.onNodeWithTag("local-music-list").performScrollToNode(hasText("Track 30"))
         compose.onNodeWithContentDescription("Opciones de Track 30").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals("30", more) }
         assertTrue(first >= 0f)
-        compose.onAllNodesWithText("Local Music").assertCountEquals(0)
+        compose.onAllNodesWithText(compose.activity.getString(com.music.aurelis.R.string.local_music)).assertCountEquals(0)
     }
 
     @Test fun folderTabOpensTheSameLocalCollectionAndDoesNotStartAnotherPlayer() {

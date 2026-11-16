@@ -16,6 +16,15 @@ ahora terminar MiniPlayer y pantalla de reproducción, vertical/horizontal, junt
 dentro de60 archivos. El resto del plan conserva su orden y autorización por entrega.
 Planificar B09 no autoriza iniciarlo. Avisar tras cada push y registrar resultados reales.
 
+## Continuación autorizada y forma de entrega
+
+MiniPlayer/reproductor se publicaron y corrigieron en e0fc7cad/0f639624. Base de
+esta continuación:0f639624, Main170 SUCCESS B01–B06,429 pruebas por variante;
+UI26 conserva fallo de referencia y revisión visual/Redmi pendientes. El usuario
+indica «Continúa»: se ejecuta entrega5, cápsulas y textos confirmados del ZIP.
+Después del push avisar y esperar SU resultado de GitHub antes de avanzar, sin
+vigilar conclusiones ni descargar ZIP de un «Continúa» por iniciativa propia.
+
 ## Base y referencia
 
 Aurelis HEAD publicado a50897411f26f43c163100cffd3481f6343b5e5d.

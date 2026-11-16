@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components.home
 
 import androidx.compose.foundation.background
@@ -22,6 +22,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.music.aurelis.R
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.model.LocalSong
 
@@ -35,7 +37,7 @@ fun HomeHero(
     song: LocalSong?,
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
-    eyebrow: String = "ESCUCHA AHORA",
+    eyebrow: String = stringResource(R.string.home_listen),
     portrait: Boolean = false,
 ) {
     val shape = RoundedCornerShape(if (portrait) 12.dp else 24.dp)
@@ -92,7 +94,7 @@ fun HomeHero(
                 modifier = Modifier.padding(top = 4.dp),
             )
             Text(
-                text = song?.artist ?: "Tu música local",
+                text = song?.artist ?: stringResource(R.string.home_local_music),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.70f),
                 maxLines = 1,
@@ -113,7 +115,7 @@ fun HomeHero(
         ) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
-                contentDescription = "Reproducir",
+                contentDescription = stringResource(R.string.player_play),
                 tint = Color.Black,
                 modifier = Modifier.size(28.dp),
             )

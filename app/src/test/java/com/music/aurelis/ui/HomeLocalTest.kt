@@ -1,3 +1,4 @@
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui
 
 import android.graphics.Bitmap
@@ -35,6 +36,23 @@ class HomeLocalTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
     private val song = LocalSong("1", "Canción local", "Artista local", "Álbum local",
         "content://media/external/audio/media/1", null, 60_000, null, 1, 2026, 1000)
+
+    @Test
+    @Config(qualifiers = "es-rES-w360dp-h800dp-mdpi")
+    fun welcomeBannerUsesRealCountsWithSpanishSingularAndPlural() {
+        var rows by mutableStateOf(listOf(song))
+        var favorites = 0
+        compose.setContent { AurelisTheme {
+            HomeScreen(rows, rows, rows, emptyList(), emptyList(), rememberLazyListState(),
+                {}, {}, {}, {}, null, false, contentPadding = PaddingValues(),
+                libraryState = LibraryState.Success(rows), onOpenFavorites = { favorites++ })
+        } }
+        compose.onNodeWithText("1 canción en este dispositivo").assertIsDisplayed()
+        compose.runOnIdle { rows = listOf(song, song.copy(id = "2", title = "Otra canción")) }
+        compose.onNodeWithText("2 canciones en este dispositivo").assertIsDisplayed()
+        compose.onNode(hasText("Favoritos") and hasClickAction()).performClick()
+        compose.runOnIdle { assertEquals(1, favorites) }
+    }
 
     @Test fun loadingPermissionErrorAndEmptyLibraryNeverShowInventedContent() {
         var state: LibraryState by mutableStateOf(LibraryState.Loading)

@@ -441,4 +441,45 @@
     <string name="player_no_lyrics_preview">Show lyrics</string>
     <string name="player_lyrics_preview">Current lyric</string>
     <string name="player_timer_active">Sleep timer active</string>
+
+    <!-- Local library/search chrome; user metadata remains untouched. -->
+    <string name="local_music_audio_files">Audio files on device</string>
+    <string name="local_music_summary">%1$s · %2$d min</string>
+    <string name="local_music_playlists">Playlists</string>
+    <string name="local_music_grant">Grant music access</string>
+    <string name="local_music_retry">Retry</string>
+    <string name="local_music_empty">No songs</string>
+    <string name="local_music_manage_playlists">Manage playlists</string>
+    <string name="local_music_no_results">No results</string>
+    <string name="local_music_no_artists">No artists</string>
+    <string name="local_music_no_albums">No albums</string>
+    <string name="local_music_search_open">Search this list</string>
+    <string name="local_music_search_close">Close list search</string>
+    <string name="local_music_sort">Sort</string>
+    <string name="local_music_sort_library">Sort library</string>
+    <string name="local_music_refresh">Refresh</string>
+    <string name="local_search_hint">Search songs, artists, albums…</string>
+    <string name="local_search_all">All</string>
+    <string name="local_search_genres">Genres</string>
+    <string name="local_search_title">Title</string>
+    <string name="local_search_artist">Artist</string>
+    <string name="local_search_album">Album</string>
+    <string name="local_search_playlist">Playlist</string>
+    <string name="local_search_genre">Genre</string>
+    <string name="local_search_start">Search your local music</string>
+    <string name="local_search_type">Type to search</string>
+    <string name="local_search_recent">Recent searches</string>
+    <string name="local_search_clear_history">Clear</string>
+    <string name="local_search_remove_history">Remove search: %1$s</string>
+    <string name="local_sort_title_asc">Title (A-Z)</string>
+    <string name="local_sort_title_desc">Title (Z-A)</string>
+    <string name="local_sort_artist_asc">Artist (A-Z)</string>
+    <string name="local_sort_artist_desc">Artist (Z-A)</string>
+    <string name="local_sort_album_asc">Album (A-Z)</string>
+    <string name="local_sort_album_desc">Album (Z-A)</string>
+    <string name="local_sort_duration_asc">Duration (shortest)</string>
+    <string name="local_sort_duration_desc">Duration (longest)</string>
+    <plurals name="home_device_song_count"><item quantity="one">%d song on this device</item><item quantity="other">%d songs on this device</item></plurals>
+    <string name="home_local_music">Your local music</string>
+    <string name="home_creating_mix">Creating mix…</string>
 </resources>

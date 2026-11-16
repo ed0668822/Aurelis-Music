@@ -590,3 +590,14 @@ Local adaptation keeps a single Media3 controller/service, real device music vol
 local favorites, local queue/lyrics, source-quality disclosure and existing tools.
 Streaming/video/party/output-server logic is excluded. No fonts/media are copied.
 Original upstream hashes and exact scope are in docs/migration/beta-local/LICENSE_AUDIT.md.
+
+B05 UI follow-up — local action pills and ES/EN presentation
+LocalDetailHeader.LocalActionPill adapts DetailScreen.kt ActionPill at BitChord
+b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3): 50dp pill, 420dp row cap, 14dp
+gap, filled Play/outlined Shuffle, icon spacing and Resume haptic. Aurelis keeps
+its existing local callbacks and uses draw-only fill/border inside the backdrop.
+Inner padding is16dp to accommodate local labels; border/fill adapt to theme ink.
+No backdrop rim sampler, download/remote library action or dependency is introduced.
+Original contributors and GPLv3 terms remain applicable. Local translations,
+plural handling and sort-label presentation are Aurelis contributions; media names,
+queries and stored enum identities are preserved. See LICENSE_AUDIT for source hash.

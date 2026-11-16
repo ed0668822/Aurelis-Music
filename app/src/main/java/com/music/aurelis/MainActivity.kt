@@ -424,16 +424,16 @@ internal fun AurelisNavigationContent(
                 val destinations = if (key.isBlank()) emptyList() else buildList {
                     val allTypes = searchCategory == LocalSearchCategory.ALL
                     if (allTypes || searchCategory == LocalSearchCategory.ALBUMS) librarySuccess?.albums?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
-                        add(LocalSearchDestination(it.name, "Álbum") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) })
+                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_album)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) })
                     }
                     if (allTypes || searchCategory == LocalSearchCategory.ARTISTS) librarySuccess?.artists?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
-                        add(LocalSearchDestination(it.name, "Artista") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) })
+                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_artist)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) })
                     }
                     if (allTypes || searchCategory == LocalSearchCategory.PLAYLISTS) userState.playlists.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
-                        add(LocalSearchDestination(it.name, "Playlist") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it.id)) })
+                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_playlist)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it.id)) })
                     }
                     if (allTypes || searchCategory == LocalSearchCategory.GENRES) genreGroups.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
-                        add(LocalSearchDestination(it.name, "Género") { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key)) })
+                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_genre)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key)) })
                     }
                 }
                 val results = remember(searchQuery, allSongs, libraryUiState.sortOption) {

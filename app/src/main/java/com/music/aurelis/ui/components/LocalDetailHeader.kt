@@ -4,13 +4,22 @@ package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import com.music.aurelis.R
+import com.music.aurelis.ui.haptics.Haptic
+import com.music.aurelis.ui.haptics.rememberHaptics
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
@@ -45,14 +54,26 @@ internal fun LocalDetailHeader(title: String, subtitle: String, metadata: String
             textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Text(metadata, Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (canPlay) Row(Modifier.widthIn(max = 440.dp).fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            TextButton(onClick = onPlay, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                Icon(AurelisIcons.Play, null); Spacer(Modifier.width(8.dp)); Text("Play")
-            }
-            TextButton(onClick = onShuffle, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                Icon(AurelisIcons.Shuffle, null); Spacer(Modifier.width(8.dp)); Text("Shuffle")
-            }
+        if (canPlay) Row(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            LocalActionPill(AurelisIcons.Play, stringResource(R.string.collection_play), onPlay, true, Modifier.weight(1f))
+            LocalActionPill(AurelisIcons.Shuffle, stringResource(R.string.shuffle), onShuffle, false, Modifier.weight(1f))
         }
+    }
+}
+
+/** BitChord DetailScreen.ActionPill geometry; safe draw-only surface inside the backdrop. */
+@Composable
+private fun LocalActionPill(icon: ImageVector, label: String, onClick: () -> Unit, filled: Boolean, modifier: Modifier) {
+    val haptics = rememberHaptics()
+    val ink = if (filled) Color.Black else MaterialTheme.colorScheme.onSurface
+    Row(modifier.height(50.dp).clip(CircleShape)
+        .background(if (filled) Color.White else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
+        .then(if (filled) Modifier else Modifier.border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape))
+        .clickable(role = Role.Button) { haptics.play(Haptic.Resume); onClick() }
+        .padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(18.dp), tint = ink)
+        Spacer(Modifier.width(8.dp))
+        Text(label, style = MaterialTheme.typography.titleMedium, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

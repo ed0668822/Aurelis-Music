@@ -588,3 +588,18 @@ cabecera de autoría Aurelis a esos gráficos upstream. PlayerVolumeRow y textos
 son aportes propios; volumen Android STREAM_MUSIC, sin nueva dependencia/host falso.
 No se portan fuentes, video, servidor, streaming, party, TV, Wear o Auto. Ninguna
 limpieza masiva de licencias. Pruebas nuevas solo Actions para validación Android.
+
+## B05 — cápsulas locales y presentación ES/EN
+
+Fuente: BitChord `b690dc146009d4815825fa4a20815ef2e4ee8898`, GPLv3,
+`app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt`,
+SHA256 `21b88b74aff957481e54795b1ca069a07322aa4f28494d3b800cde5f61a66855`. Se adapta ActionPill para los callbacks locales ya existentes:
+altura50, max420, gap14, icon18 y separación8, cápsulas rellena/con borde, háptico
+Resume. Padding interno16 para etiquetas locales; borde/fill siguen tinta del tema.
+No se introduce liquidGlassRim ni muestreo del propio backdrop; se conservan las
+correcciones RenderNode. Sin descargas/remoto/biblioteca online/dependencias nuevas.
+
+Traducciones ES/EN, plurales y helper de etiquetas de orden son propios. No se
+relicencia material upstream ni se retiran atribuciones. Nombres/consultas/catálogos
+y enum.name persistidos no se traducen ni migran. Cabeceras propias mantenidas; sin
+limpieza masiva. El resto de NOTICE/licencias anteriores sigue aplicando.

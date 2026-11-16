@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
@@ -171,7 +172,7 @@ fun HomeScreen(
                                 .clickable(enabled = !isCreatingMix, onClick = onAutoMix).padding(20.dp),
                                 verticalArrangement = Arrangement.SpaceBetween) {
                                 Icon(AurelisIcons.Shuffle, null, Modifier.size(48.dp))
-                                Text(if (isCreatingMix) "Creando mezcla…" else stringResource(R.string.home_automix),
+                                Text(stringResource(if (isCreatingMix) R.string.home_creating_mix else R.string.home_automix),
                                     style = MaterialTheme.typography.headlineSmall)
                             }
                         }
@@ -183,7 +184,7 @@ fun HomeScreen(
         if (hero == null) item(key = "automix") {
             TextButton(onClick = onAutoMix, enabled = !isCreatingMix, modifier = Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER).heightIn(min = 48.dp)) {
                 Icon(AurelisIcons.Shuffle, null); Spacer(Modifier.width(8.dp))
-                Text(if (isCreatingMix) "Creando mezcla…" else stringResource(R.string.home_automix))
+                Text(stringResource(if (isCreatingMix) R.string.home_creating_mix else R.string.home_automix))
             }
         }
         if (mixError != null) item(key = "mix-error") { Text(mixError, modifier = Modifier.padding(horizontal = PAGE_GUTTER), color = MaterialTheme.colorScheme.error) }
@@ -299,7 +300,7 @@ private fun LocalWelcomeBanner(count: Int, onFavorites: () -> Unit, onPlaylists:
         Column(Modifier.background(Color.Black.copy(alpha = 0.35f)).fillMaxWidth().padding(20.dp)) {
             Text(profile.profile.name, style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold, color = Color.White)
-            Text("$count canciones en este dispositivo", color = Color.White)
+            Text(pluralStringResource(R.plurals.home_device_song_count, count, count), color = Color.White)
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onFavorites, colors = androidx.compose.material3.ButtonDefaults.textButtonColors(

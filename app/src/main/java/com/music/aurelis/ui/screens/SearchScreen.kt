@@ -1,4 +1,4 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.background
@@ -34,7 +34,10 @@ import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.data.model.SortOption
 import com.music.aurelis.ui.components.*
 
-enum class LocalSearchCategory(val label: String) { ALL("Todo"), SONGS("Canciones"), ALBUMS("Álbumes"), ARTISTS("Artistas"), PLAYLISTS("Playlists"), GENRES("Géneros") }
+enum class LocalSearchCategory(@get:androidx.annotation.StringRes val labelRes: Int) {
+    ALL(R.string.local_search_all), SONGS(R.string.songs), ALBUMS(R.string.albums),
+    ARTISTS(R.string.artists), PLAYLISTS(R.string.local_music_playlists), GENRES(R.string.local_search_genres)
+}
 
 data class LocalSearchDestination(val title: String, val detail: String, val onOpen: () -> Unit)
 
@@ -86,14 +89,14 @@ fun SearchScreen(
                 onQueryChange = onQueryChange,
                 onSubmit = onSubmit,
                 focusRequester = focusRequester,
-                placeholder = "Buscar canciones, artistas, álbumes…",
+                placeholder = stringResource(R.string.local_search_hint),
             ) }, actions = { onOpenProfile?.let { LocalProfileButton(it) } })
         Column(modifier = Modifier.weight(1f).fillMaxWidth()
             .then(contentBackdropModifier).padding(top = topPadding)) {
-            if (results != null) LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
+            if (results != null) LazyRow(modifier = Modifier.testTag("local-search-categories"), contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(LocalSearchCategory.entries.toList()) { _, item ->
-                    SearchFilterChip(item.label, category == item, { onCategoryChange(item) })
+                    SearchFilterChip(stringResource(item.labelRes), category == item, { onCategoryChange(item) })
                 }
             }
             if (results != null && category in listOf(LocalSearchCategory.ALL, LocalSearchCategory.SONGS)) {
@@ -104,17 +107,17 @@ fun SearchScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     SearchFilterChip(
-                        label = "Título",
+                        label = stringResource(R.string.local_search_title),
                         selected = filter == SortOption.TITLE_ASC,
                         onClick = { onFilterChange(SortOption.TITLE_ASC) },
                     )
                     SearchFilterChip(
-                        label = "Artista",
+                        label = stringResource(R.string.local_search_artist),
                         selected = filter == SortOption.ARTIST_ASC,
                         onClick = { onFilterChange(SortOption.ARTIST_ASC) },
                     )
                     SearchFilterChip(
-                        label = "Álbum",
+                        label = stringResource(R.string.local_search_album),
                         selected = filter == SortOption.ALBUM_ASC,
                         onClick = { onFilterChange(SortOption.ALBUM_ASC) },
                     )
@@ -135,7 +138,7 @@ fun SearchScreen(
                 when {
                     results == null && query.isEmpty() -> {
                         if (history.isEmpty()) {
-                            item { MessageState("Busca tu música local") }
+                            item { MessageState(stringResource(R.string.local_search_start)) }
                         } else {
                             recentSearches(
                                 history = history,
@@ -145,9 +148,9 @@ fun SearchScreen(
                             )
                         }
                     }
-                    results == null -> item { MessageState("Escribe para buscar") }
+                    results == null -> item { MessageState(stringResource(R.string.local_search_type)) }
                     results.isEmpty() && destinations.isEmpty() -> item {
-                        MessageState("No hay resultados para \"$query\"")
+                        MessageState(stringResource(R.string.search_library_no_results, query))
                     }
                     else -> {
                         itemsIndexed(results, key = { index, song -> "${song.id}_$index" }) { index, song ->
@@ -208,13 +211,13 @@ private fun androidx.compose.foundation.lazy.LazyListScope.recentSearches(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Búsquedas recientes",
+                text = stringResource(R.string.local_search_recent),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "Borrar",
+                text = stringResource(R.string.local_search_clear_history),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -252,7 +255,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.recentSearches(
             ) {
                 Icon(
                     Icons.Rounded.Close,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.local_search_remove_history, term),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp),
                 )

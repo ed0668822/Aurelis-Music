@@ -23,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.music.aurelis.R
 import com.music.aurelis.data.model.SortOption
 
 /**
@@ -43,7 +45,7 @@ fun SortMenu(
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.Sort,
-            contentDescription = "Ordenar biblioteca",
+            contentDescription = stringResource(R.string.local_music_sort_library),
             tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(22.dp),
         )
@@ -62,7 +64,7 @@ fun SortMenu(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = option.label,
+                            text = option.localizedLabel(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),

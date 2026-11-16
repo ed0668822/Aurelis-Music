@@ -18,6 +18,36 @@
 > eliminaciones de la entrega; múltiples commits no reinician su presupuesto.
 > El usuario autoriza continuar con la primera entrega del plan B05_UI_EVIDENCE_PLAN.
 
+### B05 — pendientes confirmados del ZIP: cápsulas y textos ES/EN
+
+El usuario dice «Continúa» tras indicar que esperemos su resultado de GitHub; se
+continúa con entrega5 del plan, sin repetir MiniPlayer/reproductor. Base0f639624:
+Main170 SUCCESS B01–B06,429 por variante y90,35% confirmados en logs del turno
+anterior; UI26 FAILURE en referencia, Aurelis18/18 por material, casos nativos35/36
+PASS. No declarar paridad total ni trasladar ese verde al nuevo SHA.
+
+Cápsulas50/max420/gap14 adaptadas de ActionPill de BitChord fijo, Play relleno y
+Shuffle con borde, mismos callbacks y conjunto de canciones; no muestreo del propio
+backdrop ni funciones remotas. Se localizan Música local y búsqueda: títulos,
+subtítulos, metadatos/plurales, pestañas, acciones, vacíos, historial, filtros y
+etiquetas de destinos. Helper UI para SortOption sin cambiar valores persistidos.
+Inicio usa plural real y etiquetas de carga/hero accesibles ES/EN; datos musicales,
+perfiles y consultas permanecen originales. Se conserva navegación/estado/backdrop.
+
+Tres regresiones Android/JVM preparadas: cápsulas EN50dp con Play/Shuffle/orden y
+nombres reales preservados; búsqueda EN con categorías/consulta100% e historial;
+Home ES singular/plural y Favoritos conectado. Tests previos de scroll actualizan
+solo título localizado. No ejecutados localmente; compilación/Lint/APK/tests Android
+SOLO GitHub Actions. Dos revisiones del mismo agente, no independientes. Ver
+B05_LOCAL_UI_FOLLOWUP.md. B07/B09 sin iniciar y prueba física pendiente.
+
+Regla vigente de trabajo: tras push, avisar y ESPERAR que el usuario comunique si
+GitHub compiló correctamente o falló. No vigilar conclusiones por iniciativa propia
+ni iniciar otra entrega. Se permite dejar CI iniciado y sus enlaces para revisión.
+«Continúa» del usuario confirma avanzar; si informa error, leer evidencia real y
+reparar la misma entrega antes de otro bloque. Máximo60 archivos distintos por
+mensaje/entrega, incluidos sus commits de corrección. Sin nueva Release oficial.
+
 ### B05 — corrección de compilación del primer intento del player
 
 Run169/43799755349/e0fc7cad: fallo en compileDebugKotlin por acceso a favorites

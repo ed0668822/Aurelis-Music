@@ -460,4 +460,45 @@
     <string name="player_no_lyrics_preview">Ver Letras</string>
     <string name="player_lyrics_preview">Letra actual</string>
     <string name="player_timer_active">Temporizador activo</string>
+
+    <!-- Local library/search chrome; user metadata remains untouched. -->
+    <string name="local_music_audio_files">Archivos de audio en el dispositivo</string>
+    <string name="local_music_summary">%1$s · %2$d min</string>
+    <string name="local_music_playlists">Playlists</string>
+    <string name="local_music_grant">Conceder acceso a música</string>
+    <string name="local_music_retry">Reintentar</string>
+    <string name="local_music_empty">No hay canciones</string>
+    <string name="local_music_manage_playlists">Gestionar playlists</string>
+    <string name="local_music_no_results">Sin resultados</string>
+    <string name="local_music_no_artists">No hay artistas</string>
+    <string name="local_music_no_albums">No hay álbumes</string>
+    <string name="local_music_search_open">Buscar en esta lista</string>
+    <string name="local_music_search_close">Cerrar búsqueda de esta lista</string>
+    <string name="local_music_sort">Ordenar</string>
+    <string name="local_music_sort_library">Ordenar biblioteca</string>
+    <string name="local_music_refresh">Recargar</string>
+    <string name="local_search_hint">Buscar canciones, artistas, álbumes…</string>
+    <string name="local_search_all">Todo</string>
+    <string name="local_search_genres">Géneros</string>
+    <string name="local_search_title">Título</string>
+    <string name="local_search_artist">Artista</string>
+    <string name="local_search_album">Álbum</string>
+    <string name="local_search_playlist">Playlist</string>
+    <string name="local_search_genre">Género</string>
+    <string name="local_search_start">Busca tu música local</string>
+    <string name="local_search_type">Escribe para buscar</string>
+    <string name="local_search_recent">Búsquedas recientes</string>
+    <string name="local_search_clear_history">Borrar</string>
+    <string name="local_search_remove_history">Quitar búsqueda: %1$s</string>
+    <string name="local_sort_title_asc">Título (A-Z)</string>
+    <string name="local_sort_title_desc">Título (Z-A)</string>
+    <string name="local_sort_artist_asc">Artista (A-Z)</string>
+    <string name="local_sort_artist_desc">Artista (Z-A)</string>
+    <string name="local_sort_album_asc">Álbum (A-Z)</string>
+    <string name="local_sort_album_desc">Álbum (Z-A)</string>
+    <string name="local_sort_duration_asc">Duración (corta)</string>
+    <string name="local_sort_duration_desc">Duración (larga)</string>
+    <plurals name="home_device_song_count"><item quantity="one">%d canción en este dispositivo</item><item quantity="other">%d canciones en este dispositivo</item></plurals>
+    <string name="home_local_music">Tu música local</string>
+    <string name="home_creating_mix">Creando mezcla…</string>
 </resources>
