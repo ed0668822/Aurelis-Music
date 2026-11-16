@@ -71,11 +71,8 @@ fun MiniPlayer(
         tonalElevation = if (glass) 0.dp else 4.dp, onClick = onClick) {
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).playerDockArtwork(dock, songId, mini = true).clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.MusicNote, null, Modifier.size(24.dp))
-                    AsyncImage(artworkUri, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                }
+                AnimatedArtwork(songKey = songId, artworkUri = artworkUri, size = 40.dp, corner = 8.dp,
+                    modifier = Modifier.playerDockArtwork(dock, songId, mini = true))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)

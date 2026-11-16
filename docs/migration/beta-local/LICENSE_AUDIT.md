@@ -611,3 +611,10 @@ Adaptación de geometría/player, wallet/ranking Replay y grupos de ajustes sobr
 componentes Aurelis existentes; agregación local y traducciones propias.
 Fuentes/hashes y diferencias autorizadas en PLAYER_REPLAY_SETTINGS_FOLLOWUP.md.
 No se elimina ninguna atribución ni se cambia GPLv3 a «or later».
+
+## Player/letras y transición
+
+BitChord fijo b690dc146009d4815825fa4a20815ef2e4ee8898 GPLv3: disposición y
+medidas de PlayerLyrics/NowPlayingScreen y patrón de compartir sobre componentes
+locales ya adaptados. Fuentes y hashes en PLAYER_LYRICS_TRANSITIONS.md. Se conserva
+licencia y créditos; carga retenida, renderer PNG y traducciones son propios.

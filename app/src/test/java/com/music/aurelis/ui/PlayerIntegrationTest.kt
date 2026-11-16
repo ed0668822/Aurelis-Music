@@ -492,6 +492,12 @@ class PlayerIntegrationTest {
             // Positive delays lyrics: media1500 - offset500 = lyric1000.
             compose.runOnIdle { assertEquals(1500L, vm.state.value.positionMs) }
             compose.onNodeWithText("Segunda frase propia").assertIsSelected()
+            val positionBeforeSharing = vm.state.value.positionMs
+            compose.onNodeWithTag("lyrics-line-0").performTouchInput { longClick() }
+            compose.onNodeWithText(compose.activity.getString(R.string.lyrics_share_title)).assertIsDisplayed()
+            compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.onNodeWithText("Segunda frase propia").assertIsSelected()
+            compose.runOnIdle { assertEquals(positionBeforeSharing, vm.state.value.positionMs) }
             capture("synced-lyrics")
             compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(-500) }
             compose.onNodeWithText("Segunda frase propia").performClick()

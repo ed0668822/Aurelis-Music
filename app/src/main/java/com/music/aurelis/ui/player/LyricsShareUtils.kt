@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background // 👈 IMPORT AÑADIDO
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +57,7 @@ internal fun ShareAction(
 
     Row(
         modifier = modifier
+            .clickable(enabled = enabled, onClick = onClick)
             .clip(RoundedCornerShape(14.dp))
             .background(background)
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -88,10 +90,14 @@ internal suspend fun saveToGallery(context: Context, bitmap: Bitmap, title: Stri
             }
             val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
                 ?: return@runCatching false
-            context.contentResolver.openOutputStream(uri)?.use {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            try {
+                val stream = context.contentResolver.openOutputStream(uri) ?: error("Image output unavailable")
+                stream.use { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+                true
+            } catch (error: Exception) {
+                context.contentResolver.delete(uri, null, null)
+                throw error
             }
-            true
         }.getOrDefault(false)
     }
 
@@ -102,7 +108,7 @@ internal suspend fun cacheForSharing(context: Context, bitmap: Bitmap, filename:
             cachePath.mkdirs()
             val file = File(cachePath, filename)
             FileOutputStream(file).use {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
             }
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         }.getOrNull()

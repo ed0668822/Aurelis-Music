@@ -38,6 +38,7 @@ import com.music.aurelis.ui.graphics.ColorUtils
 import com.music.aurelis.ui.graphics.forPixelAccess
 import com.music.aurelis.ui.graphics.paletteSwatches
 import com.music.aurelis.ui.graphics.toImageBitmap
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -238,10 +239,11 @@ fun cyclingMeshPalette(
 @Composable
 fun rememberArtworkColors(artworkUri: Uri?): MeshPalette {
     val context = LocalPlatformContext.current
-    var palette by remember(artworkUri) { mutableStateOf(MeshPalette(FallbackColors)) }
+    val transition = remember(context) { ArtworkTransition(MeshPalette(FallbackColors)) }
 
     LaunchedEffect(artworkUri) {
-        if (artworkUri == null) return@LaunchedEffect
+        val generation = transition.begin()
+        if (artworkUri == null) { transition.complete(generation, MeshPalette(FallbackColors)); return@LaunchedEffect }
         val request = ImageRequest.Builder(context)
             .data(artworkUri)
             .size(128)
@@ -250,11 +252,17 @@ fun rememberArtworkColors(artworkUri: Uri?): MeshPalette {
         val result = runCatching {
             SingletonImageLoader.get(context).execute(request)
         }.getOrNull()
-        val bitmap = (result as? SuccessResult)?.image?.toImageBitmap() ?: return@LaunchedEffect
+        val bitmap = (result as? SuccessResult)?.image?.toImageBitmap()
+        if (bitmap == null) {
+            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+            transition.complete(generation, MeshPalette(FallbackColors))
+            return@LaunchedEffect
+        }
         val colors = withContext(Dispatchers.Default) { paletteOf(bitmap) }
-        palette = MeshPalette(colors)
+        kotlinx.coroutines.currentCoroutineContext().ensureActive()
+        transition.complete(generation, MeshPalette(colors))
     }
-    return palette
+    return transition.value
 }
 
 /**

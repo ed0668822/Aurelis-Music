@@ -491,4 +491,23 @@
     <string name="replay_clear_confirm">Clear history?</string>
     <string name="replay_clear_hint">Listening statistics for this profile will be cleared. Your playlists and favorites will be kept.</string>
     <string name="player_playing_album">Playing from %1$s</string>
+    <string name="lyrics_ui_close">Close lyrics</string>
+    <string name="lyrics_ui_tools">Lyrics tools</string>
+    <string name="lyrics_ui_unavailable">Lyrics unavailable</string>
+    <string name="lyrics_ui_pause_follow">Pause following</string>
+    <string name="lyrics_ui_follow">Follow lyrics</string>
+    <string name="lyrics_ui_sync_disabled">Synchronization disabled in settings</string>
+    <string name="lyrics_ui_unsynced">Unsynced lyrics</string>
+    <string name="lyrics_ui_instrumental">Instrumental</string>
+    <string name="lyrics_ui_offset">Adjust synchronization</string>
+    <string name="lyrics_ui_translate">Translate</string>
+    <string name="lyrics_ui_import">Import LRC / TTML</string>
+    <string name="lyrics_ui_cached">Cached</string>
+    <string name="lyrics_ui_translating">Translating…</string>
+    <string name="lyrics_ui_translation_failed">Could not translate. Check the server, connection or languages and retry.</string>
+    <string name="lyrics_ui_same_language">Lyrics are already in the selected language.</string>
+    <string name="lyrics_ui_hide_translation">Hide translation</string>
+    <string name="lyrics_ui_loading">Loading lyrics…</string>
+    <string name="lyrics_ui_missing">No local or saved lyrics. Import an LRC or search LRCLIB (sends title and artist).</string>
+    <string name="lyrics_ui_translation_language">Translation: %1$s</string>
 </resources>

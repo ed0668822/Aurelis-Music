@@ -64,22 +64,13 @@ internal fun AndroidLyricsShareSheet(
         image = null
         failed = false
         saved = false
-        // Nota: La generación real de la imagen se omite aquí para mantenerlo simple,
-        // puedes usar un Canvas de Android para dibujar el texto de las letras.
-        // Por ahora generamos un placeholder transparente para que compile.
-        image = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888).apply {
-            val canvas = android.graphics.Canvas(this)
-            canvas.drawColor(android.graphics.Color.BLACK)
-            val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = 60f
-                isAntiAlias = true
-            }
-            var y = 200f
-            request.lines.take(10).forEach { line ->
-                canvas.drawText(line.text, 100f, y, paint)
-                y += 100f
-            }
+        image = try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { renderLyricsShare(request, story) }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            failed = true
+            null
         }
     }
 
@@ -167,6 +158,7 @@ internal fun AndroidLyricsShareSheet(
                             haptics.play(Haptic.Tap)
                             scope.launch {
                                 saved = saveToGallery(context, drawn, request.song.title, "aurelis-lyrics")
+                                if (!saved) failed = true
                             }
                         }
                     },
@@ -182,7 +174,7 @@ internal fun AndroidLyricsShareSheet(
                         if (drawn != null) {
                             haptics.play(Haptic.Tap)
                             scope.launch {
-                                val uri = cacheForSharing(context, drawn, "lyrics.png")
+                                val uri = cacheForSharing(context, drawn, "lyrics-${java.util.UUID.randomUUID()}.png")
                                 if (uri == null) {
                                     failed = true
                                     saved = false

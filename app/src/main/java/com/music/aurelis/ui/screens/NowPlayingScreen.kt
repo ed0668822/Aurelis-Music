@@ -12,6 +12,10 @@ import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.rounded.AllInclusive
 import com.music.aurelis.ui.components.PlayerVolumeRow
+import androidx.compose.material.icons.rounded.IosShare
+import com.music.aurelis.ui.player.LyricsShareRequest
+import com.music.aurelis.ui.player.LyricsShareLine
+import com.music.aurelis.ui.player.AndroidLyricsShareSheet
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.ui.platform.LocalContext
 import com.music.aurelis.AurelisApplication
@@ -162,12 +166,16 @@ fun NowPlayingScreen(
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var showInlineQueue by rememberSaveable { mutableStateOf(false) }
     val queueListState = rememberLazyListState()
+    var lyricsShareRequest by remember { mutableStateOf<LyricsShareRequest?>(null) }
+    var showLyricsTools by remember { mutableStateOf(false) }
+    LaunchedEffect(song?.queueEntryId, song?.id, isVisible) { lyricsShareRequest = null; showLyricsTools = false }
     var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
 
     BackHandler(enabled = isVisible && showInlineQueue) { showInlineQueue = false }
     BackHandler(enabled = isVisible && showLyrics) { showLyrics = false }
+    BackHandler(enabled = isVisible && lyricsShareRequest != null) { lyricsShareRequest = null }
 
     val lyricsOffset by SettingsRepository.lyricsOffsetMs.collectAsState()
     val syncEnabled by SettingsRepository.syncedLyrics.collectAsState()
@@ -407,26 +415,33 @@ fun NowPlayingScreen(
 
                     androidx.compose.material3.Surface(
                         modifier = Modifier.fillMaxSize().testTag("lyrics-overlay"),
-                        color = MaterialTheme.colorScheme.background,
-                        contentColor = MaterialTheme.colorScheme.onBackground,
+                        color = Color.Transparent,
+                        contentColor = Color.White,
                     ) {
+                        Box(Modifier.fillMaxSize().then(if (lyricsShareRequest != null) Modifier.clearAndSetSemantics { } else Modifier)) {
+                        if (meshPalette != null) MeshGradientBackground(meshPalette, Modifier.fillMaxSize(), trackKey = s.id, reduceAnimation = reduceAnimation)
+                        else Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
                         Column(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 IconButton(onClick = { showLyrics = false }) {
-                                    Icon(Icons.Rounded.KeyboardArrowDown, "Cerrar letras", tint = Color.White)
+                                    Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.lyrics_ui_close), tint = Color.White)
                                 }
-                                Spacer(Modifier.weight(1f))
-                                IconButton(onClick = { showLyricsOffset = true }) { Icon(Icons.Rounded.Timer, "Ajustar sincronización") }
+                                Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                                    Text(s.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
+                                    Text(s.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                                IconButton(onClick = { showLyricsTools = !showLyricsTools }) { Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.lyrics_ui_tools)) }
+                                IconButton(onClick = { showLyricsOffset = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.lyrics_ui_offset)) }
                                 IconButton(onClick = { showTranslationLanguages = true }) {
-                                    Icon(Icons.Rounded.Translate, "Traducir", tint = Color.White)
+                                    Icon(Icons.Rounded.Translate, stringResource(R.string.lyrics_ui_translate), tint = Color.White)
                                 }
                             }
 
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                TextButton(onClick = { importSongId = s.id; importLyrics.launch(arrayOf("text/*", "application/ttml+xml", "application/xml", "application/octet-stream", "application/x-subrip")) }) { Text("Importar LRC / TTML") }
+                            if (showLyricsTools || lines.isEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                TextButton(onClick = { importSongId = s.id; importLyrics.launch(arrayOf("text/*", "application/ttml+xml", "application/xml", "application/octet-stream", "application/x-subrip")) }) { Text(stringResource(R.string.lyrics_ui_import)) }
                                 TextButton(onClick = playbackViewModel::searchLyrics,
                                     enabled = state.lyrics !is LyricsState.Loading && state.lyricsLookup !is LyricsLookupState.Loading) {
                                     Text(stringResource(R.string.lyrics_search_lrclib))
@@ -442,22 +457,22 @@ fun NowPlayingScreen(
                                 else -> Unit
                             }
                             val loaded = state.lyrics as? LyricsState.Loaded
-                            if (loaded != null) Text(loaded.source.label + if (loaded.cached) " · Caché" else "",
+                            if (loaded != null) Text(loaded.source.label + if (loaded.cached) " · " + stringResource(R.string.lyrics_ui_cached) else "",
                                 modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelMedium)
                             when (translation) {
                                 TranslationState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Traduciendo…", modifier = Modifier.weight(1f).padding(16.dp))
+                                    Text(stringResource(R.string.lyrics_ui_translating), modifier = Modifier.weight(1f).padding(16.dp))
                                     TextButton(onClick = playbackViewModel::clearTranslation) { Text(stringResource(R.string.lyrics_cancel_translation)) }
                                 }
                                 is TranslationState.Error -> Column {
                                     Text(lyricsFailureText(translation.failure), modifier = Modifier.padding(16.dp))
                                     TextButton(onClick = { showTranslationLanguages = true }) { Text(stringResource(R.string.lyrics_retry_translation)) }
                                 }
-                                TranslationState.Failed -> Text("No se pudo traducir. Revisa el servidor, la conexión o los idiomas y reintenta.", modifier = Modifier.padding(16.dp))
-                                is TranslationState.SameLanguage -> Text("La letra ya está en el idioma elegido.", modifier = Modifier.padding(16.dp))
+                                TranslationState.Failed -> Text(stringResource(R.string.lyrics_ui_translation_failed), modifier = Modifier.padding(16.dp))
+                                is TranslationState.SameLanguage -> Text(stringResource(R.string.lyrics_ui_same_language), modifier = Modifier.padding(16.dp))
                                 is TranslationState.Done -> Row {
-                                    Text("Traducción: ${TranslationLanguages.supportedLanguages[translation.language] ?: translation.language}" + if (translation.cached) " · Caché" else "", modifier = Modifier.weight(1f).padding(16.dp))
-                                    TextButton(onClick = playbackViewModel::clearTranslation) { Text("Ocultar traducción") }
+                                    Text(stringResource(R.string.lyrics_ui_translation_language, TranslationLanguages.supportedLanguages[translation.language] ?: translation.language) + if (translation.cached) " · " + stringResource(R.string.lyrics_ui_cached) else "", modifier = Modifier.weight(1f).padding(16.dp))
+                                    TextButton(onClick = playbackViewModel::clearTranslation) { Text(stringResource(R.string.lyrics_ui_hide_translation)) }
                                 }
                                 else -> Unit
                             }
@@ -466,10 +481,10 @@ fun NowPlayingScreen(
                                     Text(
                                         modifier = Modifier.padding(16.dp),
                                         text = when (lyricsState) {
-                                            is LyricsState.Loading -> "Buscando letras..."
-                                            is LyricsState.Missing -> "No hay letras locales o guardadas. Importa un LRC o busca en LRCLIB (envía título y artista)."
+                                            is LyricsState.Loading -> stringResource(R.string.lyrics_ui_loading)
+                                            is LyricsState.Missing -> stringResource(R.string.lyrics_ui_missing)
                                             is LyricsState.Failed -> lyricsState.message
-                                            else -> "Cargando..."
+                                            else -> stringResource(R.string.lyrics_ui_loading)
                                         },
                                         color = Color.White.copy(alpha = 0.7f),
                                     )
@@ -495,9 +510,22 @@ fun NowPlayingScreen(
                                     isSynced = loaded?.isSynced == true,
                                     translatedLines = translated,
                                     syncEnabled = syncEnabled, blurUnfocused = blurLyrics && !reduceBlur,
+                                    onLineLongClick = { index -> lines.getOrNull(index)?.takeIf { !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }?.let { line ->
+                                        lyricsShareRequest = LyricsShareRequest(s, s.artworkUri, listOf(LyricsShareLine(line.text, translated?.getOrNull(index)?.text?.takeIf { it.length + line.text.length <= 250 })))
+                                    } },
                                     modifier = Modifier.weight(1f),
                                 )
                             }
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { showInlineQueue = !showInlineQueue; showLyrics = false }) { Icon(Icons.AutoMirrored.Rounded.QueueMusic, stringResource(R.string.player_queue)) }
+                                Box(Modifier.weight(1f)) { transport(true) }
+                                IconButton(enabled = lines.any { !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }, onClick = {
+                                    val index = lines.indexOfLast { it.timeMs <= com.music.aurelis.ui.player.adjustedLyricsPosition(state.positionMs, lyricsOffset) && !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }
+                                        .takeIf { it >= 0 } ?: lines.indexOfFirst { !it.isGap && it.text.isNotBlank() && it.text.length <= 250 }
+                                    lines.getOrNull(index)?.takeIf { it.text.length <= 250 }?.let { line -> lyricsShareRequest = LyricsShareRequest(s, s.artworkUri, listOf(LyricsShareLine(line.text, translated?.getOrNull(index)?.text?.takeIf { it.length + line.text.length <= 250 }))) }
+                                }) { Icon(Icons.Rounded.IosShare, stringResource(R.string.lyrics_share_title)) }
+                            }
+                        }
                         }
                     }
                 }
@@ -511,7 +539,7 @@ fun NowPlayingScreen(
                             background = {}, modifier = Modifier.testTag("player-landscape"), reduceMotion = reduceAnimation,
                             artwork = { artwork(it, 320.dp) },
                             actions = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                if (showLyrics || showInlineQueue) { transport(true); actions() }
+                                if (showInlineQueue) { transport(true); actions() }
                                 header()
                             } },
                             mainPane = { compact ->
@@ -548,6 +576,7 @@ fun NowPlayingScreen(
                 if (showLyrics && !landscape) lyricsContent()
                 if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false }, listState = queueListState)
 
+                lyricsShareRequest?.let { request -> AndroidLyricsShareSheet(hazeState, request, { lyricsShareRequest = null }) }
                 if (showPlaybackTools) com.music.aurelis.ui.components.PlaybackToolsDialog(
                     state, { duration, after -> playbackViewModel.setSleepTimer(duration, after) },
                     playbackViewModel::setPlaybackSpeed, playbackViewModel::setSkipSilence, playbackViewModel::setAutoplay, { showPlaybackTools = false })

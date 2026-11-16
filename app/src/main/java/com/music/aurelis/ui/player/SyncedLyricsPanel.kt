@@ -1,6 +1,14 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.player
 
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.music.aurelis.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
@@ -29,6 +37,7 @@ import kotlinx.coroutines.flow.collect
 import com.music.aurelis.ui.theme.LocalReduceMotion
 import kotlin.math.abs
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SyncedLyricsPanel(
     lines: List<LyricLine>,
@@ -44,10 +53,11 @@ fun SyncedLyricsPanel(
     syncEnabled: Boolean = true,
     blurUnfocused: Boolean = false,
     offsetMs: Int = 0,
+    onLineLongClick: ((Int) -> Unit)? = null,
 ) {
     if (lines.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Letras no disponibles", style = MaterialTheme.typography.bodyLarge,
+            Text(stringResource(R.string.lyrics_ui_unavailable), style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
@@ -99,39 +109,42 @@ fun SyncedLyricsPanel(
     }
     Column(modifier.fillMaxSize()) {
         if (synchronise) TextButton(onClick = { following = !following }) {
-            Text(if (following) "Pausar seguimiento" else "Seguir letras")
-        } else Text(if (isSynced) "Sincronización desactivada en ajustes" else "Letra sin sincronización",
+            Text(stringResource(if (following) R.string.lyrics_ui_pause_follow else R.string.lyrics_ui_follow))
+        } else Text(stringResource(if (isSynced) R.string.lyrics_ui_sync_disabled else R.string.lyrics_ui_unsynced),
             style = MaterialTheme.typography.labelMedium)
         val pad = if (centerFocus) with(density) { (viewportHeight / 2f).toDp() } else 0.dp
         LazyColumn(state = listState, contentPadding = PaddingValues(vertical = pad),
             modifier = Modifier.weight(1f).fillMaxWidth().testTag("lyrics-list").onSizeChanged { viewportHeight = it.height }) {
             itemsIndexed(lines) { index, line ->
                 val focused = synchronise && index in active
-                val style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold,
+                val style = MaterialTheme.typography.headlineMedium.copy(fontSize = 34.sp, lineHeight = 41.sp, fontWeight = FontWeight.Bold,
                     textAlign = if (line.alignment == LyricAlignment.End) TextAlign.End else TextAlign.Start)
-                val color = if (focused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f)
+                val color by animateColorAsState(if (focused || !synchronise) Color.White else Color.White.copy(alpha = 0.45f),
+                    animationSpec = tween(if (reduceMotion) 0 else 180), label = "lyric-focus")
                 Column(Modifier.fillMaxWidth().testTag("lyrics-row-$index")
                     .blur(if (blurUnfocused && synchronise && following && activeIndex >= 0 && !focused) 1.dp else 0.dp)) {
                     val mainModifier = Modifier.fillMaxWidth().testTag("lyrics-line-$index").semantics { selected = focused }
-                        .clickable(enabled = isSynced) { following = true; onSeekToLine(line.timeMs) }
-                        .padding(vertical = 12.dp, horizontal = 20.dp)
+                        .combinedClickable(enabled = isSynced || onLineLongClick != null,
+                            onLongClick = onLineLongClick?.let { action -> { action(index) } },
+                            onClick = { if (isSynced) { following = true; onSeekToLine(line.timeMs) } })
+                        .padding(vertical = 12.dp, horizontal = 24.dp)
                     if (focused && line.isWordSynced) {
                         SweptLocalLyric(line, playhead, style, color, mainModifier)
                     } else {
-                        Text(if (line.isGap && isSynced) "Instrumental" else line.text, style = style,
+                        Text(if (line.isGap && isSynced) stringResource(R.string.lyrics_ui_instrumental) else line.text, style = style,
                             color = color, modifier = mainModifier)
                     }
                     line.background?.takeIf { it.text.isNotBlank() }?.let { backing ->
                         val backingStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = style.textAlign)
                         val backingModifier = Modifier.fillMaxWidth().testTag("lyrics-background-$index")
-                            .padding(horizontal = 20.dp).padding(bottom = 8.dp)
+                            .padding(horizontal = 24.dp).padding(bottom = 8.dp)
                         if (focused && backing.isWordSynced) SweptLocalLyric(backing, playhead, backingStyle, color, backingModifier)
                         else Text(backing.text, style = backingStyle, color = color, modifier = backingModifier)
                     }
                     translatedLines?.getOrNull(index)?.takeIf { it.text.isNotBlank() && it.text != line.text }?.let { translated ->
                         Text(translated.text, style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 8.dp))
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 8.dp))
                     }
                 }
             }

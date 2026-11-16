@@ -18,6 +18,17 @@
 > eliminaciones de la entrega; múltiples commits no reinician su presupuesto.
 > El usuario autoriza continuar con la primera entrega del plan B05_UI_EVIDENCE_PLAN.
 
+### Player/letras y parpadeo — base d181c97a
+
+Nueva petición autoriza presentación activa del reproductor/letras y transición
+entre canciones. Portada retenida en player/mini y paleta sin reset intermedio;
+protección de peticiones obsoletas. Cabecera/fondo/controles de letras, foco34/41sp,
+manual y sincronización preservados. Compartir una línea real con PNG ajustado y
+FileProvider limitado, Atrás y cambio de canción.3 pruebas de estado y1 de PNG/URI,
+integración de letras ampliada, SOLO Actions. No certificar paridad ni cierre B07;
+partículas/glow y multiselección de versos pendientes. Ver PLAYER_LYRICS_TRANSITIONS.md.
+Tras push ESPERAR resultado del usuario. Dos revisiones del mismo agente; B09 sin iniciar.
+
 ### Continuación por capturas — player, Replay y ajustes
 
 Base1da11b0f. Arte vertical de borde a borde y créditos/cabecera; slider restante y

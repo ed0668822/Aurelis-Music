@@ -510,4 +510,23 @@
     <string name="replay_clear_confirm">¿Borrar historial?</string>
     <string name="replay_clear_hint">Se borrarán las estadísticas de escucha de este perfil. Tus playlists y favoritos se conservarán.</string>
     <string name="player_playing_album">Reproduciendo de %1$s</string>
+    <string name="lyrics_ui_close">Cerrar letras</string>
+    <string name="lyrics_ui_tools">Herramientas de letras</string>
+    <string name="lyrics_ui_unavailable">Letras no disponibles</string>
+    <string name="lyrics_ui_pause_follow">Pausar seguimiento</string>
+    <string name="lyrics_ui_follow">Seguir letras</string>
+    <string name="lyrics_ui_sync_disabled">Sincronización desactivada en ajustes</string>
+    <string name="lyrics_ui_unsynced">Letra sin sincronización</string>
+    <string name="lyrics_ui_instrumental">Instrumental</string>
+    <string name="lyrics_ui_offset">Ajustar sincronización</string>
+    <string name="lyrics_ui_translate">Traducir</string>
+    <string name="lyrics_ui_import">Importar LRC / TTML</string>
+    <string name="lyrics_ui_cached">Caché</string>
+    <string name="lyrics_ui_translating">Traduciendo…</string>
+    <string name="lyrics_ui_translation_failed">No se pudo traducir. Revisa el servidor, la conexión o los idiomas y reintenta.</string>
+    <string name="lyrics_ui_same_language">La letra ya está en el idioma elegido.</string>
+    <string name="lyrics_ui_hide_translation">Ocultar traducción</string>
+    <string name="lyrics_ui_loading">Buscando letras...</string>
+    <string name="lyrics_ui_missing">No hay letras locales o guardadas. Importa un LRC o busca en LRCLIB (envía título y artista).</string>
+    <string name="lyrics_ui_translation_language">Traducción: %1$s</string>
 </resources>
