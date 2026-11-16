@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
@@ -41,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -81,6 +83,9 @@ import com.music.aurelis.ui.components.topBarContentPadding
 import com.music.aurelis.ui.components.TopBarContentGap
 import com.music.aurelis.ui.components.UpdateAvailableDialog
 import com.music.aurelis.ui.icons.AurelisIcons
+import com.music.aurelis.ui.icons.AurelisNavigationIcons
+import com.music.aurelis.ui.components.NAV_BAR_MAX_WIDTH
+import com.music.aurelis.ui.components.floatingtabbar.rememberFloatingTabBarScrollConnection
 import com.music.aurelis.ui.screens.HomeScreen
 import com.music.aurelis.ui.screens.LibraryLink
 import com.music.aurelis.ui.screens.LibraryScreen
@@ -227,6 +232,7 @@ internal fun AurelisNavigationContent(
     val localProfile by com.music.aurelis.data.ProfileRepository.state.collectAsState()
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
     val route = navigator.visibleRoute()
+    val navBarScroll = rememberFloatingTabBarScrollConnection()
     var bottomChromeHeight by remember { mutableIntStateOf(0) }
     var searchFocusRequested by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -258,10 +264,10 @@ internal fun AurelisNavigationContent(
         if (route == AppRoute.LocalMusic) libraryViewModel.refresh()
     }
     val tabs = listOf(
-        BottomTab(stringResource(R.string.home), AurelisIcons.Home),
-        BottomTab(stringResource(R.string.explore), AurelisIcons.Explore),
-        BottomTab(stringResource(R.string.library), AurelisIcons.Library),
-        BottomTab(stringResource(R.string.search), AurelisIcons.Search),
+        BottomTab(stringResource(R.string.home), AurelisNavigationIcons.Home),
+        BottomTab(stringResource(R.string.explore), AurelisNavigationIcons.TabExplore),
+        BottomTab(stringResource(R.string.library), AurelisNavigationIcons.TabLibrary),
+        BottomTab(stringResource(R.string.search), AurelisNavigationIcons.TabSearch),
     )
     val librarySuccess = libraryUiState.libraryState as? LibraryState.Success
     val allSongs = librarySuccess?.songs ?: emptyList()
@@ -291,6 +297,7 @@ internal fun AurelisNavigationContent(
     AppNavigationHost(
         navigator = navigator,
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
+            .nestedScroll(navBarScroll)
             .onSizeChanged { dock.sheetTravel = it.height.toFloat() }.onGloballyPositioned { dock.reportHost(it) },
         pageModifier = pageBackdropModifier,
         pageHandlesBackdrop = { page ->
@@ -509,8 +516,8 @@ internal fun AurelisNavigationContent(
         },
         bottomBar = {
             Column(
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                    .onSizeChanged { bottomChromeHeight = it.height }.navigationBarsPadding().imePadding(),
+                modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = NAV_BAR_MAX_WIDTH).fillMaxWidth()
+                    .onSizeChanged { bottomChromeHeight = it.height }.imePadding(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (!playbackState.isConnected && playbackState.errorMessage != null) {
@@ -546,6 +553,7 @@ internal fun AurelisNavigationContent(
                         focusManager.clearFocus(); keyboard?.hide(); panelMotion.open()
                     } },
                     dock = dock, pull = panelMotion,
+                    scrollConnection = navBarScroll,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

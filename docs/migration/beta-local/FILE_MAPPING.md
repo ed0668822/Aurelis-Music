@@ -158,3 +158,16 @@ NowPlayingScreen conecta ui/player/SyncedLyricsPanel y rememberLyricsPicker; no
 LyricsScreen legacy. Se conectan PlayerControlsOnScroll (PlayerLyrics fijo),
 LyricsControlsGesture, PlayerCircleGlyph/PlayerBottomGlyph y cuatro trazados AurelisPlayerIcons
 extraídos del original. UI_PLAYER_DEEP_AUDIT.md registra fuentes, hashes y límites.
+
+
+## F002 del inventario funcional — navegación inferior
+
+Este ID no reemplaza la numeración Fxx histórica. B:GlassNavBar/FloatingBottomBar
+→ D:ui/components/GlassNavBar.kt y FloatingBottomBar.kt; constantes compartidas
+→ nuevo D:ui/components/NavigationBarMetrics.kt. B:floatingtabbar/FloatingTabBar.kt
+→ los tres archivos existentes FloatingTabBar.kt, FloatingTabBarDefaults.kt y
+FloatingTabBarScrollConnection.kt, con contratos originales restaurados.
+U:ui/icons/BitChordIcons.kt → nuevo D:ui/icons/AurelisNavigationIcons.kt, solo
+cuatro glifos y helper. MainActivity conecta el scroll/íconos y el máximo ancho.
+GlassSelectionPill y MiniPlayer existentes se conservan. Fuentes, SHA256,
+adaptaciones, seis regresiones y límites en F002_NAVIGATION_BAR.md.

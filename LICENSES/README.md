@@ -27,6 +27,7 @@ Las siguientes copias conservan los textos y avisos de sus respectivos titulares
 | [onnxruntime-ThirdPartyNotices.txt](onnxruntime-ThirdPartyNotices.txt) | Avisos íntegros de ONNX Runtime v1.22.0; conservar condiciones de los componentes aplicables |
 | [jsoup-MIT.txt](jsoup-MIT.txt) | Jsoup |
 | [checker-qual-MIT.txt](checker-qual-MIT.txt) | Checker Framework, artefacto checker-qual |
+| [cupertino-icons-MIT.txt](cupertino-icons-MIT.txt) | Trazados Cupertino de las pestañas Explorar, Biblioteca y Buscar; Vladimir Kharlampidi |
 
 Los avisos MIT de liquid_glass_easy y Apache de Kyant0/backdrop también se
 conservan en NOTICE. Esta lista describe los textos aquí incluidos; no afirma

@@ -95,6 +95,17 @@ Their original notices are preserved below.
    Aurelis changes: material applied to the active tab bar and MiniPlayer,
    opaque page recording, and shared disabled/reduced-effect sampling policy.
    Kyant0/backdrop and liquid_glass_easy notices below remain applicable.
+   F002 navigation adaptation (BitChord b690dc146009d4815825fa4a20815ef2e4ee8898):
+   GlassNavBar's inline/expanded accessory and FloatingBottomBar retain the
+   Echo-Music/BitChord provenance. FloatingTabBar v1.0.1 is vendored source by
+   Elyes Mansour (https://github.com/elyesmansour/compose-floating-tab-bar),
+   Apache-2.0, with the original notice and Echo-Music/BitChord modifications
+   retained. Aurelis changes: local host/data/capabilities, Compose 1.7 source
+   compatibility, safe backdrop policy, reduced motion and tab semantics/RTL.
+   Four navigation glyphs are extracted from BitChordIcons.kt. The Explore,
+   Library and Search outlines retain cupertino_icons MIT provenance:
+   Copyright (c) 2016 Vladimir Kharlampidi; full notice in
+   LICENSES/cupertino-icons-MIT.txt. Apache text: LICENSES/Apache-2.0.txt.
    See https://www.gnu.org/licenses/gpl-3.0.html.
 
 ────────────────────────────────────────────────────────────────────

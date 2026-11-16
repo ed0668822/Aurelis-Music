@@ -627,3 +627,28 @@ rememberPlayerControlsOnScroll; se adaptan medidas de PlayerLyrics/PlayerControl
 selección existente. Nuevos archivos de partes portadas conservan aviso GPLv3 y
 autoría de contribuyentes, sin relabel or-later. Fuentes/hashes/deltas en
 UI_PLAYER_DEEP_AUDIT.md. Corrección propia de reveal y separación del backdrop.
+
+
+## F002 — barra de navegación y accesorio Glass
+
+Referencia fija BitChord `b690dc146009d4815825fa4a20815ef2e4ee8898`.
+Se adaptan GlassNavBar/FloatingBottomBar, la biblioteca FloatingTabBar vendorizada,
+cuatro vectores y fragmentos de SongText/Common/Theme; rutas y SHA256 exactos en
+[F002_NAVIGATION_BAR](F002_NAVIGATION_BAR.md). Se conservan los avisos originales.
+
+- FloatingTabBar v1.0.1: Elyes Mansour, Apache-2.0; modificaciones posteriores
+  Echo-Music/BitChord y adaptación Aurelis diferenciadas, sin reclasificar el
+  código vendorizado. Texto Apache existente conservado y empaquetado.
+- GlassNavBar: estructura/accesorio EchoMusicApp/Echo-Music, GPL-3.0, según aviso
+  del archivo BitChord. Se mantienen las atribuciones BitChord y Glass previas.
+- Home: trazado BitChord. TabExplore/TabLibrary/TabSearch: trazados declarados
+  derivados de cupertino_icons/MIT. Nuevo texto íntegro
+  LICENSES/cupertino-icons-MIT.txt, copyright 2016 Vladimir Kharlampidi, obtenido
+  del blob flutter/packages `581f84ccf02b284313f5f2c75433d3798990a352`.
+- Cambios Aurelis: paquetes, LocalSong, callbacks/capacidades, estado del host,
+  compatibilidad Compose 1.7, fallback seguro, accesibilidad/RTL y reducción de
+  efectos. Sin fuentes SF Pro, SfIcons ni funciones remotas excluidas.
+
+NOTICE registra estas procedencias; el empaquetado legal existente incorpora el
+nuevo texto. No se elimina ni sustituye LICENSE ni un aviso legal anterior.
+La presencia definitiva del paquete legal se verificará en el nuevo CI/APK.

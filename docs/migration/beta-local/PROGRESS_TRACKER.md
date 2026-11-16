@@ -1,6 +1,23 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F002 — barra inferior y Buscar separado (2026-11-16)
+
+Autorizado después de F001, base `4b60c176`. Se conecta la barra vendorizada real
+BitChord `b690dc14`, su plegado por scroll y accesorio de dos densidades, y la
+barra normal de cuatro pestañas. Se adaptan los cuatro vectores originales,
+métricas/insets, máximo 440dp, selección accesible, RTL y movimiento reducido.
+AppNavigator, MiniPlayer normal, reproducción y motor estable de Glass se
+conservan. Sin cambiar dependencias, ABI, SDK, fuentes o servicios remotos.
+
+Se añaden seis regresiones de scroll y UI, destinadas solo a Actions. Dos
+revisiones del mismo agente; comprobaciones estáticas locales. CI nuevo y
+validación física/visual pendientes; no se hereda el verde de la base.
+Detalle, fuentes, licencias y límites: [F002_NAVIGATION_BAR](F002_NAVIGATION_BAR.md).
+Después de enviar se avisa al usuario y se espera su resultado y autorización
+para F003. Máximo 60 archivos distintos, incluidas correcciones.
+
+
 ### F001 — navegación por entradas: conservar y validar (2026-11-16)
 
 El usuario aprueba el inventario F001–F014 por funciones y autoriza únicamente
