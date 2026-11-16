@@ -76,6 +76,9 @@ class PlayerIntegrationTest {
         start(fontScale = 1.5f)
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
         assertPrimaryTransportInsidePlayer("player-portrait")
+        val viewport = compose.onNodeWithTag("player-portrait").fetchSemanticsNode().boundsInRoot
+        val cover = compose.onNodeWithTag("player-artwork").fetchSemanticsNode().boundsInRoot
+        assertEquals(viewport.width, cover.width, 1f)
         val queue = vm.state.value.queue.map { it.queueEntryId }
         val replacements = player.replacements
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_next)).performClick()
@@ -443,7 +446,8 @@ class PlayerIntegrationTest {
         store.toggleFavorite("1"); store.createPlaylist("Conservar", listOf("1"))
         compose.setContent { AurelisTheme { com.music.aurelis.ui.screens.ReplayScreen(
             store = store, songs = listOf(song("1")), onPlay = {}) } }
-        compose.onNodeWithText("1 reproducciones · 5 s").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.replay_plays_total, 1L)).assertIsDisplayed()
+        compose.runOnIdle { assertEquals(5000L, store.state.value.listening.getValue("1").listenedMs) }
         compose.onNodeWithText("Borrar historial").performClick()
         compose.onNodeWithText("Cancelar").performClick()
         compose.runOnIdle { assertEquals(1, store.state.value.listening.size) }

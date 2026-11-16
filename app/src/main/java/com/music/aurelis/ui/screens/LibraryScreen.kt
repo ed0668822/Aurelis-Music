@@ -131,7 +131,7 @@ fun LibraryReplayPreview(listenedMs: Long, holder: String, onOpen: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         item(key = "all-time") {
             com.music.aurelis.ui.replay.ReplayCreditCard(
-                label = stringResource(R.string.minutes),
+                label = stringResource(R.string.minutes_listened),
                 value = com.music.aurelis.ui.replay.formatMinutes(listenedMs),
                 detail = stringResource(R.string.all_time), holder = holder, memberSince = null,
                 onClick = onOpen,

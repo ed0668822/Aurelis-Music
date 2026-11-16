@@ -501,4 +501,13 @@
     <plurals name="home_device_song_count"><item quantity="one">%d canción en este dispositivo</item><item quantity="other">%d canciones en este dispositivo</item></plurals>
     <string name="home_local_music">Tu música local</string>
     <string name="home_creating_mix">Creando mezcla…</string>
+    <string name="replay_history_unavailable">No se pudo leer el historial guardado.</string>
+    <string name="replay_plays_total">%1$d reproducciones · Todo el tiempo</string>
+    <string name="replay_play_top">Reproducir tu canción más escuchada</string>
+    <string name="replay_song_unavailable">Canción no disponible</string>
+    <string name="replay_row_minutes">%1$s · %2$d min</string>
+    <string name="replay_clear">Borrar historial</string>
+    <string name="replay_clear_confirm">¿Borrar historial?</string>
+    <string name="replay_clear_hint">Se borrarán las estadísticas de escucha de este perfil. Tus playlists y favoritos se conservarán.</string>
+    <string name="player_playing_album">Reproduciendo de %1$s</string>
 </resources>

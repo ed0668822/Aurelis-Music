@@ -123,10 +123,10 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     Column(Modifier.fillMaxSize().then(contentBackdropModifier).background(MaterialTheme.colorScheme.background)
         .navigationBarsPadding().then(if (editing || translation || browsingFolders || language) Modifier.clearAndSetSemantics { } else Modifier)
         .verticalScroll(scrollState).padding(top = topBarContentPadding())) {
-        Text(category?.let { settingsTitle(it, context.resources) } ?: context.getString(R.string.navigation_settings), style = MaterialTheme.typography.displayLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+        Text(category?.let { settingsTitle(it, context.resources) } ?: context.getString(R.string.navigation_settings), style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
         if (category == null) SearchField(query, { query = it }, onSubmit = {},
-            placeholder = context.getString(R.string.settings_search), modifier = Modifier.padding(horizontal = 20.dp))
+            placeholder = context.getString(R.string.settings_search), modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 4.dp))
         (profileError ?: profileState.error)?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
         if (category == null && query.isBlank() || shows(SettingsCategory.GENERAL)) {
         SettingsGroup(header = context.getString(R.string.settings_profile_group), topSpacing = 0.dp) {

@@ -1,6 +1,9 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Offset
 import android.database.ContentObserver
 import android.media.AudioManager
 import android.os.Handler
@@ -23,6 +26,7 @@ import com.music.aurelis.R
 import kotlin.math.roundToInt
 
 /** Real STREAM_MUSIC volume. This does not install another player or audio pipeline. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerVolumeRow(modifier: Modifier = Modifier) {
     val context = LocalContext.current.applicationContext
@@ -60,6 +64,14 @@ fun PlayerVolumeRow(modifier: Modifier = Modifier) {
                     refresh()
                 }
             }, enabled = available, modifier = Modifier.weight(1f).height(40.dp).semantics { contentDescription = label },
+            thumb = { Box(Modifier.size(6.dp)) },
+            track = { slider ->
+                val ink = MaterialTheme.colorScheme.onSurface
+                Canvas(Modifier.fillMaxWidth().height(6.dp)) {
+                    drawLine(ink.copy(alpha = 0.2f), Offset(0f, size.height / 2), Offset(size.width, size.height / 2), size.height, StrokeCap.Round)
+                    drawLine(ink, Offset(0f, size.height / 2), Offset(size.width * slider.value, size.height / 2), size.height, StrokeCap.Round)
+                }
+            },
             colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.onSurface,
                 activeTrackColor = MaterialTheme.colorScheme.onSurface,
                 inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)))

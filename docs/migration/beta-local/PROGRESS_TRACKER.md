@@ -18,6 +18,17 @@
 > eliminaciones de la entrega; múltiples commits no reinician su presupuesto.
 > El usuario autoriza continuar con la primera entrega del plan B05_UI_EVIDENCE_PLAN.
 
+### Continuación por capturas — player, Replay y ajustes
+
+Base1da11b0f. Arte vertical de borde a borde y créditos/cabecera; slider restante y
+volumen fino real. Replay con tarjetas/ranking y suma común saturada con Biblioteca;
+ajustes con geometría de grupos y jerarquía adaptadas. Dos pruebas de agregación,
+regresión de ancho de arte y pruebas de navegación/borrado conservadas.
+CI nuevo PENDIENTE; Android solo Actions. Dos revisiones del mismo agente.
+No simular períodos semanales/mensuales/anuales del histórico legado. No cerrar
+B05/B11 ni certificar fidelidad visual/física. Ver PLAYER_REPLAY_SETTINGS_FOLLOWUP.md.
+Tras push esperar resultado que comunique usuario; no avanzar por iniciativa propia.
+
 ### B05 — pendientes confirmados del ZIP: cápsulas y textos ES/EN
 
 Corrección posterior: Main171/43816340050 de4eb1ef89 FAILURE. B01 sí compiló;

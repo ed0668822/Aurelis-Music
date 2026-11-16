@@ -43,6 +43,7 @@ fun PlayerSlider(
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    showRemaining: Boolean = false,
 ) {
     val seekLabel = stringResource(R.string.player_seek)
     var isDragging by remember { mutableStateOf(false) }
@@ -95,7 +96,7 @@ fun PlayerSlider(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = formatTime(durationMs),
+                text = if (showRemaining) "-" + formatTime((durationMs - currentPosition.toLong()).coerceAtLeast(0)) else formatTime(durationMs),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 8.dp),

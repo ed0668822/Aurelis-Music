@@ -84,7 +84,7 @@ class NavigationIntegrationTest {
         back()
         tab("Biblioteca").assertIsSelected()
         compose.onNodeWithContentDescription("Replay").performScrollTo().performClick()
-        compose.onNodeWithText("Replay & Statistics").assertIsDisplayed()
+        compose.onNodeWithTag("replay-page").assertIsDisplayed()
         back()
         tab("Biblioteca").assertIsSelected()
         back()

@@ -44,7 +44,7 @@ fun SettingsGroup(
             text = header.uppercase(Locale.ROOT),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = GROUP_INSET + 4.dp, end = GROUP_INSET, top = 26.dp, bottom = 8.dp),
+            modifier = Modifier.padding(start = GROUP_INSET + 4.dp, end = GROUP_INSET, top = topSpacing, bottom = 8.dp),
         )
     } else {
         Spacer(Modifier.height(topSpacing))
@@ -53,7 +53,7 @@ fun SettingsGroup(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = GROUP_INSET)
-            .clip(MaterialTheme.shapes.medium)
+            .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
         content()
@@ -73,7 +73,7 @@ fun RowDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = TEXT_INSET),
         thickness = 0.5.dp,
-        color = MaterialTheme.colorScheme.outlineVariant,
+        color = MaterialTheme.colorScheme.outline,
     )
 }
 

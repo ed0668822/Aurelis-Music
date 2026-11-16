@@ -603,3 +603,11 @@ Traducciones ES/EN, plurales y helper de etiquetas de orden son propios. No se
 relicencia material upstream ni se retiran atribuciones. Nombres/consultas/catálogos
 y enum.name persistidos no se traducen ni migran. Cabeceras propias mantenidas; sin
 limpieza masiva. El resto de NOTICE/licencias anteriores sigue aplicando.
+
+## Capturas: player, Replay y ajustes
+
+Referencia fija BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3.
+Adaptación de geometría/player, wallet/ranking Replay y grupos de ajustes sobre
+componentes Aurelis existentes; agregación local y traducciones propias.
+Fuentes/hashes y diferencias autorizadas en PLAYER_REPLAY_SETTINGS_FOLLOWUP.md.
+No se elimina ninguna atribución ni se cambia GPLv3 a «or later».

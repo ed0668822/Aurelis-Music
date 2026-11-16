@@ -7,8 +7,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.rounded.AllInclusive
 import com.music.aurelis.ui.components.PlayerVolumeRow
 import androidx.compose.material.icons.rounded.Timer
@@ -249,7 +250,14 @@ fun NowPlayingScreen(
                     else onOpenQueue()
                 }
                 val header: @Composable () -> Unit = {
-                    Row(Modifier.fillMaxWidth().height(48.dp).testTag("player-handle")
+                    if (!landscape) Column(Modifier.fillMaxWidth().playerSwipeTrigger(1, closePlayer, panelMotion), horizontalAlignment = Alignment.CenterHorizontally) {
+                        IconButton(onClick = closePlayer, modifier = Modifier.height(28.dp)) {
+                            Box(Modifier.size(38.dp, 5.dp).background(MaterialTheme.colorScheme.onSurface, CircleShape)
+                                .semantics { contentDescription = context.getString(R.string.player_close) })
+                        }
+                        Text(stringResource(R.string.player_playing_album, s.album), style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    } else Row(Modifier.fillMaxWidth().height(48.dp).testTag("player-handle")
                         .playerSwipeTrigger(1, closePlayer, panelMotion), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = closePlayer) {
                             Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.player_close), Modifier.size(28.dp))
@@ -278,6 +286,7 @@ fun NowPlayingScreen(
                         artworkUri = s.artworkUri,
                         title = s.title,
                         size = artworkSize,
+                        corner = if (landscape) 10.dp else 0.dp,
                         modifier = artworkModifier.testTag("player-artwork").playerDockArtwork(dock, s.id, mini = false),
                         progressFraction = progressFraction,
                     )
@@ -287,7 +296,7 @@ fun NowPlayingScreen(
                     Row(Modifier.fillMaxWidth().padding(top = if (compact) 0.dp else 8.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(s.title, style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,
+                            Text(s.title, fontWeight = FontWeight.Bold, style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(s.artist, style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -298,8 +307,11 @@ fun NowPlayingScreen(
                         }
                         IconButton(onClick = { userStore.toggleFavorite(s.id) }) {
                             val favorite = s.id in userLibraryState.favorites
-                            Icon(if (favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                            Icon(if (favorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                                 stringResource(if (favorite) R.string.player_remove_favorite else R.string.player_add_favorite))
+                        }
+                        if (!landscape) IconButton(onClick = { showSongActions = true }) {
+                            Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions))
                         }
                     }
                 }
@@ -365,18 +377,20 @@ fun NowPlayingScreen(
                         Box(Modifier.fillMaxWidth()) {
                             key(s.queueEntryId ?: s.id) {
                                 PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
-                                    enabled = state.isConnected && state.canSeek)
+                                    enabled = state.isConnected && state.canSeek, showRemaining = true)
                             }
-                            TextButton(onClick = { showQuality = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                                modifier = Modifier.align(Alignment.BottomCenter).height(24.dp)) {
-                                SourceQualityBadge(state.sourceQuality.formatLabel)
-                            }
+
                         }
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
                         transport(compact)
                         Spacer(Modifier.height(if (compact) 0.dp else 6.dp))
                         if (hideVolumeBar) Spacer(Modifier.fillMaxWidth().height(40.dp)) else PlayerVolumeRow()
                         actions()
+                        if (!compact) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            IconButton(onClick = { showPlaybackTools = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools)) }
+                            TextButton(onClick = { showQuality = true }) { SourceQualityBadge(state.sourceQuality.formatLabel) }
+                            IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
+                        }
                     }
                 }
                 val lyricsContent: @Composable () -> Unit = {
@@ -511,18 +525,18 @@ fun NowPlayingScreen(
                     } else {
                         // Measure the deck at its natural height first; artwork receives
                         // the remaining space. Transport never depends on scrolling.
-                        Column(Modifier.align(Alignment.Center).widthIn(max = 560.dp).fillMaxSize()
-                            .statusBarsPadding().navigationBarsPadding().padding(horizontal = 30.dp)
-                            .testTag("player-portrait"), horizontalAlignment = Alignment.CenterHorizontally) {
-                            header()
-                            Column(Modifier.weight(1f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                    val side = minOf(maxWidth, maxHeight).coerceAtLeast(0.dp)
-                                    if (side > 0.dp) artwork(Modifier, side)
-                                }
-                                credits(false)
+                        Box(Modifier.fillMaxSize().testTag("player-portrait")) {
+                            BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
+                                artwork(Modifier, maxWidth)
+                                Box(Modifier.fillMaxWidth().height(maxWidth).background(Brush.verticalGradient(
+                                    listOf(Color.Transparent, MaterialTheme.colorScheme.background))))
                             }
-                            deck(false)
+                            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                header()
+                                Spacer(Modifier.weight(1f))
+                                credits(false)
+                                deck(false)
+                            }
                         }
                     }
                 }

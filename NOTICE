@@ -601,3 +601,10 @@ No backdrop rim sampler, download/remote library action or dependency is introdu
 Original contributors and GPLv3 terms remain applicable. Local translations,
 plural handling and sort-label presentation are Aurelis contributions; media names,
 queries and stored enum identities are preserved. See LICENSE_AUDIT for source hash.
+
+Player / Replay / Settings screenshot follow-up
+Reference: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3).
+Adapts portrait cover/credits layout, Replay wallet/chart presentation and
+Settings group geometry to Aurelis local data and existing playback. Preserves
+upstream credits and license; no Cast/Canvas/network playback included.
+Sources and hashes: docs/migration/beta-local/PLAYER_REPLAY_SETTINGS_FOLLOWUP.md.

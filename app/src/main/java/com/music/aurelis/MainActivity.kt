@@ -373,9 +373,7 @@ internal fun AurelisNavigationContent(
                 var playlistError by remember { mutableStateOf<String?>(null) }
                 val context = LocalContext.current
                 val listenedMs = remember(userState.listening) {
-                    userState.listening.values.fold(0L) { total, entry ->
-                        total + entry.listenedMs.coerceAtMost(Long.MAX_VALUE - total)
-                    }
+                    com.music.aurelis.ui.replay.totalListeningMs(userState.listening)
                 }
                 LibraryScreen(
                     listState = listState,

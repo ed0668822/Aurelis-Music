@@ -482,4 +482,13 @@
     <plurals name="home_device_song_count"><item quantity="one">%d song on this device</item><item quantity="other">%d songs on this device</item></plurals>
     <string name="home_local_music">Your local music</string>
     <string name="home_creating_mix">Creating mix…</string>
+    <string name="replay_history_unavailable">Saved history could not be read.</string>
+    <string name="replay_plays_total">%1$d plays · Lifetime</string>
+    <string name="replay_play_top">Play your top song</string>
+    <string name="replay_song_unavailable">Song unavailable</string>
+    <string name="replay_row_minutes">%1$s · %2$d min</string>
+    <string name="replay_clear">Clear history</string>
+    <string name="replay_clear_confirm">Clear history?</string>
+    <string name="replay_clear_hint">Listening statistics for this profile will be cleared. Your playlists and favorites will be kept.</string>
+    <string name="player_playing_album">Playing from %1$s</string>
 </resources>
