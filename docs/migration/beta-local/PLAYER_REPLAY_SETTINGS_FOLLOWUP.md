@@ -89,3 +89,18 @@ Aurelis; no se reemplazan módulos enteros ni autorías de terceros.
 - docs/migration/beta-local/LICENSE_AUDIT.md
 - docs/migration/beta-local/PLAYER_REPLAY_SETTINGS_FOLLOWUP.md
 - docs/migration/beta-local/PROGRESS_TRACKER.md
+
+## Corrección de compilación — Main173
+
+Run43901604613/a6b91075 FAILURE: compileDebugKotlin en NowPlayingScreen.kt:258,
+String? de LocalSong.album enviado al vararg Any de stringResource. Logs ZIP
+originales descargados y CRC válido antes de editar. B02/B03/B04/B05 omitidos;
+B06 falla la puerta global, sin que esos estados acrediten pruebas ejecutadas.
+
+Se usa álbum no vacío o recurso local_music como fallback localizado. Una regresión
+de integración cubre null, cadena vacía, espacios y álbum con acento/porcentaje;
+verifica cabecera visible e identidad de canción. La prueba no se ejecutó localmente.
+Revisiones estáticas de tipo/recurso y de llamadas/casos de metadatos por el mismo
+agente, no independientes; parser Kotlin y diff-check locales. Tres rutas de
+corrección ya pertenecían al inventario: siguen18 distintas acumuladas desde1da11b0f.
+Nuevo CI pendiente; esperar resultado comunicado por usuario después del push.

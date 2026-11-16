@@ -255,7 +255,8 @@ fun NowPlayingScreen(
                             Box(Modifier.size(38.dp, 5.dp).background(MaterialTheme.colorScheme.onSurface, CircleShape)
                                 .semantics { contentDescription = context.getString(R.string.player_close) })
                         }
-                        Text(stringResource(R.string.player_playing_album, s.album), style = MaterialTheme.typography.labelMedium,
+                        val albumLabel = s.album?.takeIf { it.isNotBlank() } ?: stringResource(R.string.local_music)
+                        Text(stringResource(R.string.player_playing_album, albumLabel), style = MaterialTheme.typography.labelMedium,
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                     } else Row(Modifier.fillMaxWidth().height(48.dp).testTag("player-handle")
                         .playerSwipeTrigger(1, closePlayer, panelMotion), verticalAlignment = Alignment.CenterVertically) {

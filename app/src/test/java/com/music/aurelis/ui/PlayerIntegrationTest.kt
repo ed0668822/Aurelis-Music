@@ -103,6 +103,17 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertFalse(player.playWhenReady); assertEquals("1", vm.state.value.currentSong?.id) }
     }
 
+    @Test fun playerHeaderHandlesMissingBlankAndNamedAlbumsAndKeepsTheCorrectSong() {
+        start()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+        for (album in listOf(null, "", "   ", "Álbum 100% local")) {
+            compose.runOnIdle { vm.playSongs(listOf(song("1").copy(album = album))) }
+            val expected = album?.takeIf { it.isNotBlank() } ?: compose.activity.getString(R.string.local_music)
+            compose.onNodeWithText(compose.activity.getString(R.string.player_playing_album, expected)).assertIsDisplayed()
+            compose.runOnIdle { assertEquals("1", vm.state.value.currentSong?.id) }
+        }
+    }
+
     @Test fun hidingVolumePreservesTheControlDeckAndTransportPlacement() {
         val previous = SettingsRepository.hideVolumeBar.value
         try {
