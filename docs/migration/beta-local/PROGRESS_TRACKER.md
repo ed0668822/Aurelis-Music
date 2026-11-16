@@ -18,6 +18,16 @@
 > eliminaciones de la entrega; múltiples commits no reinician su presupuesto.
 > El usuario autoriza continuar con la primera entrega del plan B05_UI_EVIDENCE_PLAN.
 
+### B05 — corrección de compilación del primer intento del player
+
+Run169/43799755349/e0fc7cad: fallo en compileDebugKotlin por acceso a favorites
+privado del store y falta de import semantics.contentDescription. Se usa el estado
+público colectado del mismo store y se añade import; logs oficiales CRC válido.
+Se respeta hideVolumeBar reservando40dp y sincronización deshabilitada para preview.
+Cinco pruebas JVM nuevas esperadas429; la adicional comprueba que ocultar volumen
+conserve la geometría del deck y controles visibles. Dos revisiones del mismo agente,
+corrección dentro de las mismas24 rutas; Android nuevo pendiente de Actions.
+
 ### B05 — MiniPlayer y reproductor vertical/horizontal, implementación autorizada
 
 El usuario autoriza terminar MiniPlayer y pantalla de reproducción en esta entrega,
@@ -39,14 +49,14 @@ y cambio de panel se mantienen accesibles al mostrar cola/letras. Letras conserv
 su núcleo/panel actual: efectos/gestos/compartir de B07 siguen pendientes.
 
 Textos de controles ES/EN; selectores de tests usan recursos y dejan de desplazar
-controles que ahora deben caber de inicio. Cuatro nuevos tests JVM: retrato320×568
+controles que ahora deben caber de inicio. Cinco nuevos tests JVM: retrato320×568
 con fuente1,5, horizontal640×320 fuente1,5, volumen Android real y pausa durante carga.
 Prueba nativa con reproducción añade player, pausa, giro, reanudar, retorno y cierre;
 conserva pruebas Perfil/Biblioteca/Ajustes/Search/renderer/Glass, sin alargar timeouts.
 
 Dos revisiones del mismo agente, no independientes. Kotlin parser/XML/diff/Python
 permitidos localmente; Gradle/Lint/APK/Android exclusivamente Actions. Android nuevo
-PENDIENTE al preparar el commit; no declarar que428 tests o giros aprobaron. Ver
+PENDIENTE al preparar el commit; no declarar que429 tests o giros aprobaron. Ver
 B05_PLAYER_DELIVERY.md y LICENSE_AUDIT para alcance/procedencia/limitaciones.
 Fidelidad visual completa pendiente de capturas y prueba Redmi/Android16/HyperOS3;
 plain23 se pidió al usuario y sigue inaccesible por proxy. No iniciar B07/B09 aquí.

@@ -100,6 +100,21 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertFalse(player.playWhenReady); assertEquals("1", vm.state.value.currentSong?.id) }
     }
 
+    @Test fun hidingVolumePreservesTheControlDeckAndTransportPlacement() {
+        val previous = SettingsRepository.hideVolumeBar.value
+        try {
+            SettingsRepository.setHideVolumeBar(false)
+            start()
+            compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+            compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_volume)).assertExists()
+            val before = compose.onNodeWithTag("player-control-deck").fetchSemanticsNode().boundsInRoot
+            compose.runOnIdle { SettingsRepository.setHideVolumeBar(true) }
+            compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_volume)).assertDoesNotExist()
+            assertEquals(before, compose.onNodeWithTag("player-control-deck").fetchSemanticsNode().boundsInRoot)
+            assertPrimaryTransportInsidePlayer("player-portrait")
+        } finally { compose.runOnIdle { SettingsRepository.setHideVolumeBar(previous) } }
+    }
+
     @Test fun volumeSliderChangesTheRealMusicStreamAndReadsItsActualLevel() {
         val audio = app.getSystemService(android.media.AudioManager::class.java)
         val maximum = audio.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)

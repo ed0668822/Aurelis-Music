@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.unit.Dp
 import com.music.aurelis.ui.player.LandscapePlayerLayout
@@ -140,6 +141,7 @@ fun NowPlayingScreen(
     val context = LocalContext.current
     val application = context.applicationContext as AurelisApplication
     val userStore by application.libraries.collectAsState()
+    val userLibraryState by userStore.state.collectAsState()
     var showSongActions by remember { mutableStateOf(false) }
     val themeViewModel: DynamicThemeViewModel = viewModel()
 
@@ -171,6 +173,7 @@ fun NowPlayingScreen(
     val blurLyrics by SettingsRepository.blurUnfocusedLyrics.collectAsState()
     val reduceBlur by SettingsRepository.reduceDynamicBlur.collectAsState()
     val reduceAnimation by SettingsRepository.reduceAnimation.collectAsState()
+    val hideVolumeBar by SettingsRepository.hideVolumeBar.collectAsState()
     val hazeState = remember { HazeState() }
     val closePlayer: () -> Unit = { if (panelMotion != null && song != null) panelMotion.close() else onDismiss() }
     BackHandler(enabled = isVisible && !showLyrics && !showInlineQueue) { closePlayer() }
@@ -293,8 +296,8 @@ fun NowPlayingScreen(
                                 TextButton(onClick = playbackViewModel::retry) { Text(stringResource(R.string.player_retry)) }
                             }
                         }
-                        IconButton(onClick = { application.userLibrary.toggleFavorite(s.id) }) {
-                            val favorite = s.id in userStore.favorites
+                        IconButton(onClick = { userStore.toggleFavorite(s.id) }) {
+                            val favorite = s.id in userLibraryState.favorites
                             Icon(if (favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
                                 stringResource(if (favorite) R.string.player_remove_favorite else R.string.player_add_favorite))
                         }
@@ -350,7 +353,8 @@ fun NowPlayingScreen(
                     Column(Modifier.fillMaxWidth().testTag("player-control-deck"), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (!compact) {
                             val time = com.music.aurelis.ui.player.adjustedLyricsPosition(state.positionMs, lyricsOffset)
-                            val line = (state.lyrics as? LyricsState.Loaded)?.lines?.lastOrNull { it.timeMs <= time && !it.isGap }?.text
+                            val line = (state.lyrics as? LyricsState.Loaded)?.lines?.takeIf { syncEnabled }
+                                ?.lastOrNull { it.timeMs <= time && !it.isGap }?.text
                             TextButton(onClick = openLyrics, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                                 modifier = Modifier.fillMaxWidth().height(32.dp)
                                 .semantics { contentDescription = context.getString(R.string.player_lyrics_preview) }) {
@@ -371,7 +375,7 @@ fun NowPlayingScreen(
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
                         transport(compact)
                         Spacer(Modifier.height(if (compact) 0.dp else 6.dp))
-                        PlayerVolumeRow()
+                        if (hideVolumeBar) Spacer(Modifier.fillMaxWidth().height(40.dp)) else PlayerVolumeRow()
                         actions()
                     }
                 }

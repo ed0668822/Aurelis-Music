@@ -56,14 +56,14 @@ regresiones Python por material. Gradle, Android Lint, APK y tests Android SOLO
 GitHub Actions. Dos revisiones del mismo agente, no independientes: implementación/
 capacidades/lifecycle y consumidores/restauración/pruebas/recursos/presupuesto.
 
-Cuatro tests nuevos JVM preparados:320×568 fuente1,5,640×320 fuente1,5, volumen real
+Cinco tests nuevos JVM preparados:320×568 fuente1,5,640×320 fuente1,5, volumen real
 de AudioManager y pausa MiniPlayer durante buffering. Se conservan pruebas previas
 de cola, fuentes/traducción, calidad, gestos y restauración; se retira scroll para
 alcanzar controles que deben estar visibles. Se amplía el caso nativo con música a
 abrir player, pausar, girar, reanudar, volver y cerrar. Conserva hardware/Glass y
 recorridos Perfil/Biblioteca/Nueva lista/Buscar. Ningún timeout se alarga.
 
-Compilación/428 tests esperados/giros del SHA nuevo PENDIENTES al preparar commit;
+Compilación/429 tests esperados/giros del SHA nuevo PENDIENTES al preparar commit;
 no afirmar aprobación antes de leer Actions. El comparador mantiene sus requisitos
 de transporte real visible y cambios de sesión; no se relaja para ocultar fallos.
 La referencia puede seguir perdiendo ADB; causa final aún no acreditada.
@@ -103,3 +103,17 @@ Restantes hallazgos ZIP de otras pantallas conservan sus entregas del plan.
 - `docs/migration/beta-local/B05_UI_EVIDENCE_PLAN.md`
 - `docs/migration/beta-local/LICENSE_AUDIT.md`
 - `docs/migration/beta-local/PROGRESS_TRACKER.md`
+
+## Corrección del primer intento de Actions
+
+Run169/43799755349/e0fc7cad: B01 falla en compileDebugKotlin; otras fases de app
+omitidas, B06 conserva fallo real. Logs ZIP oficiales CRC válido: NowPlayingScreen
+accedía a userStore.favorites (campo privado SharedPreferences) y faltaba import de
+semantics.contentDescription. Se colecta userStore.state y se usa su favorites
+público; acción y estado de favorito pertenecen a la misma instancia activa. Se
+añade import explícito. No supresiones ni alteración de firmas/SDK/dependencias.
+
+Se respeta hideVolumeBar existente, reservando40dp como la fila real; nueva regresión
+comprueba que ocultarla no desplace transporte. La preview respeta syncedLyrics.
+Cinco tests JVM nuevos preparados (429 esperados), todavía NO ejecutados aquí.
+Dos revisiones del mismo agente para la corrección; nuevo CI pendiente.
