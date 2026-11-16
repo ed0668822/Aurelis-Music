@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 import zipfile
 import ui_parity as parity
+import ui_parity_host as host
 import ui_parity_handoff as external
 import ci14_handoff as handoff
 import os
@@ -15,6 +16,99 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def session(self, title='Parity Track 01', state=2, actions=52, package='com.music.aurelis', queue=3):
+        return f'package={package}\nactive=true\nstate=PlaybackState {{state={state}, actions={actions}}}\nmetadata: description={title}, Artist, Album\nqueueTitle=null, size={queue}\n'
+
+    def player_xml(self, previous_enabled=True):
+        return '<hierarchy>' + ''.join(
+            f'<node package="com.music.aurelis" text="{label}" enabled="{enabled}" bounds="[{10+i*80},50][{70+i*80},110]"/>'
+            for i, (label, enabled) in enumerate([('Parity Track 01','true'),('Play','true'),
+                                                  ('Next','true'),('Previous',str(previous_enabled).lower())])) + '</hierarchy>'
+
+    def test_uploaded_ui23_player_cannot_pass_without_visible_transport(self):
+        xml = (Path(__file__).parent / 'fixtures/ui23-player-without-transport.xml').read_text()
+        self.assertTrue(parity.matches(parity.nodes(xml), ('Parity Track 01',)))
+        self.assertTrue(parity.matches(parity.nodes(xml), ('Ver Letras',)))
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
+             patch.object(parity, 'tree', return_value=xml), patch.object(parity, 'foreground', return_value=True), \
+             patch.object(parity, 'screenshot', return_value=[1080,1920]), \
+             patch.object(parity, 'shell', return_value=self.session()), patch.object(parity, 'exercise_transport') as exercise:
+            result={'screens':[]}
+            parity.record_state(result, 'aurelis', 'dark', 'player-portrait', True)
+            row=result['screens'][0]
+            self.assertTrue(row['panel_opened'])
+            self.assertFalse(row['reached'])
+            self.assertIn('transport: play',row['reason'])
+            self.assertEqual('NOT_REVIEWED',row['visual_verdict'])
+            exercise.assert_not_called()
+            self.assertEqual(xml,(Path(temp)/'aurelis/dark/player-portrait/hierarchy.xml').read_text())
+
+    def test_player_visibility_preserves_disabled_previous_and_checks_real_capabilities(self):
+        xml=self.player_xml(previous_enabled=False)
+        self.assertTrue(parity.player_transport(xml,self.session(actions=36),'com.music.aurelis',[1080,1920])['visible'])
+        self.assertFalse(parity.player_transport(xml,self.session(actions=52),'com.music.aurelis',[1080,1920])['visible'])
+        for bad in (xml.replace('bounds="[90,50][150,110]"','bounds="[90,1921][150,1980]"'),
+                    xml.replace('text="Play"','text="Play" visible-to-user="false"'),
+                    xml.replace('package="com.music.aurelis"','package="com.other"')):
+            self.assertFalse(parity.player_transport(bad,self.session(actions=36),'com.music.aurelis',[1080,1920])['visible'])
+        for dump in (self.session(state=3),self.session(package='com.other'),self.session(title='Other song')):
+            self.assertFalse(parity.player_transport(xml,dump,'com.music.aurelis',[1080,1920])['visible'])
+
+    def test_transport_probe_requires_real_play_pause_next_previous_session_changes(self):
+        xml=self.player_xml().replace('text="Play"','text="Play" content-desc="Pause"')
+        def run_probe(dumps):
+            iterator=iter(dumps)
+            def shell(*args):
+                return next(iterator) if args==('dumpsys','media_session') else ''
+            with tempfile.TemporaryDirectory() as temp, patch.object(parity,'tree',return_value=xml), \
+                 patch.object(parity,'shell',side_effect=shell) as calls, patch.object(parity.time,'sleep'):
+                result=parity.exercise_transport('com.music.aurelis',Path(temp))
+                self.assertEqual(result,json.loads((Path(temp)/'transport-results.json').read_text()))
+                self.assertFalse(any(c.args[:2]==('input','swipe') for c in calls.call_args_list))
+                return result
+        result=run_probe([self.session(state=3),self.session(),self.session(title='Parity Track 02'),self.session()])
+        self.assertTrue(result['passed'])
+        self.assertEqual(['play','pause','next','previous'],[s['step'] for s in result['steps']])
+        for dump in (self.session(),self.session(state=3,package='com.other'),self.session(state=3,queue=1)):
+            self.assertFalse(run_probe([dump]*6)['passed'])
+
+    def test_failed_transport_interaction_cannot_become_a_reached_player(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity,'OUT',Path(temp)), \
+             patch.object(parity,'tree',return_value=self.player_xml()), patch.object(parity,'foreground',return_value=True), \
+             patch.object(parity,'screenshot',return_value=[1080,1920]), patch.object(parity,'shell',return_value=self.session()), \
+             patch.object(parity,'exercise_transport',return_value={'passed':False,'steps':[]}):
+            result={'screens':[]}
+            parity.record_state(result,'aurelis','dark','player-portrait',True)
+            self.assertFalse(result['screens'][0]['reached'])
+            self.assertTrue(result['screens'][0]['transport']['visible'])
+
+    def test_host_telemetry_is_bounded_and_never_certifies_a_cause(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(host,'command',return_value={'exit_code':0,'stdout':'sample'}):
+            monitor=host.HostMonitor(temp)
+            for _ in range(40): monitor.sample()
+            evidence=json.loads((Path(temp)/'during-capture.json').read_text())
+            self.assertEqual(36,len(evidence['samples']))
+            self.assertEqual('UNCONFIRMED',evidence['cause_verdict'])
+        import subprocess
+        with patch.object(host.subprocess,'run',side_effect=subprocess.TimeoutExpired('adb',3)):
+            self.assertEqual({'error':'TimeoutExpired'},host.command(['adb','get-state']))
+
+    def test_host_diagnostic_failure_is_recorded_without_becoming_an_app_verdict(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(host,'command',side_effect=PermissionError):
+            monitor=host.HostMonitor(temp)
+            monitor.loop()
+            result=json.loads((Path(temp)/'during-capture.json').read_text())
+            self.assertEqual('PermissionError',result['error'])
+            self.assertEqual('UNCONFIRMED',result['cause_verdict'])
+
+    def test_host_monitor_stops_before_teardown_and_keeps_both_kernel_snapshots(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(host,'command',return_value={'exit_code':0,'stdout':'mock telemetry'}):
+            monitor=host.HostMonitor(temp)
+            monitor.start()
+            self.assertTrue(monitor.stop()['stopped'])
+            for stage in ('before','after'):
+                self.assertEqual('mock telemetry',json.loads((Path(temp)/(stage+'-kernel.json')).read_text())['stdout'])
+
     def test_device_preparation_requires_observed_user_unlock(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
              patch.object(parity, 'shell', side_effect=['', '', '', '0', 'RUNNING_UNLOCKING', 'RUNNING_UNLOCKED']) as shell, \
@@ -169,7 +263,7 @@ class ParityEvidenceTest(unittest.TestCase):
         self.assertFalse(parity.local_library_fixture(rows(['Local Music', '3 songs'])))
         self.assertFalse(parity.local_library_fixture(rows(['Play', 'Shuffle', '3 songs'])))
 
-    def test_player_expansion_requires_paused_session_and_visible_title_and_controls(self):
+    def test_player_opening_requires_paused_session_title_and_panel_marker(self):
         with patch.object(parity,'tree') as tree:
             self.assertFalse(parity.expand_fixture(False))
             tree.assert_not_called()
@@ -181,6 +275,7 @@ class ParityEvidenceTest(unittest.TestCase):
 
     def setUp(self):
         # Reports made from synthetic fixtures must never pollute the real CI summary.
+        self.enterContext(redirect_stdout(io.StringIO()))
         self.enterContext(patch.dict(os.environ))
         os.environ.pop("GITHUB_STEP_SUMMARY", None)
         self.enterContext(patch.object(parity, "SYSTEM_DIALOG_EVENTS", []))

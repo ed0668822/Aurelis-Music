@@ -7,6 +7,7 @@ on:
       - .github/workflows/ui-parity-comparison.yml
       - .github/scripts/ui_parity*.py
       - .github/scripts/test_ui_parity.py
+      - .github/scripts/fixtures/ui23-*.xml
   workflow_dispatch:
 permissions:
   contents: read

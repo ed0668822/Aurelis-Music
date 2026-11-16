@@ -12,6 +12,48 @@
 
 > **Autorización posterior de implementación:** el usuario autoriza terminar e implementar el parche explicado de Biblioteca/galería, con commit y push a feature/bitchord-local-migration/PR1. Máximo63 rutas distintas en toda esta corrección. Esta instrucción posterior levanta la pausa de implementación/publicación; la paridad visual, prueba física y cierre de B07 no se dan por aprobados al aplicar el código.
 
+> **Aclaración vigente del usuario:** máximo **60 archivos distintos por mensaje/entrega**
+> para este trabajo, pudiendo modificar todos los archivos necesarios. Sustituye la
+> interpretación histórica de63 acumulados. Cuenta código/tests/docs/config/renombres/
+> eliminaciones de la entrega; múltiples commits no reinician su presupuesto.
+> El usuario autoriza continuar con la primera entrega del plan B05_UI_EVIDENCE_PLAN.
+
+### B05 — primera entrega: evidencia y aceptación real del transporte
+
+Se conserva a5089741/run167 B01–B06 SUCCESS,424 tests por variante,90,24% de
+cobertura; no trasladar ese verde al nuevo SHA. UI23 FAILURE. ZIP glass23 aportado
+por el usuario: CRC válido,18 capturas Aurelis y6 BitChord; revisión visual parcial
+con diferencias confirmadas. Controles del player fuera de vista inicial en ambas
+orientaciones, Play/Shuffle locales sin cápsulas, textos ES con locale EN y MiniPlayer
+diferente. No cerrar B05 por estas capturas. Plain23 sigue bloqueado: HTTP302 a
+productionresultssa16.blob.core.windows.net, CONNECT403. No ZIP local inventado.
+
+Separación en resultados: panel_opened, transporte visible y verificación de acciones.
+El estado exige título/control propio dentro del viewport, sesión propia PAUSED y
+Play/Next/Previous con capacidad/habilitación coherentes. Anterior deshabilitado se
+conserva si coincide con su capacidad real. El PNG se guarda ANTES de tocar controles.
+No desplazar para ocultar un defecto. Después, prueba por UI Play→Pause→Next→Previous,
+con dumps reales, cola de3 fixtures, cambio a02/03 y retorno01. No basta un tap ni
+una sesión ajena. Letras exige también sesión pausada propia de01 tras esas acciones.
+El criterio de abrir panel sigue separado para recoger letras aunque falle transporte.
+
+Fixture XML deriva de la jerarquía original de UI23, con SHA de procedencia; solo
+se añaden comentarios de cabecera. Regresión conserva evidencia y rechaza REACHED
+con título/letras pero sin transporte. Se añaden casos de controles deshabilitados,
+capacidades, viewport/paquete, acción inefectiva/sesión ajena/cola distinta e integridad
+del resultado. Monitor toma memoria/procesos sin argumentos/cgroup y estado ADB
+DURANTE la captura, con historial acotado; kernel antes/después aún dentro del paso.
+Añade buffers Android system/events y aísla stdout sintético de los tests para
+no confundirlo con captura real. Telemetría no certifica causa ni sustituye gate;
+no cores, entorno, tokens, GPU/ABI/SDK/firmas ni referencia modificados.
+
+57 regresiones Python PASS por material; dos revisiones del mismo agente, no
+independientes. Comprobaciones locales estáticas/Python/diff; Android solo Actions.
+No se modifica todavía UI de producto: esa adaptación es la siguiente entrega.
+El nuevo gate debe detectar la brecha actual; un comparador rojo por ese defecto
+es evidencia pendiente de reparación, no éxito visual. Causa final de ADB closed
+sin demostrar; mejorar datos no equivale a resolverla. Ver B05_UI_EVIDENCE_PLAN.md.
+
 ## Continuación actual — primera entrega documental
 
 ### Run166 aprobado; preparación y diagnóstico de emuladores de comparación22

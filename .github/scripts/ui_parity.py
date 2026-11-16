@@ -127,7 +127,7 @@ def push_fixture(path, remote):
         raise RuntimeError("Fixture bytes differ after transfer: " + path.name)
 
 
-def nodes(xml):
+def nodes(xml, include_disabled=False):
     root = ET.fromstring(xml)
     result = []
     for node in root.iter("node"):
@@ -136,10 +136,12 @@ def nodes(xml):
         editable = node.get("class", "").endswith("EditText")
         scrollable = node.get("scrollable") == "true"
         bounds = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.get("bounds", ""))
-        if bounds and (label or editable or scrollable) and node.get("enabled", "true") == "true":
+        if (bounds and (label or editable or scrollable) and node.get("visible-to-user", "true") != "false"
+                and (include_disabled or node.get("enabled", "true") == "true")):
             left, top, right, bottom = map(int, bounds.groups())
             if right > left and bottom > top:
-                result.append({"label": label, "bounds": [left, top, right, bottom], "class": node.get("class", ""), "labels": labels, "scrollable": scrollable})
+                result.append({"label": label, "bounds": [left, top, right, bottom], "class": node.get("class", ""), "labels": labels, "scrollable": scrollable,
+                               "enabled": node.get("enabled", "true") == "true", "package": node.get("package", "")})
     return result
 
 
@@ -153,8 +155,8 @@ def matches(rows, labels):
             for label in row.get("labels", [row["label"]]) for value in [label, *label.splitlines()])]
 
 
-def fixture_session(dump, package, states=(2, 3)):
-    """Never borrow another package's active session or merely accept a tap."""
+def session_snapshot(dump, package):
+    """Read only this package's active session, including real capabilities."""
     records = re.finditer(r"^\s*package=(\S+)[ \t]*\n(.*?)(?=^\s*package=|\Z)", dump, re.M | re.S)
     for record in records:
         if record[1] != package:
@@ -162,10 +164,76 @@ def fixture_session(dump, package, states=(2, 3)):
         body = record[2]
         state = re.search(r"state=PlaybackState \{state=(?:[A-Z_]+\()?(\d+)", body)
         title = re.search(r"metadata:.*?description=([^,\n]+)", body)
-        if (state and int(state[1]) in states and title and title[1].strip() == "Parity Track 01"
-                and re.search(r"^\s*active=true\s*$", body, re.M)):
-            return True
-    return False
+        actions = re.search(r"\bactions=(\d+)", body)
+        queue = re.search(r"queueTitle=.*?, size=(\d+)", body)
+        if state and title and re.search(r"^\s*active=true\s*$", body, re.M):
+            return {"state": int(state[1]), "title": title[1].strip(),
+                    "actions": int(actions[1]) if actions else None,
+                    "queue_size": int(queue[1]) if queue else None}
+    return None
+
+
+def fixture_session(dump, package, states=(2, 3)):
+    snapshot = session_snapshot(dump, package)
+    return bool(snapshot and snapshot["state"] in states and snapshot["title"] == "Parity Track 01")
+
+
+TRANSPORT = {"play": ("Play", "Reproducir"), "pause": ("Pause", "Pausar", "Pausa"),
+             "next": ("Next", "Siguiente"), "previous": ("Previous", "Anterior")}
+
+
+def player_transport(xml, dump, package, dimensions):
+    """Check the initial viewport; disabled controls must agree with session actions."""
+    snapshot = session_snapshot(dump, package)
+    if not snapshot or snapshot["state"] != 2 or snapshot["title"] != "Parity Track 01" or snapshot["actions"] is None:
+        return {"visible": False, "reason": "Own paused fixture session/capabilities missing"}
+    rows = [r for r in nodes(xml, include_disabled=True) if r["package"] == package
+            and 0 <= r["bounds"][0] < r["bounds"][2] <= dimensions[0]
+            and 0 <= r["bounds"][1] < r["bounds"][3] <= dimensions[1]]
+    if not matches(rows, ("Parity Track 01",)):
+        return {"visible": False, "reason": "Fixture title missing from own viewport"}
+    controls = {}
+    for name, bit in (("play", 4), ("next", 32), ("previous", 16)):
+        found = matches(rows, TRANSPORT[name])
+        if len(found) != 1 or found[0]["enabled"] != bool(snapshot["actions"] & bit):
+            return {"visible": False, "reason": "Missing, ambiguous or capability-mismatched transport: " + name}
+        controls[name] = found[0]
+    if not controls["play"]["enabled"]:
+        return {"visible": False, "reason": "Paused fixture cannot be played"}
+    return {"visible": True, "controls": controls, "session": snapshot}
+
+
+def exercise_transport(package, folder):
+    """Exercise UI controls, retaining every observed session; never scroll to pass."""
+    evidence = {"passed": False, "steps": []}
+    def observe(name, titles, states):
+        for attempt in range(6):
+            dump = shell("dumpsys", "media_session")
+            (folder / ("transport-" + name + ".txt")).write_text(dump)
+            snapshot = session_snapshot(dump, package)
+            if snapshot and snapshot["title"] in titles and snapshot["state"] in states and snapshot["queue_size"] == 3:
+                evidence["steps"].append({"step": name, "session": snapshot})
+                return snapshot
+            if attempt < 5:
+                time.sleep(0.5)
+        raise RuntimeError("Transport did not reach expected fixture state: " + name)
+    try:
+        for name, titles, states in (("play", ("Parity Track 01",), (3,)),
+                                     ("pause", ("Parity Track 01",), (2,)),
+                                     ("next", ("Parity Track 02", "Parity Track 03"), (2,)),
+                                     ("previous", ("Parity Track 01",), (2,))):
+            rows = [r for r in nodes(tree()) if r["package"] == package]
+            found = matches(rows, TRANSPORT[name])
+            if len(found) != 1:
+                raise RuntimeError("Enabled transport control missing or ambiguous: " + name)
+            left, top, right, bottom = found[0]["bounds"]
+            shell("input", "tap", (left + right) // 2, (top + bottom) // 2)
+            observe(name, titles, states)
+        evidence["passed"] = True
+    except RuntimeError as error:
+        evidence["error"] = str(error)
+    (folder / "transport-results.json").write_text(json.dumps(evidence, indent=2) + "\n")
+    return evidence
 
 
 def wait_fixture_session(package, states):
@@ -364,17 +432,34 @@ def record_state(result, app, theme, name, reached, reason=""):
         orientation_ok = dimensions[0] > dimensions[1] if name == "player-landscape" else dimensions[0] < dimensions[1]
         if not orientation_ok:
             reason = "Requested orientation was not verified in screenshot dimensions"
+        transport = None
+        panel_opened = bool(reached and current and orientation_ok)
         if name in {"miniplayer", "player-portrait", "player-landscape", "lyrics"}:
             session = shell("dumpsys", "media_session")
             (folder / "media-session.txt").write_text(session)
             if name == "miniplayer" and not (mini_player_rows(nodes(xml)) and fixture_session(session, PACKAGES[app], (2,))):
                 reached = False
                 reason = "Requires visible MiniPlayer transport and this app's paused fixture session"
+            if name == "lyrics" and not fixture_session(session, PACKAGES[app], (2,)):
+                reached = False
+                reason = "Lyrics require this app's own paused fixture session"
+            if name in {"player-portrait", "player-landscape"} and current and orientation_ok:
+                transport = player_transport(xml, session, PACKAGES[app], dimensions)
+                if not transport["visible"]:
+                    reached = False
+                    reason = transport["reason"]
+                elif reached:
+                    transport["interaction"] = exercise_transport(PACKAGES[app], folder)
+                    if not transport["interaction"]["passed"]:
+                        reached = False
+                        reason = "Visible player transport failed interaction verification"
         result["screens"].append({"app": app, "theme": theme, "state": name,
             "reached": bool(reached and current and orientation_ok), "foreground": current, "dimensions": dimensions,
             "reason": reason if reached and current else reason or "Target navigation/foreground was not verified",
             "labels": labels, "image": str((folder / "screen.png").relative_to(OUT)),
             "visual_verdict": "NOT_REVIEWED"})
+        if name in {"player-portrait", "player-landscape"}:
+            result["screens"][-1].update({"panel_opened": panel_opened, "transport": transport})
     except Exception as error:
         result["screens"].append({"app": app, "theme": theme, "state": name,
             "reached": False, "reason": str(error), "visual_verdict": "NOT_REVIEWED"})
@@ -464,6 +549,8 @@ def pause_fixture(package, local):
 
 
 def expand_fixture(paused):
+    # Opening alone is insufficient: record_state validates the initial transport
+    # and its real interactions separately, without scrolling the screenshot.
     if not paused:
         return False
     expanded = paused and (tap(("Abrir reproductor", "Open player", "Expand player")) or expand_miniplayer())
@@ -513,10 +600,12 @@ def wait_offline_fixture():
 
 
 def capture():
+    from ui_parity_host import HostMonitor
     OUT.mkdir(exist_ok=True)
     SYSTEM_DIALOG_EVENTS.clear()
     logcat = None
     logcat_stream = None
+    monitor = HostMonitor(OUT / "host")
     result = {"schema": 1, "aurelis_commit": os.environ.get("GITHUB_SHA"), "reference_commit": REFERENCE_SHA,
         "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
         "not_tested": ["widgets on a launcher", "gestures and animations in motion", "continuous rotation with player open", "cold landscape library playback initiation", "physical device", "pixel identity"],
@@ -527,6 +616,7 @@ def capture():
         "scope": "Evidence gathering only; Android Auto/TV/Wear excluded"}
     save(result)
     try:
+        monitor.start()
         reference = Path("comparison-reference/reference.apk")
         provenance = json.loads(Path("comparison-reference/reference.json").read_text())
         if provenance.get("commit") != REFERENCE_SHA or provenance.get("sha256") != digest(reference):
@@ -541,7 +631,7 @@ def capture():
         prepare_device("capture")
         # Stream before navigating: a dead emulator cannot answer a final logcat dump.
         logcat_stream = (OUT / "device-logcat.txt").open("wb")
-        logcat = subprocess.Popen(["adb", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash"],
+        logcat = subprocess.Popen(["adb", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash", "-b", "system", "-b", "events"],
                                   stdout=logcat_stream, stderr=subprocess.STDOUT)
         shell("wm", "size", "1080x1920"); shell("wm", "density", "480")
         shell("settings", "put", "system", "font_scale", "1.0")
@@ -632,6 +722,8 @@ def capture():
         result["error"] = str(error)
         print(f"UI capture FAILED at {result['stage']}: {error}", flush=True)
     finally:
+        # This executes before emulator-runner tears the VM down, even on ADB loss.
+        result["host_monitor"] = monitor.stop()
         result["system_dialog_events"] = SYSTEM_DIALOG_EVENTS.copy()
         if logcat is not None:
             logcat.terminate()
@@ -739,9 +831,9 @@ def report():
     result = json.loads(path.read_text()) if path.exists() else {"error": "Capture never produced results", "screens": []}
     result["visual_verdict"] = "NOT_REVIEWED"
     save(result)
-    summary = {key: result.get(key) for key in ("stage", "error", "capture_complete", "visual_verdict", "system_dialog_events")}
+    summary = {key: result.get(key) for key in ("stage", "error", "capture_complete", "visual_verdict", "system_dialog_events", "host_monitor")}
     summary["captured_states"] = len(result.get("screens", []))
-    summary["unreached"] = [{key: row.get(key) for key in ("app", "theme", "state", "reason", "labels")}
+    summary["unreached"] = [{key: row.get(key) for key in ("app", "theme", "state", "reason", "labels", "panel_opened", "transport")}
                             for row in result.get("screens", []) if not row.get("reached")]
     diagnostic = json.dumps(summary, ensure_ascii=False, indent=2)
     print("UI comparison diagnostic:\n" + diagnostic, flush=True)
