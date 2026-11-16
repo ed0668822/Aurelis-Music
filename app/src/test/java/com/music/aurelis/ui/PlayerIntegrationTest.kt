@@ -583,7 +583,11 @@ class PlayerIntegrationTest {
         vm.remoteLyricsRequest = { requests++; error("Disabled lookup must not send metadata") }
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
-        compose.onNodeWithText("Buscar en LRCLIB").performClick()
+        val lookupLabel = compose.activity.getString(R.string.lyrics_search_lrclib)
+        compose.onNodeWithText(lookupLabel).assertDoesNotExist()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.lyrics_ui_tools)).performClick()
+        compose.runOnIdle { assertEquals(0, requests) }
+        compose.onNodeWithText(lookupLabel).assertIsDisplayed().performClick()
         compose.onNodeWithText("Source line A").assertIsDisplayed()
         compose.runOnIdle {
             assertEquals(0, requests)

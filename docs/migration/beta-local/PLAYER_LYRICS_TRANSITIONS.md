@@ -95,3 +95,21 @@ solicitudes, renderer PNG y recursos propios son aportaciones Aurelis.
 - docs/migration/beta-local/LICENSE_AUDIT.md
 - docs/migration/beta-local/PLAYER_LYRICS_TRANSITIONS.md
 - docs/migration/beta-local/PROGRESS_TRACKER.md
+
+## Reparación de Main176
+
+Run43912192270/38980bfc terminó FAILURE. Logs originales descargados y CRC válido.
+B01/B02/B05 SUCCESS; B03 ejecutó439 casos por variante con un fallo en cada una;
+B04 SKIPPED y B06 FAILURE. La cobertura quedó sin generar tras el fallo de suites,
+no es la causa raíz acreditada.
+
+La prueba disabledOnlineSearchKeepsImportedLyricsAndDoesNotSendMetadata buscaba
+LRCLIB directamente aunque ahora importación/búsqueda están dentro de Herramientas
+cuando hay letra. Se actualiza el recorrido: acción oculta inicialmente, abrir
+Herramientas, comprobar cero peticiones y pulsar búsqueda explícita por su recurso.
+Se conservan letra importada visible, lookup fallido al estar deshabilitado, cero
+peticiones remotas y reproducción pausada. No se cambia producción ni se omite
+la prueba. Dos revisiones del mismo agente: alcance de variables/recursos y
+contrato de privacidad/recuperación. Parser y diff-check locales; Android solo CI.
+Dos archivos correctivos ya pertenecían a la entrega:19 distintos acumulados
+desde d181c97a, máximo60. Nuevo CI pendiente; avisar push y esperar al usuario.
