@@ -14,6 +14,21 @@
 
 ## Continuación actual — primera entrega documental
 
+### Comparación20 — cristal completo; comprobación offline con espera acotada
+
+43783063417 de02a3cb1c: glass recoge36/36 estados alcanzados, incluidos ambos
+player horizontales. visual_verdict sigue NOT_REVIEWED; recoger imágenes no acredita
+paridad visual, widgets, movimiento o HyperOS. Plain falla antes de instalar/abrir
+apps en offline_configuration: no se verifica «Active default network: none» tras
+la espera fija2s. Logs ZIP oficiales válidos; no se inventa otro diagnóstico.
+
+La comprobación conserva las órdenes de modo avión/WiFi/datos y exige observar
+el mismo estado desconectado. Espera hasta15 lecturas con intervalos1s, guardando
+siempre el último dumpsys; conexión persistente o salida desconocida conservan
+fallo. Dos regresiones cubren desconexión tardía y rechazo acotado, sin relajar gate.
+44 pruebas Python PASS en cada material, doble revisión del mismo agente y diff
+correcto. Tres rutas ya incluidas; total63. Sin Android local; nuevo CI pendiente.
+
 ### Reparación de run164 — tamaño del diálogo Nueva lista
 
 02a3cb1c/run164/43783063441: B01/B02/B05 SUCCESS, B03 FAILURE, B04 SKIPPED y

@@ -456,6 +456,21 @@ def verify_apk(path, package):
     return {"sha256": digest(path), "package": package, "abi": "arm64-v8a"}
 
 
+def wait_offline_fixture():
+    # Android disconnects asynchronously after airplane mode and svc changes.
+    # Preserve the last observed state and never accept an unverified connection.
+    for attempt in range(15):
+        network = shell("dumpsys", "connectivity")
+        (OUT / "connectivity.txt").write_text(network)
+        if "Active default network: none" in network:
+            return network
+        if attempt < 14:
+            time.sleep(1)
+    state = next((line.strip() for line in network.splitlines()
+                  if line.strip().startswith("Active default network:")), "default network status missing")
+    raise RuntimeError("Offline fixture conditions were not verified after 15 connectivity snapshots; last state: " + state[:200])
+
+
 def capture():
     OUT.mkdir(exist_ok=True)
     SYSTEM_DIALOG_EVENTS.clear()
@@ -494,11 +509,7 @@ def capture():
         # No remote credentials/content are used. Internet access is disabled for captures.
         shell("cmd", "connectivity", "airplane-mode", "enable")
         shell("svc", "wifi", "disable"); shell("svc", "data", "disable")
-        time.sleep(2)
-        network = shell("dumpsys", "connectivity")
-        (OUT / "connectivity.txt").write_text(network)
-        if "Active default network: none" not in network:
-            raise RuntimeError("Offline fixture conditions were not verified")
+        wait_offline_fixture()
         result["device"] = {"size": shell("wm", "size"), "density": shell("wm", "density"),
             "font_scale": shell("settings", "get", "system", "font_scale"),
             "locale": shell("getprop", "persist.sys.locale"), "api": "35",

@@ -15,6 +15,27 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_offline_configuration_waits_for_observed_disconnect_and_keeps_the_dump(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
+             patch.object(parity, 'shell', side_effect=['Active default network: 100', 'Active default network: none']) as shell, \
+             patch.object(parity.time, 'sleep') as delay:
+            self.assertEqual('Active default network: none', parity.wait_offline_fixture())
+            self.assertEqual(2, shell.call_count)
+            delay.assert_called_once_with(1)
+            self.assertEqual('Active default network: none', (Path(temp) / 'connectivity.txt').read_text())
+
+    def test_offline_configuration_never_accepts_connected_or_unknown_state(self):
+        for observed in ('Active default network: 100', 'Unknown connectivity state'):
+            with self.subTest(observed=observed), tempfile.TemporaryDirectory() as temp, \
+                 patch.object(parity, 'OUT', Path(temp)), patch.object(parity, 'shell', return_value=observed) as shell, \
+                 patch.object(parity.time, 'sleep') as delay:
+                with self.assertRaisesRegex(RuntimeError, '15 connectivity snapshots') as failure:
+                    parity.wait_offline_fixture()
+                self.assertIn(observed if observed.startswith('Active default network:') else 'default network status missing', str(failure.exception))
+                self.assertEqual(15, shell.call_count)
+                self.assertEqual(14, delay.call_count)
+                self.assertEqual(observed, (Path(temp) / 'connectivity.txt').read_text())
+
     def test_static_scenario_stops_before_rotation_and_resets_both_apps_equally(self):
         for app in parity.PACKAGES:
             calls = []
