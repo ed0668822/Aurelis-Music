@@ -15,6 +15,76 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_device_preparation_requires_observed_user_unlock(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
+             patch.object(parity, 'shell', side_effect=['', '', '', '0', 'RUNNING_UNLOCKING', 'RUNNING_UNLOCKED']) as shell, \
+             patch.object(parity.time, 'sleep') as delay:
+            parity.prepare_device('fixture')
+            self.assertEqual([('svc', 'power', 'stayon', 'true'), ('input', 'keyevent', 'KEYCODE_WAKEUP'),
+                              ('wm', 'dismiss-keyguard'), ('am', 'get-current-user'),
+                              ('am', 'get-started-user-state', '0'), ('am', 'get-started-user-state', '0')],
+                             [call.args for call in shell.call_args_list])
+            self.assertEqual({'user': '0', 'observations': ['RUNNING_UNLOCKING', 'RUNNING_UNLOCKED']},
+                             json.loads((Path(temp) / 'fixture-user-state.json').read_text()))
+            delay.assert_called_once_with(1)
+
+    def test_device_preparation_never_accepts_a_locked_or_unknown_user_state(self):
+        for state in ('RUNNING_LOCKED', 'unknown'):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as temp, \
+                 patch.object(parity, 'OUT', Path(temp)), \
+                 patch.object(parity, 'shell', side_effect=['', '', '', '0'] + [state] * 15), \
+                 patch.object(parity.time, 'sleep') as delay:
+                with self.assertRaisesRegex(RuntimeError, 'not RUNNING_UNLOCKED'):
+                    parity.prepare_device('fixture')
+                self.assertEqual(14, delay.call_count)
+                self.assertEqual([state] * 15, json.loads((Path(temp) / 'fixture-user-state.json').read_text())['observations'])
+        with patch.object(parity, 'shell', side_effect=['', '', '', 'not a user id']):
+            with self.assertRaisesRegex(RuntimeError, 'Cannot verify emulator current user'):
+                parity.prepare_device('fixture')
+
+    def test_fixture_transfer_retains_create_error_and_verifies_original_bytes(self):
+        error = RuntimeError("remote couldn't create file: Operation not permitted")
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
+             patch.object(parity, 'adb', side_effect=[error, 'copied']) as adb, \
+             patch.object(parity, 'shell') as shell, patch.object(parity.time, 'sleep') as delay:
+            path = Path(temp) / 'original.flac'
+            path.write_bytes(b'original fixture bytes')
+            shell.return_value = parity.digest(path) + '  /sdcard/Music/Parity/original.flac'
+            parity.push_fixture(path, '/sdcard/Music/Parity/original.flac')
+            self.assertEqual(2, adb.call_count)
+            delay.assert_called_once_with(1)
+            self.assertEqual([{'file': path.name, 'attempt': 1, 'error': str(error)}],
+                             json.loads((Path(temp) / 'fixture-transfer-errors.json').read_text()))
+
+    def test_fixture_transfer_rejects_persistent_create_error_without_verifying_or_indexing(self):
+        error = RuntimeError("remote couldn't create file: Operation not permitted")
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
+             patch.object(parity, 'adb', side_effect=error) as adb, patch.object(parity, 'shell') as shell, \
+             patch.object(parity.time, 'sleep') as delay:
+            with self.assertRaisesRegex(RuntimeError, 'Operation not permitted'):
+                parity.push_fixture(Path('original.flac'), '/sdcard/Music/Parity/original.flac')
+            self.assertEqual(3, adb.call_count)
+            self.assertEqual(2, delay.call_count)
+            self.assertEqual(3, len(json.loads((Path(temp) / 'fixture-transfer-errors.json').read_text())))
+            shell.assert_not_called()
+
+    def test_fixture_transfer_never_retries_dead_device_or_differing_bytes(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
+             patch.object(parity, 'adb', side_effect=RuntimeError('device offline')) as adb, \
+             patch.object(parity, 'shell') as shell, patch.object(parity.time, 'sleep') as delay:
+            with self.assertRaisesRegex(RuntimeError, 'device offline'):
+                parity.push_fixture(Path('original.flac'), '/sdcard/Music/Parity/original.flac')
+            adb.assert_called_once()
+            delay.assert_not_called()
+            shell.assert_not_called()
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'adb') as adb, \
+             patch.object(parity, 'shell', return_value='wrong  /sdcard/original.flac'):
+            path = Path(temp) / 'original.flac'
+            path.write_bytes(b'original')
+            with self.assertRaisesRegex(RuntimeError, 'Fixture bytes differ'):
+                parity.push_fixture(path, '/sdcard/original.flac')
+            adb.assert_called_once()
+
     def test_offline_configuration_waits_for_observed_disconnect_and_keeps_the_dump(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
              patch.object(parity, 'shell', side_effect=['Active default network: 100', 'Active default network: none']) as shell, \
@@ -230,6 +300,7 @@ class ParityEvidenceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, "OUT", Path(temp)), \
              patch.dict(os.environ, UI_SETTINGS_ANDROID_API="35"), \
              patch.object(parity, "verify_apk"), patch.object(parity, "adb"), \
+             patch.object(parity, "prepare_device"), patch.object(parity, "tree", return_value='<hierarchy/>'), \
              patch.object(parity, "shell", side_effect=lambda *args: "35" if args == ("getprop", "ro.build.version.sdk") else ""), \
              patch.object(parity.subprocess, "run", return_value=failed), redirect_stdout(io.StringIO()):
             self.assertEqual(1, parity.settings_navigation())
@@ -237,6 +308,21 @@ class ParityEvidenceTest(unittest.TestCase):
             self.assertFalse(result['passed'])
             self.assertEqual(2, len(result['cases']))
             self.assertTrue(all('ANDROID_RUNNER_REPORTED_FAILURE' in row['problems'] for row in result['cases']))
+
+    def test_settings_runner_never_instruments_over_a_blocking_app_error(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
+             patch.dict(os.environ, UI_SETTINGS_ANDROID_API='35'), \
+             patch.object(parity, 'verify_apk'), patch.object(parity, 'adb'), \
+             patch.object(parity, 'shell', side_effect=lambda *args: '35' if args == ('getprop', 'ro.build.version.sdk') else ''), \
+             patch.object(parity, 'prepare_device'), \
+             patch.object(parity, 'tree', side_effect=RuntimeError("Blocking system error: Aurelis Music isn't responding")), \
+             patch.object(parity.subprocess, 'run') as instrument, redirect_stdout(io.StringIO()):
+            self.assertEqual(1, parity.settings_navigation())
+            result = json.loads((Path(temp) / 'settings-navigation.json').read_text())
+            self.assertFalse(result['passed'])
+            self.assertEqual([], result['cases'])
+            self.assertIn("Aurelis Music isn't responding", result['error'])
+            instrument.assert_not_called()
 
     def test_settings_runner_rejects_wrong_android_before_install_or_instrumentation(self):
         for expected, actual in (("35", "36"), ("36", "35")):

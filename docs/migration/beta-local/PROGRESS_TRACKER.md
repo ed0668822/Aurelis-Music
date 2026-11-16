@@ -14,6 +14,38 @@
 
 ## Continuación actual — primera entrega documental
 
+### Run166 aprobado; preparación y diagnóstico de emuladores de comparación22
+
+efd7598a/run166/43785856046: B01–B06 SUCCESS. Los logs oficiales acreditan424
+SUCCESS Debug y424 Release, tareas ejecutadas y cobertura de líneas cambiadas
+90,24%≥80%. Pasan creación/apertura de lista, preview y selector visual/cancelación.
+Esto valida la compilación/pruebas del parche Biblioteca/galería, no paridad visual.
+
+Comparación22/43785856052 FAILURE: glass alcanza36/36, capture_complete=true y
+NOT_REVIEWED; API36 pasa ambos recorridos. Plain supera offline y falla al copiar
+la primera FLAC («remote couldn't create file: Operation not permitted»), antes de
+instalar apps. API35 falla ambos casos en la primera búsqueda de Perfil, visible=[],
+antes de abrir Ajustes. El mismo código de app/test había pasado ambos casos en
+API35/API36 de comparación21/43785229427; ese workflow se canceló después para
+sustituir las comparaciones restantes por22. No atribuir estos fallos a una causa
+de app, almacenamiento, bloqueo o ventana concreta sin la evidencia correspondiente.
+
+Se establece pantalla despierta/keyguard descartado y se exige RUNNING_UNLOCKED
+del usuario actual, máximo15 lecturas con historial; comando contrastado con AOSP15.
+La regresión nativa guarda la jerarquía previa y aplica la política ya existente de
+recuperar una sola ANR verificada de Pixel Launcher. ANR de app/desconocida/repetida
+conserva fallo; no hay UiAutomation paralelo a instrumentación. Si falta un control,
+el diagnóstico incluye paquete/clase raíz, ventana, pantalla/keyguard/desbloqueo.
+
+Transferencias conservan bytes originales y verifican SHA256 remoto antes de scan.
+Solo el error exacto de creación observado admite hasta3 intentos con pausa1s;
+se registran todos los errores. Persistencia, dispositivo perdido o hash diferente
+fallan. No cambian permisos, SDK, ABI, firma, material, aserciones ni timeouts nativos.
+50 pruebas Python PASS por material; seis regresiones nuevas. Dos revisiones del
+mismo agente, no independientes; parser estático Kotlin y diff correctos. Cuatro
+rutas ya contadas; total63. Android nuevo exclusivamente Actions y aún pendiente.
+Prueba física Redmi/Android16/HyperOS3 y revisión visual de imágenes siguen pendientes.
+
 ### Comparación20 — cristal completo; comprobación offline con espera acotada
 
 43783063417 de02a3cb1c: glass recoge36/36 estados alcanzados, incluidos ambos

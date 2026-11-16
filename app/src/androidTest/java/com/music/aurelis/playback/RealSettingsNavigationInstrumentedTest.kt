@@ -1,10 +1,13 @@
 // Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback
 
+import android.app.KeyguardManager
 import android.content.ComponentName
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.SystemClock
+import android.os.PowerManager
+import android.os.UserManager
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.lifecycle.Lifecycle
@@ -49,6 +52,24 @@ class RealSettingsNavigationInstrumentedTest {
             label?.toString()?.lineSequence()?.any { it.equals(text, ignoreCase = true) } == true
         }
 
+    private fun windowDiagnostic(): String {
+        val root = instrumentation.uiAutomation.rootInActiveWindow
+        val labels = mutableListOf<String>()
+        fun visit(node: AccessibilityNodeInfo, depth: Int) {
+            if (depth > 30 || labels.size >= 40) return
+            if (node.isVisibleToUser && (!node.text.isNullOrBlank() || !node.contentDescription.isNullOrBlank())) {
+                labels.add("${node.packageName}:${node.text}|${node.contentDescription}")
+            }
+            for (index in 0 until node.childCount) node.getChild(index)?.let { visit(it, depth + 1) }
+        }
+        root?.let { visit(it, 0) }
+        return "root=${root?.packageName}/${root?.className}; " +
+            "interactive=${context.getSystemService(PowerManager::class.java).isInteractive}; " +
+            "keyguard=${context.getSystemService(KeyguardManager::class.java).isKeyguardLocked}; " +
+            "userUnlocked=${context.getSystemService(UserManager::class.java).isUserUnlocked}; " +
+            "windowLabels=$labels"
+    }
+
     private fun clickLabeledControl(node: AccessibilityNodeInfo): Boolean {
         // Compose exposes some labels as children of their clickable tab/row.
         // Use that actual ancestor's accessibility action, never guessed coordinates.
@@ -73,7 +94,7 @@ class RealSettingsNavigationInstrumentedTest {
             SystemClock.sleep(150)
         }
         throw AssertionError("Settings navigation: missing " + label + "; visible=" +
-            rows().map { "${it.text}|${it.contentDescription}" })
+            rows().map { "${it.text}|${it.contentDescription}" } + "; " + windowDiagnostic())
     }
 
     private fun awaitAbsent(label: String) {
@@ -92,12 +113,13 @@ class RealSettingsNavigationInstrumentedTest {
             SystemClock.sleep(150)
         }
         throw AssertionError("Settings navigation: $stage editor missing; visible=" +
-            rows().map { "${it.text}|${it.contentDescription}" })
+            rows().map { "${it.text}|${it.contentDescription}" } + "; " + windowDiagnostic())
     }
 
     private fun evidence(stage: String) {
         val folder = File(context.getExternalFilesDir(null), "settings-navigation").apply { mkdirs() }
-        File(folder, "$stage.txt").writeText(rows().joinToString("\n") { "${it.text}|${it.contentDescription}" })
+        File(folder, "$stage.txt").writeText(windowDiagnostic() + "\n" +
+            rows().joinToString("\n") { "${it.text}|${it.contentDescription}" })
         instrumentation.uiAutomation.takeScreenshot()?.let { bitmap ->
             File(folder, "$stage.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
             bitmap.recycle()

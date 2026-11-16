@@ -86,6 +86,47 @@ def shell(*args, **kwargs):
     return adb("shell", shlex.join(map(str, args)), **kwargs)
 
 
+def prepare_device(stage):
+    """Boot completion alone does not establish an unlocked, interactive fixture."""
+    shell("svc", "power", "stayon", "true")
+    shell("input", "keyevent", "KEYCODE_WAKEUP")
+    shell("wm", "dismiss-keyguard")
+    user = shell("am", "get-current-user")
+    if not re.fullmatch(r"\d+", user):
+        raise RuntimeError("Cannot verify emulator current user: " + user)
+    observations = []
+    for attempt in range(15):
+        state = shell("am", "get-started-user-state", user)
+        observations.append(state)
+        (OUT / (stage + "-user-state.json")).write_text(json.dumps(
+            {"user": user, "observations": observations}, indent=2) + "\n")
+        if state == "RUNNING_UNLOCKED":
+            return
+        if attempt < 14:
+            time.sleep(1)
+    raise RuntimeError("Emulator user is not RUNNING_UNLOCKED: " + state)
+
+
+def push_fixture(path, remote):
+    """Retain bounded create failures; never retry transport or hash failures."""
+    for attempt in range(3):
+        try:
+            adb("push", path, remote)
+            break
+        except RuntimeError as error:
+            events_path = OUT / "fixture-transfer-errors.json"
+            events = json.loads(events_path.read_text()) if events_path.exists() else []
+            events.append({"file": path.name, "attempt": attempt + 1, "error": str(error)})
+            events_path.write_text(json.dumps(events, indent=2) + "\n")
+            print("Fixture transfer diagnostic: " + str(error), flush=True)
+            if attempt == 2 or "remote couldn't create file: Operation not permitted" not in str(error):
+                raise
+            time.sleep(1)
+    transferred = shell("sha256sum", remote).split()
+    if not transferred or transferred[0] != digest(path):
+        raise RuntimeError("Fixture bytes differ after transfer: " + path.name)
+
+
 def nodes(xml):
     root = ET.fromstring(xml)
     result = []
@@ -497,6 +538,7 @@ def capture():
         result["stage"] = "device_configuration"
         if shell("getprop", "ro.build.version.sdk") != "35":
             raise ValueError("Expected API35")
+        prepare_device("capture")
         # Stream before navigating: a dead emulator cannot answer a final logcat dump.
         logcat_stream = (OUT / "device-logcat.txt").open("wb")
         logcat = subprocess.Popen(["adb", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash"],
@@ -521,7 +563,7 @@ def capture():
         shell("mkdir", "-p", media)
         for path in sorted(fixtures.glob("*")):
             if path.suffix in {".flac", ".lrc"}:
-                adb("push", path, media + "/" + path.name)
+                push_fixture(path, media + "/" + path.name)
                 shell("am", "broadcast", "-a", "android.intent.action.MEDIA_SCANNER_SCAN_FILE", "-d", "file://" + media + "/" + path.name)
         for _ in range(20):
             catalog = shell("content", "query", "--uri", "content://media/external/audio/media", "--projection", "_display_name")
@@ -617,6 +659,7 @@ def settings_navigation():
     from b05_case_results import verdict
     OUT.mkdir(exist_ok=True)
     result = {"source_sha": os.environ.get("GITHUB_SHA"), "cases": [], "passed": False}
+    SYSTEM_DIALOG_EVENTS.clear()
     try:
         expected_api = os.environ.get("UI_SETTINGS_ANDROID_API", "35")
         if expected_api not in {"35", "36"}:
@@ -641,6 +684,10 @@ def settings_navigation():
                        "com.music.aurelis.playback." + klass + "#" + method,
                        "com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner"]
             shell("am", "force-stop", package)
+            prepare_device(method)
+            # Never launch a second UiAutomation client during instrumentation.
+            # Apply the existing strictly verified launcher-only ANR policy first.
+            (OUT / (method + "-preflight.xml")).write_text(tree())
             shell("logcat", "-c")
             try:
                 run = subprocess.run(command, capture_output=True, text=True, timeout=150)
@@ -680,6 +727,7 @@ def settings_navigation():
         result["passed"] = len(result["cases"]) == 2 and all(case["passed"] for case in result["cases"])
     except Exception as error:
         result["error"] = str(error)
+    result["system_dialog_events"] = SYSTEM_DIALOG_EVENTS.copy()
     (OUT / "settings-navigation.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2), flush=True)
     return 0 if result["passed"] else 1
