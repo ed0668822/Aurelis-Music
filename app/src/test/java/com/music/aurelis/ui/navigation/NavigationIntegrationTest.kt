@@ -60,9 +60,15 @@ class NavigationIntegrationTest {
     }
 
     @Test fun realLibraryLinksAndNestedSettingsRespectAndroidBackAndRestore() {
+        val app = RuntimeEnvironment.getApplication() as AurelisApplication
+        val song = com.music.aurelis.data.model.LocalSong("replay-fixture", "Local", "Artist", null,
+            "content://media/1", null, 60_000L, null, null, null)
+        app.userLibrary.recordListening(song, 5_000L, completed = true)
+        app.userLibrary.flush()
         val restoration = startApp()
         tab("Biblioteca").performClick().assertIsSelected()
-        compose.onNodeWithText("Ajustes").performClick()
+        compose.onNodeWithText("Ajustes").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Perfil").performClick()
         tab("Biblioteca").assertIsDisplayed().assertIsSelected()
         compose.onNodeWithText("Reproducción").performScrollTo().performClick()
         compose.onNodeWithText("Equalizer").performScrollTo().performClick()
@@ -77,7 +83,7 @@ class NavigationIntegrationTest {
         compose.runOnIdle { assertEquals(AppRoute.Settings, navigator.visibleRoute()) }
         back()
         tab("Biblioteca").assertIsSelected()
-        compose.onNodeWithText("Replay").performClick()
+        compose.onNodeWithContentDescription("Replay").performScrollTo().performClick()
         compose.onNodeWithText("Replay & Statistics").assertIsDisplayed()
         back()
         tab("Biblioteca").assertIsSelected()
@@ -91,7 +97,8 @@ class NavigationIntegrationTest {
         tab("Buscar").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("mi música local")
         tab("Biblioteca").performClick()
-        compose.onNodeWithText("Ajustes").performClick()
+        compose.onNodeWithText("Ajustes").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Perfil").performClick()
         restoration.emulateSavedInstanceStateRestore()
         back()
         tab("Biblioteca").assertIsSelected()
@@ -106,7 +113,7 @@ class NavigationIntegrationTest {
         shadowOf(RuntimeEnvironment.getApplication()).denyPermissions(Manifest.permission.READ_MEDIA_AUDIO)
         val restoration = startApp()
         tab("Biblioteca").performClick()
-        compose.onNodeWithText("Canciones").performClick()
+        compose.onNodeWithText("Música local").performClick()
         compose.runOnIdle { assertEquals(AppRoute.LocalMusic, navigator.visibleRoute()) }
         compose.onNodeWithText("Permiso de acceso a música no concedido. " +
             "Concédelo en Ajustes para escanear el dispositivo.").assertIsDisplayed()
@@ -132,4 +139,18 @@ class NavigationIntegrationTest {
         compose.onNodeWithText("Atrás").performClick()
         tab("Buscar").assertIsSelected()
     }
+    @Test fun libraryCreatesAndOpensAPlaylistInTheExistingLocalStore() {
+        startApp()
+        tab("Biblioteca").performClick()
+        compose.onNodeWithTag("library-page").performScrollToNode(hasTestTag("library-shelf-playlists"))
+        compose.onNodeWithText("Nueva lista").performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("Desde biblioteca")
+        compose.onNodeWithText("Guardar").performClick()
+        val app = RuntimeEnvironment.getApplication() as AurelisApplication
+        val playlist = app.userLibrary.state.value.playlists.single { it.name == "Desde biblioteca" }
+        assertTrue(playlist.songIds.isEmpty())
+        compose.onNodeWithText("Desde biblioteca").performClick()
+        compose.runOnIdle { assertEquals(AppRoute.Collection(LocalCollectionKind.PLAYLIST, playlist.id), navigator.visibleRoute()) }
+    }
+
 }

@@ -530,3 +530,33 @@ material de origen. Traducciones de estados/datos locales y nuevos controles
 propias. No se copia el archivo entero, fuentes ni medios. Se preservan contratos
 de formato y textos locales cuando el origen describe funciones fuera de alcance.
 El inventario exacto está en la evidencia de entrega english-reference.json.
+
+
+## Biblioteca local y galería — ruta63 e implementación autorizadas
+
+Petición posterior del usuario: Biblioteca con la presentación de BitChord, sin
+fila Ajustes porque la foto abre esa pantalla; foto mediante selector de imágenes.
+La adaptación usa la estructura título/Replay/enlaces/On Device/listas del commit
+b690dc146009d4815825fa4a20815ef2e4ee8898. Se adaptan el orden, límites de cinco
+previews, tarjeta inicial de nueva lista, anchura150dp, radios12dp, huecos10/12dp,
+separación de estantes26dp y Replay300dp. Los datos son álbumes/listas/historial
+locales; Replay solo muestra el agregado real disponible, identificado como total
+histórico. No implementa períodos/historias de B11 ni anuncia paridad completa.
+
+Biblioteca conserva solo Música local en la lista de carpetas. Álbumes y listas
+son tarjetas con navegación real; Nueva lista guarda en LocalUserLibrary y aparece
+en el mismo estante. Perfil conserva su ID/nombre/foto local; Ajustes se abre por
+la foto, incluido desde Biblioteca. El selector PickVisualMedia/ImageOnly abre el
+selector visual de Android33+, conserva cancelación y la copia privada validada
+existente de ProfileAvatars. Carpetas mantiene OpenDocumentTree.
+
+GPLv3 y atribuciones de BitChord conservadas; no convertir su licencia en or-later.
+Aurelis conserva GPL-3.0-or-later y fuentes/iconos permitidos. No se importan SF
+Symbols ni fuentes restringidas, streaming, autenticación remota, Cast/TV/Auto/Wear,
+WebDAV/SMB o nuevas dependencias. La referencia local no se modifica.
+
+Fuentes de solo lectura:
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/LibraryScreen.kt` SHA256 `d53961bee3b257a40407bf1c552bd90b6f7792ba7306653f4c62daa342f8179a`.
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt` SHA256 `d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017`.
+- `app/src/main/java/com/music/bitchord/ui/screens/LibraryPhoneParts.kt` SHA256 `ffe9d6c50375f79f897520aa84c0e235c1c7c2c52ea2fa2b16638edcd2ddc45d`.
+- `app/src/main/java/com/music/bitchord/ui/replay/ReplayScreen.kt` SHA256 `310d8d9f23e834b81b68d4a0f9661b839f36ed280004dad15acec5e9454b53a5`.

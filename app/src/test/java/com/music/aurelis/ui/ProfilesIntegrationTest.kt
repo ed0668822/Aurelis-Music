@@ -21,6 +21,22 @@ import org.robolectric.annotation.GraphicsMode
 class ProfilesIntegrationTest {
     @get:Rule(order = 0) val registerActivity = RobolectricActivityRule()
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun profilePhotoOpensTheImagePickerAndCancelPreservesTheLocalProfile() {
+        val before = ProfileRepository.state.value.profile
+        compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }
+        compose.onNodeWithText(compose.activity.getString(com.music.aurelis.R.string.settings_photo_hint)).performClick()
+        val started = requireNotNull(org.robolectric.Shadows.shadowOf(compose.activity).nextStartedActivityForResult) {
+            "The photo row must open a gallery picker"
+        }
+        assertEquals(android.provider.MediaStore.ACTION_PICK_IMAGES, started.intent.action)
+        assertEquals("image/*", started.intent.type)
+        compose.runOnIdle {
+            compose.activity.activityResultRegistry.dispatchResult(started.requestCode, android.app.Activity.RESULT_CANCELED, null)
+            assertEquals(before, ProfileRepository.state.value.profile)
+        }
+    }
+
     @Test fun settingsOnlyEditsOneLocalProfileAndPreservesItsIdentity() {
         val id = ProfileRepository.profileId
         compose.setContent { AurelisTheme { SettingsScreen(true, {}) } }

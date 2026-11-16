@@ -99,4 +99,34 @@ class LocalUiParityTest {
         compose.onNodeWithContentDescription("Atrás").performClick()
         compose.onNode(hasSetTextAction()).assertExists()
     }
+    @Test fun libraryPreviewsCapTheirCardsAndKeepCreationAndOpenActionsConnected() {
+        val albums = (1..6).map { LocalAlbum("Album $it", "Artist", null, 1, songs.take(1), "album$it") }
+        val playlists = (1..6).map { LocalPlaylist("p$it", "Playlist $it", emptyList()) }
+        var opened = ""
+        var created = false
+        compose.setContent { AurelisTheme { Box(Modifier.size(360.dp, 640.dp)) {
+            com.music.aurelis.ui.screens.LibraryScreen(
+                listState = androidx.compose.foundation.lazy.rememberLazyListState(),
+                links = emptyList(), onShowAll = { opened = it }, contentPadding = PaddingValues(),
+                albums = albums, playlists = playlists, songs = songs,
+                onAlbumOpen = { opened = it.key }, onPlaylistOpen = { opened = it },
+                onNewPlaylist = { created = true })
+        } } }
+        compose.onNodeWithText("Album 1").performClick()
+        compose.runOnIdle { assertEquals("media:album1", opened) }
+        compose.onNodeWithTag("library-row-albums").performScrollToIndex(4)
+        compose.onNodeWithText("Album 5").assertIsDisplayed()
+        compose.onNodeWithText("Album 6").assertDoesNotExist()
+        compose.onNodeWithTag("library-page").performScrollToNode(hasTestTag("library-shelf-playlists"))
+        compose.onNodeWithText("Nueva lista").performClick()
+        compose.runOnIdle { assertTrue(created) }
+        compose.onNodeWithText("Playlist 1").performClick()
+        compose.runOnIdle { assertEquals("p1", opened) }
+        compose.onNodeWithTag("library-row-playlists").performScrollToIndex(4)
+        compose.onNodeWithText("Playlist 4").assertIsDisplayed()
+        compose.onNodeWithText("Playlist 5").assertDoesNotExist()
+        compose.onNode(hasText("Ver todo") and hasAnyAncestor(hasTestTag("library-shelf-playlists"))).performClick()
+        compose.runOnIdle { assertEquals("playlists", opened) }
+    }
+
 }

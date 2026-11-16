@@ -3,6 +3,7 @@ package com.music.aurelis.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,7 +83,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
     fun change(action: () -> Unit) {
         try { action(); profileError = null } catch (error: Exception) { profileError = error.message ?: context.getString(R.string.settings_profile_save_error) }
     }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) scope.launch {
             importing = true
             try { ProfileAvatars.import(context, ProfileId(photoProfile), uri); profileError = null }
@@ -129,7 +130,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         (profileError ?: profileState.error)?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
         if (category == null && query.isBlank() || shows(SettingsCategory.GENERAL)) {
         SettingsGroup(header = context.getString(R.string.settings_profile_group), topSpacing = 0.dp) {
-            if (showRow(LocalSetting.PHOTO)) Row(Modifier.fillMaxWidth().clickable(enabled = !importing) { photoProfile = active.id.value; picker.launch(arrayOf("image/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (showRow(LocalSetting.PHOTO)) Row(Modifier.fillMaxWidth().clickable(enabled = !importing) { photoProfile = active.id.value; picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Person, null)
                     if (photo != null) AsyncImage(photo, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)

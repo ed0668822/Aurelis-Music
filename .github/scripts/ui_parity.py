@@ -431,6 +431,18 @@ def expand_fixture(paused):
     return expanded and bool(matches(rows, markers)) and bool(matches(rows, ("Parity Track 01",)))
 
 
+def expand_landscape_fixture(package, paused):
+    # Initialize transport in portrait, where both local-library pages expose it.
+    # Rotate the paused MiniPlayer before opening the independent full player.
+    if not paused:
+        return False
+    shell("wm", "user-rotation", "lock", "1")
+    lock = shell("wm", "user-rotation")
+    if lock != "lock 1":
+        raise RuntimeError("Landscape WindowManager lock was not verified: " + lock)
+    return wait_fixture_session(package, (2,)) and expand_fixture(True)
+
+
 def verify_apk(path, package):
     if abis(path) != {"arm64-v8a"}:
         raise ValueError("APK must contain only ARM64 native libraries")
@@ -451,7 +463,7 @@ def capture():
     logcat_stream = None
     result = {"schema": 1, "aurelis_commit": os.environ.get("GITHUB_SHA"), "reference_commit": REFERENCE_SHA,
         "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
-        "not_tested": ["widgets on a launcher", "gestures and animations in motion", "continuous rotation with player open", "physical device", "pixel identity"],
+        "not_tested": ["widgets on a launcher", "gestures and animations in motion", "continuous rotation with player open", "cold landscape library playback initiation", "physical device", "pixel identity"],
         "font_policy": "Original reference default; Aurelis authorized system font. Difference remains visible.",
         "fixture_preferences": "Disposable emulator only: reset app/theme; matched material and reduced motion, explicit locale; skip reference remote onboarding",
         "material_mode": material_mode(),
@@ -551,9 +563,14 @@ def capture():
                 record_state(result, app, theme, "lyrics", lyrics and any("Parity line" in label for label in text),
                     "Requires visible local fixture lyrics; a lyrics button alone is insufficient")
                 result["stage"] = "capture:" + app + "/" + theme + "/player-landscape"
-                result["scenario_preferences"][app + "/" + theme + "/landscape"] = launch_scenario(app, theme, 1)
+                preferences = launch_scenario(app, theme, 0)
+                preferences["initial_rotation"] = preferences.pop("rotation")
+                preferences["initial_window_rotation_lock"] = preferences.pop("window_rotation_lock")
+                preferences["capture_rotation_requested"] = 1
+                preferences["player_setup"] = "Pause fixture in portrait; rotate MiniPlayer before opening full player"
+                result["scenario_preferences"][app + "/" + theme + "/landscape"] = preferences
                 local = tap(LABELS["library"]) and tap(LABELS["songs"], scroll=True)
-                record_state(result, app, theme, "player-landscape", expand_fixture(pause_fixture(package, local)))
+                record_state(result, app, theme, "player-landscape", expand_landscape_fixture(package, pause_fixture(package, local)))
                 shell("am", "force-stop", package)
             shell("am", "force-stop", package)
         (OUT / "widget-registration.txt").write_text(shell("dumpsys", "appwidget"))

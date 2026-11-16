@@ -407,4 +407,6 @@
     <string name="lyrics_cancel_lookup">Cancel lookup</string>
     <string name="lyrics_cancel_translation">Cancel translation</string>
     <string name="lyrics_retry_translation">Retry translation</string>
+    <string name="library_playlist_local_hint">Saved on this device</string>
+    <string name="library_playlist_save_error">Could not save the playlist. Try again.</string>
 </resources>

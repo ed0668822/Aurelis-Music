@@ -45,6 +45,22 @@ class ParityEvidenceTest(unittest.TestCase):
             self.assertEqual([('com.music.aurelis', (3,)), ('com.music.aurelis', (2,))],
                              [call.args for call in session.call_args_list])
 
+    def test_landscape_expands_only_after_rotation_and_the_same_apps_paused_session(self):
+        with patch.object(parity, 'shell') as shell, patch.object(parity, 'expand_fixture') as expand:
+            self.assertFalse(parity.expand_landscape_fixture('com.music.aurelis', False))
+            shell.assert_not_called(); expand.assert_not_called()
+        for session_ok in (False, True):
+            with patch.object(parity, 'shell', side_effect=['', 'lock 1']), \
+                 patch.object(parity, 'wait_fixture_session', return_value=session_ok) as session, \
+                 patch.object(parity, 'expand_fixture', return_value=True) as expand:
+                self.assertEqual(session_ok, parity.expand_landscape_fixture('com.music.aurelis', True))
+                session.assert_called_once_with('com.music.aurelis', (2,))
+                self.assertEqual(int(session_ok), expand.call_count)
+        with patch.object(parity, 'shell', side_effect=['', 'lock 0']), patch.object(parity, 'expand_fixture') as expand:
+            with self.assertRaisesRegex(RuntimeError, 'Landscape WindowManager lock was not verified'):
+                parity.expand_landscape_fixture('com.music.aurelis', True)
+            expand.assert_not_called()
+
     def test_rotation_readback_failure_does_not_launch_or_certify_an_orientation(self):
         with patch.object(parity, 'shell', return_value='free'), \
              patch.object(parity, 'seed_preferences', return_value={}), patch.object(parity, 'launch') as launch:

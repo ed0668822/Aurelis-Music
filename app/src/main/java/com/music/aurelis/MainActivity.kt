@@ -223,6 +223,7 @@ internal fun AurelisNavigationContent(
     val libraryUiState by libraryViewModel.uiState.collectAsState()
     val userStore by com.music.aurelis.ui.AppUi.host.libraries.collectAsState()
     val userState by userStore.state.collectAsState()
+    val localProfile by com.music.aurelis.data.ProfileRepository.state.collectAsState()
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
     val route = navigator.visibleRoute()
     var bottomChromeHeight by remember { mutableIntStateOf(0) }
@@ -366,22 +367,46 @@ internal fun AurelisNavigationContent(
             }
             AppTab.LIBRARY -> {
                 val listState = rememberLazyListState()
-                val links = listOf(
-                    LibraryLink(stringResource(R.string.songs), AurelisIcons.MusicNote) { navigator.push(AppRoute.LocalMusic) },
-                    LibraryLink("Álbumes", AurelisIcons.Album) { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUMS)) },
-                    LibraryLink("Artistas", AurelisIcons.Artist) { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTISTS)) },
-                    LibraryLink("Carpetas", AurelisIcons.Folder) { navigator.push(AppRoute.Collection(LocalCollectionKind.FOLDERS)) },
-                    LibraryLink("Historial", AurelisIcons.Clock) { navigator.push(AppRoute.Collection(LocalCollectionKind.HISTORY)) },
-                    LibraryLink(stringResource(R.string.home_favorites), AurelisIcons.Heart) { navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES)) },
-                    LibraryLink(stringResource(R.string.home_playlists), AurelisIcons.Playlist) { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) },
-                    LibraryLink(stringResource(R.string.replay), AurelisIcons.Clock) { navigator.push(AppRoute.Replay) },
-                    LibraryLink(stringResource(R.string.navigation_settings), AurelisIcons.Settings, openSettings),
-                )
+                var creatingPlaylist by rememberSaveable { mutableStateOf(false) }
+                var playlistName by rememberSaveable { mutableStateOf("") }
+                var playlistError by remember { mutableStateOf<String?>(null) }
+                val context = LocalContext.current
+                val listenedMs = remember(userState.listening) {
+                    userState.listening.values.fold(0L) { total, entry ->
+                        total + entry.listenedMs.coerceAtMost(Long.MAX_VALUE - total)
+                    }
+                }
                 LibraryScreen(
                     listState = listState,
-                    links = links,
-                    onShowAll = {},
+                    links = listOf(LibraryLink(stringResource(R.string.local_music), AurelisIcons.Folder) {
+                        navigator.push(AppRoute.LocalMusic)
+                    }),
+                    onShowAll = { shelf -> navigator.push(AppRoute.Collection(
+                        if (shelf == "albums") LocalCollectionKind.ALBUMS else LocalCollectionKind.PLAYLISTS)) },
                     contentPadding = listPadding,
+                    replay = { com.music.aurelis.ui.screens.LibraryReplayPreview(listenedMs,
+                        localProfile.profile.name, { navigator.push(AppRoute.Replay) }) },
+                    albums = librarySuccess?.albums.orEmpty(), playlists = userState.playlists, songs = allSongs,
+                    onAlbumOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) },
+                    onPlaylistOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it)) },
+                    onNewPlaylist = { playlistName = ""; playlistError = null; creatingPlaylist = true },
+                    canCreatePlaylist = !userState.readOnly,
+                )
+                if (creatingPlaylist) androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { creatingPlaylist = false },
+                    title = { Text(stringResource(R.string.new_playlist)) },
+                    text = { Column {
+                        androidx.compose.material3.OutlinedTextField(value = playlistName,
+                            onValueChange = { playlistName = it.take(100); playlistError = null },
+                            label = { Text(stringResource(R.string.playlist_name)) }, singleLine = true)
+                        playlistError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    } },
+                    confirmButton = { TextButton(enabled = playlistName.isNotBlank() && !userState.readOnly,
+                        onClick = {
+                            try { userStore.createPlaylist(playlistName); creatingPlaylist = false }
+                            catch (_: Exception) { playlistError = context.getString(R.string.library_playlist_save_error) }
+                        }) { Text(stringResource(R.string.save)) } },
+                    dismissButton = { TextButton(onClick = { creatingPlaylist = false }) { Text(stringResource(R.string.cancel)) } },
                 )
             }
             AppTab.SEARCH -> {

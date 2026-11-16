@@ -7,7 +7,43 @@
 
 > **Ampliación autorizada posterior:** máximo **62 archivos distintos para estas correcciones UI**, incluidos todos los commits de reparación. Sustituye el techo60 de esta entrega; el límite general de otros bloques sigue en30. El usuario autorizó expresamente aplicar el parche de los dos contratos de idioma y entregar contexto detallado.
 
+> **Última autorización — solo límite:** máximo **63 archivos distintos para esta corrección UI**, contando el historial completo de la entrega. El usuario autoriza únicamente ampliar el límite de62 a63 y pide explicar el parche. La aplicación de código adicional, commits, push/publicación y el inicio funcional de B07 quedan en pausa hasta una instrucción expresa posterior. Se conservan los borradores locales existentes.
+
+
+> **Autorización posterior de implementación:** el usuario autoriza terminar e implementar el parche explicado de Biblioteca/galería, con commit y push a feature/bitchord-local-migration/PR1. Máximo63 rutas distintas en toda esta corrección. Esta instrucción posterior levanta la pausa de implementación/publicación; la paridad visual, prueba física y cierre de B07 no se dan por aprobados al aplicar el código.
+
 ## Continuación actual — primera entrega documental
+
+### Propuesta posterior del usuario — Biblioteca y selector visual de fotos
+
+Nueva instrucción de UI: quitar Ajustes de la lista de Biblioteca y entrar por la
+foto; ajustar la estructura a BitChord y abrir galería para la foto. Cambios y
+regresiones preparados, sin publicar: foto PickVisualMedia/ImageOnly, cancelación
+sin alterar perfil, prueba de intent ACTION_PICK_IMAGES y navegación por la foto
+con Atrás/restauración/servicio conservados. Nueva estructura con enlace Música
+local, previews reales de álbumes/listas (máximo5 contando Nueva lista), creación
+real y Replay total histórico si hay escucha registrada. Sin estadísticas falsas.
+
+La ruta LibraryScreen.kt no pertenece a las62 ya entregadas: acumulado previsto63.
+La ampliación a63 y la implementación/publicación están ahora autorizadas. Se aplica
+el parche revisado; la validación de este código nuevo queda pendiente de Actions. No reiniciar
+el conteo, reescribir historial ni añadir dependencias/SDK/ABI. Dos revisiones del
+mismo agente; XML/parser/contratos/diff locales. Android nuevo aún NO EJECUTADO;
+compilación/Lint/APK/tests exclusivamente Actions para el SHA de esta entrega.
+
+Run163/43763766092 del6c8653bf: B01–B06 SUCCESS;421/421 por variante en logs.
+Comparación19/43763766083 FAILURE, con ambos casos API35/API36 SUCCESS. Aurelis
+alcanza sus18 estados en cada material, incluido horizontal. La referencia no
+alcanza horizontal desde biblioteca fría; plain pierde ADB en player claro. La
+siguiente captura preparada inicia/pausa la pista en vertical y gira MiniPlayer
+antes de expandir, igual para ambas apps; exige lock1, sesión propia PAUSED,
+título/controles y PNG horizontal. No certifica iniciar desde biblioteca fría en
+horizontal ni rotar continuamente con player abierto.42 regresiones Python PASS
+por material. ZIP de imágenes siguen inaccesibles; sin certificación de paridad.
+
+El usuario comunicó modelo/Android/HyperOS y nuevas preferencias, no un resultado
+de prueba física. Mantener esa validación pendiente. B07 conserva preparación;
+no iniciarlo funcionalmente ni B09 mientras quede abierta la puerta de UI.
 
 ### Resultado de fe942152 — compilación y navegación aprobadas; botón fuera de vista en horizontal
 

@@ -75,7 +75,7 @@ class LibraryCatalogueIntegrationTest {
         } }
         compose.runOnIdle { library.loadLibrary() }
         compose.onNode(isSelectable() and hasText("Biblioteca")).performClick()
-        compose.onNodeWithText("Canciones").performClick()
+        compose.onNodeWithText("Música local").performClick()
         compose.onNodeWithContentDescription("Buscar en esta lista").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("arbol")
         compose.onNode(isSelectable() and hasText("Álbumes")).performClick()
