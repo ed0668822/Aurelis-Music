@@ -12,6 +12,7 @@ import com.music.aurelis.*
 import com.music.aurelis.data.*
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.playback.*
+import com.music.aurelis.ui.components.LocalGlassHardware
 import com.music.aurelis.ui.navigation.*
 import com.music.aurelis.ui.theme.AurelisTheme
 import org.junit.*
@@ -123,7 +124,11 @@ class HomeShelvesIntegrationTest {
         var fontScale by mutableFloatStateOf(1f)
         compose.setContent { AurelisTheme(darkTheme = dark) {
             val density = androidx.compose.ui.platform.LocalDensity.current
-            CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides
+            // This case captures with Canvas(Bitmap). The accelerated window flag
+            // does not describe that software canvas; keep motion enabled and use
+            // the supported software presentation, not RenderNode shared bounds.
+            CompositionLocalProvider(LocalGlassHardware provides false,
+                androidx.compose.ui.platform.LocalDensity provides
                 androidx.compose.ui.unit.Density(density.density,fontScale)) {
                 navigator = rememberAppNavigator()
                 AurelisNavigationContent(navigator,player,library,onRequestAudioPermission = {
@@ -152,8 +157,15 @@ class HomeShelvesIntegrationTest {
             val bitmap=compose.runOnIdle {
                 val view=compose.activity.window.decorView
                 android.graphics.Bitmap.createBitmap(view.width,view.height,android.graphics.Bitmap.Config.ARGB_8888)
-                    .also { view.draw(android.graphics.Canvas(it)) }
+                    .also {
+                        val canvas=android.graphics.Canvas(it)
+                        assertFalse(canvas.isHardwareAccelerated)
+                        view.draw(canvas)
+                    }
             }
+            val pixels=IntArray(bitmap.width*bitmap.height)
+            bitmap.getPixels(pixels,0,bitmap.width,0,0,bitmap.width,bitmap.height)
+            assertTrue("Home capture must contain rendered content",pixels.toSet().size>20)
             val file=java.io.File("build/reports/b03-local/home-${if(night) "dark-large" else "light"}.png")
             file.parentFile!!.mkdirs()
             file.outputStream().use { assertTrue(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)) }

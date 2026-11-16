@@ -3,6 +3,17 @@
 
 ### F002 — barra inferior y Buscar separado (2026-11-16)
 
+**Corrección CI182:** `44005ca7` ejecutó450 casos por variante: Debug449/450,
+Release450/450. Solo falla la captura software de Home; la ventana acelerada de
+Robolectric no describe el Canvas(Bitmap). Ese caso declara LocalGlassHardware=false,
+conserva sus recorridos/aserciones y añade comprobación de imagen no vacía.
+La regresión de poses/captura se amplía a SDK33 y35. No cambia producción ni se
+desactivan animaciones de la app. CI181 no ejecutó tests por HTTP429 de Maven;
+CI182 fue una ejecución completa, no una repetición parcial. Detalle y hashes
+en F002_NAVIGATION_BAR.md. Cuatro archivos en esta reparación,18 acumulados sobre
+la base de F002, máximo60. Dos revisiones del mismo agente; nuevo CI PENDIENTE.
+Esperar resultado del usuario antes de F003.
+
 **Reparación posterior CI180:** `ab09f2c5` falló en B03: 449 pruebas por variante,
 443 SUCCESS y6 FAILURE. Las seis nuevas de F002 aprobaron; los fallos son capturas
 software de Home/player: SharedBoundsNode.draw usa drawRenderNode sin soporte.

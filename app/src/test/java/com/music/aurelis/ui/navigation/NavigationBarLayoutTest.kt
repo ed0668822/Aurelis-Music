@@ -47,7 +47,9 @@ class NavigationBarLayoutTest {
         BottomTab("Search", AurelisNavigationIcons.TabSearch))
     private fun tab(name: String) = compose.onNode(isSelectable() and (hasText(name) or hasContentDescription(name)))
 
-    @Test fun softwareCapturesKeepBothPosesUsableWithoutHardwareOrWithReducedMotion() {
+    @Test
+    @Config(sdk = [33, 35])
+    fun softwareCapturesKeepBothPosesUsableWithoutHardwareOrWithReducedMotion() {
         var hardware by mutableStateOf(false)
         var reduced by mutableStateOf(false)
         var selected by mutableIntStateOf(0)

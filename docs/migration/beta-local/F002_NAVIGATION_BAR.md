@@ -144,6 +144,48 @@ archivos ya incluidos en F002: implementación, prueba, este informe y tracker;
 el acumulado sigue en17 rutas distintas sobre la base4b60c176, máximo60.
 Nuevo CI de la reparación PENDIENTE. Esperar resultado del usuario antes de F003.
 
+## Corrección de captura — CI181 y CI182
+
+CI181 (`43961700531`, SHA `44005ca7`) no ejecutó pruebas: Maven Central
+respondió HTTP429 al resolver kover-features-jvm y kover-jvm-agent0.9.11.
+Los logs pasan CRC, SHA256
+`de644a8dd764f64156ee4d0b68a2f60eaee8f1a7362b5526476be837577cc034`.
+Se inició una ejecución completa del mismo SHA, sin cambiar dependencias ni
+reutilizar parcialmente las fases: [CI182](https://github.com/ed0668822/Aurelis-Music/actions/runs/43963880770).
+
+CI182: B01/B02/B05 SUCCESS, B03/B06 FAILURE y B04 SKIPPED. Debug ejecutó450
+casos (449 SUCCESS,1 FAILURE); Release ejecutó450, todos SUCCESS. Los siete
+casos nuevos de F002 aprueban en ambas variantes. El único fallo restante es
+HomeShelvesIntegrationTest.loadingPermissionEmptyFailureAndRetryRecoverToRealHome,
+con Software rendering doesn't support drawRenderNode desde SharedBoundsNode.draw.
+F5 sin XML es consecuencia del fallo, no un porcentaje bajo demostrado.
+ZIP de logs original `run182-logs.zip`, CRC válido, SHA256
+`d2d64524b2bab693ae713e096d38de05c8095b17a6fa1d109750625fe96803bc`.
+
+La condición añadida en44005ca7 es necesaria, pero no convierte un RenderNode
+en contenido software: la ventana de Robolectric puede anunciar hardware mientras
+la captura usa Canvas(Bitmap). Home heredaba esa bandera del tema. Este caso
+configura ahora LocalGlassHardware=false en su proveedor de captura, junto a su
+densidad existente. Mantiene movimiento y todos los recorridos de permiso,
+vacío, error, reintento, modo claro/oscuro y fuente grande; no se suprime ninguna
+excepción ni se omite el dibujo. Se comprueba que el canvas no tiene GPU y que
+la imagen contiene más de20 colores. PixelCopy no es sustituto en este entorno:
+VisualSystemTest documenta que Robolectric no conduce su callback forceRedraw.
+
+La regresión de captura de NavigationBarLayoutTest se ejecutará en SDK33 (el
+del fallo) y35, con ambas poses, con/sin canción y las dos políticas soportadas.
+No se cambia código de producción, animaciones en hardware, dependencias,
+umbrales, workflows ni APIs Android. La fidelidad GPU requiere la comparación
+en emulador/dispositivo; una captura software no la acredita.
+
+Dos revisiones del mismo agente: (1) logs de ambas variantes y correspondencia
+entre canvas y proveedor; (2) preservación de aserciones, aislamiento del cambio,
+matriz SDK y diff final. Comprobaciones locales limitadas a sintaxis Kotlin y
+git diff --check; Gradle/pruebas Android solo en Actions. Cuatro archivos en
+esta corrección;18 rutas distintas acumuladas desde4b60c176, dentro del máximo60.
+Resultado del nuevo CI PENDIENTE; se avisará del push y se esperará al usuario
+antes de F003.
+
 ## Fuentes y SHA256
 
 | Fuente BitChord fijada | SHA256 |
