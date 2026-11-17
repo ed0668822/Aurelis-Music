@@ -785,9 +785,22 @@ def capture():
 def settings_navigation():
     """Independent real-Activity regression; a broken reference cannot skip it."""
     from b05_case_results import verdict
+    from ui_parity_host import HostMonitor
     OUT.mkdir(exist_ok=True)
     result = {"source_sha": os.environ.get("GITHUB_SHA"), "cases": [], "passed": False}
     SYSTEM_DIALOG_EVENTS.clear()
+    monitor = None
+    stages = []
+    stage_path = OUT / "settings-navigation-stages.json"
+
+    def checkpoint(stage, method=None, code=None):
+        event = {"stage": stage, "method": method, "exit_code": code, "unix_time": time.time()}
+        stages.append(event)
+        pending = stage_path.with_suffix(".tmp")
+        pending.write_text(json.dumps({"source_sha": result["source_sha"], "events": stages}, indent=2) + "\n")
+        pending.replace(stage_path)
+
+    checkpoint("initializing")
     try:
         expected_api = os.environ.get("UI_SETTINGS_ANDROID_API", "35")
         if expected_api not in {"35", "36"}:
@@ -806,17 +819,22 @@ def settings_navigation():
         adb("install", "-r", "app/build/outputs/apk/debug/app-debug.apk")
         adb("install", "-r", "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk")
         shell("pm", "grant", package, "android.permission.READ_MEDIA_AUDIO")
+        # Host-side telemetry survives Android/ADB disappearing during instrumentation.
+        monitor = HostMonitor(OUT / "host")
+        monitor.start()
         for method in ("profileAndLibrarySettingsSurviveRecreation", "profileAndLibrarySettingsPreserveRealPlayback"):
             klass = "RealSettingsNavigationInstrumentedTest"
             command = ["adb", "shell", "am", "instrument", "-w", "-r", "-e", "class",
                        "com.music.aurelis.playback." + klass + "#" + method,
                        "com.music.aurelis.test/androidx.test.runner.AndroidJUnitRunner"]
+            checkpoint("preflight", method)
             shell("am", "force-stop", package)
             prepare_device(method)
             # Never launch a second UiAutomation client during instrumentation.
             # Apply the existing strictly verified launcher-only ANR policy first.
             (OUT / (method + "-preflight.xml")).write_text(tree())
             shell("logcat", "-c")
+            checkpoint("instrumentation_started", method)
             try:
                 run = subprocess.run(command, capture_output=True, text=True, timeout=150)
                 log, code = run.stdout + run.stderr, str(run.returncode)
@@ -824,6 +842,7 @@ def settings_navigation():
                 def decode(value):
                     return value.decode(errors="replace") if isinstance(value, bytes) else value or ""
                 log, code = decode(error.stdout) + decode(error.stderr), "TIMEOUT"
+            checkpoint("instrumentation_finished", method, code)
             (OUT / (method + ".log")).write_text(log)
             passed, problems = verdict(log, klass, method, code)
             result["cases"].append({"method": method, "passed": passed, "problems": problems, "exit_code": code})
@@ -855,6 +874,10 @@ def settings_navigation():
         result["passed"] = len(result["cases"]) == 2 and all(case["passed"] for case in result["cases"])
     except Exception as error:
         result["error"] = str(error)
+    finally:
+        if monitor is not None:
+            result["host_monitor"] = monitor.stop()
+        checkpoint("passed" if result["passed"] else "failed")
     result["system_dialog_events"] = SYSTEM_DIALOG_EVENTS.copy()
     (OUT / "settings-navigation.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2), flush=True)

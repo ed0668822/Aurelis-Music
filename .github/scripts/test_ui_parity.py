@@ -466,13 +466,19 @@ class ParityEvidenceTest(unittest.TestCase):
              patch.object(parity, "prepare_device"), patch.object(parity, "tree", return_value='<hierarchy/>'), \
              patch.object(parity, "shell", side_effect=lambda *args: "35" if args == ("getprop", "ro.build.version.sdk") else ""), \
              patch.object(parity.subprocess, "run", return_value=failed), \
-             patch.object(parity, "seed_preferences") as seed, redirect_stdout(io.StringIO()):
+             patch.object(parity, "seed_preferences") as seed, patch.object(host, "HostMonitor") as monitor, redirect_stdout(io.StringIO()):
             self.assertEqual(1, parity.settings_navigation())
             seed.assert_not_called()
             result = json.loads((Path(temp) / 'settings-navigation.json').read_text())
             self.assertFalse(result['passed'])
             self.assertEqual(2, len(result['cases']))
             self.assertTrue(all('ANDROID_RUNNER_REPORTED_FAILURE' in row['problems'] for row in result['cases']))
+            monitor.return_value.start.assert_called_once()
+            monitor.return_value.stop.assert_called_once()
+            self.assertIn('host_monitor', result)
+            stages = json.loads((Path(temp) / 'settings-navigation-stages.json').read_text())['events']
+            self.assertEqual(2, sum(e['stage'] == 'instrumentation_started' for e in stages))
+            self.assertEqual('failed', stages[-1]['stage'])
 
     def test_settings_runner_never_instruments_over_a_blocking_app_error(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(parity, 'OUT', Path(temp)), \
@@ -488,6 +494,11 @@ class ParityEvidenceTest(unittest.TestCase):
             self.assertEqual([], result['cases'])
             self.assertIn("Aurelis Music isn't responding", result['error'])
             instrument.assert_not_called()
+            monitor.return_value.start.assert_called_once()
+            monitor.return_value.stop.assert_called_once()
+            stages = json.loads((Path(temp) / "settings-navigation-stages.json").read_text())["events"]
+            self.assertEqual("preflight", stages[-2]["stage"])
+            self.assertEqual("failed", stages[-1]["stage"])
 
     def test_settings_runner_rejects_wrong_android_before_install_or_instrumentation(self):
         for expected, actual in (("35", "36"), ("36", "35")):
@@ -496,7 +507,7 @@ class ParityEvidenceTest(unittest.TestCase):
                  patch.dict(os.environ, UI_SETTINGS_ANDROID_API=expected), \
                  patch.object(parity, "shell", return_value=actual), \
                  patch.object(parity, "verify_apk") as verify, patch.object(parity, "adb") as adb, \
-                 patch.object(parity.subprocess, "run") as instrument, redirect_stdout(io.StringIO()):
+                 patch.object(parity.subprocess, "run") as instrument, patch.object(host, "HostMonitor") as monitor, redirect_stdout(io.StringIO()):
                 self.assertEqual(1, parity.settings_navigation())
                 result = json.loads((Path(temp) / "settings-navigation.json").read_text())
                 self.assertEqual({"expected_api": expected, "api": actual}, result["device"])

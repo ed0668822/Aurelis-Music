@@ -151,6 +151,14 @@ jobs:
           python3 .github/scripts/ci14_handoff.py verify
           if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
 
+      - name: Release idle Gradle daemons before Android16 emulator
+        if: ${{ !cancelled() && steps.android16_handoff.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          mkdir -p ci-b03/android16
+          ./gradlew --stop 2>&1 | tee ci-b03/android16/gradle-daemon-stop.log
+          free -m | tee ci-b03/android16/host-memory-before-emulator.txt
+
       - name: Exercise real Activity recreation and playback on Android16
         id: android16
         if: ${{ !cancelled() && steps.android16_handoff.outcome == 'success' }}
