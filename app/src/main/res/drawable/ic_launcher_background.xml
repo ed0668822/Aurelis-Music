@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Aurelis © 2026. GPL-3.0-or-later -->
 <!-- Aurelis © 2026. GPL-3.0-or-later. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
@@ -7,19 +6,42 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M0,0h108v108h-108z">
+    <!-- Full-bleed graphite background; Android applies the launcher mask. -->
+    <path android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="12"
-                android:startY="10"
-                android:endX="96"
-                android:endY="98"
-                android:type="linear">
-                <item android:offset="0" android:color="#0F172A" />
-                <item android:offset="0.4" android:color="#1E1B4B" />
-                <item android:offset="0.8" android:color="#312E81" />
-                <item android:offset="1" android:color="#0B1120" />
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108">
+                <item android:offset="0" android:color="#FF2F3035" />
+                <item android:offset="0.46" android:color="#FF121317" />
+                <item android:offset="1" android:color="#FF050507" />
             </gradient>
         </aapt:attr>
     </path>
+    <!-- Understated diamond facets allude to hi-fi sound without reproducing a brand logo. -->
+    <path
+        android:fillColor="#0CFFFFFF"
+        android:strokeColor="#2AFFFFFF"
+        android:strokeWidth="0.7"
+        android:pathData="M54,14 L94,54 L54,94 L14,54 Z" />
+    <!-- Soft glass highlight, deliberately behind the opaque music note. -->
+    <path android:pathData="M0,0 L82,0 C59,12 32,35 0,65 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="76"
+                android:endY="71">
+                <item android:offset="0" android:color="#3CFFFFFF" />
+                <item android:offset="1" android:color="#00FFFFFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#0CFFFFFF"
+        android:pathData="M28,108 C55,94 78,89 108,64 L108,108 Z" />
 </vector>
