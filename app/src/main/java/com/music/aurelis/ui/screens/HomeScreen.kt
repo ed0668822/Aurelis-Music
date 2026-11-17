@@ -152,8 +152,8 @@ fun HomeScreen(
             item(key = "hero") {
                 SectionHeader(stringResource(R.string.home_recommendations))
                 BoxWithConstraints {
-                    val cardWidth = (maxWidth * 0.60f).coerceAtMost(280.dp)
-                    androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
+                    val cardWidth = heroCardWidth(maxWidth)
+                    ShelfRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                         horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         item(key = hero.id) {
                 HomeHero(
@@ -163,12 +163,14 @@ fun HomeScreen(
                     },
                     modifier = Modifier.width(cardWidth),
                     portrait = true,
+                    isPlaying = hero.id == currentSong?.id && isPlaying,
+                    onLongPress = { onSongLongPress(hero) },
                     eyebrow = stringResource(if (hero.id == currentSong?.id) R.string.home_continue else R.string.home_listen),
                 )
                         }
                         item(key = "local-mix") {
-                            Column(Modifier.width(cardWidth).aspectRatio(0.75f)
-                                .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primaryContainer)
+                            Column(Modifier.width(cardWidth).aspectRatio(HERO_CARD_RATIO)
+                                .clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.primaryContainer)
                                 .clickable(enabled = !isCreatingMix, onClick = onAutoMix).padding(20.dp),
                                 verticalArrangement = Arrangement.SpaceBetween) {
                                 Icon(AurelisIcons.Shuffle, null, Modifier.size(48.dp))
@@ -297,7 +299,8 @@ private fun LocalWelcomeBanner(count: Int, onFavorites: () -> Unit, onPlaylists:
         .clip(RoundedCornerShape(22.dp))) {
         MeshGradientBackground(MeshPalette(listOf(colors.primary, colors.secondary, colors.tertiary, colors.inverseSurface)),
             modifier = Modifier.matchParentSize(), continuous = false, animated = false, blurRadius = 36.dp)
-        Column(Modifier.background(Color.Black.copy(alpha = 0.35f)).fillMaxWidth().padding(20.dp)) {
+        Column(Modifier.background(Color.Black.copy(alpha = 0.35f)).fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 18.dp)) {
             Text(profile.profile.name, style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold, color = Color.White)
             Text(pluralStringResource(R.plurals.home_device_song_count, count, count), color = Color.White)

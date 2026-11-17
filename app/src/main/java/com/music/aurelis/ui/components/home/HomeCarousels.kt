@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -65,7 +64,7 @@ fun SongCarousel(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 26.dp)) {
         SectionHeader(title)
-        LazyRow(
+        ShelfRow(
             contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -117,11 +116,7 @@ fun SongCard(
             style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            color = when {
-                isPlaying -> MaterialTheme.colorScheme.primary
-                isCurrent -> MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-                else -> MaterialTheme.colorScheme.onSurface
-            },
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(top = 10.dp),
         )
         Text(
@@ -138,7 +133,7 @@ fun SongCard(
 fun AlbumCarousel(title: String, albums: List<LocalAlbum>, onAlbumClick: (LocalAlbum) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(bottom = 26.dp)) {
         SectionHeader(title)
-        LazyRow(
+        ShelfRow(
             contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -178,7 +173,7 @@ fun AlbumCard(album: LocalAlbum, onClick: () -> Unit) {
 fun ArtistCarousel(title: String, artists: List<LocalArtist>, onArtistClick: (LocalArtist) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(bottom = 26.dp)) {
         SectionHeader(title)
-        LazyRow(
+        ShelfRow(
             contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -191,25 +186,21 @@ fun ArtistCarousel(title: String, artists: List<LocalArtist>, onArtistClick: (Lo
 
 @Composable
 fun ArtistCard(artist: LocalArtist, onClick: () -> Unit) {
-    Column(Modifier.width(100.dp).clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier.size(100.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
-                .homeArtworkBorder(CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (artist.artworkUri != null) {
-                AsyncImage(model = artist.artworkUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            } else {
-                Text(
-                    artist.name.firstOrNull()?.uppercase() ?: "♪",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+    Column(Modifier.width(SHELF_CARD_WIDTH).clickable(onClick = onClick).testTag("home-artist-card")) {
+        Box(Modifier.size(SHELF_CARD_WIDTH).clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .homeArtworkBorder(RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            if (artist.artworkUri != null) AsyncImage(artist.artworkUri, null,
+                contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            else Text(artist.name.firstOrNull()?.uppercase() ?: "♪", style = MaterialTheme.typography.displaySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Spacer(Modifier.height(8.dp))
-        Text(artist.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)
-        Text("${artist.songCount} canciones", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(10.dp))
+        Text(artist.name, style = MaterialTheme.typography.titleMedium,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onBackground)
+        Text(androidx.compose.ui.res.pluralStringResource(com.music.aurelis.R.plurals.home_available_song_count,
+            artist.songCount, artist.songCount), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -224,7 +215,7 @@ fun HeroShelf(
 ) {
     BoxWithConstraints(Modifier.padding(bottom = 26.dp)) {
         val cardWidth = heroCardWidth(maxWidth)
-        LazyRow(
+        ShelfRow(
             contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -270,7 +261,7 @@ fun RecentSongShelf(title: String, songs: List<LocalSong>, currentId: String?, i
             modifier = Modifier.padding(horizontal = PAGE_GUTTER, vertical = 10.dp))
         BoxWithConstraints {
             val columnWidth = trackColumnWidth(maxWidth)
-            LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
+            ShelfRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 itemsIndexed(songs.chunked(RECENT_TRACKS_PER_COLUMN), key = { _, page -> page.first().id }) { pageIndex, page ->
                     Column(Modifier.width(columnWidth)) {
@@ -307,7 +298,7 @@ fun PlaylistCarousel(playlists: List<com.music.aurelis.data.LocalPlaylist>, song
     val byId = remember(songs) { songs.associateBy { it.id } }
     Column(Modifier.testTag("home-playlists").padding(bottom = 26.dp)) {
         SectionHeader(stringResource(com.music.aurelis.R.string.home_playlists))
-        LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        ShelfRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             items(playlists, key = { it.id }) { playlist ->
                 val artwork = playlist.songIds.firstNotNullOfOrNull { byId[it]?.artworkUri }
                 val available = playlist.songIds.count { it in byId }

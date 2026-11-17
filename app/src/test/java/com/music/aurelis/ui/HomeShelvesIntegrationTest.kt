@@ -71,6 +71,24 @@ class HomeShelvesIntegrationTest {
         compose.onNodeWithText("Cerrar").performScrollTo().performClick()
         compose.runOnIdle { assertEquals("4", recording.currentMediaItem?.mediaId); assertEquals(2, recording.mediaItemCount) }
     }
+    @Test fun leadingCurrentTrackOpensTheExistingPlayerWithoutReplacingItsQueue() {
+        start()
+        compose.onNodeWithTag("home-leading-hero").performClick()
+        val original = compose.runOnIdle {
+            assertNotNull(recording.currentMediaItem)
+            recording.seekTo(12_345)
+            recording.pause()
+            (0 until recording.mediaItemCount).map { recording.getMediaItemAt(it).mediaId }
+        }
+        compose.onNodeWithTag("home-leading-hero").performClick()
+        compose.runOnIdle {
+            assertEquals(AppRoute.NowPlaying, navigator.visibleRoute())
+            assertEquals(original, (0 until recording.mediaItemCount).map { recording.getMediaItemAt(it).mediaId })
+            assertEquals(12_345L, recording.currentPosition)
+            assertTrue(recording.playWhenReady)
+        }
+    }
+
     @Test fun playlistTileOpensThePersistedPlaylistAndExcludesUnavailableSongs() {
         val id = app.userLibrary.createPlaylist("Mi colección", listOf("2", "missing"))
         start()
