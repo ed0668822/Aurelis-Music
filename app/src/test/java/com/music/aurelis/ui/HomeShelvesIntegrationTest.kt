@@ -26,7 +26,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @UnstableApi
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "w360dp-h800dp-mdpi", application = AurelisApplication::class)
+@Config(sdk = [33, 35], qualifiers = "w360dp-h800dp-mdpi", application = AurelisApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class HomeShelvesIntegrationTest {
     @get:Rule(order = 0) val registerActivity = RobolectricActivityRule()

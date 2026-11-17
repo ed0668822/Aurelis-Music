@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "es-rES-w360dp-h800dp-mdpi", application = AurelisApplication::class)
+@Config(sdk = [33, 35], qualifiers = "es-rES-w360dp-h800dp-mdpi", application = AurelisApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class NavigationIntegrationTest {
     @get:org.junit.Rule(order = 0) val registerActivity = com.music.aurelis.ui.RobolectricActivityRule()
@@ -93,17 +93,30 @@ class NavigationIntegrationTest {
     }
 
     @Test fun replayProfileReturnsThroughSettingsToTheSameLibraryTab() {
-        startApp()
+        val restoration = startApp()
         tab("Biblioteca").performClick()
         compose.runOnIdle { navigator.push(AppRoute.Replay) }
         compose.onNodeWithContentDescription("Perfil").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(AppRoute.Settings, navigator.visibleRoute()) }
         compose.onNodeWithText("PERFIL DEL DISPOSITIVO").assertIsDisplayed()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.runOnIdle {
+            assertEquals(AppRoute.Settings, navigator.visibleRoute())
+            assertEquals(AppTab.LIBRARY, navigator.selectedTab)
+        }
         back()
         compose.runOnIdle { assertEquals(AppRoute.Replay, navigator.visibleRoute()) }
+        restoration.emulateSavedInstanceStateRestore()
         compose.onNodeWithContentDescription("Perfil").assertIsDisplayed()
         back()
         tab("Biblioteca").assertIsSelected()
+        compose.runOnIdle {
+            assertNull(navigator.visibleRoute())
+            assertTrue(navigator.entries.isEmpty())
+            assertTrue("Back from the Library root still returns Home", navigator.canGoBack)
+        }
+        back()
+        tab("Inicio").assertIsSelected()
         compose.runOnIdle { assertFalse(navigator.canGoBack) }
     }
 

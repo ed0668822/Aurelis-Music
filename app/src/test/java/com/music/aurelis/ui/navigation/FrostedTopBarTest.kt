@@ -36,7 +36,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "es-rES-w360dp-h800dp-mdpi", application = AurelisApplication::class)
+@Config(sdk = [33, 35], qualifiers = "es-rES-w360dp-h800dp-mdpi", application = AurelisApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class FrostedTopBarTest {
     @get:Rule(order = 0) val activity = RobolectricActivityRule()

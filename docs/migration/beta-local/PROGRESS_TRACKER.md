@@ -3,6 +3,31 @@
 
 ### F003 — cabeceras, perfil y acceso a ajustes (2026-11-17)
 
+**CI185 y mejora autorizada de pruebas:** SHA1ca0093a, run43999110484:
+B01/B02/B05 SUCCESS, B03/B06 FAILURE y B04 SKIPPED.457 casos por variante,
+456 SUCCESS y1 FAILURE, ambos en la aserción final de Replay→perfil→ajustes.
+La prueba confundía raíz de Biblioteca con raíz de Inicio: canGoBack sigue
+siendo true para volver a Inicio. Se conserva AppNavigator y se comprueban pila
+vacía, retorno final a Inicio y restauración en Ajustes/Replay.
+
+El usuario autoriza «Mejora eso y corrige el error». Navegación, cabecera y
+estados de Home amplían Robolectric a SDK33/35. B03 compila Kotlin/Java de ambas
+variantes antes de ejecutarlas, conserva independencia y cobertura, y reutiliza
+los APK B01 verificados para dos pruebas reales en emuladorAPI36. Un informe
+probado con fixtures distingue compilación/dependencias, aserciones, timeout,
+proceso terminado y falta de evidencia. No se convierte exit137 en timeout
+demostrado ni success de un paso continue-on-error en éxito de pruebas.
+
+Mejora de dificultad alta:10 rutas de10, todas necesarias para código de pruebas,
+workflow, scripts/fixtures y registros. F003 acumulado19/40, incluidas todas las
+reparaciones; producción, SDK, ABI, dependencias y orden B01–B06 intactos.
+Dos revisiones del mismo agente. Ver F003_TOP_BAR.md; nuevo CI PENDIENTE.
+Validación local:149 fixtures/regresiones Python aprobadas, actionlint, bash -n,
+sintaxis de tres Kotlin y diff --check. No se ejecutó Gradle/Android localmente.
+Base de publicación actualizada por avance directo a69480b41: se preservan
+cinco commits ajenos de iconos; esta reparación modifica10 rutas y no los edita.
+F004 sin iniciar; esperar resultado del usuario después de avisar del envío.
+
 **Reparación CI184:** el commitca3316af aprobó B01/B02/B05, pero B03 no compiló
 las pruebas Debug/Release: FrostedTopBarTest:132 encadenaba performImeAction()
 sobre el Unit devuelto por performTextInput(). No se ejecutaron pruebas en

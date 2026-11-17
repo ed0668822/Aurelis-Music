@@ -12,6 +12,8 @@ Clasificación media, máximo40 rutas distintas incluyendo reparaciones. Lista
 cerrada antes de implementar:14 rutas, dos de ellas documentación de la nueva
 organización40/10 preparada en el turno anterior. No se implementa F004 ni se
 reabre F001/F002. Las funciones posteriores siguen pendientes de decisión.
+Estas secciones describen la entrega inicial; el apartado CI185 registra la
+mejora de pruebas autorizada después y el acumulado vigente19/40.
 
 ## Diferencias comprobadas
 
@@ -136,7 +138,94 @@ Dos revisiones del mismo agente: (1) causa y API/receptor, (2) continuidad de
 acciones/aserciones, alcance y diff. Sintaxis/diff locales; compilación y pruebas
 Android exclusivamente en Actions. Nuevo CI PENDIENTE; F004 sigue sin iniciar.
 
-## Rutas de la entrega (14 de40)
+## CI185 — corrección del recorrido y mejora de pruebas
+
+El usuario autoriza «Mejora eso y corrige el error» después de preguntar por las
+pruebas. [CI185/run43999110484](https://github.com/ed0668822/Aurelis-Music/actions/runs/43999110484),
+SHA `1ca0093a7fd98dd3c9afb3727a0599a57db6de61`, aprobó B01/B02/B05; B03/B06
+FAILURE y B04 SKIPPED. En cada variante se ejecutaron457 casos:456 SUCCESS y
+1 FAILURE. Las cinco pruebas de FrostedTopBarTest aprobaron en Debug y Release.
+El único fallo fue la aserción final de
+NavigationIntegrationTest.replayProfileReturnsThroughSettingsToTheSameLibraryTab,
+línea107. Logs originales CRC válidos, `run185-logs.zip`, SHA256
+`c4fedcd96732c4e1ea6f14fe73819ea82b79ec7216d4137192f0d167b67d140a`.
+
+AppNavigator.canGoBack incluye la condición selectedTab!=HOME. Volver de Replay
+a Biblioteca vacía la pila de páginas pero todavía permite Atrás→Inicio. La
+prueba ahora verifica ambas cosas y el último paso hacia Inicio; no se debilita
+el modelo para satisfacer una expectativa errónea. También restaura estado en
+Ajustes y Replay antes de completar el recorrido. F5 sin XML fue consecuencia
+de la prueba fallida, no evidencia de una cobertura porcentual baja.
+
+### Mejora controlada (dificultad alta,10 archivos)
+
+1. NavigationIntegrationTest: corregir y ampliar el recorrido; SDK33/35.
+2. FrostedTopBarTest: ejecutar las cinco regresiones en SDK33/35.
+3. HomeShelvesIntegrationTest: permisos, carga, vacío, error y recuperación en SDK33/35.
+4. .github/workflows/b03-unit-tests.yml: compilación independiente Kotlin/Java de
+   Debug y Release antes de ejecutar; ejecutar cada suite solo si compiló su
+   variante. El fallo de una no omite la otra. Kover/F5 permanecen obligatorios.
+5. .github/scripts/b03-phase.sh: conservar logs y estados de comando, timeout y
+   escritura de logs; un error no se pierde al usar tee.
+6. .github/scripts/b03_test_summary.py: extraer JUnit con causas, clase/caso y
+   ubicación; distinguir fallo de dependencias/compilación, ejecución, timeout,
+   proceso terminado y evidencia incompleta. Exit137 no prueba por sí mismo un
+   timeout. Mantiene campos y rutas que B06 consume, y añade diagnóstico por fase.
+7. .github/scripts/test_b03_test_summary.py: fixtures de informes y códigos de
+   salida con comandos simulados, sin Gradle/Android local.
+8. Este informe.
+9. PROGRESS_TRACKER.md.
+10. FUNCTION_BLOCKS_40_10.md, actualizado con el presupuesto acumulado.
+
+Robolectric4.14.1 de la base no soporta API36: no se fuerza ni se actualiza una
+dependencia para aparentar esa cobertura. B03 añade el emulador Android16
+reutilizando ui_parity.py settings-navigation y las dos pruebas instrumentadas
+existentes de recreación y continuidad de reproducción en ajustes. Descarga los
+APK Debug/instrumentación de B01 y verifica SHA, run, intento y hashes mediante
+ci14_handoff antes de ejecutarlos. No recompila APK ni modifica su firma/ABI.
+
+El emulador valida API36, commit y ambos casos concretos. Evidencia ausente,
+reporte inválido, caso omitido o comando fallido rechazan la puerta final aunque
+los pasos de diagnóstico usen continue-on-error. Los artefactos mantienen nombres
+y estructura; compile-*.log y android16/ quedan en el paquete B03. Las capturas
+unitarias siguen declarando software; la evidencia del emulador se identifica
+como tal y no acredita igualdad visual o validación física de HyperOS3.
+La comprobación ampliada necesita el pipeline unificado con B01: un despacho
+aislado de B03 sin esos APK no puede acreditar Android16 y falla por falta de
+evidencia, igual que las otras fases que dependen del handoff de B01.
+
+Esta comprobación adicional puede alargar B03 por el arranque del emulador.
+Se conserva su límite90min y se acota el paso Android16 a25min; un fallo de
+preparación queda diferenciado de una aserción de la app. B05 conserva sus pruebas
+de audio Android15 y el DAG B01→B02/B03/B05→B04→B06 no se altera.
+
+Controles nuevos: XML ausente/vacío/inválido, compilación fallida con XML antiguo,
+skips, errores, un comando fallido pese a XML positivo, timeout con caso activo,
+proceso terminado, API/commit/casos Android incorrectos y fallo de tee. Ninguna
+prueba existente ni umbral se elimina. Las verificaciones Android nuevas quedan
+PENDIENTES de Actions. Dos revisiones del mismo agente: causa/APIs y después
+gates/artefactos/independencia/matriz/scope. Comprobaciones locales permitidas:
+fixtures Python, actionlint, bash -n, parser Kotlin y diff --check.
+
+Resultado local:17 fixtures nuevas y132 regresiones existentes de B06, handoff,
+comparación UI y cobertura aprobadas (149 casos distintos). También aprobaron
+actionlint, bash -n, sintaxis de los tres Kotlin modificados y git diff --check.
+El fixture de compatibilidad verifica que B06 sigue acreditando casos JUnit con
+el nuevo esquema. Nada de ello sustituye compilar/ejecutar Android en Actions.
+
+El bloque F003 pasa de14 a19 rutas acumuladas (máximo40), añadiendo cinco:
+HomeShelvesIntegrationTest, el workflow B03, el script de fases, el generador de
+informes y sus fixtures. La mejora alta ocupa10/10. F004 sigue sin iniciar.
+
+Antes del commit se detectaron cinco commits remotos ajenos que solo cambian
+cinco recursos de iconos. Se incorporaron por avance directo a
+`69480b41012d3091e340be2535ebcfc6004acf19`, sin rebase ni commit de merge.
+Esta reparación parte de esa base y modifica10 rutas; los iconos se conservan
+sin edición. El acumulado propio de F003 es19; el diff global desde su primera
+base contiene además esas cinco rutas ajenas, que no se ocultan ni se atribuyen
+a esta entrega.
+
+## Rutas de la entrega inicial (14 de40)
 
 1. app/src/main/java/com/music/aurelis/MainActivity.kt
 2. app/src/main/java/com/music/aurelis/ui/components/FrostedTopBar.kt
