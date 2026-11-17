@@ -1,6 +1,39 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### CI200 — precondición temporal de Anterior en Android16 (2026-11-17)
+
+Run44096639847, SHA5d8a096e: B01/B02/B05 SUCCESS.534/534 Debug y534/534
+Release PASS; F5 PASS con90,96% sobre umbral80%. La corrección AutoMix quedó
+validada. Navegación API36 sin audio PASS. El recorrido con audio falla en
+advanceWithoutReopening, esperado settings-navigation pero observado
+settings-navigation-next al pulsar Anterior. B04 SKIPPED; B06 falla por B03.
+No se atribuye este resultado a compilación, cobertura ni un crash.
+
+Se leyó el fuente oficial Media3 common1.11.1: BasePlayer.seekToPrevious cambia
+al elemento anterior solo si getCurrentPosition <= getMaxSeekToPreviousPosition;
+fuera de ese umbral reinicia el elemento actual. La prueba hacía seekTo(0) con
+reproducción activa antes de esperar al asentamiento/accessibility y muestrear.
+No se registró la posición inmediatamente anterior al click en200; el cruce del
+umbral es una explicación compatible, no una medición de ese momento.
+
+La precondición se hace independiente del tiempo de renderizado: se pausa y se
+vuelve a cero, se espera READY, !playWhenReady, !isPlaying, pista segunda,
+anterior disponible y posición0 dentro del umbral. Después se pulsa Anterior
+real por accesibilidad y se verifica el ID esperado. Se reanuda mediante la UI.
+Siguiente continúa probado durante reproducción; Anterior se prueba pausado.
+El muestreo de900ms, tolerancia2px, detección de desaparición/reapertura y
+aserciones finales de perfil y reproducción se conservan. No se cambia
+el comportamiento productivo de Anterior ni se relaja una aserción de identidad.
+
+Tres rutas de reparación: prueba nativa y dos registros. La prueba es una ruta
+nueva en F007:14/40; F00811/40,19 conjuntas, sin reiniciar contadores.
+Dos revisiones del mismo agente: contrato Media3/precondición y callbacks;
+después conservación del detector visual, reanudación y ámbito/diff. Parser y
+diff --check locales; Android del nuevo SHA pendiente exclusivamente de Actions.
+Avisar al enviar y esperar al usuario; F009/F010 siguen autorizados sin iniciar.
+
+
 ### CI199 — alcance y sincronización de las pruebas AutoMix (2026-11-17)
 
 Run44091908811, SHA03c473f9: B01/B02/B05 SUCCESS, B03/B06 FAILURE,

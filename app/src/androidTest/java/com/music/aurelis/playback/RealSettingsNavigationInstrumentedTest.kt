@@ -289,10 +289,29 @@ class RealSettingsNavigationInstrumentedTest {
                     File(folder, "$prefix-transition-$expectedId.csv").writeText(samples.joinToString("\n") + "\n")
                 }
                 advanceWithoutReopening(context.getString(R.string.player_next), "settings-navigation-next")
-                // Previous from the start selects the preceding track rather than
-                // the Media3 restart-current behavior after several seconds.
-                onMain { player!!.seekTo(0) }
+                // Previous means restart-current above Media3's position threshold.
+                // Keep the clock paused at zero throughout accessibility/layout
+                // sampling, so a slow emulator cannot change this precondition.
+                // Next above still exercises a transition during real playback.
+                onMain { player!!.pause(); player!!.seekTo(0) }
+                await(context.getString(R.string.player_play))
+                val previousDeadline = SystemClock.elapsedRealtime() + 15_000
+                var previousReady = false
+                while (!previousReady && SystemClock.elapsedRealtime() < previousDeadline) {
+                    onMain {
+                        val controller = player!!
+                        previousReady = !controller.playWhenReady && !controller.isPlaying &&
+                            controller.playbackState == Player.STATE_READY &&
+                            controller.currentMediaItem?.mediaId == "settings-navigation-next" &&
+                            controller.hasPreviousMediaItem() && controller.currentPosition == 0L &&
+                            controller.currentPosition <= controller.maxSeekToPreviousPosition
+                    }
+                    if (!previousReady) SystemClock.sleep(100)
+                }
+                assertTrue("Previous must start paused at zero on the second track", previousReady)
                 advanceWithoutReopening(context.getString(R.string.player_previous), "settings-navigation")
+                await(context.getString(R.string.player_play), click = true)
+                await(context.getString(R.string.player_pause))
                 evidence("$prefix-player-track-transition")
                 await(context.getString(R.string.player_pause), click = true)
                 await(context.getString(R.string.player_play))

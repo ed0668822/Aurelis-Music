@@ -50,7 +50,7 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   artefactos al reintentar196. La igualdad visual completa y el físico siguen pendientes.
 - Entrega autorizada ahora: F007 y F008, base44d2fb5d. Recomendaciones locales
   con presentación Top Picks y Explorar con carátulas duotono de géneros reales.
-  F00713/40, F00811/40,18 rutas acumuladas conjuntas contando avisos, pruebas y
+  F00714/40, F00811/40,19 rutas acumuladas conjuntas contando avisos, pruebas y
   recursos compartidos. Nuevo CI PENDIENTE. No se inicia F009 ni B09.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
@@ -608,7 +608,7 @@ esperar al usuario; el siguiente bloque F009 no está autorizado en esta entrega
 
 Listas fijadas antes de editar; cada corrección futura cuenta en estos acumulados:
 
-F007: 13 rutas acumuladas de40, incluida la reparación CI199:
+F007: 14 rutas acumuladas de40, incluidas las reparaciones CI199/CI200:
 
 - NOTICE
 - docs/migration/beta-local/LICENSE_AUDIT.md
@@ -623,6 +623,7 @@ F007: 13 rutas acumuladas de40, incluida la reparación CI199:
 - app/src/test/java/com/music/aurelis/ui/RecommendationBackdropTest.kt
 - app/src/test/java/com/music/aurelis/ui/HomeShelvesIntegrationTest.kt
 - app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt
+- app/src/androidTest/java/com/music/aurelis/playback/RealSettingsNavigationInstrumentedTest.kt
 
 F008: 11 rutas de40:
 
@@ -669,3 +670,24 @@ Dos revisiones estáticas del mismo agente; sintaxis/diff locales. Sin cambios
 Android de producción, compilación local, nuevas funciones o workflows.
 El resultado de las pruebas de esta corrección queda pendiente de Actions;
 avisar del push y esperar al usuario antes de avanzar.
+
+### Reparación CI200 — Anterior y el reloj de Media3
+
+534/534 Debug y534/534 Release PASS; F5 PASS90,96% (umbral80%), B01/B02/B05
+SUCCESS. El recorrido API36 sin audio PASS; el que conserva reproducción falla
+al comprobar la pista tras Anterior: esperaba settings-navigation y mantiene
+settings-navigation-next. La reparación AutoMix anterior queda acreditada.
+
+El fuente oficial Media3 common1.11.1 confirma que seekToPrevious reinicia la
+pista actual fuera de maxSeekToPreviousPosition. El seek a0 anterior al helper no
+impide que el reloj activo supere ese umbral durante las esperas de accesibilidad.
+No hay una medida de posición pre-click en200 que pruebe ese cruce concreto.
+La prueba se ajusta para establecer y comprobar una precondición estable, sin
+cambiar la semántica productiva: pausa, seek0, READY y pista/anterior válidos,
+click real, ID esperado y reanudación por UI. Siguiente sigue con audio activo;
+Anterior se comprueba pausado. Se mantienen900ms de muestreo/2px y el detector
+de cierre/reapertura, las recreaciones y las aserciones finales de reproducción.
+
+Prueba nativa y estos dos registros:3 rutas. Acumulados F00714/40, F00811/40,
+19 conjuntas. Dos revisiones del mismo agente; sintaxis/diff locales. Nuevo CI
+Android pendiente. No se inicia F009/F010 ni otro bloque antes de su resultado.
