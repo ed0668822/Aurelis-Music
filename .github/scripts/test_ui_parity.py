@@ -16,6 +16,68 @@ from contextlib import redirect_stdout
 
 
 class ParityEvidenceTest(unittest.TestCase):
+    def test_audio_startup_fixture_preserves_metadata_and_replaces_only_welcome(self):
+        existing = ('<map><int name="last_version" value="42"/><string name="other">kept &amp; safe</string>'
+                    '<boolean name="local_onboarding_complete" value="false"/>'
+                    '<string name="local_onboarding_complete">invalid duplicate</string></map>')
+        written = []
+        def shell(*args, **kwargs):
+            self.assertIn('com.music.aurelis', args)
+            if kwargs.get('input_data') is not None:
+                written.append(kwargs['input_data'])
+            if args[-1] == 'shared_prefs/app_meta.xml':
+                return written[-1].decode()
+            return existing
+        with patch.object(parity, 'shell', side_effect=shell) as adb:
+            result = parity.seed_audio_startup_fixture()
+        root = parity.ET.fromstring(written[0])
+        self.assertEqual('42', root.find("int[@name='last_version']").get('value'))
+        self.assertEqual('kept & safe', root.find("string[@name='other']").text)
+        flags = root.findall("*[@name='local_onboarding_complete']")
+        self.assertEqual([('boolean', 'true')], [(f.tag, f.get('value')) for f in flags])
+        self.assertEqual(('am', 'force-stop', 'com.music.aurelis'), adb.call_args_list[0].args)
+        self.assertEqual(5, adb.call_count)
+        self.assertTrue(result['welcome_completed'])
+        for key in ('welcome_ui_tested', 'motion_settings_changed', 'audio_policy_changed'):
+            self.assertFalse(result[key])
+
+    def test_audio_startup_fixture_supports_missing_metadata_without_clearing_app_data(self):
+        writes = []
+        def shell(*args, **kwargs):
+            self.assertNotIn('clear', args)
+            if 'input_data' in kwargs:
+                writes.append(kwargs['input_data'])
+            return writes[-1].decode() if args[-1] == 'shared_prefs/app_meta.xml' else '<map/>'
+        with patch.object(parity, 'shell', side_effect=shell):
+            self.assertTrue(parity.seed_audio_startup_fixture()['welcome_completed'])
+        self.assertEqual(1, len(parity.ET.fromstring(writes[0])))
+
+    def test_audio_startup_fixture_does_not_overwrite_malformed_existing_metadata(self):
+        for xml in ('broken XML', '<other/>'):
+            with self.subTest(xml=xml), patch.object(parity, 'shell', return_value=xml) as adb:
+                with self.assertRaises((ValueError, parity.ET.ParseError)):
+                    parity.seed_audio_startup_fixture()
+                self.assertEqual(3, adb.call_count)
+                self.assertTrue(all('input_data' not in call.kwargs for call in adb.call_args_list))
+
+    def test_audio_startup_fixture_requires_exact_persisted_boolean_readback(self):
+        for observed in ('<map/>', '<map><boolean name="local_onboarding_complete" value="false"/></map>',
+                         '<map><string name="local_onboarding_complete" value="true"/></map>',
+                         '<map>' + '<boolean name="local_onboarding_complete" value="true"/>' * 2 + '</map>',
+                         '<wrong><boolean name="local_onboarding_complete" value="true"/></wrong>', 'invalid'):
+            with self.subTest(observed=observed), patch.object(parity, 'shell',
+                    side_effect=['', '', '<map/>', '', observed]):
+                with self.assertRaises((RuntimeError, parity.ET.ParseError)):
+                    parity.seed_audio_startup_fixture()
+
+    def test_audio_startup_fixture_propagates_device_and_write_failures(self):
+        for fail_at in range(5):
+            steps = ['', '', '<map/>', '', '<map/>']
+            steps[fail_at] = RuntimeError('device or private preference write failed')
+            with self.subTest(fail_at=fail_at), patch.object(parity, 'shell', side_effect=steps):
+                with self.assertRaisesRegex(RuntimeError, 'device or private preference write failed'):
+                    parity.seed_audio_startup_fixture()
+
     def session(self, title='Parity Track 01', state=2, actions=52, package='com.music.aurelis', queue=3):
         return f'package={package}\nactive=true\nstate=PlaybackState {{state={state}, actions={actions}}}\nmetadata: description={title}, Artist, Album\nqueueTitle=null, size={queue}\n'
 

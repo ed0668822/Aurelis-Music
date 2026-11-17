@@ -511,6 +511,37 @@ def seed_preferences(app, theme):
             "font_exception": "Reference default; Aurelis authorized system font"}
 
 
+def seed_audio_startup_fixture():
+    """Complete only welcome in the disposable B05 audio fixture, preserving other prefs.
+
+    Native Settings navigation separately clicks through the real welcome. Audio
+    tests use ActivityScenario, whose global idle waits cannot own that continuously
+    animated first-run screen. This fixture changes neither motion nor audio policy.
+    """
+    package = PACKAGES["aurelis"]
+    path = "shared_prefs/app_meta.xml"
+    key = "local_onboarding_complete"
+    shell("am", "force-stop", package)
+    shell("run-as", package, "mkdir", "-p", "shared_prefs")
+    existing = shell("run-as", package, "sh", "-c",
+                     f"if test -f {path}; then cat {path}; else printf '<map/>'; fi")
+    root = ET.fromstring(existing)
+    if root.tag != "map":
+        raise ValueError("Audio startup fixture requires SharedPreferences XML")
+    for entry in list(root):
+        if entry.get("name") == key:
+            root.remove(entry)
+    ET.SubElement(root, "boolean", name=key, value="true")
+    shell("run-as", package, "sh", "-c", f"cat > {path}", input_data=ET.tostring(root))
+    observed = ET.fromstring(shell("run-as", package, "cat", path))
+    flags = [entry for entry in observed if entry.get("name") == key]
+    if observed.tag != "map" or len(flags) != 1 or flags[0].tag != "boolean" or flags[0].get("value") != "true":
+        raise RuntimeError("Audio startup welcome flag was not verified")
+    return {"fixture": "disposable B05 audio tests", "package": package,
+            "welcome_completed": True, "welcome_ui_tested": False,
+            "motion_settings_changed": False, "audio_policy_changed": False}
+
+
 def launch(package):
     shell("am", "start", "-W", "-f", "0x10008000", "-n", package + "/.MainActivity")
     time.sleep(4)
@@ -808,7 +839,7 @@ def settings_navigation():
                 # Instrumentation installs its own exception handler: Java stacks may
                 # use MonitoringInstr/TestRunner rather than AndroidRuntime.
                 relevant = "\n".join(line for line in runtime.splitlines() if re.search(
-                    r"\b(?:AndroidRuntime|AndroidJUnitRunner|AndroidJUnit4|MonitoringInstr|InstrumentationResultPrinter|TestRunner|libc|DEBUG|System\.err)\s*:", line))
+                    r"\b(?:AndroidRuntime|AndroidJUnitRunner|AndroidJUnit4|MonitoringInstr|InstrumentationResultPrinter|TestRunner|SettingsNavigationTest|ActivityScenario|LifecycleMonitor|libc|DEBUG|System\.err)\s*:", line))
                 print(relevant[-48000:], flush=True)
                 exits = shell("dumpsys", "activity", "exit-info", package)
                 (OUT / (method + "-exit-info.txt")).write_text(exits)
@@ -869,7 +900,7 @@ def report():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["select-reference", "capture", "report", "settings-navigation"])
+    parser.add_argument("command", choices=["select-reference", "capture", "report", "settings-navigation", "seed-audio-startup"])
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
     if args.command == "select-reference":
@@ -878,5 +909,7 @@ if __name__ == "__main__":
         raise SystemExit(capture())
     elif args.command == "settings-navigation":
         raise SystemExit(settings_navigation())
+    elif args.command == "seed-audio-startup":
+        print(json.dumps(seed_audio_startup_fixture(), indent=2))
     else:
         report()

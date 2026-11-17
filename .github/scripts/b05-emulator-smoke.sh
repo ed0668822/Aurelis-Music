@@ -96,7 +96,7 @@ if ! adb install -r "$TEST_APK" > "$OUT/p3-install.log" 2>&1; then
   cat "$OUT/p3-install.log"
   exit 1
 fi
-# MainActivity requests READ_MEDIA_AUDIO on first launch. Grant only for this
+# MainActivity offers READ_MEDIA_AUDIO during the local welcome. Grant only for this
 # automated test so the Android permission dialog cannot replace the foreground
 # app while Media3 requests audio focus (Android 15, targetSdk 35).
 if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
@@ -105,6 +105,10 @@ if ! adb shell pm grant "$PKG" android.permission.READ_MEDIA_AUDIO \
   cat "$OUT/p3-permission-grant.log"
   exit 1
 fi
+# This disposable audio fixture starts after welcome. The independent B03 native
+# navigation test exercises the actual welcome buttons with animations enabled.
+# Leave production settings, audio focus and every Media3 assertion unchanged.
+python3 .github/scripts/ui_parity.py seed-audio-startup > "$OUT/p3-startup-fixture.json"
 # Eight separate AndroidJUnitRunner commands, all run even if one fails.
 mkdir -p "$OUT/p3-tests"
 mapfile -t CASE_SELECTORS < <(python3 .github/scripts/b05_case_results.py list)
@@ -132,8 +136,15 @@ for entry in "${CASE_SELECTORS[@]}"; do
   cat "$OUT/p3-tests/${case_id}.log" >> "$OUT/p3-instrumentation.log"
   adb logcat -d -v threadtime -s \
     P3Media3Test:D P3Media3Service:D MediaFocusControl:I \
+    ActivityScenario:V LifecycleMonitor:D TestRunner:I MonitoringInstr:I \
     ExoPlayerImplInternal:E AudioTrack:E AndroidRuntime:E '*:S' \
     > "$OUT/p3-tests/${case_id}-logcat.txt" 2>&1 || true
+  if [ "$(cat "$OUT/p3-tests/${case_id}.exit")" != "0" ] || \
+      ! grep -q '^OK (1 test)' "$OUT/p3-tests/${case_id}.log"; then
+    echo "P3 failed or incomplete case: $case_id; original test and audio logs follow"
+    cat "$OUT/p3-tests/${case_id}.log"
+    cat "$OUT/p3-tests/${case_id}-logcat.txt"
+  fi
 done
 # Failing any one case fails B05 after preserving every other result.
 python3 .github/scripts/b05_case_results.py summarize "$OUT"

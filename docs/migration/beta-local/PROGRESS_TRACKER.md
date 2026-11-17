@@ -1,6 +1,46 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### CI195 — bienvenida animada y esperas del harness Android (2026-11-17)
+
+El ZIP original aportado por el usuario es válido:311 entradas. SHAa76abcf4,
+run44017612090: B01/B02 SUCCESS;506/506 Debug y506/506 Release aprobados,
+incluidas las reparaciones CI193. B03 falla exclusivamente por el primer caso
+de navegación API36, TIMEOUT150s; el segundo caso con audio PASS. B05 registra
+6/8 PASS: local y continuous terminan124 por timeout125s. B04 SKIPPED y B06
+FAILURE mantienen la puerta correcta. No se certifican fases omitidas.
+
+Las trazas de continuous muestran READY, más de12s de avance, seek pausado,
+reanudación y stop/abandono de foco; no hay resultado JUnit final. Local no llega
+a registrar el punto posterior a ActivityScenario.launch/onActivity. En API36
+se observa RESUMED, pero no aparece la primera evidencia de Perfil antes del
+timeout. No hay stack de hilos que permita afirmar un deadlock nativo o un fallo
+de decodificación. Se leyó el fuente oficial ActivityScenario1.6.1: espera
+waitForIdleSync en launch, transición de estado, onActivity y cierre. La nueva
+bienvenida continúa animándose y el harness de audio nunca la completaba.
+
+La integración de pruebas deja de depender de inactividad global mientras esa
+bienvenida está visible: el caso nativo la abre con un Intent normal y pulsa
+Siguiente/Empezar por accesibilidad, comprueba persistencia y perfil intacto,
+y después usa ActivityScenario para todos los recorridos/recreaciones originales.
+El fixture B05 marca solo la bienvenida completada con la app detenida, conserva
+las demás claves app_meta y verifica el booleano leído del archivo. No cambia
+ajustes de movimiento, Glass, foco, decodificador o las aserciones de audio.
+Esta preparación de B05 no cuenta como prueba de la bienvenida; la prueba real
+sigue en B03. No se amplían timeouts ni se añaden reintentos que oculten fallos.
+
+Se imprimen los logs de los casos incompletos y etapas del harness en Actions,
+además de conservar sus artefactos. Cinco fixtures Python nuevos comprueban
+preservación de metadatos, instalación nueva y rechazo de XML/readback/error de
+dispositivo.86 pruebas Python aprobadas (62 capturador,7 atestación B05,17 B03),
+sintaxis Bash/Kotlin y diff --check; Android solo en Actions, aún pendiente.
+Dos revisiones del mismo agente: flujo/lifecycle/persistencia y contratos de
+evidencia/scope/compatibilidad. No se declara resuelto físicamente sin el nuevo CI.
+
+Seis rutas en esta reparación, solo b05-emulator-smoke.sh nueva en el acumulado:
+F004.a8/10, F004.b9/10, F005–F00611/40;20 rutas propias y23 con los tres iconos
+externos preservados. No se inicia F007. Tras push avisar y esperar al usuario.
+
 ### CI193 — corrección de las pruebas de Inicio (2026-11-17)
 
 Run44015753195, SHA16040c91: B01 SUCCESS. Los logs originales verificados

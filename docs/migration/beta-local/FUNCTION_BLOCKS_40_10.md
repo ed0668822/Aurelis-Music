@@ -45,12 +45,12 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   con21 rutas acumuladas incluida la mejora de pruebas autorizada después de
   CI185 y la reparación de dependencias B02 trasCI191; CI192 global SUCCESS para3a015702.
   La mejora B03 ocupa10/10 y aprobó CI191. La reparación específica B02 ocupa5/10.
-- Entrega autorizada ahora: F004 y F005–F006, base3a015702; CI193 cancelado
-  tras registrar tres fallos de pruebas por variante. Reparación documentada abajo;
-  nuevo CI PENDIENTE.
-  F004 se divide antes de ampliar el scope en F004.a y F004.b,8 rutas cada uno,
+- Entrega autorizada ahora: F004 y F005–F006, base3a015702; CI195 confirma B01,
+  Lint y506 pruebas por variante aprobados. Fallan timeouts Android; reparación
+  del harness documentada abajo, nuevo CI PENDIENTE.
+  F004 se divide antes de ampliar el scope en F004.a8 y F004.b9 rutas acumuladas,
   máximo10 por subbloque. F005–F006 ocupa11/40 con la reparación de HomeLocalTest.
-  Son19 rutas propias distintas conjuntas;22 incluyendo tres iconos externos conservados.
+  Son20 rutas propias distintas conjuntas;23 incluyendo tres iconos externos conservados.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -365,15 +365,16 @@ F004.a — presentación y persistencia,8 rutas de10:
 - docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
 - docs/migration/beta-local/PROGRESS_TRACKER.md
 
-F004.b — conexión activa y harness,8 rutas de10:
+F004.b — conexión activa y harness,9 rutas acumuladas de10 con la reparación CI195:
 
 - app/src/main/java/com/music/aurelis/MainActivity.kt
 - app/src/androidTest/java/com/music/aurelis/playback/RealSettingsNavigationInstrumentedTest.kt
 - .github/scripts/ui_parity.py
 - .github/scripts/test_ui_parity.py
+- .github/scripts/b05-emulator-smoke.sh
 - Los mismos cuatro registros/avisos de F004.a, contados también en este subbloque.
 
-El padre F004 ocupa12 rutas distintas, declaradas expresamente; cada subbloque
+El padre F004 ocupa13 rutas distintas, declaradas expresamente; cada subbloque
 mantiene su acumulado independiente para sus futuras correcciones. La primera
 parte queda compilable pero sin activación hasta conectar la segunda. La prueba
 instrumentada existente atraviesa la bienvenida real, comprueba la bandera y
@@ -439,6 +440,31 @@ integración que abre el reproductor actual sin sustituir su cola ni posición.
 Todos se destinan a SDK33/35. Las pruebas anteriores no se eliminan.
 
 ## Evidencia de esta entrega conjunta y procedencia
+
+Actualización CI195 (ZIP original del usuario,311 entradas válidas): B01 y B02
+SUCCESS;506 pruebas Debug y506 Release PASS, reparaciones CI193 validadas.
+El primer recorrido Android16 agota150s y el segundo PASS; B05 tiene6/8 PASS,
+local y continuous agotan125s (exit124). Continuous sí registra12s de audio,
+seek, reanudación y stop final, antes de quedar sin resultado JUnit. No se
+demuestra un error de audio ni un deadlock nativo con estas trazas.
+
+Se verificó el fuente oficial ActivityScenario1.6.1: launch/onActivity/transición
+y cierre esperan waitForIdleSync. La bienvenida animada aún estaba activa en
+la preparación de estos tests. El recorrido de ajustes ahora completa la
+bienvenida real por Intent/accesibilidad antes de entrar a ActivityScenario,
+verificando perfil y persistencia; mantiene todas las recreaciones y recorridos.
+El fixture de audio B05 completa solo la bandera de bienvenida mientras la app
+está detenida, preserva las demás claves y exige readback booleano exacto.
+No prueba ni certifica la UI de bienvenida: esa cobertura permanece en B03.
+No se modifica producción, Glass, movimiento, audio focus o los límites de tiempo.
+Si otro problema persiste, los casos fallidos imprimen sus logs y etapas reales.
+
+Cinco regresiones Python nuevas verifican que el fixture no borra metadatos y
+falla ante errores de dispositivo, XML o readback.86 fixtures Python PASS;
+Android nuevo pendiente exclusivamente de Actions. Dos revisiones del mismo
+agente. Esta reparación usa6 rutas; solo b05-emulator-smoke.sh es nueva frente
+al acumulado anterior. F004.a8/10, F004.b9/10, F005–F00611/40,20 propias y23
+con iconos externos. No se reinician contadores ni se inicia F007.
 
 Actualización CI193: B01 compiló correctamente. Debug y Release ejecutaron506
 casos cada uno:503 aprobados y3 fallidos. HomeLocalTest buscaba el rótulo y botón

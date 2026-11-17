@@ -3,6 +3,7 @@ package com.music.aurelis.playback
 
 import android.app.KeyguardManager
 import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Rect
@@ -147,14 +148,19 @@ class RealSettingsNavigationInstrumentedTest {
         SettingsRepository.setReduceAnimation(false)
         val fixture = File(context.cacheDir, "settings-navigation.wav")
         val before = ProfileRepository.state.value.profile
-        val activity = ActivityScenario.launch(MainActivity::class.java)
+        var scenario: ActivityScenario<MainActivity>? = null
         var connection: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
         var player: MediaController? = null
         try {
-            assertEquals(Lifecycle.State.RESUMED, activity.state)
             val startup = context.getSharedPreferences("app_meta", android.content.Context.MODE_PRIVATE)
             if (!startup.getBoolean("local_onboarding_complete", false)) {
-                // Exercise the production welcome instead of disabling it for CI.
+                // ActivityScenario waits for global main-loop idle at launch,
+                // onActivity and close. The welcome intentionally animates forever.
+                // Launch normally and use accessibility to finish the real welcome
+                // before entering that lifecycle harness; keep all effects enabled.
+                context.startActivity(Intent(context, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                android.util.Log.i("SettingsNavigationTest", "Exercising real local welcome")
                 await(context.getString(R.string.onboarding_next), click = true)
                 await(context.getString(R.string.onboarding_start), click = true)
                 await(context.getString(R.string.settings_profile_action))
@@ -163,6 +169,10 @@ class RealSettingsNavigationInstrumentedTest {
                 assertEquals("Welcome must preserve the existing local profile", before,
                     ProfileRepository.state.value.profile)
             }
+            android.util.Log.i("SettingsNavigationTest", "Welcome complete; launching lifecycle scenario")
+            val activity = ActivityScenario.launch(MainActivity::class.java)
+            scenario = activity
+            assertEquals(Lifecycle.State.RESUMED, activity.state)
             if (withPlayback) {
                 // Original PCM fixture, through the production MediaSession and decoder.
                 val samples = 8_000 * 90
@@ -315,7 +325,7 @@ class RealSettingsNavigationInstrumentedTest {
             runCatching { evidence(if (withPlayback) "playing-final" else "idle-final") }
             player?.let { controller -> onMain { controller.stop(); controller.clearMediaItems() } }
             connection?.let { future -> onMain { MediaController.releaseFuture(future) } }
-            activity.close()
+            scenario?.close()
             fixture.delete()
             SettingsRepository.setReduceAnimation(previousMotion)
         }
