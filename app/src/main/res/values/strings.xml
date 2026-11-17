@@ -541,4 +541,8 @@
     <string name="player_local_device">En este dispositivo</string>
     <string name="lyrics_local_file_title">Archivo local</string>
     <string name="lyrics_embedded_title">Incrustadas</string>
+
+    <string name="local_search_top_result">Resultado destacado</string>
+    <string name="local_search_edit_suggestion">Editar “%1$s”</string>
+    <string name="local_search_playlist_action">Lista de reproducción</string>
 </resources>

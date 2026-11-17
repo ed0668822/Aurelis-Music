@@ -54,8 +54,9 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   recursos compartidos. Su reparación de CI queda a cargo de otro agente, por
   instrucción posterior del usuario. Ese encargo permite avanzar ahora con F009.
 - F009 entregado en b3b6cfd0. El usuario autoriza avanzar con «Continúa».
-- Entrega activa: F010, conservación del historial; F011 queda para la siguiente
-  autorización. No se cambia infraestructura ni se certifica el CI anterior.
+- F010 entregado en bd3a4e50. El usuario autoriza avanzar con «Continúa».
+- Entrega activa: F011, destacado y sugerencias locales; F012 queda pendiente
+  de autorización. No se cambia infraestructura ni se certifica el CI anterior.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -75,7 +76,7 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 | F008 | Explorar por géneros locales | Media | 40 | Implementado; CI nuevo pendiente |
 | F009 | Búsqueda y filtros locales | Media | 40 | Implementado; Actions pendiente |
 | F010 | Conservar historial de búsqueda y sus acciones | Fácil | 40 | Entregado para validar; Actions pendiente |
-| F011 | Resultado destacado y sugerencias locales | Media | 40 | Pendiente |
+| F011 | Resultado destacado y sugerencias locales | Media | 40 | Implementado; Actions pendiente |
 | F012 | Actualización, carga y recuperación del escaneo | Difícil | 10 | Pendiente |
 | F013 | Conservar estados vacíos, errores y reintentos | Fácil | 40 | Pendiente |
 | F014 | Teclado, foco, Atrás e insets | Difícil | 10 | Pendiente |
@@ -852,3 +853,95 @@ acredita por sí sola funcionamiento físico o igualdad visual completa.
 Actions y comprobación física quedan pendientes. Tras push avisar y esperar
 resultado del usuario antes de F011; no modificar la reparación de CI del otro
 agente, workflows, servicio ni arquitectura de reproducción.
+
+### F011 — resultado destacado y sugerencias locales (2026-11-17)
+
+Autorización: «Continúa con el siguiente bloque» después de F010. Antes de editar
+se incorpora por avance rápido d58a74f2, que contiene la corrección ajena0011cf52
+(selector de Albums en PlayerIntegrationTest) y diagnósticos/limpieza de daemons
+de d58a74f2. Se preservan sin reescribir historial ni intervenir en su reparación.
+No se supone un CI verde por esta incorporación; el usuario autoriza avanzar.
+
+Dificultad media, máximo40. Se fijan14 rutas antes de editar; las reparaciones
+posteriores cuentan sobre el mismo conjunto. Alcance y copias iniciales fuera del
+checkout: `/workspace/aurelis-validation/f011/scope.json`.
+
+- `app/src/main/java/com/music/aurelis/data/LocalSearchSuggestions.kt`
+- `app/src/main/java/com/music/aurelis/ui/screens/SearchHighlights.kt`
+- `app/src/main/java/com/music/aurelis/ui/screens/SearchScreen.kt`
+- `app/src/main/java/com/music/aurelis/MainActivity.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/main/res/values-en/strings.xml`
+- `app/src/test/java/com/music/aurelis/data/LocalSearchSuggestionsTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/SearchHighlightsTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/SearchHighlightsIntegrationTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/SearchHistoryIntegrationTest.kt`
+- `NOTICE`
+- `docs/migration/beta-local/LICENSE_AUDIT.md`
+- `docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md`
+- `docs/migration/beta-local/PROGRESS_TRACKER.md`
+
+Implementación:
+
+- TopResultCard original adaptado a LocalSong, con sus tamaños, espaciados,
+  tipografía del tema, portada cuadrada, botones y menú. Se muestra en «Todo»,
+  fuera de las sugerencias, para el primer resultado del orden actual. No se
+  inventa una clasificación de relevancia distinta del buscador local.
+- La canción destacada no se repite en la sección de canciones; se conserva su
+  índice y la cola completa al reproducir. Las demás filas mantienen sus índices
+  originales, también cuando la destacada no está en el índice0 en pruebas.
+- Sugerencias reales de título/artista/álbum, colecciones y consultas previas;
+  normalización de acentos compartida, deduplicación y hasta tres alternativas.
+  Se respeta el orden actual de resultados y luego colecciones/historial. No
+  se consulta red, ni se inventan canciones, tendencias o respuestas remotas.
+- Se conserva el contrato original de eco de consulta + alternativas, sin dibujar
+  dos veces el texto escrito. Pulsar el texto busca y guarda; la flecha completa,
+  enfoca el campo y permite seguir escribiendo sin guardar ni reproducir.
+- Solo se guarda el indicador de edición, además de la consulta ya guardable;
+  las sugerencias se reconstruyen a partir de datos actuales. Enviar por IME o
+  elegir una sugerencia/historial devuelve la lista al inicio para mostrar el
+  destacado; completar vuelve al inicio sin confirmar. IME, historia,
+  selección de categoría/orden, abrir colección y reproducir cierran la fase de
+  sugerencias. Ningún callback de red puede devolver resultados antiguos.
+- Reproducir utiliza PlaybackViewModel y la cola actuales. Playlist registra la
+  consulta y abre SongActionsDialog, que permite añadir/crear en LocalUserLibrary.
+  No activa el PlaylistPickerSheet placeholder ni implementa F129 anticipadamente.
+
+Diferencias explícitas respecto al origen: en Aurelis los filtros locales siguen
+accesibles mientras se escribe, y se conservan las filas SongRow existentes.
+Sin alternativas distintas de la consulta se muestran los resultados inmediatos.
+No se importan typeahead remoto, calentamiento de URLs, radio ni historial por
+entidades. El diseño y contenido completo del selector de playlists pertenece
+a F129; se mantiene el diálogo local funcional. Los botones de la tarjeta usan
+FlowRow solo para envolver cuando no caben; a tamaño normal conservan la fila y
+separación original. No se declara igualdad visual completa ni validación física.
+
+Fuentes BitChord fijo b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3:
+
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt` — SHA256 `175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842`.
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/Common.kt` — SHA256 `9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e`.
+- `app/src/main/java/com/music/bitchord/ui/MainViewModel.kt` — SHA256 `f37fbd76edf4d4396c5327562d0d9fc96da452b7aa03df59d6d4fd9d76709fdf`.
+- `sharedUi/src/commonMain/composeResources/values/strings.xml` — SHA256 `4879b1373cc57e20d4a379b383fbe28d162fc49e1c22d05e38500496d4787d08`.
+- `sharedUi/src/commonMain/composeResources/values-es/strings.xml` — SHA256 `1eb6406f782fe58709fb8986ce46501ea1121f06ef19ee4309e5206930d81455`.
+
+- `app/src/main/java/com/music/bitchord/MainActivity.kt` — SHA256 `90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2`.
+
+MainActivity del origen también se consultó para confirmar que Play/Playlist
+registran la selección antes de reproducir/abrir selector; no se copia su negocio
+remoto. NOTICE y LICENSE_AUDIT conservan procedencia, contribuidores y condiciones.
+
+Validación preparada: once métodos nuevos,18 casos previstos (cuatro de lógica
+pura, siete Compose/integración en SDK33/35). Incluye límites, acentos, ausencia de
+resultados inventados, orden, actualización de consulta, dimensiones72dp, no
+repetición del destacado, índices/colas, acciones, completar/buscar/foco, texto
+grande en320dp, retorno al destacado al enviar desde el final de la lista,
+persistencia real de playlists y ausencia de reproducción al
+completar o guardar. Un test F010 conserva sus aserciones y distingue la fila
+musical de una sugerencia con el mismo título mediante su contenedor semántico.
+
+No Gradle/Lint/Android local. Sintaxis Kotlin, XML, recursos, procedencia, archivos
+protegidos, presupuesto y diff --check se revisan estáticamente. Dos revisiones
+del mismo agente: conexiones/estado/colas; después fidelidad de componentes,
+localización, selectores de pruebas y alcance. Ejecución Android y revisión
+visual/física pendientes de Actions y RedmiNote14Pro5G Android16/HyperOS3.
+Tras push avisar y esperar resultado del usuario antes de F012. No B09.

@@ -1,6 +1,29 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F011 — destacado y sugerencias locales (2026-11-17)
+
+Autorizado tras F010 por «Continúa con el siguiente bloque». Base d58a74f2,
+incorporada mediante avance rápido; se preservan la corrección ajena del selector
+Albums y los diagnósticos CI.14/40 rutas fijadas antes de editar; ningún workflow,
+servicio, repositorio de biblioteca/historial ni estado musical global cambiado.
+
+Se adaptan TopResultCard y SuggestionRow reales del BitChord fijo. Destacado
+=primer resultado del orden actual, sin duplicarlo en la lista ni alterar la cola.
+Sugerencias locales de metadatos/colecciones/historial, máximo tres, sin red.
+Completar edita/enfoca; buscar guarda/confirma. Los filtros y SongRow se conservan.
+Play mantiene índices; Playlist usa las operaciones del diálogo/store existentes.
+No se activa un selector placeholder ni se adelanta F129. FlowRow permite botones
+con texto grande sin alterar tamaños normales. Fuentes, hashes y diferencias
+registrados en FUNCTION_BLOCKS_40_10, NOTICE y LICENSE_AUDIT.
+
+Once métodos nuevos,18 casos previstos: lógica4 y Compose/integración7 en SDK33/35.
+Test F010 ajustado para distinguir título de sugerencia y fila, sin relajar sus
+aserciones. Sintaxis/XML/recursos/diff y dos revisiones del mismo agente; Android
+exclusivamente Actions y pendiente. No se declara igualdad visual completa.
+F012/B09 no iniciados. Avisar del envío y esperar resultado del usuario.
+
+
 ### F010 — conservar historial y acciones (2026-11-17)
 
 Autorización «Continúa con el siguiente bloque @github» tras la entrega F009.

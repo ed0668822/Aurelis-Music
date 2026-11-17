@@ -426,12 +426,13 @@ internal fun AurelisNavigationContent(
             }
             AppTab.SEARCH -> {
                 var searchQuery by rememberSaveable { mutableStateOf("") }
+                var searchEditing by rememberSaveable { mutableStateOf(false) }
                 var searchCategory by rememberSaveable { mutableStateOf(LocalSearchCategory.ALL) }
                 val searchListState = rememberLazyListState()
                 val searchContext = LocalContext.current
                 val searchHistory = remember(userStore) { LocalSearchHistory(searchContext) }
                 var history by remember(searchHistory) { mutableStateOf(searchHistory.entries) }
-                fun saveQuery() { searchHistory.submit(searchQuery); history = searchHistory.entries }
+                fun saveQuery() { searchEditing = false; searchHistory.submit(searchQuery); history = searchHistory.entries }
                 val key = LocalSearch.normalize(searchQuery)
                 val searchSongsById = remember(allSongs) { allSongs.associateBy { it.id } }
                 val unknownGenreLabel = searchContext.getString(R.string.explore_unknown_genre)
@@ -462,13 +463,22 @@ internal fun AurelisNavigationContent(
                         LocalSearch.sort(allSongs.filter { LocalSearch.matchesNormalized(it, key) }, libraryUiState.sortOption)
                     }
                 }
+                val suggestions = if (searchEditing) com.music.aurelis.data.LocalSearchSuggestions.build(
+                    searchQuery,
+                    if (searchCategory in listOf(LocalSearchCategory.ALL, LocalSearchCategory.SONGS)) results.orEmpty() else emptyList(),
+                    destinations.map { it.title }, history,
+                ) else emptyList()
                 SearchScreen(
                     filter = libraryUiState.sortOption,
-                    onFilterChange = libraryViewModel::onSortOptionChanged,
+                    onFilterChange = { libraryViewModel.onSortOptionChanged(it); searchEditing = false },
                     query = searchQuery,
-                    onQueryChange = { searchQuery = it },
+                    onQueryChange = { searchQuery = it; searchEditing = true },
                     results = if (results == null || searchCategory in listOf(LocalSearchCategory.ALL, LocalSearchCategory.SONGS)) results else emptyList(),
-                    category = searchCategory, onCategoryChange = { searchCategory = it },
+                    category = searchCategory, onCategoryChange = { searchCategory = it; searchEditing = false },
+                    topResult = results?.firstOrNull(), suggestions = suggestions,
+                    onSuggestionSearch = { searchQuery = it; saveQuery() },
+                    onSuggestionFill = { searchQuery = it; searchEditing = true },
+                    onTopResultPlaylist = { saveQuery(); actionSong = it },
                     listState = searchListState,
                     focusRequested = searchFocusRequested,
                     onFocusHandled = { searchFocusRequested = false },
@@ -479,7 +489,7 @@ internal fun AurelisNavigationContent(
                     history = history,
                     destinations = destinations,
                     onSubmit = { saveQuery() },
-                    onHistoryClick = { searchQuery = it },
+                    onHistoryClick = { searchQuery = it; searchEditing = false },
                     onHistoryRemove = { searchHistory.remove(it); history = searchHistory.entries },
                     onHistoryClear = { searchHistory.clear(); history = searchHistory.entries },
                     currentSong = playbackState.currentSong,

@@ -694,3 +694,15 @@ LocalSearchHistory storage, bounds and accent normalization. The namespace fix
 for query item keys and added regression tests are Aurelis contributions.
 Source hashes, conservation scope and unexecuted Android checks are recorded in
 docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md (F010 section).
+
+F011 — local top result and search completions
+Adapts TopResultCard and SuggestionRow/searchSuggestions presentation from
+BitChord sharedUi SearchScreen.kt, commit
+b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3), original contributors.
+Common.kt RowMoreButton and original English/Spanish strings are referenced.
+MainViewModel/MainActivity submission and top-result actions were consulted;
+remote suggestion, prefetch, radio and entity-history systems are not imported.
+Aurelis uses actual local metadata/collections/history, its existing sorted queue,
+profile-private history and song-actions/playlist store. Filters and SongRow are
+retained; buttons wrap when space is insufficient. Provenance, hashes, differences
+and pending Android/visual verification: FUNCTION_BLOCKS_40_10.md, F011 section.

@@ -105,7 +105,7 @@ class SearchHistoryIntegrationTest {
     @Test fun playingAndOpeningAnAlbumRecordQueriesWithoutAddingHistoryPlayback() {
         start()
         compose.onNode(hasSetTextAction()).performTextInput("beyonce")
-        compose.onNodeWithText(song.title).performClick()
+        compose.onNode(hasText(song.title) and hasAnyAncestor(hasTestTag("search-song:${song.id}:0"))).performClick()
         compose.runOnIdle {
             assertEquals(listOf("beyonce"), entries())
             assertEquals(song.id, player.currentMediaItem?.mediaId)

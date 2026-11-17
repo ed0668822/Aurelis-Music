@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -80,10 +81,16 @@ fun SearchScreen(
     onCategoryChange: (LocalSearchCategory) -> Unit = {},
     onOpenProfile: (() -> Unit)? = null,
     contentBackdropModifier: Modifier = Modifier,
+    topResult: LocalSong? = null,
+    suggestions: List<String> = emptyList(),
+    onSuggestionSearch: (String) -> Unit = onQueryChange,
+    onSuggestionFill: (String) -> Unit = onQueryChange,
+    onTopResultPlaylist: (LocalSong) -> Unit = onSongLongPress,
 ) {
     val focusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(focusRequested) {
         if (focusRequested) {
@@ -96,6 +103,10 @@ fun SearchScreen(
     // A category with no matches must retain the controls that let the user leave it.
     val songs = if (category == LocalSearchCategory.ALL || category == LocalSearchCategory.SONGS) results.orEmpty() else emptyList()
     val collections = destinations.filter { category == LocalSearchCategory.ALL || it.category == category }
+    val suggesting = query.isNotBlank() && suggestions.size > 1
+    val topIndex = if (!suggesting && category == LocalSearchCategory.ALL && topResult != null)
+        songs.indexOfFirst { it.id == topResult.id } else -1
+    val songRows = songs.withIndex().filter { it.index != topIndex }
 
     Column(modifier = modifier.fillMaxSize()) {
         FrostedTopBar(title = stringResource(R.string.search), scrolled = { false },
@@ -103,12 +114,13 @@ fun SearchScreen(
             accessory = { SearchField(
                 query = query,
                 onQueryChange = onQueryChange,
-                onSubmit = onSubmit,
+                onSubmit = { onSubmit(); scope.launch { listState.scrollToItem(0) } },
                 focusRequester = focusRequester,
                 placeholder = stringResource(R.string.local_search_hint),
             ) }, actions = { onOpenProfile?.let { LocalProfileButton(it) } })
         Column(modifier = Modifier.weight(1f).fillMaxWidth()
             .then(contentBackdropModifier).padding(top = topPadding)) {
+            // Local instant search retains its category controls while text completions are shown.
             if (results != null) {
                 PillSegmentedControl(
                     items = LocalSearchCategory.entries.map { stringResource(it.labelRes) },
@@ -140,6 +152,22 @@ fun SearchScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth().testTag("local-search-results"),
                 contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
             ) {
+                if (suggesting) {
+                    localSearchSuggestions(suggestions,
+                        onSearch = { term ->
+                            onSuggestionSearch(term)
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            scope.launch { listState.scrollToItem(0) }
+                        },
+                        onFill = { term ->
+                            onSuggestionFill(term)
+                            focusRequester.requestFocus()
+                            keyboardController?.show()
+                            scope.launch { listState.scrollToItem(0) }
+                        },
+                    )
+                }
                 when {
                     results == null && query.isEmpty() -> {
                         if (history.isEmpty()) {
@@ -147,7 +175,7 @@ fun SearchScreen(
                         } else {
                             recentSearches(
                                 history = history,
-                                onClick = onHistoryClick,
+                                onClick = { term -> onHistoryClick(term); scope.launch { listState.scrollToItem(0) } },
                                 onRemove = onHistoryRemove,
                                 onClear = onHistoryClear,
                             )
@@ -159,26 +187,37 @@ fun SearchScreen(
                     }
                     else -> {
                         // Original ordering: songs, artists, albums, playlists, then other local groups.
-                        if (songs.isNotEmpty()) {
-                            if (category == LocalSearchCategory.ALL) searchSection(LocalSearchCategory.SONGS)
-                            itemsIndexed(songs, key = { index, song -> "song:${song.id}:$index" }) { index, song ->
-                                SongRow(
-                                    song = song,
-                                    onClick = { onSongClick(songs, index) },
-                                    onLongPress = { onSongLongPress(song) },
-                                    isCurrent = currentSong?.id == song.id,
-                                    isPlaying = isPlaying && currentSong?.id == song.id,
-                                    searchPlayingStyle = true,
-                                    activeTint = PlayingAccent,
-                                )
-                                if (index < songs.lastIndex) SearchDivider()
+                        if (topIndex >= 0) {
+                            val featured = songs[topIndex]
+                            item(key = "search:top-result:${featured.id}") {
+                                LocalTopResultCard(featured, onPlay = { onSongClick(songs, topIndex) },
+                                    onPlaylist = { onTopResultPlaylist(featured) },
+                                    onLongPress = { onSongLongPress(featured) })
+                            }
+                        }
+                        if (songRows.isNotEmpty()) {
+                            if (!suggesting && category == LocalSearchCategory.ALL) searchSection(LocalSearchCategory.SONGS)
+                            itemsIndexed(songRows, key = { _, row -> "song:${row.value.id}:${row.index}" }) { index, row ->
+                                val song = row.value
+                                Box(Modifier.testTag("search-song:${song.id}:${row.index}")) {
+                                    SongRow(
+                                        song = song,
+                                        onClick = { onSongClick(songs, row.index) },
+                                        onLongPress = { onSongLongPress(song) },
+                                        isCurrent = currentSong?.id == song.id,
+                                        isPlaying = isPlaying && currentSong?.id == song.id,
+                                        searchPlayingStyle = true,
+                                        activeTint = PlayingAccent,
+                                    )
+                                }
+                                if (index < songRows.lastIndex) SearchDivider()
                             }
                         }
                         for (kind in listOf(LocalSearchCategory.ARTISTS, LocalSearchCategory.ALBUMS,
                             LocalSearchCategory.PLAYLISTS, LocalSearchCategory.GENRES)) {
                             val section = collections.filter { it.category == kind }
                             if (section.isNotEmpty()) {
-                                if (category == LocalSearchCategory.ALL) searchSection(kind)
+                                if (!suggesting && category == LocalSearchCategory.ALL) searchSection(kind)
                                 itemsIndexed(section, key = { _, row -> "destination:${row.category}:${row.key}" }) { index, row ->
                                     SearchDestinationRow(row)
                                     if (index < section.lastIndex) SearchDivider()

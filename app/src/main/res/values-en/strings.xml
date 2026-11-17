@@ -522,4 +522,8 @@
     <string name="player_local_device">On this device</string>
     <string name="lyrics_local_file_title">Local file</string>
     <string name="lyrics_embedded_title">Embedded</string>
+
+    <string name="local_search_top_result">Top result</string>
+    <string name="local_search_edit_suggestion">Edit “%1$s”</string>
+    <string name="local_search_playlist_action">Playlist</string>
 </resources>

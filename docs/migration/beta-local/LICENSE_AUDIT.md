@@ -756,3 +756,34 @@ licencia del origen a «or later». NOTICE registra esta conservación.
 |---|---|
 | sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt | 175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842 |
 | app/src/main/java/com/music/bitchord/data/settings/SearchHistory.kt | d4a02c712e82f53ce1a0f8849aeae3181de0cfcac04417d8cbe71962068bb31b |
+
+## F011 — resultado destacado y sugerencias locales
+
+BitChord fijo b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3; se conservan
+contribuyentes, términos y avisos sin convertirlos a «or later». SearchHighlights
+identifica explícitamente la adaptación. La cabecera Aurelis cubre aportaciones
+locales. LICENSE y los avisos anteriores no se eliminan ni sustituyen.
+
+TopResultCard conserva portada72dp/radio10, espacios10/14/4/12, título de dos
+líneas, menú24dp/objetivo36 y botones outlined con separación10. SuggestionRow
+conserva icono22, separación16, flecha18/objetivo40, padding6/8 y tres opciones
+además del eco contractual de la consulta (ese eco no se dibuja duplicado).
+Se reutilizan sus textos de playlist/editar en inglés/español; se localiza el
+encabezado. Adaptaciones: LocalSong, ImageRequest acotada144px, recursos Android,
+callbacks existentes, menú local y FlowRow para texto grande/anchuras pequeñas.
+No se copian fuentes SF ni sistemas de red, radio o cuentas del origen.
+
+LocalSearchSuggestions es propio: consulta metadatos, colecciones e historial ya
+locales, con la normalización existente y sin alterar su orden ni persistencia.
+La política remoto/enviado de MainViewModel se consulta para distinguir completar
+y buscar, sin copiar su pipeline. El selector completo de playlists queda para
+F129; esta entrega usa el diálogo real existente y sus operaciones locales.
+
+| Fuente consultada/adaptada | SHA256 |
+|---|---|
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt | 175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/Common.kt | 9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e |
+| app/src/main/java/com/music/bitchord/ui/MainViewModel.kt | f37fbd76edf4d4396c5327562d0d9fc96da452b7aa03df59d6d4fd9d76709fdf |
+| sharedUi/src/commonMain/composeResources/values/strings.xml | 4879b1373cc57e20d4a379b383fbe28d162fc49e1c22d05e38500496d4787d08 |
+| sharedUi/src/commonMain/composeResources/values-es/strings.xml | 1eb6406f782fe58709fb8986ce46501ea1121f06ef19ee4309e5206930d81455 |
+| app/src/main/java/com/music/bitchord/MainActivity.kt | 90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2 |
