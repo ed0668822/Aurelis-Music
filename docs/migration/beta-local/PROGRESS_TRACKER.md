@@ -1,6 +1,40 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F004 y F005–F006 — siguientes dos bloques autorizados (2026-11-17)
+
+El usuario pide «Continúa con los siguientes dos bloques». Base3a015702;
+[CI192](https://github.com/ed0668822/Aurelis-Music/actions/runs/44006598772)
+terminó SUCCESS en B01–B06 y CodeQL. Ese verde cierra las reparaciones de F003
+para ese SHA; no acredita la entrega nueva ni validación física completa.
+
+F004 activa bienvenida, nombre y permiso local sobre el perfil único existente.
+La finalización se guarda en app_meta y solo cierra tras commit confirmado;
+si falla, revierte también la bandera en memoria y permite reintentar. Mantiene
+nombre/foto, biblioteca y pila pendientes; no importa Google ni otros perfiles.
+La prueba real de ajustes atraviesa la bienvenida; solo las capturas comparativas
+de fixtures la marcan completada, igual que hacen con la bienvenida de BitChord.
+
+Una dependencia descubierta antes de exceder el presupuesto exigía adaptar el
+capturador. Se subdivide F004 antes de editar esas rutas nuevas: F004.a8/10,
+presentación/persistencia/pruebas; F004.b8/10, arranque y harness. Doce rutas
+distintas en el padre; no se reinicia ningún contador de correcciones.
+
+F005–F006 conserva cabecera/métricas/colas ya correctas y adapta la tarjeta
+destacada a ancho70% con techo320dp, proporción0,92 y esquinas18dp. Los carruseles
+usan ShelfRow original y su encaje. Se preservan acciones locales y sobrecargas
+legacy; artista usa tarjeta150dp y contador localizado.10 rutas de40.
+
+Entrega conjunta18 rutas distintas, dentro del techo60. Se añaden16 métodos de
+regresión Android para SDK33/35; los existentes se conservan. Compilación, Lint,
+Android16 y comparación real solo en Actions. Nuevo CI PENDIENTE; fidelidad de
+píxeles y prueba en Redmi/HyperOS3 pendientes. Dos revisiones del mismo agente;
+sintaxis, XML y fixtures Python locales. Validación local:74 pruebas Python
+aprobadas, actionlint, diez Kotlin sin errores de parser, XML y diff --check;
+compilación/tipos y Android pendientes de Actions. Listas y hashes en
+[FUNCTION_BLOCKS_40_10](FUNCTION_BLOCKS_40_10.md). Tras el envío se avisa y se
+espera el resultado del usuario antes de F007; no se inicia B09.
+
 ### F003 — cabeceras, perfil y acceso a ajustes (2026-11-17)
 
 **CI191: B03 aprobado; reparación B02.** SHA3463388e: B01/B03/B05 SUCCESS,

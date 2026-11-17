@@ -37,15 +37,17 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 
 ## Estado y autorización
 
-- Base actual: Aurelis `9d203d13dc86bfddf90ac64dd39ee2e679ef1cdb`.
+- Base de la organización original: Aurelis `9d203d13dc86bfddf90ac64dd39ee2e679ef1cdb`.
 - CI183, run43970204682: B01–B06 SUCCESS, comprobado antes de esta planificación.
 - F001 entregado:1 archivo documental. F002 entregado:18 rutas acumuladas,
   incluidas reparaciones. No se vuelven a implementar por reorganizar el plan.
 - F003 se implementa en la entrega documentada en [F003_TOP_BAR](F003_TOP_BAR.md),
   con21 rutas acumuladas incluida la mejora de pruebas autorizada después de
-  CI185 y la reparación de dependencias B02 trasCI191; CI global nuevo pendiente.
+  CI185 y la reparación de dependencias B02 trasCI191; CI192 global SUCCESS para3a015702.
   La mejora B03 ocupa10/10 y aprobó CI191. La reparación específica B02 ocupa5/10.
-  F004 está autorizado y sin implementar.
+- Entrega autorizada ahora: F004 y F005–F006, base3a015702, nuevo CI PENDIENTE.
+  F004 se divide antes de ampliar el scope en F004.a y F004.b,8 rutas cada uno,
+  máximo10 por subbloque. F005–F006 ocupa10/40. Son18 rutas distintas conjuntas.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -58,9 +60,9 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 |---|---|---|---:|---|
 | F001 | Entradas, Atrás y restauración | Fácil | 40 | Entregado; conservar |
 | F002 | Barra inferior y Buscar separado | Media | 40 | Entregado; conservar |
-| F003 | Cabeceras, foto local y acceso a ajustes | Media | 40 | Implementado; CI nuevo pendiente |
-| F004 | Bienvenida, nombre, permiso y finalización persistida | Difícil | 10 | Autorizado; después de F003 |
-| F005–F006 | Cabecera, destacados, carruseles y estanterías de Inicio | Media | 40 | Pendiente |
+| F003 | Cabeceras, foto local y acceso a ajustes | Media | 40 | Entregado; CI192 SUCCESS |
+| F004 | Bienvenida, nombre, permiso y finalización persistida | Difícil | 10 | Implementado en.a/.b; CI nuevo pendiente |
+| F005–F006 | Cabecera, destacados, carruseles y estanterías de Inicio | Media | 40 | Implementado; CI nuevo pendiente |
 | F007 | Presentación de recomendaciones locales existentes | Media | 40 | Pendiente |
 | F008 | Explorar por géneros locales | Media | 40 | Pendiente |
 | F009 | Búsqueda y filtros locales | Media | 40 | Pendiente |
@@ -75,7 +77,8 @@ F004 utiliza el perfil único existente, conserva nombres/datos y trata rechazo,
 cancelación, recreación y perfil en solo lectura. No incorpora Google ni otro
 repositorio de perfiles. Si su integración supera10 rutas, se separarán antes
 de implementar la presentación y la conexión persistida, sin activar un flujo
-incompleto. No se rediseñan Inicio o Buscar como parte de estas dos funciones.
+incompleto. La subdivisión y las listas de esta entrega están al final. F004 no
+rediseña Inicio o Buscar; F005–F006 adapta únicamente el Inicio aprobado.
 
 ## Biblioteca local
 
@@ -303,3 +306,162 @@ filas para aparentar que el bloque principal utiliza menos archivos.
 
 La validación física en Redmi Note14 Pro5G, Android16/HyperOS3, sigue pendiente.
 Una compilación o captura software no acredita fidelidad visual ni audio real.
+
+## Entrega F004 — bienvenida con perfil local
+
+Autorizada junto al bloque siguiente mediante «Continúa con los siguientes dos
+bloques». Base3a01570239c384d9808d813d8c56e13ccfc16d9d, CI192 SUCCESS en
+B01–B06 y CodeQL. No se hereda ese verde para el código nuevo.
+
+Se reutilizan NamePage/NameField, cápsulas56dp, título40/44sp, campo64dp,
+transición horizontal420ms y salida vertical560ms del origen fijado. Se conservan
+icono y paletas Aurelis existentes. La segunda página solicita permiso de música
+local y permite omitirlo; no hay Google, conexión remota obligatoria o perfiles
+adicionales. El límite del nombre sigue los60 UTF-16 del propietario local,
+sin cortar un par sustituto; la fuente fijada limitaba su nombre de fiesta a40.
+
+LocalOnboardingGate vive junto a la pantalla y recibe app_meta del arranque,
+no crea otro ProfileRepository. El nombre se guarda con ProfileRepository.rename
+al confirmar la primera página, como el patrón original; un nombre sin cambios
+no se reescribe. El perfil de solo lectura permite seguir conservando sus datos.
+No se serializan canciones, servicios, callbacks o repositorios en el estado UI.
+
+La finalización usa local_onboarding_complete en metadatos de esta instalación.
+Solo descubre el contenido tras un commit confirmado fuera del hilo UI. Un fallo
+restaura la bandera en memoria, conserva los demás datos y ofrece reintento.
+La recreación preserva borrador/página; futuras aperturas omiten la bienvenida
+tras completar. Instalar esta función sobre una versión sin bandera muestra la
+bienvenida una vez, con el nombre actual prellenado y sin crear otro perfil.
+
+Antes de terminar no se compone la navegación ni sus modales, para que no roben
+foco, accesibilidad o Atrás. El navegador recordado, conexión de reproducción y
+ciclo de biblioteca permanecen en su propietario existente; una intención de
+abrir el reproductor conserva su destino pendiente. El permiso deja de abrirse
+automáticamente al primer frame y se pide desde la bienvenida o recuperación.
+Se actualiza al volver del diálogo/ajustes de Android. La pantalla respeta IME,
+texto grande, scroll en ventanas cortas y movimiento reducido. El controlador
+SystemBarIcons existente muestra iconos blancos en bienvenida y restaura el
+contraste del tema al terminar; no se añade un gestor de ventanas paralelo.
+
+### Subdivisión previa a ampliar el ámbito
+
+La lista inicial de10 rutas no incluía el capturador comparativo. Antes de editar
+esas rutas adicionales o crear commits, se detectó que su reset dejaría la nueva
+bienvenida bloqueando capturas de Inicio. Se divide la función antes de superar
+su presupuesto, conforme a la regla inicial del plan. No es una división de
+correcciones para reiniciar contadores.
+
+F004.a — presentación y persistencia,8 rutas de10:
+
+- app/src/main/java/com/music/aurelis/ui/onboarding/OnboardingScreen.kt
+- app/src/test/java/com/music/aurelis/ui/OnboardingTest.kt
+- app/src/main/res/values/strings.xml
+- app/src/main/res/values-en/strings.xml
+- NOTICE
+- docs/migration/beta-local/LICENSE_AUDIT.md
+- docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
+- docs/migration/beta-local/PROGRESS_TRACKER.md
+
+F004.b — conexión activa y harness,8 rutas de10:
+
+- app/src/main/java/com/music/aurelis/MainActivity.kt
+- app/src/androidTest/java/com/music/aurelis/playback/RealSettingsNavigationInstrumentedTest.kt
+- .github/scripts/ui_parity.py
+- .github/scripts/test_ui_parity.py
+- Los mismos cuatro registros/avisos de F004.a, contados también en este subbloque.
+
+El padre F004 ocupa12 rutas distintas, declaradas expresamente; cada subbloque
+mantiene su acumulado independiente para sus futuras correcciones. La primera
+parte queda compilable pero sin activación hasta conectar la segunda. La prueba
+instrumentada existente atraviesa la bienvenida real, comprueba la bandera y
+conservación del perfil y sigue con ajustes/recreación/reproducción. El capturador
+solo prepara la bandera en el emulador desechable de comparación, igual que ya
+omitía la bienvenida de BitChord. Su informe declara esa preparación y la prueba
+nativa no llama a seed_preferences. No se modifica el APK de referencia.
+
+Se añaden10 métodos Robolectric para SDK33/35: guardar/omitir permiso; restaurar
+borrador y página; nombre vacío/límite/Unicode; fallo al guardar perfil; perfil de
+solo lectura; fallo y reintento al finalizar; persistencia ya completada; rollback
+de memoria tras fallo de disco; bandera inválida; texto grande/ventana corta.
+La comprobación de iconos del sistema forma parte del recorrido de finalización.
+El emulador API36 ejercitará la entrada activa, no una pantalla aislada.
+
+## Entrega F005–F006 — presentación de Inicio y carruseles
+
+Se conservan la cabecera/levantamiento28dp y el título pequeño oculto del origen,
+gutter16dp, estanterías150dp, recents de cuatro filas, las listas locales y sus
+índices/colas, pulsación mantenida, favoritos, playlists y AutoMix existente.
+No se inicia análisis musical, DSP, streaming o otra función pendiente.
+
+La tarjeta principal pasa de60%/280dp y proporción0,75 a heroCardWidth original:
+70%, techo320dp, proporción0,92, esquinas18dp y scrim/caption con padding16/34/14dp.
+Se adapta la función HeroCard real: texto titleLarge, artista a dos líneas y
+barras centrales solo en reproducción. El gran botón superpuesto ajeno a esa
+variante desaparece; el toque y la pulsación mantenida mantienen sus callbacks.
+La variante legacy no vertical de HomeHero conserva su implementación anterior.
+El contexto local Escuchar/Continuar permanece en la semántica de la tarjeta.
+
+ShelfRow incorpora el código original como una sobrecarga compatible. Todos los
+carruseles Home lo usan con sus claves/listas previas y rememberSnapFlingBehavior;
+no se elimina el ShelfRow legacy de filas ni su sobrecarga GlassNavBar. Se leyó
+el JAR fuente oficial de foundation1.7.6 sin compilar: su posición por defecto es
+Center, por lo que la prueba no asume que el comentario upstream de alineación
+inicial equivale a un SnapPosition.Start que el código nunca solicita.
+
+Las tarjetas de artista usan la geometría cuadrada150dp del ShelfCard original
+y un contador local pluralizado; se retira el literal español del consumidor.
+El título de canción mantiene la tinta del original, con estado de reproducción
+en las barras existentes. Se conserva el banner local funcional y sus dos
+destinos, en lugar del login remoto; se ajusta su padding inferior a18dp. Su mesh
+estable y los motores de imagen/Glass no se sustituyen. No se añaden botones
+Mostrar todo a Home: la referencia los reserva a los consumidores de Biblioteca.
+
+Lista de10 rutas (máximo40), incluidos todos los avisos y pruebas:
+
+- app/src/main/java/com/music/aurelis/ui/screens/HomeScreen.kt
+- app/src/main/java/com/music/aurelis/ui/components/home/HomeHero.kt
+- app/src/main/java/com/music/aurelis/ui/components/home/HomeCarousels.kt
+- app/src/main/java/com/music/aurelis/ui/components/ShelfRow.kt
+- app/src/test/java/com/music/aurelis/ui/HomeShelvesIntegrationTest.kt
+- app/src/test/java/com/music/aurelis/ui/HomePresentationTest.kt
+- NOTICE
+- docs/migration/beta-local/LICENSE_AUDIT.md
+- docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
+- docs/migration/beta-local/PROGRESS_TRACKER.md
+
+Se añaden cinco métodos de presentación (ancho/proporción/tap/hold en teléfono,
+techo en ventana ancha, encaje tras fling, RTL/click y artista/contador), y uno de
+integración que abre el reproductor actual sin sustituir su cola ni posición.
+Todos se destinan a SDK33/35. Las pruebas anteriores no se eliminan.
+
+## Evidencia de esta entrega conjunta y procedencia
+
+Son18 rutas distintas en conjunto (máximo60), con los cuatro avisos/registros
+compartidos contados en cada subbloque.16 métodos Android nuevos, pendientes de
+Actions; no se ejecuta Gradle, Lint ni Android localmente. Validación local:
+parser de10 Kotlin, XML/recursos, diff --check y fixtures Python del capturador.
+Pasaron74 pruebas Python del capturador y sus informes (57+17), actionlint de
+los workflows que consumen esas evidencias, XML sin claves duplicadas y sintaxis
+de los diez Kotlin. No se ha ejecutado todavía ninguno de los16 métodos Android.
+El parser verifica sintaxis, no tipos/compilación. Se verificaron estáticamente
+las APIs Compose1.7.6 usadas (autoCorrectEnabled y snap Center).
+
+Dos revisiones del mismo agente: (1) flujo, persistencia/rollback, permisos,
+readOnly, ciclo de vida y conservación de propietarios; (2) procedencia/APIs,
+geometría, gestos, índices de colas, capturas, pruebas, ámbitos y diff. El nuevo
+resultado B01–B06 y la comparación visual quedan PENDIENTES. La prueba física
+en Redmi Note14 Pro5G, Android16/HyperOS3, y la fidelidad completa de píxeles
+siguen pendientes. Avisar después del push y esperar al usuario antes de F007.
+
+BitChord se mantiene en b690dc146009d4815825fa4a20815ef2e4ee8898, solo lectura.
+GPLv3 y autorías originales conservadas; la cabecera Aurelis identifica su
+adaptación sin reemplazar los avisos aplicables. No se copian fuentes SF,
+recursos Google ni código de funciones excluidas.
+
+| Fuente BitChord | SHA256 |
+|---|---|
+| app/src/main/java/com/music/bitchord/ui/onboarding/OnboardingScreen.kt | d8dfbce86c9ef6a31fb99932aa09a81fa23c4676be1e51159a5fd7f223c7ffc6 |
+| app/src/main/java/com/music/bitchord/MainActivity.kt | 90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt | d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/ShelfRow.kt | 5478cc6b81502bc206045ae8798b991fd649f2662128b866920cee99a13d3fa5 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/Common.kt | 9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e |

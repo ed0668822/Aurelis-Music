@@ -344,6 +344,10 @@
     <string name="onboarding_start">Get started</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_back">Back</string>
+    <string name="onboarding_name_prompt">What should we call you?</string>
+    <string name="onboarding_name_hint">Your name</string>
+    <string name="onboarding_name_footer">One local profile on this device. You can change your name and photo in Settings.</string>
+    <string name="onboarding_save_error">Your changes could not be saved. Your data is preserved. Please try again.</string>
     <string name="widget_artwork">Album art</string>
     <string name="widget_previous">Previous</string>
     <string name="widget_play">Play</string>

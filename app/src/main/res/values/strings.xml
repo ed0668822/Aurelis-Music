@@ -284,6 +284,10 @@
     <string name="onboarding_start">Empezar</string>
     <string name="onboarding_skip">Omitir</string>
     <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_name_prompt">¿Cómo quieres que te llamemos?</string>
+    <string name="onboarding_name_hint">Tu nombre</string>
+    <string name="onboarding_name_footer">Un solo perfil local en este dispositivo. Puedes cambiar tu nombre y foto en Ajustes.</string>
+    <string name="onboarding_save_error">No se pudieron guardar los cambios. Tus datos se conservan. Vuelve a intentarlo.</string>
 
     <!-- Widgets -->
     <string name="widget_artwork">Carátula</string>

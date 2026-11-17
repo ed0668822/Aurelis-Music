@@ -644,3 +644,21 @@ Aurelis retains the existing local profile, settings/back callbacks, isolated
 page recording, rendering safeguards and reduced-motion preferences. No remote
 accounts, multi-profile switching, SF fonts or SfIcons are copied. Exact source
 paths, hashes and modifications: docs/migration/beta-local/F003_TOP_BAR.md.
+
+F004 — local welcome and installation completion
+Adapts the NamePage/NameField, capsule controls and page-transition presentation
+from BitChord app/src/main/java/com/music/bitchord/ui/onboarding/OnboardingScreen.kt,
+commit b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3), original BitChord contributors.
+Aurelis replaces remote connection/party identity with its existing single local
+profile and Android media permission. It retains its own icon/palettes and adds
+installation-scoped completion, failure recovery and accessibility adaptations.
+No Google assets, remote authentication, streaming or party code is copied.
+
+F005–F006 — local Home presentation and shelves
+Adapts HeroCard presentation and shelf/card metrics from BitChord sharedUi
+src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt, plus the
+original components/ShelfRow.kt, at the same fixed GPLv3 commit. Original
+contributors and terms remain applicable. Aurelis keeps LocalSong/MediaStore,
+existing queues, local favorites/playlists/AutoMix callbacks and legacy component
+overloads. Scope, source hashes, differences and verification are recorded in
+docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md (F004 and F005–F006 sections).

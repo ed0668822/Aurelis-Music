@@ -668,3 +668,23 @@ El composable Aurelis anterior llamado SquirclePillShape se conserva junto al
 tipo Shape adaptado; no tenía llamadas activas, y no se elimina su contrato.
 NOTICE registra la procedencia. LICENSE, textos legales y avisos anteriores
 permanecen intactos. No se copian SfIcons, fuentes SF ni recursos de cuenta remota.
+
+## F004 y F005–F006 — bienvenida e Inicio locales
+
+Referencia fija BitChord `b690dc146009d4815825fa4a20815ef2e4ee8898`, GPLv3,
+contribuyentes y condiciones originales conservados, sin atribuir «or later»
+automáticamente a las partes adaptadas. Se reutilizan las funciones reales
+NamePage/NameField y transiciones/controles de OnboardingScreen, la presentación
+HeroCard de HomeScreen y la implementación de ShelfRow de sharedUi. Common
+aporta métricas/estructura del banner; los helpers ya funcionales se mantienen.
+
+Integración propia Aurelis: nombre/perfil existentes, permisos locales,
+finalización en app_meta, recuperación de fallos, texto grande, movimiento
+reducido y conexión de LocalSong/callbacks. Logo/paletas Aurelis conservados.
+No se copian recursos Google, fuentes SF, cuentas remotas ni módulos excluidos.
+Las sobrecargas legacy funcionales de ShelfRow y HomeHero se conservan.
+
+NOTICE registra la procedencia. Rutas, SHA256, listas por subbloque y diferencias
+en [FUNCTION_BLOCKS_40_10](FUNCTION_BLOCKS_40_10.md). Los cambios de fixtures
+emuladas son propios; no modifican el repositorio de referencia ni sus APK.
+LICENSE y todos los textos legales anteriores permanecen intactos.
