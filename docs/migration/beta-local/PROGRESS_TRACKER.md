@@ -3,6 +3,20 @@
 
 ### F003 — cabeceras, perfil y acceso a ajustes (2026-11-17)
 
+**CI191: B03 aprobado; reparación B02.** SHA3463388e: B01/B03/B05 SUCCESS,
+B02/B06 FAILURE y B04 SKIPPED.474 casos Debug y474 Release SUCCESS; ambos
+casos de navegación/recreación/reproducción en Android16 PASS. La mejora B03
+anterior queda validada, sin declarar éxito global ni validación física.
+
+B02 falló antes de ejecutar Lint por HTTP429 de Maven al resolver Kover0.9.11.
+Se amplía únicamente la recuperación pre-tarea existente: máximo tres intentos
+para ese429 exacto, esperas15/30s y caché conservada. No reintenta errores reales
+ni modifica SDK, dependencias o umbrales. Cinco rutas de reparación B02 (máximo10),
+F003 acumulado21/40; cinco recursos ajenos de iconos conservados aparte.
+20 pruebas Python B02 aprobadas (nueve nuevas), bash -n y diff --check.
+Dos revisiones del mismo agente; nuevo CI PENDIENTE. Detalle/hashes en
+F003_TOP_BAR.md. F004 sin iniciar; avisar del envío y esperar al usuario.
+
 **CI185 y mejora autorizada de pruebas:** SHA1ca0093a, run43999110484:
 B01/B02/B05 SUCCESS, B03/B06 FAILURE y B04 SKIPPED.457 casos por variante,
 456 SUCCESS y1 FAILURE, ambos en la aserción final de Replay→perfil→ajustes.

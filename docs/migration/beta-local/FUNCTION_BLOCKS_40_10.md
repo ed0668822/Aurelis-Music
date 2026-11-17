@@ -42,8 +42,9 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 - F001 entregado:1 archivo documental. F002 entregado:18 rutas acumuladas,
   incluidas reparaciones. No se vuelven a implementar por reorganizar el plan.
 - F003 se implementa en la entrega documentada en [F003_TOP_BAR](F003_TOP_BAR.md),
-  con19 rutas acumuladas incluida la mejora de pruebas autorizada después de
-  CI185; CI nuevo pendiente. La mejora de calidad ocupa10 rutas, máximo10.
+  con21 rutas acumuladas incluida la mejora de pruebas autorizada después de
+  CI185 y la reparación de dependencias B02 trasCI191; CI global nuevo pendiente.
+  La mejora B03 ocupa10/10 y aprobó CI191. La reparación específica B02 ocupa5/10.
   F004 está autorizado y sin implementar.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,

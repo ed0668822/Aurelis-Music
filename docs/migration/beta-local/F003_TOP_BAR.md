@@ -225,6 +225,52 @@ sin edición. El acumulado propio de F003 es19; el diff global desde su primera
 base contiene además esas cinco rutas ajenas, que no se ocultan ni se atribuyen
 a esta entrega.
 
+## CI191 — B03 aprobado; recuperación acotada de B02
+
+[CI191/run44003106973](https://github.com/ed0668822/Aurelis-Music/actions/runs/44003106973),
+SHA `3463388ec03d0f0301a73e73985c61dcd012c791`: B01/B03/B05 SUCCESS;
+B02/B06 FAILURE, B04 SKIPPED. B03 ejecutó474 casos Debug y474 Release, todos
+SUCCESS, sin errores ni omitidos. También aprobaron en el emulador API36
+profileAndLibrarySettingsSurviveRecreation y
+profileAndLibrarySettingsPreserveRealPlayback. El bloque de mejora B03 de10/10
+queda validado para ese SHA; no se le atribuye un verde global ni prueba física.
+
+Logs originales CRC válidos, `run191-logs.zip`, SHA256
+`a975f8f5041c1e60110b2c23b74ab90830b6c87341d18c45ec0494b4c8dc6bf7`.
+El fallo nuevo de B02 es de configuración de Gradle: Maven Central devuelve
+HTTP429 Too Many Requests al descargar los POM kover-features-jvm y
+kover-jvm-agent0.9.11. No aparece ninguna tarea Lint ejecutada. Por tanto no se
+atribuye este rojo a un defecto detectado por Android Lint en la UI.
+
+b02-run-lint.sh ya tenía recuperación de un «Could not find» de esos dos
+módulos, pero no reconocía el «Could not resolve» con429 observado. La reparación
+mantiene esa recuperación de metadatos una sola vez y añade una ruta específica:
+HTTP429 de los POM0.9.11 en repo.maven.apache.org, error de configuración raíz,
+ninguna tarea iniciada y ninguna señal de error Kotlin/Lint. Solo entonces hay
+un segundo y, si persiste exactamente esa causa, tercer intento tras15/30s.
+No usa --refresh-dependencies para429 ni añade mirrors o cambia versiones.
+
+Cada intento conserva su log original y el conjunto lint.log. Se preservan los
+códigos del comando y de los escritores de logs; un fallo de tee no activa la
+recuperación. Un error real de Lint, cualquier tarea iniciada, otro host/módulo/
+versión/estado HTTP o una causa distinta en el siguiente intento detiene la
+recuperación. Tres fallos conservan el último resultado fallido; no hay cuarto
+intento ni fabricación de XML. Los informes y puertas Debug/Release no cambian.
+
+Esta reparación específica de B02 tiene cinco rutas, máximo10 por su dificultad:
+b02-run-lint.sh, test_b02_run_lint.py, este informe, PROGRESS_TRACKER.md y
+FUNCTION_BLOCKS_40_10.md. No se toca el bloque B03 ya aprobado. El acumulado
+propio de F003 es21/40, al añadir dos scripts existentes no editados antes;
+el diff de la rama desde la base inicial incluye además cinco recursos ajenos
+de iconos (26 rutas globales), que se conservan sin edición.
+
+Validación local:20 fixtures/regresiones Python B02 aprobadas, incluidas nueve
+nuevas, con Gradle y sleep simulados; bash -n y diff --check aprobados. No se
+ejecuta Gradle/Android localmente. Dos revisiones del mismo agente: (1) logs,
+selector exacto de429 y compatibilidad de recuperación anterior; (2) límites,
+salidas, conservación de fallos/logs, fixtures y diff. El resultado del nuevo
+pipeline completo queda PENDIENTE. F004 sigue sin iniciar.
+
 ## Rutas de la entrega inicial (14 de40)
 
 1. app/src/main/java/com/music/aurelis/MainActivity.kt
