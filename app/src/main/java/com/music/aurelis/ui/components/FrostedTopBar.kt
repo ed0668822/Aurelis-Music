@@ -18,8 +18,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
@@ -78,7 +83,7 @@ fun LocalProfileButton(onClick: () -> Unit) {
 
 /** Floating page chrome from the pinned source. Title parameters remain for
  * caller compatibility; that source intentionally hides its small title.
- * Refresh gestures/indicator completion belong to F012, not this adaptation. */
+ * Refresh gestures are owned by the feed host; its pull state also drives this bar. */
 @Composable
 fun FrostedTopBar(
     title: String,
@@ -200,7 +205,7 @@ fun FrostedTopBar(
             }
         }
         HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
-        if (refreshing) CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally).size(24.dp))
+        RefreshPuck(refreshing, pullFraction)
     }
 }
 
@@ -402,3 +407,66 @@ private fun artworkPageSurface(
         // so these surfaces do as well.
         .border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
 }
+
+// Original refresh puck geometry and motion; Android Material3 compatibility adapted.
+@Composable
+private fun RefreshPuck(refreshing: Boolean, pullFraction: () -> Float, modifier: Modifier = Modifier) {
+    val currentFraction by rememberUpdatedState(pullFraction)
+    val pulling by remember { derivedStateOf { currentFraction() > 0f } }
+    if (!refreshing && !pulling) return
+
+    val travel = with(LocalDensity.current) { (PUCK_REST + PUCK_SIZE).toPx() }
+    Box(
+        modifier = modifier
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints.copy(minHeight = 0))
+                layout(placeable.width, 0) { placeable.place(0, 0) }
+            }
+            .fillMaxWidth()
+            .height(PUCK_REST + PUCK_SIZE + PUCK_OVERSHOOT + 12.dp)
+            .clipToBounds(),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Box(
+            modifier = Modifier
+                .graphicsLayer {
+                    val f = currentFraction().coerceIn(0f, 2f)
+                    // Past the threshold the puck keeps following, but
+                    // reluctantly, like the list under it.
+                    val eased = if (f <= 1f) f else 1f + (f - 1f) * 0.35f
+                    translationY = travel * eased - PUCK_SIZE.toPx()
+                    alpha = (f * 3f).coerceAtMost(1f)
+                }
+                .shadow(6.dp, CircleShape)
+                .size(PUCK_SIZE)
+                .testTag("library-refresh-puck")
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            val indicatorModifier = Modifier.size(22.dp)
+            if (refreshing) {
+                CircularProgressIndicator(
+                    modifier = indicatorModifier,
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 2.5.dp,
+                    strokeCap = StrokeCap.Round,
+                )
+            } else {
+                CircularProgressIndicator(
+                    progress = { (currentFraction() * 0.8f).coerceIn(0f, 0.8f) },
+                    modifier = indicatorModifier.graphicsLayer {
+                        rotationZ = currentFraction().coerceIn(0f, 2f) * 180f
+                    },
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = Color.Transparent,
+                    strokeWidth = 2.5.dp,
+                    strokeCap = StrokeCap.Round,
+                )
+            }
+        }
+    }
+}
+
+private val PUCK_SIZE = 40.dp
+private val PUCK_REST = 16.dp
+private val PUCK_OVERSHOOT = 20.dp

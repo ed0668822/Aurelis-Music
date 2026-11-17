@@ -41,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -94,6 +95,7 @@ import com.music.aurelis.ui.screens.NowPlayingScreen
 import com.music.aurelis.ui.screens.QueueScreen
 import com.music.aurelis.ui.screens.ReplayScreen
 import com.music.aurelis.ui.components.SongActionsDialog
+import com.music.aurelis.ui.components.LocalPullToRefresh
 import com.music.aurelis.ui.screens.SearchScreen
 import com.music.aurelis.ui.screens.SettingsScreen
 import com.music.aurelis.ui.theme.AurelisTheme
@@ -232,6 +234,7 @@ private fun AurelisApp(playerRequest: Int = 0) {
 
 /** UI graph separated from startup/service effects so navigation can be verified offline. */
 @Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 internal fun AurelisNavigationContent(
     navigator: AppNavigator,
     playbackViewModel: PlaybackViewModel,
@@ -244,6 +247,15 @@ internal fun AurelisNavigationContent(
     val userStore by com.music.aurelis.ui.AppUi.host.libraries.collectAsState()
     val userState by userStore.state.collectAsState()
     val localProfile by com.music.aurelis.data.ProfileRepository.state.collectAsState()
+    val homePullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+    val explorePullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+    val libraryPullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+    fun feedPullState(tab: AppTab) = when (tab) {
+        AppTab.EXPLORE -> explorePullState
+        AppTab.LIBRARY -> libraryPullState
+        else -> homePullState
+    }
+    val activePullState = feedPullState(navigator.selectedTab)
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
     val route = navigator.visibleRoute()
     val navBarScroll = rememberFloatingTabBarScrollConnection()
@@ -324,11 +336,20 @@ internal fun AurelisNavigationContent(
             if (route == null && navigator.selectedTab != AppTab.SEARCH) {
                 FrostedTopBar(title = tabs[navigator.selectedTab.ordinal].label, scrolled = { false },
                     transparentBackdrop = true, artworkPageChrome = true,
-                    modifier = Modifier.align(Alignment.TopCenter),
+                    refreshing = libraryUiState.isRefreshing,
+                    pullFraction = { activePullState.distanceFraction },
+                    modifier = Modifier.align(Alignment.TopCenter).testTag("feed-refresh-header"),
                     actions = { LocalProfileButton(openSettings) })
             }
         },
         tabContent = { tab ->
+            LocalPullToRefresh(
+                refreshing = libraryUiState.isRefreshing,
+                onRefresh = libraryViewModel::refresh,
+                state = feedPullState(tab),
+                enabled = tab != AppTab.SEARCH,
+                modifier = Modifier.testTag("feed-refresh:${tab.name}"),
+            ) {
             when (tab) {
             AppTab.HOME -> {
                 val listState = rememberLazyListState()
@@ -497,6 +518,7 @@ internal fun AurelisNavigationContent(
                     contentPadding = PaddingValues(bottom = bottomContentPadding),
                     topPadding = TopBarContentGap,
                 )
+            }
             }
             }
         },

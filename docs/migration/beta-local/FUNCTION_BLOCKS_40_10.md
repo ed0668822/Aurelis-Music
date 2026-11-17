@@ -55,8 +55,10 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   instrucción posterior del usuario. Ese encargo permite avanzar ahora con F009.
 - F009 entregado en b3b6cfd0. El usuario autoriza avanzar con «Continúa».
 - F010 entregado en bd3a4e50. El usuario autoriza avanzar con «Continúa».
-- Entrega activa: F011, destacado y sugerencias locales; F012 queda pendiente
-  de autorización. No se cambia infraestructura ni se certifica el CI anterior.
+- F011 entregado en b1ce841a; su validación/reparaciones CI siguen a cargo del
+  otro agente.14 rutas funcionales +7 de infraestructura =21/40 acumuladas.
+- Entrega activa: F012, autorizada expresamente al continuar el siguiente bloque
+  mientras el otro agente resuelve CI. No se certifica un pipeline verde anterior.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -77,7 +79,7 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 | F009 | Búsqueda y filtros locales | Media | 40 | Implementado; Actions pendiente |
 | F010 | Conservar historial de búsqueda y sus acciones | Fácil | 40 | Entregado para validar; Actions pendiente |
 | F011 | Resultado destacado y sugerencias locales | Media | 40 | Implementado; Actions pendiente |
-| F012 | Actualización, carga y recuperación del escaneo | Difícil | 10 | Pendiente |
+| F012 | Actualización, carga y recuperación del escaneo | Difícil | 10 | Implementado; Actions pendiente |
 | F013 | Conservar estados vacíos, errores y reintentos | Fácil | 40 | Pendiente |
 | F014 | Teclado, foco, Atrás e insets | Difícil | 10 | Pendiente |
 
@@ -945,3 +947,85 @@ del mismo agente: conexiones/estado/colas; después fidelidad de componentes,
 localización, selectores de pruebas y alcance. Ejecución Android y revisión
 visual/física pendientes de Actions y RedmiNote14Pro5G Android16/HyperOS3.
 Tras push avisar y esperar resultado del usuario antes de F012. No B09.
+
+### F012 — gesto, carga y recuperación del escaneo (2026-11-17)
+
+Autorización: el usuario pide continuar con el siguiente bloque mientras el otro
+agente trabaja en la reparación de CI. Base b5599378, incorporada previamente por
+avance rápido y preservada íntegramente. No se tocan workflows, scripts ni tests
+CI. No se declara cerrado F011 ni se supone que sus fases estén aprobadas.
+
+F012 es difícil: máximo10 archivos distintos, incluidos avisos, pruebas y
+correcciones posteriores. Lista fijada antes de editar y copias previas fuera del
+checkout en `/workspace/aurelis-validation/f012/scope.json`.10/10 rutas:
+
+- `app/src/main/java/com/music/aurelis/ui/components/LocalPullToRefresh.kt`
+- `app/src/main/java/com/music/aurelis/ui/components/FrostedTopBar.kt`
+- `app/src/main/java/com/music/aurelis/ui/screens/HomeScreen.kt`
+- `app/src/main/java/com/music/aurelis/MainActivity.kt`
+- `app/src/test/java/com/music/aurelis/ui/LocalRefreshIntegrationTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/HomeStateRecoveryTest.kt`
+- `NOTICE`
+- `docs/migration/beta-local/LICENSE_AUDIT.md`
+- `docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md`
+- `docs/migration/beta-local/PROGRESS_TRACKER.md`
+
+Decisión: conservar byte a byte LibraryViewModel, LocalLibrarySource,
+LocalMediaRepository, permisos y servicio/controlador de reproducción. El motor
+existente ya cancela al salir, invalida lecturas antiguas, agrupa peticiones y
+retiene el catálogo válido durante una lectura. Se conservan sus políticas de
+error/permiso; no se cambia cuándo publica o retira un catálogo.
+
+Implementación:
+
+- Contenedor PullToRefresh original adaptado alrededor de las pestañas Inicio,
+  Explorar y Biblioteca, conectado al mismo libraryViewModel.refresh. Buscar
+  queda fuera del gesto y de la acción accesible. No hay otro escáner ni observer.
+- Un estado visual de arrastre por pestaña, con isRefreshing del ViewModel común.
+  Cambiar entre pestañas no inicia otra lectura. Durante una lectura no se acepta
+  otra acción accesible; el motor conserva además su agrupación de peticiones.
+- La cabecera usa RefreshPuck real: medida0 vertical, puck40, reposo16, exceso20,
+  arco22/2,5, sombra6 y desplazamiento/rotación del original. El indicador ocupa
+  la banda bajo la cabecera sin aumentar su altura ni tomar eventos de toque.
+  El contenedor no dibuja otro puck detrás del Glass ni se captura a sí mismo.
+- Se retira únicamente la barra lineal antigua de Inicio; su carga inicial,
+  skeleton, vacío, error y acciones de permiso/reintento permanecen. El botón de
+  recarga de Música local se conserva, como en la referencia (sin importar allí
+  un gesto nuevo). Los materiales y demás pantallas no se rediseñan.
+- Acción «Actualizar biblioteca» accesible usando el recurso existente; ejecuta
+  el mismo callback que el gesto y devuelve false mientras el escaneo está activo.
+  Un permiso denegado continúa ofreciendo la acción real de permiso existente.
+
+Fuentes BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3:
+
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/Common.kt` — SHA256 `9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e`.
+- `app/src/main/java/com/music/bitchord/ui/components/FrostedTopBar.kt` — SHA256 `58aefbaabffadaf172faee21b4e6b94ec1b48c782651fd2913eb9dc3d04f83c9`.
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt` — SHA256 `d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017`.
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/LibraryScreen.kt` — SHA256 `d53961bee3b257a40407bf1c552bd90b6f7792ba7306653f4c62daa342f8179a`.
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/ExploreScreen.kt` — SHA256 `75593b43d96c479bac6b5831eab3e36071c15d4b40df5e91b44160040b806ed8`.
+
+Compatibilidad: se conserva Material3/Compose declarados. Se omite el argumento
+reciente gapSize del CircularProgressIndicator del origen; la pista del arco
+interactivo sigue transparente. No se cambian SDK, ABI, firmas ni dependencias.
+No se certifica fidelidad visual completa ni funcionamiento físico.
+
+Validación preparada: cinco métodos nuevos en SDK33/35 (10 casos previstos).
+Comprueban un gesto vertical real, una sola lectura suspendida con catálogo y
+reproducción conservados, alternativa accesible/bloqueo mientras se actualiza,
+continuidad Explorar→Biblioteca, exclusión de Buscar, carga desde vacío,
+error/reintento, permiso revocado/recuperado con favoritos intactos, medidas40dp
+y altura estable del header en ambos temas. Se conserva el test Home de retención
+del catálogo y se comprueba isRefreshing en el ViewModel; el indicador visual
+ahora se verifica en la cabecera real desde el nuevo test de integración.
+LibraryUpdatesTest conserva su cobertura de cancelación, coalescing y permisos.
+El nuevo recorrido usa LocalLibrarySource inyectada y RecordingPlayer para
+controlar la lectura y verificar comandos/cola; no acredita señal de audio audible
+ni escaneo físico de MediaStore. Las pruebas reales existentes no se sustituyen.
+
+No Gradle, Lint ni Android local. Sintaxis, recursos, hashes, archivos protegidos,
+presupuesto y diff --check se verifican estáticamente. Dos revisiones del mismo
+agente: propiedad del estado/cancelación/captura Glass; después API/imports,
+semántica, tests, medidas y alcance. Actions y dispositivo real pendientes.
+Avisar del commit/push y esperar resultado del usuario antes de F013. Con10/10
+no se permite añadir una ruta nueva de reparación sin resolver previamente el
+presupuesto; no se reinicia contando desde otro commit. No F014 ni B09.

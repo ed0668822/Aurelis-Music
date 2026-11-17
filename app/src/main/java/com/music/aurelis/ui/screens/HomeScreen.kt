@@ -17,7 +17,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.FilterChip
@@ -137,9 +136,6 @@ fun HomeScreen(
         contentPadding = homePadding,
     ) {
         item(key = "title") { HomeTitle() }
-        if (isRefreshing) item(key = "refreshing") {
-            LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = PAGE_GUTTER).testTag("home-refresh"))
-        }
         if (collectionsReadOnly) item { Text(stringResource(R.string.collections_unavailable), Modifier.padding(16.dp)) }
 
         item(key = "local-actions") {

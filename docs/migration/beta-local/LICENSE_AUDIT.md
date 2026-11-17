@@ -787,3 +787,31 @@ F129; esta entrega usa el diálogo real existente y sus operaciones locales.
 | sharedUi/src/commonMain/composeResources/values/strings.xml | 4879b1373cc57e20d4a379b383fbe28d162fc49e1c22d05e38500496d4787d08 |
 | sharedUi/src/commonMain/composeResources/values-es/strings.xml | 1eb6406f782fe58709fb8986ce46501ea1121f06ef19ee4309e5206930d81455 |
 | app/src/main/java/com/music/bitchord/MainActivity.kt | 90e254be457f57c70166321ca9bac3bc5e42eba4e6bdf577b48235ea75c200e2 |
+
+## F012 — actualización de las pestañas locales
+
+BitChord fijo b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3. Se conservan
+contribuyentes, términos y avisos; no se convierte su licencia a «or later».
+Las cabeceras Aurelis cubren la integración y otras aportaciones propias.
+NOTICE registra la procedencia; LICENSE y avisos anteriores permanecen intactos.
+
+Common.PullToRefresh aporta el contenedor sin indicador sobre el contenido.
+FrostedTopBar.RefreshPuck aporta la banda de altura medida0, puck40dp, reposo16,
+exceso20, sombra6, arco22/ancho2,5, tope de fracción2, amortiguación0,35 y arco
+interactivo0,8. Home/Explore/Library se consultan para compartir el estado del
+arrastre con la cabecera externa a la página capturada.
+
+Adaptaciones Aurelis: tres estados de gesto (uno por pestaña), un mismo estado
+LibraryUiState.isRefreshing y callback del ViewModel existente; exclusión de
+Buscar y acciones de accesibilidad. Se suprime la línea de progreso antigua de
+Inicio para no duplicar el indicador. Se usa la API Material3 actual sin el
+argumento gapSize del origen, manteniendo la pista transparente, sin actualizar
+dependencias. No se copian fuentes, sistemas remotos ni otros escáneres.
+
+| Fuente leída/adaptada | SHA256 |
+|---|---|
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/Common.kt | 9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e |
+| app/src/main/java/com/music/bitchord/ui/components/FrostedTopBar.kt | 58aefbaabffadaf172faee21b4e6b94ec1b48c782651fd2913eb9dc3d04f83c9 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt | d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/LibraryScreen.kt | d53961bee3b257a40407bf1c552bd90b6f7792ba7306653f4c62daa342f8179a |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/ExploreScreen.kt | 75593b43d96c479bac6b5831eab3e36071c15d4b40df5e91b44160040b806ed8 |

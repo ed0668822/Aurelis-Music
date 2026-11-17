@@ -1,6 +1,32 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F012 — actualización local y recuperación (2026-11-17)
+
+El usuario autoriza avanzar mientras el otro agente repara CI. Base b5599378,
+conservada; ningún archivo CI modificado.10/10 rutas fijadas antes de editar,
+incluidos pruebas y avisos. F011 queda pendiente de validación por su encargado;
+su acumulado es21/40 (14 funcionales +7 de reparaciones), sin reiniciar contadores.
+
+Se conserva íntegro el motor LibraryViewModel/MediaStore y su cancelación,
+coalescing e invalidación. Se integra el gesto original en Inicio/Explorar/
+Biblioteca con un mismo estado de escaneo y estados visuales por pestaña. Buscar
+queda fuera. El puck original se dibuja en la cabecera, fuera de la captura Glass,
+sin aumentar la altura del header; reemplaza la línea de progreso de Inicio.
+Se mantienen los estados y acciones de vacío/error/permiso y el botón de Música
+local. Se añade una acción accesible real, inhabilitada mientras lee.
+
+Cinco métodos SDK33/35 (10 casos previstos): gesto, lectura única, catálogo y
+reproducción conservados, pestañas compartidas, Buscar excluido, carga/error/
+reintento, permisos/favoritos y puck40dp/altura del header en ambos temas.
+Test Home conserva catálogo/isRefreshing; el nuevo test valida el indicador en
+su host real. No compilación/pruebas Android locales. Comprobaciones estáticas
+y dos revisiones del mismo agente; Android/visual/físico pendientes.
+
+Fuentes/hashes/rutas en FUNCTION_BLOCKS_40_10, NOTICE y LICENSE_AUDIT. No F013,
+F014 ni B09. Avisar al subir y esperar el resultado comunicado por el usuario.
+
+
 ### F011 — destacado y sugerencias locales (2026-11-17)
 
 Autorizado tras F010 por «Continúa con el siguiente bloque». Base d58a74f2,

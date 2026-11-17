@@ -114,13 +114,12 @@ class HomeStateRecoveryTest {
         compose.onNodeWithTag("local-home").assertIsDisplayed()
         compose.runOnIdle { library.refresh() }
         compose.onNodeWithTag("local-home").assertIsDisplayed()
-        compose.onNodeWithTag("home-refresh").assertIsDisplayed()
         compose.runOnIdle {
+            assertTrue(library.uiState.value.isRefreshing)
             assertEquals(listOf(song), (library.uiState.value.libraryState as LibraryState.Success).songs)
             populatedRefresh.complete(emptyList())
         }
         compose.onNodeWithText("Actualizar biblioteca").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("home-refresh").assertDoesNotExist()
         compose.onNodeWithText("Canción real local").assertDoesNotExist()
         compose.runOnIdle { assertEquals(3, reads); assertFalse(library.uiState.value.isRefreshing) }
     }
