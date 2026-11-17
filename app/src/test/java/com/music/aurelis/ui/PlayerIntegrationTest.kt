@@ -160,13 +160,16 @@ class PlayerIntegrationTest {
         val songResult = hasText("Canción local 1") and
             hasAnyAncestor(hasTestTag("local-search-results"))
         compose.onNode(songResult).assertExists()
-        compose.onNodeWithText("Álbumes").performClick()
+        val albumsTab = hasText("Álbumes") and isSelectable()
+        compose.onAllNodes(albumsTab).assertCountEquals(1)
+        compose.onNode(albumsTab).performClick()
         compose.onNode(songResult).assertDoesNotExist()
         compose.onNodeWithTag("mini-player").assertTextContains("Canción local 1")
         compose.runOnIdle { assertEquals("1", vm.state.value.currentSong?.id) }
         compose.onNodeWithText("Todo").performClick()
         compose.onNode(songResult).assertExists()
-        compose.onNodeWithText("Álbumes").performClick()
+        compose.onAllNodes(albumsTab).assertCountEquals(1)
+        compose.onNode(albumsTab).performClick()
         compose.onNode(hasText("Álbum local") and hasClickAction()).performClick()
         compose.onNodeWithText(app.getString(R.string.collection_play)).assertIsDisplayed()
         compose.runOnIdle { assertEquals(listOf("Álbum"), LocalSearchHistory(app).entries) }
