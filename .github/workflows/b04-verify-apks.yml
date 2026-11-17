@@ -65,7 +65,8 @@ jobs:
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
         with:
           validate-wrappers: true
-          cache-read-only: true
+          # Reuse existing Gradle artifacts and persist missing Release dependencies on the migration branch.
+          cache-read-only: ${{ github.ref != 'refs/heads/feature/bitchord-local-migration' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') }}
 
       - name: Install matching Android SDK tools
         run: |
