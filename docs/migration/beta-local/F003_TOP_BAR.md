@@ -109,6 +109,33 @@ regresiones, límites y diff. Estado del nuevo CI: **PENDIENTE**. La fidelidad
 visual completa y la prueba en Redmi Note14 Pro5G, Android16/HyperOS3, siguen
 pendientes. Se avisará del envío y se esperará al usuario antes de F004.
 
+## Reparación posterior — CI184
+
+[CI184/run43997300231](https://github.com/ed0668822/Aurelis-Music/actions/runs/43997300231),
+SHA `ca3316af5cbba112385371dd10aacb5956770cee`: B01/B02/B05 SUCCESS,
+B03/B06 FAILURE y B04 SKIPPED. El APK Debug e instrumentación sí compilaron;
+no se acredita un APK Release verificado porque B04 no se ejecutó.
+
+Los logs originales pasan CRC, guardados fuera del checkout como
+`run184-logs.zip`, SHA256
+`3df9ca6b8b619493ad9d24a3a427bbeb2e51f7093ba8b16a1a6f71a02675ef28`.
+Ambas variantes fallan en compileDebugUnitTestKotlin/compileReleaseUnitTestKotlin
+por el mismo error, FrostedTopBarTest.kt:132:72. performTextInput() devuelve
+Unit; encadenar performImeAction(), que requiere SemanticsNodeInteraction,
+produce Unresolved reference por incompatibilidad del receptor.
+
+No hay eventos AURELIS_TEST_END en ninguna variante: no se afirma que las seis
+regresiones nuevas ni las pruebas anteriores aprobaran. Kover se omitió y F5
+rechazó COVERAGE_XML_UNAVAILABLE; no es evidencia de un porcentaje bajo.
+
+Corrección mínima: las acciones de escribir y confirmar IME se ejecutan en dos
+sentencias sobre el mismo selector del campo. Se mantienen las seis pruebas,
+su secuencia y todas sus aserciones. No cambia código de producción, parámetros
+del pipeline, dependencias o umbrales. Tres rutas ya incluidas, acumulado14/40.
+Dos revisiones del mismo agente: (1) causa y API/receptor, (2) continuidad de
+acciones/aserciones, alcance y diff. Sintaxis/diff locales; compilación y pruebas
+Android exclusivamente en Actions. Nuevo CI PENDIENTE; F004 sigue sin iniciar.
+
 ## Rutas de la entrega (14 de40)
 
 1. app/src/main/java/com/music/aurelis/MainActivity.kt

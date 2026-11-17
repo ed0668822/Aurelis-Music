@@ -3,6 +3,16 @@
 
 ### F003 — cabeceras, perfil y acceso a ajustes (2026-11-17)
 
+**Reparación CI184:** el commitca3316af aprobó B01/B02/B05, pero B03 no compiló
+las pruebas Debug/Release: FrostedTopBarTest:132 encadenaba performImeAction()
+sobre el Unit devuelto por performTextInput(). No se ejecutaron pruebas en
+ninguna variante. Kover quedó omitido; F5 rechazó COVERAGE_XML_UNAVAILABLE como
+consecuencia. B04 SKIPPED y B06 FAILURE. Se separan las dos llamadas, conservando
+acciones y aserciones. Tres archivos de reparación, todos dentro de las14 rutas
+acumuladas de F003; máximo40. Dos revisiones del mismo agente y sintaxis/diff
+locales; nueva compilación y pruebas solo en Actions, resultado PENDIENTE.
+Logs CRC válidos, SHA256 y diagnóstico completo en F003_TOP_BAR.md.
+
 Autorizado con «Continúa con el siguiente bloque», base9d203d13. Se adaptan
 los helpers originales de cabecera y SquirclePillShape de BitChord b690dc14:
 controles44dp, avatar28dp, gutter16dp y gaps/insets originales. Buscar toma la

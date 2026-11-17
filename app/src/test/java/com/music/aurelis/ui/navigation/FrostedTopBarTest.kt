@@ -129,7 +129,8 @@ class FrostedTopBarTest {
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.search)).performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.clear_search)).performClick()
         compose.onNode(hasSetTextAction()).assertTextEquals("").assertIsFocused()
-        compose.onNode(hasSetTextAction()).performTextInput("Canción").performImeAction()
+        compose.onNode(hasSetTextAction()).performTextInput("Canción")
+        compose.onNode(hasSetTextAction()).performImeAction()
         profile().performClick()
         compose.runOnIdle { assertEquals("Canción", query); assertEquals(2, submissions); assertEquals(1, profiles) }
         assertEquals(accessory, bounds("top-bar-accessory"))
