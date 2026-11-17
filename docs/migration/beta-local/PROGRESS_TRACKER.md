@@ -1,6 +1,36 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### CI193 — corrección de las pruebas de Inicio (2026-11-17)
+
+Run44015753195, SHA16040c91: B01 SUCCESS. Los logs originales verificados
+registran506 casos por variante,503 aprobados y3 fallidos tanto Debug como
+Release. HomeLocalTest aún buscaba el rótulo/botón visual legacy; la tarjeta
+portrait conserva Continuar en su semántica y se activa tocando la tarjeta.
+Los otros dos fallos son SDK33/35 de HomeShelvesIntegrationTest: el reloj de
+Media3 reanudado pasó de12345 a12354ms, invalidando una igualdad temporal exacta.
+
+Se corrigen únicamente las pruebas: recorrer la lista y el carrusel reales,
+validar la semántica Continuar y sus callbacks; pausar antes del seek de prueba,
+comprobar posición exacta pausada y, tras reanudar, que no hubo reemplazo de cola,
+prepare ni seek adicionales, sin exigir que el reloj en marcha quede congelado.
+No se desactiva ninguna aserción funcional ni se cambian producción o workflows.
+
+El resultado global de193 es CANCELLED, no un fallo de compilación Kotlin.
+El push posterior8f7e1b1a, tres iconos ajenos conservados mediante fast-forward,
+inició CI194 y la concurrencia canceló193. B02/B03/B05 quedaron cancelados,
+B04 omitido y la puerta B06 falló correctamente por evidencias incompletas.
+Lint y emulador no quedan aprobados ni tienen otra causa raíz demostrada aquí.
+
+Reparación de4 rutas: las dos pruebas y los dos registros de progreso/plan.
+Solo HomeLocalTest añade una ruta al alcance anterior: F005–F00611/40,
+F004.a8/10 y F004.b8/10 sin cambios; entrega propia19 rutas distintas.
+Incluidos los tres iconos externos preservados, el intervalo completo suma22.
+Dos revisiones del mismo agente: (1) trazas, recorridos y reloj/comandos Media3;
+(2) selectores Compose, alcance, conservación de cambios ajenos y diff.
+Parser Kotlin y diff --check locales; pruebas Android solo Actions y pendientes
+para el nuevo SHA. Avisar del push y esperar al usuario antes de F007.
+
 ### F004 y F005–F006 — siguientes dos bloques autorizados (2026-11-17)
 
 El usuario pide «Continúa con los siguientes dos bloques». Base3a015702;

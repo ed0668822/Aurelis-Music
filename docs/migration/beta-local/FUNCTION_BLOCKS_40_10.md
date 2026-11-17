@@ -45,9 +45,12 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   con21 rutas acumuladas incluida la mejora de pruebas autorizada después de
   CI185 y la reparación de dependencias B02 trasCI191; CI192 global SUCCESS para3a015702.
   La mejora B03 ocupa10/10 y aprobó CI191. La reparación específica B02 ocupa5/10.
-- Entrega autorizada ahora: F004 y F005–F006, base3a015702, nuevo CI PENDIENTE.
+- Entrega autorizada ahora: F004 y F005–F006, base3a015702; CI193 cancelado
+  tras registrar tres fallos de pruebas por variante. Reparación documentada abajo;
+  nuevo CI PENDIENTE.
   F004 se divide antes de ampliar el scope en F004.a y F004.b,8 rutas cada uno,
-  máximo10 por subbloque. F005–F006 ocupa10/40. Son18 rutas distintas conjuntas.
+  máximo10 por subbloque. F005–F006 ocupa11/40 con la reparación de HomeLocalTest.
+  Son19 rutas propias distintas conjuntas;22 incluyendo tres iconos externos conservados.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -416,7 +419,7 @@ destinos, en lugar del login remoto; se ajusta su padding inferior a18dp. Su mes
 estable y los motores de imagen/Glass no se sustituyen. No se añaden botones
 Mostrar todo a Home: la referencia los reserva a los consumidores de Biblioteca.
 
-Lista de10 rutas (máximo40), incluidos todos los avisos y pruebas:
+Lista acumulada de11 rutas (máximo40), incluidos avisos, pruebas y reparación CI193:
 
 - app/src/main/java/com/music/aurelis/ui/screens/HomeScreen.kt
 - app/src/main/java/com/music/aurelis/ui/components/home/HomeHero.kt
@@ -424,6 +427,7 @@ Lista de10 rutas (máximo40), incluidos todos los avisos y pruebas:
 - app/src/main/java/com/music/aurelis/ui/components/ShelfRow.kt
 - app/src/test/java/com/music/aurelis/ui/HomeShelvesIntegrationTest.kt
 - app/src/test/java/com/music/aurelis/ui/HomePresentationTest.kt
+- app/src/test/java/com/music/aurelis/ui/HomeLocalTest.kt
 - NOTICE
 - docs/migration/beta-local/LICENSE_AUDIT.md
 - docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
@@ -435,6 +439,28 @@ integración que abre el reproductor actual sin sustituir su cola ni posición.
 Todos se destinan a SDK33/35. Las pruebas anteriores no se eliminan.
 
 ## Evidencia de esta entrega conjunta y procedencia
+
+Actualización CI193: B01 compiló correctamente. Debug y Release ejecutaron506
+casos cada uno:503 aprobados y3 fallidos. HomeLocalTest buscaba el rótulo y botón
+legacy retirados de la variante portrait aprobada; se actualiza para comprobar
+la semántica Continuar y tocar la tarjeta, desplazando realmente la lista y el
+carrusel para acceder a Favoritos y AutoMix. Los SDK33/35 de la prueba de retorno
+al reproductor exigían12345ms exactos después de reanudar, pero el reloj avanzó
+a12354ms. Ahora se comprueba12345ms mientras está pausado y, tras reanudar,
+igualdad de cola y de contadores reales de reemplazo/prepare/seek, además de
+posición no retrocedida y playWhenReady. No se cambia el reproductor ni se
+permite una tolerancia arbitraria o un reinicio encubierto de la reproducción.
+
+El push externo8f7e1b1a de tres iconos inició194 y canceló193 por la concurrencia
+existente. B02/B03/B05 quedaron CANCELLED, B04 SKIPPED y B06 FAILURE; no se
+atribuyen a Lint/emulador errores no demostrados. Se conservan los tres iconos.
+La reparación ocupa cuatro rutas (dos pruebas y estos dos registros), una nueva
+respecto de la entrega propia:19 acumuladas, F005–F00611/40, F004.a8/10 y
+F004.b8/10. El intervalo completo con cambios externos contiene22 rutas.
+Dos revisiones estáticas del mismo agente; Android del nuevo SHA queda pendiente
+exclusivamente de Actions. No se inicia F007.
+
+Evidencia histórica de preparación anterior a CI193:
 
 Son18 rutas distintas en conjunto (máximo60), con los cuatro avisos/registros
 compartidos contados en cada subbloque.16 métodos Android nuevos, pendientes de

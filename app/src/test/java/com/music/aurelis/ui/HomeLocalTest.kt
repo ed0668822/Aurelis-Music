@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
@@ -84,10 +85,19 @@ class HomeLocalTest {
             libraryState = LibraryState.Success(listOf(song)), onOpenPlayer = { openedPlayer++ },
             onAutoMix = { mixes++ }, onOpenFavorites = { favorites++ },
         ) } } }
-        compose.onNodeWithText("CONTINUAR ESCUCHANDO").assertIsDisplayed()
-        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_play)).performClick()
+        compose.onNodeWithTag("local-home").performScrollToKey("hero")
+        val hero = compose.onNodeWithTag("home-leading-hero")
+        hero.assertIsDisplayed().assert(SemanticsMatcher.expectValue(
+            SemanticsProperties.StateDescription,
+            compose.activity.getString(com.music.aurelis.R.string.home_continue),
+        )).performClick()
+        compose.onNodeWithTag("local-home").performScrollToKey("local-actions")
         compose.onNode(hasText("Favoritos") and hasClickAction()).performClick()
-        compose.onNodeWithText("AutoMix · Selección local").performClick()
+        compose.onNodeWithTag("local-home").performScrollToKey("hero")
+        val autoMix = hasText(compose.activity.getString(com.music.aurelis.R.string.home_automix))
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("local-home")) and
+            hasAnyDescendant(hasTestTag("home-leading-hero"))).performScrollToNode(autoMix)
+        compose.onNode(autoMix).assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(1, openedPlayer); assertEquals(0, restarted); assertEquals(1, mixes); assertEquals(1, favorites) }
         for (night in listOf(false, true)) {
             compose.runOnIdle { dark = night }

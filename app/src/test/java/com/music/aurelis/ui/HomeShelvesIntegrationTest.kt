@@ -76,15 +76,22 @@ class HomeShelvesIntegrationTest {
         compose.onNodeWithTag("home-leading-hero").performClick()
         val original = compose.runOnIdle {
             assertNotNull(recording.currentMediaItem)
-            recording.seekTo(12_345)
             recording.pause()
+            recording.seekTo(12_345)
+            assertEquals(12_345L, recording.currentPosition)
             (0 until recording.mediaItemCount).map { recording.getMediaItemAt(it).mediaId }
+        }
+        val commands = compose.runOnIdle {
+            Triple(recording.replacements, recording.prepares, recording.seeks)
         }
         compose.onNodeWithTag("home-leading-hero").performClick()
         compose.runOnIdle {
             assertEquals(AppRoute.NowPlaying, navigator.visibleRoute())
             assertEquals(original, (0 until recording.mediaItemCount).map { recording.getMediaItemAt(it).mediaId })
-            assertEquals(12_345L, recording.currentPosition)
+            // READY + playWhenReady advances Media3's clock. Verify the actual
+            // commands instead of requiring the resumed position to stay frozen.
+            assertEquals(commands, Triple(recording.replacements, recording.prepares, recording.seeks))
+            assertTrue(recording.currentPosition >= 12_345L)
             assertTrue(recording.playWhenReady)
         }
     }
