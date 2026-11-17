@@ -636,3 +636,14 @@ F008: 11 rutas de40:
 - app/src/main/java/com/music/aurelis/ui/screens/LocalCollectionScreen.kt
 - app/src/test/java/com/music/aurelis/ui/ExplorePresentationTest.kt
 - app/src/test/java/com/music/aurelis/ui/ExploreIntegrationTest.kt
+
+### Reparación CI198 antes de F009/F010
+
+El usuario autoriza F009/F010; al verificar la base se encontró198 fallido.
+B01/B02/B05 SUCCESS, B03/B06 FAILURE, B04 SKIPPED. La importación R ambigua
+impide compilar ExploreIntegrationTest en Debug y Release:0 tests ejecutados.
+Se añade import explícito com.music.aurelis.R; no cambia producción ni se retira
+una aserción. Tres rutas de corrección ya contabilizadas en F008: la prueba y
+FUNCTION_BLOCKS_40_10/PROGRESS_TRACKER. Acumulados12/40 y11/40,17 conjuntas.
+Dos revisiones del mismo agente, sintaxis/diff locales; Actions pendiente.
+No se aplica la entrega nueva hasta validar la reparación.

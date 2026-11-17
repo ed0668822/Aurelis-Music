@@ -1,6 +1,22 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### CI198 — importación R de la prueba Explore (2026-11-17)
+
+Run44041268015, SHA0708648a: B01/B02/B05 SUCCESS, B03/B06 FAILURE,
+B04 SKIPPED. El log de compilación de tests Debug y Release señala
+ExploreIntegrationTest.kt:51:59: R ambiguo y string sin resolver. Se añade
+importación explícita com.music.aurelis.R, conservando toda la prueba.
+No se ejecutó ninguna suite unitaria; no se atribuye el fallo a cobertura o audio.
+
+Corrección de3 rutas ya incluidas en F008 (prueba y estos dos registros), sin
+reiniciar contadores: F00712/40, F00811/40,17 conjuntas. Dos revisiones del mismo
+agente: resolución de imports y usos; después alcance/diff y coherencia del
+informe. Sintaxis/diff locales; compilación nueva solo Actions, pendiente.
+El usuario autoriza F009/F010, que quedan en espera de esta validación antes
+de aplicar código nuevo. No se inicia F011 ni B09.
+
+
 ### F007/F008 — recomendaciones y Explorar (2026-11-17)
 
 Autorizados los dos bloques siguientes, base44d2fb5d; CI197 completo SUCCESS.
