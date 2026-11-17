@@ -207,6 +207,37 @@ class PhaseAndWorkflowTests(unittest.TestCase):
                                          cwd=temp, env=env, capture_output=True, text=True)
                     self.assertEqual(expected, run.returncode)
 
+    def test_maven_central_429_retries_and_recovers(self):
+        with TemporaryDirectory() as temp:
+            counter = Path(temp) / "attempts"
+            script = (
+                "from pathlib import Path; import sys; "
+                "p=Path('attempts'); n=int(p.read_text())+1 if p.exists() else 1; "
+                "p.write_text(str(n)); "
+                "print('Could not GET https://repo.maven.apache.org/maven2/example.pom. "
+                "Received status code 429 from server: Too Many Requests' if n==1 else 'SUCCESS'); "
+                "sys.exit(1 if n==1 else 0)"
+            )
+            env = dict(os.environ, AURELIS_MAVEN_RETRY_DELAY_OVERRIDE="0")
+            run = subprocess.run(["bash", str(SCRIPTS / "b03-phase.sh"), "compile-release",
+                                  sys.executable, "-c", script],
+                                 cwd=temp, env=env, capture_output=True, text=True)
+            self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+            self.assertEqual("2", counter.read_text())
+            self.assertIn("attempts=2", (Path(temp) / "ci-b03/compile-release.log").read_text())
+
+    def test_maven_central_429_exhaustion_remains_failure(self):
+        with TemporaryDirectory() as temp:
+            script = ("print('Could not GET https://repo.maven.apache.org/maven2/example.pom. "
+                      "Received status code 429 from server: Too Many Requests'); "
+                      "raise SystemExit(1)")
+            env = dict(os.environ, AURELIS_MAVEN_RETRY_DELAY_OVERRIDE="0")
+            run = subprocess.run(["bash", str(SCRIPTS / "b03-phase.sh"), "compile-debug",
+                                  sys.executable, "-c", script],
+                                 cwd=temp, env=env, capture_output=True, text=True)
+            self.assertEqual(1, run.returncode)
+            self.assertIn("attempts=3", (Path(temp) / "ci-b03/compile-debug.log").read_text())
+
     def test_workflow_keeps_variants_independent_and_reuses_immutable_apks(self):
         flow = (SCRIPTS.parent / "workflows/b03-unit-tests.yml").read_text()
         self.assertLess(flow.index('id: compile_release'), flow.index('id: debug\n'))

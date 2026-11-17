@@ -36,7 +36,7 @@ class GraphTests(unittest.TestCase):
     def test_one_push_trigger_not_two_full_runs(self):
         self.assertIn("  push:", self.flow)
         self.assertNotIn("  pull_request:", self.flow)
-        self.assertIn("cancel-in-progress: true", self.flow)
+        self.assertIn("cancel-in-progress: false", self.flow)
 
     def test_b04_requires_both_lint_and_unit_tests(self):
         body = job(self.flow, "b04")
@@ -57,7 +57,7 @@ class GraphTests(unittest.TestCase):
             data = path.read_text(encoding="utf-8")
             block = data.split("concurrency:", 1)[1].split("jobs:", 1)[0]
             self.assertEqual(block.count("cancel-in-progress:"), 1)
-            expected = "true" if name.startswith("b06-") else "false"
+            expected = "false"
             self.assertIn(f"cancel-in-progress: {expected}", block)
 
     def test_removed_release_upload_step_is_not_referenced(self):
