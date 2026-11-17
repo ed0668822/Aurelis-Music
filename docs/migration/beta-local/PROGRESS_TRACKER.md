@@ -1,6 +1,31 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F010 — conservar historial y acciones (2026-11-17)
+
+Autorización «Continúa con el siguiente bloque @github» tras la entrega F009.
+F010 ocupa7/40 rutas, fijadas antes de editar. Se conserva byte a byte el almacén
+LocalSearchHistory, su formato y la integración MainActivity; tampoco se altera
+el diseño existente del historial. Se consulta BitChord fijo para verificar el
+patrón original de consultas recientes y se registran fuentes/hashes/avisos.
+
+Única corrección productiva: consultas con texto `header` colisionaban con la
+clave del encabezado `recent:header`; se separan como `recent:query:<texto>`.
+No hay migración de preferencias ni cambio del texto guardado.
+
+Seis métodos nuevos, nueve casos previstos: datos en SDK33 e integración en
+SDK33/35. Persistencia, límites, Unicode, deduplicación, JSON ilegible, escribir
+sin guardar, IME, reutilizar sin reproducir, quitar sin seleccionar, restauración,
+vaciar, consulta `header` y guardar al reproducir/abrir colección. Se conservan
+los dos tests de datos anteriores. Ejecución Android pendiente exclusivamente
+de Actions. Comprobaciones estáticas y dos revisiones del mismo agente.
+
+F011 no iniciado. Se incorpora por avance rápido el commit ajeno2ef4778d
+(import de la prueba F009), conservando su contenido/autoría; el test F010 lleva
+su import explícito. Ningún workflow modificado. Avisar del envío y esperar
+resultado antes del siguiente bloque.
+
+
 ### F009 — búsqueda y filtros locales (2026-11-17)
 
 El usuario permite avanzar con el siguiente bloque y asigna el fallo de CI a otro

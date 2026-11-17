@@ -53,8 +53,9 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   F00714/40, F00811/40,19 rutas acumuladas conjuntas contando avisos, pruebas y
   recursos compartidos. Su reparación de CI queda a cargo de otro agente, por
   instrucción posterior del usuario. Ese encargo permite avanzar ahora con F009.
-- Entrega activa: F009, búsqueda y filtros. F010 queda para la siguiente entrega;
-  no se cambia infraestructura ni se certifica el resultado del CI anterior.
+- F009 entregado en b3b6cfd0. El usuario autoriza avanzar con «Continúa».
+- Entrega activa: F010, conservación del historial; F011 queda para la siguiente
+  autorización. No se cambia infraestructura ni se certifica el CI anterior.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -73,7 +74,7 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 | F007 | Presentación de recomendaciones locales existentes | Media | 40 | Implementado; CI nuevo pendiente |
 | F008 | Explorar por géneros locales | Media | 40 | Implementado; CI nuevo pendiente |
 | F009 | Búsqueda y filtros locales | Media | 40 | Implementado; Actions pendiente |
-| F010 | Conservar historial de búsqueda y sus acciones | Fácil | 40 | Pendiente |
+| F010 | Conservar historial de búsqueda y sus acciones | Fácil | 40 | Entregado para validar; Actions pendiente |
 | F011 | Resultado destacado y sugerencias locales | Media | 40 | Pendiente |
 | F012 | Actualización, carga y recuperación del escaneo | Difícil | 10 | Pendiente |
 | F013 | Conservar estados vacíos, errores y reintentos | Fácil | 40 | Pendiente |
@@ -792,3 +793,62 @@ prueba física RedmiNote14Pro5G/Android16/HyperOS3 pendientes.
 
 Tras commit/push, avisar al usuario y esperar su resultado antes de F010. El
 fallo de CI asignado al otro agente no se modifica ni se da por corregido aquí.
+
+### F010 — conservación del historial y acciones (2026-11-17)
+
+El usuario dice «Continúa con el siguiente bloque @github» tras F009. Se toma
+como autorización para avanzar y entregar F010; no equivale a certificar los
+resultados de las fases de Actions. Alcance fijado sobre b3b6cfd0; antes del commit
+se incorpora mediante avance rápido 2ef4778d, corrección publicada por el otro
+agente del import AurelisNavigationContent en la prueba F009. El nuevo test F010
+usará también ese import explícito. No se modifica el commit ajeno ni su autoría.
+F011 no se inicia en esta entrega.
+
+Clasificación fácil, máximo40. Se fijan7 rutas antes de editar (incluidas pruebas,
+avisos y documentos); las reparaciones posteriores conservan este acumulado.
+Lista y copias iniciales en `/workspace/aurelis-validation/f010/scope.json`:
+
+- `app/src/main/java/com/music/aurelis/ui/screens/SearchScreen.kt`
+- `app/src/test/java/com/music/aurelis/data/LocalSearchHistoryTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/SearchHistoryIntegrationTest.kt`
+- `NOTICE`
+- `docs/migration/beta-local/LICENSE_AUDIT.md`
+- `docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md`
+- `docs/migration/beta-local/PROGRESS_TRACKER.md`
+
+Decisión de implementación: CONSERVAR LocalSearchHistory y el recorrido activo
+MainActivity→SearchScreen. La persistencia privada del perfil,20 entradas, recorte
+de200 caracteres, normalización/deduplicación por acentos, eliminación exacta,
+borrado y protección ante JSON ilegible permanecen sin cambios. También se
+mantienen medidas, iconos, textos y callbacks de la presentación existente.
+Se contrasta con el patrón original de consultas recientes de BitChord, sin
+importar un almacén de entidades, addons ni consultas de red.
+
+Corrección mínima: una consulta literal `header` producía la clave `recent:header`,
+idéntica a la del encabezado. Las consultas pasan a `recent:query:<texto>`;
+se conserva la clave del encabezado. El cambio afecta a las claves de la lista
+visible, no al formato persistido ni al texto del usuario.
+
+Fuentes leídas, BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3:
+
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt` — SHA256 `175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842`.
+- `app/src/main/java/com/music/bitchord/data/settings/SearchHistory.kt` — SHA256 `d4a02c712e82f53ce1a0f8849aeae3181de0cfcac04417d8cbe71962068bb31b`.
+
+Verificación preparada: seis métodos nuevos, nueve casos previstos (tres de datos
+SDK33 y tres de integración SDK33/35). Los dos métodos de datos anteriores se
+conservan. Cubre consultas vacías, orden reciente y deduplicación, Unicode/JSON,
+recorte200, persistencia, operaciones con JSON ilegible, preferencia ajena intacta,
+escribir sin guardar, envío IME, reutilizar sin reproducir/reordenar, eliminación
+sin selección, restauración del estado guardable, vaciado persistido, consulta
+`header`, reproducción y apertura de álbum con registro de la consulta.
+
+No se ejecutan Gradle, Lint ni pruebas Android localmente. Sintaxis Kotlin,
+diff --check, procedencia, presupuesto y archivos protegidos se comprueban
+estáticamente; la colisión de claves se acredita comparando sus expresiones.
+Dos revisiones del mismo agente: almacenamiento/callbacks/procedencia; después
+claves, restauración, selectores de pruebas y alcance. Ninguna de estas revisiones
+acredita por sí sola funcionamiento físico o igualdad visual completa.
+
+Actions y comprobación física quedan pendientes. Tras push avisar y esperar
+resultado del usuario antes de F011; no modificar la reparación de CI del otro
+agente, workflows, servicio ni arquitectura de reproducción.

@@ -737,3 +737,22 @@ remotos. LocalSearch, SongRow, historial y arquitectura de reproducción se cons
 
 LICENSE y los avisos anteriores permanecen intactos. Validación Android y
 fidelidad visual pendientes; dos revisiones estáticas del mismo agente.
+
+## F010 — conservación del historial local
+
+Se conserva la presentación ya adaptada de consultas recientes. Se contrasta
+con recentAddonSearches y las medidas de encabezado/fila del SearchScreen de
+BitChord, commit fijo b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3;
+se mantienen sus contribuyentes y avisos. El patrón visual de consultas no
+incorpora funcionalidades de addons. SearchHistory.kt solo se consulta como
+contexto: no se copia su almacén de entidades ni se introduce otra persistencia.
+
+La separación de claves consulta/encabezado y las pruebas nuevas son propias.
+LocalSearchHistory y su almacenamiento permanecen byte a byte sin cambios.
+No se retiran LICENSE, atribuciones, textos anteriores ni se convierte la
+licencia del origen a «or later». NOTICE registra esta conservación.
+
+| Fuente consultada | SHA256 |
+|---|---|
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt | 175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842 |
+| app/src/main/java/com/music/bitchord/data/settings/SearchHistory.kt | d4a02c712e82f53ce1a0f8849aeae3181de0cfcac04417d8cbe71962068bb31b |

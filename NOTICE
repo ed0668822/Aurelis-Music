@@ -683,3 +683,14 @@ artwork requests, accessibility, RTL placement, haptic policy and reduced motion
 are adapted to Android/Aurelis. No remote results, suggestions, SF fonts or
 streaming sources are imported. Exact paths/hashes and pending verification:
 docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md (F009 section).
+
+F010 — preserve local search history
+The existing text-only recent-search presentation is retained and checked against
+recentAddonSearches/header/row metrics in BitChord sharedUi SearchScreen.kt,
+commit b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3), original contributors.
+This references the query-only visual pattern; it does not introduce addons.
+BitChord SearchHistory.kt was consulted only; Aurelis keeps its own profile-private
+LocalSearchHistory storage, bounds and accent normalization. The namespace fix
+for query item keys and added regression tests are Aurelis contributions.
+Source hashes, conservation scope and unexecuted Android checks are recorded in
+docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md (F010 section).

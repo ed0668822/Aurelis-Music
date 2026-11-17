@@ -269,7 +269,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.recentSearches(
             )
         }
     }
-    itemsIndexed(history, key = { _, term -> "recent:$term" }) { _, term ->
+    // Query text can be "header"; keep item keys disjoint from recent:header.
+    itemsIndexed(history, key = { _, term -> "recent:query:$term" }) { _, term ->
         Row(
             modifier = Modifier.fillMaxWidth()
                 .clickable { onClick(term) }
