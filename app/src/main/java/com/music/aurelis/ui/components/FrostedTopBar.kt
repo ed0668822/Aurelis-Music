@@ -128,94 +128,89 @@ fun FrostedTopBar(
         label = "topBarDivider",
     )
 
-    // Keep the top bar at its original height while measuring the puck at
-    // its actual size. A zero-height puck ancestor breaks Compose visibility
-    // semantics even when graphicsLayer paints pixels below the bar.
-    val puckVisible = refreshing || pullFraction() > 0f
-    Column(
-        modifier = modifier
-            .layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints.copy(minHeight = 0))
-                val puckHeight = if (puckVisible) (PUCK_REST + PUCK_SIZE + PUCK_OVERSHOOT + 12.dp).roundToPx() else 0
-                layout(placeable.width, (placeable.height - puckHeight).coerceAtLeast(0)) {
-                    placeable.place(0, 0)
-                }
-            }
-            .fillMaxWidth()
-            .then(
-                if (reduceDynamicBlur && !transparentBackdrop) {
-                    Modifier.background(MaterialTheme.colorScheme.surface)
-                } else Modifier,
-            ),
-    ) {
-        Box(
-            modifier = Modifier
+    // The puck sits in a wrapper below the header Column instead of inside it.
+    // The header (the node carrying the caller's modifier) keeps its own height,
+    // and the puck keeps an ancestor whose bounds contain it; a puck laid out
+    // beyond its ancestors' bounds is clipped away from Compose visibility semantics.
+    Column {
+        Column(
+            modifier = modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(stableStatusBarInsets())
-                .height(TopBarContentHeight),
+                .then(
+                    if (reduceDynamicBlur && !transparentBackdrop) {
+                        Modifier.background(MaterialTheme.colorScheme.surface)
+                    } else Modifier,
+                ),
         ) {
-            // The pinned reference keeps the small centered title hidden.
-
-            // On a pushed page the back affordance is always visible, since
-            // there is no large in-list header to fall back on.
-            if (onBack != null) {
-                if (useFloatingChrome) {
-                    ArtworkPageBackButton(
-                        onClick = onBack,
-                        hazeState = backButtonHazeState,
-                        // The surface edge aligns with the floating navbar. The
-                        // padding belongs outside the circle; its icon remains
-                        // centred in the same 44dp control in every material.
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(start = BAR_GUTTER),
-                    )
-                } else {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp),
-                    ) {
-                        Icon(
-                            AurelisIcons.ArrowBack,
-                            contentDescription = stringResource(com.music.aurelis.R.string.back),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            }
-            // No wordmark at the leading end: the root tabs carry it above
-            // their large heading instead (LargePageTitle in :sharedUi).
-            // The accessory takes everything from the leading gutter up to the
-            // actions, which keep their own width at the trailing end.
-            val edge = if (useFloatingChrome) BAR_GUTTER else 4.dp
-            Row(
+            Box(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .then(if (accessory != null) Modifier.fillMaxWidth().padding(start = edge) else Modifier)
-                    // The page's gutter (the navbar keeps Apple's wider one);
-                    // the pill's inset below is internal padding around the
-                    // icons, not extra margin.
-                    .padding(end = edge),
-                verticalAlignment = Alignment.CenterVertically,
+                    .fillMaxWidth()
+                    .windowInsetsPadding(stableStatusBarInsets())
+                    .height(TopBarContentHeight),
             ) {
-                if (accessory != null) {
-                    Box(Modifier.weight(1f)) {
-                        AccessoryPill(
-                            floating = useFloatingChrome,
+                // The pinned reference keeps the small centered title hidden.
+
+                // On a pushed page the back affordance is always visible, since
+                // there is no large in-list header to fall back on.
+                if (onBack != null) {
+                    if (useFloatingChrome) {
+                        ArtworkPageBackButton(
+                            onClick = onBack,
                             hazeState = backButtonHazeState,
-                            content = accessory,
+                            // The surface edge aligns with the floating navbar. The
+                            // padding belongs outside the circle; its icon remains
+                            // centred in the same 44dp control in every material.
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .padding(start = BAR_GUTTER),
                         )
+                    } else {
+                        IconButton(
+                            onClick = onBack,
+                            modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp),
+                        ) {
+                            Icon(
+                                AurelisIcons.ArrowBack,
+                                contentDescription = stringResource(com.music.aurelis.R.string.back),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
-                    Spacer(Modifier.width(ACCESSORY_GAP))
                 }
-                if (useFloatingChrome) {
-                    ArtworkPageActions(hazeState = backButtonHazeState, content = actions)
-                } else {
-                    actions()
+                // No wordmark at the leading end: the root tabs carry it above
+                // their large heading instead (LargePageTitle in :sharedUi).
+                // The accessory takes everything from the leading gutter up to the
+                // actions, which keep their own width at the trailing end.
+                val edge = if (useFloatingChrome) BAR_GUTTER else 4.dp
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .then(if (accessory != null) Modifier.fillMaxWidth().padding(start = edge) else Modifier)
+                        // The page's gutter (the navbar keeps Apple's wider one);
+                        // the pill's inset below is internal padding around the
+                        // icons, not extra margin.
+                        .padding(end = edge),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (accessory != null) {
+                        Box(Modifier.weight(1f)) {
+                            AccessoryPill(
+                                floating = useFloatingChrome,
+                                hazeState = backButtonHazeState,
+                                content = accessory,
+                            )
+                        }
+                        Spacer(Modifier.width(ACCESSORY_GAP))
+                    }
+                    if (useFloatingChrome) {
+                        ArtworkPageActions(hazeState = backButtonHazeState, content = actions)
+                    } else {
+                        actions()
+                    }
                 }
             }
+            HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
         }
-        HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
         RefreshPuck(refreshing, pullFraction)
     }
 }
