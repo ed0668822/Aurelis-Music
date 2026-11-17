@@ -146,14 +146,16 @@ private fun AurelisApp(playerRequest: Int = 0) {
     val navigator = rememberAppNavigator()
     LaunchedEffect(playerRequest) { if (playerRequest > 0) navigator.push(AppRoute.NowPlaying) }
     val hazeState = remember { HazeState() }
+    var audioGranted by remember { mutableStateOf(AudioPermission.isGranted(context)) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { libraryViewModel.onForeground() }
+    ) { audioGranted = AudioPermission.isGranted(context); libraryViewModel.onForeground() }
     var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
     val updateInfo by AppUpdateChecker.available.collectAsState()
     val downloadState by AppUpdateChecker.download.collectAsState()
 
     val meta = remember(context) { context.getSharedPreferences("app_meta", android.content.Context.MODE_PRIVATE) }
+    val localProfile by com.music.aurelis.data.ProfileRepository.state.collectAsState()
     val requestAudioAccess = {
         if (AudioPermission.needsSettings(context, meta.getBoolean("audio_permission_requested", false))) {
             context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
@@ -164,14 +166,16 @@ private fun AurelisApp(playerRequest: Int = 0) {
     }
     LaunchedEffect(Unit) {
         playbackViewModel.connect()
-        if (!AudioPermission.isGranted(context) && !meta.getBoolean("audio_permission_requested", false)) requestAudioAccess()
     }
     // An offline/slow update server must not delay audio permission or catalogue loading.
     LaunchedEffect(Unit) { AppUpdateChecker.check() }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, libraryViewModel) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) libraryViewModel.onForeground()
+            if (event == Lifecycle.Event.ON_RESUME) {
+                audioGranted = AudioPermission.isGranted(context)
+                libraryViewModel.onForeground()
+            }
             if (event == Lifecycle.Event.ON_STOP) {
                 libraryViewModel.onBackground()
                 com.music.aurelis.data.stats.ListeningStats.flush()
@@ -183,35 +187,45 @@ private fun AurelisApp(playerRequest: Int = 0) {
     LaunchedEffect(updateInfo) {
         if (updateInfo != null) showUpdateDialog = true
     }
-    Box(Modifier.fillMaxSize()) {
-        AurelisNavigationContent(navigator, playbackViewModel, libraryViewModel, hazeState,
-            onRequestAudioPermission = requestAudioAccess)
-        if (showUpdateDialog && updateInfo != null) {
-            UpdateAvailableDialog(
-                version = updateInfo!!.version,
-                hazeState = hazeState,
-                onDismiss = {
-                    showUpdateDialog = false
-                    AppUpdateChecker.resetDownload()
-                },
-                onDownload = { scope.launch { AppUpdateChecker.downloadApk(context) } },
-                onCancelDownload = { AppUpdateChecker.cancelDownload() },
-                onInstall = {
-                    val state = downloadState
-                    if (state is AppUpdateChecker.DownloadState.Ready) {
-                        AppUpdateChecker.installApk(context, state.file)
-                    }
-                },
-                onOpenReleasePage = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo!!.releaseUrl))
-                    context.startActivity(intent)
-                },
-            )
-        }
-        // This modal owns Back before the page below it; no navigation is discarded.
-        BackHandler(enabled = showUpdateDialog && updateInfo != null) {
-            showUpdateDialog = false
-            AppUpdateChecker.resetDownload()
+    com.music.aurelis.ui.onboarding.LocalOnboardingGate(
+        preferences = meta, initialName = localProfile.profile.name,
+        profileReadOnly = localProfile.readOnly,
+        onNameChosen = { chosen ->
+            if (!localProfile.readOnly && chosen != localProfile.profile.name) {
+                com.music.aurelis.data.ProfileRepository.rename(chosen)
+            }
+        }, permissionGranted = audioGranted, onRequestPermission = requestAudioAccess,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            AurelisNavigationContent(navigator, playbackViewModel, libraryViewModel, hazeState,
+                onRequestAudioPermission = requestAudioAccess)
+            if (showUpdateDialog && updateInfo != null) {
+                UpdateAvailableDialog(
+                    version = updateInfo!!.version,
+                    hazeState = hazeState,
+                    onDismiss = {
+                        showUpdateDialog = false
+                        AppUpdateChecker.resetDownload()
+                    },
+                    onDownload = { scope.launch { AppUpdateChecker.downloadApk(context) } },
+                    onCancelDownload = { AppUpdateChecker.cancelDownload() },
+                    onInstall = {
+                        val state = downloadState
+                        if (state is AppUpdateChecker.DownloadState.Ready) {
+                            AppUpdateChecker.installApk(context, state.file)
+                        }
+                    },
+                    onOpenReleasePage = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo!!.releaseUrl))
+                        context.startActivity(intent)
+                    },
+                )
+            }
+            // This modal owns Back before the page below it; no navigation is discarded.
+            BackHandler(enabled = showUpdateDialog && updateInfo != null) {
+                showUpdateDialog = false
+                AppUpdateChecker.resetDownload()
+            }
         }
     }
 }

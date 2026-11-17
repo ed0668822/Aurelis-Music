@@ -352,9 +352,15 @@ class ParityEvidenceTest(unittest.TestCase):
                     prefs = parity.seed_preferences(app, "dark")
                     self.assertEqual(mode == "glass", prefs["liquid_glass"])
                     self.assertTrue(prefs["reduce_animation"])
-                bodies = [call.kwargs["input_data"] for call in shell.call_args_list if "input_data" in call.kwargs]
+                bodies = [call.kwargs["input_data"] for call in shell.call_args_list
+                          if "input_data" in call.kwargs and "app_meta.xml" not in str(call.args)]
                 self.assertEqual(2, len(bodies))
                 self.assertTrue(all(b'name="reduce_animation" value="true"' in body for body in bodies))
+                welcome = [call for call in shell.call_args_list if "app_meta.xml" in str(call.args)]
+                self.assertEqual(1, len(welcome))
+                self.assertEqual("com.music.aurelis", welcome[0].args[1])
+                self.assertEqual(b'<map><boolean name="local_onboarding_complete" value="true"/></map>',
+                                 welcome[0].kwargs["input_data"])
         with patch.dict(os.environ, {"UI_COMPARISON_MATERIAL": "unknown"}), patch.object(parity, "shell") as shell:
             with self.assertRaises(ValueError): parity.seed_preferences("aurelis", "dark")
             shell.assert_not_called()
@@ -397,8 +403,10 @@ class ParityEvidenceTest(unittest.TestCase):
              patch.object(parity, "verify_apk"), patch.object(parity, "adb"), \
              patch.object(parity, "prepare_device"), patch.object(parity, "tree", return_value='<hierarchy/>'), \
              patch.object(parity, "shell", side_effect=lambda *args: "35" if args == ("getprop", "ro.build.version.sdk") else ""), \
-             patch.object(parity.subprocess, "run", return_value=failed), redirect_stdout(io.StringIO()):
+             patch.object(parity.subprocess, "run", return_value=failed), \
+             patch.object(parity, "seed_preferences") as seed, redirect_stdout(io.StringIO()):
             self.assertEqual(1, parity.settings_navigation())
+            seed.assert_not_called()
             result = json.loads((Path(temp) / 'settings-navigation.json').read_text())
             self.assertFalse(result['passed'])
             self.assertEqual(2, len(result['cases']))
@@ -504,9 +512,11 @@ class ParityEvidenceTest(unittest.TestCase):
                     prefs = parity.seed_preferences(app, theme)
                     self.assertTrue(prefs["reset_app_data"])
                     self.assertTrue(prefs["liquid_glass"])
-            bodies = [call.kwargs["input_data"] for call in shell.call_args_list if "input_data" in call.kwargs]
+            bodies = [call.kwargs["input_data"] for call in shell.call_args_list
+                      if "input_data" in call.kwargs and "app_meta.xml" not in str(call.args)]
             self.assertEqual(4, len(bodies))
             self.assertTrue(all(b'name="liquid_glass" value="true"' in body for body in bodies))
+            self.assertEqual(2, sum("app_meta.xml" in str(call.args) for call in shell.call_args_list))
             self.assertEqual(4, sum(call.args[:2] == ("pm", "clear") for call in shell.call_args_list))
 
     def fixture(self, base, filters=None, output="original.apk", package="com.music.bitchord", abi="arm64-v8a"):

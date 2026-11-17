@@ -502,7 +502,12 @@ def seed_preferences(app, theme):
         body = f'<map>{common}<int name="theme_mode" value="{1 if theme == "light" else 2}"/></map>'
     shell("run-as", package, "mkdir", "-p", "shared_prefs")
     shell("run-as", package, "sh", "-c", f"cat > shared_prefs/{filename}", input_data=body.encode())
+    if app == "aurelis":
+        # Capture fixture only: native Settings navigation exercises the real welcome.
+        shell("run-as", package, "sh", "-c", "cat > shared_prefs/app_meta.xml",
+              input_data=b'<map><boolean name="local_onboarding_complete" value="true"/></map>')
     return {"reset_app_data": True, "liquid_glass": glass, "reduce_animation": True, "material_mode": mode, "locale": locale, "theme": theme,
+            "welcome_completed_for_capture": True,
             "font_exception": "Reference default; Aurelis authorized system font"}
 
 
@@ -610,7 +615,7 @@ def capture():
         "visual_verdict": "NOT_REVIEWED", "screens": [], "capture_complete": False, "stage": "provenance",
         "not_tested": ["widgets on a launcher", "gestures and animations in motion", "continuous rotation with player open", "cold landscape library playback initiation", "physical device", "pixel identity"],
         "font_policy": "Original reference default; Aurelis authorized system font. Difference remains visible.",
-        "fixture_preferences": "Disposable emulator only: reset app/theme; matched material and reduced motion, explicit locale; skip reference remote onboarding",
+        "fixture_preferences": "Disposable emulator only: reset app/theme; matched material and reduced motion, explicit locale; skip both welcomes for capture; native navigation exercises the Aurelis welcome separately",
         "material_mode": material_mode(),
         "scenario_preferences": {},
         "scope": "Evidence gathering only; Android Auto/TV/Wear excluded"}

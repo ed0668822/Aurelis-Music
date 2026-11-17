@@ -152,6 +152,17 @@ class RealSettingsNavigationInstrumentedTest {
         var player: MediaController? = null
         try {
             assertEquals(Lifecycle.State.RESUMED, activity.state)
+            val startup = context.getSharedPreferences("app_meta", android.content.Context.MODE_PRIVATE)
+            if (!startup.getBoolean("local_onboarding_complete", false)) {
+                // Exercise the production welcome instead of disabling it for CI.
+                await(context.getString(R.string.onboarding_next), click = true)
+                await(context.getString(R.string.onboarding_start), click = true)
+                await(context.getString(R.string.settings_profile_action))
+                assertTrue("Welcome completion must persist before navigation",
+                    startup.getBoolean("local_onboarding_complete", false))
+                assertEquals("Welcome must preserve the existing local profile", before,
+                    ProfileRepository.state.value.profile)
+            }
             if (withPlayback) {
                 // Original PCM fixture, through the production MediaSession and decoder.
                 val samples = 8_000 * 90
