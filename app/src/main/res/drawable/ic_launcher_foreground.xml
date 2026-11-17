@@ -1,25 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Aurelis © 2026. GPL-3.0-or-later. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Original Aurelis double note: centered within Android's adaptive-icon safe area. -->
-    <path
-        android:pathData="M46,33 C46,31 47,29 50,28 L81,20 C83,19 85,21 85,24 L85,66 L79,66 L79,37 L52,44 L52,75 L46,75 Z M50,70 C46,66 39,65 32,69 C25,73 23,81 28,86 C33,91 42,89 49,84 C54,79 54,73 50,70 Z M83,61 C78,58 70,59 64,64 C58,69 57,76 63,80 C69,84 79,80 84,73 C88,67 87,64 83,61 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:type="linear"
-                android:startX="34"
-                android:startY="20"
-                android:endX="78"
-                android:endY="89">
-                <item android:offset="0" android:color="#FFFFFFFF" />
-                <item android:offset="0.58" android:color="#FFFAFAFC" />
-                <item android:offset="1" android:color="#FFDFE0E5" />
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- Separate opaque silhouettes prevent fill-rule holes at notehead/stem overlaps. -->
+    <!-- Compact glyph stays inside adaptive-icon safe area and remains legible at small sizes. -->
+    <path android:fillColor="#FFFDFDFE"
+        android:pathData="M45,38 C45,36.3 46.2,34.7 48,34.3 L73,27.4 C75.1,26.8 77,28.2 77,30.5 L77,63 L72,63 L72,35 L50,40.9 L50,72 L45,72 Z" />
+    <path android:fillColor="#FFFDFDFE"
+        android:pathData="M48.7,68.5 C44.8,66.0 38.4,66.5 33.3,70.7 C28.7,74.6 28.2,79.4 31.6,81.5 C35.6,84.2 43.7,81.9 48.6,78.1 C52.9,74.6 52.7,70.8 48.7,68.5 Z" />
+    <path android:fillColor="#FFFDFDFE"
+        android:pathData="M74.7,60.1 C70.8,57.6 64.1,58.3 59.2,62.2 C54.7,65.9 54.1,70.6 57.7,72.8 C61.9,75.3 69.8,73.1 74.4,69.2 C78.8,65.8 78.7,62.4 74.7,60.1 Z" />
 </vector>

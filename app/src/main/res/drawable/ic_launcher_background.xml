@@ -6,8 +6,8 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Full-bleed graphite background; Android applies the launcher mask. -->
-    <path android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+    <!-- Full-bleed neutral graphite: the launcher applies the final mask. -->
+    <path android:pathData="M0,0 H108 V108 H0 Z">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:type="linear"
@@ -15,33 +15,27 @@
                 android:startY="0"
                 android:endX="108"
                 android:endY="108">
-                <item android:offset="0" android:color="#FF2F3035" />
-                <item android:offset="0.46" android:color="#FF121317" />
-                <item android:offset="1" android:color="#FF050507" />
+                <item android:offset="0" android:color="#FF303138" />
+                <item android:offset="0.48" android:color="#FF141417" />
+                <item android:offset="1" android:color="#FF060608" />
             </gradient>
         </aapt:attr>
     </path>
-    <!-- Understated diamond facets allude to hi-fi sound without reproducing a brand logo. -->
-    <path
-        android:fillColor="#0CFFFFFF"
-        android:strokeColor="#2AFFFFFF"
-        android:strokeWidth="0.7"
-        android:pathData="M54,14 L94,54 L54,94 L14,54 Z" />
-    <!-- Soft glass highlight, deliberately behind the opaque music note. -->
-    <path android:pathData="M0,0 L82,0 C59,12 32,35 0,65 Z">
+    <!-- Subtle glass reflection; no distracting diamond or lines behind the note. -->
+    <path android:pathData="M0,0 H108 V23 C73,30 45,42 0,66 Z">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:type="linear"
                 android:startX="0"
                 android:startY="0"
-                android:endX="76"
-                android:endY="71">
-                <item android:offset="0" android:color="#3CFFFFFF" />
+                android:endX="80"
+                android:endY="70">
+                <item android:offset="0" android:color="#1EFFFFFF" />
                 <item android:offset="1" android:color="#00FFFFFF" />
             </gradient>
         </aapt:attr>
     </path>
     <path
-        android:fillColor="#0CFFFFFF"
-        android:pathData="M28,108 C55,94 78,89 108,64 L108,108 Z" />
+        android:fillColor="#06FFFFFF"
+        android:pathData="M108,76 C77,97 46,102 21,108 L108,108 Z" />
 </vector>
