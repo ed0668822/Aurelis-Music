@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="home_top_picks">Selecciones para ti</string>
+    <string name="home_local_pick">De tu biblioteca</string>
+    <string name="explore_local_empty">No hay música local para explorar</string>
+    <string name="explore_unknown_genre">Sin clasificar</string>
+
     <string name="library_read_error">No se pudo leer la biblioteca del dispositivo. Inténtalo de nuevo.</string>
     <string name="library_unknown_title">Canción sin título</string>
     <string name="library_unknown_artist">Artista desconocido</string>

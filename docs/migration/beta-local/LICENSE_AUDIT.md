@@ -688,3 +688,29 @@ NOTICE registra la procedencia. Rutas, SHA256, listas por subbloque y diferencia
 en [FUNCTION_BLOCKS_40_10](FUNCTION_BLOCKS_40_10.md). Los cambios de fixtures
 emuladas son propios; no modifican el repositorio de referencia ni sus APK.
 LICENSE y todos los textos legales anteriores permanecen intactos.
+
+## F007/F008 — recomendaciones y géneros locales
+
+BitChord fijado `b690dc146009d4815825fa4a20815ef2e4ee8898`, GPLv3;
+se conservan contribuyentes, términos y avisos originales, sin atribuirles
+automáticamente «or later». Se adaptan funciones reales TopPicksShelf,
+TopPickCard/CardCaption/ReleaseArt y el filtro Android BlurredBackdrop; Explore
+reutiliza MoodGenreSleeve, geometría y matriz duotono. HomeScreen fija la posición
+del carrusel. El modelo TopPicks solo se consulta para no atribuir a canciones
+locales estaciones, novedades ni inferencia de estados de ánimo inexistentes.
+
+Cambios Aurelis: LocalSong y callbacks de la cola actual, carátulas locales,
+claves reales de género, recursos Android/localización, permiso/reintento y
+contador semántico. El blur cacheado procesa la franja inferior a48px, con
+altura4..96, petición160px y cancelación; no añade un blur de pantalla por frame.
+No se copian clips externos, fuentes, símbolos protegidos ni servicios remotos.
+LICENSE y todos los avisos anteriores permanecen intactos; NOTICE registra
+esta adaptación. La compilación y el resultado Android quedan pendientes de CI.
+
+| Fuente BitChord | SHA256 |
+|---|---|
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/TopPicksShelf.kt | 808914fea081d0b7813dff8648e366d7ef1989f1d2ca7eee1e23ed33ba449de5 |
+| sharedUi/src/androidMain/kotlin/com/music/bitchord/ui/components/BlurredBackdrop.android.kt | 6b4b01b6a0e3c22b2d48764ff0182330ebda92bd89bd56d399c9b9aa15c42704 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/ExploreScreen.kt | 75593b43d96c479bac6b5831eab3e36071c15d4b40df5e91b44160040b806ed8 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt | d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017 |
+| shared/src/commonMain/kotlin/com/music/bitchord/data/model/TopPicks.kt | 893efc8aaee9a53f60d112157136f04e11525bffc8cf9b24736c0cbe1dfcb745 |

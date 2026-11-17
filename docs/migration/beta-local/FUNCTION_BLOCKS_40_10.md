@@ -45,16 +45,13 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   con21 rutas acumuladas incluida la mejora de pruebas autorizada después de
   CI185 y la reparación de dependencias B02 trasCI191; CI192 global SUCCESS para3a015702.
   La mejora B03 ocupa10/10 y aprobó CI191. La reparación específica B02 ocupa5/10.
-- Entrega autorizada ahora: F004 y F005–F006, base3a015702; CI196 intento2
-  confirma B01–B05 SUCCESS,506 pruebas por variante, ambos recorridos API36
-  y8/8 casos de audio API35. Los timeouts195 quedan superados. El cierre B06
-  falló por artefactos duplicados del reintento; reparación de infraestructura
-  documentada abajo, nuevo CI global PENDIENTE.
-  F004 se divide antes de ampliar el scope en F004.a8 y F004.b9 rutas acumuladas,
-  máximo10 por subbloque. F005–F006 ocupa11/40 con la reparación de HomeLocalTest.
-  La entrega funcional conserva20 rutas propias. La reparación de publicación
-  CI196 ocupa9/10, con dos documentos compartidos:27 propias acumuladas,
-  30 incluyendo tres iconos externos conservados.
+- F004 y F005–F006 entregados. CI197, run44034859111, SHA44d2fb5d,
+  SUCCESS en las seis fases B01–B06. Corrige los timeouts de195 y el cierre de
+  artefactos al reintentar196. La igualdad visual completa y el físico siguen pendientes.
+- Entrega autorizada ahora: F007 y F008, base44d2fb5d. Recomendaciones locales
+  con presentación Top Picks y Explorar con carátulas duotono de géneros reales.
+  F00712/40, F00811/40,17 rutas distintas conjuntas contando avisos, pruebas y
+  recursos compartidos. Nuevo CI PENDIENTE. No se inicia F009 ni B09.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -68,10 +65,10 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 | F001 | Entradas, Atrás y restauración | Fácil | 40 | Entregado; conservar |
 | F002 | Barra inferior y Buscar separado | Media | 40 | Entregado; conservar |
 | F003 | Cabeceras, foto local y acceso a ajustes | Media | 40 | Entregado; CI192 SUCCESS |
-| F004 | Bienvenida, nombre, permiso y finalización persistida | Difícil | 10 | Implementado en.a/.b; Android aprobado196/2, cierre CI pendiente |
-| F005–F006 | Cabecera, destacados, carruseles y estanterías de Inicio | Media | 40 | Implementado; pruebas aprobadas196/2, cierre CI pendiente |
-| F007 | Presentación de recomendaciones locales existentes | Media | 40 | Pendiente |
-| F008 | Explorar por géneros locales | Media | 40 | Pendiente |
+| F004 | Bienvenida, nombre, permiso y finalización persistida | Difícil | 10 | Entregado; CI197 SUCCESS |
+| F005–F006 | Cabecera, destacados, carruseles y estanterías de Inicio | Media | 40 | Entregado; CI197 SUCCESS |
+| F007 | Presentación de recomendaciones locales existentes | Media | 40 | Implementado; CI nuevo pendiente |
+| F008 | Explorar por géneros locales | Media | 40 | Implementado; CI nuevo pendiente |
 | F009 | Búsqueda y filtros locales | Media | 40 | Pendiente |
 | F010 | Conservar historial de búsqueda y sus acciones | Fácil | 40 | Pendiente |
 | F011 | Resultado destacado y sugerencias locales | Media | 40 | Pendiente |
@@ -556,3 +553,86 @@ recursos Google ni código de funciones excluidas.
 | sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt | d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017 |
 | sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/ShelfRow.kt | 5478cc6b81502bc206045ae8798b991fd649f2662128b866920cee99a13d3fa5 |
 | sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/Common.kt | 9e6847c462b52f4c94a53b24a297fe9aba1fa5a0f29accde2746e7a6c075b04e |
+
+## Entrega F007/F008 — recomendaciones y géneros (2026-11-17)
+
+Autorización: «Continúa con los dos siguientes bloques F007 and F008».
+Base44d2fb5d4c35998e26a7e7606fa2ba3c4f1e2d04, CI197 B01–B06 SUCCESS.
+Referencia BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, clon solo lectura.
+
+F007 adapta TopPicksShelf/TopPickCard/CardCaption/ReleaseArt: ancho60% con
+techo280dp, proporción0,75, esquinas12dp, gutter16dp, separación14dp y caption
+13/17/13sp. Conserva la posición tras el banner y antes del feed como el origen.
+La portada cuadrada se funde con una franja inferior cacheada del mismo archivo;
+se adapta el blur Android original a48px, altura4..96 y solicitud160px, con
+cancelación y sin reciclar la imagen propiedad de Coil. La caché se invalida con
+su propia clave. No se incorpora vídeo de artista ni canvas externo.
+
+Las tarjetas reciben las recomendaciones actuales de LocalHomeData sin cambiar
+el algoritmo. El toque usa la cola real del estante y su índice; mantener pulsado
+abre las acciones de esa canción. La canción actual conserva semántica de
+selección y barras de reproducción. La leyenda De tu biblioteca sustituye
+etiquetas remotas de novedad/estación que no serían verdaderas para esos datos.
+No se crean estados de ánimo, inferencia musical, streaming ni mezclas DSP.
+HeroShelf y la tarjeta principal F005 se conservan para sus otros consumidores.
+
+F008 completa GenreSleeve con MoodGenreSleeve/duotone originales: franja28%,
+carátula72%, proporción1,72, esquinas18dp y separación12dp; rejilla2..6 columnas
+según ventana, fila incompleta del mismo tamaño. La portada viene de la primera
+carátula no vacía de las canciones del grupo actual, sin red añadida. Los géneros
+se siguen agrupando únicamente por etiquetas reales; unknown conserva su clave
+independiente y su nombre se localiza también en el detalle. El contador real
+pluralizado se ofrece semánticamente, sin el rótulo extra ausente del origen.
+
+Explorar conecta el skeleton, error, permiso, vacío y reintento a LibraryState y
+al escáner existente; no inventa géneros durante carga/error ni tras vaciar el
+catálogo. No se inicia F012 ni se añade otro observador o gesto de actualización.
+Se preservan nombre Aurelis, MediaStore, ProfileRepository, servicio y sesión,
+modelos y filtros ABI, firmas, Gradle, todos los workflows y los iconos ajenos.
+Nuevos textos ES/EN; traducciones adicionales quedan en F146.
+
+Se añaden14 métodos Android de regresión destinados a SDK33/35: geometría de
+recomendaciones y géneros en teléfono/ventana ancha, RTL/fuente grande, selección,
+cola e índices al reordenar, tap/hold, eliminación del estante vacío, bounds/color
+sin mutar la portada original, errores/permisos/reintentos y navegación real de
+Explore a un género y vuelta. Se actualiza el desplazamiento de las pruebas Home
+para el carrusel adicional y se conserva su comprobación de cola/seek/retorno.
+Android, Lint, Gradle y APK nuevos solo en Actions, pendientes. La fidelidad de
+píxeles y la prueba física en Redmi Android16/HyperOS3 siguen pendientes.
+
+Dos revisiones del mismo agente: (1) propiedad de datos/cola/permisos/caché y
+contratos Compose/Coil3.0.4 verificados en su fuente; (2) medidas/RTL/accesibilidad,
+recorridos de pruebas, procedencia/licencias, lista de rutas y diff. Sin agentes
+independientes. Los SHA256 de fuente están en LICENSE_AUDIT. Tras push avisar y
+esperar al usuario; el siguiente bloque F009 no está autorizado en esta entrega.
+
+Listas fijadas antes de editar; cada corrección futura cuenta en estos acumulados:
+
+F007: 12 rutas de40:
+
+- NOTICE
+- docs/migration/beta-local/LICENSE_AUDIT.md
+- docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
+- docs/migration/beta-local/PROGRESS_TRACKER.md
+- app/src/main/res/values/strings.xml
+- app/src/main/res/values-en/strings.xml
+- app/src/main/java/com/music/aurelis/ui/components/home/LocalRecommendationsShelf.kt
+- app/src/main/java/com/music/aurelis/ui/components/home/RecommendationBackdrop.kt
+- app/src/main/java/com/music/aurelis/ui/screens/HomeScreen.kt
+- app/src/test/java/com/music/aurelis/ui/RecommendationsPresentationTest.kt
+- app/src/test/java/com/music/aurelis/ui/RecommendationBackdropTest.kt
+- app/src/test/java/com/music/aurelis/ui/HomeShelvesIntegrationTest.kt
+
+F008: 11 rutas de40:
+
+- NOTICE
+- docs/migration/beta-local/LICENSE_AUDIT.md
+- docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
+- docs/migration/beta-local/PROGRESS_TRACKER.md
+- app/src/main/res/values/strings.xml
+- app/src/main/res/values-en/strings.xml
+- app/src/main/java/com/music/aurelis/ui/screens/ExploreScreen.kt
+- app/src/main/java/com/music/aurelis/MainActivity.kt
+- app/src/main/java/com/music/aurelis/ui/screens/LocalCollectionScreen.kt
+- app/src/test/java/com/music/aurelis/ui/ExplorePresentationTest.kt
+- app/src/test/java/com/music/aurelis/ui/ExploreIntegrationTest.kt

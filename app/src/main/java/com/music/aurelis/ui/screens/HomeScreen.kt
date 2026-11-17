@@ -146,6 +146,11 @@ fun HomeScreen(
             LocalWelcomeBanner(libraryState.songs.size, onOpenFavorites, onOpenPlaylists)
         }
 
+        if (recommendations.isNotEmpty()) item(key = "recommendations") {
+            LocalRecommendationsShelf(recommendations, currentSong, isPlaying,
+                onPlay = playShelf, onHold = onSongLongPress)
+        }
+
         val hero = currentSong?.takeIf { current -> libraryState.songs.any { it.id == current.id } }
             ?: recentlyPlayed.firstOrNull() ?: recentlyAdded.firstOrNull() ?: libraryState.songs.firstOrNull()
         if (hero != null) {
@@ -198,13 +203,6 @@ fun HomeScreen(
         }
         if (playlists.isNotEmpty()) item(key = "playlists") {
             PlaylistCarousel(playlists, libraryState.songs, onOpenPlaylist)
-        }
-        if (recommendations.isNotEmpty()) item(key = "recommendations") {
-            Column(Modifier.testTag("home-recommendations")) {
-                SectionHeader(stringResource(R.string.home_recommendations))
-                HeroShelf(recommendations, { song -> playShelf(recommendations, recommendations.indexOfFirst { it.id == song.id }) },
-                    currentSong, isPlaying, onSongLongPress)
-            }
         }
 
         if (recentlyPlayed.isNotEmpty()) {

@@ -73,6 +73,7 @@ class HomeShelvesIntegrationTest {
     }
     @Test fun leadingCurrentTrackOpensTheExistingPlayerWithoutReplacingItsQueue() {
         start()
+        compose.onNodeWithTag("local-home").performScrollToKey("hero")
         compose.onNodeWithTag("home-leading-hero").performClick()
         val original = compose.runOnIdle {
             assertNotNull(recording.currentMediaItem)
@@ -84,6 +85,7 @@ class HomeShelvesIntegrationTest {
         val commands = compose.runOnIdle {
             Triple(recording.replacements, recording.prepares, recording.seeks)
         }
+        compose.onNodeWithTag("local-home").performScrollToKey("hero")
         compose.onNodeWithTag("home-leading-hero").performClick()
         compose.runOnIdle {
             assertEquals(AppRoute.NowPlaying, navigator.visibleRoute())
@@ -116,7 +118,7 @@ class HomeShelvesIntegrationTest {
                 libraryState = LibraryState.Success(rows), recommendations = recommendations, onPlayShelf = onQueue)
         } }
     }
-    @Test fun heroShelfUsesItsRealSongsAndHoldDoesNotPlayAgain() {
+    @Test fun recommendationShelfUsesItsRealSongsAndHoldDoesNotPlayAgain() {
         val recommended = rows.takeLast(2)
         var queue = emptyList<LocalSong>(); var index = -1; var plays = 0; var held = ""
         directHome(recommendations = recommended, onQueue = { q, i -> queue = q; index = i; plays++ }, onHold = { held = it.id })
@@ -125,6 +127,18 @@ class HomeShelvesIntegrationTest {
         compose.onNode(card).performClick()
         compose.onNode(card).performTouchInput { longClick() }
         compose.runOnIdle { assertEquals(recommended, queue);assertEquals(0,index);assertEquals(1,plays);assertEquals("5",held) }
+    }
+
+    @Test fun recommendationCardStartsTheExistingLocalRecommendationQueue() {
+        val expected = LocalHomeData.build(rows, app.userLibrary.state.value, null).recommendations
+        assertTrue(expected.isNotEmpty())
+        start()
+        compose.onNodeWithTag("local-home").performScrollToKey("recommendations")
+        compose.onNodeWithTag("recommendation:${expected.first().id}").performClick()
+        compose.runOnIdle {
+            assertEquals(expected.map { it.id }, (0 until recording.mediaItemCount).map { recording.getMediaItemAt(it).mediaId })
+            assertEquals(expected.first().id, recording.currentMediaItem?.mediaId)
+        }
     }
     @Test fun recentSecondPageKeepsItsGlobalQueueIndexAndMoreOnlyOpensActions() {
         var index = -1;var plays = 0;var held = ""

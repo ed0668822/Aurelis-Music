@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 <resources>
+    <string name="home_top_picks">Top Picks for You</string>
+    <string name="home_local_pick">From your library</string>
+    <string name="explore_local_empty">No local music to explore</string>
+    <string name="explore_unknown_genre">Unclassified</string>
+
     <!-- Local profile and compatible Settings -->
     <string name="navigation_settings">Settings</string>
     <string name="settings_profile_action">Profile</string>

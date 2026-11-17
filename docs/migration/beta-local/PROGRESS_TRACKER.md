@@ -1,6 +1,25 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F007/F008 — recomendaciones y Explorar (2026-11-17)
+
+Autorizados los dos bloques siguientes, base44d2fb5d; CI197 completo SUCCESS.
+F004 y F005–F006 conservan ese resultado; no se hereda para esta entrega nueva.
+F007: Top Picks original adaptado a recomendaciones locales existentes, con
+portada/franja inferior cacheada, medidas y caption originales; cola/índice y
+pulsación mantenida conservados. No se cambia el algoritmo ni se inventan mixes.
+F008: carátulas locales con matriz duotono del original, rejilla y geometría
+conservadas, géneros reales/unknown, contador accesible localizado y estados
+reales de carga/error/permiso/reintento. Detalle de unknown localizado.
+
+F00712/40, F00811/40,17 rutas conjuntas.14 métodos Android nuevos (SDK33/35),
+solo se ejecutarán en Actions. Gradle/dependencias/servicio/MediaStore/perfil/
+agrupación/algoritmo/workflows y firmas sin cambios. Dos revisiones del mismo
+agente. Procedencia, diferencias y manifiestos en FUNCTION_BLOCKS_40_10 y
+LICENSE_AUDIT. Nuevo resultado Android y visual PENDIENTE; físico Redmi pendiente.
+Avisar del envío y esperar al usuario antes de F009. B09 sigue sin iniciar.
+
+
 ### CI196 — Android validado; publicación de artefactos al reintentar (2026-11-17)
 
 SHA8da645ba, run44021559186. Intento1 falló antes de ejecutar tareas por HTTP429
