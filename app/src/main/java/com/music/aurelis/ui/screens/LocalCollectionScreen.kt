@@ -78,7 +78,8 @@ fun LocalCollectionScreen(
     }
     val title = when (route.kind) {
         LocalCollectionKind.FOLDER -> com.music.aurelis.data.LocalFolderRepository.groups(allSongs).firstOrNull { it.key == route.key }?.label.orEmpty()
-        LocalCollectionKind.GENRE -> genres.firstOrNull { it.key == route.key }?.name.orEmpty()
+        LocalCollectionKind.GENRE -> if (route.key == "unknown") stringResource(R.string.explore_unknown_genre)
+            else genres.firstOrNull { it.key == route.key }?.name.orEmpty()
         LocalCollectionKind.HISTORY -> "Historial"
         LocalCollectionKind.ALBUMS -> "Álbumes"
         LocalCollectionKind.ARTISTS -> "Artistas"

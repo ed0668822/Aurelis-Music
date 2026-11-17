@@ -369,23 +369,16 @@ internal fun AurelisNavigationContent(
 
             AppTab.EXPLORE -> {
                 val genres = genreGroups
-                if (libraryUiState.libraryState !is LibraryState.Success) {
-                    Column(Modifier.align(Alignment.Center).padding(24.dp)) {
-                        val error = libraryUiState.libraryState as? LibraryState.Error
-                        if (error == null) androidx.compose.material3.CircularProgressIndicator()
-                        else {
-                            Text(error.message)
-                            TextButton(onClick = { if (error.permissionRequired) onRequestAudioPermission() else libraryViewModel.refresh() }) {
-                                Text(if (error.permissionRequired) "Permitir acceso" else "Reintentar")
-                            }
-                        }
-                    }
-                } else ExploreScreen(genres.map { LocalGenre(it.name, it.songs.size, null, it.key) },
+                ExploreScreen(genres.map { LocalGenre(
+                    if (it.key == "unknown") stringResource(R.string.explore_unknown_genre) else it.name,
+                    it.songs.size, null, it.key,
+                    it.songs.firstNotNullOfOrNull { song -> song.artworkUri?.takeIf(String::isNotBlank) }) },
                     rememberLazyListState(), { genre ->
                         genres.firstOrNull { it.key == genre.key }?.let {
                             navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key))
                         }
-                    }, listPadding)
+                    }, listPadding, libraryState = libraryUiState.libraryState,
+                    onRetry = { libraryViewModel.refresh() }, onRequestPermission = onRequestAudioPermission)
             }
             AppTab.LIBRARY -> {
                 val listState = rememberLazyListState()
