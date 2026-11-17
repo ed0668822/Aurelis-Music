@@ -128,8 +128,19 @@ fun FrostedTopBar(
         label = "topBarDivider",
     )
 
+    // Keep the top bar at its original height while measuring the puck at
+    // its actual size. A zero-height puck ancestor breaks Compose visibility
+    // semantics even when graphicsLayer paints pixels below the bar.
+    val puckVisible = refreshing || pullFraction() > 0f
     Column(
         modifier = modifier
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints.copy(minHeight = 0))
+                val puckHeight = if (puckVisible) (PUCK_REST + PUCK_SIZE + PUCK_OVERSHOOT + 12.dp).roundToPx() else 0
+                layout(placeable.width, (placeable.height - puckHeight).coerceAtLeast(0)) {
+                    placeable.place(0, 0)
+                }
+            }
             .fillMaxWidth()
             .then(
                 if (reduceDynamicBlur && !transparentBackdrop) {
@@ -420,15 +431,7 @@ private fun RefreshPuck(refreshing: Boolean, pullFraction: () -> Float, modifier
         modifier = modifier
             .fillMaxWidth()
             .height(PUCK_REST + PUCK_SIZE + PUCK_OVERSHOOT + 12.dp)
-            .clipToBounds()
-            // Measure the clipped puck viewport at its real size, then reserve
-            // zero height in the top bar so the bar never grows while pulling.
-            // Keeping the zero-height layout outside the viewport avoids
-            // clipping the puck itself to an empty rectangle.
-            .layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints.copy(minHeight = 0))
-                layout(placeable.width, 0) { placeable.place(0, 0) }
-            },
+            .clipToBounds(),
         contentAlignment = Alignment.TopCenter,
     ) {
         Box(
