@@ -197,7 +197,9 @@ class PhaseAndWorkflowTests(unittest.TestCase):
             folder = Path(temp) / "bin"
             folder.mkdir()
             tee = folder / "tee"
-            tee.write_text("#!/bin/sh\nexit 9\n")
+            # A failing log writer still leaves its (empty) target behind, so the
+            # phase script's log-copy guard passes and the tee status is what is tested.
+            tee.write_text('#!/bin/sh\nfor last; do :; done\n: >> "$last"\nexit 9\n')
             tee.chmod(0o755)
             env = dict(os.environ, PATH=str(folder) + os.pathsep + os.environ["PATH"])
             for command_status, expected in ((0, 9), (7, 7)):
