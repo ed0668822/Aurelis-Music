@@ -190,6 +190,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b03-debug-tests-${{ github.run_number }}
+          overwrite: true
           path: |
             ci-b03/compile-debug.log
             ci-b03/debug.log
@@ -202,6 +203,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b03-release-tests-${{ github.run_number }}
+          overwrite: true
           path: |
             ci-b03/compile-release.log
             ci-b03/release.log
@@ -214,6 +216,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b03-summary-${{ github.run_number }}
+          overwrite: true
           path: |
             ci-b03/summary.md
             ci-b03/results.json

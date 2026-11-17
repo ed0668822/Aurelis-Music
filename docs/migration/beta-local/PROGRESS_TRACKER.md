@@ -1,6 +1,46 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### CI196 — Android validado; publicación de artefactos al reintentar (2026-11-17)
+
+SHA8da645ba, run44021559186. Intento1 falló antes de ejecutar tareas por HTTP429
+de Maven Central al resolver Kover0.9.11; B02–B05 omitidos. Se reintentaron los
+trabajos fallidos del mismo SHA, sin otra modificación de Android.
+
+Intento2: B01, B02, B03, B04 y B05 SUCCESS.506/506 casos Debug y506/506 Release
+PASS; profileAndLibrarySettingsSurviveRecreation y
+profileAndLibrarySettingsPreserveRealPlayback PASS en API36;8/8 casos Media3
+PASS en API35, incluidos WAV y continuous. Los tres timeouts de CI195 quedan
+superados en esta ejecución. El paso del emulador B05 duró283s frente a815s en195.
+No acredita prueba física en HyperOS ni igualdad visual completa.
+
+B06 consolidó/subió el informe y aprobó Enforce all phases and report publication,
+pero falló después al limpiar: Duplicate artifact names; refusing cleanup.
+La API confirmó dos b01-report-196 y dos Aurelis-Informes-B01-B06-196, activos,
+provenientes de ambos intentos. No se declara verde global para196.
+
+Corrección de infraestructura acotada antes de editar:9 rutas de máximo10,
+sin reiniciar contadores funcionales. Se añade overwrite:true a las12 subidas
+de los seis workflows B01–B06: el productor reemplaza su artefacto homónimo en
+la misma ejecución. Se conservan nombres, rutas, dependencias, orden, permisos,
+retenciones, firmas, ABI y todas las puertas. El limpiador sigue rechazando
+duplicados/desconocidos y nunca limpia una validación fallida. No se eliminan
+manualmente artefactos históricos ni se crea una Release oficial.
+
+Una regresión consume la configuración real de los seis productores, simula
+dos intentos y ejecuta el limpiador original: conserva solo los tres artefactos
+finales del intento más reciente. Al retirar overwrite en memoria, reproduce
+el rechazo original, sin alterar archivos.15 pruebas de contrato y9 de grafo CI
+PASS; actionlint de los seis workflows y diff --check PASS. Dos revisiones del
+mismo agente: contrato por ejecución y rechazos seguros; después grafo/scope/
+procedencia y conservación del código Android. Nueva ejecución pendiente.
+
+Rutas: seis workflows de B01–B06, test_b06_delivery_contract.py y los dos
+registros FUNCTION_BLOCKS_40_10/PROGRESS_TRACKER. F004.a8/10, F004.b9/10 y
+F005–F00611/40 se conservan; la reparación CI ocupa9/10. Entrega acumulada27
+rutas propias,30 contando los tres iconos externos. No se inicia F007; avisar
+del envío y esperar al usuario antes de continuar.
+
 ### CI195 — bienvenida animada y esperas del harness Android (2026-11-17)
 
 El ZIP original aportado por el usuario es válido:311 entradas. SHAa76abcf4,

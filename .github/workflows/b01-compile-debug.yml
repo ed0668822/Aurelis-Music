@@ -156,6 +156,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b01-compiler-outputs-${{ github.run_number }}
+          overwrite: true
           path: ci-f3-classes/
           if-no-files-found: error
           retention-days: 2
@@ -165,6 +166,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b01-shared-apks-${{ github.run_number }}
+          overwrite: true
           path: ci-f3-handoff/
           if-no-files-found: error
           retention-days: 2
@@ -233,6 +235,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b01-report-${{ github.run_number }}
+          overwrite: true
           path: ci-b01/
           if-no-files-found: warn
           retention-days: 30

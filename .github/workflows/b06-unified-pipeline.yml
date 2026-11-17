@@ -153,6 +153,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Aurelis-Informes-B01-B06-${{ github.run_number }}
+          overwrite: true
           path: b06-package/
           if-no-files-found: error
           retention-days: 30

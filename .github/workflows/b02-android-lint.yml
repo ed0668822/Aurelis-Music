@@ -84,6 +84,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b02-lint-report-${{ github.run_number }}
+          overwrite: true
           path: ci-b02/
           retention-days: 30
           if-no-files-found: warn

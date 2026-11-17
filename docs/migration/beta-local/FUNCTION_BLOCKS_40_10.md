@@ -45,12 +45,16 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   con21 rutas acumuladas incluida la mejora de pruebas autorizada después de
   CI185 y la reparación de dependencias B02 trasCI191; CI192 global SUCCESS para3a015702.
   La mejora B03 ocupa10/10 y aprobó CI191. La reparación específica B02 ocupa5/10.
-- Entrega autorizada ahora: F004 y F005–F006, base3a015702; CI195 confirma B01,
-  Lint y506 pruebas por variante aprobados. Fallan timeouts Android; reparación
-  del harness documentada abajo, nuevo CI PENDIENTE.
+- Entrega autorizada ahora: F004 y F005–F006, base3a015702; CI196 intento2
+  confirma B01–B05 SUCCESS,506 pruebas por variante, ambos recorridos API36
+  y8/8 casos de audio API35. Los timeouts195 quedan superados. El cierre B06
+  falló por artefactos duplicados del reintento; reparación de infraestructura
+  documentada abajo, nuevo CI global PENDIENTE.
   F004 se divide antes de ampliar el scope en F004.a8 y F004.b9 rutas acumuladas,
   máximo10 por subbloque. F005–F006 ocupa11/40 con la reparación de HomeLocalTest.
-  Son20 rutas propias distintas conjuntas;23 incluyendo tres iconos externos conservados.
+  La entrega funcional conserva20 rutas propias. La reparación de publicación
+  CI196 ocupa9/10, con dos documentos compartidos:27 propias acumuladas,
+  30 incluyendo tres iconos externos conservados.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -64,8 +68,8 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 | F001 | Entradas, Atrás y restauración | Fácil | 40 | Entregado; conservar |
 | F002 | Barra inferior y Buscar separado | Media | 40 | Entregado; conservar |
 | F003 | Cabeceras, foto local y acceso a ajustes | Media | 40 | Entregado; CI192 SUCCESS |
-| F004 | Bienvenida, nombre, permiso y finalización persistida | Difícil | 10 | Implementado en.a/.b; CI nuevo pendiente |
-| F005–F006 | Cabecera, destacados, carruseles y estanterías de Inicio | Media | 40 | Implementado; CI nuevo pendiente |
+| F004 | Bienvenida, nombre, permiso y finalización persistida | Difícil | 10 | Implementado en.a/.b; Android aprobado196/2, cierre CI pendiente |
+| F005–F006 | Cabecera, destacados, carruseles y estanterías de Inicio | Media | 40 | Implementado; pruebas aprobadas196/2, cierre CI pendiente |
 | F007 | Presentación de recomendaciones locales existentes | Media | 40 | Pendiente |
 | F008 | Explorar por géneros locales | Media | 40 | Pendiente |
 | F009 | Búsqueda y filtros locales | Media | 40 | Pendiente |
@@ -440,6 +444,41 @@ integración que abre el reproductor actual sin sustituir su cola ni posición.
 Todos se destinan a SDK33/35. Las pruebas anteriores no se eliminan.
 
 ## Evidencia de esta entrega conjunta y procedencia
+
+Actualización CI196, SHA8da645ba, intento2: B01–B05 SUCCESS;506/506 Debug,
+506/506 Release, ambos recorridos de navegación API36 y8/8 casos de audio API35
+PASS. Los tres timeouts195 quedan superados; el primer intento196 no los probó
+porque Maven Central respondió429 en configuración. El reintento conserva el SHA.
+La prueba física y la fidelidad visual completa siguen pendientes.
+
+B06 consolidó/subió informes y aprobó su puerta de evidencia; falló su limpieza
+por dos nombres duplicados (b01-report-196 y Aurelis-Informes-B01-B06-196) de
+los dos intentos. Se mantiene la validación estricta del limpiador. La corrección
+configura overwrite:true en las12 subidas de B01–B06 para reemplazar únicamente
+artefactos homónimos de la misma ejecución. No se añaden sufijos por intento,
+se cambian nombres entregables ni se mezclan evidencias de distintas ejecuciones.
+La acción fijada upload-artifact@b7c566a confirma soporte de esta opción.
+
+Ámbito de infraestructura fijado antes de editar,9 rutas de10:
+
+- .github/workflows/b01-compile-debug.yml
+- .github/workflows/b02-android-lint.yml
+- .github/workflows/b03-unit-tests.yml
+- .github/workflows/b04-verify-apks.yml
+- .github/workflows/b05-android-emulator.yml
+- .github/workflows/b06-unified-pipeline.yml
+- .github/scripts/test_b06_delivery_contract.py
+- docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
+- docs/migration/beta-local/PROGRESS_TRACKER.md
+
+Los ámbitos funcionales no se reinician ni amplían: F004.a8/10, F004.b9/10,
+F005–F00611/40. Sumando la corrección de infraestructura y documentos compartidos
+hay27 rutas propias distintas,30 con los tres iconos externos conservados.
+Una regresión simula dos intentos desde los seis workflows reales y ejecuta el
+limpiador original. Sin overwrite reproduce el rechazo anterior; con él conserva
+solo los tres artefactos finales recientes.15 casos de contrato y9 de grafo CI
+PASS, actionlint y diff --check PASS. Dos revisiones del mismo agente; nueva
+validación global pendiente. No se inicia F007 ni se publica una Release oficial.
 
 Actualización CI195 (ZIP original del usuario,311 entradas válidas): B01 y B02
 SUCCESS;506 pruebas Debug y506 Release PASS, reparaciones CI193 validadas.

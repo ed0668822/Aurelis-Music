@@ -100,6 +100,51 @@ class DeliveryTests(unittest.TestCase):
                 "Aurelis-Release-ARM64-23",
             })
 
+    def test_rerun_uploads_preserve_the_strict_three_artifact_contract(self):
+        # Exercise the real cleanup against two upload cycles configured by all
+        # six producers. Without overwrite, the old attempt's names survive and
+        # cleanup must refuse to delete anything, as observed in CI196.
+        workflows = Path(__file__).resolve().parent.parent / "workflows"
+        uploads = []
+        for filename in ("b01-compile-debug.yml", "b02-android-lint.yml", "b03-unit-tests.yml",
+                         "b04-verify-apks.yml", "b05-android-emulator.yml", "b06-unified-pipeline.yml"):
+            source = (workflows / filename).read_text(encoding="utf-8")
+            for step in re.split(r"(?m)^      - name: ", source):
+                if not re.search(r"(?m)^        uses: actions/upload-artifact@", step):
+                    continue
+                name = re.search(r"(?m)^          name: (.+)$", step).group(1)
+                uploads.append((name.replace("${{ github.run_number }}", "23"),
+                                bool(re.search(r"(?m)^          overwrite: true$", step))))
+        expected = self.artifacts_for_run()
+        self.assertEqual({row['name'] for row in expected}, {name for name, _ in uploads})
+        self.assertEqual(len(expected), len(uploads))
+        records = list(expected)
+        for index, (name, overwrite) in enumerate(uploads, start=100):
+            if overwrite:
+                records = [row for row in records if row['name'] != name]
+            records.append({'id': index, 'name': name, 'expired': False})
+        with TemporaryDirectory() as tmp:
+            deleted = []
+            def fake_api(method, resource):
+                nonlocal records
+                self.assertEqual('DELETE', method)
+                self.assertTrue(resource.startswith('/repos/sample/repo/actions/artifacts/'))
+                ident = int(resource.rsplit('/', 1)[-1])
+                deleted.append(ident)
+                records = [row for row in records if row['id'] != ident]
+            with patch.dict(os.environ, self.fake_env(tmp)), \
+                 patch.object(clean, 'artifacts', side_effect=lambda: list(records)), \
+                 patch.object(clean, 'api', side_effect=fake_api):
+                old = os.getcwd()
+                try:
+                    os.chdir(tmp)
+                    self.assertEqual(clean.main(), 0)
+                finally:
+                    os.chdir(old)
+            self.assertEqual(9, len(deleted))
+            self.assertEqual({row['name'] for row in expected[:3]}, {row['name'] for row in records})
+            self.assertTrue(all(row['id'] >= 100 for row in records), 'Only the latest attempt is delivered')
+
     def test_disabled_candidate_policy_keeps_two_final_artifacts(self):
         with TemporaryDirectory() as tmp:
             records = [r for r in self.artifacts_for_run()

@@ -334,6 +334,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: b04-verification-report-${{ github.run_number }}
+          overwrite: true
           path: ci-artifacts/
           retention-days: 30
           if-no-files-found: warn
@@ -346,6 +347,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Aurelis-Release-ARM64-${{ github.run_number }}
+          overwrite: true
           path: ci-b04-delivery/release/*.apk
           retention-days: 14
           if-no-files-found: error
@@ -356,6 +358,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Aurelis-Pruebas-ARM64-${{ github.run_number }}
+          overwrite: true
           path: ci-b04-delivery/debug/*.apk
           retention-days: 14
           if-no-files-found: error
