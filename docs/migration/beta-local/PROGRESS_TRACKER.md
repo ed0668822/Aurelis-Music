@@ -1,6 +1,37 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F003 — cabeceras, perfil y acceso a ajustes (2026-11-17)
+
+Autorizado con «Continúa con el siguiente bloque», base9d203d13. Se adaptan
+los helpers originales de cabecera y SquirclePillShape de BitChord b690dc14:
+controles44dp, avatar28dp, gutter16dp y gaps/insets originales. Buscar toma la
+altura de su superficie; Replay añade foto→ajustes con retorno a su página.
+Se preservan perfil único, callbacks, fuente de captura aislada, servicio y
+funciones locales. El título pequeño permanece oculto como en la referencia.
+
+Se añaden seis regresiones para Actions. Dos revisiones del mismo agente;
+validaciones estáticas locales, sin Gradle/Android local. CI nuevo PENDIENTE,
+sin heredar el resultado de CI183.14 rutas de40, incluidos el plan40/10 y este
+registro preparados previamente. Detalle, lista y hashes: [F003_TOP_BAR](F003_TOP_BAR.md).
+Avisar al enviar y esperar resultado del usuario antes de F004, aún sin iniciar.
+
+### Organización vigente por dificultad (2026-11-17)
+
+El usuario establece **máximo40 archivos distintos por bloque fácil/medio y10
+por bloque difícil**, incluidas pruebas, documentación, avisos y correcciones.
+Se conserva el techo previo de60 rutas para una entrega conjunta. Distribución
+completa F001–F200, autorizaciones y exclusiones en
+[FUNCTION_BLOCKS_40_10.md](FUNCTION_BLOCKS_40_10.md).
+Los60 de los registros anteriores no son el límite vigente por bloque.
+Esta reorganización es documental, no implementa ni aprueba funciones pendientes.
+
+F001 y F002 se conservan. CI183/run43970204682, SHA9d203d13, terminó SUCCESS
+en B01–B06, comprobado después de los registros históricos de abajo. F003
+(cabeceras/perfil/ajustes, media, máximo40) se entrega en el registro superior;
+F004 (bienvenida local, difícil, máximo10) está autorizado y sin implementar.
+No se inicia F005 ni B09.
+
 ### F002 — barra inferior y Buscar separado (2026-11-16)
 
 **Corrección CI182:** `44005ca7` ejecutó450 casos por variante: Debug449/450,

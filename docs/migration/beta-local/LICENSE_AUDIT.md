@@ -652,3 +652,19 @@ cuatro vectores y fragmentos de SongText/Common/Theme; rutas y SHA256 exactos en
 NOTICE registra estas procedencias; el empaquetado legal existente incorpora el
 nuevo texto. No se elimina ni sustituye LICENSE ni un aviso legal anterior.
 La presencia definitiva del paquete legal se verificará en el nuevo CI/APK.
+
+## F003 — cabeceras y perfil local
+
+BitChord fijado `b690dc146009d4815825fa4a20815ef2e4ee8898`, GPLv3. Se adaptan
+los helpers reales de FrostedTopBar, el algoritmo SquirclePillShape y la
+geometría de SearchField alojado sobre una superficie. Common/SongText aportan
+métricas y presentación del aro de avatar. Archivos exactos y SHA256 en
+[F003_TOP_BAR](F003_TOP_BAR.md).
+
+Se mantienen los contribuyentes originales y GPLv3 de esas porciones, sin
+atribuirles automáticamente «or later». Cambios Aurelis: paquete, perfil único,
+callback a ajustes, guardas del renderer, tema del aro y movimiento reducido.
+El composable Aurelis anterior llamado SquirclePillShape se conserva junto al
+tipo Shape adaptado; no tenía llamadas activas, y no se elimina su contrato.
+NOTICE registra la procedencia. LICENSE, textos legales y avisos anteriores
+permanecen intactos. No se copian SfIcons, fuentes SF ni recursos de cuenta remota.

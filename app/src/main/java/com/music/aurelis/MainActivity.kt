@@ -504,7 +504,7 @@ internal fun AurelisNavigationContent(
                 AppRoute.Equalizer -> EqualizerScreen(onBack = { navigator.pop() })
                 AppRoute.Replay -> ReplayScreen(onBack = { navigator.pop() }, store = userStore,
                     contentBackdropModifier = pageBackdropModifier, bottomPadding = listPadding,
-                    songs = allSongs, onPlay = { playbackViewModel.playSongs(listOf(it)) })
+                    songs = allSongs, onPlay = { playbackViewModel.playSongs(listOf(it)) }, onProfile = openSettings)
                 is AppRoute.Collection -> LocalCollectionScreen(
                     page, libraryUiState.libraryState, userStore,
                     playbackState.currentSong?.id, playbackState.isPlaying,

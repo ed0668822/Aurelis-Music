@@ -241,7 +241,7 @@ fun SettingsScreen(isVisible: Boolean, onDismiss: () -> Unit, onOpenEqualizer: (
         }
         Spacer(Modifier.height(24.dp))
     }
-    FrostedTopBar(category?.let { settingsTitle(it, context.resources) } ?: context.getString(R.string.navigation_settings), { scrollState.value > 0 }, transparentBackdrop = true, artworkPageChrome = false,
+    FrostedTopBar(category?.let { settingsTitle(it, context.resources) } ?: context.getString(R.string.navigation_settings), { scrollState.value > 0 }, transparentBackdrop = true, artworkPageChrome = true,
         onBack = { if (category != null) openCategory(null) else onDismiss() })
     }
     }

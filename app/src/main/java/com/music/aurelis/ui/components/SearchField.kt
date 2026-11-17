@@ -1,7 +1,11 @@
 // Aurelis © 2026. GPL-3.0-or-later
+// Header-hosted geometry adapted from BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3).
+// Original BitChord contributors and terms retained; local search callbacks preserved.
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +35,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -48,6 +54,7 @@ fun SearchField(
     focusRequester: FocusRequester = remember { FocusRequester() },
     placeholder: String = stringResource(R.string.search_hint),
 ) {
+    val onSurface = LocalSearchFieldOnSurface.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val submit = {
@@ -58,18 +65,25 @@ fun SearchField(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                if (LocalSearchFieldOnSurface.current) {
+                if (onSurface) {
                     Modifier.fillMaxHeight()
                 } else {
                     Modifier
+                        .heightIn(min = 52.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
                 },
             )
-            .heightIn(min = 52.dp)
-            .padding(horizontal = 4.dp),
+            .then(if (onSurface) Modifier.padding(start = 8.dp, end = 12.dp)
+                else Modifier.padding(horizontal = 4.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = submit, enabled = query.isNotBlank(), modifier = Modifier.size(48.dp)) {
+        if (onSurface) {
+            Icon(Icons.Rounded.Search, stringResource(R.string.search),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(32.dp).clip(CircleShape)
+                    .clickable(enabled = query.isNotBlank(), role = Role.Button, onClick = submit)
+                    .padding(6.dp))
+        } else IconButton(onClick = submit, enabled = query.isNotBlank(), modifier = Modifier.size(48.dp)) {
             Icon(
                 Icons.Rounded.Search,
                 contentDescription = stringResource(R.string.search),
@@ -93,7 +107,7 @@ fun SearchField(
                 onValueChange = onQueryChange,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (onSurface) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface,
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -104,20 +118,30 @@ fun SearchField(
             )
         }
         if (query.isNotEmpty()) {
-            IconButton(
-                modifier = Modifier.size(48.dp),
-                onClick = {
-                    onQueryChange("")
-                    focusRequester.requestFocus()
-                    keyboardController?.show()
-                },
-            ) {
-                Icon(
-                    Icons.Rounded.Close,
-                    contentDescription = stringResource(R.string.clear_search),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
+            val clear = {
+                onQueryChange("")
+                focusRequester.requestFocus()
+                keyboardController?.show()
+                Unit
+            }
+            if (onSurface) {
+                Box(Modifier.size(28.dp).clip(CircleShape).clickable(role = Role.Button, onClick = clear),
+                    contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Close, stringResource(R.string.clear_search),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                }
+            } else {
+                IconButton(
+                    modifier = Modifier.size(48.dp),
+                    onClick = clear,
+                ) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.clear_search),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }

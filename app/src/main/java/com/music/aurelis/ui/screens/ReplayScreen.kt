@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.ProfileRepository
 import com.music.aurelis.ui.components.FrostedTopBar
+import com.music.aurelis.ui.components.LocalProfileButton
 import com.music.aurelis.ui.components.topBarContentPadding
 import com.music.aurelis.ui.replay.*
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,7 +34,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ReplayScreen(onBack: () -> Unit = {}, store: LocalUserLibrary, songs: List<LocalSong>, onPlay: (LocalSong) -> Unit,
-    contentBackdropModifier: Modifier = Modifier, bottomPadding: PaddingValues = PaddingValues(bottom = 160.dp)) {
+    contentBackdropModifier: Modifier = Modifier, bottomPadding: PaddingValues = PaddingValues(bottom = 160.dp),
+    onProfile: (() -> Unit)? = null) {
     val user by store.state.collectAsState()
     var confirm by remember { mutableStateOf(false) }
     val profile by ProfileRepository.state.collectAsState()
@@ -85,7 +87,9 @@ fun ReplayScreen(onBack: () -> Unit = {}, store: LocalUserLibrary, songs: List<L
                 item { TextButton(onClick = { confirm = true }, enabled = !user.readOnly, modifier = Modifier.padding(20.dp)) { Text(stringResource(R.string.replay_clear)) } }
             }
         }
-        FrostedTopBar(stringResource(R.string.replay), { false }, onBack = onBack, transparentBackdrop = true)
+        FrostedTopBar(stringResource(R.string.replay), { false }, onBack = onBack,
+            transparentBackdrop = true, artworkPageChrome = true,
+            actions = { onProfile?.let { LocalProfileButton(it) } })
     }
     if (confirm) AlertDialog(modifier = Modifier.width(320.dp), properties = DialogProperties(usePlatformDefaultWidth = false),
         onDismissRequest = { confirm = false }, title = { Text(stringResource(R.string.replay_clear_confirm)) },

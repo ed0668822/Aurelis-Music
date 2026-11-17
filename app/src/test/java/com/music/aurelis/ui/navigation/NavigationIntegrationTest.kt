@@ -92,6 +92,21 @@ class NavigationIntegrationTest {
         compose.runOnIdle { assertFalse(navigator.canGoBack) }
     }
 
+    @Test fun replayProfileReturnsThroughSettingsToTheSameLibraryTab() {
+        startApp()
+        tab("Biblioteca").performClick()
+        compose.runOnIdle { navigator.push(AppRoute.Replay) }
+        compose.onNodeWithContentDescription("Perfil").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(AppRoute.Settings, navigator.visibleRoute()) }
+        compose.onNodeWithText("PERFIL DEL DISPOSITIVO").assertIsDisplayed()
+        back()
+        compose.runOnIdle { assertEquals(AppRoute.Replay, navigator.visibleRoute()) }
+        compose.onNodeWithContentDescription("Perfil").assertIsDisplayed()
+        back()
+        tab("Biblioteca").assertIsSelected()
+        compose.runOnIdle { assertFalse(navigator.canGoBack) }
+    }
+
     @Test fun searchTextSurvivesTabChangesPagesAndSavedStateRecreation() {
         val restoration = startApp()
         tab("Buscar").performClick()

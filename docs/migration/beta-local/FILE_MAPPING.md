@@ -171,3 +171,14 @@ U:ui/icons/BitChordIcons.kt → nuevo D:ui/icons/AurelisNavigationIcons.kt, solo
 cuatro glifos y helper. MainActivity conecta el scroll/íconos y el máximo ancho.
 GlassSelectionPill y MiniPlayer existentes se conservan. Fuentes, SHA256,
 adaptaciones, seis regresiones y límites en F002_NAVIGATION_BAR.md.
+
+## F003 del inventario funcional — cabeceras y perfil
+
+B:ui/components/FrostedTopBar.kt → D:ui/components/FrostedTopBar.kt, helpers de
+controles flotantes/material/grupo de acciones. U:ui/components/SquirclePillShape.kt
+→ tipo Shape en el archivo homónimo existente; el composable anterior se conserva.
+U:ui/components/SearchField.kt → solo la presentación alojada en la cabecera de D.
+MainActivity conecta foto de Replay a openSettings; SettingsScreen/ReplayScreen
+usan la variante flotante sin cambiar sus cuerpos grabados. ProfileRepository,
+AppNavigator y la lógica de grabación de páginas permanecen intactos.
+Lista14/40, fuentes, SHA256, pruebas y límites en F003_TOP_BAR.md. F004 no iniciado.
