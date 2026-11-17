@@ -7,6 +7,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.ViewModelStore
 import com.music.aurelis.AurelisApplication
+import com.music.aurelis.AurelisNavigationContent
 import com.music.aurelis.LibraryViewModel
 import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalLibrarySource
