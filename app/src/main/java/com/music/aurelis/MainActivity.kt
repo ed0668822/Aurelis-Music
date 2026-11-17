@@ -433,19 +433,27 @@ internal fun AurelisNavigationContent(
                 var history by remember(searchHistory) { mutableStateOf(searchHistory.entries) }
                 fun saveQuery() { searchHistory.submit(searchQuery); history = searchHistory.entries }
                 val key = LocalSearch.normalize(searchQuery)
+                val searchSongsById = remember(allSongs) { allSongs.associateBy { it.id } }
+                val unknownGenreLabel = searchContext.getString(R.string.explore_unknown_genre)
                 val destinations = if (key.isBlank()) emptyList() else buildList {
                     val allTypes = searchCategory == LocalSearchCategory.ALL
                     if (allTypes || searchCategory == LocalSearchCategory.ALBUMS) librarySuccess?.albums?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
-                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_album)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) })
+                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_album),
+                            LocalSearchCategory.ALBUMS, it.key, it.artworkUri) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) })
                     }
                     if (allTypes || searchCategory == LocalSearchCategory.ARTISTS) librarySuccess?.artists?.filter { LocalSearch.normalize(it.name).contains(key) }?.forEach {
-                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_artist)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) })
+                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_artist),
+                            LocalSearchCategory.ARTISTS, it.key, it.artworkUri) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) })
                     }
                     if (allTypes || searchCategory == LocalSearchCategory.PLAYLISTS) userState.playlists.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
-                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_playlist)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it.id)) })
+                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_playlist),
+                            LocalSearchCategory.PLAYLISTS, it.id,
+                            it.songIds.firstNotNullOfOrNull { id -> searchSongsById[id]?.artworkUri }) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it.id)) })
                     }
-                    if (allTypes || searchCategory == LocalSearchCategory.GENRES) genreGroups.filter { LocalSearch.normalize(it.name).contains(key) }.forEach {
-                        add(LocalSearchDestination(it.name, searchContext.getString(R.string.local_search_genre)) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key)) })
+                    if (allTypes || searchCategory == LocalSearchCategory.GENRES) genreGroups.filter { LocalSearch.normalize(if (it.key == "unknown") unknownGenreLabel else it.name).contains(key) }.forEach {
+                        add(LocalSearchDestination(if (it.key == "unknown") unknownGenreLabel else it.name,
+                            searchContext.getString(R.string.local_search_genre), LocalSearchCategory.GENRES, it.key,
+                            it.songs.firstNotNullOfOrNull { song -> song.artworkUri }) { saveQuery(); navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key)) })
                     }
                 }
                 val results = remember(searchQuery, allSongs, libraryUiState.sortOption) {

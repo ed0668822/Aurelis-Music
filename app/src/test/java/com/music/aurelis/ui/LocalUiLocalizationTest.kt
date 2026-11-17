@@ -77,7 +77,7 @@ class LocalUiLocalizationTest {
         compose.onNodeWithText(term).performClick()
         compose.onNode(hasSetTextAction()).assertTextEquals(term)
         compose.onNodeWithText(compose.activity.getString(R.string.search_library_no_results, term)).assertIsDisplayed()
-        compose.onNodeWithTag("local-search-categories").performScrollToNode(hasText("Genres"))
+        compose.onNodeWithText("Genres").performScrollTo()
         compose.onNodeWithText("Genres").performClick()
         compose.runOnIdle { assertEquals(LocalSearchCategory.GENRES, category) }
         compose.onNode(hasSetTextAction()).performTextClearance()

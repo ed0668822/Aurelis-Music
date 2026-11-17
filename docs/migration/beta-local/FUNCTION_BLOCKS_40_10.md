@@ -48,10 +48,13 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 - F004 y F005–F006 entregados. CI197, run44034859111, SHA44d2fb5d,
   SUCCESS en las seis fases B01–B06. Corrige los timeouts de195 y el cierre de
   artefactos al reintentar196. La igualdad visual completa y el físico siguen pendientes.
-- Entrega autorizada ahora: F007 y F008, base44d2fb5d. Recomendaciones locales
+- Entrega anterior: F007 y F008, base44d2fb5d. Recomendaciones locales
   con presentación Top Picks y Explorar con carátulas duotono de géneros reales.
   F00714/40, F00811/40,19 rutas acumuladas conjuntas contando avisos, pruebas y
-  recursos compartidos. Nuevo CI PENDIENTE. No se inicia F009 ni B09.
+  recursos compartidos. Su reparación de CI queda a cargo de otro agente, por
+  instrucción posterior del usuario. Ese encargo permite avanzar ahora con F009.
+- Entrega activa: F009, búsqueda y filtros. F010 queda para la siguiente entrega;
+  no se cambia infraestructura ni se certifica el resultado del CI anterior.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
   se limita a las aprobadas. Esta organización no aprueba el inventario completo.
@@ -69,7 +72,7 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
 | F005–F006 | Cabecera, destacados, carruseles y estanterías de Inicio | Media | 40 | Entregado; CI197 SUCCESS |
 | F007 | Presentación de recomendaciones locales existentes | Media | 40 | Implementado; CI nuevo pendiente |
 | F008 | Explorar por géneros locales | Media | 40 | Implementado; CI nuevo pendiente |
-| F009 | Búsqueda y filtros locales | Media | 40 | Pendiente |
+| F009 | Búsqueda y filtros locales | Media | 40 | Implementado; Actions pendiente |
 | F010 | Conservar historial de búsqueda y sus acciones | Fácil | 40 | Pendiente |
 | F011 | Resultado destacado y sugerencias locales | Media | 40 | Pendiente |
 | F012 | Actualización, carga y recuperación del escaneo | Difícil | 10 | Pendiente |
@@ -723,3 +726,69 @@ F00714/40 y F00811/40 siguen con19 rutas conjuntas; con esta reparación20.
 31 fixtures Python PASS (9+7+15), actionlint y diff --check PASS. Dos revisiones
 del mismo agente, sin Android local. Nuevo pipeline/caché pendientes de Actions.
 No se inicia F009/F010 ni otro bloque; avisar y esperar al usuario.
+
+### F009 — búsqueda local y filtros (2026-11-17)
+
+Autorización: «continúa con el siguiente bloque; el error lo va a solucionar otro
+agente». Se ejecuta únicamente F009 sobre a3a2b88b. Los registros anteriores de
+esperar a reparar CI quedan como historia; la reparación actual pertenece al otro
+agente. No se toca ningún workflow, servicio, DSP, repositorio ni F010/F011/F014.
+
+Antes de editar se fijaron11 rutas de dificultad media, máximo40 (incluye todas
+las correcciones posteriores). Alcance y copias previas fuera del checkout en
+`/workspace/aurelis-validation/f009/scope.json`. Rutas entregadas:
+
+- `app/src/main/java/com/music/aurelis/ui/components/PillSegmentedControl.kt`
+- `app/src/main/java/com/music/aurelis/ui/screens/SearchScreen.kt`
+- `app/src/main/java/com/music/aurelis/MainActivity.kt`
+- `app/src/test/java/com/music/aurelis/ui/SearchPresentationTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/SearchIntegrationTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/PillSegmentedControlTest.kt`
+- `app/src/test/java/com/music/aurelis/ui/LocalUiLocalizationTest.kt`
+- `NOTICE`
+- `docs/migration/beta-local/LICENSE_AUDIT.md`
+- `docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md`
+- `docs/migration/beta-local/PROGRESS_TRACKER.md`
+
+Cambios y conservación:
+
+- Selector BitChord real: rellenos claro/oscuro, squircle, spring0,8, inset4dp,
+  padding horizontal18/vertical9dp y fade28dp; distribución equitativa cuando
+  cabe, anchos naturales con scroll cuando no. Se respetan hápticos y movimiento
+  reducido de Aurelis, selección accesible, deshabilitado y RTL.
+- Categorías visibles incluso en cero resultados. Cambiar categoría u orden
+  devuelve la lista al inicio; la composición/restauración inicial no la reinicia.
+  La ordenación existente por título/artista/álbum queda conectada al ViewModel.
+- «Todo» agrupa canciones, artistas, álbumes, playlists y géneros; una categoría
+  individual no repite el encabezado. Filas de colecciones con portada52dp,
+  separación14dp, padding vertical8dp y artistas circulares. Claves por tipo/ID
+  impiden colisiones entre colecciones diferentes. Peticiones de imagen104px.
+- Las carátulas proceden del catálogo y las playlists locales, con índice por ID
+  recordado para evitar buscar el catálogo completo por cada canción de playlist.
+  «Sin clasificar» se busca por su traducción visible. Se conservan la normalización
+  de acentos, coincidencias y ordenación de LocalSearch sin modificar ese archivo.
+- Se conservan MediaStore, historial, SongRow, callbacks de acciones/reproducción,
+  cola de resultados y rutas de colecciones. No hay resultados remotos inventados.
+
+Fuentes exactas: BitChord b690dc146009d4815825fa4a20815ef2e4ee8898, GPLv3:
+
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt` — SHA256 `175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842`.
+- `sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/PillSegmentedControl.kt` — SHA256 `3edcc3a0bb45ffe86d5d425415b72ccdc5568130d2f878925da7864532a52ad7`.
+
+Diferencias conscientes: géneros y ordenación son adaptaciones al catálogo local;
+se conserva SongRow y la tipografía disponible en Aurelis. No se añade TopResult,
+sugerencias, fuentes SF, búsquedas remotas ni otro backend. No se declara igualdad
+visual completa ni comprobación física.
+
+Verificación: nueve métodos nuevos para SDK33/35 (18 casos previstos), más la
+prueba de localización existente ajustada para el nuevo scroll. Comprueban vacío
+y recuperación, selección, deshabilitado, anchos, RTL/texto grande, callbacks de
+canciones y colecciones, búsqueda por acentos y retorno con la misma consulta.
+No se han ejecutado localmente: compilación/Lint/Android exclusivamente en Actions.
+Sintaxis Kotlin, referencias de recursos, procedencia, presupuesto y diff --check
+comprobados localmente. Dos revisiones estáticas del mismo agente: integración/
+estado/contratos; después UI accesible, RTL, pruebas y alcance. Actions nuevo y
+prueba física RedmiNote14Pro5G/Android16/HyperOS3 pendientes.
+
+Tras commit/push, avisar al usuario y esperar su resultado antes de F010. El
+fallo de CI asignado al otro agente no se modifica ni se da por corregido aquí.

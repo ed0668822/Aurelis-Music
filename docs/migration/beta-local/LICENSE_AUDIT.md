@@ -714,3 +714,26 @@ esta adaptación. La compilación y el resultado Android quedan pendientes de CI
 | sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/ExploreScreen.kt | 75593b43d96c479bac6b5831eab3e36071c15d4b40df5e91b44160040b806ed8 |
 | sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt | d6f6a11a322eb968823fd6abd861f3e8ebff381e71e629a2a77a55d38d66e017 |
 | shared/src/commonMain/kotlin/com/music/bitchord/data/model/TopPicks.kt | 893efc8aaee9a53f60d112157136f04e11525bffc8cf9b24736c0cbe1dfcb745 |
+
+## F009 — filtros y resultados de búsqueda local
+
+BitChord fijado `b690dc146009d4815825fa4a20815ef2e4ee8898`, GPLv3,
+con sus contribuyentes originales. La cabecera Aurelis corresponde a las
+aportaciones locales; no reemplaza GPLv3 ni convierte los archivos de origen
+a «or later». NOTICE registra la adaptación.
+
+Se adapta el selector original: squircle, rellenos, medidas, distribución por
+anchos naturales, selección animada, scroll automático y fading. Se conserva
+la API Aurelis y se conectan su política háptica y movimiento reducido. Se añade
+semántica de selección/deshabilitado y colocación relativa para RTL. SearchScreen
+aporta el orden de secciones, encabezados y geometría BrowseRow52/14/8dp.
+Los destinos usan claves y carátulas locales; no se importan fuentes ni servicios
+remotos. LocalSearch, SongRow, historial y arquitectura de reproducción se conservan.
+
+| Fuente BitChord | SHA256 |
+|---|---|
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt | 175156f3016efdf35804cafbf2e104d52130b2b74ca8297006d7c81b65f97842 |
+| sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/components/PillSegmentedControl.kt | 3edcc3a0bb45ffe86d5d425415b72ccdc5568130d2f878925da7864532a52ad7 |
+
+LICENSE y los avisos anteriores permanecen intactos. Validación Android y
+fidelidad visual pendientes; dos revisiones estáticas del mismo agente.

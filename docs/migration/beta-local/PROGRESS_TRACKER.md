@@ -1,6 +1,27 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### F009 — búsqueda y filtros locales (2026-11-17)
+
+El usuario permite avanzar con el siguiente bloque y asigna el fallo de CI a otro
+agente. Entrega F009 únicamente,11/40 rutas fijadas antes de editar. No se toca
+infraestructura ni se inicia F010/F011/F014 o B09.
+
+Se adapta PillSegmentedControl real de BitChord fijo b690dc14: medidas, formas,
+colores, movimiento y desbordamiento; conectado a categorías/orden local con
+selección accesible, RTL y preferencias Aurelis. Resultados agrupados y destinos
+con portadas locales52dp y claves por tipo/ID. «Sin clasificar» usa su traducción
+visible al buscar. LocalSearch, MediaStore, SongRow, historial y reproducción
+existentes se conservan; los cambios son de presentación/integración.
+
+Nueve métodos nuevos SDK33/35 (18 casos previstos) y ajuste de un test de
+localización; ejecución Android pendiente exclusivamente de Actions. Sintaxis,
+recursos, presupuesto y diff --check locales sin errores. Dos revisiones del mismo
+agente; la igualdad visual y el dispositivo real siguen pendientes. Fuentes,
+hashes,11 rutas y aceptación en FUNCTION_BLOCKS_40_10, sección F009; avisos en
+NOTICE y LICENSE_AUDIT. Avisar al subir y esperar resultado antes de F010.
+
+
 ### CI201 — reintento completo y caché Gradle (2026-11-17)
 
 SHA701c5c1c, run44100816340. Intento1: B01/B02/B05 SUCCESS,534/534 casos

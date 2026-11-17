@@ -672,3 +672,14 @@ contributors and terms remain applicable. Aurelis keeps LocalSong/MediaStore,
 existing queues, local favorites/playlists/AutoMix callbacks and legacy component
 overloads. Scope, source hashes, differences and verification are recorded in
 docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md (F004 and F005–F006 sections).
+
+F009 — local search filters and grouped collection rows
+Adapts PillSegmentedControl.kt and SearchScreen.kt result sections/BrowseRow
+from BitChord sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/,
+commit b690dc146009d4815825fa4a20815ef2e4ee8898 (GPLv3), original contributors.
+Aurelis preserves LocalSearch normalization/sorting, local collection identities,
+MediaStore, the current SongRow, history and playback callbacks. Category labels,
+artwork requests, accessibility, RTL placement, haptic policy and reduced motion
+are adapted to Android/Aurelis. No remote results, suggestions, SF fonts or
+streaming sources are imported. Exact paths/hashes and pending verification:
+docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md (F009 section).
