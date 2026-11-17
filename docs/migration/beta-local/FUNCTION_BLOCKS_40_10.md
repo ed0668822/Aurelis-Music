@@ -691,3 +691,35 @@ de cierre/reapertura, las recreaciones y las aserciones finales de reproducción
 Prueba nativa y estos dos registros:3 rutas. Acumulados F00714/40, F00811/40,
 19 conjuntas. Dos revisiones del mismo agente; sintaxis/diff locales. Nuevo CI
 Android pendiente. No se inicia F009/F010 ni otro bloque antes de su resultado.
+
+### CI201 — validación Android y reparación de caché
+
+Sobre701c5c1c, el primer intento pierde ADB durante el caso API36 con audio
+(exit255, sin JUnit final, device offline y puerto5554 connection refused).
+No registra la ComparisonFailure de200. El intento2 parcial propio se cancela
+al verificar que el contrato APK requiere el mismo run_attempt. Se ejecuta el
+intento3 completo con debug y mismo SHA, manteniendo dicho contrato.
+
+La puerta B03 del intento3 aprueba ambas suites y los dos recorridos API36.
+Anterior queda validado allí; la desconexión no se reproduce y no se atribuye
+una causa nativa/OOM sin datos. El nuevo bloqueo del intento3 es B02: tres429
+de Maven Central resolviendo Kover0.9.11, sin llegar a ejecutar Lint. B01 y los
+lectores usaban caché de solo lectura y B02 restauró un estado antiguo1d0d26a8.
+
+Se permite a B01 guardar las dependencias para que las fases dependientes
+puedan restaurarlas, según el comportamiento documentado de la acción Gradle
+fijada07231958. Solo rama autorizada y eventos push/workflow_dispatch; todos
+los otros contextos y los lectores posteriores conservan solo lectura. No
+cambia ninguna versión, mirror, orden, tarea, firma, ABI o puerta de validación.
+Se conservan las esperas/rechazos reales de B02 y la procedencia por intento.
+
+Ámbito de infraestructura separado y fijado previamente:3 rutas de10:
+
+- .github/workflows/b01-compile-debug.yml
+- docs/migration/beta-local/FUNCTION_BLOCKS_40_10.md
+- docs/migration/beta-local/PROGRESS_TRACKER.md
+
+F00714/40 y F00811/40 siguen con19 rutas conjuntas; con esta reparación20.
+31 fixtures Python PASS (9+7+15), actionlint y diff --check PASS. Dos revisiones
+del mismo agente, sin Android local. Nuevo pipeline/caché pendientes de Actions.
+No se inicia F009/F010 ni otro bloque; avisar y esperar al usuario.

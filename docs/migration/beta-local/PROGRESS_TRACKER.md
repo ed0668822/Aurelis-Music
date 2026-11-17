@@ -1,6 +1,43 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### CI201 — reintento completo y caché Gradle (2026-11-17)
+
+SHA701c5c1c, run44100816340. Intento1: B01/B02/B05 SUCCESS,534/534 casos
+por variante y F5 PASS90,96%. API36 sin audio PASS; con audio termina255 sin
+JUnit final, adb device offline y puerto5554 connection refused. No repite la
+ComparisonFailure de200 y no demuestra un crash de la app ni OOM del anfitrión.
+
+Se inició un reintento parcial con debug; al comprobar que ci14_handoff exige
+mismo run_attempt se canceló ese intento2 propio y se lanzó el intento3 completo
+sobre el mismo SHA. No se relajó la procedencia de los APK ni se reutilizaron
+intentos distintos. La puerta B03 del intento3 aprobó ambas suites y navegación
+API36 con/sin audio; la corrección de Anterior queda validada en esa ejecución.
+La desconexión anterior no se reprodujo; su causa de bajo nivel sigue sin probar.
+
+El intento3 encontró otro fallo: B02 no pudo resolver Kover0.9.11 tras tres
+respuestas HTTP429 de Maven Central, con las esperas15/30s existentes. Sus logs
+restauran caché antigua de1d0d26a8; todos los trabajos tenían cache-read-only:true,
+por lo que B01 no guardaba las dependencias que acababa de descargar.
+
+Corrección de infraestructura fijada antes de editar:3/10 rutas. B01 permite
+escribir su caché únicamente en feature/bitchord-local-migration y para push o
+workflow_dispatch. Los lectores posteriores y otros eventos/ramas siguen en
+solo lectura. La acción Gradle fijada documenta restauración por job/workflow y
+fallback al estado más reciente del mismo SO, primero en la misma rama. Se
+preservan grafo, orden, versiones, ABI, firmas, permisos, tareas y verificación
+estricta por SHA/run/intento. No se añade mirror ni se amplían timeouts/reintentos.
+
+31 pruebas Python PASS (grafo9, APK handoff7, runner Lint15), actionlint y diff
+--check PASS. Dos revisiones del mismo agente: política de caché y evidencia de
+429; después procedencia por intento, condiciones de rama/evento y diff. Sin
+compilación Android local. La caché corregida y el pipeline nuevo quedan
+pendientes de Actions. Tres rutas: b01-compile-debug.yml y estos dos registros.
+Alcances funcionales F00714/40, F00811/40,19 conjuntas sin reiniciar;20 rutas
+con la reparación de caché. Avisar del envío y esperar resultado; F009/F010
+siguen autorizados sin implementar.
+
+
 ### CI200 — precondición temporal de Anterior en Android16 (2026-11-17)
 
 Run44096639847, SHA5d8a096e: B01/B02/B05 SUCCESS.534/534 Debug y534/534
