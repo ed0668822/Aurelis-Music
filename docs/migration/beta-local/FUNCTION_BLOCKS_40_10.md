@@ -50,7 +50,7 @@ incompleta ni se declara terminada la función padre hasta verificarla completa.
   artefactos al reintentar196. La igualdad visual completa y el físico siguen pendientes.
 - Entrega autorizada ahora: F007 y F008, base44d2fb5d. Recomendaciones locales
   con presentación Top Picks y Explorar con carátulas duotono de géneros reales.
-  F00712/40, F00811/40,17 rutas distintas conjuntas contando avisos, pruebas y
+  F00713/40, F00811/40,18 rutas acumuladas conjuntas contando avisos, pruebas y
   recursos compartidos. Nuevo CI PENDIENTE. No se inicia F009 ni B09.
 - Las demás filas quedan pendientes de decisión individual. Una fila que reúne
   varias funciones solo se ejecuta cuando todas ellas estén autorizadas; si no,
@@ -608,7 +608,7 @@ esperar al usuario; el siguiente bloque F009 no está autorizado en esta entrega
 
 Listas fijadas antes de editar; cada corrección futura cuenta en estos acumulados:
 
-F007: 12 rutas de40:
+F007: 13 rutas acumuladas de40, incluida la reparación CI199:
 
 - NOTICE
 - docs/migration/beta-local/LICENSE_AUDIT.md
@@ -622,6 +622,7 @@ F007: 12 rutas de40:
 - app/src/test/java/com/music/aurelis/ui/RecommendationsPresentationTest.kt
 - app/src/test/java/com/music/aurelis/ui/RecommendationBackdropTest.kt
 - app/src/test/java/com/music/aurelis/ui/HomeShelvesIntegrationTest.kt
+- app/src/test/java/com/music/aurelis/ui/PlayerIntegrationTest.kt
 
 F008: 11 rutas de40:
 
@@ -647,3 +648,24 @@ una aserción. Tres rutas de corrección ya contabilizadas en F008: la prueba y
 FUNCTION_BLOCKS_40_10/PROGRESS_TRACKER. Acumulados12/40 y11/40,17 conjuntas.
 Dos revisiones del mismo agente, sintaxis/diff locales; Actions pendiente.
 No se aplica la entrega nueva hasta validar la reparación.
+
+### Reparación CI199 — pruebas AutoMix después del carrusel
+
+B01/B02/B05 SUCCESS; B03 compila ambas variantes y ejecuta534 casos por cada
+una:532 PASS,2 FAILURE. Ambos recorridos API36 PASS. Fallan dos pruebas antiguas
+de PlayerIntegrationTest; no se inicia F009/F010 sobre esta base fallida.
+
+La tarjeta AutoMix se alcanza con scroll a hero y scroll horizontal de su
+LazyRow, se exige visible/habilitada y solo después se pulsa. La espera exige
+el fin de la mezcla y shuffle desactivado, sin pasar por un false inicial de
+isCreatingMix. Se conservan todas las verificaciones de identidad, posición,
+cola y reproducción. La prueba de error vacío desplaza a la clave mix-error
+antes de buscar texto: un nodo lazy fuera de pantalla puede no estar compuesto.
+La puerta F5 no recibió XML por el fallo previo; no se rebaja ni modifica.
+
+Tres rutas de reparación: la prueba y los dos registros de plan/progreso.
+Solo PlayerIntegrationTest es nueva en F007:13/40, F00811/40,18 conjuntas.
+Dos revisiones estáticas del mismo agente; sintaxis/diff locales. Sin cambios
+Android de producción, compilación local, nuevas funciones o workflows.
+El resultado de las pruebas de esta corrección queda pendiente de Actions;
+avisar del push y esperar al usuario antes de avanzar.

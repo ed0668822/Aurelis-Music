@@ -1,6 +1,36 @@
 <!-- Aurelis © 2026. GPL-3.0-or-later -->
 # PROGRESS_TRACKER — beta local
 
+### CI199 — alcance y sincronización de las pruebas AutoMix (2026-11-17)
+
+Run44091908811, SHA03c473f9: B01/B02/B05 SUCCESS, B03/B06 FAILURE,
+B04 SKIPPED. La importación R ya compila en ambas variantes.534 casos por
+variante:532 PASS y2 FAILURE. Ambos recorridos reales de navegación API36 PASS.
+Fallan homeAutoMixKeepsCurrentItemAndPositionWhileReplacingUpcomingSongs y
+emptyAutoMixShowsAnErrorAndDoesNotClearTheCurrentQueue de PlayerIntegrationTest.
+
+El nuevo carrusel coloca la tarjeta AutoMix y el error debajo del viewport.
+La primera prueba hacía click sin desplazar los dos ejes y podía seguir porque
+isCreatingMix era false antes de arrancar una mezcla. La segunda buscaba mediante
+performScrollTo un mensaje aún no compuesto en LazyColumn.
+
+Se alcanza hero por clave y la tarjeta AutoMix mediante su LazyRow; se exige
+que el control esté visible/habilitado antes del click. La espera exige tanto
+fin del trabajo como el efecto observable de salir de shuffle; se conservan las
+aserciones de canción, identidad, cola, posición y reproducción. El mensaje de
+error se compone desplazando primero a mix-error. No se modifican AutoMix,
+reproducción, presentación, timeouts, asserts de cobertura o workflows.
+
+Corrección de3 rutas: PlayerIntegrationTest y los dos registros. Una nueva en
+el acumulado: F00713/40, F00811/40,18 conjuntas; los contadores no se reinician.
+Dos revisiones del mismo agente: selectores/recorridos y estado VM; después
+sincronización, aserciones conservadas, ámbito y diff. Sintaxis Kotlin/diff
+locales; las suites Android nuevas se ejecutarán exclusivamente en Actions.
+F5 quedó sin XML tras el fallo de pruebas: consecuencia, no causa raíz atribuida.
+Avisar del push y esperar al usuario. F009/F010 autorizados pero sin implementar;
+no se inicia F011 ni B09.
+
+
 ### CI198 — importación R de la prueba Explore (2026-11-17)
 
 Run44041268015, SHA0708648a: B01/B02/B05 SUCCESS, B03/B06 FAILURE,

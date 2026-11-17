@@ -631,8 +631,17 @@ class PlayerIntegrationTest {
     @Test fun homeAutoMixKeepsCurrentItemAndPositionWhileReplacingUpcomingSongs() {
         start()
         val original = compose.runOnIdle { player.seekTo(12_345); player.shuffleModeEnabled = true; player.currentMediaItem }
-        compose.onNodeWithText("AutoMix · Selección local").performClick()
-        compose.waitUntil(5000) { compose.runOnIdle { !vm.state.value.isCreatingMix } }
+        // Top Picks precedes the hero shelf. Reach the actual AutoMix card in
+        // both scroll axes before injecting a click; its old coordinates may
+        // now belong to a recommendation or the floating MiniPlayer.
+        compose.onNodeWithTag("local-home").performScrollToKey("hero")
+        val autoMix = hasText(compose.activity.getString(R.string.home_automix))
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("local-home")) and
+            hasAnyDescendant(hasTestTag("home-leading-hero"))).performScrollToNode(autoMix)
+        compose.onNode(autoMix).assertIsDisplayed().assertIsEnabled().performClick()
+        compose.waitUntil(5000) { compose.runOnIdle {
+            !vm.state.value.isCreatingMix && !player.shuffleModeEnabled
+        } }
         compose.runOnIdle {
             assertNull(vm.state.value.mixError)
             assertSame(original, player.currentMediaItem)
@@ -650,6 +659,9 @@ class PlayerIntegrationTest {
         start()
         compose.runOnIdle { vm.startAutoMix(emptyList(), app.userLibrary.state.value) }
         compose.waitUntil(5000) { compose.runOnIdle { !vm.state.value.isCreatingMix } }
+        // The error is a lazy item below the hero, so it need not be composed
+        // until the list is explicitly scrolled to its stable key.
+        compose.onNodeWithTag("local-home").performScrollToKey("mix-error")
         compose.onNodeWithText("No hay canciones locales disponibles para crear una mezcla.").performScrollTo().assertIsDisplayed()
         compose.runOnIdle { assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id }) }
     }
