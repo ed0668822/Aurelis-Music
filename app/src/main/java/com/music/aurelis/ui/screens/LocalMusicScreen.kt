@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,5 +43,6 @@ fun LocalMusicScreen(
                     (uiState.libraryState as? LibraryState.Success)?.artists?.firstOrNull { it.key == page.key }?.let { onArtistOpen?.invoke(it) }
                 else -> Unit
             }
-        }, onSongActions, onProfile, contentPadding, contentBackdropModifier)
+        }, onSongActions, onProfile, contentPadding, contentBackdropModifier,
+        isRefreshing = uiState.isRefreshing)
 }
