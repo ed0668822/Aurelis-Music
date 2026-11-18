@@ -160,7 +160,11 @@ jobs:
           ./gradlew --stop 2>&1 | tee ci-b03/android16/gradle-daemon-stop.log
           free -m | tee ci-b03/android16/host-memory-before-emulator.txt
 
-      # Both Android16 cases are mandatory but run in fresh emulator instances.
+      # Both Android16 cases are mandatory and run on fresh emulator instances.
+      # Android Emulator 37.x deprecates swiftshader_indirect; use supported SwiftShader
+      # GLES rendering and turn off Vulkan to avoid post-boot QEMU graphics crashes
+      # observed in B03 #235/#238/#240. Keep the real Activity, effects and playback
+      # assertions enabled; this only changes the emulator's host graphics backend.
       - name: Android16 Activity and Settings recreation
         id: android16_recreation
         if: ${{ !cancelled() && steps.android16_handoff.outcome == 'success' }}
@@ -179,7 +183,7 @@ jobs:
           cores: 2
           emulator-boot-timeout: 900
           disable-animations: false
-          emulator-options: '-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none'
+          emulator-options: '-no-snapshot -no-window -gpu swiftshader -feature -Vulkan -no-boot-anim -camera-back none -camera-front none'
           script: python3 .github/scripts/ui_parity.py settings-navigation
 
       - name: Reset ADB and capture host resources between Android16 cases
@@ -213,7 +217,7 @@ jobs:
           cores: 2
           emulator-boot-timeout: 900
           disable-animations: false
-          emulator-options: '-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none'
+          emulator-options: '-no-snapshot -no-window -gpu swiftshader -feature -Vulkan -no-boot-anim -camera-back none -camera-front none'
           script: python3 .github/scripts/ui_parity.py settings-navigation
 
       - name: Verify B03 report classification and failure gates
