@@ -399,7 +399,8 @@ internal fun AurelisNavigationContent(
                             navigator.push(AppRoute.Collection(LocalCollectionKind.GENRE, it.key))
                         }
                     }, listPadding, libraryState = libraryUiState.libraryState,
-                    onRetry = { libraryViewModel.refresh() }, onRequestPermission = onRequestAudioPermission)
+                    onRetry = { libraryViewModel.refresh() }, onRequestPermission = onRequestAudioPermission,
+                    isRefreshing = libraryUiState.isRefreshing)
             }
             AppTab.LIBRARY -> {
                 val listState = rememberLazyListState()
@@ -503,6 +504,9 @@ internal fun AurelisNavigationContent(
                     listState = searchListState,
                     focusRequested = searchFocusRequested,
                     onFocusHandled = { searchFocusRequested = false },
+                    libraryState = libraryUiState.libraryState,
+                    onRetry = libraryViewModel::refresh,
+                    onRequestPermission = onRequestAudioPermission,
                     onOpenProfile = openSettings,
                     contentBackdropModifier = pageBackdropModifier,
                     onSongClick = { songs, index -> saveQuery(); playbackViewModel.playSongs(songs, index) },
