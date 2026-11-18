@@ -22,7 +22,8 @@ class LocalCreditRoutesTest {
     }
 
     @Test fun artistNavigationUsesExactCreditAndMembershipNotFuzzyNameMatches() {
-        val another = artist.copy(name = "Alpha", mediaId = "36")
+        val another = artist.copy(name = "Alpha", mediaId = "36",
+            songs = listOf(track.copy(id = "another-track")))
         assertEquals(artist.key, matchedLocalArtist(track, artist.name, listOf(artist, another))?.key)
         assertNull(matchedLocalArtist(track, "Alpha", listOf(artist, another)))
         assertNull(matchedLocalArtist(track.copy(id = "other"), artist.name, listOf(artist)))
