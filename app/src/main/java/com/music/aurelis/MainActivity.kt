@@ -511,6 +511,7 @@ internal fun AurelisNavigationContent(
                     libraryState = libraryUiState.libraryState,
                     onRetry = libraryViewModel::refresh,
                     onRequestPermission = onRequestAudioPermission,
+                    keyboardBackEnabled = route == null,
                     onOpenProfile = openSettings,
                     contentBackdropModifier = pageBackdropModifier,
                     onSongClick = { songs, index -> saveQuery(); playbackViewModel.playSongs(songs, index) },
