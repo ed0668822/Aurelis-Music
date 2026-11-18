@@ -102,7 +102,7 @@ fun List<LocalSong>.sortedForLibrary(order: LocalMusicSort): List<LocalSong> = w
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title },
     )
     LocalMusicSort.DATE_MODIFIED -> sortedWith(
-        compareByDescending<LocalSong> { it.dateAddedMs }
+        compareByDescending<LocalSong> { it.dateModifiedMs }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title },
     )
 }
@@ -113,7 +113,8 @@ private fun List<LocalSong>.sortedByTitle(): List<LocalSong> =
 fun List<LocalSong>.sortedForAlbum(): List<LocalSong> {
     if (none { it.trackNumber != null }) return this
     return sortedWith(
-        compareBy<LocalSong> { it.trackNumber ?: Int.MAX_VALUE }
+        compareBy<LocalSong> { it.discNumber ?: 1 }
+            .thenBy { it.trackNumber ?: Int.MAX_VALUE }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title },
     )
 }

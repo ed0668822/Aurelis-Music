@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.music.aurelis.R
@@ -35,6 +36,9 @@ import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.components.SongListItem
+import com.music.aurelis.ui.components.LocalDetailHeader
+import com.music.aurelis.ui.components.BrowseActionsMenu
+import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.components.MessageState
 import com.music.aurelis.ui.navigation.AppRoute
 import com.music.aurelis.ui.navigation.LocalCollectionKind
@@ -101,18 +105,28 @@ fun LocalCollectionScreen(
     )) { mutableStateOf(emptySet<String>()) }
     var bulkPlaylist by remember { mutableStateOf(false) }
     var descending by rememberSaveable(route) { mutableStateOf(false) }
-    val displaySongs = if (descending) songs.sortedByDescending { LocalSearch.normalize(it.title) } else songs
-    // Resolve saved IDs against the current visible ordering, never stale media.
+    // Keep source indices for playlist moves/removal, including inaccessible media entries.
+    // Playlists retain their saved manual order even when other collections are sorted.
+    val sourceEntries = if (playlist != null)
+        playlist.songIds.mapIndexedNotNull { position, id -> byId[id]?.let { IndexedValue(position, it) } }
+    else songs.mapIndexed { position, song -> IndexedValue(position, song) }
+    val displayEntries = if (descending && playlist == null)
+        sourceEntries.sortedByDescending { LocalSearch.normalize(it.value.title) } else sourceEntries
+    val displaySongs = displayEntries.map { it.value }
+    // Resolve saved IDs against visible media, never against stale playlist snapshots.
     val selectedSongs = displaySongs.filter { it.id in selected }
     var orderSong by remember { mutableStateOf<String?>(null) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
     var deleting by remember { mutableStateOf(false) }
     var addSongId by rememberSaveable { mutableStateOf<String?>(null) }
+    var collectionActionsExpanded by remember { mutableStateOf(false) }
+    val hasDetailHeader = route.kind in setOf(LocalCollectionKind.ALBUM, LocalCollectionKind.ARTIST,
+        LocalCollectionKind.FOLDER, LocalCollectionKind.GENRE)
 
     Column(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp)) {
         TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
-        Text(title.ifBlank { stringResource(R.string.collection_unavailable) }, style = MaterialTheme.typography.headlineMedium)
+        if (!hasDetailHeader) Text(title.ifBlank { stringResource(R.string.collection_unavailable) }, style = MaterialTheme.typography.headlineMedium)
         if (user.readOnly) Text(stringResource(R.string.collections_unavailable))
         // Private playlist listing does not require a successful media scan.
         if (route.kind != LocalCollectionKind.PLAYLISTS) {
@@ -157,10 +171,30 @@ fun LocalCollectionScreen(
             }
             if (songs.isEmpty() && library is LibraryState.Success) Text(stringResource(R.string.collection_empty))
             if (playlist != null && playlist.songIds.size > songs.size) Text(stringResource(R.string.collection_missing_tracks))
-            Button(onClick = { onPlay(displaySongs, 0) }, enabled = displaySongs.isNotEmpty()) { Text(stringResource(R.string.collection_play)) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!hasDetailHeader) Button(onClick = { onPlay(displaySongs, 0) }, enabled = displaySongs.isNotEmpty()) {
+                    Text(stringResource(R.string.collection_play))
+                }
+                Box {
+                    IconButton(onClick = { collectionActionsExpanded = true }) {
+                        Icon(Icons.Rounded.MoreVert, "Acciones de colección")
+                    }
+                    BrowseActionsMenu(onDismiss = { collectionActionsExpanded = false },
+                        expanded = collectionActionsExpanded,
+                        onPlay = if (displaySongs.isEmpty()) null else {{ onPlay(displaySongs, 0) }},
+                        onShuffle = if (displaySongs.isEmpty()) null else {{ onPlay(displaySongs.shuffled(), 0) }},
+                        onSelect = { selectionMode = true; selected = emptySet() },
+                        onRename = if (playlist != null && !user.readOnly) {{ name = playlist.name; editing = true }} else null,
+                        onDelete = if (playlist != null && !user.readOnly) {{ deleting = true }} else null)
+                }
+            }
             Row {
-                TextButton(onClick = { selectionMode = !selectionMode; selected = emptySet() }) { Text(if (selectionMode) "Cancelar selección" else "Seleccionar") }
-                TextButton(onClick = { descending = !descending }) { Text(if (descending) "Orden original" else "Título Z–A") }
+                TextButton(onClick = { selectionMode = !selectionMode; selected = emptySet() }) {
+                    Text(if (selectionMode) "Cancelar selección" else "Seleccionar")
+                }
+                if (playlist == null) TextButton(onClick = { descending = !descending }) {
+                    Text(if (descending) "Orden original" else "Título Z–A")
+                }
             }
             if (selectionMode) {
                 Row {
@@ -173,7 +207,27 @@ fun LocalCollectionScreen(
                 TextButton(enabled = selectedSongs.isNotEmpty() && !user.readOnly, onClick = { bulkPlaylist = true }) { Text("Añadir selección a playlist") }
             }
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 24.dp)) {
-                itemsIndexed(displaySongs, key = { _, item -> item.id }) { index, song ->
+                if (hasDetailHeader) item(key = "collection-detail-header") {
+                    val artwork = when (route.kind) {
+                        LocalCollectionKind.ALBUM -> album?.artworkUri
+                        LocalCollectionKind.ARTIST -> artist?.artworkUri
+                        else -> songs.firstNotNullOfOrNull { it.artworkUri }
+                    }
+                    val placeholder = when (route.kind) {
+                        LocalCollectionKind.ARTIST -> AurelisIcons.Artist
+                        LocalCollectionKind.FOLDER -> AurelisIcons.Folder
+                        else -> AurelisIcons.Album
+                    }
+                    LocalDetailHeader(title.ifBlank { stringResource(R.string.collection_unavailable) },
+                        if (route.kind == LocalCollectionKind.ALBUM) album?.artist.orEmpty() else "",
+                        pluralStringResource(R.plurals.settings_song_count, songs.size, songs.size),
+                        156.dp, artwork, placeholder,
+                        onPlay = { onPlay(displaySongs, 0) },
+                        onShuffle = { onPlay(displaySongs.shuffled(), 0) },
+                        canPlay = displaySongs.isNotEmpty())
+                }
+                itemsIndexed(displayEntries, key = { _, entry -> "${entry.index}:${entry.value.id}" }) { index, entry ->
+                    val song = entry.value
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (selectionMode) Checkbox(checked = song.id in selected, onCheckedChange = { checked ->
                             selected = if (checked) selected + song.id else selected - song.id
@@ -191,7 +245,7 @@ fun LocalCollectionScreen(
                         }
                         if (playlist != null) Box {
                             IconButton(onClick = { orderSong = song.id }, enabled = !user.readOnly) { Icon(Icons.Rounded.MoreVert, "Orden de ${song.title}") }
-                            val savedIndex = playlist.songIds.indexOf(song.id)
+                            val savedIndex = entry.index
                             DropdownMenu(expanded = orderSong == song.id, onDismissRequest = { orderSong = null }) {
                                 DropdownMenuItem(text = { Text("Subir") }, enabled = savedIndex > 0,
                                     onClick = { store.movePlaylistSong(playlist.id, savedIndex, savedIndex - 1); orderSong = null })
@@ -200,7 +254,7 @@ fun LocalCollectionScreen(
                             }
                         }
                         if (playlist != null) IconButton(onClick = {
-                            store.setPlaylistSongs(playlist.id, playlist.songIds.filterNot { it == song.id })
+                            store.setPlaylistSongs(playlist.id, playlist.songIds.filterIndexed { position, _ -> position != entry.index })
                         }, enabled = !user.readOnly) { Icon(Icons.Rounded.Delete, stringResource(R.string.playlist_remove_track, song.title)) }
                     }
                 }
