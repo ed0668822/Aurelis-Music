@@ -3,6 +3,10 @@
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Star
@@ -17,6 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -24,6 +31,7 @@ import coil3.compose.AsyncImage
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.icons.AurelisIcons
+import com.music.aurelis.ui.icons.AurelisPlayerIcons
 
 /**
  * F039: local-only song actions in the existing anchored, scrollable IosMenu.
@@ -39,7 +47,7 @@ fun SongActionsDialog(
     var name by remember(song.id) { mutableStateOf("") }
     val favorite = song.id in user.favorites
 
-    HeldContextMenu(onDismiss) {
+    HeldContextMenu(onDismiss, compactSongStyle = true) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -68,8 +76,10 @@ fun SongActionsDialog(
         }
         HorizontalDivider(Modifier.padding(vertical = 6.dp))
 
-        SongMenuAction(
-            icon = if (favorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+        // Local favorite mirrors BitChord's leading quick-action tile.
+        // It stays mounted after a tap so the state updates immediately.
+        SongFavoriteQuickAction(
+            icon = if (favorite) AurelisPlayerIcons.StarFilled else AurelisPlayerIcons.Star,
             label = if (favorite) "Quitar de favoritos" else "Añadir a favoritos",
             enabled = !user.readOnly, selected = favorite,
             onClick = { store.toggleFavorite(song.id) },
@@ -136,6 +146,36 @@ fun SongActionsDialog(
         HorizontalDivider(Modifier.padding(vertical = 6.dp))
         TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
             Text("Cerrar")
+        }
+    }
+}
+
+/** The reference quick action occupies 66dp, with a 23dp glyph over a 12sp label. */
+@Composable
+private fun SongFavoriteQuickAction(
+    icon: ImageVector, label: String, enabled: Boolean, selected: Boolean, onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val accent = MaterialTheme.colorScheme.primary
+    val ink = if (selected) accent else MaterialTheme.colorScheme.onSurface
+    Row(Modifier.fillMaxWidth().height(66.dp).padding(horizontal = 10.dp)) {
+        Column(
+            Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp))
+                .background(if (pressed) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+                            else Color.Transparent)
+                .clickable(interactionSource = interaction, indication = null,
+                    enabled = enabled, onClick = onClick)
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = ink.copy(alpha = if (enabled) 1f else 0.4f),
+                modifier = Modifier.size(23.dp))
+            Spacer(Modifier.height(6.dp))
+            Text(label, color = ink.copy(alpha = if (enabled) 1f else 0.4f),
+                fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Medium,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

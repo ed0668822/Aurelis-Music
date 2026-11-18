@@ -93,6 +93,7 @@ fun Modifier.heldContextMenuInteractions(onClick: () -> Unit, onLongClick: () ->
 
 /** Uses the same focus, dismissal, scrolling and motion policy as other menus. */
 @Composable
-fun HeldContextMenu(onDismiss: () -> Unit, actions: @Composable ColumnScope.() -> Unit) {
-    IosMenu(onDismiss, actions)
+fun HeldContextMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
+    actions: @Composable ColumnScope.() -> Unit) {
+    IosMenu(onDismiss, compactSongStyle, actions)
 }

@@ -58,7 +58,8 @@ internal fun heldMenuPosition(
 
 /** Focusable bounded action panel. Back and outside taps dismiss the real owner. */
 @Composable
-fun IosMenu(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit) {
     val menuState = LocalHeldMenuState.current
     // Consume only the opener of this menu; later button-opened menus cannot reuse it.
     val anchor = remember(menuState) { menuState?.takeAnchor() }
@@ -84,15 +85,18 @@ fun IosMenu(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) 
     val progress = remember { Animatable(if (reduced) 1f else 0f) }
     LaunchedEffect(reduced) { progress.animateTo(1f, if (reduced) snap() else tween(180)) }
     val configuration = LocalConfiguration.current
-    val width = (configuration.screenWidthDp - 32).coerceIn(1, 320).dp
+    // The BitChord song menu is a 256dp slab with 30dp corners.
+    // Other Aurelis menus keep their original dimensions.
+    val width = (configuration.screenWidthDp - 32).coerceIn(1, if (compactSongStyle) 256 else 320).dp
     val height = (configuration.screenHeightDp - 64).coerceIn(1, 560).dp
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(if (compactSongStyle) 30.dp else 20.dp)
     Popup(popupPositionProvider = positionProvider, onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true, dismissOnBackPress = true,
             dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
         Surface(modifier = Modifier.width(width).heightIn(max = height).semantics { paneTitle = "Acciones" }.graphicsLayer {
                 alpha = progress.value
-                scaleX = if (reduced) 1f else 0.94f + 0.06f * progress.value
+                scaleX = if (reduced) 1f else (if (compactSongStyle) 0.30f else 0.94f) +
+                    (if (compactSongStyle) 0.70f else 0.06f) * progress.value
                 scaleY = scaleX
             }.liquidGlass(shape),
             shape = shape, color = Color.Transparent) {
