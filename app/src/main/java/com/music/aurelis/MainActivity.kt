@@ -65,6 +65,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import com.music.aurelis.ui.player.PlayerDock
 import com.music.aurelis.ui.player.PlayerSheetMotion
+import com.music.aurelis.ui.player.matchedLocalAlbum
+import com.music.aurelis.ui.player.matchedLocalArtist
 import com.music.aurelis.ui.player.DockedArtworkOverlay
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -666,7 +668,14 @@ internal fun AurelisNavigationContent(
         onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null },
         onPlayNext = { playbackViewModel.playNext(listOf(song)) },
         queueActionsEnabled = playbackState.isConnected && playbackState.canEditQueue,
-        playNextEnabled = !playbackState.shuffleEnabled) }
+        playNextEnabled = !playbackState.shuffleEnabled,
+        onOpenAlbum = librarySuccess?.albums?.let { matchedLocalAlbum(song, it) }?.let { album ->
+            { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUM, album.key)) }
+        },
+        onOpenArtist = matchedLocalArtist(song, song.artist, librarySuccess?.artists.orEmpty())
+            ?.let { artist ->
+                { navigator.push(AppRoute.Collection(LocalCollectionKind.ARTIST, artist.key)) }
+            }) }
     }
 
 }

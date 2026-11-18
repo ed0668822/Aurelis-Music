@@ -504,6 +504,21 @@ class PlayerIntegrationTest {
         }
     }
 
+    @Test fun songMenuOpensOnlyResolvedLocalAlbumWithoutRebuildingPlayback() {
+        start()
+        val originalQueue = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        val originals = compose.runOnIdle { player.replacements }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_song_actions)).performClick()
+        compose.onNodeWithText("Abrir álbum").performScrollTo().performClick()
+        compose.onNodeWithTag("collection-tracks").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals("1", vm.state.value.currentSong?.id)
+            assertEquals(originalQueue, vm.state.value.queue.map { it.queueEntryId })
+            assertEquals(originals, player.replacements)
+        }
+    }
+
     @Test fun songActionsPersistFavoritePlaylistAndAppendWithoutRestartingQueue() {
         start()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()

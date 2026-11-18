@@ -694,7 +694,11 @@ fun NowPlayingScreen(
                     onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false },
                     onPlayNext = { playbackViewModel.playNext(listOf(s)) },
                     queueActionsEnabled = state.isConnected && state.canEditQueue,
-                    playNextEnabled = !state.shuffleEnabled || state.canEditShuffleQueue)
+                    playNextEnabled = !state.shuffleEnabled || state.canEditShuffleQueue,
+                    onOpenAlbum = albumRoute?.let { destination -> { onOpenCollection(destination) } },
+                    onOpenArtist = artistRoutes.values.distinct().singleOrNull()?.let { destination ->
+                        { onOpenCollection(destination) }
+                    })
                 if (showLyricsSources) {
                     LyricsSourcesDialog(onDismiss = { showLyricsSources = false },
                         currentSource = (state.lyrics as? LyricsState.Loaded)?.source,

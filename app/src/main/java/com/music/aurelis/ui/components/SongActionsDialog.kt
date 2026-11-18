@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.ui.icons.AurelisIcons
 
 /**
  * F039: local-only song actions in the existing anchored, scrollable IosMenu.
@@ -32,6 +33,7 @@ import com.music.aurelis.data.model.LocalSong
 fun SongActionsDialog(
     song: LocalSong, store: LocalUserLibrary, onEnqueue: () -> Unit, onDismiss: () -> Unit,
     onPlayNext: () -> Unit, queueActionsEnabled: Boolean = true, playNextEnabled: Boolean = true,
+    onOpenAlbum: (() -> Unit)? = null, onOpenArtist: (() -> Unit)? = null,
 ) {
     val user by store.state.collectAsState()
     var name by remember(song.id) { mutableStateOf("") }
@@ -116,6 +118,21 @@ fun SongActionsDialog(
             enabled = !user.readOnly && name.isNotBlank(),
             onClick = { store.createPlaylist(name, listOf(song.id)); onDismiss() },
         )
+        if (onOpenAlbum != null || onOpenArtist != null) {
+            HorizontalDivider(Modifier.padding(vertical = 6.dp))
+            onOpenAlbum?.let { open ->
+                SongMenuAction(
+                    icon = AurelisIcons.Album, label = "Abrir álbum", enabled = true,
+                    onClick = { onDismiss(); open() },
+                )
+            }
+            onOpenArtist?.let { open ->
+                SongMenuAction(
+                    icon = AurelisIcons.Artist, label = "Abrir artista", enabled = true,
+                    onClick = { onDismiss(); open() },
+                )
+            }
+        }
         HorizontalDivider(Modifier.padding(vertical = 6.dp))
         TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
             Text("Cerrar")
