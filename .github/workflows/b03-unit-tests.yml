@@ -160,11 +160,13 @@ jobs:
           ./gradlew --stop 2>&1 | tee ci-b03/android16/gradle-daemon-stop.log
           free -m | tee ci-b03/android16/host-memory-before-emulator.txt
 
-      # Both Android16 cases are mandatory and run on fresh emulator instances.
-      # Android Emulator 37.x deprecates swiftshader_indirect; use supported SwiftShader
-      # GLES rendering and turn off Vulkan to avoid post-boot QEMU graphics crashes
-      # observed in B03 #235/#238/#240. Keep the real Activity, effects and playback
-      # assertions enabled; this only changes the emulator's host graphics backend.
+      # Both Android16 cases remain mandatory on isolated Android 16 / API 36 AVDs.
+      # B03 #241: the host kernel records qemu's RenderThread SIGSEGV during live
+      # playback; ADB offline is a consequence, not a test assertion failure.
+      # Pin the previous stable emulator 36.6.11.0 and switch from SwiftShader
+      # to Mesa Lavapipe to avoid the observed host GLES rendering path.
+      # Preserve real Media3 playback, hardware-accelerated Activity, screenshots,
+      # animations, and strict AndroidJUnitRunner PASS attestation.
       - name: Android16 Activity and Settings recreation
         id: android16_recreation
         if: ${{ !cancelled() && steps.android16_handoff.outcome == 'success' }}
@@ -178,12 +180,13 @@ jobs:
           api-level: 36
           target: google_apis
           arch: x86_64
+          emulator-build: '15507667' # Android Emulator 36.6.11.0 (June 2026)
           profile: pixel_5
           ram-size: 3072M
           cores: 2
           emulator-boot-timeout: 900
           disable-animations: false
-          emulator-options: '-no-snapshot -no-window -gpu swiftshader -feature -Vulkan -no-boot-anim -camera-back none -camera-front none'
+          emulator-options: '-no-snapshot -no-window -gpu lavapipe -no-boot-anim -camera-back none -camera-front none'
           script: python3 .github/scripts/ui_parity.py settings-navigation
 
       - name: Reset ADB and capture host resources between Android16 cases
@@ -212,12 +215,13 @@ jobs:
           api-level: 36
           target: google_apis
           arch: x86_64
+          emulator-build: '15507667' # Android Emulator 36.6.11.0 (June 2026)
           profile: pixel_5
           ram-size: 3072M
           cores: 2
           emulator-boot-timeout: 900
           disable-animations: false
-          emulator-options: '-no-snapshot -no-window -gpu swiftshader -feature -Vulkan -no-boot-anim -camera-back none -camera-front none'
+          emulator-options: '-no-snapshot -no-window -gpu lavapipe -no-boot-anim -camera-back none -camera-front none'
           script: python3 .github/scripts/ui_parity.py settings-navigation
 
       - name: Verify B03 report classification and failure gates
