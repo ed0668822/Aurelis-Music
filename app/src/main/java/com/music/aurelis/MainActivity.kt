@@ -634,6 +634,9 @@ internal fun AurelisNavigationContent(
                 onDismiss = { navigator.pop() },
                 onOpenQueue = { navigator.push(AppRoute.Queue) },
                 dock = dock, panelMotion = panelMotion,
+                localAlbums = librarySuccess?.albums.orEmpty(),
+                localArtists = librarySuccess?.artists.orEmpty(),
+                onOpenCollection = { navigator.push(it) },
             )
             DockedArtworkOverlay(dock, playbackState.currentSong)
             QueueScreen(

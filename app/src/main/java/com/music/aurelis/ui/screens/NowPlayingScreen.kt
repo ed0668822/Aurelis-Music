@@ -45,6 +45,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -60,6 +62,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.unit.Dp
 import com.music.aurelis.ui.player.LandscapePlayerLayout
 import com.music.aurelis.ui.player.PlayerPane
+import com.music.aurelis.ui.player.artistCredits
+import com.music.aurelis.ui.player.artistCreditSegments
+import com.music.aurelis.ui.player.matchedLocalAlbum
+import com.music.aurelis.ui.player.matchedLocalArtist
 import com.music.aurelis.ui.player.playerSwipeTrigger
 import com.music.aurelis.ui.components.SourceQualityBadge
 import com.music.aurelis.ui.components.MiniPlayerQualityDialog
@@ -128,6 +134,10 @@ import com.music.aurelis.data.lyrics.TranslationLanguages
 import com.music.aurelis.playback.LyricsLookupState
 import com.music.aurelis.playback.LyricsState
 import com.music.aurelis.playback.PlaybackViewModel
+import com.music.aurelis.data.model.LocalAlbum
+import com.music.aurelis.data.model.LocalArtist
+import com.music.aurelis.ui.navigation.AppRoute
+import com.music.aurelis.ui.navigation.LocalCollectionKind
 import com.music.aurelis.playback.TranslationState
 import com.music.aurelis.ui.components.AnimatedArtwork
 import com.music.aurelis.ui.components.lyricsSourceTitle
@@ -158,6 +168,9 @@ fun NowPlayingScreen(
     onOpenQueue: () -> Unit,
     dock: PlayerDock? = null,
     panelMotion: PlayerSheetMotion? = null,
+    localAlbums: List<LocalAlbum> = emptyList(),
+    localArtists: List<LocalArtist> = emptyList(),
+    onOpenCollection: (AppRoute.Collection) -> Unit = {},
 ) {
     val state by playbackViewModel.state.collectAsState()
     var importSongId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -230,6 +243,21 @@ fun NowPlayingScreen(
         ) + fadeOut(animationSpec = tween(220)),
     ) {
         val s = song ?: return@AnimatedVisibility
+        // Resolve the current queue item against real MediaStore-backed collections.
+        // A shared album title or artist name is not enough to choose a destination.
+        val albumRoute = remember(s.id, localAlbums) {
+            matchedLocalAlbum(s, localAlbums)?.let {
+                AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)
+            }
+        }
+        val credits = remember(s.artist) { artistCredits(s.artist) }
+        val artistRoutes = remember(s.id, credits, localArtists) {
+            credits.mapNotNull { credit ->
+                matchedLocalArtist(s, credit.name, localArtists)?.let { artist ->
+                    credit.name to AppRoute.Collection(LocalCollectionKind.ARTIST, artist.key)
+                }
+            }.toMap()
+        }
         DisposableEffect(panelMotion, dock) {
             onDispose { dock?.attached = false; dock?.releasePanel(); panelMotion?.onSheetGone() }
         }
@@ -287,7 +315,12 @@ fun NowPlayingScreen(
                                 .semantics { contentDescription = context.getString(R.string.player_close) })
                         }
                         val albumLabel = s.album?.takeIf { it.isNotBlank() } ?: stringResource(R.string.local_music)
-                        Text(stringResource(R.string.player_playing_album, albumLabel), style = MaterialTheme.typography.labelMedium,
+                        Text(stringResource(R.string.player_playing_album, albumLabel),
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.then(
+                                if (albumRoute != null) Modifier.clickable { onOpenCollection(albumRoute) }
+                                else Modifier
+                            ),
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                     } else Row(Modifier.fillMaxWidth().height(48.dp).testTag("player-handle")
                         .playerSwipeTrigger(1, closePlayer, panelMotion), verticalAlignment = Alignment.CenterVertically) {
@@ -330,10 +363,37 @@ fun NowPlayingScreen(
                     Row(Modifier.fillMaxWidth().padding(top = if (compact) 0.dp else 8.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(s.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge.copy(fontSize = if (compact) 16.sp else 20.sp, lineHeight = if (compact) 20.sp else 24.sp, letterSpacing = (-0.2).sp),
-                                maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(s.artist, style = MaterialTheme.typography.titleLarge.copy(fontSize = if (compact) 16.sp else 20.sp, lineHeight = if (compact) 20.sp else 24.sp, fontWeight = FontWeight.W500),
-                                color = Color.White.copy(alpha = 0.55f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            val allowMarquee = !reduceAnimation && isVisible
+                            val titleStyle = MaterialTheme.typography.titleLarge.copy(
+                                fontSize = if (compact) 16.sp else 20.sp,
+                                lineHeight = if (compact) 20.sp else 24.sp,
+                                letterSpacing = (-0.2).sp, fontWeight = FontWeight.Bold)
+                            Text(s.title, style = titleStyle, maxLines = 1, softWrap = false,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.fillMaxWidth().testTag("player-credit-title")
+                                    .then(if (allowMarquee) Modifier.basicMarquee(initialDelayMillis = 1_250)
+                                          else Modifier)
+                                    .then(if (albumRoute != null) Modifier.clickable {
+                                        onOpenCollection(albumRoute)
+                                    } else Modifier))
+                            val artistStyle = MaterialTheme.typography.titleLarge.copy(
+                                fontSize = if (compact) 16.sp else 20.sp,
+                                lineHeight = if (compact) 20.sp else 24.sp, fontWeight = FontWeight.W500)
+                            val spans = remember(s.artist, credits) { artistCreditSegments(s.artist, credits) }
+                            Row(Modifier.fillMaxWidth().testTag("player-credit-artists")
+                                .then(if (allowMarquee) Modifier.basicMarquee(initialDelayMillis = 2_100)
+                                      else Modifier),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                spans.forEach { span ->
+                                    val destination = span.creditName?.let(artistRoutes::get)
+                                    Text(span.text, style = artistStyle,
+                                        color = Color.White.copy(alpha = 0.55f),
+                                        maxLines = 1, softWrap = false, overflow = TextOverflow.Clip,
+                                        modifier = if (destination != null) Modifier.clickable {
+                                            onOpenCollection(destination)
+                                        } else Modifier)
+                                }
+                            }
                             state.errorMessage?.let { message ->
                                 Text(message, maxLines = 2, style = MaterialTheme.typography.labelSmall)
                                 TextButton(onClick = playbackViewModel::retry) { Text(stringResource(R.string.player_retry)) }
