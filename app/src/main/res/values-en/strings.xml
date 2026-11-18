@@ -541,4 +541,17 @@
     <string name="local_search_top_result">Top result</string>
     <string name="local_search_edit_suggestion">Edit “%1$s”</string>
     <string name="local_search_playlist_action">Playlist</string>
+    <!-- MiniPlayer: input-track information; not a certified output format -->
+    <string name="mini_quality_action">Audio quality details</string>
+    <string name="mini_quality_title">Audio information</string>
+    <string name="mini_quality_input">File and selected track</string>
+    <string name="mini_quality_format">Format</string>
+    <string name="mini_quality_origin">Source</string>
+    <string name="mini_quality_rate">Sample rate</string>
+    <string name="mini_quality_channels">Channels</string>
+    <string name="mini_quality_bitrate">Bitrate</string>
+    <string name="mini_quality_depth">PCM bit depth</string>
+    <string name="mini_quality_unknown">Unavailable</string>
+    <string name="mini_quality_note">These details describe the file or selected input track. They do not verify the actual audio output, Bluetooth, USB, or bit-perfect playback.</string>
+    <string name="mini_quality_close">Close</string>
 </resources>
