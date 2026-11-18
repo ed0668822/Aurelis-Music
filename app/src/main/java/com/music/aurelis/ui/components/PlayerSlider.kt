@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +25,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
@@ -71,6 +71,7 @@ fun PlayerSlider(
             enabled = canSeek,
             modifier = Modifier.testTag("player-seek-track").semantics {
                 contentDescription = seekLabel
+                if (!canSeek) disabled()
                 progressBarRangeInfo = ProgressBarRangeInfo(shown, 0f..1f)
                 if (canSeek) setProgress { value ->
                     onSeek(fractionToPosition(value, duration))
