@@ -135,7 +135,9 @@ fun GlassNavBar(
         Column(modifier.fillMaxWidth()) {
             song?.let { current ->
                 MiniPlayer(current.title, current.artist, isPlaying, onPlayPause, onExpand,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    // Apply the 16dp margin before width measurement so the
+                    // MiniPlayer's own bounds are exactly the screen width minus 32dp.
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
                     artworkUri = current.artworkUri, isLoading = isLoading, enabled = !controlsLocked,
                     canNext = canNext, onNext = onNext, progress = progress, qualityLabel = qualityLabel,
                     songId = current.id, dock = dock, pull = pull,
