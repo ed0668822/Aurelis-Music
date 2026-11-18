@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.components
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,8 +43,13 @@ fun MiniPlayerQualityDialog(info: AudioQualityInfo, onDismiss: () -> Unit) {
         icon = { Icon(Icons.Rounded.Info, contentDescription = null) },
         title = { Text(stringResource(R.string.mini_quality_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.mini_quality_input), style = MaterialTheme.typography.titleSmall)
+                // A decoder or file label does not establish the effective hardware route.
+                Text(stringResource(R.string.mini_quality_output_unmeasured),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 rows.forEach { (label, value) ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,

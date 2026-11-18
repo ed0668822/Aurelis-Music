@@ -20,6 +20,32 @@ class ArtworkTransitionTest {
         state.complete(slow, "palette B")
         assertEquals("palette C", state.value)
     }
+    @Test fun rapidTrackSkipsCannotPublishLateArtworkForAnOlderSong() {
+        val state = ArtworkTransition<String?>("A")
+        val slowB = state.begin()
+        val quickC = state.begin()
+        val returnA = state.begin()
+        assertEquals("A", state.value)
+        state.complete(slowB, "B late")
+        state.complete(quickC, "C late")
+        assertEquals("A", state.value)
+        state.complete(returnA, "A current")
+        assertEquals("A current", state.value)
+        state.complete(slowB, "B even later")
+        assertEquals("A current", state.value)
+    }
+
+    @Test fun duplicateQueueOccurrencesCanRetainTheSameDecodedCover() {
+        val state = ArtworkTransition<String?>("cover for song A")
+        // Two queue entries for the same local URI do not require invalidating
+        // a displayed cover. A new image request only begins when the URI changes.
+        assertEquals("cover for song A", state.value)
+        val differentUri = state.begin()
+        assertEquals("cover for song A", state.value)
+        state.complete(differentUri, "cover for song B")
+        assertEquals("cover for song B", state.value)
+    }
+
     @Test fun missingOrFailedArtworkClearsTheOldFrameAndRejectsLateSuccess() {
         val state = ArtworkTransition<String?>("artwork A")
         val old = state.begin()

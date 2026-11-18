@@ -571,6 +571,7 @@
     <string name="mini_quality_bitrate">Tasa de bits</string>
     <string name="mini_quality_depth">Profundidad PCM</string>
     <string name="mini_quality_unknown">No disponible</string>
+    <string name="mini_quality_output_unmeasured">Salida del dispositivo: no medida</string>
     <string name="mini_quality_note">Estos datos describen el archivo o la pista seleccionada. No verifican la salida real, Bluetooth, USB ni bit-perfect.</string>
     <string name="mini_quality_close">Cerrar</string>
 </resources>

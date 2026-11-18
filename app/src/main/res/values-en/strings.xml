@@ -552,6 +552,7 @@
     <string name="mini_quality_bitrate">Bitrate</string>
     <string name="mini_quality_depth">PCM bit depth</string>
     <string name="mini_quality_unknown">Unavailable</string>
+    <string name="mini_quality_output_unmeasured">Device output: not measured</string>
     <string name="mini_quality_note">These details describe the file or selected input track. They do not verify the actual audio output, Bluetooth, USB, or bit-perfect playback.</string>
     <string name="mini_quality_close">Close</string>
 </resources>

@@ -103,6 +103,39 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertFalse(player.playWhenReady); assertEquals("1", vm.state.value.currentSong?.id) }
     }
 
+    @Test fun rapidSkipsAndSameSongDuplicateQueueDoNotReopenThePlayer() {
+        start()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+        val original = vm.state.value.queue.map { it.queueEntryId }
+        compose.runOnIdle {
+            vm.next()
+            vm.previous()
+            vm.next()
+            vm.previous()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("player-portrait").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals("1", vm.state.value.currentSong?.id)
+            assertEquals(original, vm.state.value.queue.map { it.queueEntryId })
+            vm.playNext(listOf(song("1")))
+        }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(4, vm.state.value.queue.size)
+            assertEquals("1", vm.state.value.queue[1].id)
+            assertNotEquals(vm.state.value.queue[0].queueEntryId, vm.state.value.queue[1].queueEntryId)
+            vm.next()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("player-portrait").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals("1", vm.state.value.currentSong?.id)
+            assertEquals(vm.state.value.queue[1].queueEntryId, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(4, player.mediaItemCount)
+        }
+    }
+
     @Test fun playerHeaderHandlesMissingBlankAndNamedAlbumsAndKeepsTheCorrectSong() {
         start()
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
