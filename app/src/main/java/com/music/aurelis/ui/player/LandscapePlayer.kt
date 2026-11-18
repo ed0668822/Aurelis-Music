@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import androidx.compose.animation.AnimatedContent
@@ -69,6 +70,20 @@ internal val LANDSCAPE_ART_CORNER = 10.dp
 private val LandscapeArtShape = RoundedCornerShape(LANDSCAPE_ART_CORNER)
 private val LANDSCAPE_HANDLE_STRIP = 24.dp
 
+/** Keep room for the lyrics or queue on short, narrow landscape devices. */
+internal fun landscapeArtworkWeight(width: androidx.compose.ui.unit.Dp): Float = when {
+    width < 600.dp -> 0.42f
+    width < 760.dp -> 0.46f
+    else -> 0.50f
+}
+
+internal fun landscapeSidePadding(width: androidx.compose.ui.unit.Dp, compact: Boolean): androidx.compose.ui.unit.Dp =
+    when {
+        width < 680.dp -> 12.dp
+        compact -> LANDSCAPE_GUTTER_COMPACT
+        else -> 24.dp
+}
+
 internal enum class PlayerPane { Main, Lyrics, Queue }
 
 @Composable
@@ -93,7 +108,9 @@ internal fun LandscapePlayerLayout(
             contentAlignment = Alignment.TopCenter,
         ) {
             val compact = maxHeight < LANDSCAPE_COMPACT_HEIGHT
-            val gutter = if (compact) LANDSCAPE_GUTTER_COMPACT else 24.dp
+            val gutter = landscapeSidePadding(maxWidth, compact)
+            val artworkWeight = landscapeArtworkWeight(maxWidth)
+            val paneWeight = 1f - artworkWeight
 
             Row(
                 modifier = Modifier
@@ -106,7 +123,7 @@ internal fun LandscapePlayerLayout(
             ) {
                 Column(
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(artworkWeight)
                         .fillMaxHeight()
                         .padding(horizontal = gutter),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -136,7 +153,7 @@ internal fun LandscapePlayerLayout(
                     },
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(paneWeight)
                         .fillMaxHeight(),
                     label = "landscapePane",
                 ) { shown ->
@@ -152,14 +169,14 @@ internal fun LandscapePlayerLayout(
                         PlayerPane.Lyrics -> Box(
                             Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 24.dp),
+                                .padding(horizontal = gutter),
                         ) {
                             lyricsPane()
                         }
                         PlayerPane.Queue -> Box(
                             Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 24.dp),
+                                .padding(horizontal = gutter),
                         ) {
                             queuePane()
                         }
