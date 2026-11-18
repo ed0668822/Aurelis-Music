@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
@@ -39,6 +40,7 @@ import com.music.aurelis.ui.components.*
 import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.navigation.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, playlists: List<LocalPlaylist>,
     currentSongId: String?, isPlaying: Boolean, sort: SortOption, onSort: (SortOption) -> Unit,
@@ -55,7 +57,17 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
     val searchFocus = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    BackHandler(search) { search = false; query = "" }
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    BackHandler(search) {
+        if (imeVisible) {
+            // The first Back dismisses the IME, rather than losing the query.
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        } else {
+            search = false
+            query = ""
+        }
+    }
     LaunchedEffect(search) {
         if (search) {
             list.scrollToItem(0)
@@ -84,7 +96,8 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
             state = pullState,
             modifier = Modifier.fillMaxSize().testTag("local-music-refresh"),
         ) {
-        LazyColumn(state = list, modifier = Modifier.fillMaxSize().then(contentBackdropModifier).testTag("local-music-list"),
+        LazyColumn(state = list, modifier = Modifier.fillMaxSize().imePadding()
+            .then(contentBackdropModifier).testTag("local-music-list"),
             contentPadding = bottomPadding) {
             item(key = "header") {
                 if (success != null && !search) LocalDetailHeader(stringResource(R.string.local_music), stringResource(R.string.local_music_audio_files), headerMetadata,
@@ -92,7 +105,10 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                     { onPlay(filtered.shuffled(), 0) }, filtered.isNotEmpty())
                 else Text(stringResource(R.string.local_music), style = MaterialTheme.typography.headlineLarge,
                     modifier = Modifier.padding(start = 16.dp, top = topBarContentPadding(), bottom = 16.dp))
-                if (search) SearchField(query, { query = it }, onSubmit = {}, focusRequester = searchFocus,
+                if (search) SearchField(query, { query = it }, onSubmit = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }, focusRequester = searchFocus,
                     placeholder = stringResource(R.string.local_music_search_open), modifier = Modifier.padding(horizontal = 16.dp))
                 LocalFolderTabs(tabs, selected, { next ->
                     if (selected != next) { selected = next; scope.launch { list.scrollToItem(0) } }
