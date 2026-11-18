@@ -296,16 +296,18 @@ private fun LocalMusicGridCard(
 ) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
         .background(if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
-        .clickable(onClick = onClick).testTag("local-music-card:" + key).padding(10.dp)) {
+        .padding(10.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(onClick = onClick).testTag("local-music-card:" + key),
+            contentAlignment = Alignment.Center) {
             Icon(icon, null, modifier = Modifier.size(38.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
             if (artwork != null) AsyncImage(artwork, null, Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop)
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f).padding(top = 8.dp)) {
+            Column(Modifier.weight(1f).clickable(onClick = onClick).padding(top = 8.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 2,
                     overflow = TextOverflow.Ellipsis)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
