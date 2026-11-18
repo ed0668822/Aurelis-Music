@@ -426,6 +426,10 @@ internal fun AurelisNavigationContent(
                     onPlaylistOpen = { navigator.push(AppRoute.Collection(LocalCollectionKind.PLAYLIST, it)) },
                     onNewPlaylist = { playlistName = ""; playlistError = null; creatingPlaylist = true },
                     canCreatePlaylist = !userState.readOnly,
+                    libraryState = libraryUiState.libraryState,
+                    isRefreshing = libraryUiState.isRefreshing,
+                    onRetry = libraryViewModel::refresh,
+                    onRequestPermission = onRequestAudioPermission,
                 )
                 if (creatingPlaylist) androidx.compose.material3.AlertDialog(
                     modifier = Modifier.width(320.dp),
@@ -561,6 +565,8 @@ internal fun AurelisNavigationContent(
                     playbackState.currentSong?.id, playbackState.isPlaying,
                     onBack = { navigator.pop() }, onOpen = { navigator.push(it) },
                     onPlay = playbackViewModel::playSongs,
+                    onRetry = libraryViewModel::refresh,
+                    onRequestPermission = onRequestAudioPermission,
                 )
                 else -> error("Destination is not wired in the local graph: $page")
             }
