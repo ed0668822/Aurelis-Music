@@ -7,7 +7,7 @@ Este bloque conserva MediaStore, LibraryViewModel y la reproducción local. No i
 |---|---|---|
 | F015 | Corregido y pruebas añadidas | `LocalMediaRepository`: duración 0/desconocida exige etiquetas válidas; tolerancia al rechazo de `DATA`; se preservan exclusión de pendientes/papelera y MediaStore como fuente única |
 | F016 | Reforzado con pruebas | `LocalMetadataReader`: lecturas vacías no se cachean, pista/disco válidos, cancelación y permiso propagados, LRU acotado; MediaStore sigue siendo propietario del catálogo |
-| F017 | Conservado | `LocalLibrarySource` y `LibraryViewModel`: observación en primer plano y prevención de resultados antiguos |
+| F017 | Reforzado; pendiente CI | `LocalLibrarySource` observa avisos legacy/URI de MediaStore sin polling; `LibraryViewModel` refresca en primer plano, deja de hacerlo en segundo plano y vuelve a registrarse al regresar; pruebas nuevas |
 | F018 | Conservado | `LocalFolderRepository`: árboles SAF, permisos persistidos y rechazo de accesos revocados |
 | F019 | Mejorado | `LocalGroups`: orden de álbum por disco y pista, con prueba de regresión |
 | F020 | Parcial | `LocalMusicContent`: cinco pestañas conectadas; paridad completa de vista cuadrícula pendiente |

@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data
 
 import android.content.Context
+import android.net.Uri
 import com.music.aurelis.data.model.LocalSong
 import android.database.ContentObserver
 import android.os.Handler
@@ -32,7 +35,10 @@ class MediaStoreLibrarySource(context: Context) : LocalLibrarySource {
         callbackFlow {
         val resolver = appContext.contentResolver
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            // Some providers call the legacy callback and others pass a changed URI.
+            // Both must invalidate the same MediaStore catalogue without polling.
             override fun onChange(selfChange: Boolean) { trySend(Unit) }
+            override fun onChange(selfChange: Boolean, uri: Uri?) { trySend(Unit) }
         }
         resolver.registerContentObserver(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, true, observer)
         trySend(Unit) // Register before the first read so changes during it are not lost.

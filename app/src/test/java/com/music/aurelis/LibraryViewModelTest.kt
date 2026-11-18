@@ -1,15 +1,27 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis
 
 import android.Manifest
 import android.app.Application
+import android.os.Looper
+import android.provider.MediaStore
+import com.music.aurelis.data.MediaStoreLibrarySource
 import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalLibrarySource
 import com.music.aurelis.data.SettingsRepository
 import com.music.aurelis.data.model.LocalSong
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -120,6 +132,50 @@ class LibraryViewModelTest {
         model.loadLibrary()
         runCurrent()
         assertTrue(model.uiState.value.libraryState is LibraryState.Success)
+    }
+
+
+    @Test fun foregroundCatalogueChangesRefreshAndBackgroundStopsWatching() = runTest(dispatcher) {
+        SettingsRepository.setFilterNonMusicAudio(false)
+        val events = MutableSharedFlow<Unit>(extraBufferCapacity = 2)
+        var calls = 0
+        val source = object : LocalLibrarySource {
+            override val changes: Flow<Unit> = events.onStart { emit(Unit) }
+            override suspend fun songs(filterNonMusic: Boolean): List<LocalSong> {
+                assertFalse(filterNonMusic)
+                calls++
+                return emptyList()
+            }
+        }
+        val model = LibraryViewModel(application, source)
+        model.onForeground()
+        runCurrent()
+        assertEquals(1, calls)
+        assertTrue(events.tryEmit(Unit))
+        advanceTimeBy(351)
+        runCurrent()
+        assertEquals(2, calls)
+        model.onBackground()
+        assertTrue(events.tryEmit(Unit))
+        advanceTimeBy(500)
+        runCurrent()
+        assertEquals("A background screen must not rescan", 2, calls)
+        model.onForeground()
+        runCurrent()
+        assertEquals("The observer must register anew and emit an initial refresh", 3, calls)
+        model.onBackground()
+    }
+
+    @Test fun mediaStoreUriNotificationsAreObservedWithoutPolling() = runTest(dispatcher) {
+        val seen = mutableListOf<Unit>()
+        val job = launch { MediaStoreLibrarySource(application).changes.take(2).toList(seen) }
+        runCurrent()
+        assertEquals("Registration must trigger the first catalogue read", 1, seen.size)
+        application.contentResolver.notifyChange(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null)
+        shadowOf(Looper.getMainLooper()).idle()
+        runCurrent()
+        assertEquals("Android URI notifications must invalidate the catalogue", 2, seen.size)
+        job.cancel()
     }
 
     @Test fun androidFactoryConstructorRemainsAvailable() {
