@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.layout.*
@@ -34,6 +35,7 @@ import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.components.SongListItem
+import com.music.aurelis.ui.components.MessageState
 import com.music.aurelis.ui.navigation.AppRoute
 import com.music.aurelis.ui.navigation.LocalCollectionKind
 
@@ -48,6 +50,8 @@ fun LocalCollectionScreen(
     onBack: () -> Unit,
     onOpen: (AppRoute.Collection) -> Unit,
     onPlay: (List<LocalSong>, Int) -> Unit,
+    onRetry: () -> Unit = {},
+    onRequestPermission: () -> Unit = {},
 ) {
     val user by store.state.collectAsState()
     val snapshot = library as? LibraryState.Success
@@ -110,16 +114,30 @@ fun LocalCollectionScreen(
         TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
         Text(title.ifBlank { stringResource(R.string.collection_unavailable) }, style = MaterialTheme.typography.headlineMedium)
         if (user.readOnly) Text(stringResource(R.string.collections_unavailable))
+        // Private playlist listing does not require a successful media scan.
+        if (route.kind != LocalCollectionKind.PLAYLISTS) {
+            when (library) {
+                LibraryState.Loading -> Column(Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(12.dp))
+                    Text(stringResource(R.string.home_loading))
+                }
+                is LibraryState.Error -> MessageState(library.message,
+                    actionLabel = stringResource(if (library.permissionRequired)
+                        R.string.home_grant_permission else R.string.home_retry),
+                    onAction = if (library.permissionRequired) onRequestPermission else onRetry)
+                is LibraryState.Success -> Unit
+            }
+        }
         if (directory != null) {
             TextButton(onClick = { grid = !grid }) { Text(if (grid) "Mostrar lista" else "Mostrar cuadrícula") }
-            if (library == LibraryState.Loading) CircularProgressIndicator()
-            if (library is LibraryState.Error) Text(library.message)
             if (library is LibraryState.Success && directory.isEmpty()) Text(stringResource(R.string.collection_empty))
-            if (grid) LazyVerticalGrid(GridCells.Adaptive(140.dp), Modifier.weight(1f)) {
+            if (grid && library is LibraryState.Success) LazyVerticalGrid(GridCells.Adaptive(140.dp), Modifier.weight(1f)) {
                 items(directory, key = { it.second.key }) { entry ->
                     TextButton(onClick = { onOpen(entry.second) }, modifier = Modifier.heightIn(min = 96.dp)) { Text(entry.first) }
                 }
-            } else LazyColumn(Modifier.weight(1f)) {
+            } else if (library is LibraryState.Success) LazyColumn(Modifier.weight(1f)) {
                 items(directory, key = { it.second.key }) { entry -> TextButton(onClick = { onOpen(entry.second) }) { Text(entry.first) } }
             }
         } else if (route.kind == LocalCollectionKind.PLAYLISTS) {
@@ -137,8 +155,6 @@ fun LocalCollectionScreen(
                 TextButton(onClick = { name = playlist.name; editing = true }, enabled = !user.readOnly) { Text(stringResource(R.string.playlist_rename)) }
                 TextButton(onClick = { deleting = true }, enabled = !user.readOnly) { Text(stringResource(R.string.playlist_delete)) }
             }
-            if (library == LibraryState.Loading) CircularProgressIndicator()
-            if (library is LibraryState.Error) Text(library.message)
             if (songs.isEmpty() && library is LibraryState.Success) Text(stringResource(R.string.collection_empty))
             if (playlist != null && playlist.songIds.size > songs.size) Text(stringResource(R.string.collection_missing_tracks))
             Button(onClick = { onPlay(displaySongs, 0) }, enabled = displaySongs.isNotEmpty()) { Text(stringResource(R.string.collection_play)) }
