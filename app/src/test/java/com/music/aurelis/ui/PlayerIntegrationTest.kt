@@ -428,6 +428,21 @@ class PlayerIntegrationTest {
         }
     }
 
+    @Test fun playerScrubberClampsSeekingAndKeepsTheSameQueue() {
+        start()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+        val queueBefore = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        val seek = compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_seek))
+        seek.assertIsDisplayed().assertIsEnabled()
+        seek.performSemanticsAction(SemanticsActions.SetProgress) { it(-2f) }
+        compose.runOnIdle { assertEquals(0L, vm.state.value.positionMs) }
+        seek.performSemanticsAction(SemanticsActions.SetProgress) { it(1.25f) }
+        compose.runOnIdle {
+            assertEquals(60_000L, vm.state.value.positionMs)
+            assertEquals(queueBefore, vm.state.value.queue.map { it.queueEntryId })
+        }
+    }
+
     @Test fun miniPlayerOpensRealControlsAndQueueActionsStaySynchronized() {
         start()
         val previousEntry = vm.state.value.queue.first().queueEntryId

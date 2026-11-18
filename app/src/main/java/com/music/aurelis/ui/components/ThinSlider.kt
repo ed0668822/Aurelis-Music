@@ -58,6 +58,7 @@ fun ThinSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     onValueChangeFinished: (() -> Unit)? = null,
+    enabled: Boolean = true,
     mixing: Boolean = false,
     mixPulse: MixPulse? = null,
     loading: Boolean = false,
@@ -109,29 +110,33 @@ fun ThinSlider(
         modifier = modifier
             .fillMaxWidth()
             .height(activeHeight + 22.dp)
-            .pointerInput(Unit) {
-                awaitEachGesture {
+            .pointerInput(enabled) {
+                if (enabled) awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     dragging = true
-                    onValueChange((down.position.x / size.width).coerceIn(0f, 1f))
-
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val pointer = event.changes.firstOrNull { it.id == down.id } ?: break
-                        if (!pointer.pressed) {
-                            pointer.consume()
-                            break
+                    try {
+                        val width = size.width.coerceAtLeast(1).toFloat()
+                        onValueChange((down.position.x / width).coerceIn(0f, 1f))
+                        var released = false
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val pointer = event.changes.firstOrNull { it.id == down.id } ?: break
+                            if (!pointer.pressed) {
+                                pointer.consume()
+                                released = true
+                                break
+                            }
+                            if (pointer.positionChanged()) {
+                                onValueChange((pointer.position.x / width).coerceIn(0f, 1f))
+                                pointer.consume()
+                            }
                         }
-                        if (pointer.positionChanged()) {
-                            onValueChange((pointer.position.x / size.width).coerceIn(0f, 1f))
-                            pointer.consume()
-                        }
+                        // A cancelled gesture must never seek to a stale position.
+                        if (released) onValueChangeFinished?.invoke()
+                    } finally {
+                        dragging = false
                     }
-
-                    dragging = false
-                    onValueChangeFinished?.invoke()
-                }
-            },
+                },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(

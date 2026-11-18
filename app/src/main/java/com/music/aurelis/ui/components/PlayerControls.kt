@@ -51,16 +51,24 @@ fun PlayerControls(
     val skipSize = if (compact) 44.dp else 53.dp
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically) {
-        TransportGlyph(R.drawable.ic_player_previous, stringResource(R.string.player_previous), skipSize, 56.dp,
+        TransportGlyph(R.drawable.ic_player_previous, stringResource(R.string.player_previous), skipSize, 53.dp,
             enabled && canPrevious, reduceAnimation, blendChrome, squash = 0.85f) {
             haptics.play(Haptic.SkipPrevious); onPrevious()
         }
-        TransportGlyph(if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play,
-            stringResource(if (isPlaying) R.string.player_pause else R.string.player_play), playSize, playTouch,
-            enabled, reduceAnimation, blendChrome, loading = isLoading) {
-            haptics.play(if (isPlaying) Haptic.Pause else Haptic.Resume); onPlayPause()
+        if (isLoading) {
+            // Keep BitChord's play target footprint fixed during buffering.
+            Box(Modifier.size(playTouch), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(Modifier.size(if (compact) 30.dp else 38.dp),
+                    color = androidx.compose.ui.graphics.Color.White, strokeWidth = 3.dp)
+            }
+        } else {
+            TransportGlyph(if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play,
+                stringResource(if (isPlaying) R.string.player_pause else R.string.player_play), playSize, playTouch,
+                enabled, reduceAnimation, blendChrome) {
+                haptics.play(if (isPlaying) Haptic.Pause else Haptic.Resume); onPlayPause()
+            }
         }
-        TransportGlyph(R.drawable.ic_player_next, stringResource(R.string.player_next), skipSize, 56.dp,
+        TransportGlyph(R.drawable.ic_player_next, stringResource(R.string.player_next), skipSize, 53.dp,
             enabled && canNext, reduceAnimation, blendChrome, squash = 0.85f) {
             haptics.play(Haptic.SkipNext); onNext()
         }

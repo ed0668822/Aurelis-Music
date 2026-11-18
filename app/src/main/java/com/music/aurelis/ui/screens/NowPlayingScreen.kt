@@ -489,16 +489,16 @@ fun NowPlayingScreen(
                                 }
                             }
                         }
-                        Box(Modifier.fillMaxWidth()) {
-                            key(s.queueEntryId ?: s.id) {
-                                PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
-                                    enabled = state.isConnected && state.canSeek, showRemaining = true)
-                            }
-                            if (compact) TextButton(onClick = { showQuality = true },
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                                modifier = Modifier.align(Alignment.BottomCenter).height(24.dp)) {
-                                SourceQualityBadge(state.sourceQuality.formatLabel)
-                            }
+                        key(s.queueEntryId ?: s.id) {
+                            PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
+                                enabled = state.isConnected && state.canSeek, showRemaining = true,
+                                centerLabel = {
+                                    TextButton(onClick = { showQuality = true },
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                                        modifier = Modifier.align(Alignment.Center).height(24.dp)) {
+                                        SourceQualityBadge(state.sourceQuality.formatLabel)
+                                    }
+                                })
                         }
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
                         transport(compact)
@@ -507,9 +507,6 @@ fun NowPlayingScreen(
                         actions()
                         if (!compact && !lyricsMode) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             IconButton(onClick = { showPlaybackTools = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools)) }
-                            TextButton(onClick = { showQuality = true }) {
-                                SourceQualityBadge(state.sourceQuality.formatLabel)
-                            }
                             IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
                         }
                         if (!compact) Text(stringResource(R.string.player_local_device),
