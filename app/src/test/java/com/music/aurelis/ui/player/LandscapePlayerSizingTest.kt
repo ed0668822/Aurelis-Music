@@ -8,17 +8,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LandscapePlayerSizingTest {
-    @Test fun compactPhoneReservesSpaceForLyricsAndQueue() {
-        assertEquals(0.42f, landscapeArtworkWeight(568.dp), 0.001f)
-        assertEquals(12.dp, landscapeSidePadding(568.dp, compact = true))
-        assertTrue(landscapeArtworkWeight(568.dp) < 0.5f)
+    @Test fun equalColumnsMatchTheBitChordLandscapeReferenceAtAllWidths() {
+        for (width in listOf(568.dp, 640.dp, 760.dp, 800.dp, 1100.dp)) {
+            assertEquals(0.5f, landscapeArtworkWeight(width), 0.001f)
+        }
     }
 
-    @Test fun wideScreensKeepBalancedColumnsAndSafeInsets() {
-        assertEquals(0.46f, landscapeArtworkWeight(640.dp), 0.001f)
-        assertEquals(0.5f, landscapeArtworkWeight(800.dp), 0.001f)
-        assertEquals(20.dp, landscapeSidePadding(800.dp, compact = true))
-        assertEquals(24.dp, landscapeSidePadding(800.dp, compact = false))
-        assertEquals(12.dp, landscapeSidePadding(640.dp, compact = false))
+    @Test fun compactAndRoomyMarginsMatchReference() {
+        for (width in listOf(568.dp, 640.dp, 800.dp)) {
+            assertEquals(20.dp, landscapeSidePadding(width, compact = true))
+            assertEquals(30.dp, landscapeSidePadding(width, compact = false))
+        }
     }
 }

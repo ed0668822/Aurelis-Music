@@ -63,6 +63,7 @@ import com.music.aurelis.ui.theme.stableStatusBarInsets
 private val LANDSCAPE_PLAYER_MAX_WIDTH = 1100.dp
 private val LANDSCAPE_COMPACT_HEIGHT = 440.dp
 private val LANDSCAPE_GUTTER_COMPACT = 20.dp
+private val LANDSCAPE_GUTTER = 30.dp
 private const val LANDSCAPE_PANE_FADE_IN_MS = 220
 private const val LANDSCAPE_PANE_FADE_IN_DELAY_MS = 90
 private const val LANDSCAPE_PANE_FADE_OUT_MS = 140
@@ -70,19 +71,12 @@ internal val LANDSCAPE_ART_CORNER = 10.dp
 private val LandscapeArtShape = RoundedCornerShape(LANDSCAPE_ART_CORNER)
 private val LANDSCAPE_HANDLE_STRIP = 24.dp
 
-/** Keep room for the lyrics or queue on short, narrow landscape devices. */
-internal fun landscapeArtworkWeight(width: androidx.compose.ui.unit.Dp): Float = when {
-    width < 600.dp -> 0.42f
-    width < 760.dp -> 0.46f
-    else -> 0.50f
-}
+/** BitChord's landscape player uses equally weighted columns at every width. */
+internal fun landscapeArtworkWeight(width: androidx.compose.ui.unit.Dp): Float = 0.5f
 
+/** Source layout: 20dp on low-height phones, 30dp on larger landscape windows. */
 internal fun landscapeSidePadding(width: androidx.compose.ui.unit.Dp, compact: Boolean): androidx.compose.ui.unit.Dp =
-    when {
-        width < 680.dp -> 12.dp
-        compact -> LANDSCAPE_GUTTER_COMPACT
-        else -> 24.dp
-}
+    if (compact) LANDSCAPE_GUTTER_COMPACT else LANDSCAPE_GUTTER
 
 internal enum class PlayerPane { Main, Lyrics, Queue }
 
