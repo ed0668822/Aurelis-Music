@@ -20,14 +20,15 @@ def read_policy(path):
     if (p.get("schema_version") != 1 or p.get("repo") != REPO or
         p.get("workflow") != WORKFLOW or
         any(type(p.get(k)) is not int or p[k] <= 0
-            for k in ("anchor_run_number", "base_major", "base_minor",
+            for k in ("anchor_run_number", "base_major",
                       "successes_per_minor", "version_code_offset")) or
+        type(p.get("base_minor")) is not int or p["base_minor"] < 0 or
         p["successes_per_minor"] != 150 or
         type(p.get("anchor_visible_patch")) is not int or
         p["anchor_visible_patch"] != 101 or
         p["anchor_run_number"] != 101 or
         p["version_code_offset"] != 10000 or
-        (p["base_major"], p["base_minor"]) != (1, 9)):
+        (p["base_major"], p["base_minor"]) != (2, 0)):
         raise ValueError("Invalid V1 policy")
     return p
 
@@ -37,7 +38,7 @@ def compute(count, number, policy):
         raise ValueError("Invalid green-build count or run number")
     if count > number - policy["anchor_run_number"] - 1:
         raise ValueError("Impossible successful-run count")
-    # Preserve previously issued 1.9.101; never restart the visible patch at 0.
+    # Preserve the monotonic patch sequence while entering the 2.0 release series.
     if count < policy["successes_per_minor"]:
         visible_name = f"{policy['base_major']}.{policy['base_minor']}.{policy['anchor_visible_patch'] + 1 + count}"
     else:

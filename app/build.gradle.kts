@@ -85,7 +85,7 @@ require((v1Name == null) == (v1Code == null)) {
     "V1 versionName and versionCode must be supplied together"
 }
 if (v1Name != null) {
-    require(Regex("""1\.\d+\.\d+""").matches(v1Name)) { "Invalid V1 versionName" }
+    require(Regex("""2\.\d+\.\d+""").matches(v1Name)) { "Invalid V1 versionName" }
 }
 val parsedVersionCode = v1Code?.toIntOrNull()
 if (v1Code != null) {
@@ -94,7 +94,7 @@ if (v1Code != null) {
     }
 }
 val autoVersionCode = parsedVersionCode ?: if (runNumber != null) 10000 + runNumber else 1
-val autoVersionName = v1Name ?: if (runNumber != null) "1.9.$runNumber" else "1.9.0-dev"
+val autoVersionName = v1Name ?: if (runNumber != null) "2.0.$runNumber" else "2.0.0-dev"
 
 android {
     namespace = "com.music.aurelis"
