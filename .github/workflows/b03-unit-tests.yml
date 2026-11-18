@@ -1,4 +1,5 @@
-# Aurelis © 2026. GPL-3.0-or-later.
+# SPDX-FileCopyrightText: 2026 Aurelis
+# SPDX-License-Identifier: LGPL-3.0-or-later
 # B03: independent compilation/tests plus Android16 navigation using B01 APKs.
 # No APK is built or published by the runtime step.
 name: "B03 | Android Unit Tests"
@@ -174,12 +175,25 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_5
-          ram-size: 4096M
+          ram-size: 3072M
           cores: 2
           emulator-boot-timeout: 900
           disable-animations: false
           emulator-options: '-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none'
           script: python3 .github/scripts/ui_parity.py settings-navigation
+
+      - name: Reset ADB and capture host resources between Android16 cases
+        if: ${{ !cancelled() && steps.android16_handoff.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          mkdir -p ci-b03/android16
+          free -m | tee ci-b03/android16/host-memory-between-cases.txt
+          ps -eo pid,ppid,rss,comm --sort=-rss | sed -n '1,25p' | tee ci-b03/android16/host-processes-between-cases.txt
+          # Restart the ADB daemon after the first emulator instance is torn down.
+          # Retain mandatory fresh-emulator assertions and fail on an actual test error.
+          adb kill-server || true
+          adb start-server
+          adb devices -l | tee ci-b03/android16/adb-between-cases.txt
 
       - name: Android16 real playback and Settings recreation
         id: android16_playback
@@ -195,7 +209,7 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_5
-          ram-size: 4096M
+          ram-size: 3072M
           cores: 2
           emulator-boot-timeout: 900
           disable-animations: false

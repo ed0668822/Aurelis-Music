@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# Aurelis © 2026. GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Aurelis
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """Fixtures for honest B03 classification and propagation of failed commands."""
 import json
 import os
@@ -276,6 +277,12 @@ class PhaseAndWorkflowTests(unittest.TestCase):
         self.assertIn('name: b01-shared-apks-${{ github.run_number }}', flow)
         self.assertIn('ci14_handoff.py restore --variant all', flow)
         self.assertIn('api-level: 36', flow)
+        self.assertEqual(2, flow.count('ram-size: 3072M'))
+        self.assertEqual(2, flow.count('script: python3 .github/scripts/ui_parity.py settings-navigation'))
+        self.assertLess(flow.index('id: android16_recreation'), flow.index('Reset ADB and capture host resources between Android16 cases'))
+        self.assertLess(flow.index('Reset ADB and capture host resources between Android16 cases'), flow.index('id: android16_playback'))
+        self.assertIn('adb kill-server || true', flow)
+        self.assertIn('adb start-server', flow)
         self.assertIn('ui_parity.py settings-navigation', flow)
         self.assertIn('b03_test_summary.py --gate', flow)
         self.assertIn('f5_coverage_gate.py ci-b03/diff-coverage.json', flow)

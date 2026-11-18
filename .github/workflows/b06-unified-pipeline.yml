@@ -1,4 +1,5 @@
-# Aurelis © 2026. GPL-3.0-or-later.
+# SPDX-FileCopyrightText: 2026 Aurelis
+# SPDX-License-Identifier: LGPL-3.0-or-later
 # B06: one push -> ordered, independently reported CI stages.
 name: "Aurelis | Unified B01-B06 Pipeline"
 
@@ -32,11 +33,11 @@ permissions:
   contents: read
   actions: read
 
-# Preserve an active B01-B06 run when new commits arrive on this branch.
-# GitHub keeps one pending run per group; newer pushes may replace only pending runs.
+# Supersede obsolete pipeline runs only on the migration branch.
+# Do not cancel main-branch or release-tag CI.
 concurrency:
   group: aurelis-unified-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.ref == 'refs/heads/feature/bitchord-local-migration' }}
 
 jobs:
   b01:
