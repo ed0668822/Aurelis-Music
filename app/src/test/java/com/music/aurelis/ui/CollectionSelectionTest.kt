@@ -160,6 +160,19 @@ class CollectionSelectionTest {
         }
     }
 
+    @Test fun selectionCanClearAndSelectVisibleTracksWithoutEditingTheirPlaylist() {
+        val id = app.userLibrary.createPlaylist("Lista para selección", listOf("a", "c", "z"))
+        val restoration = start()
+        compose.onNodeWithText("Seleccionar").performClick()
+        compose.onNodeWithText("Todas").performClick()
+        compose.onNodeWithTag("collection-selection-count").assertTextContains("3")
+        compose.onNodeWithText("Ninguna").performClick()
+        compose.onNodeWithTag("collection-selection-count").assertTextContains("0")
+        compose.runOnIdle { assertEquals(listOf("a", "c", "z"), app.userLibrary.state.value.playlists.single { it.id == id }.songIds) }
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("collection-selection-count").assertTextContains("0")
+    }
+
     @Test fun markedIdsAndVisibleSortSurviveRecreationAndCancelClearsThem() {
         val restoration = start()
         compose.onNodeWithText("Título Z–A").performClick()

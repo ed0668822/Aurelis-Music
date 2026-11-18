@@ -128,6 +128,7 @@ fun LocalCollectionScreen(
     val displaySongs = displayEntries.map { it.value }
     // Resolve saved IDs against visible media, never against stale playlist snapshots.
     val selectedSongs = displaySongs.filter { it.id in selected }
+    val allVisibleSelected = displaySongs.isNotEmpty() && displaySongs.all { it.id in selected }
     var orderSong by remember { mutableStateOf<String?>(null) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
@@ -210,8 +211,16 @@ fun LocalCollectionScreen(
                 }
             }
             if (selectionMode) {
+                Text(
+                    pluralStringResource(R.plurals.settings_song_count, selectedSongs.size, selectedSongs.size),
+                    modifier = Modifier.testTag("collection-selection-count"),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Row {
-                    TextButton(onClick = { selected = songs.map { it.id }.toSet() }) { Text("Todas") }
+                    TextButton(onClick = { selected = displaySongs.mapTo(linkedSetOf()) { it.id } },
+                        enabled = displaySongs.isNotEmpty() && !allVisibleSelected) { Text("Todas") }
+                    TextButton(onClick = { selected = emptySet() },
+                        enabled = selectedSongs.isNotEmpty()) { Text("Ninguna") }
                     TextButton(enabled = selectedSongs.isNotEmpty(), onClick = { onPlay(selectedSongs, 0) }) { Text("Reproducir") }
                     TextButton(enabled = selectedSongs.isNotEmpty() && !user.readOnly, onClick = {
                         selectedSongs.filterNot { it.id in user.favorites }.forEach { store.toggleFavorite(it.id) }
@@ -327,14 +336,16 @@ fun LocalCollectionScreen(
                             if (selectionMode) selected = if (song.id in selected) selected - song.id else selected + song.id
                             else onPlay(displaySongs, index)
                         }, Modifier.weight(1f))
-                        IconButton(onClick = { store.toggleFavorite(song.id) }, enabled = !user.readOnly) {
+                        IconButton(onClick = { store.toggleFavorite(song.id) },
+                            enabled = !selectionMode && !user.readOnly) {
                             Icon(if (song.id in user.favorites) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
                                 stringResource(R.string.favorite_action, song.title))
                         }
-                        IconButton(onClick = { name = ""; addSongId = song.id }, enabled = !user.readOnly) {
+                        IconButton(onClick = { name = ""; addSongId = song.id },
+                            enabled = !selectionMode && !user.readOnly) {
                             Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, stringResource(R.string.playlist_add_track, song.title))
                         }
-                        if (playlist != null) Box {
+                        if (playlist != null && !selectionMode) Box {
                             IconButton(onClick = { orderSong = song.id }, enabled = !user.readOnly) { Icon(Icons.Rounded.MoreVert, "Orden de ${song.title}") }
                             val savedIndex = entry.index
                             DropdownMenu(expanded = orderSong == song.id, onDismissRequest = { orderSong = null }) {
@@ -344,7 +355,7 @@ fun LocalCollectionScreen(
                                     onClick = { store.movePlaylistSong(playlist.id, savedIndex, savedIndex + 1); orderSong = null })
                             }
                         }
-                        if (playlist != null) IconButton(onClick = {
+                        if (playlist != null && !selectionMode) IconButton(onClick = {
                             store.setPlaylistSongs(playlist.id, playlist.songIds.filterIndexed { position, _ -> position != entry.index })
                         }, enabled = !user.readOnly) { Icon(Icons.Rounded.Delete, stringResource(R.string.playlist_remove_track, song.title)) }
                     }
