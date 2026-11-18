@@ -80,6 +80,6 @@ fun matchedLocalArtist(song: LocalSong, credit: String, artists: List<LocalArtis
 
 /** Common separators in artist bylines: comma, ampersand, "feat.", "ft.", "with", " x ". */
 private val CREDIT_SEPARATOR = Regex(
-    """\s*(?:,|&|\bfeat\.?\b|\bft\.?\b|\bwith\b|\s+x\s+)\s*""",
+    """\s*(?:,|&|\bfeat\b\.?|\bft\b\.?|\bwith\b|\s+x\s+)\s*""",
     RegexOption.IGNORE_CASE,
 )
