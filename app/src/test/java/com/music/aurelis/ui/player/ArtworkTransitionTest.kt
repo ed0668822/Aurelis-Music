@@ -35,6 +35,23 @@ class ArtworkTransitionTest {
         assertEquals("A current", state.value)
     }
 
+    @Test fun repeatedTrackSameArtworkUriCanRejoinQueueWithoutObsoleteCover() {
+        val state = ArtworkTransition<String?>("album cover A")
+        // Same URI across duplicate queue entries does not begin a fresh load.
+        assertEquals("album cover A", state.value)
+        val requestB = state.begin()
+        val requestC = state.begin()
+        state.complete(requestB, "old B")
+        assertEquals("album cover A", state.value)
+        state.complete(requestC, "cover C")
+        assertEquals("cover C", state.value)
+        val missing = state.begin()
+        state.complete(missing, null)
+        assertNull(state.value)
+        state.complete(requestB, "stale B")
+        assertNull(state.value)
+    }
+
     @Test fun duplicateQueueOccurrencesCanRetainTheSameDecodedCover() {
         val state = ArtworkTransition<String?>("cover for song A")
         // Two queue entries for the same local URI do not require invalidating

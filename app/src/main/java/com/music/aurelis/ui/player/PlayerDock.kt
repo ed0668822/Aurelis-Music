@@ -55,11 +55,20 @@ class PlayerDock {
     internal fun reportMini(id: String, coordinates: LayoutCoordinates, corner: Dp = 8.dp) {
         miniId = id; mini = coordinates; miniCorner = corner
     }
-    internal fun releaseMini(id: String) { if (miniId == id) { mini = null; miniId = null } }
+    /** A retiring layout must not discard the new copy of this song's cover. */
+    internal fun releaseMini(id: String, coordinates: LayoutCoordinates?) {
+        if (isCurrentDockOwner(miniId, mini, id, coordinates)) {
+            mini = null; miniId = null
+        }
+    }
     internal fun reportExpanded(id: String, coordinates: LayoutCoordinates, corner: Dp = 0.dp) {
         expandedId = id; expanded = coordinates; expandedCorner = corner
     }
-    internal fun releaseExpanded(id: String) { if (expandedId == id) { expanded = null; expandedId = null } }
+    internal fun releaseExpanded(id: String, coordinates: LayoutCoordinates?) {
+        if (isCurrentDockOwner(expandedId, expanded, id, coordinates)) {
+            expanded = null; expandedId = null
+        }
+    }
     private fun bounds(coordinates: LayoutCoordinates?, relative: LayoutCoordinates?): Rect? {
         val c = coordinates?.takeIf { it.isAttached } ?: return null
         val origin = relative?.takeIf { it.isAttached } ?: return null
@@ -87,6 +96,10 @@ class PlayerDock {
 }
 
 internal data class ArtworkDockPose(val bounds: Rect, val corner: Dp)
+
+/** Identity-based disposal ensures a stale cover never erases its replacement. */
+internal fun isCurrentDockOwner(currentId: String?, currentOwner: Any?, oldId: String, oldOwner: Any?): Boolean =
+    currentId == oldId && currentOwner != null && currentOwner === oldOwner
 
 /** Interpolate frame and the actual mini/expanded artwork corner as one pose. */
 internal fun artworkDockPose(

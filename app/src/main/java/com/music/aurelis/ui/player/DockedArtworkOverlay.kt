@@ -24,10 +24,17 @@ import com.music.aurelis.data.model.LocalSong
 @Composable
 internal fun Modifier.playerDockArtwork(dock: PlayerDock?, id: String, mini: Boolean, corner: Dp = 8.dp): Modifier {
     if (dock == null) return this
+    // BitChord releases a specific layout measurement, not every cover with
+    // the same song ID. The collapsed/expanded bars can overlap while folding.
+    val owned = remember(dock, id, mini) { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
     DisposableEffect(dock, id, mini) {
-        onDispose { if (mini) dock.releaseMini(id) else dock.releaseExpanded(id) }
+        onDispose {
+            if (mini) dock.releaseMini(id, owned[0])
+            else dock.releaseExpanded(id, owned[0])
+        }
     }
     return onGloballyPositioned {
+        owned[0] = it
         if (mini) dock.reportMini(id, it, corner) else dock.reportExpanded(id, it, corner)
     }.graphicsLayer { alpha = if (dock.coversArtwork(id)) 0f else 1f }
 }

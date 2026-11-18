@@ -8,6 +8,15 @@ import org.junit.Test
 class PlayerDockGeometryTest {
     private val mini = Rect(12f, 720f, 52f, 760f)
     private val expanded = Rect(24f, 100f, 344f, 420f)
+    @Test fun retiringAnOldCoverDoesNotClearItsReplacementForTheSameTrack() {
+        val oldCover = Any()
+        val newCover = Any()
+        assertFalse(isCurrentDockOwner("track", newCover, "track", oldCover))
+        assertTrue(isCurrentDockOwner("track", newCover, "track", newCover))
+        assertFalse(isCurrentDockOwner("other", newCover, "track", newCover))
+        assertFalse(isCurrentDockOwner("track", newCover, "track", null))
+    }
+
     @Test fun interpolationUsesMeasuredEndpointsAndClampsTheFraction() {
         assertEquals(mini, artworkBoundsBetween(mini, expanded, -1f))
         assertEquals(expanded, artworkBoundsBetween(mini, expanded, 2f))
