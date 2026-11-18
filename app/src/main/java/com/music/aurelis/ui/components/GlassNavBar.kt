@@ -18,7 +18,9 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -133,12 +135,13 @@ fun GlassNavBar(
         Column(modifier.fillMaxWidth()) {
             song?.let { current ->
                 MiniPlayer(current.title, current.artist, isPlaying, onPlayPause, onExpand,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = NAV_BAR_GUTTER),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     artworkUri = current.artworkUri, isLoading = isLoading, enabled = !controlsLocked,
                     canNext = canNext, onNext = onNext, progress = progress, qualityLabel = qualityLabel,
                     songId = current.id, dock = dock, pull = pull,
                     canPrevious = canPrevious, onPrevious = onPrevious,
-                    onQualityClick = onQualityClick)
+                    onQualityClick = onQualityClick, isExplicit = current.isExplicit,
+                    hazeState = haze)
                 Spacer(Modifier.height(8.dp))
             }
             FloatingBottomBar(tabs, selectedIndex, onTabSelected, haze)
@@ -332,6 +335,7 @@ fun GlassNavBar(
  * The press response is Echo's, and belongs to the glass rather than the row:
  * a surface you can push on is the whole point of the material.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun GlassNowPlaying(
     song: LocalSong,
@@ -377,6 +381,12 @@ private fun GlassNowPlaying(
     )
     val glyphSlot = if (isInline) 32.dp else 40.dp
     val glyphSize = if (isInline) 24.dp else EXPANDED_GLYPH_SIZE
+    val hasQuality = onQualityClick != null && !qualityLabel.isNullOrBlank()
+    val pressAction = if (hasQuality) Modifier.combinedClickable(
+        interactionSource = pressSource, indication = null,
+        onClick = onExpand, onLongClick = { onQualityClick?.invoke() },
+        onLongClickLabel = stringResource(R.string.mini_quality_action),
+    ) else Modifier.clickable(interactionSource = pressSource, indication = null, onClick = onExpand)
 
     Box(
         // Inline, the accessory is stretched to the row's height by the tab bar
@@ -407,11 +417,7 @@ private fun GlassNowPlaying(
                 stateDescription = qualityLabel.orEmpty()
                 progressBarRangeInfo = ProgressBarRangeInfo(progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f, 0f..1f)
             }
-            .clickable(
-                interactionSource = pressSource,
-                indication = null,
-                onClick = onExpand,
-            ),
+            .then(pressAction),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -430,6 +436,7 @@ private fun GlassNowPlaying(
         ) {
             AnimatedArtwork(songKey = song.id, artworkUri = song.artworkUri,
                 title = song.title, size = ACCESSORY_ART_SIZE, corner = ACCESSORY_ART_CORNER,
+                miniPlayerStyle = true,
                 modifier = Modifier.playerDockArtwork(dock, song.id, mini = true, corner = ACCESSORY_ART_CORNER))
             Spacer(Modifier.width(if (isInline) 8.dp else 9.dp))
             // Title and artist at both densities, as Apple Music has them, in its
@@ -438,18 +445,8 @@ private fun GlassNowPlaying(
             // a long line fades out at its end, as Apple's does.
             Column(Modifier.weight(1f)) {
                 val secondary = contentColor.copy(alpha = 0.7f)
-                FadingLine(song.title, titleStyle, contentColor)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    FadingLine(
-                        text = song.artist, style = artistStyle, color = secondary,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (!isInline && !qualityLabel.isNullOrBlank()) {
-                        Spacer(Modifier.width(4.dp))
-                        SourceQualityBadge(qualityLabel,
-                            modifier = Modifier.testTag("mini-quality"), onClick = onQualityClick)
-                    }
-                }
+                MiniPlayerSongTitle(song.title, song.isExplicit, titleStyle, contentColor, secondary)
+                FadingLine(text = song.artist, style = artistStyle, color = secondary)
             }
             if (isLoading) {
                 Box(Modifier.size(glyphSlot), contentAlignment = Alignment.Center) {

@@ -45,6 +45,7 @@ fun AnimatedArtwork(
     progressFraction: Float = 0f,
     modifier: Modifier = Modifier,
     corner: androidx.compose.ui.unit.Dp = 10.dp,
+    miniPlayerStyle: Boolean = false,
 ) {
     val context = LocalPlatformContext.current
     val reduceMotion = LocalReduceMotion.current
@@ -78,13 +79,14 @@ fun AnimatedArtwork(
         modifier = modifier
             .size(resolvedSize)
             .clip(RoundedCornerShape(corner))
-            .background(Brush.verticalGradient(colors = gradientColors)),
+            .then(if (miniPlayerStyle) Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                  else Modifier.background(Brush.verticalGradient(colors = gradientColors))),
         contentAlignment = Alignment.Center,
     ) {
         Crossfade(targetState = transition.value, animationSpec = tween(if (reduceMotion) 0 else 220),
             modifier = Modifier.fillMaxSize(), label = "player-artwork-crossfade") { bitmap ->
             if (bitmap != null) Image(bitmap, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            else if (!miniPlayerStyle) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(displayText, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimary)
             }
         }
