@@ -48,6 +48,32 @@ class LocalUiParityTest {
         compose.onNodeWithText("Sin resultados").assertIsDisplayed()
     }
 
+    @Test fun gridPreservesRealSongActionsAndAlbumRoutes() {
+        var played: List<String> = emptyList()
+        var actions: String? = null
+        var opened: AppRoute.Collection? = null
+        val state = LibraryState.Success(songs,
+            albums = listOf(LocalAlbum("Album", "Artist", null, songs.size, songs)),
+            artists = listOf(LocalArtist("Artist", null, songs.size, 1, songs)))
+        compose.setContent { AurelisTheme { Box(Modifier.size(360.dp, 640.dp)) {
+            LocalMusicContent(state, songs, emptyList(), null, false, SortOption.TITLE_ASC, {},
+                {}, {}, {}, { tracks, _ -> played = tracks.map { it.id } },
+                { opened = it }, { actions = it.id }, {})
+        } } }
+        compose.onNodeWithTag("local-music-view-toggle").performClick()
+        compose.onNodeWithTag("local-music-card:song:1").performClick()
+        compose.runOnIdle { assertEquals(songs.map { it.id }, played) }
+        compose.onNodeWithContentDescription("Opciones de Track 1").performClick()
+        compose.runOnIdle { assertEquals("1", actions) }
+        compose.onNode(isSelectable() and hasText("Álbumes")).performScrollTo().performClick()
+        compose.onNodeWithTag("local-music-card:album:5:AlbumArtist").performClick()
+        compose.runOnIdle {
+            assertEquals(AppRoute.Collection(LocalCollectionKind.ALBUM, state.albums.single().key), opened)
+        }
+        compose.onNodeWithTag("local-music-view-toggle").performClick()
+        compose.onNodeWithTag("local-music-card:album:5:AlbumArtist").assertDoesNotExist()
+    }
+
     @Test fun restoringTheLocalListDoesNotResetItsSavedScrollToTheHeader() {
         val restore = StateRestorationTester(compose)
         restore.setContent { AurelisTheme {

@@ -467,6 +467,11 @@
     <string name="local_music_sort">Sort</string>
     <string name="local_music_sort_library">Sort library</string>
     <string name="local_music_refresh">Refresh</string>
+    <string name="local_music_grid_view">Show grid</string>
+    <string name="local_music_list_view">Show list</string>
+    <string name="local_music_song_options">Options for %1$s</string>
+    <string name="local_music_no_playlists">No playlists</string>
+    <string name="local_music_no_folders">No folders</string>
     <string name="local_search_hint">Search songs, artists, albums…</string>
     <string name="local_search_all">All</string>
     <string name="local_search_genres">Genres</string>

@@ -17,6 +17,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.ViewList
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material3.*
@@ -52,6 +55,7 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
     var query by rememberSaveable { mutableStateOf("") }
     var search by rememberSaveable { mutableStateOf(false) }
     var sorting by remember { mutableStateOf(false) }
+    var grid by rememberSaveable { mutableStateOf(false) }
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val searchFocus = remember { FocusRequester() }
@@ -89,6 +93,7 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
         pluralStringResource(R.plurals.settings_song_count, songs.size, songs.size), totalMinutes)
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val sleeve = (maxWidth * 0.76f).coerceAtMost(maxHeight * 0.5f)
+        val gridColumns = if (maxWidth >= 700.dp) 4 else if (maxWidth >= 500.dp) 3 else 2
         val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
         LocalPullToRefresh(
             refreshing = isRefreshing,
@@ -131,31 +136,83 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                 } else when (selected) {
                     0 -> {
                         if (filtered.isEmpty()) item { Text(stringResource(R.string.local_music_empty), Modifier.padding(24.dp)) }
-                        itemsIndexed(filtered, key = { _, song -> song.id }) { index, song ->
-                            SongListItem(song, currentSongId == song.id && isPlaying, { onPlay(filtered, index) }, onMore = { onActions(song) })
+                        if (grid) {
+                            localMusicGridRows(filtered, gridColumns, { it.id }) { song ->
+                                val index = filtered.indexOf(song)
+                                LocalMusicGridCard("song:" + song.id, song.title, song.artist,
+                                    song.artworkUri, AurelisIcons.MusicNote,
+                                    active = currentSongId == song.id && isPlaying,
+                                    onClick = { onPlay(filtered, index) },
+                                    onMore = { onActions(song) })
+                            }
+                        } else itemsIndexed(filtered, key = { _, song -> song.id }) { index, song ->
+                            SongListItem(song, currentSongId == song.id && isPlaying,
+                                { onPlay(filtered, index) }, onMore = { onActions(song) })
                             HorizontalDivider(Modifier.padding(start = 84.dp), thickness = 0.5.dp)
                         }
                     }
-                    1 -> items(success?.artists.orEmpty().filter { it.songs.any { song -> song.id in visibleIds } }, key = { it.key }) {
-                        LocalEntityRow(it.name, pluralStringResource(R.plurals.settings_song_count, it.songCount, it.songCount), it.artworkUri, AurelisIcons.Artist,
-                            round = true, onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.ARTIST, it.key)) })
-                    }
-                    2 -> items(success?.albums.orEmpty().filter { it.songs.any { song -> song.id in visibleIds } }, key = { it.key }) {
-                        LocalEntityRow(it.name, it.artist, it.artworkUri, AurelisIcons.Album,
-                            onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.ALBUM, it.key)) })
-                    }
-                    3 -> {
-                        item { TextButton(onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) }) { Text(stringResource(R.string.local_music_manage_playlists)) } }
-                        items(playlists.filter { LocalSearch.normalize(it.name).contains(LocalSearch.normalize(query)) }, key = { it.id }) {
-                            val playlist = it
-                            LocalEntityRow(it.name, pluralStringResource(R.plurals.settings_song_count, it.songIds.size, it.songIds.size),
-                                songs.firstOrNull { song -> song.id == playlist.songIds.firstOrNull() }?.artworkUri,
-                                AurelisIcons.Playlist, onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.PLAYLIST, playlist.id)) })
+                    1 -> {
+                        val artists = success?.artists.orEmpty().filter { group -> group.songs.any { it.id in visibleIds } }
+                        if (grid) localMusicGridRows(artists, gridColumns, { it.key }) { artist ->
+                            LocalMusicGridCard("artist:" + artist.key, artist.name,
+                                pluralStringResource(R.plurals.settings_song_count, artist.songCount, artist.songCount),
+                                artist.artworkUri, AurelisIcons.Artist,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.ARTIST, artist.key)) })
+                        } else items(artists, key = { it.key }) { artist ->
+                            LocalEntityRow(artist.name,
+                                pluralStringResource(R.plurals.settings_song_count, artist.songCount, artist.songCount),
+                                artist.artworkUri, AurelisIcons.Artist, round = true,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.ARTIST, artist.key)) })
                         }
                     }
-                    4 -> items(LocalFolderRepository.groups(filtered), key = { it.key }) {
-                        LocalEntityRow(it.label, pluralStringResource(R.plurals.settings_song_count, it.songs.size, it.songs.size), null, AurelisIcons.Folder,
-                            onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.FOLDER, it.key)) })
+                    2 -> {
+                        val albums = success?.albums.orEmpty().filter { group -> group.songs.any { it.id in visibleIds } }
+                        if (grid) localMusicGridRows(albums, gridColumns, { it.key }) { album ->
+                            LocalMusicGridCard("album:" + album.key, album.name, album.artist,
+                                album.artworkUri, AurelisIcons.Album,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.ALBUM, album.key)) })
+                        } else items(albums, key = { it.key }) { album ->
+                            LocalEntityRow(album.name, album.artist, album.artworkUri, AurelisIcons.Album,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.ALBUM, album.key)) })
+                        }
+                    }
+                    3 -> {
+                        item { TextButton(onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.PLAYLISTS)) }) {
+                            Text(stringResource(R.string.local_music_manage_playlists)) } }
+                        val visiblePlaylists = playlists.filter { LocalSearch.normalize(it.name).contains(LocalSearch.normalize(query)) }
+                        if (visiblePlaylists.isEmpty()) item {
+                            Text(stringResource(R.string.local_music_no_playlists), Modifier.padding(24.dp))
+                        }
+                        if (grid) localMusicGridRows(visiblePlaylists, gridColumns, { it.id }) { playlist ->
+                            LocalMusicGridCard("playlist:" + playlist.id, playlist.name,
+                                pluralStringResource(R.plurals.settings_song_count, playlist.songIds.size, playlist.songIds.size),
+                                songs.firstOrNull { song -> song.id == playlist.songIds.firstOrNull() }?.artworkUri,
+                                AurelisIcons.Playlist,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.PLAYLIST, playlist.id)) })
+                        } else items(visiblePlaylists, key = { it.id }) { playlist ->
+                            LocalEntityRow(playlist.name,
+                                pluralStringResource(R.plurals.settings_song_count, playlist.songIds.size, playlist.songIds.size),
+                                songs.firstOrNull { song -> song.id == playlist.songIds.firstOrNull() }?.artworkUri,
+                                AurelisIcons.Playlist,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.PLAYLIST, playlist.id)) })
+                        }
+                    }
+                    4 -> {
+                        val folders = LocalFolderRepository.groups(filtered)
+                        if (folders.isEmpty()) item {
+                            Text(stringResource(R.string.local_music_no_folders), Modifier.padding(24.dp))
+                        }
+                        if (grid) localMusicGridRows(folders, gridColumns, { it.key }) { folder ->
+                            LocalMusicGridCard("folder:" + folder.key, folder.label,
+                                pluralStringResource(R.plurals.settings_song_count, folder.songs.size, folder.songs.size),
+                                null, AurelisIcons.Folder,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.FOLDER, folder.key)) })
+                        } else items(folders, key = { it.key }) { folder ->
+                            LocalEntityRow(folder.label,
+                                pluralStringResource(R.plurals.settings_song_count, folder.songs.size, folder.songs.size),
+                                null, AurelisIcons.Folder,
+                                onClick = { onOpen(AppRoute.Collection(LocalCollectionKind.FOLDER, folder.key)) })
+                        }
                     }
                 }
             }
@@ -176,6 +233,10 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                     if (!search) query = ""
                 }) { Icon(if (search) AurelisIcons.Close else AurelisIcons.Search,
                     stringResource(if (search) R.string.local_music_search_close else R.string.local_music_search_open)) }
+                IconButton(onClick = { grid = !grid }, modifier = Modifier.testTag("local-music-view-toggle")) {
+                    Icon(if (grid) Icons.Rounded.ViewList else Icons.Rounded.GridView,
+                        stringResource(if (grid) R.string.local_music_list_view else R.string.local_music_grid_view))
+                }
                 Box {
                     IconButton(onClick = { sorting = true }) { Icon(AurelisIcons.Sort, stringResource(R.string.local_music_sort)) }
                     DropdownMenu(sorting, { sorting = false }) {
@@ -210,15 +271,50 @@ private fun LocalEntityRow(title: String, subtitle: String, artwork: String?, ic
 
 @Composable
 private fun LocalFolderTabs(tabs: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    val shape = RoundedCornerShape(percent = 50)
-    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth().clip(shape)
-        .background(MaterialTheme.colorScheme.surfaceVariant).horizontalScroll(rememberScrollState())
-        .selectableGroup().padding(4.dp)) {
-        tabs.forEachIndexed { index, label ->
-            Box(Modifier.clip(shape).background(if (selected == index) MaterialTheme.colorScheme.background else Color.Transparent)
-                .selectable(selected == index, role = Role.Tab) { onSelect(index) }
-                .heightIn(min = 48.dp).padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
-                Text(label, style = MaterialTheme.typography.bodyLarge)
+    PillSegmentedControl(tabs, selected, onSelect,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+}
+
+/** Keep every grid row inside the existing lazy list and navigation state. */
+private fun <T> LazyListScope.localMusicGridRows(
+    values: List<T>, columns: Int, key: (T) -> String,
+    content: @Composable (T) -> Unit,
+) {
+    items(values.chunked(columns), key = { row -> "grid:" + key(row.first()) }) { row ->
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            row.forEach { value -> Box(Modifier.weight(1f)) { content(value) } }
+            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+}
+
+@Composable
+private fun LocalMusicGridCard(
+    key: String, title: String, subtitle: String, artwork: String?, icon: ImageVector,
+    active: Boolean = false, onClick: () -> Unit, onMore: (() -> Unit)? = null,
+) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+        .background(if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+        .clickable(onClick = onClick).testTag("local-music-card:" + key).padding(10.dp)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+            Icon(icon, null, modifier = Modifier.size(38.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (artwork != null) AsyncImage(artwork, null, Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop)
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(top = 8.dp)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 2,
+                    overflow = TextOverflow.Ellipsis)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            if (onMore != null) IconButton(onClick = onMore) {
+                Icon(AurelisIcons.MoreVert,
+                    contentDescription = stringResource(R.string.local_music_song_options, title))
             }
         }
     }
