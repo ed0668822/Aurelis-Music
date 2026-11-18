@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data
 
 import android.content.Context
@@ -53,7 +55,11 @@ object LocalFolderRepository {
         }
     }
     fun remove(context: Context, value: String) {
-        SettingsRepository.setLocalFolderSelection(SettingsRepository.localMusicFolders.value - value, SettingsRepository.useAllAudioFolders.value)
+        // Only revoke grants that this profile actually selected. An unrelated SAF
+        // grant may belong to another feature, and a stale removal must be inert.
+        val selected = SettingsRepository.localMusicFolders.value
+        if (value !in selected) return
+        SettingsRepository.setLocalFolderSelection(selected - value, SettingsRepository.useAllAudioFolders.value)
         runCatching { context.contentResolver.releasePersistableUriPermission(Uri.parse(value), Intent.FLAG_GRANT_READ_URI_PERMISSION) }
     }
     private fun checkAccess(context: Context, uri: Uri) {

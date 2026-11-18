@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data
 
 import android.content.*
@@ -66,6 +68,30 @@ class LocalFolderRepositoryTest {
         assertTrue(LocalMediaRepository.getLibrarySongs(app,true).isEmpty())
         assertTrue(app.contentResolver.persistedUriPermissions.none { it.uri == tree })
     }
+    @Test fun removingUnselectedTreeDoesNotRevokeAnotherFeaturesGrant() {
+        val unrelated = Uri.parse("content://com.android.externalstorage.documents/tree/primary%3ADocuments")
+        app.contentResolver.takePersistableUriPermission(unrelated, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val before = SettingsRepository.localMusicFolders.value
+        LocalFolderRepository.remove(app, unrelated.toString())
+        assertEquals(before, SettingsRepository.localMusicFolders.value)
+        assertTrue(app.contentResolver.persistedUriPermissions.any { it.uri == unrelated && it.isReadPermission })
+        app.contentResolver.releasePersistableUriPermission(unrelated, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    @Test fun removingSelectedTreePreservesAnUnrelatedGrantAndEmptyScope() = runBlocking {
+        val unrelated = Uri.parse("content://com.android.externalstorage.documents/tree/primary%3ADocuments")
+        app.contentResolver.takePersistableUriPermission(unrelated, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        LocalFolderRepository.add(app, tree)
+        LocalFolderRepository.remove(app, tree.toString())
+        LocalFolderRepository.remove(app, tree.toString()) // idempotent
+        assertFalse(SettingsRepository.useAllAudioFolders.value)
+        assertTrue(SettingsRepository.localMusicFolders.value.isEmpty())
+        assertTrue(LocalMediaRepository.getLibrarySongs(app, true).isEmpty())
+        assertFalse(app.contentResolver.persistedUriPermissions.any { it.uri == tree })
+        assertTrue(app.contentResolver.persistedUriPermissions.any { it.uri == unrelated && it.isReadPermission })
+        app.contentResolver.releasePersistableUriPermission(unrelated, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
     @Test fun providerWithoutFolderColumnsReportsUnsupportedRatherThanAnEmptyFolder() = runBlocking {
         LocalFolderRepository.add(app, tree)
         media.columns = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DURATION)
