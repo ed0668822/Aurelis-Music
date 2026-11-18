@@ -37,6 +37,7 @@ class GlassNavigationTest {
         var song by mutableStateOf<com.music.aurelis.data.model.LocalSong?>(null)
         compose.setContent { AurelisTheme {
             CompositionLocalProvider(com.music.aurelis.ui.components.LocalGlassHardware provides false,
+                com.music.aurelis.ui.components.LocalLiquidGlassEnabled provides false,
                 LocalReduceMotion provides true) {
                 androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier
                     .size(360.dp, 640.dp)) {
@@ -53,7 +54,8 @@ class GlassNavigationTest {
         val mini = compose.onNodeWithTag("mini-player").fetchSemanticsNode().boundsInRoot
         assertEquals(before.bottom, withTrack.bottom, 0.5f)
         assertTrue(mini.bottom < withTrack.top)
-        // The standard BitChord mini-player uses the page's 16dp side gutter.
+        // Force standard (non-Liquid-Glass) mode: BitChord uses 16dp side gutters.
+        // Glass mode intentionally has its own 19dp navigation layout.
         assertEquals(328f, mini.width, 0.5f)
         compose.runOnIdle { song = null }
         assertEquals(before.bottom, tab.fetchSemanticsNode().boundsInRoot.bottom, 0.5f)

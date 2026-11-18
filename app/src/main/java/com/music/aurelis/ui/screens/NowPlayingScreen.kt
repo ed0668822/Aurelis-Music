@@ -161,6 +161,10 @@ internal fun portraitArtworkSize(width: Dp, height: Dp): Dp {
     // Compact portrait windows leave more room for the credits and transport.
     // Width remains full-bleed on ordinary phones; on tablets the art is centred.
     val available = (height - 260.dp).coerceAtLeast(54.dp)
+    // If the portrait already leaves 240dp beneath its square artwork,
+    // maintain the full-width sleeve. This also preserves the 320x568
+    // large-text/transport regression verified by PlayerIntegrationTest.
+    if (width <= 560.dp && height - width >= 240.dp) return width
     return minOf(width, 560.dp, available)
 }
 

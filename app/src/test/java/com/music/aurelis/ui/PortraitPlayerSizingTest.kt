@@ -9,7 +9,8 @@ import org.junit.Test
 
 class PortraitPlayerSizingTest {
     @Test fun phonePortraitBoundsArtworkByAvailableHeightAndTitleControls() {
-        assertEquals(308.dp, portraitArtworkSize(320.dp, 568.dp))
+        assertEquals(320.dp, portraitArtworkSize(320.dp, 568.dp))
+        assertEquals(280.dp, portraitArtworkSize(320.dp, 540.dp))
         assertEquals(360.dp, portraitArtworkSize(360.dp, 800.dp))
         assertEquals(280.dp, portraitArtworkSize(360.dp, 540.dp))
     }
