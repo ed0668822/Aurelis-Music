@@ -17,6 +17,8 @@ import com.music.aurelis.ui.theme.LocalReduceMotion
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ensureActive
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,6 +70,8 @@ fun AnimatedArtwork(
         transition.complete(request, next)
     }
     val resolvedSize = size
+    val miniBorder = if (isSystemInDarkTheme()) Color.White.copy(alpha = 0.15f)
+                     else Color.Black.copy(alpha = 0.15f)
     val gradientColors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
     val displayText = if (title.isNotEmpty()) {
         title.first().uppercaseChar().toString()
@@ -80,10 +84,12 @@ fun AnimatedArtwork(
             .size(resolvedSize)
             .clip(RoundedCornerShape(corner))
             .then(if (miniPlayerStyle) Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
-                  else Modifier.background(Brush.verticalGradient(colors = gradientColors))),
+                  else Modifier.background(Brush.verticalGradient(colors = gradientColors)))
+            .then(if (miniPlayerStyle) Modifier.border(1.dp, miniBorder, RoundedCornerShape(corner))
+                  else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Crossfade(targetState = transition.value, animationSpec = tween(if (reduceMotion) 0 else 220),
+        Crossfade(targetState = transition.value, animationSpec = tween(if (reduceMotion || miniPlayerStyle) 0 else 220),
             modifier = Modifier.fillMaxSize(), label = "player-artwork-crossfade") { bitmap ->
             if (bitmap != null) Image(bitmap, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else if (!miniPlayerStyle) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
