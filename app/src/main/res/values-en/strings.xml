@@ -473,6 +473,11 @@
     <string name="local_music_no_playlists">No playlists</string>
     <string name="local_music_no_folders">No folders</string>
     <string name="album_duration_minutes">%1$d min</string>
+    <plurals name="artist_album_count">
+        <item quantity="one">%d album</item>
+        <item quantity="other">%d albums</item>
+    </plurals>
+    <string name="artist_local_songs">Songs</string>
     <string name="local_search_hint">Search songs, artists, albums…</string>
     <string name="local_search_all">All</string>
     <string name="local_search_genres">Genres</string>

@@ -40,6 +40,7 @@ import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.data.model.LocalAlbum
+import com.music.aurelis.data.model.LocalArtist
 import com.music.aurelis.ui.components.SongListItem
 import com.music.aurelis.ui.components.LocalDetailHeader
 import com.music.aurelis.ui.components.BrowseActionsMenu
@@ -67,7 +68,9 @@ fun LocalCollectionScreen(
     val allSongs = snapshot?.songs.orEmpty()
     val playlist = user.playlists.firstOrNull { it.id == route.key }
     val album = snapshot?.albums?.let { resolveLocalAlbum(it, route.key) }
-    val artist = snapshot?.artists?.firstOrNull { it.key == route.key || it.name == route.key }
+    val artist = snapshot?.artists?.let { resolveLocalArtist(it, route.key) }
+    val artistAlbums = if (route.kind == LocalCollectionKind.ARTIST && artist != null)
+        localArtistAlbums(artist, snapshot?.albums.orEmpty()) else emptyList()
     val byId = remember(allSongs) { allSongs.associateBy { it.id } }
     val genres = remember(allSongs) { LocalGenres.groups(allSongs) }
     val directory = when (route.kind) {
@@ -237,10 +240,13 @@ fun LocalCollectionScreen(
                         }
                         val durationLabel = if (route.kind == LocalCollectionKind.ALBUM && totalMs >= 60_000L)
                             stringResource(R.string.album_duration_minutes, totalMs / 60_000L) else null
+                        val albumCountLabel = if (route.kind == LocalCollectionKind.ARTIST && artist != null)
+                            pluralStringResource(R.plurals.artist_album_count, artistAlbums.size, artistAlbums.size) else null
                         val metadata = buildString {
                             append(countLabel)
                             if (knownYear != null) append(" · ").append(knownYear)
                             if (durationLabel != null) append(" · ").append(durationLabel)
+                            if (albumCountLabel != null) append(" · ").append(albumCountLabel)
                         }
                         LocalDetailHeader(title.ifBlank { stringResource(R.string.collection_unavailable) },
                             if (route.kind == LocalCollectionKind.ALBUM) album?.artist.orEmpty() else "",
@@ -248,6 +254,20 @@ fun LocalCollectionScreen(
                             onPlay = { onPlay(displaySongs, 0) },
                             onShuffle = { onPlay(displaySongs.shuffled(), 0) },
                             canPlay = displaySongs.isNotEmpty())
+                    }
+                }
+                if (route.kind == LocalCollectionKind.ARTIST && artistAlbums.isNotEmpty()) {
+                    item(key = "artist-albums") {
+                        LocalArtistAlbumShelf(artistAlbums) { chosen ->
+                            onOpen(AppRoute.Collection(LocalCollectionKind.ALBUM, chosen.key))
+                        }
+                    }
+                }
+                if (route.kind == LocalCollectionKind.ARTIST && displayEntries.isNotEmpty()) {
+                    item(key = "artist-songs-title") {
+                        Text(stringResource(R.string.artist_local_songs),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
                     }
                 }
                 itemsIndexed(displayEntries, key = { _, entry -> "${entry.index}:${entry.value.id}" }) { index, entry ->
@@ -356,3 +376,9 @@ internal fun resolveLocalAlbum(albums: List<LocalAlbum>, routeKey: String): Loca
         }
     }.singleOrNull()
 }
+
+/** Existing MediaStore identity wins; a display-name fallback may resolve only one artist. */
+internal fun resolveLocalArtist(artists: List<LocalArtist>, routeKey: String): LocalArtist? =
+    artists.firstOrNull { it.key == routeKey }
+        ?: if (routeKey.startsWith("media:")) null
+        else artists.filter { it.name == routeKey }.singleOrNull()
