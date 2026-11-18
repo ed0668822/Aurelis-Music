@@ -64,6 +64,7 @@ class MediaStoreLibraryTest {
         assertEquals("content://media/external/audio/albumart/10", songs[0].artworkUri)
         assertEquals(123_000, songs[0].dateAddedMs)
         assertEquals("Pop", songs[0].genre)
+        assertEquals(com.music.aurelis.data.model.MetadataOrigin.MEDIA_STORE, songs[0].genreOrigin)
         assertEquals("file-2", songs[1].title)
         assertEquals("Artista desconocido", songs[1].artist)
         assertNull(songs[1].filePath)
@@ -72,6 +73,23 @@ class MediaStoreLibraryTest {
         assertTrue(provider.selection.orEmpty().contains("is_pending = 0"))
         assertTrue(provider.selection.orEmpty().contains("is_trashed = 0"))
         assertEquals(listOf("500"), provider.arguments?.toList())
+    }
+
+    @Test fun unknownMediaStoreGenreMayUseRealFileTagWithoutInventingACategory() = runBlocking {
+        provider.rows = listOf(
+            row(1, mapOf(MediaStore.Audio.Media.GENRE to " <unknown> ")),
+            row(2, mapOf(MediaStore.Audio.Media.GENRE to " <unknown> ")),
+        )
+        val tags = LocalMetadataReader { uri ->
+            if (uri.lastPathSegment == "1") LocalFileMetadata(genre = "Post-rock")
+            else LocalFileMetadata()
+        }
+        val tracks = LocalMediaRepository.getAllSongs(context, true, tags)
+        assertEquals("Post-rock", tracks[0].genre)
+        assertEquals(com.music.aurelis.data.model.MetadataOrigin.FILE_TAG, tracks[0].genreOrigin)
+        assertNull(tracks[1].genre)
+        assertNull(tracks[1].genreOrigin)
+        assertEquals(setOf("tag:post-rock", "unknown"), LocalGenres.groups(tracks).map { it.key }.toSet())
     }
 
     @Test fun nonMusicFilterIsOptionalButPendingAndTrashedAreAlwaysExcluded() = runBlocking {
