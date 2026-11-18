@@ -125,6 +125,25 @@ class LocalUiParityTest {
         compose.onNodeWithContentDescription("Atrás").performClick()
         compose.onNode(hasSetTextAction()).assertExists()
     }
+    @Test fun libraryLocalLinksOpenRealDestinationsWithoutExtraSettingsAccess() {
+        var opened = ""
+        compose.setContent { AurelisTheme {
+            com.music.aurelis.ui.screens.LibraryScreen(
+                listState = androidx.compose.foundation.lazy.rememberLazyListState(),
+                links = listOf(
+                    com.music.aurelis.ui.screens.LibraryLink("Música local", com.music.aurelis.ui.icons.AurelisIcons.Folder) { opened = "local" },
+                    com.music.aurelis.ui.screens.LibraryLink("Favoritos", com.music.aurelis.ui.icons.AurelisIcons.Heart) { opened = "favorites" },
+                ), onShowAll = {}, contentPadding = PaddingValues(),
+                onAlbumOpen = {}, onPlaylistOpen = {}, onNewPlaylist = {},
+            )
+        } }
+        compose.onNodeWithText("Favoritos").performClick()
+        compose.runOnIdle { assertEquals("favorites", opened) }
+        compose.onNodeWithText("Música local").performClick()
+        compose.runOnIdle { assertEquals("local", opened) }
+        compose.onNodeWithText("Ajustes").assertDoesNotExist()
+    }
+
     @Test fun libraryPreviewsCapTheirCardsAndKeepCreationAndOpenActionsConnected() {
         val albums = (1..6).map { LocalAlbum("Album $it", "Artist", null, 1, songs.take(1), "album$it") }
         val playlists = (1..6).map { LocalPlaylist("p$it", "Playlist $it", emptyList()) }
@@ -140,6 +159,7 @@ class LocalUiParityTest {
         } } }
         compose.onNodeWithText("Album 1").performClick()
         compose.runOnIdle { assertEquals("media:album1", opened) }
+        compose.onNodeWithTag("library-show-all-albums").assertExists()
         compose.onNodeWithTag("library-row-albums").performScrollToIndex(4)
         compose.onNodeWithText("Album 5").assertIsDisplayed()
         compose.onNodeWithText("Album 6").assertDoesNotExist()

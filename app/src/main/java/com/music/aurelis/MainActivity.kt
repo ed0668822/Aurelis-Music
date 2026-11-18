@@ -413,9 +413,14 @@ internal fun AurelisNavigationContent(
                 }
                 LibraryScreen(
                     listState = listState,
-                    links = listOf(LibraryLink(stringResource(R.string.local_music), AurelisIcons.Folder) {
-                        navigator.push(AppRoute.LocalMusic)
-                    }),
+                    links = listOf(
+                        LibraryLink(stringResource(R.string.local_music), AurelisIcons.Folder) {
+                            navigator.push(AppRoute.LocalMusic)
+                        },
+                        LibraryLink(stringResource(R.string.home_favorites), AurelisIcons.Heart) {
+                            navigator.push(AppRoute.Collection(LocalCollectionKind.FAVORITES))
+                        },
+                    ),
                     onShowAll = { shelf -> navigator.push(AppRoute.Collection(
                         if (shelf == "albums") LocalCollectionKind.ALBUMS else LocalCollectionKind.PLAYLISTS)) },
                     contentPadding = listPadding,

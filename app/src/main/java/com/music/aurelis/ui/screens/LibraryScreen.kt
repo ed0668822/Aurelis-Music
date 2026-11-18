@@ -3,6 +3,7 @@
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -183,9 +185,10 @@ private fun LocalLibraryShelf(title: String, key: String, onShowAll: (() -> Unit
             Text(title, style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground, maxLines = 2,
                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            if (onShowAll != null) Text(stringResource(R.string.show_all),
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable(onClick = onShowAll).padding(start = 12.dp, top = 10.dp, bottom = 10.dp))
+            if (onShowAll != null) TextButton(onClick = onShowAll,
+                modifier = Modifier.testTag("library-show-all-$key")) {
+                Text(stringResource(R.string.show_all), style = MaterialTheme.typography.bodyMedium)
+            }
         }
         LazyRow(contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(LIBRARY_GRID_SPACING),
@@ -198,7 +201,9 @@ private fun LibraryPreviewCard(title: String, subtitle: String, artworkUri: Stri
     onClick: () -> Unit, enabled: Boolean = true, newPlaylist: Boolean = false) {
     Column(Modifier.width(SHELF_CARD_WIDTH).clickable(enabled = enabled, onClick = onClick)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center) {
             if (artworkUri != null) AsyncImage(artworkUri, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else Icon(icon, null, Modifier.size(if (newPlaylist) 34.dp else 40.dp), tint = MaterialTheme.colorScheme.primary)
         }
