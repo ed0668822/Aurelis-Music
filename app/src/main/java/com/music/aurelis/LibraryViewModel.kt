@@ -11,6 +11,7 @@ import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalLibrarySource
 import com.music.aurelis.data.MediaStoreLibrarySource
 import com.music.aurelis.data.SettingsRepository
+import com.music.aurelis.data.sortedForAlbum
 import com.music.aurelis.data.model.LocalAlbum
 import com.music.aurelis.data.model.LocalArtist
 import com.music.aurelis.data.model.LocalSong
@@ -178,7 +179,7 @@ class LibraryViewModel @JvmOverloads constructor(
                     mediaId = list.first().albumId,
                     artworkUri = list.firstNotNullOfOrNull { it.artworkUri },
                     songCount = list.size,
-                    songs = list.sortedWith(compareBy<LocalSong> { it.discNumber ?: 0 }.thenBy { it.trackNumber ?: Int.MAX_VALUE }),
+                    songs = list.sortedForAlbum(),
                 )
             }
             .sortedBy { it.name.lowercase(Locale.getDefault()) }

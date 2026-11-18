@@ -22,6 +22,15 @@ class LocalGroupsSortingTest {
         assertEquals(listOf("two", "one"), rows.sortedForLibrary(LocalMusicSort.DATE_MODIFIED).map { it.id })
     }
 
+
+    @Test fun trackNumbersNeedARealAlbumName() {
+        val untagged = song("untagged", "Desconocida", track = 2).copy(album = null)
+        val blank = song("blank", "Sin nombre", track = 1).copy(album = " ")
+        assertEquals(false, listOf(untagged).useTrackTags())
+        assertEquals(false, listOf(blank).useTrackTags())
+        assertEquals(true, listOf(song("known", "Con álbum", track = 1)).useTrackTags())
+    }
+
     @Test fun albumOrderRespectsDiscBeforeTrackNumber() {
         val rows = listOf(song("disc2", "A", disc = 2, track = 1),
             song("disc1later", "C", disc = 1, track = 3),

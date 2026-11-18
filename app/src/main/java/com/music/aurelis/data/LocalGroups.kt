@@ -121,6 +121,6 @@ fun List<LocalSong>.sortedForAlbum(): List<LocalSong> {
 
 fun List<LocalSong>.useTrackTags(): Boolean {
     if (isEmpty() || none { it.trackNumber != null }) return false
-    val album = first().album
+    val album = first().album?.takeIf { it.isNotBlank() } ?: return false
     return all { it.album == album }
 }

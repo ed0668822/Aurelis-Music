@@ -105,6 +105,51 @@ class LibraryViewModelTest {
         assertTrue(model.uiState.value.filteredSongs.isEmpty())
     }
 
+
+    @Test fun albumsKeepMediaStoreIdsAndUseDiscThenTrackOrder() = runTest(dispatcher) {
+        fun row(id: String, albumId: String, artistId: String, disc: Int, track: Int) = LocalSong(
+            id = id, title = "Pista $id", artist = "Mismo artista", album = "Mismo álbum",
+            contentUri = "content://media/external/audio/media/$id", artworkUri = null,
+            durationMs = 60_000L, filePath = null, trackNumber = track, year = null,
+            albumId = albumId, artistId = artistId, discNumber = disc,
+        )
+        val tracks = listOf(
+            row("a3", "10", "50", 2, 1),
+            row("a2", "10", "50", 1, 4),
+            row("b1", "11", "50", 1, 1),
+            row("a1", "10", "50", 1, 1),
+        )
+        val model = LibraryViewModel(application, LocalLibrarySource { tracks })
+        model.loadLibrary()
+        runCurrent()
+
+        val library = model.uiState.value.libraryState as LibraryState.Success
+        assertEquals(setOf("media:10", "media:11"), library.albums.map { it.key }.toSet())
+        assertEquals(listOf("a1", "a2", "a3"),
+            library.albums.single { it.mediaId == "10" }.songs.map { it.id })
+        assertEquals(listOf("b1"), library.albums.single { it.mediaId == "11" }.songs.map { it.id })
+        assertEquals(2, library.artists.single().albumCount)
+        assertEquals(tracks.toSet(), library.artists.single().songs.toSet())
+    }
+
+    @Test fun identicalAlbumNamesWithoutMediaIdsStaySeparatedByArtist() = runTest(dispatcher) {
+        fun row(id: String, artist: String) = LocalSong(
+            id = id, title = id, artist = artist, album = "Recopilación",
+            contentUri = "content://media/external/audio/media/$id", artworkUri = null,
+            durationMs = 60_000L, filePath = null, trackNumber = null, year = null,
+        )
+        val first = row("first", "Artista A")
+        val second = row("second", "Artista B")
+        val model = LibraryViewModel(application, LocalLibrarySource { listOf(first, second) })
+        model.loadLibrary()
+        runCurrent()
+
+        val library = model.uiState.value.libraryState as LibraryState.Success
+        assertEquals(2, library.albums.size)
+        assertEquals(2, library.albums.map { it.key }.toSet().size)
+        assertEquals(setOf(listOf(first), listOf(second)), library.albums.map { it.songs }.toSet())
+    }
+
     @Test fun cancellationIsNotReportedAsFailureAndAllowsRetry() = runTest(dispatcher) {
         var calls = 0
         val model = LibraryViewModel(application, LocalLibrarySource {
