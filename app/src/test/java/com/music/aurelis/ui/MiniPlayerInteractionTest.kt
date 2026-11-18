@@ -110,6 +110,27 @@ class MiniPlayerInteractionTest {
         }
     }
 
+    @Test fun pullStartsAtFingerContactButMiniBarLiftStartsAfterSlop() {
+        var first = Float.NaN
+        var opened = 0
+        val pull = object : MiniPlayerPull {
+            override fun beginDrag() = Unit
+            override fun drag(delta: Float) {
+                if (first.isNaN()) first = delta
+            }
+            override fun release(velocity: Float) = Unit
+        }
+        compose.setContent { AurelisTheme {
+            CompositionLocalProvider(LocalLiquidGlassEnabled provides false) {
+                MiniPlayer("Archivo", "Artista", false, {}, { opened++ }, pull = pull)
+            }
+        } }
+        compose.onNodeWithTag("mini-player").performTouchInput {
+            swipe(center, center + Offset(0f, -180f), durationMillis = 400)
+        }
+        compose.runOnIdle { assertTrue(first.isFinite()); assertTrue(first < -10f); assertEquals(0, opened) }
+    }
+
     @Test fun compactLargeTextKeepsTransportTargetsAndTapAndSwipeExpansionSeparate() {
         var plays = 0; var next = 0; var opened = 0
         compose.setContent { AurelisTheme {
@@ -138,7 +159,7 @@ class MiniPlayerInteractionTest {
         compose.runOnIdle { assertEquals(2, opened); assertEquals(1, plays); assertEquals(1, next) }
     }
 
-    @Test fun qualityBadgeUsesRealProvidedLabelAndDoesNotOpenThePlayer() {
+    @Test fun qualityDetailLongPressPreservesBitChordCompactVisualLayout() {
         var quality = 0; var opened = 0; var played = 0
         compose.setContent { AurelisTheme {
             CompositionLocalProvider(LocalLiquidGlassEnabled provides false) {
@@ -146,18 +167,20 @@ class MiniPlayerInteractionTest {
                     qualityLabel = "FLAC", onQualityClick = { quality++ })
             }
         } }
-        compose.onNodeWithTag("mini-quality", useUnmergedTree = true).assertExists().performClick()
+        compose.onNodeWithText("FLAC").assertDoesNotExist()
+        compose.onNodeWithTag("mini-player").performTouchInput { longClick() }
         compose.runOnIdle { assertEquals(1, quality); assertEquals(0, opened); assertEquals(0, played) }
     }
 
-    @Test fun bufferingKeepsPauseActionAndDoesNotTurnItIntoExpansion() {
+    @Test fun bufferingReplacesPlayActionJustLikeBitChord() {
         var pauses = 0
         var opened = 0
         compose.setContent { AurelisTheme {
             MiniPlayer("Tema", "Artista", true, { pauses++ }, { opened++ }, isLoading = true)
         } }
-        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_pause)).assertIsEnabled().performClick()
-        compose.runOnIdle { assertEquals(1, pauses); assertEquals(0, opened) }
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_pause)).assertDoesNotExist()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).assertExists()
+        compose.runOnIdle { assertEquals(0, pauses); assertEquals(0, opened) }
     }
 
     @Test fun progressRemainsFiniteAndBoundedWithoutInventingQualityFromTheTitle() {

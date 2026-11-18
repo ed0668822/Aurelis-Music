@@ -53,6 +53,8 @@ class GlassNavigationTest {
         val mini = compose.onNodeWithTag("mini-player").fetchSemanticsNode().boundsInRoot
         assertEquals(before.bottom, withTrack.bottom, 0.5f)
         assertTrue(mini.bottom < withTrack.top)
+        // The standard BitChord mini-player uses the page's 16dp side gutter.
+        assertEquals(328f, mini.width, 0.5f)
         compose.runOnIdle { song = null }
         assertEquals(before.bottom, tab.fetchSemanticsNode().boundsInRoot.bottom, 0.5f)
     }

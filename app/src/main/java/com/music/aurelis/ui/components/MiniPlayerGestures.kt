@@ -75,8 +75,7 @@ internal fun Modifier.miniPlayerGestures(
                 vertical = moved.y < 0f && abs(moved.x) < -moved.y * 1.5f
                 if (!vertical && abs(moved.x) < abs(moved.y)) {
                     // A downward drag is not an expand tap or a queue command.
-                    change.consume()
-                    drag(pointer) { it.consume() }
+                    // As in BitChord, do not consume downward drags.
                     return@awaitEachGesture
                 }
                 change.consume()
@@ -96,13 +95,15 @@ internal fun Modifier.miniPlayerGestures(
             } else {
                 settle[0]?.cancel()
                 lift.floatValue = 0f
-                // Keep Aurelis's existing vertical distance measured after touch slop.
-                var distance = (slopped.position.y - down.position.y + viewConfiguration.touchSlop).coerceAtMost(0f)
+                // Give the sheet the displacement from initial contact, including slop.
+                // The bar itself rises only for subsequent pull movement.
+                var distance = slopped.position.y - down.position.y
                 val target = currentPull
                 val tracker = VelocityTracker()
                 tracker.addPosition(down.uptimeMillis, down.position)
                 tracker.addPosition(slopped.uptimeMillis, slopped.position)
-                lift.floatValue = if (reduceMotion) 0f else miniPlayerLiftDistance(-distance, ease)
+                lift.floatValue = 0f
+                var pulled = 0f
                 var finished = false
                 try {
                     target?.beginDrag()
@@ -113,7 +114,8 @@ internal fun Modifier.miniPlayerGestures(
                         tracker.addPosition(change.uptimeMillis, change.position)
                         change.consume()
                         target?.drag(delta)
-                        lift.floatValue = if (reduceMotion) 0f else miniPlayerLiftDistance(-distance, ease)
+                        pulled -= delta
+                        lift.floatValue = if (reduceMotion) 0f else miniPlayerLiftDistance(pulled, ease)
                     }
                     if (finished) {
                         if (target != null) target.release(tracker.calculateVelocity().y.coerceIn(-maxVelocity, maxVelocity))
