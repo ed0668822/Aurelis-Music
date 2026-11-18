@@ -34,7 +34,9 @@ internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> 
     active: Boolean = false, haptic: Haptic = Haptic.Tap,
     enabled: Boolean = true, checkable: Boolean = false) {
     val haptics = rememberHaptics()
-    val tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    // BitChord keeps the player glyph pure white; the disc and star fill
+    // distinguish favorite states, not a theme-primary tint.
+    val tint = androidx.compose.ui.graphics.Color.White
     val reduced = LocalReduceMotion.current
     val alpha by animateFloatAsState(if (active) 0.34f else 0.18f,
         animationSpec = if (reduced) snap() else spring(), label = "glyphDisc")
@@ -48,8 +50,9 @@ internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> 
         onClick = { haptics.play(haptic); onClick() },
     )
     Box(Modifier.size(34.dp).clip(CircleShape)
-        .background(tint.copy(alpha = if (enabled) alpha else alpha * 0.35f))
         .then(touch), contentAlignment = Alignment.Center) {
+        Box(Modifier.matchParentSize()
+            .background(tint.copy(alpha = if (enabled) alpha else alpha * 0.35f)))
         Crossfade(icon, animationSpec = tween(if (reduced) 0 else 180), label = "playerMenuGlyph") { glyph ->
             Icon(glyph, label, tint = tint.copy(alpha = if (enabled) 1f else 0.38f),
                 modifier = Modifier.size(19.dp))

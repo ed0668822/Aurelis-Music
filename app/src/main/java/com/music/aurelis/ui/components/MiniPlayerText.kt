@@ -59,7 +59,7 @@ internal fun MiniPlayerSongTitle(
 
 /** BitChord's square E cutout: the letter reveals the actual blurred backdrop. */
 @Composable
-private fun MiniPlayerExplicitBadge(color: Color) {
+internal fun MiniPlayerExplicitBadge(color: Color) {
     val measurer = rememberTextMeasurer()
     val style = MaterialTheme.typography.labelSmall.copy(
         fontSize = 9.5.sp, fontWeight = FontWeight.W800, letterSpacing = 0.sp,

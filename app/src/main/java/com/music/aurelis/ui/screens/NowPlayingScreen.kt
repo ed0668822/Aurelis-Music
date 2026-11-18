@@ -69,6 +69,7 @@ import com.music.aurelis.ui.player.matchedLocalArtist
 import com.music.aurelis.ui.player.playerSwipeTrigger
 import com.music.aurelis.ui.components.SourceQualityBadge
 import com.music.aurelis.ui.components.MiniPlayerQualityDialog
+import com.music.aurelis.ui.components.MiniPlayerExplicitBadge
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.key
@@ -376,14 +377,22 @@ fun NowPlayingScreen(
                                 fontSize = if (compact) 16.sp else 20.sp,
                                 lineHeight = if (compact) 20.sp else 24.sp,
                                 letterSpacing = (-0.2).sp, fontWeight = FontWeight.Bold)
-                            Text(s.title, style = titleStyle, maxLines = 1, softWrap = false,
-                                overflow = TextOverflow.Clip,
-                                modifier = Modifier.fillMaxWidth().testTag("player-credit-title")
-                                    .then(if (allowMarquee) Modifier.basicMarquee(initialDelayMillis = 1_250)
-                                          else Modifier)
-                                    .then(if (albumRoute != null) Modifier.clickable {
-                                        onOpenCollection(albumRoute)
-                                    } else Modifier))
+                            Row(Modifier.fillMaxWidth().testTag("player-credit-title")
+                                .then(if (albumRoute != null) Modifier.clickable {
+                                    onOpenCollection(albumRoute)
+                                } else Modifier),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                // The explicit badge stays stationary while only the title scrolls.
+                                if (s.isExplicit == true) {
+                                    MiniPlayerExplicitBadge(Color.White.copy(alpha = 0.55f))
+                                    Spacer(Modifier.width(6.dp))
+                                }
+                                Text(s.title, style = titleStyle, maxLines = 1, softWrap = false,
+                                    overflow = TextOverflow.Clip,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                        .then(if (allowMarquee) Modifier.basicMarquee(initialDelayMillis = 1_250)
+                                              else Modifier))
+                            }
                             val artistStyle = MaterialTheme.typography.titleLarge.copy(
                                 fontSize = if (compact) 16.sp else 20.sp,
                                 lineHeight = if (compact) 20.sp else 24.sp, fontWeight = FontWeight.W500)
