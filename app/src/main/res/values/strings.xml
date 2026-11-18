@@ -498,6 +498,9 @@
     </plurals>
     <string name="artist_local_songs">Canciones</string>
     <string name="folder_subfolders">Subcarpetas</string>
+    <string name="collection_original_order">Orden original</string>
+    <string name="collection_sort_date_added">Fecha de incorporación</string>
+    <string name="collection_sort_date_modified">Fecha de modificación</string>
     <string name="local_search_hint">Buscar canciones, artistas, álbumes…</string>
     <string name="local_search_all">Todo</string>
     <string name="local_search_genres">Géneros</string>

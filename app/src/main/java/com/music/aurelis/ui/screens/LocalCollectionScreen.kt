@@ -118,13 +118,15 @@ fun LocalCollectionScreen(
     )) { mutableStateOf(emptySet<String>()) }
     var bulkPlaylist by remember { mutableStateOf(false) }
     var descending by rememberSaveable(route) { mutableStateOf(false) }
+    var sortMenu by remember { mutableStateOf(false) }
+    var dateSort by rememberSaveable(route) { mutableStateOf("none") }
     // Keep source indices for playlist moves/removal, including inaccessible media entries.
     // Playlists retain their saved manual order even when other collections are sorted.
     val sourceEntries = if (playlist != null)
         playlist.songIds.mapIndexedNotNull { position, id -> byId[id]?.let { IndexedValue(position, it) } }
     else songs.mapIndexed { position, song -> IndexedValue(position, song) }
-    val displayEntries = if (descending && playlist == null)
-        sourceEntries.sortedByDescending { LocalSearch.normalize(it.value.title) } else sourceEntries
+    val displayEntries = if (playlist == null) sortCollectionEntries(sourceEntries, descending, dateSort)
+        else sourceEntries
     val displaySongs = displayEntries.map { it.value }
     // Resolve saved IDs against visible media, never against stale playlist snapshots.
     val selectedSongs = displaySongs.filter { it.id in selected }
@@ -159,7 +161,9 @@ fun LocalCollectionScreen(
             }
         }
         if (directory != null) {
-            TextButton(onClick = { grid = !grid }) { Text(if (grid) "Mostrar lista" else "Mostrar cuadrícula") }
+            TextButton(onClick = { grid = !grid }, modifier = Modifier.testTag("collection-view-toggle")) {
+                Text(stringResource(if (grid) R.string.local_music_list_view else R.string.local_music_grid_view))
+            }
             if (library is LibraryState.Success && directory.isEmpty()) Text(stringResource(R.string.collection_empty))
             if (grid && library is LibraryState.Success) LazyVerticalGrid(GridCells.Adaptive(140.dp), Modifier.weight(1f)) {
                 items(directory, key = { it.second.key }) { entry ->
@@ -206,8 +210,29 @@ fun LocalCollectionScreen(
                 TextButton(onClick = { selectionMode = !selectionMode; selected = emptySet() }) {
                     Text(if (selectionMode) "Cancelar selección" else "Seleccionar")
                 }
-                if (playlist == null) TextButton(onClick = { descending = !descending }) {
-                    Text(if (descending) "Orden original" else "Título Z–A")
+                if (playlist == null) {
+                    TextButton(onClick = { dateSort = "none"; descending = !descending }) {
+                        Text(if (descending && dateSort == "none") "Orden original" else "Título Z–A")
+                    }
+                    Box {
+                        TextButton(onClick = { sortMenu = true }, modifier = Modifier.testTag("collection-sort-menu")) {
+                            Text(stringResource(R.string.local_music_sort))
+                        }
+                        DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                            listOf(
+                                "none" to R.string.collection_original_order,
+                                "added" to R.string.collection_sort_date_added,
+                                "modified" to R.string.collection_sort_date_modified,
+                            ).forEach { (key, title) ->
+                                DropdownMenuItem(text = { Text(stringResource(title)) },
+                                    leadingIcon = {
+                                        if (dateSort == key && (key != "none" || !descending))
+                                            Icon(AurelisIcons.Check, null)
+                                    },
+                                    onClick = { dateSort = key; descending = false; sortMenu = false })
+                            }
+                        }
+                    }
                 }
             }
             if (selectionMode) {
@@ -425,3 +450,19 @@ internal fun resolveLocalArtist(artists: List<LocalArtist>, routeKey: String): L
     artists.firstOrNull { it.key == routeKey }
         ?: if (routeKey.startsWith("media:")) null
         else artists.filter { it.name == routeKey }.singleOrNull()
+
+
+/** Sort a current-catalogue snapshot without mutating its playlist source indexes. */
+internal fun sortCollectionEntries(
+    entries: List<IndexedValue<LocalSong>>, descending: Boolean, dateSort: String,
+): List<IndexedValue<LocalSong>> = when (dateSort) {
+    "added" -> entries.sortedWith(compareByDescending<IndexedValue<LocalSong>> {
+        it.value.dateAddedMs.takeIf { date -> date > 0L } ?: Long.MIN_VALUE
+    }.thenBy { LocalSearch.normalize(it.value.title) })
+    "modified" -> entries.sortedWith(compareByDescending<IndexedValue<LocalSong>> {
+        it.value.dateModifiedMs.takeIf { date -> date > 0L } ?: Long.MIN_VALUE
+    }.thenBy { LocalSearch.normalize(it.value.title) })
+    else -> if (descending) entries.sortedWith(compareByDescending<IndexedValue<LocalSong>> {
+        LocalSearch.normalize(it.value.title)
+    }.thenBy { it.index }) else entries
+}

@@ -14,6 +14,7 @@ import com.music.aurelis.data.model.LocalArtist
 import com.music.aurelis.ui.screens.localArtistAlbums
 import com.music.aurelis.ui.screens.resolveLocalArtist
 import com.music.aurelis.ui.screens.resolveLocalAlbum
+import com.music.aurelis.ui.screens.sortCollectionEntries
 import com.music.aurelis.ui.navigation.AppRoute
 import com.music.aurelis.ui.navigation.LocalCollectionKind
 import com.music.aurelis.ui.screens.LocalCollectionScreen
@@ -135,6 +136,35 @@ class CollectionSelectionTest {
             hasTestTag("album-track-number:a"))
         compose.onNodeWithTag("album-track-number:a").assertTextEquals("2.2")
         compose.onNodeWithText("Orden original").assertExists()
+    }
+
+    @Test fun collectionDateSortKeepsSourceIndexesAndPlacesUnknownDatesLast() {
+        val values = listOf(
+            rows[0].copy(dateAddedMs = 100L, dateModifiedMs = 0L),
+            rows[1].copy(dateAddedMs = 0L, dateModifiedMs = 400L),
+            rows[2].copy(dateAddedMs = 300L, dateModifiedMs = 200L),
+        ).mapIndexed { index, song -> IndexedValue(index, song) }
+        assertEquals(listOf("z", "a", "c"),
+            sortCollectionEntries(values, false, "added").map { it.value.id })
+        assertEquals(listOf("c", "z", "a"),
+            sortCollectionEntries(values, false, "modified").map { it.value.id })
+        assertEquals(listOf(0, 1, 2),
+            sortCollectionEntries(values, false, "none").map { it.index })
+        assertEquals(listOf("z", "c", "a"),
+            sortCollectionEntries(values, true, "none").map { it.value.id })
+    }
+
+    @Test fun folderDirectoryViewChoiceSurvivesRecreation() {
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent { AurelisTheme {
+            LocalCollectionScreen(AppRoute.Collection(LocalCollectionKind.FOLDERS),
+                LibraryState.Success(rows), app.userLibrary,
+                null, false, onBack = {}, onOpen = {}, onPlay = { _, _ -> })
+        } }
+        compose.onNodeWithTag("collection-view-toggle").performClick()
+        compose.onNodeWithText("Mostrar lista").assertExists()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText("Mostrar lista").assertExists()
     }
 
     @Test fun bulkPlaybackAndPlaylistAppendUseVisibleOrderWithoutReorderingSavedTracks() {

@@ -198,7 +198,7 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                         }
                     }
                     4 -> {
-                        val folders = LocalFolderRepository.groups(filtered)
+                        val folders = LocalFolderRepository.browse(filtered)
                         if (folders.isEmpty()) item {
                             Text(stringResource(R.string.local_music_no_folders), Modifier.padding(24.dp))
                         }

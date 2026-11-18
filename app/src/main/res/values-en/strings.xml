@@ -479,6 +479,9 @@
     </plurals>
     <string name="artist_local_songs">Songs</string>
     <string name="folder_subfolders">Subfolders</string>
+    <string name="collection_original_order">Original order</string>
+    <string name="collection_sort_date_added">Date added</string>
+    <string name="collection_sort_date_modified">Date modified</string>
     <string name="local_search_hint">Search songs, artists, albums…</string>
     <string name="local_search_all">All</string>
     <string name="local_search_genres">Genres</string>
