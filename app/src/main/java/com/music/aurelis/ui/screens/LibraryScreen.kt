@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,6 +52,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.aurelis.R
+import com.music.aurelis.data.LibraryState
+import com.music.aurelis.ui.components.MessageState
 import com.music.aurelis.data.model.LocalAlbum
 import com.music.aurelis.ui.components.LIBRARY_GRID_SPACING
 import com.music.aurelis.ui.components.PAGE_GUTTER
@@ -74,6 +77,10 @@ fun LibraryScreen(
     onPlaylistOpen: (String) -> Unit,
     onNewPlaylist: () -> Unit,
     canCreatePlaylist: Boolean = true,
+    libraryState: LibraryState? = null,
+    isRefreshing: Boolean = false,
+    onRetry: () -> Unit = {},
+    onRequestPermission: () -> Unit = {},
 ) {
     val songsById = remember(songs) { songs.associateBy { it.id } }
     LazyColumn(
@@ -89,6 +96,34 @@ fun LibraryScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp),
                 )
+            }
+        }
+        // F013: real scanner state, with offline playlists and Replay still reachable.
+        when {
+            libraryState == LibraryState.Loading ||
+                libraryState is LibraryState.Success && isRefreshing && libraryState.songs.isEmpty() -> {
+                item(key = "library-loading") {
+                    Column(Modifier.fillMaxWidth().padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(Modifier.height(12.dp))
+                        Text(stringResource(R.string.home_loading))
+                    }
+                }
+            }
+            libraryState is LibraryState.Error -> {
+                item(key = "library-error") {
+                    MessageState(libraryState.message,
+                        actionLabel = stringResource(if (libraryState.permissionRequired)
+                            R.string.home_grant_permission else R.string.home_retry),
+                        onAction = if (libraryState.permissionRequired) onRequestPermission else onRetry)
+                }
+            }
+            libraryState is LibraryState.Success && libraryState.songs.isEmpty() -> {
+                item(key = "library-empty") {
+                    MessageState(stringResource(R.string.home_empty),
+                        actionLabel = stringResource(R.string.home_refresh), onAction = onRetry)
+                }
             }
         }
         item(key = "replay") { replay() }
