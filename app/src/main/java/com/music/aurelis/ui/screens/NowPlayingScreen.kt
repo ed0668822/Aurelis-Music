@@ -601,9 +601,9 @@ fun NowPlayingScreen(
                     } else {
                         // Measure the deck at its natural height first; artwork receives
                         // the remaining space. Transport never depends on scrolling.
+                        val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
+                        val compactPortrait = maxHeight < 650.dp
                         Box(Modifier.fillMaxSize().testTag("player-portrait")) {
-                            val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
-                            val compactPortrait = maxHeight < 650.dp
                             BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
                                 artwork(Modifier.align(Alignment.TopCenter), portraitArtwork)
                                 Box(Modifier.fillMaxWidth().height(portraitArtwork).background(
