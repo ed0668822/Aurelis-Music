@@ -57,10 +57,11 @@ fun SearchField(
     val onSurface = LocalSearchFieldOnSurface.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    val submit = {
+    val submit: () -> Unit = {
         onSubmit()
         focusManager.clearFocus()
         keyboardController?.hide()
+        Unit
     }
     Row(
         modifier = modifier

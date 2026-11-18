@@ -152,6 +152,33 @@ class ReportTests(unittest.TestCase):
         (self.root / "ci-ui-comparison/settings-navigation.json").unlink()
         self.assertIn("android16_navigation", mod.gate(self.report()))
 
+    def test_android16_fresh_emulator_results_require_both_cases(self):
+        import ui_parity
+        with TemporaryDirectory() as temp:
+            folder = Path(temp)
+            def write(method, **changes):
+                value = {"source_sha": SHA, "passed": True,
+                         "device": {"api": "36", "expected_api": "36", "fingerprint": "fixture"},
+                         "cases": [{"method": method, "passed": True, "problems": [], "exit_code": "0"}]}
+                value.update(changes)
+                (folder / f"settings-navigation-{method}.json").write_text(json.dumps(value))
+            first, second = ui_parity.SETTINGS_NAVIGATION_METHODS
+            write(first)
+            self.assertFalse(ui_parity.merge_settings_navigation_evidence(folder, SHA)["passed"])
+            write(second)
+            merged = ui_parity.merge_settings_navigation_evidence(folder, SHA)
+            self.assertTrue(merged["passed"])
+            self.assertEqual({first, second}, {case["method"] for case in merged["cases"]})
+            write(second, source_sha="b" * 40)
+            self.assertFalse(ui_parity.merge_settings_navigation_evidence(folder, SHA)["passed"])
+            write(second, cases=[{"method": second, "passed": False,
+                                  "problems": ["NO_RUNNER_SUCCESS"], "exit_code": "255"}], passed=False)
+            self.assertFalse(ui_parity.merge_settings_navigation_evidence(folder, SHA)["passed"])
+            write(second, device={"api": "35", "expected_api": "36", "fingerprint": "fixture"})
+            self.assertFalse(ui_parity.merge_settings_navigation_evidence(folder, SHA)["passed"])
+            write(second, device={"api": "36", "expected_api": "36", "fingerprint": "wrong-image"})
+            self.assertFalse(ui_parity.merge_settings_navigation_evidence(folder, SHA)["passed"])
+
     def test_gate_rejects_forged_positive_flag_with_bad_counters(self):
         result = self.report()
         result["debug"]["failed"] = 1

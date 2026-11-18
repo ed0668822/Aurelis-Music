@@ -159,13 +159,36 @@ jobs:
           ./gradlew --stop 2>&1 | tee ci-b03/android16/gradle-daemon-stop.log
           free -m | tee ci-b03/android16/host-memory-before-emulator.txt
 
-      - name: Exercise real Activity recreation and playback on Android16
-        id: android16
+      # Both Android16 cases are mandatory but run in fresh emulator instances.
+      - name: Android16 Activity and Settings recreation
+        id: android16_recreation
         if: ${{ !cancelled() && steps.android16_handoff.outcome == 'success' }}
         continue-on-error: true
         timeout-minutes: 25
         env:
           UI_SETTINGS_ANDROID_API: '36'
+          AURELIS_ANDROID16_CASE: profileAndLibrarySettingsSurviveRecreation
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          ram-size: 4096M
+          cores: 2
+          emulator-boot-timeout: 900
+          disable-animations: false
+          emulator-options: '-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none'
+          script: python3 .github/scripts/ui_parity.py settings-navigation
+
+      - name: Android16 real playback and Settings recreation
+        id: android16_playback
+        if: ${{ !cancelled() && steps.android16_handoff.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          UI_SETTINGS_ANDROID_API: '36'
+          AURELIS_ANDROID16_CASE: profileAndLibrarySettingsPreserveRealPlayback
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 36
@@ -190,7 +213,7 @@ jobs:
           COMPILE_RELEASE_OUTCOME: ${{ steps.compile_release.outcome }}
           DEBUG_OUTCOME: ${{ steps.debug.outcome }}
           RELEASE_OUTCOME: ${{ steps.release.outcome }}
-          ANDROID16_OUTCOME: ${{ steps.android16.outcome }}
+          ANDROID16_OUTCOME: ${{ steps.android16_recreation.outcome == 'success' && steps.android16_playback.outcome == 'success' && 'success' || 'failure' }}
         run: python3 .github/scripts/b03_test_summary.py
 
       - name: Upload Debug test evidence

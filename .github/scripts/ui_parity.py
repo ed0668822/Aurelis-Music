@@ -782,16 +782,77 @@ def capture():
     return 0 if result["capture_complete"] else 1
 
 
+SETTINGS_NAVIGATION_METHODS = (
+    "profileAndLibrarySettingsSurviveRecreation",
+    "profileAndLibrarySettingsPreserveRealPlayback",
+)
+
+
+def merge_settings_navigation_evidence(folder: Path, sha: str) -> dict:
+    """Fail closed unless both real cases passed on isolated Android16 emulators."""
+    combined = {"source_sha": sha, "cases": [], "passed": False,
+                "independent_emulator_runs": True}
+    issues, reference_device = [], None
+    valid_sha = isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha) is not None
+    for method in SETTINGS_NAVIGATION_METHODS:
+        path = folder / f"settings-navigation-{method}.json"
+        try:
+            part = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(part, dict):
+                raise ValueError("Expected an object")
+        except (OSError, ValueError) as error:
+            part = {}
+            issues.append(f"{method}: missing/invalid evidence ({error})")
+        raw_cases = part.get("cases")
+        original = (raw_cases[0] if isinstance(raw_cases, list) and len(raw_cases) == 1
+                    and isinstance(raw_cases[0], dict) else {})
+        case = dict(original)
+        case["method"] = method
+        problems = list(case.get("problems")) if isinstance(case.get("problems"), list) else []
+        device = part.get("device") if isinstance(part.get("device"), dict) else {}
+        if not valid_sha or part.get("source_sha") != sha:
+            problems.append("CASE_SOURCE_SHA_MISMATCH")
+        if (device.get("api") != "36" or device.get("expected_api") != "36"
+                or not device.get("fingerprint")):
+            problems.append("CASE_ANDROID16_IDENTITY_MISSING")
+        if reference_device is None:
+            reference_device = device
+        elif device != reference_device:
+            problems.append("CASE_EMULATOR_IDENTITY_MISMATCH")
+        if (original.get("method") != method or original.get("passed") is not True
+                or original.get("problems") != [] or original.get("exit_code") != "0"
+                or part.get("passed") is not True):
+            problems.append("CASE_INSTRUMENTATION_NOT_PROVEN")
+        if problems:
+            case["passed"] = False
+            case["problems"] = list(dict.fromkeys(problems))
+            issues.append(f"{method}: " + ", ".join(case["problems"]))
+        else:
+            case["passed"] = True
+            case["problems"] = []
+        combined["cases"].append(case)
+    combined["device"] = reference_device or {}
+    combined["passed"] = not issues and len(combined["cases"]) == len(SETTINGS_NAVIGATION_METHODS)
+    if issues:
+        combined["error"] = "; ".join(issues)
+    return combined
+
+
 def settings_navigation():
     """Independent real-Activity regression; a broken reference cannot skip it."""
     from b05_case_results import verdict
     from ui_parity_host import HostMonitor
     OUT.mkdir(exist_ok=True)
+    selected_method = os.environ.get("AURELIS_ANDROID16_CASE")
+    if selected_method and selected_method not in SETTINGS_NAVIGATION_METHODS:
+        raise ValueError("Unsupported Android16 test case: " + selected_method)
+    methods = (selected_method,) if selected_method else SETTINGS_NAVIGATION_METHODS
     result = {"source_sha": os.environ.get("GITHUB_SHA"), "cases": [], "passed": False}
     SYSTEM_DIALOG_EVENTS.clear()
     monitor = None
     stages = []
-    stage_path = OUT / "settings-navigation-stages.json"
+    suffix = "-" + selected_method if selected_method else ""
+    stage_path = OUT / ("settings-navigation-stages" + suffix + ".json")
 
     def checkpoint(stage, method=None, code=None):
         event = {"stage": stage, "method": method, "exit_code": code, "unix_time": time.time()}
@@ -820,9 +881,9 @@ def settings_navigation():
         adb("install", "-r", "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk")
         shell("pm", "grant", package, "android.permission.READ_MEDIA_AUDIO")
         # Host-side telemetry survives Android/ADB disappearing during instrumentation.
-        monitor = HostMonitor(OUT / "host")
+        monitor = HostMonitor(OUT / ("host" + suffix))
         monitor.start()
-        for method in ("profileAndLibrarySettingsSurviveRecreation", "profileAndLibrarySettingsPreserveRealPlayback"):
+        for method in methods:
             klass = "RealSettingsNavigationInstrumentedTest"
             command = ["adb", "shell", "am", "instrument", "-w", "-r", "-e", "class",
                        "com.music.aurelis.playback." + klass + "#" + method,
@@ -871,7 +932,7 @@ def settings_navigation():
                 adb("pull", "/sdcard/Android/data/com.music.aurelis/files/settings-navigation", OUT / "screens")
             except RuntimeError as error:
                 result.setdefault("diagnostic_errors", []).append(str(error))
-        result["passed"] = len(result["cases"]) == 2 and all(case["passed"] for case in result["cases"])
+        result["passed"] = len(result["cases"]) == len(methods) and all(case["passed"] for case in result["cases"])
     except Exception as error:
         result["error"] = str(error)
     finally:
@@ -879,7 +940,14 @@ def settings_navigation():
             result["host_monitor"] = monitor.stop()
         checkpoint("passed" if result["passed"] else "failed")
     result["system_dialog_events"] = SYSTEM_DIALOG_EVENTS.copy()
-    (OUT / "settings-navigation.json").write_text(json.dumps(result, indent=2) + "\n")
+    if selected_method:
+        # Preserve each complete case; the shared report requires both runs.
+        (OUT / f"settings-navigation-{selected_method}.json").write_text(
+            json.dumps(result, indent=2) + "\n")
+        aggregate = merge_settings_navigation_evidence(OUT, result["source_sha"])
+        (OUT / "settings-navigation.json").write_text(json.dumps(aggregate, indent=2) + "\n")
+    else:
+        (OUT / "settings-navigation.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2), flush=True)
     return 0 if result["passed"] else 1
 
