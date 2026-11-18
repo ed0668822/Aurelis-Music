@@ -138,6 +138,48 @@ class CollectionSelectionTest {
         compose.onNodeWithText("Orden original").assertExists()
     }
 
+    @Test fun albumOverflowOffersRealQueueActionsForCurrentSongs() {
+        val album = LocalAlbum("Álbum", "Artista", null, rows.size, rows, "media-10")
+        val state = LibraryState.Success(rows, albums = listOf(album))
+        var next: List<String>? = null
+        var appended: List<String>? = null
+        compose.setContent { AurelisTheme {
+            LocalCollectionScreen(
+                AppRoute.Collection(LocalCollectionKind.ALBUM, album.key),
+                state, app.userLibrary, null, false, onBack = {}, onOpen = {},
+                onPlay = { _, _ -> },
+                onPlayNext = { next = it.map { song -> song.id } },
+                onAddToQueue = { appended = it.map { song -> song.id } },
+            )
+        } }
+        compose.onNodeWithContentDescription("Acciones de colección").performClick()
+        compose.onNodeWithText("Reproducir después").performClick()
+        compose.runOnIdle {
+            assertEquals(rows.map { it.id }, next)
+            assertNull(appended)
+        }
+        compose.onNodeWithContentDescription("Acciones de colección").performClick()
+        compose.onNodeWithText("Añadir a la cola").performClick()
+        compose.runOnIdle { assertEquals(rows.map { it.id }, appended) }
+    }
+
+    @Test fun albumOverflowHidesQueueActionsWithoutAvailableLocalMedia() {
+        val album = LocalAlbum("Vacío", "Artista", null, 0, emptyList(), "media-11")
+        compose.setContent { AurelisTheme {
+            LocalCollectionScreen(
+                AppRoute.Collection(LocalCollectionKind.ALBUM, album.key),
+                LibraryState.Success(emptyList(), albums = listOf(album)),
+                app.userLibrary, null, false, onBack = {}, onOpen = {},
+                onPlay = { _, _ -> },
+                onPlayNext = { error("Cannot enqueue inaccessible songs") },
+                onAddToQueue = { error("Cannot queue inaccessible songs") },
+            )
+        } }
+        compose.onNodeWithContentDescription("Acciones de colección").performClick()
+        compose.onNodeWithText("Reproducir después").assertDoesNotExist()
+        compose.onNodeWithText("Añadir a la cola").assertDoesNotExist()
+    }
+
     @Test fun collectionDateSortKeepsSourceIndexesAndPlacesUnknownDatesLast() {
         val values = listOf(
             rows[0].copy(dateAddedMs = 100L, dateModifiedMs = 0L),

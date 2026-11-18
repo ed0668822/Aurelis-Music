@@ -571,6 +571,8 @@ internal fun AurelisNavigationContent(
                     playbackState.currentSong?.id, playbackState.isPlaying,
                     onBack = { navigator.pop() }, onOpen = { navigator.push(it) },
                     onPlay = playbackViewModel::playSongs,
+                    onPlayNext = playbackViewModel::playNext,
+                    onAddToQueue = playbackViewModel::enqueue,
                     onRetry = libraryViewModel::refresh,
                     onRequestPermission = onRequestAudioPermission,
                 )

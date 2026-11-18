@@ -64,6 +64,8 @@ fun LocalCollectionScreen(
     onPlay: (List<LocalSong>, Int) -> Unit,
     onRetry: () -> Unit = {},
     onRequestPermission: () -> Unit = {},
+    onPlayNext: ((List<LocalSong>) -> Unit)? = null,
+    onAddToQueue: ((List<LocalSong>) -> Unit)? = null,
 ) {
     val user by store.state.collectAsState()
     val snapshot = library as? LibraryState.Success
@@ -201,6 +203,10 @@ fun LocalCollectionScreen(
                         expanded = collectionActionsExpanded,
                         onPlay = if (displaySongs.isEmpty()) null else ({ onPlay(displaySongs, 0) }),
                         onShuffle = if (displaySongs.isEmpty()) null else ({ onPlay(displaySongs.shuffled(), 0) }),
+                        onPlayNext = if (displaySongs.isEmpty() || onPlayNext == null) null
+                            else ({ onPlayNext(displaySongs) }),
+                        onAddToQueue = if (displaySongs.isEmpty() || onAddToQueue == null) null
+                            else ({ onAddToQueue(displaySongs) }),
                         onSelect = { selectionMode = true; selected = emptySet() },
                         onRename = if (playlist != null && !user.readOnly) ({ name = playlist.name; editing = true }) else null,
                         onDelete = if (playlist != null && !user.readOnly) ({ deleting = true }) else null)

@@ -16,6 +16,8 @@ fun BrowseActionsMenu(
     expanded: Boolean = true,
     onPlay: (() -> Unit)? = null,
     onShuffle: (() -> Unit)? = null,
+    onPlayNext: (() -> Unit)? = null,
+    onAddToQueue: (() -> Unit)? = null,
     onSelect: (() -> Unit)? = null,
     onRename: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -27,6 +29,14 @@ fun BrowseActionsMenu(
         }
         onShuffle?.let { action ->
             DropdownMenuItem(text = { Text(stringResource(R.string.shuffle)) },
+                onClick = { onDismiss(); action() })
+        }
+        onPlayNext?.let { action ->
+            DropdownMenuItem(text = { Text(stringResource(R.string.play_next)) },
+                onClick = { onDismiss(); action() })
+        }
+        onAddToQueue?.let { action ->
+            DropdownMenuItem(text = { Text(stringResource(R.string.add_to_queue)) },
                 onClick = { onDismiss(); action() })
         }
         onSelect?.let { action ->
