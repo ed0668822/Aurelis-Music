@@ -138,6 +138,18 @@ class MiniPlayerInteractionTest {
         compose.runOnIdle { assertEquals(2, opened); assertEquals(1, plays); assertEquals(1, next) }
     }
 
+    @Test fun qualityBadgeUsesRealProvidedLabelAndDoesNotOpenThePlayer() {
+        var quality = 0; var opened = 0; var played = 0
+        compose.setContent { AurelisTheme {
+            CompositionLocalProvider(LocalLiquidGlassEnabled provides false) {
+                MiniPlayer("Archivo", "Artista", false, { played++ }, { opened++ },
+                    qualityLabel = "FLAC", onQualityClick = { quality++ })
+            }
+        } }
+        compose.onNodeWithTag("mini-quality", useUnmergedTree = true).assertExists().performClick()
+        compose.runOnIdle { assertEquals(1, quality); assertEquals(0, opened); assertEquals(0, played) }
+    }
+
     @Test fun bufferingKeepsPauseActionAndDoesNotTurnItIntoExpansion() {
         var pauses = 0
         var opened = 0

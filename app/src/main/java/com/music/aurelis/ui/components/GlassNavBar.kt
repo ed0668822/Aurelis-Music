@@ -125,6 +125,7 @@ fun GlassNavBar(
     qualityLabel: String? = null,
     canPrevious: Boolean = false,
     scrollConnection: FloatingTabBarScrollConnection = rememberFloatingTabBarScrollConnection(),
+    onQualityClick: (() -> Unit)? = null,
 ) {
     require(tabs.isNotEmpty() && selectedIndex in tabs.indices)
     if (!LocalLiquidGlassEnabled.current) {
@@ -136,7 +137,8 @@ fun GlassNavBar(
                     artworkUri = current.artworkUri, isLoading = isLoading, enabled = !controlsLocked,
                     canNext = canNext, onNext = onNext, progress = progress, qualityLabel = qualityLabel,
                     songId = current.id, dock = dock, pull = pull,
-                    canPrevious = canPrevious, onPrevious = onPrevious)
+                    canPrevious = canPrevious, onPrevious = onPrevious,
+                    onQualityClick = onQualityClick)
                 Spacer(Modifier.height(8.dp))
             }
             FloatingBottomBar(tabs, selectedIndex, onTabSelected, haze)
@@ -197,6 +199,7 @@ fun GlassNavBar(
                     pull = pull,
                     canNext = canNext, canPrevious = canPrevious, progress = progress, qualityLabel = qualityLabel,
                     modifier = accessoryModifier.then(glassSurface()),
+                    onQualityClick = onQualityClick,
                 )
             }
         },
@@ -218,6 +221,7 @@ fun GlassNavBar(
                     pull = pull,
                     canNext = canNext, canPrevious = canPrevious, progress = progress, qualityLabel = qualityLabel,
                     modifier = accessoryModifier.fillMaxWidth().then(glassSurface()),
+                    onQualityClick = onQualityClick,
                 )
             }
         },
@@ -348,6 +352,7 @@ private fun GlassNowPlaying(
     progress: Float,
     qualityLabel: String?,
     modifier: Modifier = Modifier,
+    onQualityClick: (() -> Unit)? = null,
 ) {
     val openLabel = stringResource(R.string.player_open)
     val haptics = rememberHaptics()
@@ -434,11 +439,17 @@ private fun GlassNowPlaying(
             Column(Modifier.weight(1f)) {
                 val secondary = contentColor.copy(alpha = 0.7f)
                 FadingLine(song.title, titleStyle, contentColor)
-                FadingLine(
-                    text = song.artist,
-                    style = artistStyle,
-                    color = secondary,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FadingLine(
+                        text = song.artist, style = artistStyle, color = secondary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (!isInline && !qualityLabel.isNullOrBlank()) {
+                        Spacer(Modifier.width(4.dp))
+                        SourceQualityBadge(qualityLabel,
+                            modifier = Modifier.testTag("mini-quality"), onClick = onQualityClick)
+                    }
+                }
             }
             if (isLoading) {
                 Box(Modifier.size(glyphSlot), contentAlignment = Alignment.Center) {

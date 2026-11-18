@@ -14,6 +14,7 @@ class AudioQualityInfoTest {
     @Test fun fileMetadataDoesNotInventTechnicalValuesOrHonorLegacyMarketingLabels() {
         val info = AudioQualityInfo.from(song)
         assertEquals("FLAC", info.formatLabel)
+        assertEquals("FLAC", info.compactLabel)
         assertEquals(AudioQualityOrigin.FILE_METADATA, info.origin)
         assertNull(info.sampleRateHz); assertNull(info.bitrateBps); assertNull(info.pcmBits)
         assertEquals("Formato desconocido", AudioQualityInfo.from(song.copy(mimeType = null)).formatLabel)
@@ -39,6 +40,12 @@ class AudioQualityInfoTest {
         assertNull(info.sampleRateHz)
         assertNull(AudioQualityInfo.from(song, Format.Builder().setSampleMimeType("audio/flac")
             .setPcmEncoding(C.ENCODING_PCM_24BIT).build()).pcmBits)
+    }
+    @Test fun qualityLabelExcludesUnknownInputsAndRecognizesCommonLocalFormats() {
+        assertNull(AudioQualityInfo().compactLabel)
+        assertNull(AudioQualityInfo.from(song.copy(mimeType = "audio/unknown")).compactLabel)
+        assertEquals("DSD", AudioQualityInfo.from(song.copy(mimeType = "audio/x-dsf")).compactLabel)
+        assertEquals("AIFF", AudioQualityInfo.from(song.copy(mimeType = "audio/aiff")).compactLabel)
     }
     @Test fun multipleAdaptiveCandidatesDoNotBecomeMeasuredDecoderValues() {
         val a = Format.Builder().setSampleMimeType("audio/aac").setSampleRate(44100).build()

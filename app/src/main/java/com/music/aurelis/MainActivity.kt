@@ -78,6 +78,7 @@ import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.ui.components.BottomTab
 import com.music.aurelis.ui.components.GlassNavBar
+import com.music.aurelis.ui.components.MiniPlayerQualityDialog
 import com.music.aurelis.ui.components.FrostedTopBar
 import com.music.aurelis.ui.components.LocalProfileButton
 import com.music.aurelis.ui.components.topBarContentPadding
@@ -257,6 +258,8 @@ internal fun AurelisNavigationContent(
     }
     val activePullState = feedPullState(navigator.selectedTab)
     var actionSong by remember { mutableStateOf<LocalSong?>(null) }
+    var showMiniQualityInfo by remember { mutableStateOf(false) }
+    LaunchedEffect(playbackState.currentSong?.id) { showMiniQualityInfo = false }
     val route = navigator.visibleRoute()
     val navBarScroll = rememberFloatingTabBarScrollConnection()
     var bottomChromeHeight by remember { mutableIntStateOf(0) }
@@ -608,7 +611,6 @@ internal fun AurelisNavigationContent(
                     controlsLocked = !playbackState.isConnected,
                     canNext = playbackState.canNext,
                     canPrevious = playbackState.canPrevious,
-                    qualityLabel = playbackState.sourceQuality.takeIf { it.mimeType != null }?.formatLabel,
                     progress = if (playbackState.durationMs > 0)
                         playbackState.positionMs.toFloat() / playbackState.durationMs else 0f,
                     onPlayPause = { playbackViewModel.togglePlayPause() },
@@ -620,6 +622,8 @@ internal fun AurelisNavigationContent(
                     dock = dock, pull = panelMotion,
                     scrollConnection = navBarScroll,
                     modifier = Modifier.fillMaxWidth(),
+                    qualityLabel = playbackState.sourceQuality.compactLabel,
+                    onQualityClick = { showMiniQualityInfo = true },
                 )
             }
         },
@@ -652,6 +656,9 @@ internal fun AurelisNavigationContent(
             }
         },
     )
+    if (showMiniQualityInfo && playbackState.currentSong != null) {
+        MiniPlayerQualityDialog(playbackState.sourceQuality, onDismiss = { showMiniQualityInfo = false })
+    }
     actionSong?.let { song -> SongActionsDialog(song, userStore,
         onEnqueue = { playbackViewModel.enqueue(listOf(song)) }, onDismiss = { actionSong = null },
         onPlayNext = { playbackViewModel.playNext(listOf(song)) },

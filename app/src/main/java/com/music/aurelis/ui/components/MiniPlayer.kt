@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.music.aurelis.R
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
+import com.music.aurelis.ui.graphics.fadingEdges
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,6 +60,7 @@ fun MiniPlayer(
     pull: MiniPlayerPull? = null,
     canPrevious: Boolean = false,
     onPrevious: () -> Unit = {},
+    onQualityClick: (() -> Unit)? = null,
 ) {
     val glass = LocalLiquidGlassEnabled.current
     val openLabel = stringResource(R.string.player_open)
@@ -83,8 +85,14 @@ fun MiniPlayer(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     MiniPlayerFadingText(title, MaterialTheme.typography.titleMedium, MaterialTheme.colorScheme.onSurface)
-                    MiniPlayerFadingText(artist, MaterialTheme.typography.bodyMedium,
-                        MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MiniPlayerFadingText(artist, MaterialTheme.typography.bodyMedium,
+                            MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
+                        if (!qualityLabel.isNullOrBlank()) {
+                            Spacer(Modifier.width(4.dp))
+                            SourceQualityBadge(qualityLabel, Modifier.testTag("mini-quality"), onQualityClick)
+                        }
+                    }
                 }
                 // The full screen exposes previous; keep the compact bar usable at 320dp.
                 IconButton(onClick = { haptics.play(if (isPlaying) Haptic.Pause else Haptic.Resume); onPlayPauseClick() }, enabled = enabled,
@@ -104,11 +112,11 @@ fun MiniPlayer(
 
 /** One-line fade like the reference player, with a stable compact-row layout. */
 @Composable
-private fun MiniPlayerFadingText(value: String, style: TextStyle, tint: Color) {
+private fun MiniPlayerFadingText(value: String, style: TextStyle, tint: Color, modifier: Modifier = Modifier) {
     var overflow by remember(value) { mutableStateOf(false) }
     Text(
         text = value, style = style, color = tint, maxLines = 1, softWrap = false,
         overflow = TextOverflow.Clip, onTextLayout = { overflow = it.didOverflowWidth },
-        modifier = if (overflow) Modifier.fadingEdges(32.dp, end = { 1f }) else Modifier,
+        modifier = modifier.then(if (overflow) Modifier.fadingEdges(32.dp, end = { 1f }) else Modifier),
     )
 }

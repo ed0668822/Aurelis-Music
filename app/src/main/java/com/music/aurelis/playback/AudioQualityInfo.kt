@@ -31,8 +31,15 @@ data class AudioQualityInfo(
         "audio/vorbis" -> "Vorbis"
         "audio/raw" -> "PCM"
         "audio/wav", "audio/x-wav" -> "WAV"
-        "audio/alac" -> "ALAC"
+        "audio/alac", "audio/x-alac" -> "ALAC"
+        "audio/dsd", "audio/x-dsf", "audio/x-dff" -> "DSD"
+        "audio/aiff", "audio/x-aiff" -> "AIFF"
+        "audio/ape", "audio/x-ape" -> "APE"
         else -> "Formato desconocido"
+    }
+    /** Only expose a label when we can identify a real audio input MIME type. */
+    val compactLabel: String? get() = formatLabel.takeIf {
+        origin != AudioQualityOrigin.UNKNOWN && it != "Formato desconocido"
     }
     val details: String get() = listOfNotNull(
         formatLabel,

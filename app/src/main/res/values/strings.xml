@@ -560,4 +560,17 @@
     <string name="local_search_top_result">Resultado destacado</string>
     <string name="local_search_edit_suggestion">Editar “%1$s”</string>
     <string name="local_search_playlist_action">Lista de reproducción</string>
+    <!-- MiniPlayer: measured or reported input track, never output certification -->
+    <string name="mini_quality_action">Detalles de calidad de audio</string>
+    <string name="mini_quality_title">Información de audio</string>
+    <string name="mini_quality_input">Archivo y pista seleccionada</string>
+    <string name="mini_quality_format">Formato</string>
+    <string name="mini_quality_origin">Origen</string>
+    <string name="mini_quality_rate">Muestreo</string>
+    <string name="mini_quality_channels">Canales</string>
+    <string name="mini_quality_bitrate">Tasa de bits</string>
+    <string name="mini_quality_depth">Profundidad PCM</string>
+    <string name="mini_quality_unknown">No disponible</string>
+    <string name="mini_quality_note">Estos datos describen el archivo o la pista seleccionada. No verifican la salida real, Bluetooth, USB ni bit-perfect.</string>
+    <string name="mini_quality_close">Cerrar</string>
 </resources>
