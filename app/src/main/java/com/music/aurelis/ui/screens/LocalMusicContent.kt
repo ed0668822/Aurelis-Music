@@ -25,6 +25,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.music.aurelis.R
@@ -42,14 +45,27 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
     onBack: () -> Unit, onRetry: () -> Unit, onPermission: () -> Unit,
     onPlay: (List<LocalSong>, Int) -> Unit, onOpen: (AppRoute.Collection) -> Unit,
     onActions: (LocalSong) -> Unit, onProfile: () -> Unit, bottomPadding: PaddingValues = PaddingValues(),
-    contentBackdropModifier: Modifier = Modifier) {
+    contentBackdropModifier: Modifier = Modifier, isRefreshing: Boolean = false) {
     var selected by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
     var search by rememberSaveable { mutableStateOf(false) }
     var sorting by remember { mutableStateOf(false) }
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val searchFocus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     BackHandler(search) { search = false; query = "" }
+    LaunchedEffect(search) {
+        if (search) {
+            list.scrollToItem(0)
+            searchFocus.requestFocus()
+            keyboardController?.show()
+        } else {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
+    }
     val success = library as? LibraryState.Success
     val filtered = remember(songs, query) { songs.filter { LocalSearch.matches(it, query) } }
     val visibleIds = remember(filtered) { filtered.map { it.id }.toHashSet() }
@@ -61,6 +77,13 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
         pluralStringResource(R.plurals.settings_song_count, songs.size, songs.size), totalMinutes)
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val sleeve = (maxWidth * 0.76f).coerceAtMost(maxHeight * 0.5f)
+        val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+        LocalPullToRefresh(
+            refreshing = isRefreshing,
+            onRefresh = onRetry,
+            state = pullState,
+            modifier = Modifier.fillMaxSize().testTag("local-music-refresh"),
+        ) {
         LazyColumn(state = list, modifier = Modifier.fillMaxSize().then(contentBackdropModifier).testTag("local-music-list"),
             contentPadding = bottomPadding) {
             item(key = "header") {
@@ -69,20 +92,27 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                     { onPlay(filtered.shuffled(), 0) }, filtered.isNotEmpty())
                 else Text(stringResource(R.string.local_music), style = MaterialTheme.typography.headlineLarge,
                     modifier = Modifier.padding(start = 16.dp, top = topBarContentPadding(), bottom = 16.dp))
-                if (search) SearchField(query, { query = it }, onSubmit = {}, placeholder = stringResource(R.string.local_music_search_open), modifier = Modifier.padding(horizontal = 16.dp))
+                if (search) SearchField(query, { query = it }, onSubmit = {}, focusRequester = searchFocus,
+                    placeholder = stringResource(R.string.local_music_search_open), modifier = Modifier.padding(horizontal = 16.dp))
                 LocalFolderTabs(tabs, selected, { next ->
                     if (selected != next) { selected = next; scope.launch { list.scrollToItem(0) } }
                 })
             }
             when (library) {
-                LibraryState.Loading -> item { Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-                is LibraryState.Error -> item { Column(Modifier.padding(24.dp)) {
-                    Text(library.message)
-                    TextButton(onClick = if (library.permissionRequired) onPermission else onRetry) {
-                        Text(stringResource(if (library.permissionRequired) R.string.local_music_grant else R.string.local_music_retry))
-                    }
+                LibraryState.Loading -> item { Column(Modifier.fillMaxWidth().padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(12.dp))
+                    Text(stringResource(R.string.home_loading))
                 } }
-                is LibraryState.Success -> when (selected) {
+                is LibraryState.Error -> item {
+                    MessageState(library.message,
+                        actionLabel = stringResource(if (library.permissionRequired) R.string.local_music_grant else R.string.local_music_retry),
+                        onAction = if (library.permissionRequired) onPermission else onRetry)
+                }
+                is LibraryState.Success -> if (isRefreshing && library.songs.isEmpty()) {
+                    item { MessageState(stringResource(R.string.home_loading)) }
+                } else when (selected) {
                     0 -> {
                         if (filtered.isEmpty()) item { Text(stringResource(R.string.local_music_empty), Modifier.padding(24.dp)) }
                         itemsIndexed(filtered, key = { _, song -> song.id }) { index, song ->
@@ -122,12 +152,12 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                 }
             }
         }
+        }
         FrostedTopBar(stringResource(R.string.local_music), { false }, transparentBackdrop = true, artworkPageChrome = true,
-            onBack = onBack, actions = {
+            onBack = onBack, refreshing = isRefreshing, pullFraction = { pullState.distanceFraction }, actions = {
                 IconButton(onClick = {
                     search = !search
                     if (!search) query = ""
-                    else scope.launch { list.scrollToItem(0) }
                 }) { Icon(if (search) AurelisIcons.Close else AurelisIcons.Search,
                     stringResource(if (search) R.string.local_music_search_close else R.string.local_music_search_open)) }
                 Box {
@@ -138,7 +168,7 @@ internal fun LocalMusicContent(library: LibraryState, songs: List<LocalSong>, pl
                             onClick = { sorting = false; onSort(option) }) }
                     }
                 }
-                IconButton(onClick = onRetry) { Icon(AurelisIcons.Refresh, stringResource(R.string.local_music_refresh)) }
+                IconButton(onClick = onRetry, enabled = !isRefreshing) { Icon(AurelisIcons.Refresh, stringResource(R.string.local_music_refresh)) }
                 LocalProfileButton(onProfile)
             })
     }
