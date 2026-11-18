@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,38 @@ class SearchPresentationTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
     private val songs = (1..2).map { LocalSong("$it", "Match $it", "Local artist", "Local album",
         "content://media/$it", null, 60_000, null, null, null) }
+
+    @Test fun f014KeyboardSearchSubmitsAndKeepsTypedQuery() {
+        var query by mutableStateOf("")
+        var submitted = 0
+        compose.setContent { AurelisTheme {
+            SearchScreen(query, { query = it }, emptyList(), rememberLazyListState(),
+                false, {}, { _, _ -> }, {}, emptyList(), { submitted++ }, {}, {}, {},
+                null, false, contentPadding = PaddingValues(), topPadding = 0.dp)
+        } }
+        val field = compose.onNode(hasSetTextAction())
+        field.performTextInput("Local tracks")
+        field.performImeAction()
+        compose.runOnIdle {
+            assertEquals("Local tracks", query)
+            assertEquals(1, submitted)
+        }
+    }
+
+    @Test fun f014LargeFontScaleKeepsSearchFieldAndClearControlAccessible() {
+        var query by mutableStateOf("Music")
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f, 2f)) {
+                AurelisTheme {
+                    SearchScreen(query, { query = it }, emptyList(), rememberLazyListState(),
+                        false, {}, { _, _ -> }, {}, emptyList(), {}, {}, {}, {},
+                        null, false, contentPadding = PaddingValues(), topPadding = 0.dp)
+                }
+            }
+        }
+        compose.onNode(hasSetTextAction()).assertExists()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.clear_search)).assertExists()
+    }
 
     @Test fun emptyCategoryKeepsTheSelectorAndReturnsToActualSongs() {
         var category by mutableStateOf(LocalSearchCategory.ALL)
