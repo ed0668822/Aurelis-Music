@@ -60,6 +60,7 @@ fun SearchField(
     val submit = {
         onSubmit()
         focusManager.clearFocus()
+        keyboardController?.hide()
     }
     Row(
         modifier = modifier
