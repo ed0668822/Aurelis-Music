@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import android.net.Uri
@@ -61,6 +62,7 @@ import com.music.aurelis.ui.player.LandscapePlayerLayout
 import com.music.aurelis.ui.player.PlayerPane
 import com.music.aurelis.ui.player.playerSwipeTrigger
 import com.music.aurelis.ui.components.SourceQualityBadge
+import com.music.aurelis.ui.components.MiniPlayerQualityDialog
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.key
@@ -143,6 +145,11 @@ import com.music.aurelis.ui.theme.DynamicThemeViewModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
+/** Full-width artwork on phones; capped artwork on larger portrait displays. */
+internal fun portraitArtworkSize(width: Dp, height: Dp): Dp =
+    if (width <= 600.dp) width.coerceAtLeast(0.dp)
+    else minOf(width, height * 0.60f, 560.dp).coerceAtLeast(0.dp)
+
 @Composable
 fun NowPlayingScreen(
     playbackViewModel: PlaybackViewModel,
@@ -207,11 +214,9 @@ fun NowPlayingScreen(
         if (isVisible && song != null) panelMotion?.reveal()
     }
 
-    if (showQuality && isVisible && song != null) androidx.compose.material3.AlertDialog(
-        onDismissRequest = { showQuality = false }, title = { Text(stringResource(R.string.player_audio_info)) },
-        text = { Text(stringResource(R.string.player_audio_details, state.sourceQuality.details, state.sourceQuality.originLabel)) },
-        confirmButton = { androidx.compose.material3.TextButton(onClick = { showQuality = false }) { Text(stringResource(R.string.player_close_dialog)) } },
-    )
+    if (showQuality && isVisible && song != null) {
+        MiniPlayerQualityDialog(state.sourceQuality, onDismiss = { showQuality = false })
+    }
 
     AnimatedVisibility(
         visible = isVisible && song != null,
@@ -313,7 +318,7 @@ fun NowPlayingScreen(
                         artworkUri = s.artworkUri,
                         title = s.title,
                         size = artworkSize,
-                        corner = if (landscape) 10.dp else 0.dp,
+                        corner = if (landscape || maxWidth > 600.dp) 10.dp else 0.dp,
                         modifier = artworkModifier.testTag("player-artwork").playerDockArtwork(dock, s.id, mini = false),
                         progressFraction = progressFraction,
                     )
@@ -409,10 +414,12 @@ fun NowPlayingScreen(
                                 PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
                                     enabled = state.isConnected && state.canSeek, showRemaining = true)
                             }
-                            if (compact) TextButton(onClick = { showQuality = true },
+                        }
+                        if (compact) state.sourceQuality.compactLabel?.let { label ->
+                            TextButton(onClick = { showQuality = true },
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                                modifier = Modifier.align(Alignment.BottomCenter).height(24.dp)) {
-                                SourceQualityBadge(state.sourceQuality.formatLabel)
+                                modifier = Modifier.height(26.dp)) {
+                                SourceQualityBadge(label)
                             }
                         }
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
@@ -422,7 +429,9 @@ fun NowPlayingScreen(
                         actions()
                         if (!compact && !lyricsMode) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             IconButton(onClick = { showPlaybackTools = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools)) }
-                            TextButton(onClick = { showQuality = true }) { SourceQualityBadge(state.sourceQuality.formatLabel) }
+                            state.sourceQuality.compactLabel?.let { label ->
+                                TextButton(onClick = { showQuality = true }) { SourceQualityBadge(label) }
+                            }
                             IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
                         }
                         if (!compact) Text(stringResource(R.string.player_local_device),
@@ -593,16 +602,18 @@ fun NowPlayingScreen(
                         // Measure the deck at its natural height first; artwork receives
                         // the remaining space. Transport never depends on scrolling.
                         Box(Modifier.fillMaxSize().testTag("player-portrait")) {
+                            val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
+                            val compactPortrait = maxHeight < 650.dp
                             BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
-                                artwork(Modifier, maxWidth)
-                                Box(Modifier.fillMaxWidth().height(maxWidth).background(Brush.verticalGradient(
-                                    listOf(Color.Transparent, MaterialTheme.colorScheme.background))))
+                                artwork(Modifier.align(Alignment.TopCenter), portraitArtwork)
+                                Box(Modifier.fillMaxWidth().height(portraitArtwork).background(
+                                    Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background))))
                             }
                             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 header()
                                 Spacer(Modifier.weight(1f))
-                                credits(false)
-                                deck(false, false)
+                                credits(compactPortrait)
+                                deck(compactPortrait, false)
                             }
                         }
                     }
