@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui
 
 import android.Manifest
@@ -166,6 +167,41 @@ class LocalRefreshIntegrationTest {
         refreshAction(AppTab.HOME)
         compose.onNodeWithTag("local-home").assertIsDisplayed()
         compose.runOnIdle { assertEquals(2, reads.get()); assertEquals(setOf(song.id), app.userLibrary.state.value.favorites) }
+    }
+
+    @Test fun libraryAndCollectionExposeRealScanRecoveryWhilePrivatePlaylistsSurvive() {
+        val reads = AtomicInteger()
+        val problem = "F013 fixture: MediaStore unavailable"
+        val savedId = app.userLibrary.createPlaylist("F013 saved playlist", listOf(song.id))
+        shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
+        library = LibraryViewModel(app, LocalLibrarySource {
+            when (reads.incrementAndGet()) {
+                1, 3 -> throw IOException(problem)
+                else -> listOf(song)
+            }
+        })
+        player = RecordingPlayer()
+        playback = PlaybackViewModel(app) { player }
+        models.put("library", library); models.put("player", playback)
+        compose.setContent { AurelisTheme {
+            navigator = rememberAppNavigator()
+            AurelisNavigationContent(navigator, playback, library, onRequestAudioPermission = { permissionRequests++ })
+        } }
+        compose.runOnIdle { navigator.selectTab(AppTab.LIBRARY); library.loadLibrary() }
+        compose.waitUntil(5_000) { library.uiState.value.libraryState is LibraryState.Error }
+        compose.onNodeWithText(problem).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.home_retry)).performClick()
+        compose.waitUntil(5_000) { library.uiState.value.libraryState is LibraryState.Success }
+        compose.runOnIdle { navigator.push(AppRoute.Collection(LocalCollectionKind.ALBUMS)); library.refresh() }
+        compose.waitUntil(5_000) { library.uiState.value.libraryState is LibraryState.Error }
+        compose.onNodeWithText(problem).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.home_retry)).performClick()
+        compose.waitUntil(5_000) { library.uiState.value.libraryState is LibraryState.Success }
+        compose.onNodeWithText("Album").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals(4, reads.get())
+            assertTrue(app.userLibrary.state.value.playlists.any { it.id == savedId })
+        }
     }
 
     @Test fun sourcePuckAppearsBelowTheBarWithoutChangingItsHeightInEitherTheme() {
