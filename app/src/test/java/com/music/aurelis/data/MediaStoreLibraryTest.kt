@@ -170,12 +170,43 @@ class MediaStoreLibraryTest {
         assertTrue(provider.cursors.all { it.isClosed })
     }
 
+    @Test fun zeroDurationCanUseRealFileTagsButShortClipsStayExcluded() = runBlocking {
+        provider.rows = listOf(
+            row(8, mapOf(MediaStore.Audio.Media.DURATION to 0L)),
+            row(9, mapOf(MediaStore.Audio.Media.DURATION to 200L)),
+            row(10, mapOf(MediaStore.Audio.Media.DURATION to -1L)),
+        )
+        var reads = 0
+        val tags = LocalMetadataReader { uri ->
+            reads++
+            if (uri.lastPathSegment == "8") LocalFileMetadata(durationMs = 2400L, genre = "Electronic")
+            else null
+        }
+        val songs = LocalMediaRepository.getAllSongs(context, true, tags)
+        assertEquals(listOf("8"), songs.map { it.id })
+        assertEquals(2400L, songs.single().durationMs)
+        assertEquals("Electronic", songs.single().genre)
+        assertEquals(2, reads) // 8 and 10; the known 200ms clip is rejected first.
+        assertTrue(provider.selection.orEmpty().contains("${MediaStore.Audio.Media.DURATION} <= 0"))
+    }
+
+    @Test fun unsupportedDeprecatedDataColumnDoesNotBlockUriPlayback() = runBlocking {
+        provider.rejectData = true
+        provider.rows = listOf(row(42))
+        val songs = LocalMediaRepository.getAllSongs(context, true, LocalMetadataReader { null })
+        assertEquals(listOf("42"), songs.map { it.id })
+        assertEquals("content://media/external/audio/media/42", songs.single().contentUri)
+        assertNull(songs.single().filePath)
+        assertTrue(provider.cursors.all { it.isClosed })
+    }
+
     class CatalogueProvider : ContentProvider() {
         var rows: List<Map<String, Any?>> = emptyList()
         var columns: Array<String>? = null
         var returnNull = false
         var denied = false
         var rejectOptional = false
+        var rejectData = false
         var selection: String? = null
         var arguments: Array<out String>? = null
         val cursors = mutableListOf<MatrixCursor>()
@@ -183,6 +214,7 @@ class MediaStoreLibraryTest {
         override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? {
             this.selection = selection; arguments = selectionArgs
             if (rejectOptional && projection?.contains(MediaStore.Audio.Media.VOLUME_NAME) == true) throw IllegalArgumentException("Optional column")
+            if (rejectData && projection?.contains(MediaStore.Audio.Media.DATA) == true) throw IllegalArgumentException("Deprecated DATA column")
             if (denied) throw SecurityException("Denied")
             if (returnNull) return null
             val names = columns ?: requireNotNull(projection).map { it }.toTypedArray()

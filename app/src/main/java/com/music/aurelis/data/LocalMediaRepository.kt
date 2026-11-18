@@ -54,7 +54,9 @@ object LocalMediaRepository {
         includeFolder: (String?, String?) -> Boolean = { _, _ -> true }): List<LocalSong> = withContext(Dispatchers.IO) {
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val selection = buildString {
-            append("(${MediaStore.Audio.Media.DURATION} >= ? OR ${MediaStore.Audio.Media.DURATION} IS NULL) AND ${MediaStore.Audio.Media.IS_PENDING} = 0 AND ${MediaStore.Audio.Media.IS_TRASHED} = 0")
+            // MediaStore sometimes reports 0 or null for valid DSD/fragmented audio.
+            // Inspect those candidates with file tags before admitting them.
+            append("(${MediaStore.Audio.Media.DURATION} >= ? OR ${MediaStore.Audio.Media.DURATION} <= 0 OR ${MediaStore.Audio.Media.DURATION} IS NULL) AND ${MediaStore.Audio.Media.IS_PENDING} = 0 AND ${MediaStore.Audio.Media.IS_TRASHED} = 0")
             if (filterNonMusic) append(" AND ${MediaStore.Audio.Media.IS_MUSIC} != 0")
         }
         fun query(columns: Array<String>) = context.contentResolver.query(uri, columns, selection,
@@ -63,7 +65,8 @@ object LocalMediaRepository {
         catch (_: IllegalArgumentException) {
             // Some device providers reject optional columns; keep the minimum catalogue usable.
             query(projection.filterNot { it in setOf(MediaStore.Audio.Media.GENRE, MediaStore.Audio.Media.VOLUME_NAME,
-                MediaStore.Audio.Media.RELATIVE_PATH, MediaStore.Audio.Media.DATE_MODIFIED, MediaStore.Audio.Media.MIME_TYPE) }.toTypedArray())
+                MediaStore.Audio.Media.RELATIVE_PATH, MediaStore.Audio.Media.DATE_MODIFIED, MediaStore.Audio.Media.MIME_TYPE,
+                MediaStore.Audio.Media.DATA) }.toTypedArray())
         } ?: throw IOException(context.getString(R.string.library_read_error))
         cursor.use { c ->
             if (requireFolderMetadata && (c.getColumnIndex(MediaStore.Audio.Media.VOLUME_NAME) < 0 || c.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH) < 0))
@@ -73,7 +76,7 @@ object LocalMediaRepository {
                 currentCoroutineContext().ensureActive()
                 val id = c.number(MediaStore.Audio.Media._ID)?.takeIf { it > 0 } ?: continue
                 val knownDuration = c.number(MediaStore.Audio.Media.DURATION)
-                if ((knownDuration != null && knownDuration < MIN_DURATION_MS) || c.number(MediaStore.Audio.Media.IS_PENDING) == 1L ||
+                if ((knownDuration != null && knownDuration in 1L until MIN_DURATION_MS) || c.number(MediaStore.Audio.Media.IS_PENDING) == 1L ||
                     c.number(MediaStore.Audio.Media.IS_TRASHED) == 1L ||
                     (filterNonMusic && c.number(MediaStore.Audio.Media.IS_MUSIC) == 0L)) continue
                 val volume = c.metadata(MediaStore.Audio.Media.VOLUME_NAME)?.takeIf { it.matches(Regex("[a-zA-Z0-9_-]+")) }
@@ -85,10 +88,10 @@ object LocalMediaRepository {
                 val title = c.metadata(MediaStore.Audio.Media.TITLE)
                 val artist = c.metadata(MediaStore.Audio.Media.ARTIST)
                 val album = c.metadata(MediaStore.Audio.Media.ALBUM)
-                val embedded = if (genre == null || title == null || artist == null || album == null || knownDuration == null)
+                val embedded = if (genre == null || title == null || artist == null || album == null || knownDuration == null || knownDuration <= 0L)
                     tags.read(contentUri, size ?: 0, modified) else null
                 currentCoroutineContext().ensureActive()
-                val duration = knownDuration ?: embedded?.durationMs ?: continue
+                val duration = knownDuration?.takeIf { it > 0L } ?: embedded?.durationMs ?: continue
                 if (duration < MIN_DURATION_MS) continue
                 val albumId = c.number(MediaStore.Audio.Media.ALBUM_ID)?.takeIf { it > 0 }
                 val artistId = c.number(MediaStore.Audio.Media.ARTIST_ID)?.takeIf { it > 0 }

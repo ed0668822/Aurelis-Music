@@ -5,7 +5,7 @@ Este bloque conserva MediaStore, LibraryViewModel y la reproducción local. No i
 
 | Fase | Estado de este bloque | Evidencia / alcance |
 |---|---|---|
-| F015 | Conservado | `LocalMediaRepository`: MediaStore, filtrado y exclusión de medios en papelera/pendientes; pruebas existentes |
+| F015 | Corregido y pruebas añadidas | `LocalMediaRepository`: duración 0/desconocida exige etiquetas válidas; tolerancia al rechazo de `DATA`; se preservan exclusión de pendientes/papelera y MediaStore como fuente única |
 | F016 | Conservado | `LocalMetadataReader`: extracción de etiquetas con caché acotada y cancelación desde el escáner |
 | F017 | Conservado | `LocalLibrarySource` y `LibraryViewModel`: observación en primer plano y prevención de resultados antiguos |
 | F018 | Conservado | `LocalFolderRepository`: árboles SAF, permisos persistidos y rechazo de accesos revocados |
