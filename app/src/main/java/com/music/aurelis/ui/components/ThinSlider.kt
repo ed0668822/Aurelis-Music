@@ -136,7 +136,8 @@ fun ThinSlider(
                     } finally {
                         dragging = false
                     }
-                },
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(
