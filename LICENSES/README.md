@@ -1,9 +1,9 @@
 # Licencias y atribuciones de Aurelis Music
 
-Aurelis © 2026. GPL-3.0-or-later.
+Aurelis © 2026. LGPL-3.0-or-later.
 
 Aurelis Music es software libre. Sus aportaciones propias se ofrecen bajo la
-GNU General Public License, versión 3 o, a tu elección, cualquier versión
+GNU Lesser General Public License, versión 3 o, a tu elección, cualquier versión
 posterior. Puedes utilizar, estudiar, modificar y redistribuir el programa
 conforme a las condiciones de las licencias aplicables.
 
@@ -12,12 +12,13 @@ no los modifica y no amplía los permisos de componentes de terceros.
 
 ## Dónde consultar los textos
 
-En el repositorio, el texto íntegro de la GPL v3 está en [LICENSE](../LICENSE)
+En el repositorio, el texto íntegro de la LGPL v3 (que incorpora la GPL v3) está en [LICENSE](../LICENSE)
 y los avisos de autoría, procedencia y adaptaciones están en [NOTICE](../NOTICE).
 Las siguientes copias conservan los textos y avisos de sus respectivos titulares:
 
 | Archivo en este directorio | Componente o licencia |
 | --- | --- |
+| [LGPL-3.0-or-later.txt](LGPL-3.0-or-later.txt) | Licencia del código propio y adaptaciones con autorización de relicencia |
 | [AGPL-3.0-or-later.txt](AGPL-3.0-or-later.txt) | AGPL v3; componentes derivados de Orchard |
 | [Apache-2.0.txt](Apache-2.0.txt) | Apache License 2.0; componentes y dependencias identificados en NOTICE |
 | [Vazirmatn-OFL.txt](Vazirmatn-OFL.txt) | Fuente Vazirmatn; SIL Open Font License 1.1 |
@@ -41,19 +42,19 @@ legal deben comprobarse sobre cada APK generado en GitHub.
 
 ## Derechos de terceros y alcance de la licencia
 
-Las adaptaciones de BitChord conservan sus atribuciones y las condiciones
-originales aplicables a cada archivo. Su README de referencia declara GPLv3;
-no se presume automáticamente el permiso «o cualquier versión posterior».
+El proyecto declara LGPL-3.0-or-later para el código propio y las adaptaciones
+para las que el titular haya obtenido autorización suficiente para relicenciar.
+El mantenedor declara disponer de autorizaciones para las adaptaciones que
+controla; esta declaración no modifica por sí sola los derechos de otras personas.
 
-Los componentes derivados de Orchard conservan AGPL-3.0-or-later. La combinación
-permitida por las secciones 13 de GPLv3 y AGPLv3 mantiene las condiciones de
-cada parte; las exigencias especiales de interacción por red de AGPLv3 se
-aplican a la combinación. El texto completo y los avisos originales prevalecen
-sobre este resumen. La licencia propia de Aurelis no elimina esas obligaciones.
+Las licencias, copyrights y avisos de bibliotecas, componentes nativos, fuentes,
+modelos y dependencias independientes se conservan en los documentos correspondientes
+mientras sean aplicables. No se debe presentar como código original de Aurelis una
+contribución externa solo por disponer de autorización de uso o relicencia.
 
-Las bibliotecas nativas, fuentes y modelos conservan sus licencias respectivas.
-En particular, no debe suponerse que todo FFmpeg es LGPL ni que cualquier modelo
-Open-Unmix permite los mismos usos. NOTICE registra las atribuciones conocidas.
+La configuración y fuentes precisas de FFmpeg/NextLib y la procedencia de
+exportaciones ONNX siguen sujetas a verificación. NOTICE documenta los avisos
+conocidos y la trazabilidad histórica de componentes adaptados.
 
 ## Redistribución y código fuente correspondiente
 

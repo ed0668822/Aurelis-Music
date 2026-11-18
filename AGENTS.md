@@ -18,4 +18,4 @@ Only report actionable issues with file and line, severity (Critical/High/Medium
 Do not claim a build or test passed unless actually run. If no defects are found, state remaining verification gaps. Prefer minimal corrections and regression tests; never remove a core feature just to make a build pass.
 
 ## Licensing and scope
-Respect existing `Aurelis © 2026. GPL-3.0-or-later` headers and third-party notices. Do not assume third-party attribution may be replaced. Review only: do not edit or merge code without explicit authorization. Never reveal credentials or private data.
+Respect project `Aurelis © 2026. LGPL-3.0-or-later` headers and third-party notices. Do not assume third-party attribution may be replaced. Review only: do not edit or merge code without explicit authorization. Never reveal credentials or private data.

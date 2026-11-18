@@ -29,7 +29,7 @@ streaming, mood inference or motion-cover services are imported. Aurelis adds
 bounded bitmap output, cancellation, localized accessibility and local recovery.
 Exact source hashes and changes: docs/migration/beta-local/LICENSE_AUDIT.md.
 
-Identificación del proyecto: Aurelis © 2026. GPL-3.0-or-later.
+Identificación del proyecto: Aurelis © 2026. LGPL-3.0-or-later.
 Repositorio: https://github.com/ed0668822/Aurelis-Music
 
 Este documento identifica las aportaciones propias, los componentes adaptados
@@ -38,7 +38,7 @@ aportaciones propias y no sustituye los derechos ni las condiciones de los
 componentes originales. Los avisos y textos legales originales se conservan
 en su idioma; la guía en español está en LICENSES/README.md.
 
-El texto íntegro de la GNU GPL v3 está en LICENSE. El permiso de Aurelis para
+El texto íntegro de la GNU LGPL v3 está en LICENSE. El permiso de Aurelis para
 utilizar la versión 3 o cualquier versión posterior se declara a continuación.
 Cada componente de terceros conserva las condiciones que le correspondan.
 Este aviso no concede permisos adicionales ni certifica el cumplimiento de
@@ -58,18 +58,18 @@ Contenido
 
 Aurelis Music
 Copyright (C) 2026 ed0668822 (Aurelis adaptations)
-Licensed under the GNU General Public License, version 3 or later.
+Licensed under the GNU Lesser General Public License, version 3 or later.
 See the LICENSE file for the full text.
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
+it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+GNU Lesser General Public License for more details.
 
 ────────────────────────────────────────────────────────────────────
 
@@ -527,7 +527,7 @@ B06.2-a — service-owned sleep timer
 BitChord b690dc146009d4815825fa4a20815ef2e4ee8898 playback/SleepTimer.kt:
 monotonic deadline/after-track pattern adapted into a service-owned listener and
 handler, private session commands and observed session extras. Original BitChord
-GPLv3 contributor attribution is preserved; Aurelis contributions GPL-3.0-or-later.
+GPLv3 contributor attribution is preserved; Aurelis contributions LGPL-3.0-or-later.
 Source SHA256 306d96ab08fee7edae578ac0caba8899ace263ad1997c17c3449512d90613d19.
 No global UI timer, exact alarm, remote service or dependency is introduced.
 
