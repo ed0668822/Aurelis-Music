@@ -77,6 +77,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.media3.common.Player
 import com.music.aurelis.ui.components.PlayerSlider
+import com.music.aurelis.ui.components.CurrentLyricStrip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -474,19 +475,15 @@ fun NowPlayingScreen(
                 val deck: @Composable (Boolean, Boolean) -> Unit = { compact, lyricsMode ->
                     Column(Modifier.fillMaxWidth().testTag("player-control-deck"), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (!compact && !lyricsMode) {
-                            val time = com.music.aurelis.ui.player.adjustedLyricsPosition(state.positionMs, lyricsOffset)
-                            val line = (state.lyrics as? LyricsState.Loaded)?.lines?.takeIf { syncEnabled }
-                                ?.lastOrNull { it.timeMs <= time && !it.isGap }?.text
-                            TextButton(onClick = openLyrics, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                                modifier = Modifier.fillMaxWidth().height(32.dp)
-                                .semantics { contentDescription = context.getString(R.string.player_lyrics_preview) }) {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Rounded.MusicNote, null, Modifier.size(18.dp), tint = Color.White.copy(alpha = 0.7f))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(line ?: stringResource(R.string.player_no_lyrics_preview), modifier = Modifier.weight(1f), maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis, color = Color.White.copy(alpha = 0.7f))
-                                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(18.dp), tint = Color.White.copy(alpha = 0.5f))
-                                }
+                            key(s.queueEntryId ?: s.id) {
+                                CurrentLyricStrip(
+                                    lyrics = state.lyrics,
+                                    positionMs = state.positionMs,
+                                    offsetMs = lyricsOffset,
+                                    syncEnabled = syncEnabled,
+                                    reduceMotion = reduceAnimation,
+                                    onOpenLyrics = openLyrics,
+                                )
                             }
                         }
                         key(s.queueEntryId ?: s.id) {
