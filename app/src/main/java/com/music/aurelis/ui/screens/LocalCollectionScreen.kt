@@ -181,11 +181,11 @@ fun LocalCollectionScreen(
                     }
                     BrowseActionsMenu(onDismiss = { collectionActionsExpanded = false },
                         expanded = collectionActionsExpanded,
-                        onPlay = if (displaySongs.isEmpty()) null else {{ onPlay(displaySongs, 0) }},
-                        onShuffle = if (displaySongs.isEmpty()) null else {{ onPlay(displaySongs.shuffled(), 0) }},
+                        onPlay = if (displaySongs.isEmpty()) null else { onPlay(displaySongs, 0) },
+                        onShuffle = if (displaySongs.isEmpty()) null else { onPlay(displaySongs.shuffled(), 0) },
                         onSelect = { selectionMode = true; selected = emptySet() },
-                        onRename = if (playlist != null && !user.readOnly) {{ name = playlist.name; editing = true }} else null,
-                        onDelete = if (playlist != null && !user.readOnly) {{ deleting = true }} else null)
+                        onRename = if (playlist != null && !user.readOnly) { name = playlist.name; editing = true } else null,
+                        onDelete = if (playlist != null && !user.readOnly) { deleting = true } else null)
                 }
             }
             Row {
