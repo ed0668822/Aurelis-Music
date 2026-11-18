@@ -26,6 +26,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,13 +46,19 @@ class PlayerDock {
     private var expanded by mutableStateOf<LayoutCoordinates?>(null)
     private var miniId by mutableStateOf<String?>(null)
     private var expandedId by mutableStateOf<String?>(null)
+    private var miniCorner by mutableStateOf(8.dp)
+    private var expandedCorner by mutableStateOf(0.dp)
 
     internal fun reportHost(coordinates: LayoutCoordinates) { host = coordinates }
     internal fun reportPanel(coordinates: LayoutCoordinates) { panel = coordinates }
     internal fun releasePanel() { panel = null }
-    internal fun reportMini(id: String, coordinates: LayoutCoordinates) { miniId = id; mini = coordinates }
+    internal fun reportMini(id: String, coordinates: LayoutCoordinates, corner: Dp = 8.dp) {
+        miniId = id; mini = coordinates; miniCorner = corner
+    }
     internal fun releaseMini(id: String) { if (miniId == id) { mini = null; miniId = null } }
-    internal fun reportExpanded(id: String, coordinates: LayoutCoordinates) { expandedId = id; expanded = coordinates }
+    internal fun reportExpanded(id: String, coordinates: LayoutCoordinates, corner: Dp = 0.dp) {
+        expandedId = id; expanded = coordinates; expandedCorner = corner
+    }
     internal fun releaseExpanded(id: String) { if (expandedId == id) { expanded = null; expandedId = null } }
     private fun bounds(coordinates: LayoutCoordinates?, relative: LayoutCoordinates?): Rect? {
         val c = coordinates?.takeIf { it.isAttached } ?: return null
@@ -67,14 +75,29 @@ class PlayerDock {
             bounds(mini, host) != null && bounds(expanded, panel) != null
     }
     internal fun coversArtwork(id: String): Boolean = covers && miniId == id
-    internal fun transitionBounds(id: String): Rect? {
+    internal fun transitionPose(id: String): ArtworkDockPose? {
         if (!coversArtwork(id)) return null
         val from = bounds(mini, host) ?: return null
-        // Both endpoints use the same-sized host/panel viewport. The panel-local
-        // target excludes its translating ancestor; no frame-delayed matrix subtraction.
+        // Panel-local coordinates exclude the translating ancestor and remain stable.
         val to = bounds(expanded, panel) ?: return null
-        return artworkBoundsBetween(from, to, openFraction())
+        return artworkDockPose(from, to, miniCorner, expandedCorner, openFraction())
     }
+
+    internal fun transitionBounds(id: String): Rect? = transitionPose(id)?.bounds
+}
+
+internal data class ArtworkDockPose(val bounds: Rect, val corner: Dp)
+
+/** Interpolate frame and the actual mini/expanded artwork corner as one pose. */
+internal fun artworkDockPose(
+    from: Rect, to: Rect, miniCorner: Dp, expandedCorner: Dp, fraction: Float,
+): ArtworkDockPose? {
+    if (!fraction.isFinite() || !miniCorner.value.isFinite() || !expandedCorner.value.isFinite() ||
+        miniCorner.value < 0f || expandedCorner.value < 0f) return null
+    val bounds = artworkBoundsBetween(from, to, fraction) ?: return null
+    val t = fraction.coerceIn(0f, 1f)
+    val radius = miniCorner.value + (expandedCorner.value - miniCorner.value) * t
+    return ArtworkDockPose(bounds, radius.dp)
 }
 
 internal fun usableArtworkBounds(rect: Rect): Boolean = rect.left.isFinite() && rect.top.isFinite() &&

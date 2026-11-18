@@ -81,7 +81,7 @@ fun MiniPlayer(
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 AnimatedArtwork(songKey = songId, artworkUri = artworkUri, size = 40.dp, corner = 8.dp,
-                    modifier = Modifier.playerDockArtwork(dock, songId, mini = true))
+                    modifier = Modifier.playerDockArtwork(dock, songId, mini = true, corner = 8.dp))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     MiniPlayerFadingText(title, MaterialTheme.typography.titleMedium, MaterialTheme.colorScheme.onSurface)

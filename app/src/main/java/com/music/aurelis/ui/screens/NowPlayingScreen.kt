@@ -309,6 +309,7 @@ fun NowPlayingScreen(
                     }
                 }
                 val artwork: @Composable (Modifier, Dp) -> Unit = { artworkModifier, artworkSize ->
+                    val sleeveCorner = if (landscape || maxWidth > 600.dp) 10.dp else 0.dp
                     val progressFraction = if (state.durationMs > 0) {
                         (state.positionMs.toFloat() / state.durationMs.toFloat()).coerceIn(0f, 1f)
                     } else 0f
@@ -318,8 +319,9 @@ fun NowPlayingScreen(
                         artworkUri = s.artworkUri,
                         title = s.title,
                         size = artworkSize,
-                        corner = if (landscape || maxWidth > 600.dp) 10.dp else 0.dp,
-                        modifier = artworkModifier.testTag("player-artwork").playerDockArtwork(dock, s.id, mini = false),
+                        corner = sleeveCorner,
+                        modifier = artworkModifier.testTag("player-artwork")
+                            .playerDockArtwork(dock, s.id, mini = false, corner = sleeveCorner),
                         progressFraction = progressFraction,
                     )
 
@@ -414,12 +416,10 @@ fun NowPlayingScreen(
                                 PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
                                     enabled = state.isConnected && state.canSeek, showRemaining = true)
                             }
-                        }
-                        if (compact) state.sourceQuality.compactLabel?.let { label ->
-                            TextButton(onClick = { showQuality = true },
+                            if (compact) TextButton(onClick = { showQuality = true },
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                                modifier = Modifier.height(26.dp)) {
-                                SourceQualityBadge(label)
+                                modifier = Modifier.align(Alignment.BottomCenter).height(24.dp)) {
+                                SourceQualityBadge(state.sourceQuality.formatLabel)
                             }
                         }
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
@@ -429,8 +429,8 @@ fun NowPlayingScreen(
                         actions()
                         if (!compact && !lyricsMode) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             IconButton(onClick = { showPlaybackTools = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools)) }
-                            state.sourceQuality.compactLabel?.let { label ->
-                                TextButton(onClick = { showQuality = true }) { SourceQualityBadge(label) }
+                            TextButton(onClick = { showQuality = true }) {
+                                SourceQualityBadge(state.sourceQuality.formatLabel)
                             }
                             IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
                         }
@@ -604,7 +604,7 @@ fun NowPlayingScreen(
                         val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
                         val compactPortrait = maxHeight < 650.dp
                         Box(Modifier.fillMaxSize().testTag("player-portrait")) {
-                            BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
+                            Box(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
                                 artwork(Modifier.align(Alignment.TopCenter), portraitArtwork)
                                 Box(Modifier.fillMaxWidth().height(portraitArtwork).background(
                                     Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background))))

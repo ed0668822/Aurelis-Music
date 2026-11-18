@@ -430,7 +430,7 @@ private fun GlassNowPlaying(
         ) {
             AnimatedArtwork(songKey = song.id, artworkUri = song.artworkUri,
                 title = song.title, size = ACCESSORY_ART_SIZE, corner = ACCESSORY_ART_CORNER,
-                modifier = Modifier.playerDockArtwork(dock, song.id, mini = true))
+                modifier = Modifier.playerDockArtwork(dock, song.id, mini = true, corner = ACCESSORY_ART_CORNER))
             Spacer(Modifier.width(if (isInline) 8.dp else 9.dp))
             // Title and artist at both densities, as Apple Music has them, in its
             // small, openly spaced type (see [ACCESSORY_TITLE_SIZE]). The inline

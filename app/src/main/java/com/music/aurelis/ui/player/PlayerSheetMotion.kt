@@ -124,7 +124,21 @@ class PlayerSheetMotion(
         if ((System.nanoTime() - sheetSampleNanos) / 1e6f < SHEET_VELOCITY_FRESH_MS) sheetVelocity else 0f
 
     fun open() {
-        if (shown()) return
+        if (shown()) {
+            // A second mini-player tap can catch a closing sheet mid-flight.
+            // Reuse the current pose instead of letting the old close dismiss it.
+            if (closing && holding) {
+                settle?.cancel()
+                closing = false
+                window?.setWindowAnimations(windowAnimations)
+                val from = held
+                settle = scope.launch {
+                    slide(from = from, to = 0f)
+                    held = Float.NaN
+                }
+            }
+            return
+        }
         settle?.cancel()
         closing = false
         val travel = travel()

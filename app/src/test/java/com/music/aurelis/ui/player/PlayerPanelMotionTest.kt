@@ -47,6 +47,30 @@ class PlayerPanelMotionTest {
         motion.release(Float.NaN); runCurrent()
         assertTrue(shown); assertTrue(motion.position().isFinite())
     }
+    @Test fun reopeningDuringClosingDoesNotDismissOrJumpBackToTheInitialMiniPose() = runTest {
+        var shown = false
+        val clock = BroadcastFrameClock()
+        val scope = CoroutineScope(coroutineContext + clock)
+        val dock = PlayerDock().apply { sheetTravel = 800f }
+        val motion = PlayerSheetMotion(scope, dock, { shown }, { shown = it }, inlineMode = true)
+        motion.laidOut = true
+        motion.open(); runCurrent()
+        var frame = 0L
+        repeat(120) { clock.sendFrame(++frame * 16_666_667L); runCurrent() }
+        assertTrue(shown)
+        motion.close(); runCurrent()
+        repeat(5) { clock.sendFrame(++frame * 16_666_667L); runCurrent() }
+        val closingPose = motion.position()
+        assertTrue(closingPose > 0f && closingPose < 800f)
+        motion.open(); runCurrent()
+        assertTrue(shown)
+        assertTrue(motion.position() <= closingPose)
+        repeat(120) { clock.sendFrame(++frame * 16_666_667L); runCurrent() }
+        assertTrue(shown)
+        assertFalse(motion.holding)
+        assertEquals(0f, motion.position(), 0f)
+    }
+
     @Test fun originalSpringOpensAndClosesWithAControlledFrameClock() = runTest {
         var shown = false
         val clock = BroadcastFrameClock()

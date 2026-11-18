@@ -16,7 +16,7 @@ class PortraitPlayerSizingTest {
 
     @Test fun tabletPortraitCapsArtworkWithoutChangingPlayerState() {
         assertEquals(560.dp, portraitArtworkSize(800.dp, 1200.dp))
-        assertEquals(480.dp, portraitArtworkSize(1000.dp, 800.dp))
+        assertEquals(480f, portraitArtworkSize(1000.dp, 800.dp).value, 0.001f)
         assertEquals(0.dp, portraitArtworkSize((-10).dp, 900.dp))
     }
 }
