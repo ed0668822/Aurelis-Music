@@ -3,6 +3,7 @@
 // Original contributors retained; Aurelis local catalog and callbacks remain authoritative.
 package com.music.aurelis.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -91,11 +93,19 @@ fun SearchScreen(
     libraryState: LibraryState? = null,
     onRetry: () -> Unit = {},
     onRequestPermission: () -> Unit = {},
+    keyboardBackEnabled: Boolean = true,
 ) {
     val focusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    // Keep the query and selected category intact when dismissing the keyboard.
+    // Disabled behind the player or a pushed route, whose Back action takes priority.
+    BackHandler(enabled = keyboardBackEnabled && imeVisible) {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
 
     LaunchedEffect(focusRequested) {
         if (focusRequested) {
@@ -123,7 +133,7 @@ fun SearchScreen(
                 focusRequester = focusRequester,
                 placeholder = stringResource(R.string.local_search_hint),
             ) }, actions = { onOpenProfile?.let { LocalProfileButton(it) } })
-        Column(modifier = Modifier.weight(1f).fillMaxWidth()
+        Column(modifier = Modifier.weight(1f).fillMaxWidth().imePadding()
             .then(contentBackdropModifier).padding(top = topPadding)) {
             // Local instant search retains its category controls while text completions are shown.
             if (results != null) {
