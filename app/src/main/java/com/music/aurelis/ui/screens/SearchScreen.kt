@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,6 +37,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import kotlinx.coroutines.launch
 import com.music.aurelis.R
+import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.data.model.SortOption
 import com.music.aurelis.ui.components.*
@@ -86,6 +88,9 @@ fun SearchScreen(
     onSuggestionSearch: (String) -> Unit = onQueryChange,
     onSuggestionFill: (String) -> Unit = onQueryChange,
     onTopResultPlaylist: (LocalSong) -> Unit = onSongLongPress,
+    libraryState: LibraryState? = null,
+    onRetry: () -> Unit = {},
+    onRequestPermission: () -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
@@ -103,7 +108,7 @@ fun SearchScreen(
     // A category with no matches must retain the controls that let the user leave it.
     val songs = if (category == LocalSearchCategory.ALL || category == LocalSearchCategory.SONGS) results.orEmpty() else emptyList()
     val collections = destinations.filter { category == LocalSearchCategory.ALL || it.category == category }
-    val suggesting = query.isNotBlank() && suggestions.size > 1
+    val suggesting = query.isNotBlank() && suggestions.size > 1 && libraryState !is LibraryState.Error && libraryState != LibraryState.Loading
     val topIndex = if (!suggesting && category == LocalSearchCategory.ALL && topResult != null)
         songs.indexOfFirst { it.id == topResult.id } else -1
     val songRows = songs.withIndex().filter { it.index != topIndex }
@@ -169,13 +174,30 @@ fun SearchScreen(
                     )
                 }
                 when {
+                    libraryState is LibraryState.Error -> item(key = "search-library-error") {
+                        MessageState(libraryState.message,
+                            actionLabel = stringResource(if (libraryState.permissionRequired) R.string.home_grant_permission else R.string.home_retry),
+                            onAction = if (libraryState.permissionRequired) onRequestPermission else onRetry)
+                    }
+                    libraryState == LibraryState.Loading -> item(key = "search-library-loading") {
+                        Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+                            Spacer(Modifier.height(12.dp))
+                            Text(stringResource(R.string.home_loading))
+                        }
+                    }
                     results == null && query.isEmpty() -> {
                         if (history.isEmpty()) {
                             item { MessageState(stringResource(R.string.local_search_start)) }
                         } else {
                             recentSearches(
                                 history = history,
-                                onClick = { term -> onHistoryClick(term); scope.launch { listState.scrollToItem(0) } },
+                                onClick = { term ->
+                                    onHistoryClick(term)
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
+                                    scope.launch { listState.scrollToItem(0) }
+                                },
                                 onRemove = onHistoryRemove,
                                 onClear = onHistoryClear,
                             )
