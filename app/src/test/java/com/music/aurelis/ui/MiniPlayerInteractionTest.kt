@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.music.aurelis.AurelisApplication
 import com.music.aurelis.ui.components.LocalLiquidGlassEnabled
 import com.music.aurelis.ui.components.MiniPlayer
+import com.music.aurelis.ui.components.miniPlayerLiftDistance
 import com.music.aurelis.ui.player.MiniPlayerPull
 import com.music.aurelis.ui.theme.AurelisTheme
 import org.junit.Assert.*
@@ -32,6 +33,17 @@ import org.robolectric.annotation.GraphicsMode
 class MiniPlayerInteractionTest {
     @get:Rule(order = 0) val registerActivity = RobolectricActivityRule()
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun rubberBandLiftIsStableBoundedAndRejectsInvalidDragValues() {
+        assertEquals(0f, miniPlayerLiftDistance(0f, 72f), 0f)
+        assertEquals(0f, miniPlayerLiftDistance(Float.NaN, 72f), 0f)
+        assertEquals(0f, miniPlayerLiftDistance(-80f, 72f), 0f)
+        assertEquals(0f, miniPlayerLiftDistance(100f, 0f), 0f)
+        val half = miniPlayerLiftDistance(72f, 72f)
+        val full = miniPlayerLiftDistance(144f, 72f)
+        assertTrue(half > 0f && full > half)
+        assertTrue(full - half < half)
+    }
 
     private fun horizontal(distance: Float) {
         compose.onNodeWithTag("mini-player").performTouchInput {

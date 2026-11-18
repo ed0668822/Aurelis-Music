@@ -1,14 +1,22 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // Adapted from BitChord b690dc14 MiniPlayer.miniPlayerGestures (GPLv3); see NOTICE.
 package com.music.aurelis.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -16,6 +24,14 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.dp
 import com.music.aurelis.ui.player.MiniPlayerPull
 import kotlin.math.abs
+import kotlin.math.sqrt
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+
+/** A rubber-band lift, bounded and non-linear; never changes player position. */
+internal fun miniPlayerLiftDistance(pulledPx: Float, easePx: Float): Float =
+    if (!pulledPx.isFinite() || !easePx.isFinite() || pulledPx <= 0f || easePx <= 0f) 0f
+    else easePx * (sqrt(1f + pulledPx / easePx) - 1f)
 
 /** Decide one axis once. Queue changes happen only after a completed drag. */
 @Composable
@@ -35,9 +51,15 @@ internal fun Modifier.miniPlayerGestures(
     val next by rememberUpdatedState(onNext)
     val previous by rememberUpdatedState(onPrevious)
     val expand by rememberUpdatedState(onExpand)
+    val reduceMotion by rememberUpdatedState(LocalReduceMotion.current)
+    val lift = remember { mutableFloatStateOf(0f) }
+    val settle = remember { arrayOfNulls<Job>(1) }
+    val scope = rememberCoroutineScope()
     return pointerInput(Unit) {
         val trackThreshold = 72.dp.toPx()
         val expandThreshold = 48.dp.toPx()
+        val ease = 72.dp.toPx()
+        val maxVelocity = viewConfiguration.maximumFlingVelocity
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
             val pointer = down.id
@@ -71,11 +93,15 @@ internal fun Modifier.miniPlayerGestures(
                     else if (distance >= trackThreshold && currentCanPrevious) previous()
                 }
             } else {
+                settle[0]?.cancel()
+                lift.floatValue = 0f
                 // Keep Aurelis's existing vertical distance measured after touch slop.
                 var distance = (slopped.position.y - down.position.y + viewConfiguration.touchSlop).coerceAtMost(0f)
                 val target = currentPull
                 val tracker = VelocityTracker()
+                tracker.addPosition(down.uptimeMillis, down.position)
                 tracker.addPosition(slopped.uptimeMillis, slopped.position)
+                lift.floatValue = if (reduceMotion) 0f else miniPlayerLiftDistance(-distance, ease)
                 var finished = false
                 try {
                     target?.beginDrag()
@@ -86,15 +112,23 @@ internal fun Modifier.miniPlayerGestures(
                         tracker.addPosition(change.uptimeMillis, change.position)
                         change.consume()
                         target?.drag(delta)
+                        lift.floatValue = if (reduceMotion) 0f else miniPlayerLiftDistance(-distance, ease)
                     }
                     if (finished) {
-                        if (target != null) target.release(tracker.calculateVelocity().y)
+                        if (target != null) target.release(tracker.calculateVelocity().y.coerceIn(-maxVelocity, maxVelocity))
                         else if (-distance >= expandThreshold) expand()
                     }
                 } finally {
                     if (!finished) target?.cancel()
+                    val start = lift.floatValue
+                    if (reduceMotion || start <= 0f) lift.floatValue = 0f
+                    else settle[0] = scope.launch {
+                        animate(start, 0f, animationSpec = spring(
+                            dampingRatio = 0.65f, stiffness = Spring.StiffnessMediumLow,
+                        )) { value, _ -> lift.floatValue = value }
+                    }
                 }
             }
         }
-    }
+    }.graphicsLayer { translationY = -lift.floatValue }
 }
