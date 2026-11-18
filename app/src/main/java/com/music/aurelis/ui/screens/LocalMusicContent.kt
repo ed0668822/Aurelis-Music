@@ -298,13 +298,23 @@ private fun LocalMusicGridCard(
         .background(if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
         .padding(10.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick).testTag("local-music-card:" + key),
-            contentAlignment = Alignment.Center) {
-            Icon(icon, null, modifier = Modifier.size(38.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (artwork != null) AsyncImage(artwork, null, Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop)
+            .background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize().clickable(onClick = onClick)
+                .testTag("local-music-card:" + key), contentAlignment = Alignment.Center) {
+                Icon(icon, null, modifier = Modifier.size(38.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (artwork != null) AsyncImage(artwork, null, Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop)
+            }
+            // The menu is a topmost, independent touch target within visible artwork.
+            if (onMore != null) IconButton(onClick = onMore,
+                modifier = Modifier.align(Alignment.TopEnd)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f),
+                        RoundedCornerShape(10.dp))
+                    .testTag("local-music-menu:" + key)) {
+                Icon(AurelisIcons.MoreVert,
+                    contentDescription = stringResource(R.string.local_music_song_options, title))
+            }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).clickable(onClick = onClick).padding(top = 8.dp)) {
@@ -313,11 +323,6 @@ private fun LocalMusicGridCard(
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            if (onMore != null) IconButton(onClick = onMore,
-                modifier = Modifier.testTag("local-music-menu:" + key)) {
-                Icon(AurelisIcons.MoreVert,
-                    contentDescription = stringResource(R.string.local_music_song_options, title))
             }
         }
     }

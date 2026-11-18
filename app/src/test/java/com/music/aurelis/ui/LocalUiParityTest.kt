@@ -3,6 +3,7 @@ package com.music.aurelis.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -12,7 +13,9 @@ import com.music.aurelis.AurelisApplication
 import com.music.aurelis.data.*
 import com.music.aurelis.data.model.*
 import com.music.aurelis.ui.screens.LocalMusicContent
+import com.music.aurelis.ui.screens.LocalCollectionScreen
 import com.music.aurelis.ui.screens.SettingsScreen
+import org.robolectric.RuntimeEnvironment
 import com.music.aurelis.ui.navigation.*
 import com.music.aurelis.ui.theme.AurelisTheme
 import org.junit.Assert.*
@@ -63,7 +66,11 @@ class LocalUiParityTest {
         compose.onNodeWithTag("local-music-view-toggle").performClick()
         compose.onNodeWithTag("local-music-card:song:1").performClick()
         compose.runOnIdle { assertEquals(songs.map { it.id }, played) }
-        compose.onNodeWithTag("local-music-menu:song:1", useUnmergedTree = true).performClick()
+        // The menu is independently clickable; bring its parent grid row on screen.
+        compose.onNodeWithTag("local-music-list")
+            .performScrollToNode(hasTestTag("local-music-menu:song:1"))
+        compose.onNodeWithTag("local-music-menu:song:1", useUnmergedTree = true)
+            .assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals("1", actions) }
         compose.onNode(isSelectable() and hasText("Álbumes")).performScrollTo().performClick()
         compose.onNodeWithTag("local-music-card:album:5:AlbumArtist").performClick()
@@ -100,19 +107,39 @@ class LocalUiParityTest {
     }
 
     @Test fun folderTabOpensTheSameLocalCollectionAndDoesNotStartAnotherPlayer() {
-        var route: AppRoute.Collection? = null
+        val catalogue = LibraryState.Success(songs)
+        val store = (RuntimeEnvironment.getApplication() as AurelisApplication).userLibrary
+        var route by mutableStateOf<AppRoute.Collection?>(null)
         var plays = 0
+        val rootKey = LocalFolderRepository.browse(songs).single().key
+        val childKey = LocalFolderRepository.browse(songs, rootKey).single().key
+        assertEquals(LocalFolderRepository.groups(songs).single().key, childKey)
         compose.setContent { AurelisTheme {
-            LocalMusicContent(LibraryState.Success(songs), songs, emptyList(), null, false, SortOption.TITLE_ASC, {},
-                {}, {}, {}, { _, _ -> plays++ }, { route = it }, {}, {})
+            if (route == null) {
+                LocalMusicContent(catalogue, songs, emptyList(), null, false, SortOption.TITLE_ASC,
+                    {}, {}, {}, {}, { _, _ -> plays++ }, { route = it }, {}, {})
+            } else {
+                LocalCollectionScreen(route!!, catalogue, store, null, false,
+                    onBack = { route = null }, onOpen = { route = it },
+                    onPlay = { _, _ -> plays++ })
+            }
         } }
         compose.onNodeWithTag("local-music-list").performScrollToNode(hasText("Carpetas"))
         compose.onNodeWithText("Carpetas").performScrollTo().performClick()
-        compose.onNodeWithText("Music/Test").performScrollTo().performClick()
+        compose.onNodeWithText("Music").performScrollTo().performClick()
         compose.runOnIdle {
-            assertEquals(AppRoute.Collection(LocalCollectionKind.FOLDER, LocalFolderRepository.groups(songs).single().key), route)
+            assertEquals(AppRoute.Collection(LocalCollectionKind.FOLDER, rootKey), route)
             assertEquals(0, plays)
         }
+        compose.onNodeWithTag("collection-tracks")
+            .performScrollToNode(hasTestTag("folder-child:" + childKey))
+        compose.onNodeWithTag("folder-child:" + childKey).performClick()
+        compose.runOnIdle {
+            assertEquals(AppRoute.Collection(LocalCollectionKind.FOLDER, childKey), route)
+            assertEquals(0, plays)
+        }
+        compose.onNodeWithTag("collection-tracks").performScrollToNode(hasText("Track 1"))
+        compose.onNodeWithText("Track 1").assertIsDisplayed()
     }
 
     @Test fun settingsSearchFindsExistingControlsAndCategoryBackReturnsToTheRoot() {

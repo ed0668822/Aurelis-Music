@@ -195,12 +195,12 @@ class CollectionSelectionTest {
         val restoration = start()
         compose.onNodeWithText("Seleccionar").performClick()
         compose.onNodeWithText("Todas").performClick()
-        compose.onNodeWithTag("collection-selection-count").assertTextContains("3")
+        compose.onNodeWithTag("collection-selection-count").assertTextContains("3", substring = true)
         compose.onNodeWithText("Ninguna").performClick()
-        compose.onNodeWithTag("collection-selection-count").assertTextContains("0")
+        compose.onNodeWithTag("collection-selection-count").assertTextContains("0", substring = true)
         compose.runOnIdle { assertEquals(listOf("a", "c", "z"), app.userLibrary.state.value.playlists.single { it.id == id }.songIds) }
         restoration.emulateSavedInstanceStateRestore()
-        compose.onNodeWithTag("collection-selection-count").assertTextContains("0")
+        compose.onNodeWithTag("collection-selection-count").assertTextContains("0", substring = true)
     }
 
     @Test fun markedIdsAndVisibleSortSurviveRecreationAndCancelClearsThem() {

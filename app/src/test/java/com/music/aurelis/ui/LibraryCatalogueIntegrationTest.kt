@@ -89,8 +89,12 @@ class LibraryCatalogueIntegrationTest {
         compose.onNodeWithText("Artista Dos").assertDoesNotExist()
         compose.onNodeWithText("Artista Uno").performClick()
         compose.runOnIdle { assertEquals(AppRoute.Collection(LocalCollectionKind.ARTIST, "media:11"), navigator.visibleRoute()) }
+        // The artist artwork and album shelf can push the track below the viewport.
+        // Assert that its row is reachable in the real lazy list, including after restore.
+        compose.onNodeWithTag("collection-tracks").performScrollToNode(hasText("Árbol"))
         compose.onNodeWithText("Árbol").assertIsDisplayed()
         restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("collection-tracks").performScrollToNode(hasText("Árbol"))
         compose.onNodeWithText("Árbol").assertIsDisplayed()
     }
 
