@@ -155,10 +155,14 @@ import com.music.aurelis.ui.theme.DynamicThemeViewModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
-/** Full-width artwork on phones; capped artwork on larger portrait displays. */
-internal fun portraitArtworkSize(width: Dp, height: Dp): Dp =
-    if (width <= 600.dp) width.coerceAtLeast(0.dp)
-    else minOf(width, height * 0.60f, 560.dp).coerceAtLeast(0.dp)
+/** BitChord caps the portrait sleeve at 560dp and sizes it to the vertical room. */
+internal fun portraitArtworkSize(width: Dp, height: Dp): Dp {
+    if (width <= 0.dp || height <= 0.dp) return 0.dp
+    // Compact portrait windows leave more room for the credits and transport.
+    // Width remains full-bleed on ordinary phones; on tablets the art is centred.
+    val available = (height - 260.dp).coerceAtLeast(54.dp)
+    return minOf(width, 560.dp, available)
+}
 
 @Composable
 fun NowPlayingScreen(
@@ -665,10 +669,13 @@ fun NowPlayingScreen(
                         val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
                         val compactPortrait = maxHeight < 650.dp
                         Box(Modifier.fillMaxSize().testTag("player-portrait")) {
-                            Box(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
-                                artwork(Modifier.align(Alignment.TopCenter), portraitArtwork)
-                                Box(Modifier.fillMaxWidth().height(portraitArtwork).background(
-                                    Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background))))
+                            Box(Modifier.fillMaxWidth().align(Alignment.TopCenter),
+                                contentAlignment = Alignment.TopCenter) {
+                                Box(Modifier.size(portraitArtwork)) {
+                                    artwork(Modifier, portraitArtwork)
+                                    Box(Modifier.fillMaxSize().background(
+                                        Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background))))
+                                }
                             }
                             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 header()
