@@ -25,6 +25,10 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.res.stringResource
@@ -35,6 +39,7 @@ import com.music.aurelis.R
 import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.data.model.LocalAlbum
 import com.music.aurelis.ui.components.SongListItem
 import com.music.aurelis.ui.components.LocalDetailHeader
 import com.music.aurelis.ui.components.BrowseActionsMenu
@@ -61,9 +66,7 @@ fun LocalCollectionScreen(
     val snapshot = library as? LibraryState.Success
     val allSongs = snapshot?.songs.orEmpty()
     val playlist = user.playlists.firstOrNull { it.id == route.key }
-    val album = snapshot?.albums?.firstOrNull { item -> item.key == route.key || item.songs.any {
-        "${item.name.length}:${item.name}${it.artist}" == route.key
-    } }
+    val album = snapshot?.albums?.let { resolveLocalAlbum(it, route.key) }
     val artist = snapshot?.artists?.firstOrNull { it.key == route.key || it.name == route.key }
     val byId = remember(allSongs) { allSongs.associateBy { it.id } }
     val genres = remember(allSongs) { LocalGenres.groups(allSongs) }
@@ -206,7 +209,8 @@ fun LocalCollectionScreen(
                 }
                 TextButton(enabled = selectedSongs.isNotEmpty() && !user.readOnly, onClick = { bulkPlaylist = true }) { Text("Añadir selección a playlist") }
             }
-            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(Modifier.weight(1f).testTag("collection-tracks"),
+                contentPadding = PaddingValues(bottom = 24.dp)) {
                 if (hasDetailHeader) item(key = "collection-detail-header") {
                     val artwork = when (route.kind) {
                         LocalCollectionKind.ALBUM -> album?.artworkUri
@@ -218,13 +222,33 @@ fun LocalCollectionScreen(
                         LocalCollectionKind.FOLDER -> AurelisIcons.Folder
                         else -> AurelisIcons.Album
                     }
-                    LocalDetailHeader(title.ifBlank { stringResource(R.string.collection_unavailable) },
-                        if (route.kind == LocalCollectionKind.ALBUM) album?.artist.orEmpty() else "",
-                        pluralStringResource(R.plurals.settings_song_count, songs.size, songs.size),
-                        156.dp, artwork, placeholder,
-                        onPlay = { onPlay(displaySongs, 0) },
-                        onShuffle = { onPlay(displaySongs.shuffled(), 0) },
-                        canPlay = displaySongs.isNotEmpty())
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                        // The device's available viewport limits the cover in landscape.
+                        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+                        val sleeve = if (route.kind == LocalCollectionKind.ALBUM)
+                            (maxWidth * 0.76f).coerceAtMost(screenHeight * 0.5f)
+                                .coerceAtLeast(144.dp)
+                        else 156.dp
+                        val knownYear = if (route.kind == LocalCollectionKind.ALBUM)
+                            songs.mapNotNull { it.year }.distinct().singleOrNull() else null
+                        val countLabel = pluralStringResource(R.plurals.settings_song_count, songs.size, songs.size)
+                        val totalMs = songs.fold(0L) { total, song ->
+                            total + song.durationMs.coerceIn(0L, Long.MAX_VALUE - total)
+                        }
+                        val durationLabel = if (route.kind == LocalCollectionKind.ALBUM && totalMs >= 60_000L)
+                            stringResource(R.string.album_duration_minutes, totalMs / 60_000L) else null
+                        val metadata = buildString {
+                            append(countLabel)
+                            if (knownYear != null) append(" · ").append(knownYear)
+                            if (durationLabel != null) append(" · ").append(durationLabel)
+                        }
+                        LocalDetailHeader(title.ifBlank { stringResource(R.string.collection_unavailable) },
+                            if (route.kind == LocalCollectionKind.ALBUM) album?.artist.orEmpty() else "",
+                            metadata, sleeve, artwork, placeholder,
+                            onPlay = { onPlay(displaySongs, 0) },
+                            onShuffle = { onPlay(displaySongs.shuffled(), 0) },
+                            canPlay = displaySongs.isNotEmpty())
+                    }
                 }
                 itemsIndexed(displayEntries, key = { _, entry -> "${entry.index}:${entry.value.id}" }) { index, entry ->
                     val song = entry.value
@@ -232,6 +256,21 @@ fun LocalCollectionScreen(
                         if (selectionMode) Checkbox(checked = song.id in selected, onCheckedChange = { checked ->
                             selected = if (checked) selected + song.id else selected - song.id
                         }, modifier = Modifier.semantics { contentDescription = "Seleccionar ${song.title}" })
+                        if (route.kind == LocalCollectionKind.ALBUM) {
+                            // Original release numbering does not change when the view sorts.
+                            val number = when {
+                                song.trackNumber != null && (song.discNumber ?: 1) > 1 ->
+                                    "${song.discNumber}.${song.trackNumber}"
+                                song.trackNumber != null -> song.trackNumber.toString()
+                                else -> (entry.index + 1).toString()
+                            }
+                            Text(number, modifier = Modifier.width(38.dp)
+                                .testTag("album-track-number:" + song.id),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center)
+                        }
                         SongListItem(song, song.id == currentSongId && isPlaying, {
                             if (selectionMode) selected = if (song.id in selected) selected - song.id else selected + song.id
                             else onPlay(displaySongs, index)
@@ -305,4 +344,15 @@ fun LocalCollectionScreen(
         }) { Text(stringResource(R.string.playlist_create)) } },
         dismissButton = { TextButton(onClick = { addSongId = null }) { Text(stringResource(R.string.collection_cancel)) } },
     )
+}
+
+/** Prefer an unambiguous local ID; legacy name-based routes must not open the wrong album. */
+internal fun resolveLocalAlbum(albums: List<LocalAlbum>, routeKey: String): LocalAlbum? {
+    albums.firstOrNull { it.key == routeKey }?.let { return it }
+    if (routeKey.startsWith("media:")) return null
+    return albums.filter { album ->
+        album.songs.any { song ->
+            "${album.name.length}:${album.name}${song.artist}" == routeKey
+        }
+    }.singleOrNull()
 }

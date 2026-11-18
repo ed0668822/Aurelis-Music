@@ -9,6 +9,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.music.aurelis.AurelisApplication
 import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.data.model.LocalAlbum
+import com.music.aurelis.ui.screens.resolveLocalAlbum
 import com.music.aurelis.ui.navigation.AppRoute
 import com.music.aurelis.ui.navigation.LocalCollectionKind
 import com.music.aurelis.ui.screens.LocalCollectionScreen
@@ -53,6 +55,45 @@ class CollectionSelectionTest {
         val buttons = compose.onAllNodes(hasText("Reproducir") and hasClickAction())
         buttons.assertCountEquals(2)
         buttons[1].performClick()
+    }
+
+    @Test fun sameNameAlbumsResolveByIdentityAndRejectAmbiguousLegacyRoutes() {
+        fun album(id: String, artist: String) = LocalAlbum("Mismo nombre", artist,
+            null, 1, listOf(LocalSong(id, id, artist, "Mismo nombre",
+                "content://media/" + id, null, 60_000L, null, 1, 2026)),
+            mediaId = id)
+        val first = album("10", "Artista A")
+        val second = album("11", "Artista A")
+        assertEquals(first, resolveLocalAlbum(listOf(first, second), first.key))
+        assertEquals(second, resolveLocalAlbum(listOf(first, second), second.key))
+        assertNull(resolveLocalAlbum(listOf(first, second),
+            "12:Mismo nombreArtista A"))
+        assertNull(resolveLocalAlbum(listOf(first), "media:nonexistent"))
+    }
+
+    @Test fun albumHeaderKeepsOriginalTrackNumberWhenSortingChanges() {
+        val rows = listOf(
+            LocalSong("a", "Alfa", "Artista", "Lanzamiento", "content://media/a",
+                null, 60_000L, null, 2, 2024, discNumber = 2),
+            LocalSong("b", "Beta", "Artista", "Lanzamiento", "content://media/b",
+                null, 60_000L, null, 1, 2024, discNumber = 1),
+        )
+        val release = LocalAlbum("Lanzamiento", "Artista", null, rows.size, rows, "10")
+        val state = LibraryState.Success(rows, albums = listOf(release))
+        var played = emptyList<String>()
+        compose.setContent { AurelisTheme {
+            LocalCollectionScreen(AppRoute.Collection(LocalCollectionKind.ALBUM, release.key), state,
+                app.userLibrary, null, false, onBack = {}, onOpen = {},
+                onPlay = { songs, _ -> played = songs.map { it.id } })
+        } }
+        compose.onNodeWithTag("collection-tracks").performScrollToNode(
+            hasTestTag("album-track-number:b"))
+        compose.onNodeWithTag("album-track-number:b").assertTextEquals("1")
+        compose.onNodeWithText("Título Z–A").performClick()
+        compose.onNodeWithTag("collection-tracks").performScrollToNode(
+            hasTestTag("album-track-number:a"))
+        compose.onNodeWithTag("album-track-number:a").assertTextEquals("2.2")
+        compose.onNodeWithText("Orden original").assertExists()
     }
 
     @Test fun bulkPlaybackAndPlaylistAppendUseVisibleOrderWithoutReorderingSavedTracks() {
