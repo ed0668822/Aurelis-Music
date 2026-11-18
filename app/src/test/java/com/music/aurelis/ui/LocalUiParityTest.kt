@@ -63,7 +63,7 @@ class LocalUiParityTest {
         compose.onNodeWithTag("local-music-view-toggle").performClick()
         compose.onNodeWithTag("local-music-card:song:1").performClick()
         compose.runOnIdle { assertEquals(songs.map { it.id }, played) }
-        compose.onNodeWithContentDescription("Opciones de Track 1").performClick()
+        compose.onNodeWithTag("local-music-menu:song:1", useUnmergedTree = true).performClick()
         compose.runOnIdle { assertEquals("1", actions) }
         compose.onNode(isSelectable() and hasText("Álbumes")).performScrollTo().performClick()
         compose.onNodeWithTag("local-music-card:album:5:AlbumArtist").performClick()

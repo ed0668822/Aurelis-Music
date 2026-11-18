@@ -88,7 +88,10 @@ class SearchIntegrationTest {
             compose.onNode(isSelectable() and hasText(label)).performScrollTo().performClick().assertIsSelected()
             compose.onNodeWithText(title).assertIsDisplayed().performClick()
             compose.runOnIdle { assertEquals(kind, (navigator.visibleRoute() as AppRoute.Collection).kind) }
+            // Release headers can be taller than the viewport; both rows must stay reachable.
+            compose.onNodeWithTag("collection-tracks").performScrollToNode(hasText("Zeta"))
             compose.onNodeWithText("Zeta").assertIsDisplayed()
+            compose.onNodeWithTag("collection-tracks").performScrollToNode(hasText("Alpha"))
             compose.onNodeWithText("Alpha").assertIsDisplayed()
             compose.onNodeWithText("Unrelated").assertDoesNotExist()
             compose.runOnIdle { navigator.back() }

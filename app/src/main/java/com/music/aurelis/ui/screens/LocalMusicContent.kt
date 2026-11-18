@@ -314,7 +314,8 @@ private fun LocalMusicGridCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            if (onMore != null) IconButton(onClick = onMore) {
+            if (onMore != null) IconButton(onClick = onMore,
+                modifier = Modifier.testTag("local-music-menu:" + key)) {
                 Icon(AurelisIcons.MoreVert,
                     contentDescription = stringResource(R.string.local_music_song_options, title))
             }
