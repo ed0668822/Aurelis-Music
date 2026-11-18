@@ -487,6 +487,23 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
     }
+    @Test fun favoriteStarReflectsRealLocalStateAndNeverReplacesTheQueue() {
+        start()
+        val entries = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        val replacements = compose.runOnIdle { player.replacements }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_add_favorite))
+            .assertIsOff().performClick()
+        compose.runOnIdle { assertEquals(setOf("1"), app.userLibrary.state.value.favorites) }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_remove_favorite))
+            .assertIsOn().performClick()
+        compose.runOnIdle {
+            assertTrue(app.userLibrary.state.value.favorites.isEmpty())
+            assertEquals(entries, vm.state.value.queue.map { it.queueEntryId })
+            assertEquals(replacements, player.replacements)
+        }
+    }
+
     @Test fun songActionsPersistFavoritePlaylistAndAppendWithoutRestartingQueue() {
         start()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()

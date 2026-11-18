@@ -404,7 +404,8 @@ fun NowPlayingScreen(
                         PlayerCircleGlyph(if (favorite) AurelisPlayerIcons.StarFilled else AurelisPlayerIcons.Star,
                             stringResource(if (favorite) R.string.player_remove_favorite else R.string.player_add_favorite),
                             { userStore.toggleFavorite(s.id) }, active = favorite,
-                            haptic = if (favorite) com.music.aurelis.ui.haptics.Haptic.ToggleOff else com.music.aurelis.ui.haptics.Haptic.ToggleOn)
+                            haptic = if (favorite) com.music.aurelis.ui.haptics.Haptic.ToggleOff else com.music.aurelis.ui.haptics.Haptic.ToggleOn,
+                            enabled = !userLibraryState.readOnly, checkable = true)
                         if (!landscape) {
                             Spacer(Modifier.width(8.dp))
                             PlayerCircleGlyph(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions), { showSongActions = true })
