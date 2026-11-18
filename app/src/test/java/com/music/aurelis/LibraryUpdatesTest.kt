@@ -101,6 +101,31 @@ class LibraryUpdatesTest {
         model.onBackground()
     }
 
+    @Test fun cachedLoadRechecksRevokedPermissionBeforeReturningAStaleCatalogue() = runTest(dispatcher) {
+        val item = song("f028")
+        val source = MutableCatalogue(listOf(item))
+        val model = LibraryViewModel(app, source)
+        val originalFavorites = app.userLibrary.state.value.favorites
+        if (item.id !in originalFavorites) app.userLibrary.toggleFavorite(item.id)
+        model.loadLibrary(); runCurrent()
+        assertEquals(1, source.reads)
+        assertEquals(listOf(item.id), (model.uiState.value.libraryState as LibraryState.Success).songs.map { it.id })
+        shadowOf(app).denyPermissions(Manifest.permission.READ_MEDIA_AUDIO)
+        model.loadLibrary() // Not forced: must not silently reuse Success after revocation.
+        runCurrent()
+        assertTrue((model.uiState.value.libraryState as LibraryState.Error).permissionRequired)
+        assertTrue(model.uiState.value.filteredSongs.isEmpty())
+        assertFalse(model.uiState.value.isRefreshing)
+        assertEquals(1, source.reads)
+        assertTrue(item.id in app.userLibrary.state.value.favorites)
+        shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
+        model.loadLibrary(); runCurrent()
+        assertEquals(2, source.reads)
+        assertTrue(model.uiState.value.libraryState is LibraryState.Success)
+        assertEquals(listOf(item.id), model.uiState.value.filteredSongs.map { it.id })
+        model.onBackground()
+    }
+
     @Test fun filterChangesRefreshAndAlbumsUseMediaIdsForCompilations() = runTest(dispatcher) {
         val a = song("1").copy(albumId = "10", artistId = "1")
         val b = song("2").copy(artist = "Other", albumId = "10", artistId = "2")

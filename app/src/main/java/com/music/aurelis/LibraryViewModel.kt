@@ -101,6 +101,14 @@ class LibraryViewModel @JvmOverloads constructor(
     }
 
     fun loadLibrary(force: Boolean = false) {
+        // Permission may have been revoked while the UI remained visible. Never
+        // retain a cached Success snapshot or short-circuit on "scanned" first.
+        if (!AudioPermission.isGranted(getApplication<Application>())) {
+            onBackground()
+            scanned = false
+            clearCatalogue(permissionError())
+            return
+        }
         if (scanJob?.isActive == true) { if (force) pendingRefresh = true; return }
         if (scanned && !force) return
         scanned = true
