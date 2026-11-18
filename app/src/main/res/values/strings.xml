@@ -497,6 +497,7 @@
         <item quantity="other">%d álbumes</item>
     </plurals>
     <string name="artist_local_songs">Canciones</string>
+    <string name="folder_subfolders">Subcarpetas</string>
     <string name="local_search_hint">Buscar canciones, artistas, álbumes…</string>
     <string name="local_search_all">Todo</string>
     <string name="local_search_genres">Géneros</string>

@@ -89,4 +89,62 @@ object LocalFolderRepository {
     }.map { (key, rows) ->
         Folder(key, if (key == "unknown") "Carpeta sin información" else normalizePath(rows.first().relativePath)!!.trimEnd('/').ifEmpty { rows.first().volumeName!! }, rows)
     }.sortedBy { it.label.lowercase(Locale.ROOT) }
+    /**
+     * One directory level from the current MediaStore catalogue.
+     * Paths and volume-aware keys remain stable; SAF scopes are unchanged.
+     */
+    fun browse(songs: List<LocalSong>, parentKey: String? = null): List<Folder> {
+        if (parentKey == "unknown") return emptyList()
+        val parent = parentKey?.let(::parseFolderKey)
+        if (parentKey != null && parent == null) return emptyList()
+        val candidates = linkedMapOf<String, MutableList<LocalSong>>()
+        songs.forEach { song ->
+            val path = normalizePath(song.relativePath)
+            val volume = song.volumeName?.lowercase(Locale.ROOT)
+            if (path == null || volume == null) {
+                if (parentKey == null) candidates.getOrPut("unknown") { mutableListOf() }.add(song)
+                return@forEach
+            }
+            if (parent != null && (volume != parent.first || !path.startsWith(parent.second))) return@forEach
+            val suffix = if (parent == null) path else path.removePrefix(parent.second)
+            if (suffix.isEmpty()) return@forEach
+            val next = suffix.substringBefore('/') + "/"
+            val childPath = parent?.second.orEmpty() + next
+            val key = volume.length.toString() + ":" + volume + ":" + childPath
+            candidates.getOrPut(key) { mutableListOf() }.add(song)
+        }
+        return candidates.map { (key, rows) ->
+            Folder(key, folderLabel(key), rows)
+        }.sortedWith(compareBy<Folder> { it.label.lowercase(Locale.ROOT) }.thenBy { it.key })
+    }
+
+    fun folderLabel(key: String): String = if (key == "unknown") "Carpeta sin información"
+        else parseFolderKey(key)?.second?.trimEnd('/')?.substringAfterLast('/').orEmpty()
+
+    /** Includes indexed songs from nested directories, not stale filesystem entries. */
+    fun songsIn(songs: List<LocalSong>, folderKey: String): List<LocalSong> {
+        if (folderKey == "unknown")
+            return groups(songs).firstOrNull { it.key == "unknown" }?.songs.orEmpty()
+        val (volume, path) = parseFolderKey(folderKey) ?: return emptyList()
+        return songs.filter { song ->
+            song.volumeName?.lowercase(Locale.ROOT) == volume &&
+                normalizePath(song.relativePath)?.startsWith(path) == true
+        }
+    }
+
+    /** Invalid path keys must never be interpreted as SAF access grants. */
+    private fun parseFolderKey(key: String): Pair<String, String>? {
+        val firstColon = key.indexOf(':')
+        if (firstColon <= 0) return null
+        val size = key.substring(0, firstColon).toIntOrNull()?.takeIf { it in 1..64 } ?: return null
+        val start = firstColon + 1
+        val end = start + size
+        if (end >= key.length || key[end] != ':') return null
+        val volume = key.substring(start, end)
+        if (!volume.matches(Regex("[a-z0-9_-]{1,64}"))) return null
+        val path = key.substring(end + 1)
+        if (path.isEmpty() || normalizePath(path) != path) return null
+        return volume to path
+    }
+
 }

@@ -98,6 +98,37 @@ class LocalFolderRepositoryTest {
         assertTrue(runCatching { LocalMediaRepository.getLibrarySongs(app,true) }.exceptionOrNull() is java.io.IOException)
         assertTrue(media.cursors.all { it.isClosed })
     }
+    @Test fun folderBrowseKeepsNestedPathsAndStorageVolumesSeparate() {
+        fun song(id: String, volume: String?, path: String?) =
+            LocalSong(id, id, "Artist", null, "content://media/" + id, null,
+                60000, null, null, null, volumeName = volume, relativePath = path)
+        val tracks = listOf(
+            song("base", "external_primary", "Music/"),
+            song("rock", "external_primary", "Music/Rock/"),
+            song("live", "external_primary", "Music/Rock/Live/"),
+            song("sd", "1234-abcd", "Music/Rock/"),
+            song("other", "external_primary", "Music2/"),
+            song("unknown", null, null))
+        val root = LocalFolderRepository.browse(tracks)
+        assertEquals(4, root.size)
+        val music = root.single { it.label == "Music" && it.key.contains("external_primary") }
+        assertEquals(listOf("base", "rock", "live"),
+            LocalFolderRepository.songsIn(tracks, music.key).map { it.id })
+        val rock = LocalFolderRepository.browse(tracks, music.key).single()
+        assertEquals("Rock", rock.label)
+        assertEquals(listOf("rock", "live"), rock.songs.map { it.id })
+        val live = LocalFolderRepository.browse(tracks, rock.key).single()
+        assertEquals("Live", live.label)
+        assertEquals(listOf("live"), LocalFolderRepository.songsIn(tracks, live.key).map { it.id })
+        assertEquals("Music", LocalFolderRepository.folderLabel(music.key))
+        assertEquals(listOf("unknown"), LocalFolderRepository.songsIn(tracks, "unknown").map { it.id })
+        assertTrue(LocalFolderRepository.browse(tracks, "unknown").isEmpty())
+        assertTrue(LocalFolderRepository.browse(tracks, "4:fake:../").isEmpty())
+        assertTrue(LocalFolderRepository.songsIn(tracks, "4:fake:../").isEmpty())
+        val card = root.single { it.label == "Music" && it.key.contains("1234-abcd") }
+        assertEquals(listOf("sd"), LocalFolderRepository.songsIn(tracks, card.key).map { it.id })
+    }
+
     @Test fun groupingKeepsVolumesSeparateAndUnknownPathsExplicit() {
         fun song(id:String,volume:String?,path:String?) = LocalSong(id,id,"A",null,"content://media/$id",null,60000,null,null,null,volumeName=volume,relativePath=path)
         val groups = LocalFolderRepository.groups(listOf(song("1","external_primary","Music/"),song("2","1234-abcd","Music/"),song("3",null,null)))

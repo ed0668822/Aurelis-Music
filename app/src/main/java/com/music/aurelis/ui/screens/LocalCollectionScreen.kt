@@ -3,6 +3,7 @@
 package com.music.aurelis.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import com.music.aurelis.data.LocalGenres
 import com.music.aurelis.data.LocalSearch
+import com.music.aurelis.data.LocalFolderRepository
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -73,10 +75,15 @@ fun LocalCollectionScreen(
         localArtistAlbums(artist, snapshot?.albums.orEmpty()) else emptyList()
     val byId = remember(allSongs) { allSongs.associateBy { it.id } }
     val genres = remember(allSongs) { LocalGenres.groups(allSongs) }
+    val folderSongs = if (route.kind == LocalCollectionKind.FOLDER)
+        LocalFolderRepository.songsIn(allSongs, route.key) else emptyList()
+    val folderChildren = if (route.kind == LocalCollectionKind.FOLDER)
+        LocalFolderRepository.browse(allSongs, route.key) else emptyList()
     val directory = when (route.kind) {
         LocalCollectionKind.ALBUMS -> snapshot?.albums.orEmpty().map { it.name to AppRoute.Collection(LocalCollectionKind.ALBUM, it.key) }
         LocalCollectionKind.ARTISTS -> snapshot?.artists.orEmpty().map { it.name to AppRoute.Collection(LocalCollectionKind.ARTIST, it.key) }
-        LocalCollectionKind.FOLDERS -> com.music.aurelis.data.LocalFolderRepository.groups(allSongs).map { it.label to AppRoute.Collection(LocalCollectionKind.FOLDER, it.key) }
+        LocalCollectionKind.FOLDERS -> LocalFolderRepository.browse(allSongs)
+            .map { it.label to AppRoute.Collection(LocalCollectionKind.FOLDER, it.key) }
         else -> null
     }
     val songs = when (route.kind) {
@@ -84,14 +91,14 @@ fun LocalCollectionScreen(
         LocalCollectionKind.PLAYLIST -> playlist?.songIds?.mapNotNull(byId::get).orEmpty()
         LocalCollectionKind.ALBUM -> album?.songs.orEmpty()
         LocalCollectionKind.ARTIST -> artist?.songs.orEmpty()
-        LocalCollectionKind.FOLDER -> com.music.aurelis.data.LocalFolderRepository.groups(allSongs).firstOrNull { it.key == route.key }?.songs.orEmpty()
+        LocalCollectionKind.FOLDER -> folderSongs
         LocalCollectionKind.GENRE -> genres.firstOrNull { it.key == route.key }?.songs.orEmpty()
         LocalCollectionKind.HISTORY -> user.listening.entries.filter { it.value.lastPlayedAt > 0 }
             .sortedByDescending { it.value.lastPlayedAt }.mapNotNull { byId[it.key] }
         LocalCollectionKind.PLAYLISTS, LocalCollectionKind.ALBUMS, LocalCollectionKind.ARTISTS, LocalCollectionKind.FOLDERS -> emptyList()
     }
     val title = when (route.kind) {
-        LocalCollectionKind.FOLDER -> com.music.aurelis.data.LocalFolderRepository.groups(allSongs).firstOrNull { it.key == route.key }?.label.orEmpty()
+        LocalCollectionKind.FOLDER -> LocalFolderRepository.folderLabel(route.key)
         LocalCollectionKind.GENRE -> if (route.key == "unknown") stringResource(R.string.explore_unknown_genre)
             else genres.firstOrNull { it.key == route.key }?.name.orEmpty()
         LocalCollectionKind.HISTORY -> "Historial"
@@ -254,6 +261,31 @@ fun LocalCollectionScreen(
                             onPlay = { onPlay(displaySongs, 0) },
                             onShuffle = { onPlay(displaySongs.shuffled(), 0) },
                             canPlay = displaySongs.isNotEmpty())
+                    }
+                }
+                if (route.kind == LocalCollectionKind.FOLDER && folderChildren.isNotEmpty()) {
+                    item(key = "folder-children") {
+                        Column(Modifier.fillMaxWidth().testTag("folder-children")) {
+                            Text(stringResource(R.string.folder_subfolders),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
+                            folderChildren.forEach { child ->
+                                Row(Modifier.fillMaxWidth()
+                                    .clickable { onOpen(AppRoute.Collection(LocalCollectionKind.FOLDER, child.key)) }
+                                    .testTag("folder-child:" + child.key)
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(AurelisIcons.Folder, null, Modifier.size(28.dp))
+                                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                                        Text(child.label, style = MaterialTheme.typography.titleSmall)
+                                        Text(pluralStringResource(R.plurals.settings_song_count,
+                                            child.songs.size, child.songs.size),
+                                            style = MaterialTheme.typography.bodySmall)
+                                    }
+                                    Icon(AurelisIcons.ChevronRight, null)
+                                }
+                            }
+                        }
                     }
                 }
                 if (route.kind == LocalCollectionKind.ARTIST && artistAlbums.isNotEmpty()) {
