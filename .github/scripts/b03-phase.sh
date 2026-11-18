@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Aurelis © 2026. GPL-3.0-or-later
-# Retry only Maven Central HTTP 429; preserve real command, timeout and tee failures.
+# Retry only genuine Maven artifact HTTP 429 (including Robolectric SDK mirrors); preserve timeouts, test assertions and tee failures.
 set -euo pipefail
 phase="${1:?Expected a B03 phase}"
 shift
@@ -25,7 +25,7 @@ while [ "$attempt" -le "$max_attempts" ]; do
   # Never retry timeouts, test assertions, compilation errors, or failed log writers.
   if [ "${phase_status[0]}" -eq 1 ] && [ "${phase_status[1]}" -eq 0 ] &&
      [ "$attempt" -lt "$max_attempts" ] &&
-     grep -q 'repo.maven.apache.org/maven2' "$attempt_log" &&
+     grep -Eq 'repo.maven.apache.org/maven2|gcp.mirrors.maven.org/maven2|maven-central-eu.storage-download.googleapis.com/maven2' "$attempt_log" &&
      grep -Eq 'Received status code 429|HTTP response code: 429' "$attempt_log"; then
     delay=$((20 * attempt))
     echo "AURELIS_MAVEN_429_RETRY phase=$phase attempt=$attempt delay_seconds=$delay" | tee -a "ci-b03/$phase.log"

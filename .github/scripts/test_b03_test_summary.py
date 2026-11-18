@@ -256,6 +256,41 @@ class PhaseAndWorkflowTests(unittest.TestCase):
             self.assertEqual("2", counter.read_text())
             self.assertIn("attempts=2", (Path(temp) / "ci-b03/compile-release.log").read_text())
 
+    def test_robolectric_sdk_mirror_429_retries_but_never_masks_exhaustion(self):
+        with TemporaryDirectory() as temp:
+            counter = Path(temp) / "attempts"
+            script = (
+                "from pathlib import Path; import sys; "
+                "p=Path('attempts'); n=int(p.read_text())+1 if p.exists() else 1; "
+                "p.write_text(str(n)); "
+                "print('Failed to fetch maven artifact org.robolectric:android-all-instrumented; "
+                "Server returned HTTP response code: 429 for URL: "
+                "https://gcp.mirrors.maven.org/maven2/org/robolectric/android-all-instrumented/test.jar'); "
+                "sys.exit(0 if n==2 else 1)"
+            )
+            env = dict(os.environ, AURELIS_MAVEN_RETRY_DELAY_OVERRIDE="0")
+            run = subprocess.run(["bash", str(SCRIPTS / "b03-phase.sh"), "debug",
+                                  sys.executable, "-c", script],
+                                 cwd=temp, env=env, capture_output=True, text=True)
+            self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+            self.assertEqual("2", counter.read_text())
+            self.assertIn("attempts=2", (Path(temp) / "ci-b03/debug.log").read_text())
+
+    def test_robolectric_unrelated_assertion_is_not_retried(self):
+        with TemporaryDirectory() as temp:
+            counter = Path(temp) / "attempts"
+            script = (
+                "from pathlib import Path; import sys; "
+                "p=Path('attempts'); n=int(p.read_text())+1 if p.exists() else 1; "
+                "p.write_text(str(n)); print('AssertionError: expected 1 but was 2'); sys.exit(1)"
+            )
+            env = dict(os.environ, AURELIS_MAVEN_RETRY_DELAY_OVERRIDE="0")
+            run = subprocess.run(["bash", str(SCRIPTS / "b03-phase.sh"), "release",
+                                  sys.executable, "-c", script],
+                                 cwd=temp, env=env, capture_output=True, text=True)
+            self.assertEqual(1, run.returncode)
+            self.assertEqual("1", counter.read_text())
+
     def test_maven_central_429_exhaustion_remains_failure(self):
         with TemporaryDirectory() as temp:
             script = ("print('Could not GET https://repo.maven.apache.org/maven2/example.pom. "

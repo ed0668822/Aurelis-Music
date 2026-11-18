@@ -170,6 +170,14 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Robolectric resolves its Android SDK jars outside Gradle's Maven repositories.
+        // Use the same public mirror as dependencyResolutionManagement instead of the
+        // CDN endpoint that returned HTTP 429 for hundreds of unrelated test cases.
+        unitTests.all {
+            it.systemProperty("robolectric.dependency.repo.url",
+                "https://maven-central-eu.storage-download.googleapis.com/maven2/")
+            it.systemProperty("robolectric.dependency.repo.id", "aurelis-maven-central-eu")
+        }
     }
 
     androidResources {
