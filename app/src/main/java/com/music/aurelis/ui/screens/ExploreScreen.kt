@@ -59,6 +59,7 @@ fun ExploreScreen(
     libraryState: LibraryState? = null,
     onRetry: () -> Unit = {},
     onRequestPermission: () -> Unit = {},
+    isRefreshing: Boolean = false,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().then(modifier)) {
         val columns = moodColumns(maxWidth)
@@ -79,7 +80,7 @@ fun ExploreScreen(
                     )
                 }
             }
-            if (libraryState == LibraryState.Loading) {
+            if (libraryState == LibraryState.Loading || isRefreshing && libraryState is LibraryState.Success && libraryState.songs.isEmpty()) {
                 item { ExploreSkeletonRows(columns) }
             } else if (libraryState is LibraryState.Error) {
                 item { MessageState(libraryState.message,
