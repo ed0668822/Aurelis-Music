@@ -113,6 +113,34 @@ class RichLyricsTest {
         assertEquals("Uno", lyrics.lines.single().text)
     }
 
+    @Test fun invalidTtmlIntervalsNeverMergeIntoPreviousWordOrCreateBackwardsLine() {
+        val text = """<tt><body>
+            <p begin="1s" end="4s"><span begin="1s" end="2s">Bien </span><span begin="5s" end="4s">Mal</span></p>
+            <p begin="6s" end="5s">Descartar</p>
+        </body></tt>"""
+        val lyrics = Lyrics.parse(text)!!
+        assertEquals(1, lyrics.lines.count { !it.isGap })
+        assertEquals("Bien", lyrics.lines.first { !it.isGap }.text)
+        assertFalse(lyrics.lines.any { "Mal" in it.text || "Descartar" in it.text })
+    }
+
+    @Test fun nestedTtmlBackgroundAndTranslationAreKeptSeparateFromLead() {
+        val text = """<tt xmlns:ttm="http://www.w3.org/ns/ttml#metadata"><body>
+            <p begin="1s" end="4s">
+                <span begin="1s" end="2s">Principal </span>
+                <span ttm:role="x-bg"><span begin="1.5s" end="2.5s">Eco</span></span>
+                <span ttm:role="x-translation" begin="1s" end="3s">Excluir</span>
+                <span begin="2s" end="3s">final</span>
+            </p>
+        </body></tt>"""
+        val lyrics = Lyrics.parse(text)!!
+        val line = lyrics.lines.first { !it.isGap }
+        assertEquals("Principal final", line.text)
+        assertEquals("Eco", line.background!!.text)
+        assertEquals(1500L, line.background!!.timeMs)
+        assertFalse(line.text.contains("Excluir"))
+    }
+
     @Test fun ttmlInvalidWordOrderKeepsOnlyTheDeclaredLineTiming() {
         val lyrics = Lyrics.parse("""<tt><p begin="1s"><span begin="3s" end="4s">Tres </span><span begin="2s" end="3s">dos</span></p></tt>""")!!
         assertEquals(1000L, lyrics.lines.single().timeMs)

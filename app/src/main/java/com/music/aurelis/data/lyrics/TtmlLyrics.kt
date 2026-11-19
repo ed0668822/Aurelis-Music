@@ -1,4 +1,6 @@
-// Ported from BitChord. © 2026 Kushagra Singh (BitChord/Aurelis). GPL-3.0-or-later.
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Original contributor attribution is retained in NOTICE.
 package com.music.aurelis.data.lyrics
 
 import org.w3c.dom.Element
@@ -97,6 +99,10 @@ object TtmlLyrics {
 
     private fun lineFrom(paragraph: Element): LyricLine? {
         if (paragraph.qualified("ttm:role") in SKIPPED_ROLES) return null
+        // Do not publish vocals with an impossible paragraph interval.
+        val paragraphStart = time(paragraph.getAttribute("begin"))
+        val paragraphEnd = time(paragraph.getAttribute("end"))
+        if (paragraphStart != null && paragraphEnd != null && paragraphEnd < paragraphStart) return null
         val pieces = mutableListOf<Piece>()
         val backingPieces = mutableListOf<Piece>()
         collect(paragraph, pieces, backingPieces)
@@ -146,7 +152,10 @@ object TtmlLyrics {
                     val sink = if (role == BACKGROUND_ROLE) backing else out
                     val begin = time(child.getAttribute("begin"))
                     val end = time(child.getAttribute("end"))
-                    if (begin != null && end != null && end >= begin && !hasTimedChild(child)) {
+                    // Invalid timed spans must not be folded into a preceding
+                    // valid word as untimed punctuation or duplicate syllables.
+                    if (begin != null && end != null && end < begin) continue
+                    if (begin != null && end != null && !hasTimedChild(child)) {
                         sink += Piece.Timed(child.textContent.orEmpty(), begin, end)
                     } else {
                         collect(child, sink, backing)
