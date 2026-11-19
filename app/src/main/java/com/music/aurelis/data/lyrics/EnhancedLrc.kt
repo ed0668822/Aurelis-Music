@@ -35,7 +35,9 @@ object EnhancedLrc {
             val ends = matches.mapIndexed { index, match -> match.range.first to
                 (matches.getOrNull(index + 1)?.range?.first ?: body.length) }.toMap()
             val originalWords = matches.mapNotNull { match -> stamp(match)?.let { match to it } }
-            val ordered = originalWords.zipWithNext().all { (first, second) -> first.second <= second.second }
+            // A malformed stamp must not silently drop one syllable while keeping the others.
+            val ordered = originalWords.size == matches.size &&
+                originalWords.zipWithNext().all { (first, second) -> first.second <= second.second }
             for (time in times) {
                 if (originalWords.size > 20_000 - totalRuns) return emptyList()
                 totalRuns += originalWords.size

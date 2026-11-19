@@ -49,14 +49,29 @@ class RichLyricsTest {
     }
 
     @Test fun mixedEnhancedAndOrdinaryLrcPreservesWordTimesAndRtlAlignment() {
-        val parsed = Lyrics.parse("[00:01.00]<R><00:01.00>Lu<00:01.50>na\n[00:03.00]Siguiente")!!
+        // The space between 'na' and 'clara' is an explicit A2 word boundary.
+        // With no whitespace anywhere, neither Aurelis nor BitChord invents syllables.
+        val parsed = Lyrics.parse("[00:01.00]<R><00:01.00>Lu<00:01.50>na <00:02.00>clara\n[00:03.00]Siguiente")!!
         val first = parsed.lines.first()
         assertEquals(LyricAlignment.End, first.alignment)
-        assertEquals("Luna", first.text)
+        assertEquals("Luna clara", first.text)
         assertTrue(first.isWordSynced)
         assertEquals(listOf(1000L, 1500L), first.words.first().syllables.map { it.startMs })
         assertEquals("Siguiente", parsed.lines.last().text)
         assertEquals(LyricAlignment.Start, parsed.lines.last().alignment)
+    }
+
+    @Test fun a2WithoutWhitespaceKeepsSeparateWordsInsteadOfGuessingSyllables() {
+        val lines = Lyrics.parse("[00:01.00]<00:01.00>Lu<00:01.50>na")!!.lines
+        assertEquals(listOf("Lu", "na"), lines.flatMap { it.words }.map { it.text })
+        assertTrue(lines.flatMap { it.words }.all { it.syllables.isEmpty() })
+    }
+
+    @Test fun malformedA2StampFallsBackToLineTimingRatherThanPartialWordSweep() {
+        val lines = Lyrics.parse("[00:01.00]<00:01.00>Bien <00:99.00>mal")!!.lines
+        assertEquals("Bien mal", lines.first().text)
+        assertTrue(lines.all { it.words.isEmpty() })
+        assertTrue(lines.first().timeMs == 1000L)
     }
 
     @Test fun repeatedEnhancedTimestampsShiftEveryWordAndOffsetOnlyOnce() {
