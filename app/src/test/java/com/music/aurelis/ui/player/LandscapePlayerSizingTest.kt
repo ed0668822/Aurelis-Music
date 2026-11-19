@@ -14,6 +14,23 @@ class LandscapePlayerSizingTest {
         }
     }
 
+    @Test fun narrowPhonesAndLargeFontsKeepCompactTransportSpace() {
+        assertTrue(landscapeIsCompact(320.dp, 1f))
+        assertTrue(landscapeIsCompact(420.dp, 1f))
+        assertTrue(landscapeIsCompact(550.dp, 1.5f))
+        org.junit.Assert.assertFalse(landscapeIsCompact(700.dp, 1f))
+        assertEquals(12.dp, landscapeTopHandlePadding(320.dp))
+        assertEquals(24.dp, landscapeTopHandlePadding(500.dp))
+    }
+
+    @Test fun queueAndLyricsHaveReferenceGutterOnTabletsAndPhones() {
+        for (gutter in listOf(20.dp, 30.dp)) {
+            assertEquals(gutter, landscapePanePadding(PlayerPane.Main, gutter))
+            assertEquals(16.dp, landscapePanePadding(PlayerPane.Lyrics, gutter))
+            assertEquals(16.dp, landscapePanePadding(PlayerPane.Queue, gutter))
+        }
+    }
+
     @Test fun compactAndRoomyMarginsMatchReference() {
         for (width in listOf(568.dp, 640.dp, 800.dp)) {
             assertEquals(20.dp, landscapeSidePadding(width, compact = true))

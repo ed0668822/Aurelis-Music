@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -70,6 +71,24 @@ private const val LANDSCAPE_PANE_FADE_OUT_MS = 140
 internal val LANDSCAPE_ART_CORNER = 10.dp
 private val LandscapeArtShape = RoundedCornerShape(LANDSCAPE_ART_CORNER)
 private val LANDSCAPE_HANDLE_STRIP = 24.dp
+private val LANDSCAPE_HANDLE_STRIP_TIGHT = 12.dp
+private val LANDSCAPE_PANE_GUTTER = 16.dp
+private val LANDSCAPE_SHORT_HEIGHT = 350.dp
+
+/**
+ * F064: use phone-compact constraints when text enlargement steals vertical
+ * room, not only when the raw window is under 440dp. In landscape, fontScale
+ * can make the transport/actions taller than the artwork.
+ */
+internal fun landscapeIsCompact(height: androidx.compose.ui.unit.Dp, fontScale: Float): Boolean =
+    height < LANDSCAPE_COMPACT_HEIGHT || fontScale >= 1.4f
+
+internal fun landscapeTopHandlePadding(height: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp =
+    if (height < LANDSCAPE_SHORT_HEIGHT) LANDSCAPE_HANDLE_STRIP_TIGHT else LANDSCAPE_HANDLE_STRIP
+
+/** Source queue/lyrics bleeding uses 16dp, main credits use the normal gutter. */
+internal fun landscapePanePadding(pane: PlayerPane, gutter: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp =
+    if (pane == PlayerPane.Main) gutter else LANDSCAPE_PANE_GUTTER
 
 /** BitChord's landscape player uses equally weighted columns at every width. */
 internal fun landscapeArtworkWeight(width: androidx.compose.ui.unit.Dp): Float = 0.5f
@@ -101,8 +120,9 @@ internal fun LandscapePlayerLayout(
                 .windowInsetsPadding(WindowInsets.safeDrawing.union(stableStatusBarInsets())),
             contentAlignment = Alignment.TopCenter,
         ) {
-            val compact = maxHeight < LANDSCAPE_COMPACT_HEIGHT
+            val compact = landscapeIsCompact(maxHeight, LocalDensity.current.fontScale)
             val gutter = landscapeSidePadding(maxWidth, compact)
+            val paneGutter = landscapePanePadding(pane, gutter)
             val artworkWeight = landscapeArtworkWeight(maxWidth)
             val paneWeight = 1f - artworkWeight
 
@@ -111,8 +131,9 @@ internal fun LandscapePlayerLayout(
                     .widthIn(max = LANDSCAPE_PLAYER_MAX_WIDTH)
                     .fillMaxSize()
                     .padding(
-                        top = LANDSCAPE_HANDLE_STRIP,
-                        bottom = if (compact) 8.dp else 20.dp,
+                        top = landscapeTopHandlePadding(maxHeight),
+                        bottom = if (maxHeight < LANDSCAPE_SHORT_HEIGHT) 4.dp
+                            else if (compact) 8.dp else 20.dp,
                     ),
             ) {
                 Column(
@@ -130,7 +151,10 @@ internal fun LandscapePlayerLayout(
                     ) {
                         artwork(Modifier.size(minOf(maxWidth, maxHeight)))
                     }
-                    Spacer(Modifier.height(if (compact) 12.dp else 24.dp))
+                    Spacer(Modifier.height(
+                        if (maxHeight < LANDSCAPE_SHORT_HEIGHT) 6.dp
+                        else if (compact) 12.dp else 24.dp,
+                    ))
                     actions()
                 }
 
@@ -163,14 +187,14 @@ internal fun LandscapePlayerLayout(
                         PlayerPane.Lyrics -> Box(
                             Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = gutter),
+                                .padding(horizontal = paneGutter),
                         ) {
                             lyricsPane()
                         }
                         PlayerPane.Queue -> Box(
                             Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = gutter),
+                                .padding(horizontal = paneGutter),
                         ) {
                             queuePane()
                         }
