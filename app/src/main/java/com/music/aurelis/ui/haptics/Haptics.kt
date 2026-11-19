@@ -62,8 +62,12 @@ class Haptics(
     private val vibrator: Vibrator?,
     private val feedbackEnabled: () -> Boolean = { true },
 ) {
-    private val touchAttributes = VibrationAttributes.Builder()
-        .setUsage(VibrationAttributes.USAGE_TOUCH).build()
+    // A motorless device must not touch Android vibration APIs at construction.
+    // Lazy init also avoids allocating the attributes before a permitted action.
+    private val touchAttributes by lazy {
+        VibrationAttributes.Builder()
+            .setUsage(VibrationAttributes.USAGE_TOUCH).build()
+    }
     private val compiled = mutableMapOf<Haptic, VibrationEffect>()
 
     fun play(haptic: Haptic) {
