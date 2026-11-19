@@ -61,6 +61,15 @@ class PlayerIntegrationTest {
         compose.waitForIdle()
         compose.runOnIdle { player.pause() }
     }
+    /** On the BitChord-style full-screen lyric pane, the bottom-half tap restores
+     * controls before translation/search buttons become interactive. */
+    private fun revealFullScreenLyricsControls() {
+        compose.onNodeWithTag("lyrics-list").performTouchInput {
+            click(androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.75f))
+        }
+        compose.waitForIdle()
+    }
+
     private fun assertPrimaryTransportInsidePlayer(tag: String) {
         val bounds = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
         for (key in listOf(R.string.player_play, R.string.player_next, R.string.player_previous)) {
@@ -651,7 +660,11 @@ class PlayerIntegrationTest {
         SettingsRepository.setTranslationLanguage("es")
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
-        compose.onNodeWithContentDescription("Traducir").performClick()
+        // Full-screen lyrics must start with the controls hidden. Reveal by a
+        // real bottom-half tap, instead of assuming the old toolbar is visible.
+        compose.onNodeWithContentDescription("Traducir").assertDoesNotExist()
+        revealFullScreenLyricsControls()
+        compose.onNodeWithContentDescription("Traducir").assertIsDisplayed().performClick()
         compose.onNodeWithText("Cancelar").performClick()
         compose.runOnIdle { assertEquals(0, requests) }
         compose.onNodeWithContentDescription("Traducir").performClick()
@@ -709,7 +722,11 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
         val lookupLabel = compose.activity.getString(R.string.lyrics_search_lrclib)
         compose.onNodeWithText(lookupLabel).assertDoesNotExist()
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.lyrics_ui_tools)).performClick()
+        // The controls are intentionally hidden on entry to full-screen lyrics.
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.lyrics_ui_tools)).assertDoesNotExist()
+        revealFullScreenLyricsControls()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.lyrics_ui_tools))
+            .assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(0, requests) }
         compose.onNodeWithText(lookupLabel).assertIsDisplayed().performClick()
         compose.onNodeWithText("Source line A").assertIsDisplayed()
