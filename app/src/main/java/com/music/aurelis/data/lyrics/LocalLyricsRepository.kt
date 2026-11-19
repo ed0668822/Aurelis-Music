@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data.lyrics
 
 import android.content.Context
@@ -54,10 +56,13 @@ internal class LocalLyricsRepository(
         val bytes = app.contentResolver.openInputStream(uri)?.use(::readLimited) ?: error("No se pudo abrir el archivo de letras.")
         val text = decode(bytes)
         val found = parsed(text, LyricsSource.LOCAL_FILE) ?: error("El archivo no contiene letras LRC, TTML o texto compatibles.")
+        // A valid UTF-16 input can expand beyond the storage read limit when converted to UTF-8.
+        val storedBytes = text.toByteArray(Charsets.UTF_8)
+        require(storedBytes.size <= MAX_BYTES) { "El archivo de letras convertido supera 1 MiB." }
         currentCoroutineContext().ensureActive()
         writeMutex.withLock {
             currentCoroutineContext().ensureActive()
-            atomicWrite(File(imports, "${key(song)}.lrc"), text.toByteArray(Charsets.UTF_8))
+            atomicWrite(File(imports, "${key(song)}.lrc"), storedBytes)
         }
         found
     }

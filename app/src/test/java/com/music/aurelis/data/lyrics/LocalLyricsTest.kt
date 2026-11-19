@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data.lyrics
 
 import android.net.Uri
@@ -75,6 +77,12 @@ class LocalLyricsTest {
         assertEquals("Árbol propio", repo.find(song())!!.lines.single().text)
         val broken = file("broken.lrc", byteArrayOf(0, 1, 2))
         try { repo.import(song(), Uri.fromFile(broken)); fail("Expected invalid input") } catch (_: IllegalStateException) { }
+        assertEquals("Árbol propio", repo.find(song())!!.lines.single().text)
+        // UTF-16 fits under the input cap, but its UTF-8 representation exceeds 1 MiB.
+        // Reject it before replacing the previously imported lyrics.
+        val expanded = file("expanded-utf16.lrc", ("語".repeat(80) + "\n").repeat(6000).toByteArray(Charsets.UTF_16))
+        try { repo.import(song(), Uri.fromFile(expanded)); fail("Expected converted-file size rejection") }
+        catch (_: IllegalArgumentException) { }
         assertEquals("Árbol propio", repo.find(song())!!.lines.single().text)
     }
     @Test fun cancellationIsNotConvertedToMissingLyricsOrCached() = runTest {

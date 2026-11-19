@@ -1,5 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
-// Aurelis © 2026. GPL-3.0-or-later.
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.playback
 
 import android.app.Application
@@ -492,7 +492,7 @@ class PlaybackViewModel internal constructor(
     fun importLyrics(uri: Uri, requestedSongId: String? = _state.value.currentSong?.id) {
         val song = _state.value.currentSong ?: return
         if (song.id != requestedSongId || controller?.currentMediaItem?.mediaId != song.id) {
-            _state.update { it.copy(lyrics = LyricsState.Failed("La canción cambió mientras elegías el archivo. Importa las letras para la canción actual.")) }
+            // Do not replace the new song's lyrics with an error from a stale document-picker result.
             return
         }
         val generation = ++lyricsGeneration
