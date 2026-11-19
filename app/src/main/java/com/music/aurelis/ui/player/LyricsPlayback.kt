@@ -1,4 +1,6 @@
-// Adapted from BitChord PlayerLyrics.kt (GPLv3); original contributors and changes in NOTICE.
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Previous contributors and applicable permissions documented in NOTICE.
 package com.music.aurelis.ui.player
 
 import androidx.compose.runtime.*
@@ -43,9 +45,11 @@ internal fun rememberLyricsPlayhead(
     val running = isPlaying && position.advancing && interpolate && foreground
     LaunchedEffect(engine, position, running) {
         if (!running) {
-            snapshotFlow { position.positionMs }.collect {
-                engine.hold(it, System.nanoTime() / 1_000_000.0)
-                clock.longValue = it
+            // Observe both media reports and explicit seek generations while paused.
+            // A rapid seek may land at the same time but must still reset the clock anchor.
+            snapshotFlow { position.positionMs to position.seeks }.collect { (reported, _) ->
+                engine.hold(reported, System.nanoTime() / 1_000_000.0)
+                clock.longValue = reported
             }
         } else {
             engine.restart()

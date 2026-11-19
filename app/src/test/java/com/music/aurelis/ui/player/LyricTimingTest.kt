@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import com.music.aurelis.data.lyrics.LyricLine
@@ -37,6 +39,32 @@ class LyricTimingTest {
         clock.frame(0.0, 1000, 0.0, 0)
         assertEquals(10_000L, clock.frame(100.0, 10_000, 100.0, 1))
         assertEquals(500L, clock.frame(200.0, 500, 200.0, 2))
+    }
+    @Test fun multipleRapidSeeksReanchorWithoutAccumulatingDrift() {
+        val clock = LyricClock(0)
+        assertEquals(0L, clock.frame(0.0, 0, 0.0, 0))
+        assertEquals(40_000L, clock.frame(100.0, 40_000, 100.0, 1))
+        assertEquals(2000L, clock.frame(200.0, 2000, 200.0, 2))
+        assertEquals(17_000L, clock.frame(300.0, 17_000, 300.0, 3))
+        assertEquals(17_100L, clock.frame(400.0, 17_000, 300.0, 3))
+    }
+    @Test fun fasterPlaybackLearnsItsRateWithoutAnExtraPlaybackClock() {
+        val clock = LyricClock(1000)
+        clock.frame(0.0, 1000, 0.0, 0)
+        clock.frame(500.0, 1750, 500.0, 0)
+        clock.frame(1000.0, 2500, 1000.0, 0)
+        clock.frame(1500.0, 3250, 1500.0, 0)
+        val observed = clock.frame(1600.0, 3250, 1500.0, 0)
+        assertTrue("1.5x lyric clock did not follow the player: $observed", observed in 3300L..3500L)
+    }
+    @Test fun pauseAndResumeAtSpeedDoNotExtrapolateAcrossStoppedTime() {
+        val clock = LyricClock(0)
+        clock.frame(0.0, 1000, 0.0, 0)
+        clock.hold(2000, 1000.0)
+        assertEquals(2000L, clock.frame(60_000.0, 2000, 900.0, 0))
+        assertTrue(clock.frame(60_100.0, 2000, 900.0, 0) in 2050L..2400L)
+        clock.hold(3000, 60_200.0)
+        assertEquals(3000L, clock.displayedMs.toLong())
     }
     @Test fun anUnannouncedOldReadingDoesNotMoveWordsBackwards() {
         val clock = LyricClock(3000)
