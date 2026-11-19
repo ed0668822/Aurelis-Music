@@ -321,30 +321,35 @@ fun NowPlayingScreen(
                 val coverUri = remember(s.artworkUri) {
                     s.artworkUri?.takeIf(String::isNotBlank)?.let(Uri::parse)
                 }
-                val artworkMesh = rememberArtworkMesh(coverUri)
-                val preparedBlur = rememberFullArtworkBlurImage(coverUri)
-                val seamlessCoverEnd = if (landscape) 0.dp else portraitArtworkSize(maxWidth, maxHeight)
-                ArtworkMeshBackdrop(
-                    mesh = artworkMesh,
-                    seam = seamlessCoverEnd,
-                    reduceAnimation = reduceAnimation,
-                    reduceDynamicBlur = reduceBlur,
-                    modifier = Modifier.fillMaxSize().testTag("player-mesh-background"),
-                )
-                // Original BitChord switches to its prepared still-art blur
-                // whenever lyrics/queue panels or a landscape layout are shown.
-                val blurBackdropAlpha by androidx.compose.animation.core.animateFloatAsState(
-                    targetValue = if (preparedBlur != null && (landscape || showLyrics || showInlineQueue)) 1f else 0f,
-                    animationSpec = if (reduceAnimation) androidx.compose.animation.core.snap()
-                        else tween(360, easing = FastOutSlowInEasing),
-                    label = "preparedBackdropAlpha",
-                )
-                if (blurBackdropAlpha > 0f) {
-                    FullArtworkBlurBackdrop(
-                        image = preparedBlur,
+                // F051-F052 regression: disabling dynamic blur removes the
+                // mesh layer itself, not just its RenderEffect. This preserves
+                // the existing accessibility/performance contract tested by
+                // PlayerResizeContinuityTest under orientation/restoration.
+                if (!reduceBlur) {
+                    val artworkMesh = rememberArtworkMesh(coverUri)
+                    val preparedBlur = rememberFullArtworkBlurImage(coverUri)
+                    val seamlessCoverEnd = if (landscape) 0.dp else portraitArtworkSize(maxWidth, maxHeight)
+                    ArtworkMeshBackdrop(
+                        mesh = artworkMesh,
+                        seam = seamlessCoverEnd,
                         reduceAnimation = reduceAnimation,
-                        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = blurBackdropAlpha },
+                        modifier = Modifier.fillMaxSize().testTag("player-mesh-background"),
                     )
+                    // Original BitChord switches to its prepared still-art blur
+                    // whenever lyrics/queue panels or a landscape layout are shown.
+                    val blurBackdropAlpha by androidx.compose.animation.core.animateFloatAsState(
+                        targetValue = if (preparedBlur != null && (landscape || showLyrics || showInlineQueue)) 1f else 0f,
+                        animationSpec = if (reduceAnimation) androidx.compose.animation.core.snap()
+                            else tween(360, easing = FastOutSlowInEasing),
+                        label = "preparedBackdropAlpha",
+                    )
+                    if (blurBackdropAlpha > 0f) {
+                        FullArtworkBlurBackdrop(
+                            image = preparedBlur,
+                            reduceAnimation = reduceAnimation,
+                            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = blurBackdropAlpha },
+                        )
+                    }
                 }
 
                 Box(
