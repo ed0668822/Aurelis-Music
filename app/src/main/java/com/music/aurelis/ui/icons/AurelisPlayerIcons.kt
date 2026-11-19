@@ -74,6 +74,84 @@ internal object AurelisPlayerIcons {
         }.build()
     }
 
+    val Shuffle: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "bc_shuffle",
+            defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f,
+        ).apply {
+            path(
+                stroke = stroke,
+                strokeLineWidth = STROKE,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // Strand that crosses downwards, with its arrow head
+                moveTo(3.4f, 7.4f); lineTo(7f, 7.4f); lineTo(16.6f, 16.6f); lineTo(20.6f, 16.6f)
+                moveTo(18.1f, 14.1f); lineTo(20.6f, 16.6f); lineTo(18.1f, 19.1f)
+                // Strand that crosses upwards, broken around the intersection
+                moveTo(3.4f, 16.6f); lineTo(7f, 16.6f); lineTo(9.8f, 13.9f)
+                moveTo(13.9f, 10.1f); lineTo(16.6f, 7.4f); lineTo(20.6f, 7.4f)
+                moveTo(18.1f, 4.9f); lineTo(20.6f, 7.4f); lineTo(18.1f, 9.9f)
+            }
+        }.build()
+    }
+
+    val Repeat: ImageVector by lazy { repeatLoop("bc_repeat") }
+
+    /**
+     * Two straight runs joined by semicircles, with the arrow heads lying flat
+     * at the ends of the straights. Putting them on the curves instead — as a
+     * first pass did — makes the glyph read as a refresh/sync symbol.
+     */
+    private fun repeatLoop(name: String): ImageVector =
+        ImageVector.Builder(
+            name = name,
+            defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f,
+        ).apply {
+            path(
+                stroke = stroke,
+                strokeLineWidth = STROKE,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                moveTo(8.6f, 7.6f)
+                lineTo(15.4f, 7.6f)
+                arcToRelative(4.4f, 4.4f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0f, 8.8f)
+                lineTo(8.6f, 16.4f)
+                arcToRelative(4.4f, 4.4f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0f, -8.8f)
+                close()
+                // Direction of travel: right along the top, left along the bottom.
+                moveTo(13.5f, 5.7f); lineTo(15.4f, 7.6f); lineTo(13.5f, 9.5f)
+                moveTo(10.5f, 14.5f); lineTo(8.6f, 16.4f); lineTo(10.5f, 18.3f)
+            }
+        }.build()
+
+    /** AutoPlay's lemniscate. */
+    val Infinity: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "bc_infinity",
+            defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f,
+        ).apply {
+            path(
+                stroke = stroke,
+                strokeLineWidth = STROKE,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                moveTo(12f, 12f)
+                curveTo(10.1f, 9.1f, 8.7f, 8f, 7.1f, 8f)
+                arcToRelative(4f, 4f, 0f, isMoreThanHalf = false, isPositiveArc = false, 0f, 8f)
+                curveTo(8.7f, 16f, 10.1f, 14.9f, 12f, 12f)
+                curveTo(13.9f, 9.1f, 15.3f, 8f, 16.9f, 8f)
+                arcToRelative(4f, 4f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0f, 8f)
+                curveTo(15.3f, 16f, 13.9f, 14.9f, 12f, 12f)
+            }
+        }.build()
+    }
+
     val Star: ImageVector by lazy { star("bc_star", filled = false) }
 
     val StarFilled: ImageVector by lazy { star("bc_star_filled", filled = true) }

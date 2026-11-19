@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.rounded.AllInclusive
 import com.music.aurelis.ui.components.PlayerBottomGlyph
+import com.music.aurelis.ui.components.PlayerPlaybackActions
 import com.music.aurelis.ui.components.PlayerCircleGlyph
 import com.music.aurelis.ui.components.PlayerVolumeRow
 import androidx.compose.material.icons.rounded.IosShare
@@ -431,40 +432,21 @@ fun NowPlayingScreen(
                     }
                 }
                 val actions: @Composable () -> Unit = {
-                    val activeLabel = stringResource(R.string.player_enabled)
-                    val inactiveLabel = stringResource(R.string.player_disabled)
-                    val repeatLabel = stringResource(when (state.repeatMode) {
-                        Player.REPEAT_MODE_ALL -> R.string.player_repeat_all
-                        Player.REPEAT_MODE_ONE -> R.string.player_repeat_one
-                        else -> R.string.player_repeat_off
-                    })
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween) {
-                        PlayerBottomGlyph(AurelisPlayerIcons.LyricsQuote, stringResource(R.string.player_lyrics), openLyrics, highlighted = showLyrics)
-                        androidx.compose.material3.Surface(shape = CircleShape,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)) {
-                            Row {
-                                IconButton(onClick = playbackViewModel::toggleShuffle, enabled = state.isConnected,
-                                    modifier = Modifier.size(40.dp).semantics { stateDescription = if (state.shuffleEnabled) activeLabel else inactiveLabel }) {
-                                    Icon(Icons.Rounded.Shuffle, stringResource(R.string.player_shuffle),
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (state.shuffleEnabled) 1f else 0.55f))
-                                }
-                                IconButton(onClick = playbackViewModel::cycleRepeat, enabled = state.isConnected,
-                                    modifier = Modifier.size(40.dp).semantics { stateDescription = repeatLabel }) {
-                                    Icon(if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
-                                        stringResource(R.string.player_repeat),
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (state.repeatMode == Player.REPEAT_MODE_OFF) 0.55f else 1f))
-                                }
-                                IconButton(onClick = { playbackViewModel.setAutoplay(!state.autoplayEnabled) },
-                                    enabled = state.canSetAutoplay, modifier = Modifier.size(40.dp).semantics {
-                                        stateDescription = if (state.autoplayEnabled) activeLabel else inactiveLabel
-                                    }) {
-                                    Icon(Icons.Rounded.AllInclusive, stringResource(R.string.player_autoplay))
-                                }
-                            }
-                        }
-                        PlayerBottomGlyph(AurelisPlayerIcons.Queue, stringResource(R.string.player_queue), openQueue, highlighted = showInlineQueue)
-                    }
+                    PlayerPlaybackActions(
+                        lyricsOpen = showLyrics,
+                        queueOpen = showInlineQueue,
+                        shuffleEnabled = state.shuffleEnabled,
+                        repeatMode = state.repeatMode,
+                        autoplayEnabled = state.autoplayEnabled,
+                        connected = state.isConnected,
+                        canSetAutoplay = state.canSetAutoplay,
+                        reduceMotion = reduceAnimation,
+                        onToggleLyrics = openLyrics,
+                        onToggleQueue = openQueue,
+                        onToggleShuffle = playbackViewModel::toggleShuffle,
+                        onCycleRepeat = playbackViewModel::cycleRepeat,
+                        onToggleAutoplay = { playbackViewModel.setAutoplay(!state.autoplayEnabled) },
+                    )
                 }
                 val transport: @Composable (Boolean) -> Unit = { compact ->
                     PlayerControls(state.isPlayRequested, state.isLoading, playbackViewModel::togglePlayPause,
