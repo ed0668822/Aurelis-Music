@@ -116,13 +116,35 @@ jobs:
           disable-animations: true
           script: bash .github/scripts/b05-emulator-smoke.sh
 
+      # Android-emulator-runner can fail before an AVD starts at all (adb TCP
+      # 5554 connection refused). Retry once with a new emulator instance.
+      # Both attempts still require every real instrumentation case to pass.
+      - name: Retry Android 15 after emulator setup failure
+        id: emulator_retry
+        if: ${{ steps.emulator.outcome == 'failure' && steps.build.outcome == 'success' && steps.p3_build.outcome == 'success' }}
+        continue-on-error: true
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          cores: 2
+          ram-size: 4096M
+          heap-size: 512M
+          emulator-boot-timeout: 900
+          emulator-options: "-no-snapshot -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -camera-front none"
+          disable-animations: true
+          script: bash .github/scripts/b05-emulator-smoke.sh
+
       - name: Generate B05 diagnostic report
         id: report
         if: always()
         env:
           SDK_OUTCOME: ${{ steps.sdk.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
-          EMULATOR_OUTCOME: ${{ steps.emulator.outcome }}
+          # A second attempt is useful only when a clean AVD did not start.
+          EMULATOR_OUTCOME: ${{ (steps.emulator.outcome == 'success' || steps.emulator_retry.outcome == 'success') && 'success' || 'failure' }}
           P3_BUILD_OUTCOME: ${{ steps.p3_build.outcome }}
         run: |
           python3 - <<'PY'

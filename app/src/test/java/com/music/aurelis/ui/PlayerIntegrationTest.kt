@@ -608,7 +608,7 @@ class PlayerIntegrationTest {
     @Test fun audioOutputOpensOwnDrawerWithoutClaimingAnUnconfirmedDevice() {
         start()
         compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
-        compose.onNodeWithContentDescription(app.getString(R.string.audio_output)).onFirst().performClick()
+        compose.onAllNodesWithContentDescription(app.getString(R.string.audio_output)).onFirst().performClick()
         compose.onNodeWithTag("audio-output-sheet").assertIsDisplayed()
         compose.onNodeWithTag("audio-output-system-picker").assertIsDisplayed()
         compose.onNodeWithTag("audio-output-volume").assertIsDisplayed()
