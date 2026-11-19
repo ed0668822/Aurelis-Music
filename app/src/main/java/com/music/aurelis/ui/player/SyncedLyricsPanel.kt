@@ -161,8 +161,14 @@ fun SyncedLyricsPanel(
                 .revealLyricsControlsOnTap(!controlsOpen && !picking, onRevealControls).testTag("lyrics-list").onSizeChanged { viewportHeight = it.height }) {
             itemsIndexed(lines) { index, line ->
                 val focused = synchronise && index in active
-                val style = MaterialTheme.typography.headlineMedium.copy(fontSize = if (isSynced) 34.sp else 30.sp, lineHeight = if (isSynced) 41.sp else 38.sp, fontWeight = FontWeight.ExtraBold,
-                    textAlign = if (line.alignment == LyricAlignment.End) TextAlign.End else TextAlign.Start)
+                val style = lyricVoiceStyle(
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontSize = if (isSynced) 34.sp else 30.sp,
+                        lineHeight = if (isSynced) 41.sp else 38.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    ),
+                    line.text, line.alignment == LyricAlignment.End, duet,
+                )
                 val distance = abs(index - activeIndex)
                 val falloff = if (centerFocus) LyricFalloff else LyricPhoneFalloff
                 val lineAlpha by animateFloatAsState(when {
@@ -177,9 +183,10 @@ fun SyncedLyricsPanel(
                 val rowBlur by animateFloatAsState(if (blurUnfocused && synchronise && following && activeIndex >= 0 && !focused && !picking) LyricBlurFalloff[distance.coerceAtMost(LyricBlurFalloff.lastIndex)] else 0f,
                     tween(if (reduceMotion) 0 else 400, easing = LyricSettleEasing), label = "lyric-distance-blur")
                 val alignEnd = duet && line.alignment == LyricAlignment.End
+                val visualRight = if (duet) alignEnd else lyricTextIsRtl(line.text)
                 Column(Modifier.fillMaxWidth().testTag("lyrics-row-$index")
                     .padding(start = if (alignEnd) 44.dp else 0.dp, end = if (duet && !alignEnd) 44.dp else 0.dp)
-                    .graphicsLayer { scaleX = scale; scaleY = scale; alpha = lineAlpha; transformOrigin = TransformOrigin(if (alignEnd) 1f else 0f, 0.5f) }
+                    .graphicsLayer { scaleX = scale; scaleY = scale; alpha = lineAlpha; transformOrigin = TransformOrigin(if (visualRight) 1f else 0f, 0.5f) }
                     .blur(rowBlur.dp)) {
                     val mainModifier = Modifier.fillMaxWidth().testTag("lyrics-line-$index").semantics { selected = if (picking) index in picked else focused }
                         .clip(RoundedCornerShape(10.dp))
@@ -207,14 +214,19 @@ fun SyncedLyricsPanel(
                             color = color, modifier = mainModifier)
                     }
                     line.background?.takeIf { it.text.isNotBlank() }?.let { backing ->
-                        val backingStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = style.textAlign)
+                        val backingStyle = lyricVoiceStyle(
+                            MaterialTheme.typography.bodyLarge, backing.text,
+                            line.alignment == LyricAlignment.End, duet,
+                        )
                         val backingModifier = Modifier.fillMaxWidth().testTag("lyrics-background-$index")
                             .padding(horizontal = 30.dp).padding(bottom = 8.dp)
                         if (focused && backing.isWordSynced) SweptLocalLyric(backing, playhead, backingStyle, color, backingModifier)
                         else Text(backing.text, style = backingStyle, color = color, modifier = backingModifier)
                     }
                     translatedLines?.getOrNull(index)?.takeIf { it.text.isNotBlank() && it.text != line.text }?.let { translated ->
-                        Text(translated.text, style = MaterialTheme.typography.bodyMedium, textAlign = style.textAlign,
+                        Text(translated.text,
+                            style = lyricVoiceStyle(MaterialTheme.typography.bodyMedium, translated.text,
+                                line.alignment == LyricAlignment.End, duet),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp).padding(bottom = 8.dp))
                     }

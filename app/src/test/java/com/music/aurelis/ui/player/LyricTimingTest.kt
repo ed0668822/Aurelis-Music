@@ -87,6 +87,25 @@ class LyricTimingTest {
         assertEquals(3f, line.revealedChars(2500), 0f)
         assertEquals(LyricReveal(3, 4, 0f), lyricReveal(lyricCharacterBreaks(line.text), line.revealedChars(2500)))
     }
+    @Test fun rtlScriptUsesRightPhysicalAlignmentWhenSolo() {
+        val base = androidx.compose.ui.text.TextStyle.Default
+        val hebrew = lyricVoiceStyle(base, "שלום עולם", false, false)
+        assertTrue(lyricTextIsRtl("مرحبا بالعالم"))
+        assertTrue(lyricTextIsRtl("שלום עולם"))
+        assertEquals(androidx.compose.ui.text.style.TextAlign.Right, hebrew.textAlign)
+        assertEquals(androidx.compose.ui.text.style.TextDirection.Rtl, hebrew.textDirection)
+        assertEquals(androidx.compose.ui.text.style.TextAlign.Left,
+            lyricVoiceStyle(base, "Hello world", false, false).textAlign)
+    }
+    @Test fun duetLaneIsPhysicalButBackgroundVoiceShapesItsOwnScript() {
+        val base = androidx.compose.ui.text.TextStyle.Default
+        val lead = lyricVoiceStyle(base, "السلام", false, true)
+        val answering = lyricVoiceStyle(base, "Hello", true, true)
+        assertEquals(androidx.compose.ui.text.style.TextAlign.Left, lead.textAlign)
+        assertEquals(androidx.compose.ui.text.style.TextDirection.Rtl, lead.textDirection)
+        assertEquals(androidx.compose.ui.text.style.TextAlign.Right, answering.textAlign)
+        assertEquals(androidx.compose.ui.text.style.TextDirection.Ltr, answering.textDirection)
+    }
     @Test fun overlappingVoicesRemainFocusedUntilTheirActualEnds() {
         val first = LyricLine(0, "Uno", listOf(LyricWord(0, 3000, "Uno")))
         val second = LyricLine(1000, "Dos", listOf(LyricWord(1000, 2000, "Dos")))
