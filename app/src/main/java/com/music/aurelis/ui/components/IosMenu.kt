@@ -129,7 +129,10 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
     }
     val origin = heldMenuTransformOrigin(bounds, panelBounds)
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val fallbackFill = if (dark) Color(0xFF232326) else Color(0xFFF4F4F6)
+    // A Popup is drawn in a separate Android window. Sampling the player's
+    // animated backdrop from there refractions OTHER controls through the
+    // menu's text. Use an opaque iOS-style material for legible actions.
+    val fallbackFill = if (dark) Color(0xFF202024) else Color(0xFFF7F7F9)
     Popup(popupPositionProvider = positionProvider, onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true, dismissOnBackPress = true,
             dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
@@ -147,10 +150,13 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
                     scaleX = scale
                     scaleY = scale
                 }
-                .shadow(if (reduced) 0.dp else 20.dp, shape, clip = false)
-                .liquidGlass(shape, fallbackColor = fallbackFill),
+                .shadow(if (reduced) 0.dp else 20.dp, shape, clip = false),
             shape = shape,
-            color = Color.Transparent,
+            color = fallbackFill,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (dark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f),
+            ),
         ) {
             Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp), content = content)
         }

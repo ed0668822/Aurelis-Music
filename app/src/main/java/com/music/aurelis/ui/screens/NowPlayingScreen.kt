@@ -599,13 +599,24 @@ fun NowPlayingScreen(
 
                     androidx.compose.material3.Surface(
                         modifier = Modifier.fillMaxSize().testTag("lyrics-overlay"),
-                        color = Color.Transparent,
+                        // F061: the lyrics must be their own opaque visual
+                        // plane. A transparent surface was exposing the main
+                        // player's cover, credits and a second transport deck.
+                        color = if (landscape) Color.Transparent else Color(0xFF121213),
                         contentColor = Color.White,
                     ) {
                         Box(Modifier.fillMaxSize().then(if (lyricsShareRequest != null) Modifier.clearAndSetSemantics { } else Modifier)) {
-                        // F051/F052: a single shared backdrop is already drawn
-                        // underneath this transparent lyrics panel. Do not
-                        // decode/render a second legacy four-blob mesh here.
+                        // An inexpensive prepared blurred image replaces the
+                        // UNDERLYING screen. It never blurs controls or text.
+                        // The bitmap comes from the same small artwork cache as
+                        // the main player, so no full-size GPU blur is scheduled.
+                        if (!landscape && !reduceBlur) {
+                            FullArtworkBlurBackdrop(
+                                image = rememberFullArtworkBlurImage(coverUri),
+                                modifier = Modifier.fillMaxSize().testTag("lyrics-own-backdrop"),
+                                reduceAnimation = reduceAnimation,
+                            )
+                        }
                         Column(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
                             if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
                                 IconButton(onClick = { showLyrics = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(28.dp)) {
@@ -753,7 +764,16 @@ fun NowPlayingScreen(
                         // the remaining space. Transport never depends on scrolling.
                         val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
                         val compactPortrait = maxHeight < 650.dp
-                        Box(Modifier.fillMaxSize().testTag("player-portrait")) {
+                        Box(
+                            Modifier.fillMaxSize().testTag("player-portrait")
+                                // Keep geometry/dock tracking in place, but
+                                // never paint the main player behind an opened
+                                // lyrics or queue pane. It caused duplicate
+                                // transport buttons and overlapping captions.
+                                .graphicsLayer {
+                                    alpha = if (showLyrics || showInlineQueue) 0f else 1f
+                                },
+                        ) {
                             Box(Modifier.fillMaxWidth().align(Alignment.TopCenter),
                                 contentAlignment = Alignment.TopCenter) {
                                 Box(Modifier.size(portraitArtwork)) {

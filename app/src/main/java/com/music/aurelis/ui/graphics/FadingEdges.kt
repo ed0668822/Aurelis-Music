@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.graphics
 
 import androidx.compose.ui.Modifier
@@ -42,5 +43,40 @@ fun Modifier.fadingEdges(width: Dp, start: () -> Float = NoFade, end: () -> Floa
                 }
             }
         }
+
+/**
+ * F061: vertically fade a scrollable panel's content, not the page backdrop.
+ * Both fades are controlled by whether the list can scroll in that direction,
+ * so a one-row queue has no artificial transparent strips.
+ */
+fun Modifier.verticalFadingEdges(
+    height: Dp,
+    top: () -> Float = NoFade,
+    bottom: () -> Float = NoFade,
+): Modifier = graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithCache {
+        val fade = height.toPx().coerceAtMost(size.height / 2f)
+        if (fade <= 0f) {
+            onDrawWithContent { drawContent() }
+        } else {
+            val stops = Array(FADE_CURVE_STOPS + 1) { i ->
+                val t = i / FADE_CURVE_STOPS.toFloat()
+                t to Color.Black.copy(alpha = 1f - smootherStep(t))
+            }
+            val topBrush = Brush.verticalGradient(*stops, startY = 0f, endY = fade)
+            val bottomBrush = Brush.verticalGradient(*stops,
+                startY = size.height, endY = size.height - fade)
+            onDrawWithContent {
+                drawContent()
+                val head = top().coerceIn(0f, 1f)
+                val foot = bottom().coerceIn(0f, 1f)
+                if (head > 0f) drawRect(topBrush, Offset.Zero,
+                    Size(size.width, fade), alpha = head, blendMode = BlendMode.DstOut)
+                if (foot > 0f) drawRect(bottomBrush,
+                    Offset(0f, size.height - fade), Size(size.width, fade),
+                    alpha = foot, blendMode = BlendMode.DstOut)
+            }
+        }
+    }
 
 private val NoFade = { 0f }
