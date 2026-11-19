@@ -77,7 +77,7 @@ private fun Typography.withFamily(family: FontFamily) = Typography(
 fun SystemBarIcons(dark: Boolean) {
     val view = LocalView.current
     if (view.isInEditMode) return
-    val window = findWindow(view) ?: return
+    val window = findSystemBarWindow(view) ?: return
     SideEffect {
         WindowCompat.getInsetsController(window, view).apply {
             isAppearanceLightStatusBars = dark
@@ -86,5 +86,3 @@ fun SystemBarIcons(dark: Boolean) {
     }
 }
 
-private fun findWindow(view: android.view.View): android.view.Window? =
-    (view.context as? Activity)?.window

@@ -167,6 +167,9 @@ import com.music.aurelis.ui.player.SyncedLyricsPanel
 import com.music.aurelis.ui.theme.ArtworkColors
 import com.music.aurelis.ui.theme.DynamicAurelisTheme
 import com.music.aurelis.ui.theme.DynamicThemeViewModel
+import com.music.aurelis.ui.theme.StatusBarIcons
+import com.music.aurelis.ui.theme.rememberArtworkTopBandLuminance
+import com.music.aurelis.ui.theme.topBandScrimAlpha
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
@@ -299,6 +302,8 @@ fun NowPlayingScreen(
         }
 
         DynamicAurelisTheme(colors = artworkColors ?: fallbackColors) {
+            StatusBarIcons(dark = false)
+            val topBandLuminance = rememberArtworkTopBandLuminance(s.artworkUri)
             // Intercept new touches outside the moving panel; an existing mini-player
             // drag retains its original pointer path until release or cancellation.
             Box(Modifier.fillMaxSize().pointerInput(panelMotion) { detectTapGestures { closePlayer() } })
@@ -364,6 +369,19 @@ fun NowPlayingScreen(
                                 ),
                             ),
                         ),
+                )
+
+                // The status icons stay white, while the top edge of a bright
+                // album cover gets enough scrim to remain legible.
+                Box(
+                    Modifier.fillMaxWidth().height(88.dp).background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Black.copy(alpha = topBandScrimAlpha(topBandLuminance)),
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
                 )
 
                 val openLyrics: () -> Unit = { showInlineQueue = false; showLyrics = !showLyrics; lyricsControlsOpen = true }
