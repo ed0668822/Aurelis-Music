@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.combinedClickable
@@ -52,8 +53,10 @@ internal fun rememberHeldMenuState(): HeldMenuState {
         if (restore != null) {
             // Wait until the focusable popup is removed. Host disposal cancels this job.
             withFrameNanos { }
-            if (restore.attached) restore.focusRequester.requestFocus()
-            state.restoreAnchor = null
+            // The row may have disappeared while its menu was open. Focus
+            // restoration is best-effort, never a reason to crash the player.
+            if (restore.attached) runCatching { restore.focusRequester.requestFocus() }
+            if (state.restoreAnchor === restore) state.restoreAnchor = null
         }
     }
     return state
@@ -71,6 +74,7 @@ fun Modifier.heldContextMenuInteractions(onClick: () -> Unit, onLongClick: () ->
                 anchor.attached = false
                 anchor.bounds = null
                 if (state != null && state.pendingAnchor === anchor) state.pendingAnchor = null
+                if (state != null && state.restoreAnchor === anchor) state.restoreAnchor = null
             }
         }
         this.focusRequester(anchor.focusRequester)

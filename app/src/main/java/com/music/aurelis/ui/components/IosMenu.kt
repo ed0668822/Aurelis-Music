@@ -1,7 +1,9 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
@@ -13,6 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.platform.LocalConfiguration
@@ -56,6 +61,20 @@ internal fun heldMenuPosition(
     return IntOffset(x.coerceIn(insetX, maxX), y.coerceIn(insetY, maxY))
 }
 
+/**
+ * The popover grows from the selected row, not the centre of the screen.
+ * A button-opened menu has no anchor, so it grows from its own centre.
+ */
+internal fun heldMenuTransformOrigin(anchor: IntRect?, panel: IntRect): TransformOrigin {
+    if (anchor == null || panel.width <= 0 || panel.height <= 0) return TransformOrigin.Center
+    val centerX = (anchor.left + anchor.right) / 2f
+    val centerY = (anchor.top + anchor.bottom) / 2f
+    return TransformOrigin(
+        ((centerX - panel.left) / panel.width).coerceIn(0f, 1f),
+        ((centerY - panel.top) / panel.height).coerceIn(0f, 1f),
+    )
+}
+
 /** Focusable bounded action panel. Back and outside taps dismiss the real owner. */
 @Composable
 fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
@@ -83,23 +102,56 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
     }
     val reduced = LocalReduceMotion.current
     val progress = remember { Animatable(if (reduced) 1f else 0f) }
-    LaunchedEffect(reduced) { progress.animateTo(1f, if (reduced) snap() else tween(180)) }
+    LaunchedEffect(reduced) {
+        if (reduced) progress.snapTo(1f)
+        else progress.animateTo(1f, tween(180, easing = FastOutSlowInEasing))
+    }
     val configuration = LocalConfiguration.current
     // The BitChord song menu is a 256dp slab with 30dp corners.
     // Other Aurelis menus keep their original dimensions.
     val width = (configuration.screenWidthDp - 32).coerceIn(1, if (compactSongStyle) 256 else 320).dp
     val height = (configuration.screenHeightDp - 64).coerceIn(1, 560).dp
     val shape = RoundedCornerShape(if (compactSongStyle) 30.dp else 20.dp)
+    val panelBounds = remember(bounds, width, height, density) {
+        // The exact window bounds are resolved by the PopupPositionProvider.
+        // Position remains independently tested; this value is used only as a
+        // stable point of origin for its visual expansion.
+        val screen = androidx.compose.ui.unit.IntSize(
+            with(density) { configuration.screenWidthDp.dp.roundToPx() },
+            with(density) { configuration.screenHeightDp.dp.roundToPx() },
+        )
+        val panelSize = androidx.compose.ui.unit.IntSize(
+            with(density) { width.roundToPx() },
+            with(density) { height.roundToPx() },
+        )
+        val at = heldMenuPosition(bounds, screen, panelSize, LayoutDirection.Ltr, margin, gap)
+        IntRect(at.x, at.y, at.x + panelSize.width, at.y + panelSize.height)
+    }
+    val origin = heldMenuTransformOrigin(bounds, panelBounds)
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val fallbackFill = if (dark) Color(0xFF232326) else Color(0xFFF4F4F6)
     Popup(popupPositionProvider = positionProvider, onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true, dismissOnBackPress = true,
             dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
-        Surface(modifier = Modifier.width(width).heightIn(max = height).semantics { paneTitle = "Acciones" }.graphicsLayer {
-                alpha = progress.value
-                scaleX = if (reduced) 1f else (if (compactSongStyle) 0.30f else 0.94f) +
-                    (if (compactSongStyle) 0.70f else 0.06f) * progress.value
-                scaleY = scaleX
-            }.liquidGlass(shape),
-            shape = shape, color = Color.Transparent) {
+        Surface(
+            modifier = Modifier
+                .width(width)
+                .heightIn(max = height)
+                .semantics { paneTitle = "Acciones" }
+                .graphicsLayer {
+                    alpha = progress.value
+                    transformOrigin = origin
+                    // F054: a natural iOS sheet growth without shrinking its
+                    // 48dp touch targets throughout the entire open animation.
+                    val scale = if (reduced) 1f else 0.92f + 0.08f * progress.value
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .shadow(if (reduced) 0.dp else 20.dp, shape, clip = false)
+                .liquidGlass(shape, fallbackColor = fallbackFill),
+            shape = shape,
+            color = Color.Transparent,
+        ) {
             Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp), content = content)
         }
     }
