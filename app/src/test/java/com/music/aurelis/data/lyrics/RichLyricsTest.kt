@@ -36,6 +36,33 @@ class RichLyricsTest {
         assertEquals(0, lyrics.activeIndexAt(1500)); assertEquals(1, lyrics.activeIndexAt(4500))
     }
 
+    @Test fun localEmbeddedLrcVoiceLabelsDoNotPolluteTheVisibleLyrics() {
+        val parsed = Lyrics.parse(
+            "[00:01.00]v1:Just stuck, hollow and alone\n" +
+                "[00:03.00]V1:And the fault is my own\n" +
+                "[00:05.00]<R>v2:Answering voice"
+        )!!
+        val sung = parsed.lines.filterNot { it.isGap }
+        assertEquals(
+            listOf("Just stuck, hollow and alone", "And the fault is my own", "Answering voice"),
+            sung.map { it.text },
+        )
+        assertEquals(listOf(1000L, 3000L, 5000L), sung.map { it.timeMs })
+        assertEquals(LyricAlignment.End, sung.last().alignment)
+    }
+
+    @Test fun voiceLabelBeforeOrAfterFirstWordStampKeepsItsActualWordTiming() {
+        val first = Lyrics.parse("[00:01.00]v1:<00:01.00>First <00:02.00>word")!!
+        val second = Lyrics.parse("[00:01.00]<00:01.00>v1:First <00:02.00>word")!!
+        for (lyrics in listOf(first, second)) {
+            val line = lyrics.lines.first { !it.isGap }
+            assertEquals("First word", line.text)
+            assertEquals(listOf("First", "word"), line.words.map { it.text })
+            assertEquals(listOf(1000L, 2000L), line.words.map { it.startMs })
+        }
+        assertEquals("a v1: is an actual lyric", Lyrics.parse("a v1: is an actual lyric")!!.lines.single().text)
+    }
+
     @Test fun ordinaryLrcKeepsRightAlignedRowsAndIntroducesRealLongLeadIn() {
         val lines = Lyrics.parse("[ar:Fixture]\n[00:05.00][00:07.00]<R>Derecha\n[00:09.00]Izquierda")!!
         assertTrue(lines.isSynced)

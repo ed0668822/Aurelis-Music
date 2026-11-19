@@ -19,7 +19,7 @@ object EnhancedLrc {
             ?.coerceIn(-86_400_000, 86_400_000) ?: 0L
         val rows = ArrayList<Row>()
         var totalRuns = 0
-        for (raw in lrc.removePrefix("\uFEFF").lineSequence().take(10_000)) {
+        for (raw in stripLeadingLrcVoiceLabels(lrc).removePrefix("\uFEFF").lineSequence().take(10_000)) {
             val line = raw.trim()
             val leading = ArrayList<MatchResult>(); var end = 0
             for (tag in STAMP.findAll(line)) {

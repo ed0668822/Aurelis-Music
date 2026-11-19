@@ -2,6 +2,20 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data.lyrics
 
+/**
+ * A few embedded LRC files encode the vocal channel as a prefix like "v1:".
+ * Remove only a leading label, leaving timestamps and internal words untouched.
+ */
+internal fun stripLeadingLrcVoiceLabels(raw: String): String {
+    val candidate = Regex("""v\d{1,2}:""", RegexOption.IGNORE_CASE)
+    if (!candidate.containsMatchIn(raw)) return raw
+    val prefix = Regex(
+        """^(\s*(?:\[\d{1,6}:\d{2}(?:[.:]\d{1,3})?]\s*)*(?:<R>\s*)?(?:<\d{1,6}:\d{2}(?:[.:]\d{1,3})?>)?)v\d{1,2}:\s*""",
+        RegexOption.IGNORE_CASE,
+    )
+    return raw.lineSequence().joinToString("\n") { line -> line.replaceFirst(prefix, "$1") }
+}
+
 data class Lyrics(val lines: List<LyricLine>, val isSynced: Boolean) {
     fun activeIndexAt(positionMs: Long): Int {
         if (!isSynced) return -1
@@ -21,11 +35,12 @@ data class Lyrics(val lines: List<LyricLine>, val isSynced: Boolean) {
                 val lines = TtmlLyrics.parse(raw.removePrefix("\uFEFF"))
                 return lines.takeIf { it.any { line -> line.text.isNotBlank() } }?.let { Lyrics(it, true) }
             }
-            val enhanced = EnhancedLrc.parse(raw)
+            val readable = stripLeadingLrcVoiceLabels(raw)
+            val enhanced = EnhancedLrc.parse(readable)
             if (enhanced.any { it.isWordSynced }) return Lyrics(enhanced, true)
-            val offset = offsetTag.findAll(raw).lastOrNull()?.groupValues?.get(1)?.toLongOrNull()?.coerceIn(-86_400_000, 86_400_000) ?: 0
+            val offset = offsetTag.findAll(readable).lastOrNull()?.groupValues?.get(1)?.toLongOrNull()?.coerceIn(-86_400_000, 86_400_000) ?: 0
             val timed = mutableListOf<LyricLine>(); val plain = mutableListOf<LyricLine>()
-            raw.removePrefix("\uFEFF").lineSequence().take(10_000).forEach { value ->
+            readable.removePrefix("\uFEFF").lineSequence().take(10_000).forEach { value ->
                 val line = value.trim()
                 if (line.isEmpty()) return@forEach
                 val tags = timestamp.findAll(line).toList().takeIf { it.firstOrNull()?.range?.first == 0 }.orEmpty()
