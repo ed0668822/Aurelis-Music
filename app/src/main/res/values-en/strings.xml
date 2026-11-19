@@ -252,6 +252,8 @@
     <string name="pipeline_stage_output">Device output</string>
     <string name="pipeline_route_expected">Android route (anticipated)</string>
     <string name="pipeline_output_note">Android's route report does not verify DAC negotiation or bit-perfect output.</string>
+    <string name="pipeline_route_not_confirmed">Audio output not confirmed</string>
+    <string name="pipeline_unknown_bluetooth">Bluetooth device</string>
     <string name="audio_output">Audio output</string>
     <string name="player_output_system_unavailable">Android could not open its media output switcher. You can choose an output in system settings. The app will not claim an output without confirmation.</string>
     <string name="player_output_open_settings">Open sound settings</string>

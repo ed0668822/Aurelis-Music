@@ -19,6 +19,9 @@ import com.music.aurelis.data.model.PlaybackSourceType
 import com.music.aurelis.ui.components.PlayerCircleGlyph
 import com.music.aurelis.ui.components.PlayerVolumeRow
 import com.music.aurelis.ui.player.showAndroidOutputSwitcher
+import com.music.aurelis.ui.player.rememberAndroidAudioOutputs
+import com.music.aurelis.ui.player.confirmedOutput
+import com.music.aurelis.ui.player.outputDeviceLabel
 import androidx.compose.material.icons.rounded.Speaker
 import android.content.Intent
 import android.provider.Settings
@@ -214,6 +217,8 @@ fun NowPlayingScreen(
         background = Color(0xFF0E0E14),
     )
 
+    val audioOutputs = rememberAndroidAudioOutputs()
+    val effectiveOutput = confirmedOutput(audioOutputs)
     var showPlaybackTools by rememberSaveable { mutableStateOf(false) }
     var showOutputHelp by rememberSaveable { mutableStateOf(false) }
     val openOutput: () -> Unit = {
@@ -255,6 +260,8 @@ fun NowPlayingScreen(
             info = state.sourceQuality,
             fileName = song.displayName ?: song.title,
             fileMimeType = song.mimeType,
+            routedOutput = effectiveOutput,
+            onOpenOutput = openOutput,
         )
     }
 
@@ -538,9 +545,18 @@ fun NowPlayingScreen(
                             IconButton(onClick = openOutput) { Icon(Icons.Rounded.Speaker, stringResource(R.string.audio_output)) }
                             IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
                         }
-                        if (!compact) Text(stringResource(R.string.player_local_device),
-                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
+                        if (!compact) Text(
+                            text = effectiveOutput?.let { outputDeviceLabel(it) }
+                                ?: stringResource(R.string.pipeline_route_not_confirmed),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 6.dp)
+                                .testTag("player-output-caption")
+                                .clickable(onClick = openOutput)
+                                .semantics { contentDescription = context.getString(R.string.audio_output) },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
                 val lyricsContent: @Composable () -> Unit = {

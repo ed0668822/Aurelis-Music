@@ -14,6 +14,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.music.aurelis.R
 
 @Composable
 internal fun rememberAndroidAudioOutputs(): List<AudioOutputDevice> {
@@ -22,8 +27,14 @@ internal fun rememberAndroidAudioOutputs(): List<AudioOutputDevice> {
         context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
     var outputs by remember(manager) { mutableStateOf(readOutputs(manager)) }
+    val lifecycle = LocalLifecycleOwner.current
 
-    DisposableEffect(manager) {
+    DisposableEffect(manager, lifecycle) {
+        val onForeground = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) outputs = readOutputs(manager)
+        }
+        lifecycle.lifecycle.addObserver(onForeground)
+
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
         val callback = object : android.media.AudioDeviceCallback() {
             override fun onAudioDevicesAdded(added: Array<out android.media.AudioDeviceInfo>?) {
@@ -34,7 +45,10 @@ internal fun rememberAndroidAudioOutputs(): List<AudioOutputDevice> {
             }
         }
         manager.registerAudioDeviceCallback(callback, handler)
-        onDispose { manager.unregisterAudioDeviceCallback(callback) }
+        onDispose {
+            lifecycle.lifecycle.removeObserver(onForeground)
+            manager.unregisterAudioDeviceCallback(callback)
+        }
     }
 
     return outputs
@@ -54,6 +68,9 @@ private fun readOutputs(manager: AudioManager): List<AudioOutputDevice> {
             ).map(AudioDeviceInfo::getId).toSet()
         }.getOrDefault(emptySet())
     } else emptySet()
+    // Several reported destinations are not proof of an effective single route.
+    // Mark only a uniquely identified media device; otherwise show unknown.
+    val activeId = confirmedMediaRouteId(routedIds)
     return devices.mapNotNull { device ->
         val kind = when (device.type) {
             AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> AudioOutputKind.PHONE
@@ -68,8 +85,27 @@ private fun readOutputs(manager: AudioManager): List<AudioOutputDevice> {
             id = device.id,
             name = device.productName?.toString().orEmpty(),
             kind = kind,
-            isActive = device.id in routedIds,
-            form = if (kind == AudioOutputKind.BLUETOOTH) BluetoothForm.UNKNOWN else BluetoothForm.UNKNOWN,
+            isActive = device.id == activeId,
+            form = BluetoothForm.UNKNOWN,
         )
     }
 }
+
+/** A routing report with zero or multiple candidate devices is not a confirmed route. */
+internal fun confirmedMediaRouteId(deviceIds: Set<Int>): Int? =
+    deviceIds.singleOrNull()
+
+/** An empty list or ambiguous Android report must not invent an active device. */
+internal fun confirmedOutput(outputs: List<AudioOutputDevice>): AudioOutputDevice? =
+    outputs.filter { it.isActive }.singleOrNull()
+
+@Composable
+internal fun outputDeviceLabel(device: AudioOutputDevice): String =
+    device.name.takeIf { it.isNotBlank() } ?: when (device.kind) {
+        AudioOutputKind.PHONE -> stringResource(R.string.this_phone)
+        AudioOutputKind.WIRED -> stringResource(R.string.wired_headphones)
+        AudioOutputKind.USB -> stringResource(R.string.usb_audio)
+        AudioOutputKind.HDMI -> stringResource(R.string.hdmi_output)
+        AudioOutputKind.BLUETOOTH -> stringResource(R.string.pipeline_unknown_bluetooth)
+        AudioOutputKind.OTHER -> stringResource(R.string.mini_quality_unknown)
+    }

@@ -325,6 +325,7 @@ class PlayerIntegrationTest {
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); assertEquals(3, player.mediaItemCount) }
         compose.onNodeWithText("Formato desconocido").performClick()
         compose.onNode(hasText("Salida del dispositivo: no medida", substring = true)).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.pipeline_route_not_confirmed)).assertExists()
         compose.onNodeWithText(app.getString(R.string.pipeline_stage_decoder)).assertExists()
         compose.onNodeWithText(app.getString(R.string.pipeline_stage_processing)).assertExists()
         compose.onNodeWithText("Cerrar").performClick()

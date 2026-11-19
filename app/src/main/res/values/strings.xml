@@ -185,6 +185,8 @@
     <string name="pipeline_stage_output">Salida del dispositivo</string>
     <string name="pipeline_route_expected">Ruta de Android (prevista)</string>
     <string name="pipeline_output_note">La ruta informada por Android no confirma la negociación del DAC ni la reproducción bit-perfect.</string>
+    <string name="pipeline_route_not_confirmed">Salida de audio sin confirmar</string>
+    <string name="pipeline_unknown_bluetooth">Dispositivo Bluetooth</string>
     <string name="audio_output">Salida de audio</string>
     <string name="player_output_system_unavailable">No se pudo abrir el selector de salida de Android. Puedes elegir el dispositivo desde los ajustes del sistema. La aplicación no marcará ninguna salida sin confirmación.</string>
     <string name="player_output_open_settings">Abrir ajustes de sonido</string>

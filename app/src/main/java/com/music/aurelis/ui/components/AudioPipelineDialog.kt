@@ -65,13 +65,13 @@ fun AudioPipelineDialog(
                     PipelineFact(stringResource(R.string.mini_quality_format), info.formatLabel)
                     PipelineFact(stringResource(R.string.mini_quality_origin), info.originLabel)
                     PipelineFact(stringResource(R.string.mini_quality_rate),
-                        info.sampleRateHz?.let { "$"+"it Hz" } ?: unknown)
+                        info.sampleRateHz?.let { it.toString() + " Hz" } ?: unknown)
                     PipelineFact(stringResource(R.string.mini_quality_channels),
                         info.channelCount?.toString() ?: unknown)
                     PipelineFact(stringResource(R.string.mini_quality_bitrate),
-                        info.bitrateBps?.let { "$"+"{it / 1_000} kb/s" } ?: unknown)
+                        info.bitrateBps?.let { (it / 1_000).toString() + " kb/s" } ?: unknown)
                     PipelineFact(stringResource(R.string.mini_quality_depth),
-                        info.pcmBits?.let { "$"+"it bits" } ?: unknown)
+                        info.pcmBits?.let { it.toString() + " bits" } ?: unknown)
                 }
                 PipelineStage(Icons.Rounded.Memory, stringResource(R.string.pipeline_stage_decoder)) {
                     PipelineFact(stringResource(R.string.pipeline_decoder_format), unknown)
