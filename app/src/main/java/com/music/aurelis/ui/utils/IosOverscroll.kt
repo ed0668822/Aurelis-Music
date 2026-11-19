@@ -30,8 +30,11 @@ private const val highVelocityThreshold = 5_000f
 private const val normalBounceStiffness = 247f
 private const val fastBounceStiffness = 130f
 
-private fun rubberBand(rawDistance: Float, containerPx: Float): Float {
-    val dimension = containerPx.takeIf { it > 0f } ?: fallbackContainerPx
+internal fun rubberBand(rawDistance: Float, containerPx: Float): Float {
+    // An interrupted gesture can produce a non-finite offset on some
+    // nested-scroll devices. Never propagate NaN/Infinity to graphicsLayer.
+    if (!rawDistance.isFinite()) return 0f
+    val dimension = containerPx.takeIf { it.isFinite() && it > 0f } ?: fallbackContainerPx
     val distance = abs(rawDistance)
     val banded = (1f - 1f / (distance * rubberBandConstant / dimension + 1f)) *
         dimension / rubberBandConstant
@@ -45,6 +48,8 @@ private class IosOverscrollEffect(
     private val rawPullY = mutableFloatStateOf(0f)
     private var containerWidthPx = 0f
     private var containerHeightPx = 0f
+    private var settlingX: kotlinx.coroutines.Job? = null
+    private var settlingY: kotlinx.coroutines.Job? = null
 
     override val isInProgress: Boolean
         get() = rawPullX.floatValue != 0f || rawPullY.floatValue != 0f
@@ -67,6 +72,14 @@ private class IosOverscrollEffect(
         source: NestedScrollSource,
         performScroll: (Offset) -> Offset,
     ): Offset {
+        // Touch input starts a fresh gesture, even if a previous settle spring
+        // is still running. It must not race to move the list underneath.
+        if (source == NestedScrollSource.UserInput) {
+            settlingX?.cancel()
+            settlingY?.cancel()
+            settlingX = null
+            settlingY = null
+        }
         val paidX = payDown(rawPullX, delta.x)
         val paidY = payDown(rawPullY, delta.y)
         val remaining = Offset(delta.x - paidX, delta.y - paidY)
@@ -97,8 +110,10 @@ private class IosOverscrollEffect(
         if (!isInProgress && leftover == Velocity.Zero) return
 
         coroutineScope {
-            launch { settle(rawPullX, leftover.x) }
-            launch { settle(rawPullY, leftover.y) }
+            settlingX?.cancel()
+            settlingY?.cancel()
+            settlingX = launch { settle(rawPullX, leftover.x) }
+            settlingY = launch { settle(rawPullY, leftover.y) }
         }
     }
 

@@ -81,6 +81,7 @@ import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.data.model.QueueTier
 import com.music.aurelis.ui.components.ExplicitSongTitle
 import com.music.aurelis.ui.components.thumbnailBorder
+import com.music.aurelis.ui.graphics.verticalFadingEdges
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -214,7 +215,13 @@ internal fun InlineQueue(
             if (tracks.user.isNotEmpty()) QueueClearButton(MaterialTheme.typography.titleMedium, controlsLocked, onClear)
         }
         Spacer(Modifier.height(4.dp))
-        Box(modifier = Modifier.fillMaxWidth().fadingEdges()) {
+        // F061/F062: a gradient is needed only on an edge that has
+        // actual offscreen items. Empty/single-song lists stay fully opaque.
+        Box(modifier = Modifier.fillMaxWidth().verticalFadingEdges(
+            28.dp,
+            top = { if (listState.canScrollBackward) 1f else 0f },
+            bottom = { if (listState.canScrollForward) 1f else 0f },
+        )) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxWidth().nestedScroll(keepScroll),

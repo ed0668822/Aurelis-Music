@@ -38,7 +38,9 @@ fun QueueScreen(
     listState: LazyListState? = null,
 ) {
     if (embedded) {
-        if (isVisible) Surface(Modifier.fillMaxSize(), color = Color(0xFF141414)) {
+        // F062: the owner player provides the prepared artwork backdrop.
+        // A black nested surface was covering it with a stark rectangle.
+        if (isVisible) Surface(Modifier.fillMaxSize(), color = Color.Transparent) {
             QueuePanelContent(playbackViewModel, onDismiss, embedded = true, listState = listState)
         }
         return
@@ -106,7 +108,18 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
             Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_clear_user))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        // Empty upcoming queues should communicate their state without
+        // inventing placeholder tracks or changing Media3's playback order.
+        val remaining = if (cursor >= 0) order.size - cursor - 1 else 0
+        if (state.queue.isNotEmpty() && remaining == 0 && !state.shuffleEnabled) {
+            Text(
+                text = "No hay más canciones en espera",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.62f),
+                modifier = Modifier.padding(start = 8.dp, bottom = 6.dp),
+            )
+        }
 
         if (state.queue.isEmpty()) {
             Text("La cola está vacía.", color = Color.White)

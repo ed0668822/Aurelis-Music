@@ -800,8 +800,18 @@ fun NowPlayingScreen(
                 // 85%-height sheet. Keep transport and queue-mode controls anchored
                 // while the same canonical Media3 queue scrolls above them.
                 if (showInlineQueue && !landscape) {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                    Box(Modifier.fillMaxSize().background(Color(0xFF121213))
                         .testTag("player-queue-pane")) {
+                        // F062: a real artwork-coloured queue page rather than
+                        // the former full-screen, hard-edged black panel.
+                        // The upper layout still uses the existing Media3 queue.
+                        if (!reduceBlur) {
+                            FullArtworkBlurBackdrop(
+                                image = rememberFullArtworkBlurImage(coverUri),
+                                modifier = Modifier.fillMaxSize().testTag("queue-own-backdrop"),
+                                reduceAnimation = reduceAnimation,
+                            )
+                        }
                         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
                             .padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(Modifier.weight(1f).fillMaxWidth()) {
