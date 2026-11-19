@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data.lyrics
 
 import com.music.aurelis.AurelisApplication
@@ -32,6 +34,29 @@ class RichLyricsTest {
         assertEquals(listOf(0, 2), first.words.first().syllables.map { it.startChar })
         assertEquals(listOf(2, 4), first.words.first().syllables.map { it.endChar })
         assertEquals(0, lyrics.activeIndexAt(1500)); assertEquals(1, lyrics.activeIndexAt(4500))
+    }
+
+    @Test fun ordinaryLrcKeepsRightAlignedRowsAndIntroducesRealLongLeadIn() {
+        val lines = Lyrics.parse("[ar:Fixture]\n[00:05.00][00:07.00]<R>Derecha\n[00:09.00]Izquierda")!!
+        assertTrue(lines.isSynced)
+        assertTrue(lines.lines.first().isGap)
+        assertEquals(0L, lines.lines.first().timeMs)
+        assertEquals(0, lines.activeIndexAt(2_000))
+        assertEquals(listOf(5000L, 7000L, 9000L), lines.lines.filterNot { it.isGap }.map { it.timeMs })
+        assertEquals(listOf("Derecha", "Derecha", "Izquierda"), lines.lines.filterNot { it.isGap }.map { it.text })
+        assertEquals(listOf(LyricAlignment.End, LyricAlignment.End, LyricAlignment.Start),
+            lines.lines.filterNot { it.isGap }.map { it.alignment })
+    }
+
+    @Test fun mixedEnhancedAndOrdinaryLrcPreservesWordTimesAndRtlAlignment() {
+        val parsed = Lyrics.parse("[00:01.00]<R><00:01.00>Lu<00:01.50>na\n[00:03.00]Siguiente")!!
+        val first = parsed.lines.first()
+        assertEquals(LyricAlignment.End, first.alignment)
+        assertEquals("Luna", first.text)
+        assertTrue(first.isWordSynced)
+        assertEquals(listOf(1000L, 1500L), first.words.first().syllables.map { it.startMs })
+        assertEquals("Siguiente", parsed.lines.last().text)
+        assertEquals(LyricAlignment.Start, parsed.lines.last().alignment)
     }
 
     @Test fun repeatedEnhancedTimestampsShiftEveryWordAndOffsetOnlyOnce() {

@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later.
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data.lyrics
 
 data class Lyrics(val lines: List<LyricLine>, val isSynced: Boolean) {
@@ -34,18 +35,27 @@ data class Lyrics(val lines: List<LyricLine>, val isSynced: Boolean) {
                     // Repeated leading timestamps apply the same text to each occurrence.
                     val leading = mutableListOf<MatchResult>(); var end = 0
                     tags.forEach { if (it.range.first == end) { leading.add(it); end = it.range.last + 1 } }
-                    val text = words.replace(line.substring(end), "").trim()
+                    val body = line.substring(end)
+                    val alignment = if (body.startsWith("<R>")) LyricAlignment.End else LyricAlignment.Start
+                    val text = words.replace(body.removePrefix("<R>"), "").trim()
                     leading.forEach timestampLoop@{ tag ->
+                        if (timed.size >= 10_000) return@timestampLoop
                         val minutes = tag.groupValues[1].toLongOrNull() ?: return@timestampLoop
                         val seconds = tag.groupValues[2].toLongOrNull() ?: return@timestampLoop
                         if (seconds >= 60) return@timestampLoop
                         val fraction = tag.groupValues[3].padEnd(3, '0').toLongOrNull() ?: 0
-                        timed.add(LyricLine((minutes * 60_000 + seconds * 1000 + fraction - offset).coerceAtLeast(0), text))
+                        timed.add(LyricLine((minutes * 60_000 + seconds * 1000 + fraction - offset).coerceAtLeast(0),
+                            text, alignment = alignment))
                     }
                 }
             }
             return when {
-                timed.any { it.text.isNotEmpty() } -> Lyrics(timed.sortedBy { it.timeMs }.take(10_000), true)
+                timed.any { it.text.isNotEmpty() } -> {
+                    val sorted = timed.sortedBy { it.timeMs }.take(10_000)
+                    // Preserve the original instrumental lead-in without fabricating word times.
+                    val ready = if (sorted.first().timeMs >= MIN_GAP_MS) listOf(LyricLine(0L, "")) + sorted else sorted
+                    Lyrics(ready, true)
+                }
                 plain.isNotEmpty() -> Lyrics(plain, false) // No fabricated timing for plain text.
                 else -> null
             }

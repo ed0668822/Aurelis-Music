@@ -1,4 +1,6 @@
-// Ported from BitChord. © 2026 Kushagra Singh (BitChord/Aurelis). GPL-3.0-or-later.
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Original contributor attribution is retained in NOTICE.
 package com.music.aurelis.data.lyrics
 
 /**
@@ -26,7 +28,9 @@ object EnhancedLrc {
             }
             val times = leading.mapNotNull(::stamp)
             val base = times.firstOrNull() ?: continue
-            val body = line.substring(end)
+            val annotated = line.substring(end)
+            val alignment = if (annotated.startsWith("<R>")) LyricAlignment.End else LyricAlignment.Start
+            val body = annotated.removePrefix("<R>")
             val matches = WORD.findAll(body).toList()
             val ends = matches.mapIndexed { index, match -> match.range.first to
                 (matches.getOrNull(index + 1)?.range?.first ?: body.length) }.toMap()
@@ -40,7 +44,7 @@ object EnhancedLrc {
                         val until = checkNotNull(ends[match.range.first])
                         TimedRun((at + time - base - offset).coerceAtLeast(0), 0L,
                             decodeEntities(body.substring(match.range.last + 1, until)))
-                    } else emptyList())
+                    } else emptyList(), alignment)
                 if (rows.size >= 10_000) break
             }
             if (rows.size >= 10_000) break
@@ -54,11 +58,11 @@ object EnhancedLrc {
             }
             val words = wordsFromRuns(runs)
             LyricLine(minOf(row.timeMs, words.firstOrNull()?.startMs ?: row.timeMs),
-                decodeEntities(WORD.replace(row.body, "")).trim(), words)
+                decodeEntities(WORD.replace(row.body, "")).trim(), words, alignment = row.alignment)
         }.withInstrumentalGaps()
     }
 
-    private class Row(val timeMs: Long, val body: String, val runs: List<TimedRun>)
+    private class Row(val timeMs: Long, val body: String, val runs: List<TimedRun>, val alignment: LyricAlignment)
 
     private fun stamp(match: MatchResult): Long? {
         val minutes = match.groupValues[1].toLongOrNull() ?: return null
