@@ -231,7 +231,8 @@ fun NowPlayingScreen(
     }
     var showQuality by rememberSaveable { mutableStateOf(false) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
-    var lyricsControlsOpen by rememberSaveable { mutableStateOf(true) }
+    // Enter lyrics as the full reading pane; the transport can be summoned by a tap.
+    var lyricsControlsOpen by rememberSaveable { mutableStateOf(false) }
     var showInlineQueue by rememberSaveable { mutableStateOf(false) }
     val queueListState = rememberLazyListState()
     var lyricsShareRequest by remember { mutableStateOf<LyricsShareRequest?>(null) }
@@ -384,7 +385,15 @@ fun NowPlayingScreen(
                     ),
                 )
 
-                val openLyrics: () -> Unit = { showInlineQueue = false; showLyrics = !showLyrics; lyricsControlsOpen = true }
+                val openLyrics: () -> Unit = {
+                    showInlineQueue = false
+                    val opening = !showLyrics
+                    showLyrics = opening
+                    if (opening) {
+                        lyricsControlsOpen = false
+                        showLyricsTools = false
+                    }
+                }
                 // F046: the queue belongs to this player in both orientations;
                 // switching panes never creates a second MediaController or queue.
                 val openQueue: () -> Unit = {
@@ -636,12 +645,14 @@ fun NowPlayingScreen(
                             )
                         }
                         Column(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
-                            if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
-                                IconButton(onClick = { showLyrics = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(28.dp)) {
+                            if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+                                // BitChord keeps the artwork, credits and menu in a compact
+                                // collapsed sleeve above an otherwise full-height lyric pane.
+                                IconButton(onClick = { showLyrics = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(22.dp)) {
                                     Box(Modifier.size(38.dp, 5.dp).background(Color.White, CircleShape)
                                         .semantics { contentDescription = context.getString(R.string.lyrics_ui_close) })
                                 }
-                                Row(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Row(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     AnimatedArtwork(s.id, s.artworkUri, size = 56.dp, corner = 8.dp)
                                     Spacer(Modifier.width(12.dp))
                                     Box(Modifier.weight(1f)) { credits(true) }

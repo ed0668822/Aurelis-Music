@@ -603,7 +603,10 @@ class PlayerIntegrationTest {
             val replacements = player.replacements
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
-            compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertIsDisplayed()
+            // BitChord presents full-height lyrics first; the source/transport
+            // is deliberately hidden until the reader reveals controls.
+            compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+            compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertDoesNotExist()
             compose.onNodeWithText("Primera frase propia").assertIsSelected()
             compose.onNodeWithText("Segunda frase propia").performClick()
             // Positive delays lyrics: media1500 - offset500 = lyric1000.
