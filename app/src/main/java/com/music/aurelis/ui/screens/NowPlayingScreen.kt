@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.rounded.AllInclusive
 import com.music.aurelis.ui.components.PlayerBottomGlyph
 import com.music.aurelis.ui.components.PlayerPlaybackActions
+import com.music.aurelis.ui.components.PlaybackOriginCaption
+import com.music.aurelis.data.model.PlaybackSourceType
 import com.music.aurelis.ui.components.PlayerCircleGlyph
 import com.music.aurelis.ui.components.PlayerVolumeRow
 import androidx.compose.material.icons.rounded.IosShare
@@ -325,14 +327,36 @@ fun NowPlayingScreen(
                             Box(Modifier.size(38.dp, 5.dp).background(MaterialTheme.colorScheme.onSurface, CircleShape)
                                 .semantics { contentDescription = context.getString(R.string.player_close) })
                         }
-                        val albumLabel = s.album?.takeIf { it.isNotBlank() } ?: stringResource(R.string.local_music)
-                        Text(stringResource(R.string.player_playing_album, albumLabel),
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.then(
-                                if (albumRoute != null) Modifier.clickable { onOpenCollection(albumRoute) }
-                                else Modifier
-                            ),
-                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        val originName = s.playbackSource?.trim()?.takeIf { it.isNotEmpty() }
+                        val originId = s.playbackSourceId?.takeIf { it.isNotBlank() }
+                        // Link only to a source that the local catalog can still resolve.
+                        val originRoute: AppRoute.Collection? = when (s.playbackSourceType) {
+                            PlaybackSourceType.LOCAL_FOLDER -> originId?.let {
+                                AppRoute.Collection(LocalCollectionKind.FOLDER, it)
+                            }
+                            PlaybackSourceType.HISTORY -> AppRoute.Collection(LocalCollectionKind.HISTORY)
+                            PlaybackSourceType.BROWSE -> when {
+                                albumRoute != null && originId == albumRoute.key &&
+                                    originName?.equals(s.album, ignoreCase = true) == true -> albumRoute
+                                else -> artistRoutes.entries.firstOrNull { (name, route) ->
+                                    route.key == originId && name.equals(originName, ignoreCase = true)
+                                }?.value ?: userLibraryState.playlists.firstOrNull {
+                                    it.id == originId && it.name == originName && s.id in it.songIds
+                                }?.let { AppRoute.Collection(LocalCollectionKind.PLAYLIST, it.id) }
+                            }
+                            else -> null
+                        }
+                        val originClick: (() -> Unit)? = when {
+                            originRoute != null -> { { onOpenCollection(originRoute) } }
+                            originName == null -> openQueue
+                            else -> null
+                        }
+                        PlaybackOriginCaption(
+                            text = stringResource(R.string.player_playing_album,
+                                originName ?: stringResource(R.string.queue)),
+                            onClick = originClick,
+                            modifier = Modifier.testTag("player-playback-origin"),
+                        )
                     } else Row(Modifier.fillMaxWidth().height(48.dp).testTag("player-handle")
                         .playerSwipeTrigger(1, closePlayer, panelMotion), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = closePlayer) {

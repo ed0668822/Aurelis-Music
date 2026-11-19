@@ -41,6 +41,7 @@ import com.music.aurelis.R
 import com.music.aurelis.data.LibraryState
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.data.model.PlaybackSourceType
 import com.music.aurelis.data.model.LocalAlbum
 import com.music.aurelis.data.model.LocalArtist
 import com.music.aurelis.ui.components.SongListItem
@@ -112,6 +113,22 @@ fun LocalCollectionScreen(
         LocalCollectionKind.PLAYLIST -> playlist?.name.orEmpty()
         LocalCollectionKind.ALBUM -> album?.name.orEmpty()
         LocalCollectionKind.ARTIST -> artist?.name.orEmpty()
+    }
+    // F045: queue provenance comes from the collection actually opened.
+    val originType = when (route.kind) {
+        LocalCollectionKind.FOLDER -> PlaybackSourceType.LOCAL_FOLDER
+        LocalCollectionKind.GENRE -> PlaybackSourceType.EXPLORE
+        LocalCollectionKind.HISTORY -> PlaybackSourceType.HISTORY
+        else -> PlaybackSourceType.BROWSE
+    }
+    val playFromCollection: (List<LocalSong>, Int) -> Unit = { chosen, index ->
+        onPlay(chosen.map { song ->
+            song.copy(
+                playbackSource = title.takeIf { it.isNotBlank() },
+                playbackSourceType = originType,
+                playbackSourceId = route.key.takeIf { it.isNotBlank() },
+            )
+        }, index)
     }
     var grid by rememberSaveable { mutableStateOf(false) }
     var selectionMode by rememberSaveable(route) { mutableStateOf(false) }
@@ -192,7 +209,7 @@ fun LocalCollectionScreen(
             if (songs.isEmpty() && library is LibraryState.Success) Text(stringResource(R.string.collection_empty))
             if (playlist != null && playlist.songIds.size > songs.size) Text(stringResource(R.string.collection_missing_tracks))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (!hasDetailHeader) Button(onClick = { onPlay(displaySongs, 0) }, enabled = displaySongs.isNotEmpty()) {
+                if (!hasDetailHeader) Button(onClick = { playFromCollection(displaySongs, 0) }, enabled = displaySongs.isNotEmpty()) {
                     Text(stringResource(R.string.collection_play))
                 }
                 Box {
@@ -201,8 +218,8 @@ fun LocalCollectionScreen(
                     }
                     BrowseActionsMenu(onDismiss = { collectionActionsExpanded = false },
                         expanded = collectionActionsExpanded,
-                        onPlay = if (displaySongs.isEmpty()) null else ({ onPlay(displaySongs, 0) }),
-                        onShuffle = if (displaySongs.isEmpty()) null else ({ onPlay(displaySongs.shuffled(), 0) }),
+                        onPlay = if (displaySongs.isEmpty()) null else ({ playFromCollection(displaySongs, 0) }),
+                        onShuffle = if (displaySongs.isEmpty()) null else ({ playFromCollection(displaySongs.shuffled(), 0) }),
                         onPlayNext = if (displaySongs.isEmpty() || onPlayNext == null) null
                             else ({ onPlayNext(displaySongs) }),
                         onAddToQueue = if (displaySongs.isEmpty() || onAddToQueue == null) null
@@ -252,7 +269,7 @@ fun LocalCollectionScreen(
                         enabled = displaySongs.isNotEmpty() && !allVisibleSelected) { Text("Todas") }
                     TextButton(onClick = { selected = emptySet() },
                         enabled = selectedSongs.isNotEmpty()) { Text("Ninguna") }
-                    TextButton(enabled = selectedSongs.isNotEmpty(), onClick = { onPlay(selectedSongs, 0) }) { Text("Reproducir") }
+                    TextButton(enabled = selectedSongs.isNotEmpty(), onClick = { playFromCollection(selectedSongs, 0) }) { Text("Reproducir") }
                     TextButton(enabled = selectedSongs.isNotEmpty() && !user.readOnly, onClick = {
                         selectedSongs.filterNot { it.id in user.favorites }.forEach { store.toggleFavorite(it.id) }
                     }) { Text("Favoritos") }
@@ -298,8 +315,8 @@ fun LocalCollectionScreen(
                         LocalDetailHeader(title.ifBlank { stringResource(R.string.collection_unavailable) },
                             if (route.kind == LocalCollectionKind.ALBUM) album?.artist.orEmpty() else "",
                             metadata, sleeve, artwork, placeholder,
-                            onPlay = { onPlay(displaySongs, 0) },
-                            onShuffle = { onPlay(displaySongs.shuffled(), 0) },
+                            onPlay = { playFromCollection(displaySongs, 0) },
+                            onShuffle = { playFromCollection(displaySongs.shuffled(), 0) },
                             canPlay = displaySongs.isNotEmpty())
                     }
                 }
@@ -365,7 +382,7 @@ fun LocalCollectionScreen(
                         }
                         SongListItem(song, song.id == currentSongId && isPlaying, {
                             if (selectionMode) selected = if (song.id in selected) selected - song.id else selected + song.id
-                            else onPlay(displaySongs, index)
+                            else playFromCollection(displaySongs, index)
                         }, Modifier.weight(1f))
                         IconButton(onClick = { store.toggleFavorite(song.id) },
                             enabled = !selectionMode && !user.readOnly) {

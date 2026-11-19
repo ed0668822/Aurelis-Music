@@ -141,10 +141,18 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
         for (album in listOf(null, "", "   ", "Álbum 100% local")) {
             compose.runOnIdle { vm.playSongs(listOf(song("1").copy(album = album))) }
-            val expected = album?.takeIf { it.isNotBlank() } ?: compose.activity.getString(R.string.local_music)
-            compose.onNodeWithText(compose.activity.getString(R.string.player_playing_album, expected)).assertIsDisplayed()
+            // Tags alone cannot prove the source of the queue.
+            compose.onNodeWithText(compose.activity.getString(
+                R.string.player_playing_album, compose.activity.getString(R.string.queue))).assertIsDisplayed()
             compose.runOnIdle { assertEquals("1", vm.state.value.currentSong?.id) }
         }
+        compose.runOnIdle { vm.playSongs(listOf(song("1").copy(
+            playbackSource = "Mi lista local",
+            playbackSourceType = com.music.aurelis.data.model.PlaybackSourceType.BROWSE,
+            playbackSourceId = "test-source",
+        ))) }
+        compose.onNodeWithText(compose.activity.getString(
+            R.string.player_playing_album, "Mi lista local")).assertIsDisplayed()
     }
 
     @Test fun hidingVolumePreservesTheControlDeckAndTransportPlacement() {

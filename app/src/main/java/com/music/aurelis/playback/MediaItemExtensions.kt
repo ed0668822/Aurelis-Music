@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.playback
 
 import androidx.media3.common.MediaItem
@@ -9,6 +10,9 @@ import java.util.concurrent.ConcurrentHashMap
 internal const val EXTRA_QUEUE_ENTRY_ID = "bitchord.queueEntryId"
 internal const val EXTRA_CANONICAL_INDEX = "bitchord.canonicalIndex"
 internal const val EXTRA_QUEUE_TIER = "bitchord.queueTier"
+internal const val EXTRA_SOURCE_TITLE = "aurelis.playbackSource"
+internal const val EXTRA_SOURCE_TYPE = "aurelis.playbackSourceType"
+internal const val EXTRA_SOURCE_ID = "aurelis.playbackSourceId"
 
 internal val mediaItemEntryIds = ConcurrentHashMap<MediaItem, String>()
 internal val mediaItemCanonicalIndices = ConcurrentHashMap<MediaItem, Int>()
@@ -44,6 +48,9 @@ fun LocalSong.toMediaItem(): MediaItem {
                 .setExtras(android.os.Bundle().apply {
                     putString(EXTRA_QUEUE_ENTRY_ID, queueEntryId)
                     putString(EXTRA_QUEUE_TIER, queueTier.name)
+                    putString(EXTRA_SOURCE_TITLE, playbackSource)
+                    putString(EXTRA_SOURCE_TYPE, playbackSourceType?.name)
+                    putString(EXTRA_SOURCE_ID, playbackSourceId)
                     putLong("durationMs", durationMs)
                     putString("filePath", filePath)
                     putInt("trackNumber", trackNumber ?: -1)
@@ -86,5 +93,10 @@ internal fun MediaItem.toLocalSong(): LocalSong {
         dateModifiedMs = extras?.getLong("dateModifiedMs", 0) ?: 0,
         sizeBytesKnown = extras?.getBoolean("sizeBytesKnown", false) ?: false,
         queueTier = queueTier, queueEntryId = queueEntryId,
+        playbackSource = extras?.getString(EXTRA_SOURCE_TITLE)?.takeIf { it.isNotBlank() },
+        playbackSourceType = extras?.getString(EXTRA_SOURCE_TYPE)?.let { value ->
+            runCatching { com.music.aurelis.data.model.PlaybackSourceType.valueOf(value) }.getOrNull()
+        },
+        playbackSourceId = extras?.getString(EXTRA_SOURCE_ID)?.takeIf { it.isNotBlank() },
     )
 }
