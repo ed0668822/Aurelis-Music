@@ -64,8 +64,12 @@ class PlayerIntegrationTest {
     /** On the BitChord-style full-screen lyric pane, the bottom-half tap restores
      * controls before translation/search buttons become interactive. */
     private fun revealFullScreenLyricsControls() {
-        compose.onNodeWithTag("lyrics-list").performTouchInput {
-            click(androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.75f))
+        val list = compose.onNodeWithTag("lyrics-list")
+        val bounds = list.fetchSemanticsNode().boundsInRoot
+        // TouchInjectionScope does not expose PointerInputScope.size; use the
+        // actual measured Compose node to pick a point in its bottom half.
+        list.performTouchInput {
+            click(androidx.compose.ui.geometry.Offset(bounds.width / 2f, bounds.height * 0.75f))
         }
         compose.waitForIdle()
     }
