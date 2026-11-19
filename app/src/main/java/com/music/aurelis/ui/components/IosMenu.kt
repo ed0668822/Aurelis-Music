@@ -78,6 +78,7 @@ internal fun heldMenuTransformOrigin(anchor: IntRect?, panel: IntRect): Transfor
 /** Focusable bounded action panel. Back and outside taps dismiss the real owner. */
 @Composable
 fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
+    anchorBounds: IntRect? = null,
     content: @Composable ColumnScope.() -> Unit) {
     val menuState = LocalHeldMenuState.current
     // Consume only the opener of this menu; later button-opened menus cannot reuse it.
@@ -89,7 +90,9 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
             menuState?.restoreAnchor = anchor?.takeIf { it.attached }
         }
     }
-    val bounds = anchor?.bounds
+    // An explicit three-dot button uses its own window coordinates; long-press
+    // menus still use the automatically captured held-row anchor.
+    val bounds = anchorBounds ?: anchor?.bounds
     val density = LocalDensity.current
     val margin = with(density) { 16.dp.roundToPx() }
     val gap = with(density) { 8.dp.roundToPx() }

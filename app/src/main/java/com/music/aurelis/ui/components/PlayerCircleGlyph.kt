@@ -36,7 +36,8 @@ import com.music.aurelis.ui.theme.LocalReduceMotion
 @Composable
 internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> Unit,
     active: Boolean = false, haptic: Haptic = Haptic.Tap,
-    enabled: Boolean = true, checkable: Boolean = false) {
+    enabled: Boolean = true, checkable: Boolean = false,
+    modifier: Modifier = Modifier) {
     val haptics = rememberHaptics()
     // BitChord keeps the player glyph pure white; the disc and star fill
     // distinguish favorite states, not a theme-primary tint.
@@ -63,7 +64,7 @@ internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> 
     // The icon is decorative inside this clickable/toggleable target. Attach
     // its accessible name to the *interactive* node so UI automation and
     // TalkBack find the same action after the target grows to 48dp.
-    Box(Modifier.size(48.dp).then(touch).semantics { contentDescription = label },
+    Box(modifier.size(48.dp).then(touch).semantics { contentDescription = label },
         contentAlignment = Alignment.Center) {
         Box(Modifier.size(34.dp).graphicsLayer {
             scaleX = pressScale

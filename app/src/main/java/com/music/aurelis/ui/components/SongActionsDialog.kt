@@ -22,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
@@ -42,12 +45,15 @@ fun SongActionsDialog(
     song: LocalSong, store: LocalUserLibrary, onEnqueue: () -> Unit, onDismiss: () -> Unit,
     onPlayNext: () -> Unit, queueActionsEnabled: Boolean = true, playNextEnabled: Boolean = true,
     onOpenAlbum: (() -> Unit)? = null, onOpenArtist: (() -> Unit)? = null,
+    anchorBounds: IntRect? = null,
+    onLyricsOffset: (() -> Unit)? = null,
+    onPlaybackTools: (() -> Unit)? = null,
 ) {
     val user by store.state.collectAsState()
     var name by remember(song.id) { mutableStateOf("") }
     val favorite = song.id in user.favorites
 
-    HeldContextMenu(onDismiss, compactSongStyle = true) {
+    HeldContextMenu(onDismiss, compactSongStyle = true, anchorBounds = anchorBounds) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -140,6 +146,23 @@ fun SongActionsDialog(
                 SongMenuAction(
                     icon = AurelisIcons.Artist, label = "Abrir artista", enabled = true,
                     onClick = { onDismiss(); open() },
+                )
+            }
+        }
+        // BitChord's compact three-dot menu also groups current-player tools.
+        // These actions remain connected to Aurelis' existing local settings.
+        if (onLyricsOffset != null || onPlaybackTools != null) {
+            HorizontalDivider(Modifier.padding(vertical = 6.dp))
+            onLyricsOffset?.let { open ->
+                SongMenuAction(
+                    icon = Icons.Rounded.Tune, label = "Desplazamiento de letras",
+                    enabled = true, onClick = { onDismiss(); open() },
+                )
+            }
+            onPlaybackTools?.let { open ->
+                SongMenuAction(
+                    icon = Icons.Rounded.Timer, label = "Herramientas de reproducción",
+                    enabled = true, onClick = { onDismiss(); open() },
                 )
             }
         }

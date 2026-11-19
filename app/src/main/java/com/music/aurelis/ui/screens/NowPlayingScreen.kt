@@ -123,6 +123,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.unit.IntRect
+import kotlin.math.roundToInt
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import com.music.aurelis.ui.player.PlayerDock
@@ -209,6 +212,7 @@ fun NowPlayingScreen(
     val userStore by application.libraries.collectAsState()
     val userLibraryState by userStore.state.collectAsState()
     var showSongActions by remember { mutableStateOf(false) }
+    var songMenuAnchor by remember { mutableStateOf<IntRect?>(null) }
     val themeViewModel: DynamicThemeViewModel = viewModel()
 
     LaunchedEffect(song?.artworkUri) {
@@ -237,7 +241,12 @@ fun NowPlayingScreen(
     val queueListState = rememberLazyListState()
     var lyricsShareRequest by remember { mutableStateOf<LyricsShareRequest?>(null) }
     var showLyricsTools by remember { mutableStateOf(false) }
-    LaunchedEffect(song?.queueEntryId, song?.id, isVisible) { lyricsShareRequest = null; showLyricsTools = false; lyricsControlsOpen = true }
+    LaunchedEffect(song?.queueEntryId, song?.id, isVisible) {
+        lyricsShareRequest = null
+        showLyricsTools = false
+        // Switching tracks must not reveal the transport over full-screen lyrics.
+        lyricsControlsOpen = !showLyrics
+    }
     var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
@@ -453,7 +462,12 @@ fun NowPlayingScreen(
                         IconButton(onClick = { showLyricsSources = true }) {
                             Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources))
                         }
-                        IconButton(onClick = { showSongActions = true }) {
+                        IconButton(onClick = { showSongActions = true },
+                            modifier = Modifier.onGloballyPositioned { coordinates ->
+                                val b = coordinates.boundsInWindow()
+                                songMenuAnchor = IntRect(b.left.roundToInt(), b.top.roundToInt(),
+                                    b.right.roundToInt(), b.bottom.roundToInt())
+                            }) {
                             Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions), Modifier.size(26.dp))
                         }
                     }
@@ -533,7 +547,15 @@ fun NowPlayingScreen(
                             enabled = !userLibraryState.readOnly, checkable = true)
                         if (!landscape) {
                             Spacer(Modifier.width(8.dp))
-                            PlayerCircleGlyph(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions), { showSongActions = true })
+                            PlayerCircleGlyph(
+                                Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions),
+                                { showSongActions = true },
+                                modifier = Modifier.onGloballyPositioned { coordinates ->
+                                    val b = coordinates.boundsInWindow()
+                                    songMenuAnchor = IntRect(b.left.roundToInt(), b.top.roundToInt(),
+                                        b.right.roundToInt(), b.bottom.roundToInt())
+                                },
+                            )
                         }
                     }
                 }
@@ -880,7 +902,11 @@ fun NowPlayingScreen(
                     onOpenAlbum = albumRoute?.let { destination -> { onOpenCollection(destination) } },
                     onOpenArtist = artistRoutes.values.distinct().singleOrNull()?.let { destination ->
                         { onOpenCollection(destination) }
-                    })
+                    },
+                    anchorBounds = songMenuAnchor,
+                    onLyricsOffset = { showLyricsOffset = true },
+                    onPlaybackTools = { showPlaybackTools = true },
+                )
                 if (showLyricsSources) {
                     LyricsSourcesDialog(onDismiss = { showLyricsSources = false },
                         currentSource = (state.lyrics as? LyricsState.Loaded)?.source,
