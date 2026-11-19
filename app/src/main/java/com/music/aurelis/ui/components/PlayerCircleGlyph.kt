@@ -9,6 +9,7 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -41,6 +43,13 @@ internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> 
     val alpha by animateFloatAsState(if (active) 0.34f else 0.18f,
         animationSpec = if (reduced) snap() else spring(), label = "glyphDisc")
     val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    // Keep the original 34dp artwork but provide a full 48dp touch region.
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed && enabled && !reduced) 0.94f else 1f,
+        animationSpec = if (reduced) snap() else tween(110),
+        label = "circlePress",
+    )
     val touch = if (checkable) Modifier.toggleable(
         value = active, enabled = enabled, role = Role.Checkbox,
         interactionSource = interaction, indication = null,
@@ -49,13 +58,17 @@ internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> 
         enabled = enabled, interactionSource = interaction, indication = null,
         onClick = { haptics.play(haptic); onClick() },
     )
-    Box(Modifier.size(34.dp).clip(CircleShape)
-        .then(touch), contentAlignment = Alignment.Center) {
-        Box(Modifier.matchParentSize()
-            .background(tint.copy(alpha = if (enabled) alpha else alpha * 0.35f)))
-        Crossfade(icon, animationSpec = tween(if (reduced) 0 else 180), label = "playerMenuGlyph") { glyph ->
-            Icon(glyph, label, tint = tint.copy(alpha = if (enabled) 1f else 0.38f),
-                modifier = Modifier.size(19.dp))
+    Box(Modifier.size(48.dp).then(touch), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(34.dp).graphicsLayer {
+            scaleX = pressScale
+            scaleY = pressScale
+        }.clip(CircleShape), contentAlignment = Alignment.Center) {
+            Box(Modifier.matchParentSize()
+                .background(tint.copy(alpha = if (enabled) alpha else alpha * 0.35f)))
+            Crossfade(icon, animationSpec = tween(if (reduced) 0 else 180), label = "playerMenuGlyph") { glyph ->
+                Icon(glyph, null, tint = tint.copy(alpha = if (enabled) 1f else 0.38f),
+                    modifier = Modifier.size(19.dp))
+            }
         }
     }
 }

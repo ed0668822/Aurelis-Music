@@ -6,6 +6,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -82,11 +83,21 @@ private fun TransportGlyph(@DrawableRes resource: Int, label: String, size: Dp, 
     val alpha by animateFloatAsState(if (enabled) 1f else 0.3f,
         animationSpec = if (reduced) snap() else tween(180), label = "transportAvailability")
     val ink = playerControlTint(MaterialTheme.colorScheme.onSurface, true, blend)
-    Box(Modifier.size(target).clickable(interactionSource = remember { MutableInteractionSource() },
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (enabled && pressed && !reduced) 0.94f else 1f,
+        animationSpec = if (reduced) snap() else tween(110),
+        label = "transportPress",
+    )
+    Box(Modifier.size(target).clickable(interactionSource = interaction,
         indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
         .semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
         if (loading) CircularProgressIndicator(Modifier.size(30.dp), color = ink, strokeWidth = 2.dp)
         else Icon(painterResource(resource), null, tint = ink.copy(alpha = ink.alpha * alpha),
-            modifier = Modifier.size(size).graphicsLayer { scaleY = squash }.playerAdditiveChrome(blend))
+            modifier = Modifier.size(size).graphicsLayer {
+                scaleX = pressScale
+                scaleY = squash * pressScale
+            }.playerAdditiveChrome(blend))
     }
 }
