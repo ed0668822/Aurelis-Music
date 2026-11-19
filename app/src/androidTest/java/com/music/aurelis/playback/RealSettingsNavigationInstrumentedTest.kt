@@ -162,7 +162,22 @@ class RealSettingsNavigationInstrumentedTest {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 android.util.Log.i("SettingsNavigationTest", "Exercising real local welcome")
                 await(context.getString(R.string.onboarding_next), click = true)
-                await(context.getString(R.string.onboarding_start), click = true)
+                // Page 2 permits finishing without audio-library permission. Android 16
+                // may show "Skip" instead of "Get started"; both are real completion
+                // actions and must persist the onboarding flag before navigation.
+                val startLabel = context.getString(R.string.onboarding_start)
+                val skipLabel = context.getString(R.string.onboarding_skip)
+                val deadline = SystemClock.elapsedRealtime() + 15_000L
+                var finishedWelcome = false
+                while (!finishedWelcome && SystemClock.elapsedRealtime() < deadline) {
+                    val controls = rows()
+                    val choice = controls.firstOrNull { labeled(it, startLabel) && it.isEnabled }
+                        ?: controls.firstOrNull { labeled(it, skipLabel) && it.isEnabled }
+                    if (choice != null) finishedWelcome = clickLabeledControl(choice)
+                    if (!finishedWelcome) SystemClock.sleep(150)
+                }
+                assertTrue("Permission page must offer a real Finish or Skip action; " +
+                    windowDiagnostic(), finishedWelcome)
                 await(context.getString(R.string.settings_profile_action))
                 assertTrue("Welcome completion must persist before navigation",
                     startup.getBoolean("local_onboarding_complete", false))
