@@ -159,9 +159,11 @@ import com.music.aurelis.ui.components.LyricsSourcesDialog
 import com.music.aurelis.ui.components.PlayerControls
 import com.music.aurelis.ui.components.TranslationLanguageDialog
 import com.music.aurelis.ui.player.LyricsOffsetSheet
-import com.music.aurelis.ui.player.MeshGradientBackground
+import com.music.aurelis.ui.player.ArtworkMeshBackdrop
+import com.music.aurelis.ui.player.FullArtworkBlurBackdrop
+import com.music.aurelis.ui.player.rememberArtworkMesh
+import com.music.aurelis.ui.player.rememberFullArtworkBlurImage
 import com.music.aurelis.ui.player.SyncedLyricsPanel
-import com.music.aurelis.ui.player.rememberArtworkColors
 import com.music.aurelis.ui.theme.ArtworkColors
 import com.music.aurelis.ui.theme.DynamicAurelisTheme
 import com.music.aurelis.ui.theme.DynamicThemeViewModel
@@ -314,14 +316,36 @@ fun NowPlayingScreen(
             ) {
                 val landscape = maxWidth > maxHeight
                 val compactLyrics = maxHeight < 600.dp
-                val meshPalette = if (!reduceBlur) rememberArtworkColors(s.artworkUri?.let { Uri.parse(it) }) else null
-                if (meshPalette != null) MeshGradientBackground(
-                    palette = meshPalette,
-                    trackKey = s.id,
-                    continuous = false,
+                // F051: use the original artwork-proportional, pre-blurred
+                // default mesh instead of the legacy orbiting radial blobs.
+                val coverUri = remember(s.artworkUri) {
+                    s.artworkUri?.takeIf(String::isNotBlank)?.let(Uri::parse)
+                }
+                val artworkMesh = rememberArtworkMesh(coverUri)
+                val preparedBlur = rememberFullArtworkBlurImage(coverUri)
+                val seamlessCoverEnd = if (landscape) 0.dp else portraitArtworkSize(maxWidth, maxHeight)
+                ArtworkMeshBackdrop(
+                    mesh = artworkMesh,
+                    seam = seamlessCoverEnd,
                     reduceAnimation = reduceAnimation,
+                    reduceDynamicBlur = reduceBlur,
                     modifier = Modifier.fillMaxSize().testTag("player-mesh-background"),
                 )
+                // Original BitChord switches to its prepared still-art blur
+                // whenever lyrics/queue panels or a landscape layout are shown.
+                val blurBackdropAlpha by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (preparedBlur != null && (landscape || showLyrics || showInlineQueue)) 1f else 0f,
+                    animationSpec = if (reduceAnimation) androidx.compose.animation.core.snap()
+                        else tween(360, easing = FastOutSlowInEasing),
+                    label = "preparedBackdropAlpha",
+                )
+                if (blurBackdropAlpha > 0f) {
+                    FullArtworkBlurBackdrop(
+                        image = preparedBlur,
+                        reduceAnimation = reduceAnimation,
+                        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = blurBackdropAlpha },
+                    )
+                }
 
                 Box(
                     modifier = Modifier
