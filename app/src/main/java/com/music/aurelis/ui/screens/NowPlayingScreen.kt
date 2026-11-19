@@ -317,9 +317,11 @@ fun NowPlayingScreen(
                 )
 
                 val openLyrics: () -> Unit = { showInlineQueue = false; showLyrics = !showLyrics; lyricsControlsOpen = true }
+                // F046: the queue belongs to this player in both orientations;
+                // switching panes never creates a second MediaController or queue.
                 val openQueue: () -> Unit = {
-                    if (landscape) { showLyrics = false; showInlineQueue = !showInlineQueue }
-                    else onOpenQueue()
+                    showLyrics = false
+                    showInlineQueue = !showInlineQueue
                 }
                 val header: @Composable () -> Unit = {
                     if (!landscape) Column(Modifier.fillMaxWidth().testTag("player-handle").playerSwipeTrigger(1, closePlayer, panelMotion), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -704,7 +706,26 @@ fun NowPlayingScreen(
                     exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else fadeOut(tween(420, easing = FastOutSlowInEasing))) {
                     Box(Modifier.fillMaxSize().then(if (!showLyrics) Modifier.clearAndSetSemantics { } else Modifier)) { lyricsContent() }
                 }
-                if (showInlineQueue && !landscape) QueueScreen(playbackViewModel, true, { showInlineQueue = false }, listState = queueListState)
+                // The queue is a pane of the current player, not an independent
+                // 85%-height sheet. Keep transport and queue-mode controls anchored
+                // while the same canonical Media3 queue scrolls above them.
+                if (showInlineQueue && !landscape) {
+                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                        .testTag("player-queue-pane")) {
+                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+                            .padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(Modifier.weight(1f).fillMaxWidth()) {
+                                QueueScreen(playbackViewModel, true,
+                                    { showInlineQueue = false }, embedded = true,
+                                    listState = queueListState)
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            transport(true)
+                            actions()
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
+                }
 
                 lyricsShareRequest?.let { request -> AndroidLyricsShareSheet(hazeState, request, { lyricsShareRequest = null }) }
                 if (showPlaybackTools) com.music.aurelis.ui.components.PlaybackToolsDialog(

@@ -117,7 +117,7 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
             InlineQueue(
                 queue = state.queue,
                 currentIndex = state.currentIndex,
-                autoplayEnabled = false,
+                autoplayEnabled = state.autoplayEnabled,
                 controlsLocked = !state.isConnected || !state.canEditQueue,
                 onJumpTo = playbackViewModel::seekToIndex,
                 onRemove = playbackViewModel::removeFromQueue,

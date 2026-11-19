@@ -55,16 +55,27 @@ fun QueueSidePanel(
     onMove: (Int, Int) -> Unit,
     onClear: () -> Unit,
     modifier: Modifier = Modifier,
+    // External layouts must pass the same Media3 order and edit capabilities
+    // as the full player; there is never a second locally invented queue.
+    playbackOrder: List<Int>? = null,
+    controlsLocked: Boolean = false,
+    canReorder: Boolean = true,
+    listState: androidx.compose.foundation.lazy.LazyListState? = null,
 ) {
     InlineQueue(
         queue = queue,
         currentIndex = queueIndex,
         autoplayEnabled = autoplayEnabled,
-        controlsLocked = false,
+        controlsLocked = controlsLocked,
         onJumpTo = onJumpTo,
         onRemove = onRemove,
         onMove = onMove,
         onClear = onClear,
         modifier = modifier,
+        groupByTier = false,
+        playbackOrder = playbackOrder,
+        canReorder = canReorder,
+        listState = listState ?: androidx.compose.foundation.lazy.rememberLazyListState(),
+        scrollToCurrentOnAttach = listState == null,
     )
 }
