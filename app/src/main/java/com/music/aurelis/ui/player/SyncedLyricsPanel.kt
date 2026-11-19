@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -118,10 +119,20 @@ fun SyncedLyricsPanel(
     }
     // The earliest unfinished vocal owns the scroll anchor (BitChord PlayerLyrics).
     val activeIndex = active.firstOrNull() ?: -1
+    // Only scrolling runs ahead of the vocals; highlighting remains on the true clock.
+    val scrollFocus by remember(lines, playhead, synchronise, activeIndex) {
+        derivedStateOf {
+            if (!synchronise) -1 else {
+                val now = playhead.value
+                activeLyricRows(lines, (now + lyricScrollLeadMs(lines, now)).coerceAtMost(Long.MAX_VALUE)).firstOrNull()
+                    ?: activeIndex
+            }
+        }
+    }
     val duet = remember(lines) { lines.any { it.alignment == LyricAlignment.End } }
     val scrolling by remember(listState) { derivedStateOf { listState.isScrollInProgress } }
-    val activeOnScreen by remember(listState, activeIndex) { derivedStateOf {
-        listState.layoutInfo.visibleItemsInfo.any { it.index == activeIndex }
+    val activeOnScreen by remember(listState, scrollFocus) { derivedStateOf {
+        listState.layoutInfo.visibleItemsInfo.any { it.index == scrollFocus }
     } }
     LaunchedEffect(dragging, scrolling, following, manuallyPaused, isPlaying, picking, activeOnScreen) {
         if (!following && !manuallyPaused && !dragging && !scrolling && isPlaying && !picking) {
@@ -130,19 +141,26 @@ fun SyncedLyricsPanel(
         }
     }
 
-    LaunchedEffect(trackKey, lines, activeIndex, following, looking, synchronise, dragging, picking, viewportHeight, centerFocus, reduceMotion) {
-        if (!synchronise || !looking || !following || dragging || picking || activeIndex !in lines.indices || viewportHeight <= 0) return@LaunchedEffect
+    var firstPlacement by remember(trackKey) { mutableStateOf(false) }
+    LaunchedEffect(trackKey, lines, scrollFocus, following, looking, synchronise, dragging, picking, viewportHeight, centerFocus, reduceMotion) {
+        if (!synchronise || !looking || !following || dragging || picking || scrollFocus !in lines.indices || viewportHeight <= 0) return@LaunchedEffect
+        if (!firstPlacement) {
+            listState.scrollToItem(scrollFocus)
+            firstPlacement = true
+        }
         if (!centerFocus) {
-            if (reduceMotion) listState.scrollToItem(activeIndex) else listState.animateScrollToItem(activeIndex)
+            if (reduceMotion) listState.scrollToItem(scrollFocus)
+            else listState.animateScrollToItem(scrollFocus)
         } else {
-            withFrameNanos { } // Measure after the padding/viewport update before reading geometry.
-            if (listState.layoutInfo.visibleItemsInfo.none { it.index == activeIndex }) listState.scrollToItem(activeIndex)
+            withFrameNanos { }
+            if (listState.layoutInfo.visibleItemsInfo.none { it.index == scrollFocus }) listState.scrollToItem(scrollFocus)
             withFrameNanos { }
             val layout = listState.layoutInfo
-            val item = layout.visibleItemsInfo.firstOrNull { it.index == activeIndex } ?: return@LaunchedEffect
+            val item = layout.visibleItemsInfo.firstOrNull { it.index == scrollFocus } ?: return@LaunchedEffect
             val delta = item.offset + item.size / 2f - (layout.viewportStartOffset + layout.viewportEndOffset) / 2f
             if (abs(delta) > 0.5f) {
-                if (reduceMotion) listState.scrollBy(delta) else listState.animateScrollBy(delta)
+                if (reduceMotion) listState.scrollBy(delta)
+                else listState.animateScrollBy(delta, tween(lyricScrollLeadMs(lines, playhead.value).toInt(), easing = LyricSettleEasing))
             }
         }
     }
