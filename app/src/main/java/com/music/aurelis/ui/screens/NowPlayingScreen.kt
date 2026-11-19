@@ -854,9 +854,8 @@ fun NowPlayingScreen(
                 if (showInlineQueue && !landscape) {
                     Box(Modifier.fillMaxSize().background(Color(0xFF121213))
                         .testTag("player-queue-pane")) {
-                        // F062: a real artwork-coloured queue page rather than
-                        // the former full-screen, hard-edged black panel.
-                        // The upper layout still uses the existing Media3 queue.
+                        // Keep the artwork-coloured backdrop from the same song,
+                        // not a separate black queue page.
                         if (!reduceBlur) {
                             FullArtworkBlurBackdrop(
                                 image = rememberFullArtworkBlurImage(coverUri),
@@ -864,17 +863,47 @@ fun NowPlayingScreen(
                                 reduceAnimation = reduceAnimation,
                             )
                         }
-                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
-                            .padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(
+                            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+                                .padding(horizontal = 24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            // Same collapsed sleeve as BitChord's lyrics/queue panes:
+                            // mini-art, title/artist, favorite and anchored overflow.
+                            Column(Modifier.fillMaxWidth()
+                                .testTag("player-queue-collapsed-header")) {
+                                IconButton(
+                                    onClick = { showInlineQueue = false },
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                        .height(28.dp)
+                                        .semantics { contentDescription = "Cerrar" },
+                                ) {
+                                    Box(Modifier.size(38.dp, 5.dp)
+                                        .background(Color.White, CircleShape))
+                                }
+                                Row(
+                                    Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    AnimatedArtwork(s.id, s.artworkUri, size = 56.dp, corner = 8.dp)
+                                    Spacer(Modifier.width(12.dp))
+                                    Box(Modifier.weight(1f)) { credits(true) }
+                                }
+                            }
                             Box(Modifier.weight(1f).fillMaxWidth()) {
-                                QueueScreen(playbackViewModel, true,
-                                    { showInlineQueue = false }, embedded = true,
-                                    listState = queueListState)
+                                QueueScreen(
+                                    playbackViewModel, true, { showInlineQueue = false },
+                                    embedded = true, listState = queueListState,
+                                    compactPlayerHeader = true,
+                                )
                             }
                             Spacer(Modifier.height(4.dp))
-                            transport(true)
-                            actions()
-                            Spacer(Modifier.height(12.dp))
+                            // Reuse the actual scrubber, transport, volume and
+                            // BitChord-style action capsule of this same player.
+                            Box(Modifier.fillMaxWidth()
+                                .testTag("player-queue-shared-deck")) {
+                                deck(maxHeight < 650.dp, false)
+                            }
                         }
                     }
                 }

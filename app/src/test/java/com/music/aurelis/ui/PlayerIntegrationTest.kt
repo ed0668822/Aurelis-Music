@@ -16,6 +16,8 @@ import com.music.aurelis.R
 import com.music.aurelis.*
 import com.music.aurelis.data.*
 import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.data.model.QueueTier
+import com.music.aurelis.ui.screens.queueSectionsPreservePlaybackOrder
 import com.music.aurelis.playback.*
 import com.music.aurelis.ui.navigation.*
 import com.music.aurelis.ui.theme.AurelisTheme
@@ -265,6 +267,32 @@ class PlayerIntegrationTest {
         compose.onNodeWithText("Cancelar temporizador").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Cerrar").performClick()
         compose.runOnIdle { assertEquals(current, vm.state.value.currentSong?.queueEntryId); assertFalse(player.playWhenReady) }
+    }
+
+    @Test fun queueSectionsOnlyGroupWhenTheyPreserveRealPlaybackOrder() {
+        val songs = listOf(
+            song("1"),
+            song("2").copy(queueTier = QueueTier.USER_QUEUE),
+            song("3").copy(queueTier = QueueTier.CONTEXT),
+            song("4").copy(queueTier = QueueTier.AUTOPLAY),
+        )
+        assertTrue(queueSectionsPreservePlaybackOrder(songs, listOf(0, 1, 2, 3), 0))
+        assertFalse(queueSectionsPreservePlaybackOrder(songs, listOf(0, 2, 1, 3), 0))
+        assertFalse(queueSectionsPreservePlaybackOrder(songs, listOf(0, 1, 1, 3), 0))
+    }
+
+    @Test fun queueUsesSongSleeveAndTheSameTransportDeckAsThePlayer() {
+        start()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_queue)).performClick()
+        compose.onNodeWithTag("player-queue-collapsed-header").assertIsDisplayed()
+        compose.onNodeWithTag("player-queue-shared-deck").assertIsDisplayed()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_seek)).assertIsDisplayed()
+        compose.onNodeWithTag("player-mode-pill").assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.now_playing)).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Cerrar").performClick()
+        compose.onNodeWithTag("player-queue-collapsed-header").assertDoesNotExist()
+        compose.onNodeWithTag("player-portrait").assertIsDisplayed()
     }
 
     @Test fun flatQueueCanClearOnlyAddedFutureOccurrencesWithoutChangingPlayback() {

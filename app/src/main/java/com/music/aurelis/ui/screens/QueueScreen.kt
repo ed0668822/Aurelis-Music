@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -25,9 +26,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.music.aurelis.playback.PlaybackViewModel
+import com.music.aurelis.data.model.LocalSong
+import com.music.aurelis.data.model.QueueTier
+import com.music.aurelis.R
 import com.music.aurelis.ui.theme.LocalReduceMotion
 import com.music.aurelis.ui.player.InlineQueue
 import androidx.compose.ui.platform.testTag
+
+/**
+ * Group in BitChord's USER → CONTEXT → AUTOPLAY sections only when the actual
+ * Media3 playback order already has that sequence. Never visually reorder tracks.
+ */
+internal fun queueSectionsPreservePlaybackOrder(
+    queue: List<LocalSong>,
+    playbackOrder: List<Int>,
+    currentIndex: Int,
+): Boolean {
+    if (currentIndex !in queue.indices || playbackOrder.size != queue.size ||
+        playbackOrder.toSet() != queue.indices.toSet()) return false
+    val cursor = playbackOrder.indexOf(currentIndex)
+    if (cursor < 0) return false
+    var priorTier = -1
+    for (index in playbackOrder.drop(cursor + 1)) {
+        val tier = when (queue[index].queueTier) {
+            QueueTier.USER_QUEUE -> 0
+            QueueTier.CONTEXT -> 1
+            QueueTier.AUTOPLAY -> 2
+        }
+        if (tier < priorTier) return false
+        priorTier = tier
+    }
+    return true
+}
 
 @Composable
 fun QueueScreen(
@@ -36,12 +66,14 @@ fun QueueScreen(
     onDismiss: () -> Unit,
     embedded: Boolean = false,
     listState: LazyListState? = null,
+    compactPlayerHeader: Boolean = false,
 ) {
     if (embedded) {
         // F062: the owner player provides the prepared artwork backdrop.
         // A black nested surface was covering it with a stark rectangle.
         if (isVisible) Surface(Modifier.fillMaxSize(), color = Color.Transparent) {
-            QueuePanelContent(playbackViewModel, onDismiss, embedded = true, listState = listState)
+            QueuePanelContent(playbackViewModel, onDismiss, embedded = true,
+                listState = listState, compactPlayerHeader = compactPlayerHeader)
         }
         return
     }
@@ -74,7 +106,13 @@ fun QueueScreen(
 
 
 @Composable
-private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: () -> Unit, embedded: Boolean = false, listState: LazyListState? = null) {
+private fun QueuePanelContent(
+    playbackViewModel: PlaybackViewModel,
+    onDismiss: () -> Unit,
+    embedded: Boolean = false,
+    listState: LazyListState? = null,
+    compactPlayerHeader: Boolean = false,
+) {
     val queueListState = listState ?: rememberLazyListState()
     val state by playbackViewModel.state.collectAsState()
     Column(
@@ -88,22 +126,24 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Cola de reproducción",
+                text = if (compactPlayerHeader) androidx.compose.ui.res.stringResource(R.string.queue) else "Cola de reproducción",
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = onDismiss) {
+            if (!compactPlayerHeader) IconButton(onClick = onDismiss) {
                 Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = Color.White)
             }
         }
 
         val order = state.queuePlaybackOrder ?: if (!state.shuffleEnabled) state.queue.indices.toList() else emptyList()
         val cursor = order.indexOf(state.currentIndex)
+        val groupedSections = compactPlayerHeader && !state.shuffleEnabled &&
+            queueSectionsPreservePlaybackOrder(state.queue, order, state.currentIndex)
         val hasQueued = cursor >= 0 && order.drop(cursor + 1).any {
             state.queue.getOrNull(it)?.queueTier == com.music.aurelis.data.model.QueueTier.USER_QUEUE
         }
-        if (hasQueued) TextButton(onClick = playbackViewModel::clearUserQueue,
+        if (hasQueued && !groupedSections) TextButton(onClick = playbackViewModel::clearUserQueue,
             enabled = state.isConnected && state.canEditQueue && (!state.shuffleEnabled || state.canEditShuffleQueue)) {
             Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_clear_user))
         }
@@ -112,7 +152,7 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
         // Empty upcoming queues should communicate their state without
         // inventing placeholder tracks or changing Media3's playback order.
         val remaining = if (cursor >= 0) order.size - cursor - 1 else 0
-        if (state.queue.isNotEmpty() && remaining == 0 && !state.shuffleEnabled) {
+        if (!compactPlayerHeader && state.queue.isNotEmpty() && remaining == 0 && !state.shuffleEnabled) {
             Text(
                 text = "No hay más canciones en espera",
                 style = MaterialTheme.typography.bodySmall,
@@ -138,7 +178,7 @@ private fun QueuePanelContent(playbackViewModel: PlaybackViewModel, onDismiss: (
                 onClear = playbackViewModel::clearUserQueue,
                 modifier = Modifier.weight(1f),
                 showHeader = false,
-                groupByTier = false, // Display the actual Media3 playback order.
+                groupByTier = groupedSections, // Only group when Media3 order stays unchanged.
                 listState = queueListState,
                 scrollToCurrentOnAttach = listState == null,
                 playbackOrder = state.queuePlaybackOrder,
