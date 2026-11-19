@@ -251,7 +251,7 @@
     <string name="pipeline_dsp_note">No measured resampler, equalizer or effective bit-depth telemetry is available.</string>
     <string name="pipeline_stage_output">Device output</string>
     <string name="pipeline_route_expected">Android route (anticipated)</string>
-    <string name="pipeline_output_note">Android's route report does not verify DAC negotiation or bit-perfect output.</string>
+    <string name="pipeline_output_note">The Android route report does not verify DAC negotiation or bit-perfect output.</string>
     <string name="pipeline_route_not_confirmed">Audio output not confirmed</string>
     <string name="pipeline_unknown_bluetooth">Bluetooth device</string>
     <string name="audio_output">Audio output</string>
