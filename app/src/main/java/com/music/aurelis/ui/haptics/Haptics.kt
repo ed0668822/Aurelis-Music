@@ -31,9 +31,18 @@ enum class Haptic {
     Expand,
 }
 
+/**
+ * The in-app preference and the operating-system touch-feedback preference
+ * must both permit a vibration. A vendor SettingsProvider error must never
+ * turn a simple button press into a crash or silently override the user's
+ * opt-out. No polling thread or Activity reference is retained.
+ */
 private fun feedbackAllowed(context: Context): Boolean =
     SettingsRepository.hapticFeedback.value &&
-        Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) != 0
+        runCatching {
+            Settings.System.getInt(context.contentResolver,
+                Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) != 0
+        }.getOrDefault(false)
 
 /** Filters Compose's existing feedback without generating a second vibration. */
 @Composable
@@ -110,6 +119,14 @@ private enum class BeatKind(val pulseMs: Long, val amplitude: Int) {
 }
 
 private class Beat(val kind: BeatKind, val scale: Float, val gapMs: Long)
+
+/**
+ * F058: each named response stays shorter than the press it acknowledges.
+ * Pure timing contract for automated tests; it neither vibrates nor requires
+ * Android hardware. The unscaled waveform/primitive time includes start gaps.
+ */
+internal fun hapticRhythmDurationMs(haptic: Haptic): Long =
+    rhythmOf(haptic).sumOf { it.gapMs + it.kind.pulseMs }
 
 private fun rhythmOf(haptic: Haptic): List<Beat> = when (haptic) {
     Haptic.Tick -> listOf(Beat(BeatKind.Tick, 0.35f, 0))
