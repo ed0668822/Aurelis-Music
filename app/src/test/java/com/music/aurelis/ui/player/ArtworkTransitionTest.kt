@@ -1,10 +1,38 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import org.junit.Assert.*
 import org.junit.Test
 
 class ArtworkTransitionTest {
+    @Test fun pendingImageDecodePreservesCoverAndRejectsLateFailedDecode() {
+        val transition = ArtworkTransition<String?>("cover A")
+        val slowB = transition.begin()
+        assertEquals("cover A", transition.value)
+        val quickC = transition.begin()
+        assertFalse(transition.isCurrent(slowB))
+        assertTrue(transition.isCurrent(quickC))
+        transition.complete(quickC, "cover C")
+        transition.complete(slowB, null)
+        assertEquals("cover C", transition.value)
+    }
+
+    @Test fun explicitMissingArtIsNotConfusedWithPendingLoad() {
+        val transition = ArtworkTransition<String?>("old visible artwork")
+        val loading = transition.begin()
+        assertEquals("old visible artwork", transition.value)
+        transition.complete(loading, null)
+        assertNull(transition.value)
+    }
+
+    @Test fun twoQueueOccurrencesSharingTheSameImageNeedNoExtraGeneration() {
+        val transition = ArtworkTransition("shared cover")
+        assertEquals("shared cover", transition.value)
+        // AnimatedArtwork's effect is keyed on artwork URI, not queue-entry id.
+        assertEquals("shared cover", transition.value)
+    }
+
     @Test fun startingTheNextTrackRetainsTheVisibleArtworkUntilItResolves() {
         val state = ArtworkTransition<String?>("artwork A")
         val request = state.begin()

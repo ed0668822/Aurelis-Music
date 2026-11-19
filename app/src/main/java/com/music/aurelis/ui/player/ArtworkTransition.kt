@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import androidx.compose.runtime.getValue
@@ -14,4 +15,10 @@ internal class ArtworkTransition<T>(initial: T) {
     fun complete(request: Long, next: T) {
         if (request == generation) value = next
     }
+
+    /**
+     * F052: an explicit no-artwork/failed state still belongs to the most
+     * recent request. Retain the old frame while a valid request is pending.
+     */
+    fun isCurrent(request: Long): Boolean = request == generation
 }

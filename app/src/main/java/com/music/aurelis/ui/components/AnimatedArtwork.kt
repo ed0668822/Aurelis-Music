@@ -1,7 +1,9 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.components
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import com.music.aurelis.ui.player.ArtworkTransition
@@ -51,21 +53,37 @@ fun AnimatedArtwork(
 ) {
     val context = LocalPlatformContext.current
     val reduceMotion = LocalReduceMotion.current
-    // Retain the last decoded frame only while its successor is loading. A failed
-    // or missing successor resolves to the neutral placeholder, never a wrong sleeve.
+    // F052: hold the previous decoded cover until Coil supplies the next one.
+    // This state belongs to the mounted player, not to each song id: a queue
+    // skip or a duplicate queue entry cannot momentarily blank the artwork.
     val transition = remember(context) { ArtworkTransition<ImageBitmap?>(null) }
-    LaunchedEffect(artworkUri) {
+    val decodeSize = if (size <= 64.dp) 128 else 1024
+    LaunchedEffect(artworkUri, decodeSize, context) {
         val request = transition.begin()
-        if (artworkUri.isNullOrBlank()) { transition.complete(request, null); return@LaunchedEffect }
-        val result = try {
-            SingletonImageLoader.get(context).execute(ImageRequest.Builder(context)
-                .data(artworkUri).size(if (size <= 64.dp) 128 else 1024).forPixelAccess().build())
+        if (artworkUri.isNullOrBlank()) {
+            // A missing local file must eventually remove the previous cover.
+            transition.complete(request, null)
+            return@LaunchedEffect
+        }
+
+        val next = try {
+            val result = SingletonImageLoader.get(context).execute(
+                ImageRequest.Builder(context)
+                    .data(artworkUri)
+                    // Request expanded size, never the dock's temporarily
+                    // collapsed size: opening the player stays sharp.
+                    .size(decodeSize)
+                    .forPixelAccess()
+                    .build(),
+            )
+            (result as? SuccessResult)?.image?.toImageBitmap()
         } catch (cancelled: CancellationException) {
+            // Replaced tracks may finish their Coil decode later. The old
+            // coroutine must not publish a stale cover or swallow cancellation.
             throw cancelled
         } catch (_: Exception) {
             null
         }
-        val next = (result as? SuccessResult)?.image?.toImageBitmap()
         kotlinx.coroutines.currentCoroutineContext().ensureActive()
         transition.complete(request, next)
     }
@@ -89,8 +107,15 @@ fun AnimatedArtwork(
                   else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Crossfade(targetState = transition.value, animationSpec = tween(if (reduceMotion || miniPlayerStyle) 0 else 220),
-            modifier = Modifier.fillMaxSize(), label = "player-artwork-crossfade") { bitmap ->
+        Crossfade(
+            targetState = transition.value,
+            animationSpec = tween(
+                durationMillis = if (reduceMotion || miniPlayerStyle) 0 else 320,
+                easing = FastOutSlowInEasing,
+            ),
+            modifier = Modifier.fillMaxSize(),
+            label = "player-artwork-crossfade",
+        ) { bitmap ->
             if (bitmap != null) Image(bitmap, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else if (!miniPlayerStyle) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(displayText, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimary)
