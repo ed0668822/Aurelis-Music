@@ -54,34 +54,8 @@ fun SongActionsDialog(
     val favorite = song.id in user.favorites
 
     HeldContextMenu(onDismiss, compactSongStyle = true, anchorBounds = anchorBounds) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(shape = RoundedCornerShape(9.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.size(48.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.MusicNote, contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (!song.artworkUri.isNullOrBlank()) {
-                        AsyncImage(model = song.artworkUri, contentDescription = null,
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(9.dp)),
-                            contentScale = ContentScale.Crop)
-                    }
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(song.title, style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(song.artist, style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        HorizontalDivider(Modifier.padding(vertical = 6.dp))
-
+        // BitChord's three-dot menu opens directly on quick actions.
+        // The song's artwork and credits remain visible behind the anchored popover.
         // Local favorite mirrors BitChord's leading quick-action tile.
         // It stays mounted after a tap so the state updates immediately.
         SongFavoriteQuickAction(
@@ -209,20 +183,22 @@ private fun SongMenuAction(
     icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit,
     selected: Boolean = false,
 ) {
-    TextButton(
-        onClick = onClick, enabled = enabled,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+    // Uniform 48dp touch rows match the compact BitChord/iOS action layout.
+    val foreground = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurface
+    Row(
+        Modifier.fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp),
-                tint = if (selected) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.width(12.dp))
-            Text(label, modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (selected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface)
-        }
+        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp),
+            tint = foreground.copy(alpha = if (enabled) 0.92f else 0.4f))
+        Spacer(Modifier.width(12.dp))
+        Text(label, modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = foreground.copy(alpha = if (enabled) 1f else 0.4f))
     }
 }
