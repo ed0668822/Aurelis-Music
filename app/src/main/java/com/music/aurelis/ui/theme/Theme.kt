@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.theme
 
 import android.app.Activity
@@ -15,7 +16,12 @@ import androidx.core.view.WindowCompat
 
 val AccentRed = Color(0xFFFA2D48)
 
-/** Platform font: no SF Pro files or external font downloads are bundled. */
+/**
+ * F057: use the Android/system sans family by default, retaining the
+ * BitChord-measured type scale and opting into Vazirmatn only by preference.
+ * SF Pro is not bundled: it requires independent redistribution rights and
+ * visual differences in metrics remain explicitly documented.
+ */
 val AurelisFontFamily: FontFamily = FontFamily.SansSerif
 
 /** Compatibility name for existing integrations; the actual font is the system sans. */
@@ -39,6 +45,14 @@ internal val AurelisTypography = Typography(
     bodyMedium = TextStyle(fontWeight = FontWeight.W400, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.3.sp),
     labelMedium = TextStyle(fontWeight = FontWeight.W600, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.25.sp),
     labelSmall = TextStyle(fontWeight = FontWeight.W600, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
+    // Complete the remaining Material typography slots rather than mixing
+    // platform defaults with explicit BitChord-sized roles on smaller screens.
+    displayMedium = TextStyle(fontWeight = FontWeight.W700, fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = (-0.4).sp),
+    displaySmall = TextStyle(fontWeight = FontWeight.W700, fontSize = 26.sp, lineHeight = 32.sp, letterSpacing = (-0.3).sp),
+    headlineSmall = TextStyle(fontWeight = FontWeight.W700, fontSize = 20.sp, lineHeight = 26.sp, letterSpacing = (-0.2).sp),
+    titleSmall = TextStyle(fontWeight = FontWeight.W600, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.15.sp),
+    bodySmall = TextStyle(fontWeight = FontWeight.W400, fontSize = 12.sp, lineHeight = 18.sp, letterSpacing = 0.3.sp),
+    labelLarge = TextStyle(fontWeight = FontWeight.W600, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.15.sp),
 ).withFamily(AurelisFontFamily)
 
 private fun Typography.withFamily(family: FontFamily) = Typography(
