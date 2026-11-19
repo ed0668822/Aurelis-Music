@@ -172,6 +172,19 @@
     <string name="enabled">Activado</string>
 
     <!-- Audio output -->
+    <string name="pipeline_stage_file">Archivo de música</string>
+    <string name="pipeline_file_name">Nombre de archivo</string>
+    <string name="pipeline_file_mime">MIME del archivo</string>
+    <string name="pipeline_stage_track">Pista de audio seleccionada</string>
+    <string name="pipeline_stage_decoder">Decodificador</string>
+    <string name="pipeline_decoder_format">PCM decodificado</string>
+    <string name="pipeline_decoder_note">Media3 no expone aquí el formato PCM efectivo del decodificador.</string>
+    <string name="pipeline_stage_processing">Remuestreo y procesamiento</string>
+    <string name="pipeline_dsp_result">Formato de salida DSP</string>
+    <string name="pipeline_dsp_note">Sin telemetría de remuestreo, ecualización o cambios de profundidad efectiva.</string>
+    <string name="pipeline_stage_output">Salida del dispositivo</string>
+    <string name="pipeline_route_expected">Ruta de Android (prevista)</string>
+    <string name="pipeline_output_note">La ruta informada por Android no confirma la negociación del DAC ni la reproducción bit-perfect.</string>
     <string name="audio_output">Salida de audio</string>
     <string name="player_output_system_unavailable">No se pudo abrir el selector de salida de Android. Puedes elegir el dispositivo desde los ajustes del sistema. La aplicación no marcará ninguna salida sin confirmación.</string>
     <string name="player_output_open_settings">Abrir ajustes de sonido</string>

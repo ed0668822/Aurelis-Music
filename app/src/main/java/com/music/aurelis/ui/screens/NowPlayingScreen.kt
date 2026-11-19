@@ -76,6 +76,7 @@ import com.music.aurelis.ui.player.matchedLocalArtist
 import com.music.aurelis.ui.player.playerSwipeTrigger
 import com.music.aurelis.ui.components.SourceQualityBadge
 import com.music.aurelis.ui.components.MiniPlayerQualityDialog
+import com.music.aurelis.ui.components.AudioPipelineDialog
 import com.music.aurelis.ui.components.MiniPlayerExplicitBadge
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -249,7 +250,12 @@ fun NowPlayingScreen(
     }
 
     if (showQuality && isVisible && song != null) {
-        MiniPlayerQualityDialog(state.sourceQuality, onDismiss = { showQuality = false })
+        AudioPipelineDialog(
+            onDismiss = { showQuality = false },
+            info = state.sourceQuality,
+            fileName = song.displayName ?: song.title,
+            fileMimeType = song.mimeType,
+        )
     }
 
     AnimatedVisibility(
