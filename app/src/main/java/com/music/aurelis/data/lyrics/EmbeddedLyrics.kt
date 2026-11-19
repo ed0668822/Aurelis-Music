@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.data.lyrics
 
 import java.io.DataInputStream
@@ -61,7 +62,7 @@ class EmbeddedLyricsExtractor {
                 if (header and 128 != 0) return null
             }
         }
-        return null
+        return EmbeddedContainerLyrics.extract(prefix, stream)
     }
     private fun uslt(bytes: ByteArray): String? {
         if (bytes.size < 5) return null

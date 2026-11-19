@@ -123,6 +123,48 @@ class LocalLyricsTest {
         assertTrue(offline.lines.first().isWordSynced)
     }
 
+
+    @Test fun m4aReadsStandardLyricsAndPrefersWordTimedFreeformField() {
+        val standard = "[00:01.00]Verso normal"
+        val timed = "[00:01.00]<00:01.00>Verso <00:02.00>enriquecido"
+        val data = { value: String -> mp4box("data", byteArrayOf(0, 0, 0, 1, 0, 0, 0, 0) + value.toByteArray()) }
+        val regular = mp4box(byteArrayOf(0xa9.toByte(), 108, 121, 114), data(standard))
+        val freeform = mp4box("----", mp4box("name", byteArrayOf(0, 0, 0, 0) + "BITCHORD_LYRICS".toByteArray()) + data(timed))
+        val file = mp4box("ftyp", "M4A ".toByteArray()) + mp4box("moov",
+            mp4box("udta", mp4box("meta", byteArrayOf(0, 0, 0, 0) + mp4box("ilst", regular + freeform))))
+        val actual = EmbeddedLyricsExtractor().extract(file.inputStream())!!
+        assertEquals(timed, actual)
+        assertTrue(Lyrics.parse(actual)!!.lines.first().isWordSynced)
+        assertEquals(standard, EmbeddedLyricsExtractor().extract(
+            (mp4box("ftyp", "M4A ".toByteArray()) + mp4box("moov",
+                mp4box("udta", mp4box("meta", byteArrayOf(0,0,0,0) + mp4box("ilst", regular))))).inputStream()))
+    }
+
+    @Test fun webmReadsSimpleTagWithoutAcceptingArbitrarySongBytes() {
+        val lyric = "[00:03.00]Letra local WebM"
+        val name = byteArrayOf(0x45, 0xa3.toByte(), 0x86.toByte()) + "LYRICS".toByteArray()
+        val contents = byteArrayOf(0x44, 0x87.toByte(), (0x80 or lyric.toByteArray().size).toByte()) + lyric.toByteArray()
+        val simple = byteArrayOf(0x67, 0xc8.toByte(), (0x80 or (name.size + contents.size)).toByte()) + name + contents
+        val webm = byteArrayOf(0x1a, 0x45, 0xdf.toByte(), 0xa3.toByte(), 0x80.toByte()) + simple
+        assertEquals(lyric, EmbeddedLyricsExtractor().extract(webm.inputStream()))
+        assertNull(EmbeddedLyricsExtractor().extract(
+            (byteArrayOf(1, 2, 3, 4) + simple).inputStream()))
+    }
+
+    @Test fun malformedEmbeddedMetadataFallsBackWithoutReadingUnboundedAudio() {
+        val broken = mp4box("ftyp", "M4A ".toByteArray()) +
+            byteArrayOf(0x7f, 0x7f, 0x7f, 0x7f, 'm'.code.toByte(), 'o'.code.toByte(), 'o'.code.toByte(), 'v'.code.toByte())
+        assertNull(EmbeddedLyricsExtractor().extract(broken.inputStream()))
+        val nonsense = mp4box("ftyp", "M4A ".toByteArray()) + mp4box("mdat",
+            "©lyrdataNotARealMetadataBox".toByteArray())
+        assertNull(EmbeddedLyricsExtractor().extract(nonsense.inputStream()))
+    }
+
+    private fun mp4box(type: String, body: ByteArray): ByteArray = mp4box(type.toByteArray(Charsets.ISO_8859_1), body)
+    private fun mp4box(type: ByteArray, body: ByteArray): ByteArray = byteArrayOf(
+        ((body.size + 8) ushr 24).toByte(), ((body.size + 8) ushr 16).toByte(),
+        ((body.size + 8) ushr 8).toByte(), (body.size + 8).toByte()) + type + body
+
     private fun le(value: Int) = byteArrayOf(value.toByte(), (value ushr 8).toByte(), (value ushr 16).toByte(), (value ushr 24).toByte())
     private fun id3(text: String): ByteArray {
         val payload = byteArrayOf(3, 'e'.code.toByte(), 'n'.code.toByte(), 'g'.code.toByte(), 0) + text.toByteArray()
