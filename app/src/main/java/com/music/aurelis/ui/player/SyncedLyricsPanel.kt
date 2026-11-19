@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import androidx.compose.foundation.combinedClickable
@@ -13,6 +14,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animate
@@ -209,19 +211,48 @@ fun SyncedLyricsPanel(
                     val mainModifier = Modifier.fillMaxWidth().testTag("lyrics-line-$index").semantics { selected = if (picking) index in picked else focused }
                         .clip(RoundedCornerShape(10.dp))
                         .background(when { index in picked -> Color.White.copy(alpha = 0.16f); picking -> Color.White.copy(alpha = 0.05f); else -> Color.Transparent })
-                        .combinedClickable(enabled = isSynced || onLineLongClick != null || picking,
+                        .combinedClickable(
+                            enabled = if (line.isGap) synchronise && !picking else (synchronise || onLineLongClick != null || picking),
                             onLongClick = if (line.isGap) null else onLineLongClick?.let { action -> { action(index) } },
-                            onClick = { if (picking) onTogglePick(index) else if (isSynced) { following = true; manuallyPaused = false; onSeekToLine(line.timeMs) } })
+                            onClick = {
+                                when {
+                                    line.isGap && picking -> Unit
+                                    picking -> onTogglePick(index)
+                                    synchronise -> { following = true; manuallyPaused = false; onSeekToLine(line.timeMs) }
+                                }
+                            },
+                        )
                         .padding(vertical = 10.dp, horizontal = 30.dp)
                     if (line.isGap && isSynced) {
-                        Box(mainModifier.semantics { contentDescription = contextInstrumental }, contentAlignment = Alignment.CenterStart) {
-                            Canvas(Modifier.size(49.dp, 13.dp)) {
+                        // BitChord collapses an instrumental row outside its actual interval.
+                        // Picking verses cannot select or seek through the empty gap.
+                        val visibleGap by animateFloatAsState(
+                            targetValue = if (focused && !picking) 1f else 0f,
+                            animationSpec = tween(
+                                durationMillis = if (reduceMotion) 0 else if (focused) 400 else 350,
+                                easing = LyricSettleEasing,
+                            ),
+                            label = "instrumental-gap-open",
+                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                                .height(56.dp * visibleGap)
+                                .clipToBounds(),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Box(mainModifier.semantics { contentDescription = contextInstrumental },
+                                contentAlignment = Alignment.CenterStart) {
                                 val until = lines.getOrNull(index + 1)?.timeMs ?: line.endMs
-                                val span = (until - line.timeMs).coerceAtLeast(1L)
-                                val fraction = ((playhead.value - line.timeMs).toFloat() / span).coerceIn(0f, 1f)
-                                repeat(3) { dot ->
-                                    val lit = (fraction * 3 - dot).coerceIn(0f, 1f)
-                                    drawCircle(Color.White.copy(alpha = 0.35f + 0.65f * lit), 6.5.dp.toPx(), Offset((6.5f + dot * 18f).dp.toPx(), size.height / 2))
+                                Canvas(Modifier.size(49.dp, 13.dp)) {
+                                    val fraction = lyricGapProgress(playhead.value, line.timeMs, until)
+                                    repeat(3) { dot ->
+                                        val lit = lyricGapDotFill(fraction, dot)
+                                        drawCircle(
+                                            Color.White.copy(alpha = 0.25f + 0.75f * lit),
+                                            radius = 6.5.dp.toPx(),
+                                            center = Offset((6.5f + dot * 18f).dp.toPx(), size.height / 2),
+                                        )
+                                    }
                                 }
                             }
                         }

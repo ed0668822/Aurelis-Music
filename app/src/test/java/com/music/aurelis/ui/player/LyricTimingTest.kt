@@ -133,6 +133,23 @@ class LyricTimingTest {
         assertTrue(partial.fraction in 0f..1f)
         assertEquals(boundaries.last(), lyricReveal(boundaries, 10_000f).completed)
     }
+    @Test fun instrumentalDotsFillAcrossTheirOwnDeclaredGap() {
+        assertEquals(0f, lyricGapProgress(0, 1000, 7000), 0f)
+        assertEquals(0f, lyricGapProgress(1000, 1000, 7000), 0f)
+        assertEquals(0.5f, lyricGapProgress(4000, 1000, 7000), 0.0001f)
+        assertEquals(1f, lyricGapProgress(7000, 1000, 7000), 0f)
+        assertEquals(1f, lyricGapProgress(9000, 1000, 7000), 0f)
+        assertEquals(0f, lyricGapDotFill(0.0f, 0), 0f)
+        assertEquals(1f, lyricGapDotFill(0.5f, 0), 0f)
+        assertEquals(0.5f, lyricGapDotFill(0.5f, 1), 0.0001f)
+        assertEquals(0f, lyricGapDotFill(0.5f, 2), 0f)
+    }
+    @Test fun malformedOrExtremeInstrumentalDurationCannotProduceNan() {
+        assertEquals(1f, lyricGapProgress(100, 100, 100), 0f)
+        assertEquals(0f, lyricGapProgress(0, 100, 100), 0f)
+        assertEquals(1f, lyricGapProgress(Long.MAX_VALUE, 0, Long.MAX_VALUE), 0f)
+        assertTrue(lyricGapProgress(Long.MAX_VALUE / 2, 0, Long.MAX_VALUE).isFinite())
+    }
     @Test fun overlappingVoicesRemainFocusedUntilTheirActualEnds() {
         val first = LyricLine(0, "Uno", listOf(LyricWord(0, 3000, "Uno")))
         val second = LyricLine(1000, "Dos", listOf(LyricWord(1000, 2000, "Dos")))
