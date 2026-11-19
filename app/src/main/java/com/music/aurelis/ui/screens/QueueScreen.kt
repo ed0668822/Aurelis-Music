@@ -143,7 +143,7 @@ private fun QueuePanelContent(
         val hasQueued = cursor >= 0 && order.drop(cursor + 1).any {
             state.queue.getOrNull(it)?.queueTier == com.music.aurelis.data.model.QueueTier.USER_QUEUE
         }
-        if (hasQueued && !groupedSections) TextButton(onClick = playbackViewModel::clearUserQueue,
+        if (hasQueued) TextButton(onClick = playbackViewModel::clearUserQueue,
             enabled = state.isConnected && state.canEditQueue && (!state.shuffleEnabled || state.canEditShuffleQueue)) {
             Text(androidx.compose.ui.res.stringResource(com.music.aurelis.R.string.queue_clear_user))
         }

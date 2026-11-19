@@ -50,6 +50,18 @@ class HomeShelvesIntegrationTest {
         } }
         compose.runOnIdle { library.loadLibrary() }
     }
+    private fun dismissSongMenuWithBackKey() {
+        compose.runOnIdle {
+            val global = org.robolectric.util.ReflectionHelpers.callStaticMethod<Any>(
+                Class.forName("android.view.WindowManagerGlobal"), "getInstance"
+            )
+            val views = org.robolectric.util.ReflectionHelpers.getField<List<android.view.View>>(global, "mViews")
+            val popup = views.last { it.javaClass.simpleName == "PopupLayout" }
+            popup.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_BACK))
+            popup.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_BACK))
+        }
+        compose.onNode(isPopup()).assertDoesNotExist()
+    }
     @Test fun favoriteCardUsesFavoriteQueueAndHoldDoesNotReplaceIt() {
         app.userLibrary.toggleFavorite("3");app.userLibrary.toggleFavorite("4")
         start()
@@ -68,7 +80,7 @@ class HomeShelvesIntegrationTest {
         assertFalse("Hold must target the card, not the floating player", mini.contains(target))
         compose.onNode(favorite).performTouchInput { longClick() }
         compose.onNodeWithText("Quitar de favoritos").assertIsDisplayed()
-        compose.onNodeWithText("Cerrar").performScrollTo().performClick()
+        dismissSongMenuWithBackKey()
         compose.runOnIdle { assertEquals("4", recording.currentMediaItem?.mediaId); assertEquals(2, recording.mediaItemCount) }
     }
     @Test fun leadingCurrentTrackOpensTheExistingPlayerWithoutReplacingItsQueue() {

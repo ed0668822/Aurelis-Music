@@ -153,6 +153,19 @@ class SharedGesturesTest {
         }
     }
 
+    private fun dismissSongActionsWithBackKey() {
+        compose.runOnIdle {
+            val global = ReflectionHelpers.callStaticMethod<Any>(
+                Class.forName("android.view.WindowManagerGlobal"), "getInstance"
+            )
+            val views = ReflectionHelpers.getField<List<View>>(global, "mViews")
+            val popup = views.last { it.javaClass.simpleName == "PopupLayout" }
+            popup.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_BACK))
+            popup.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_BACK))
+        }
+        compose.onNode(isPopup()).assertDoesNotExist()
+    }
+
     @Test fun heldSongFeedbackHonorsBothPreferencesForTouchAndAccessibleActions() = withHapticDevice { _, shadow ->
         val originalApp = SettingsRepository.hapticFeedback.value
         var played = 0; var held = 0
@@ -169,12 +182,12 @@ class SharedGesturesTest {
             compose.onNodeWithText(song.title).performTouchInput { longClick() }
             compose.onNode(isPopup()).assertExists()
             compose.runOnIdle { assertEquals(1, held); assertEquals(1, played); assertNotNull(shadow.vibrationAttributesFromLastVibration) }
-            compose.onNodeWithText("Cerrar").performScrollTo().performClick()
+            dismissSongActionsWithBackKey()
             compose.runOnIdle { ShadowVibrator.reset(); SettingsRepository.setHapticFeedback(false) }
             compose.onNodeWithText(song.title).performTouchInput { longClick() }
             compose.onNode(isPopup()).assertExists()
             compose.runOnIdle { assertEquals(2, held); assertEquals(1, played); assertNull(shadow.vibrationAttributesFromLastVibration) }
-            compose.onNodeWithText("Cerrar").performScrollTo().performClick()
+            dismissSongActionsWithBackKey()
             compose.runOnIdle {
                 SettingsRepository.setHapticFeedback(true)
                 Settings.System.putInt(RuntimeEnvironment.getApplication().contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0)
@@ -182,7 +195,7 @@ class SharedGesturesTest {
             compose.onNodeWithText(song.title).performTouchInput { longClick() }
             compose.onNode(isPopup()).assertExists()
             compose.runOnIdle { assertEquals(3, held); assertNull(shadow.vibrationAttributesFromLastVibration) }
-            compose.onNodeWithText("Cerrar").performScrollTo().performClick()
+            dismissSongActionsWithBackKey()
             compose.runOnIdle {
                 Settings.System.putInt(RuntimeEnvironment.getApplication().contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1)
             }
@@ -408,6 +421,7 @@ class SharedGesturesTest {
             var open by remember { mutableStateOf(true) }
             if (open) SongActionsDialog(song, store, {}, { open = false }, onPlayNext = {})
         } }
+        compose.onNodeWithText("Añadir a playlist").performClick()
         compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("Local compartida")
         compose.onNodeWithText("Crear playlist con esta canción").performScrollTo().performClick()
         compose.onNode(isPopup()).assertDoesNotExist()
@@ -426,7 +440,8 @@ class SharedGesturesTest {
                 if (open) SongActionsDialog(song, LocalUserLibrary(RuntimeEnvironment.getApplication()), {}, { open = false }, onPlayNext = {})
             }
         } }
-        compose.onNodeWithText("Cerrar").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithText("Reproducir después").performScrollTo().assertIsDisplayed()
+        dismissSongActionsWithBackKey()
         compose.onNode(isPopup()).assertDoesNotExist()
     }
 

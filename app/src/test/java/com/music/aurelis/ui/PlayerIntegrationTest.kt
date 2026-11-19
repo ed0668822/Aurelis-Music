@@ -408,8 +408,12 @@ class PlayerIntegrationTest {
     fun landscapeImportedLyricsSeekWithTheExistingOffsetWithoutReplacingTheQueue() {
         start()
         val previousOffset = SettingsRepository.lyricsOffsetMs.value
+        val previousSync = SettingsRepository.syncedLyrics.value
         try {
-            compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(500) }
+            compose.runOnIdle {
+                SettingsRepository.setLyricsOffsetMs(500)
+                SettingsRepository.setSyncedLyrics(true)
+            }
             val lrc = File(app.cacheDir, "landscape-lyrics.lrc").apply {
                 writeText("[00:00.000]Primera frase horizontal\n[00:01.000]Segunda frase horizontal")
             }
@@ -422,7 +426,10 @@ class PlayerIntegrationTest {
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
             compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
-            compose.onNodeWithText("Segunda frase horizontal").performScrollTo().performClick()
+            compose.onNodeWithTag("lyrics-line-1").performScrollTo().assertIsEnabled().performClick()
+            compose.waitUntil(5_000) {
+                compose.runOnIdle { vm.state.value.positionMs == 1500L }
+            }
             compose.runOnIdle {
                 assertEquals(1500L, vm.state.value.positionMs)
                 assertEquals(queue, vm.state.value.queue.map { it.id to it.queueEntryId })
@@ -431,7 +438,10 @@ class PlayerIntegrationTest {
             compose.onNodeWithContentDescription("Cerrar letras").performClick()
             compose.onNodeWithTag("landscape-lyrics").assertDoesNotExist()
             compose.onNodeWithTag("player-landscape").assertIsDisplayed()
-        } finally { compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(previousOffset) } }
+        } finally { compose.runOnIdle {
+            SettingsRepository.setLyricsOffsetMs(previousOffset)
+            SettingsRepository.setSyncedLyrics(previousSync)
+        } }
     }
 
     @Test fun changingSongsNeverRevealsTheAlreadyOpenPlayerAgain() {
@@ -600,7 +610,7 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
         compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions)).performClick()
         compose.onNodeWithText("Información de la canción").performScrollTo().performClick()
-        compose.onNodeWithText("Canción local 1").assertIsDisplayed()
+        compose.onAllNodesWithText("Canción local 1").onLast().assertIsDisplayed()
         compose.onNodeWithContentDescription("Volver").performClick()
         compose.onNodeWithText("Temporizador").performScrollTo().performClick()
         compose.onNodeWithText("15 min").performScrollTo().performClick()
@@ -875,8 +885,9 @@ class PlayerIntegrationTest {
         }
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).performClick()
         compose.onNodeWithTag("playback-queue").assertIsDisplayed()
-        compose.onAllNodesWithContentDescription(app.getString(R.string.drag_to_reorder)).assertCountEquals(3)
+        // Lazy queue rows are virtualized; validate the real occurrence instead.
         val duplicateEntry = vm.state.value.queue[1].queueEntryId
+        compose.onNodeWithTag("queue-entry-$duplicateEntry").performScrollTo().assertIsDisplayed()
         compose.onNode(hasContentDescription(app.getString(R.string.remove_from_queue)) and
             hasAnyAncestor(hasTestTag("queue-entry-$duplicateEntry")), useUnmergedTree = true).performClick()
         compose.runOnIdle {

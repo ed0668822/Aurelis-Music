@@ -87,7 +87,8 @@ class SearchHighlightsIntegrationTest {
         compose.runOnIdle { id = app.userLibrary.createPlaylist("Destino") }
         compose.onNode(hasSetTextAction()).performTextInput("Alpha live")
         compose.onNodeWithTag("search-top-playlist").performClick()
-        compose.onNodeWithText("Añadir a Destino").performClick()
+        compose.onNodeWithText("Añadir a playlist").performClick()
+        compose.onNodeWithText("Destino").performClick()
         compose.runOnIdle {
             assertEquals(listOf("0"), app.userLibrary.state.value.playlists.single { it.id == id }.songIds)
             assertEquals(listOf("Alpha live"), LocalSearchHistory(app).entries)
