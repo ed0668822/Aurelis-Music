@@ -15,6 +15,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -175,6 +176,9 @@ fun PillSegmentedControl(
                                     onItemSelected(index)
                                 }
                             }
+                            // One target per choice, including when enlarged text
+                            // makes the pill scroll. Never nest click handlers.
+                            .heightIn(min = 48.dp)
                             .padding(vertical = LABEL_VERTICAL_PADDING),
                         contentAlignment = Alignment.Center,
                     ) {

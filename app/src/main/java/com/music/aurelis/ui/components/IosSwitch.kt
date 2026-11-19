@@ -126,6 +126,8 @@ fun IosSwitch(
                     .graphicsLayer {
                         val travel = (TrackWidth - ThumbWidth - ThumbPadding * 2).toPx()
                         val x = ThumbPadding.toPx() + travel * position
+                        // On an RTL screen the track starts at the opposite end:
+                        // offset from the right edge, not beyond the track.
                         translationX = if (ltr) x else -x
                         // Grows from the edge it is leaving, so the stretch reads
                         // as reaching toward the other side.

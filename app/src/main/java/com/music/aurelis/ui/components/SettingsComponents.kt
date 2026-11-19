@@ -214,35 +214,13 @@ fun SegmentedControl(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .selectableGroup()
-            .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        options.forEachIndexed { index, label ->
-            val chosen = index == selectedIndex
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (chosen) MaterialTheme.colorScheme.primary else Color.Transparent)
-                    .selectable(selected = chosen, role = Role.Tab) { if (!chosen) onSelect(index) }
-                    .heightIn(min = 48.dp)
-                    .padding(vertical = 9.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (chosen) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
+    // F059: all settings pickers now reuse the same source-matched segmented
+    // control as the local library. The callback is only invoked on a *new*
+    // selection; preferences remain owned by the caller.
+    PillSegmentedControl(
+        items = options,
+        selectedIndex = selectedIndex,
+        onItemSelected = onSelect,
+        modifier = modifier,
+    )
 }
