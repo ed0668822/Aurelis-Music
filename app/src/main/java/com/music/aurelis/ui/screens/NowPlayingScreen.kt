@@ -667,7 +667,11 @@ fun NowPlayingScreen(
                                 reduceAnimation = reduceAnimation,
                             )
                         }
-                        Column(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
+                        // BitChord: the lyric list owns the full pane. The transport
+                        // is a floating bottom overlay, never a sibling which
+                        // compresses and remeasures the lyric list on reveal.
+                        Box(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
+                        Column(Modifier.fillMaxSize()) {
                             if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                                 // BitChord keeps the artwork, credits and menu in a compact
                                 // collapsed sleeve above an otherwise full-height lyric pane.
@@ -762,10 +766,20 @@ fun NowPlayingScreen(
                             }
                             if (picker.picking) LyricsPickBar(picker.picks.isNotEmpty(), picker.cancel, picker.share)
                             if (picker.overBudget) Text(stringResource(R.string.lyrics_share_pick_limit), Modifier.padding(horizontal = 24.dp), color = Color.White)
-                            AnimatedVisibility(visible = lyricsControlsOpen || landscape,
+                        } // The reading pane stays measured at full height.
+                            AnimatedVisibility(
+                                visible = (lyricsControlsOpen || landscape) && !picker.picking,
+                                modifier = Modifier.align(Alignment.BottomCenter)
+                                    .fillMaxWidth().testTag("lyrics-floating-transport"),
                                 enter = if (reduceAnimation) androidx.compose.animation.EnterTransition.None else expandVertically(tween(420, easing = FastOutSlowInEasing)) + fadeIn(tween(420)),
                                 exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else shrinkVertically(tween(420, easing = FastOutSlowInEasing)) + fadeOut(tween(420))) {
-                                Column(Modifier.then(if (!lyricsControlsOpen && !landscape) Modifier.clearAndSetSemantics { } else Modifier)) {
+                                Column(Modifier.fillMaxWidth()
+                                    .background(Brush.verticalGradient(listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.78f),
+                                        Color.Black.copy(alpha = 0.88f),
+                                    )))
+                                    .then(if (!lyricsControlsOpen && !landscape) Modifier.clearAndSetSemantics { } else Modifier)) {
                             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { showLyricsTools = !showLyricsTools }) { Icon(Icons.Rounded.Language, stringResource(R.string.lyrics_ui_tools)) }
                                 TextButton(onClick = { showLyricsSources = true }, modifier = Modifier.weight(1f)) {
@@ -902,7 +916,7 @@ fun NowPlayingScreen(
                             // BitChord-style action capsule of this same player.
                             Box(Modifier.fillMaxWidth()
                                 .testTag("player-queue-shared-deck")) {
-                                deck(maxHeight < 650.dp, false)
+                                deck(compactPortrait, false)
                             }
                         }
                     }

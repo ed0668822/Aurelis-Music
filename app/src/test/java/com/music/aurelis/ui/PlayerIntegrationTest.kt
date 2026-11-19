@@ -692,6 +692,21 @@ class PlayerIntegrationTest {
             compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(previousOffset) }
         }
     }
+    @Test fun fullScreenLyricsNeverShrinkTheirViewportWhenTransportIsRevealed() {
+        start(); importTranslationFixture()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_lyrics)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        val before = compose.onNodeWithTag("lyrics-list").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("lyrics-floating-transport").assertDoesNotExist()
+        revealFullScreenLyricsControls()
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        val after = compose.onNodeWithTag("lyrics-list").fetchSemanticsNode().boundsInRoot
+        assertEquals("Showing controls must not shrink the lyric viewport", before.height, after.height, 1f)
+        assertEquals(before.top, after.top, 1f)
+        compose.onNodeWithContentDescription(app.getString(R.string.player_seek)).assertIsDisplayed()
+    }
+
     @Test fun translationDialogCancelNeverSendsAndBilingualViewKeepsOriginal() {
         start(); importTranslationFixture()
         var requests = 0
