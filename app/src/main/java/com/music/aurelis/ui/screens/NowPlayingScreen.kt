@@ -783,7 +783,7 @@ fun NowPlayingScreen(
                             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { showLyricsTools = !showLyricsTools }) { Icon(Icons.Rounded.Language, stringResource(R.string.lyrics_ui_tools)) }
                                 TextButton(onClick = { showLyricsSources = true }, modifier = Modifier.weight(1f)) {
-                                    Text(loaded?.let { lyricsSourceTitle(it.source) + if (it.cached) " · " + stringResource(R.string.lyrics_ui_cached) else "" } ?: stringResource(R.string.player_sources), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    Text(loadedLyrics?.let { lyricsSourceTitle(it.source) + if (it.cached) " · " + stringResource(R.string.lyrics_ui_cached) else "" } ?: stringResource(R.string.player_sources), maxLines = 1, overflow = TextOverflow.Ellipsis,
                                         textDecoration = TextDecoration.Underline, color = Color.White.copy(alpha = 0.75f))
                                 }
                                 IconButton(onClick = { showTranslationLanguages = true }) { Icon(Icons.Rounded.Translate, stringResource(R.string.lyrics_ui_translate)) }
@@ -916,7 +916,7 @@ fun NowPlayingScreen(
                             // BitChord-style action capsule of this same player.
                             Box(Modifier.fillMaxWidth()
                                 .testTag("player-queue-shared-deck")) {
-                                deck(compactPortrait, false)
+                                deck(compactLyrics, false)
                             }
                         }
                     }
