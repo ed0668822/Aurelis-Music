@@ -120,6 +120,9 @@ internal fun LandscapePlayerLayout(
                 .windowInsetsPadding(WindowInsets.safeDrawing.union(stableStatusBarInsets())),
             contentAlignment = Alignment.TopCenter,
         ) {
+            // Compute once in BoxWithConstraintsScope: ColumnScope doesn't
+            // expose its implicit maxHeight receiver under Kotlin 2.
+            val isShortWindow = maxHeight < LANDSCAPE_SHORT_HEIGHT
             val compact = landscapeIsCompact(maxHeight, LocalDensity.current.fontScale)
             val gutter = landscapeSidePadding(maxWidth, compact)
             val paneGutter = landscapePanePadding(pane, gutter)
@@ -152,7 +155,7 @@ internal fun LandscapePlayerLayout(
                         artwork(Modifier.size(minOf(maxWidth, maxHeight)))
                     }
                     Spacer(Modifier.height(
-                        if (maxHeight < LANDSCAPE_SHORT_HEIGHT) 6.dp
+                        if (isShortWindow) 6.dp
                         else if (compact) 12.dp else 24.dp,
                     ))
                     actions()
