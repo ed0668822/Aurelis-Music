@@ -125,6 +125,14 @@ class LyricTimingTest {
         assertEquals(listOf(0), activeLyricRows(lines, now))
         assertEquals(listOf(1), activeLyricRows(lines, now + lyricScrollLeadMs(lines, now)))
     }
+    @Test fun lyricRevealClampAndRtlProgressNeverCrossGraphemeBounds() {
+        val boundaries = lyricCharacterBreaks("مَرْحَبًا 🌙")
+        assertEquals(0, lyricReveal(boundaries, -500f).completed)
+        val partial = lyricReveal(boundaries, 3.5f)
+        assertTrue(partial.next >= partial.completed)
+        assertTrue(partial.fraction in 0f..1f)
+        assertEquals(boundaries.last(), lyricReveal(boundaries, Float.POSITIVE_INFINITY).completed)
+    }
     @Test fun overlappingVoicesRemainFocusedUntilTheirActualEnds() {
         val first = LyricLine(0, "Uno", listOf(LyricWord(0, 3000, "Uno")))
         val second = LyricLine(1000, "Dos", listOf(LyricWord(1000, 2000, "Dos")))

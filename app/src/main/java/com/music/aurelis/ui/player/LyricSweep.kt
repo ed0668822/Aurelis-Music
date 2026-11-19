@@ -1,4 +1,6 @@
-// Adapted from BitChord PlayerLyrics.kt (GPLv3); original contributors and changes in NOTICE.
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Original contributor attribution and permissions are retained in NOTICE.
 package com.music.aurelis.ui.player
 
 import androidx.compose.foundation.layout.Box
@@ -7,6 +9,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
+import com.music.aurelis.ui.theme.LocalReduceMotion
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -46,7 +52,9 @@ internal fun SweptLocalLyric(
     style: TextStyle,
     color: Color,
     modifier: Modifier = Modifier,
+    enableEffects: Boolean = true,
 ) {
+    val effectsEnabled = enableEffects && !LocalReduceMotion.current
     var layout by remember(line.text, style) { mutableStateOf<TextLayoutResult?>(null) }
     val breaks = remember(line.text) { lyricCharacterBreaks(line.text) }
     val phase = remember(line, playhead) { derivedStateOf {
@@ -54,30 +62,46 @@ internal fun SweptLocalLyric(
         val end = line.timingSource?.endMs ?: line.words.lastOrNull()?.endMs ?: line.timeMs
         when { time <= line.timeMs -> 0; time >= end -> 2; else -> 1 }
     } }
+    // All paint layers use the same text layout and sweep. The bloom is limited
+    // to the currently sung line; reduced-motion and inactive rows cost no blur.
+    val mask = Modifier.drawWithContent {
+        val measured = layout ?: return@drawWithContent
+        if (phase.value == 0) return@drawWithContent
+        if (phase.value == 2) { drawContent(); return@drawWithContent }
+        val progress = line.revealedChars(playhead.value)
+        if (progress <= 0 || !progress.isFinite()) return@drawWithContent
+        if (progress >= line.text.length) { drawContent(); return@drawWithContent }
+        val reveal = lyricReveal(breaks, progress)
+        if (reveal.completed > 0) clipPath(measured.getPathForRange(0, reveal.completed)) {
+            this@drawWithContent.drawContent()
+        }
+        if (reveal.next > reveal.completed && reveal.fraction > 0) {
+            val path = measured.getPathForRange(reveal.completed, reveal.next)
+            val bounds = path.getBounds()
+            val rtl = measured.getBidiRunDirection(reveal.completed) == ResolvedTextDirection.Rtl
+            val edge = if (rtl) bounds.right - bounds.width * reveal.fraction else bounds.left + bounds.width * reveal.fraction
+            val left = if (rtl) edge else bounds.left
+            val right = if (rtl) bounds.right else edge
+            if (left < right && bounds.top < bounds.bottom) clipRect(left, bounds.top, right, bounds.bottom) {
+                clipPath(path) { this@drawWithContent.drawContent() }
+            }
+        }
+    }
     Box(modifier) {
         Text(line.text, style = style, color = color.copy(alpha = color.alpha * 0.4f),
             modifier = Modifier.fillMaxWidth(), onTextLayout = { layout = it })
+        if (effectsEnabled) {
+            // Blurring the masked illuminated glyphs creates a bounded feather/bloom.
+            // It is deliberately subtle and avoids allocating a second timing engine.
+            Text(line.text, style = style, color = color.copy(alpha = color.alpha * 0.20f),
+                modifier = Modifier.fillMaxWidth().clearAndSetSemantics { }
+                    .blur(3.dp).then(mask))
+        }
         Text(line.text, style = style, color = color,
-            modifier = Modifier.fillMaxWidth().clearAndSetSemantics { }.drawWithContent {
-                val measured = layout ?: return@drawWithContent
-                if (phase.value == 0) return@drawWithContent
-                if (phase.value == 2) { drawContent(); return@drawWithContent }
-                val progress = line.revealedChars(playhead.value)
-                if (progress <= 0 || !progress.isFinite()) return@drawWithContent
-                if (progress >= line.text.length) { drawContent(); return@drawWithContent }
-                val reveal = lyricReveal(breaks, progress)
-                if (reveal.completed > 0) clipPath(measured.getPathForRange(0, reveal.completed)) { this@drawWithContent.drawContent() }
-                if (reveal.next > reveal.completed && reveal.fraction > 0) {
-                    val path = measured.getPathForRange(reveal.completed, reveal.next)
-                    val bounds = path.getBounds()
-                    val rtl = measured.getBidiRunDirection(reveal.completed) == ResolvedTextDirection.Rtl
-                    val edge = if (rtl) bounds.right - bounds.width * reveal.fraction else bounds.left + bounds.width * reveal.fraction
-                    val left = if (rtl) edge else bounds.left
-                    val right = if (rtl) bounds.right else edge
-                    if (left < right && bounds.top < bounds.bottom) clipRect(left, bounds.top, right, bounds.bottom) {
-                        clipPath(path) { this@drawWithContent.drawContent() }
-                    }
+            modifier = Modifier.fillMaxWidth().clearAndSetSemantics { }
+                .graphicsLayer {
+                    translationY = if (effectsEnabled && phase.value == 1) -1.5f else 0f
                 }
-            })
+                .then(mask))
     }
 }

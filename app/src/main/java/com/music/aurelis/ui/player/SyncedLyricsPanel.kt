@@ -226,7 +226,7 @@ fun SyncedLyricsPanel(
                             }
                         }
                     } else if (focused && line.isWordSynced) {
-                        SweptLocalLyric(line, playhead, style, color, mainModifier)
+                        SweptLocalLyric(line, playhead, style, color, mainModifier, enableEffects = !picking && following)
                     } else {
                         Text(if (line.isGap && isSynced) stringResource(R.string.lyrics_ui_instrumental) else line.text, style = style,
                             color = color, modifier = mainModifier)
@@ -238,7 +238,7 @@ fun SyncedLyricsPanel(
                         )
                         val backingModifier = Modifier.fillMaxWidth().testTag("lyrics-background-$index")
                             .padding(horizontal = 30.dp).padding(bottom = 8.dp)
-                        if (focused && backing.isWordSynced) SweptLocalLyric(backing, playhead, backingStyle, color, backingModifier)
+                        if (focused && backing.isWordSynced) SweptLocalLyric(backing, playhead, backingStyle, color, backingModifier, enableEffects = !picking && following)
                         else Text(backing.text, style = backingStyle, color = color, modifier = backingModifier)
                     }
                     translatedLines?.getOrNull(index)?.takeIf { it.text.isNotBlank() && it.text != line.text }?.let { translated ->
