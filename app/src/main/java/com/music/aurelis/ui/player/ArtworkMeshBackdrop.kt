@@ -209,7 +209,12 @@ fun ArtworkMeshBackdrop(
         }
         incoming?.let { shown = it }
         incoming = null
-        if (next === shown) return@LaunchedEffect
+        if (next === shown) {
+            // A motion preference can change while a 900ms crossfade is
+            // running. Explicitly stop it rather than carrying a stale blend.
+            if (reduceAnimation) fade.snapTo(0f)
+            return@LaunchedEffect
+        }
 
         if (shown == null || reduceAnimation) {
             shown = next

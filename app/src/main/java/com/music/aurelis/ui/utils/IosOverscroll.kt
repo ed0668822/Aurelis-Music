@@ -1,5 +1,8 @@
 @file:OptIn(ExperimentalFoundationApi::class)
 
+// The iOS overscroll algorithm retains its upstream contributor attribution.
+// F065 adds a reduced-motion bypass without changing the scrollable's callbacks.
+
 package com.music.aurelis.ui.utils
 
 import androidx.compose.animation.core.Spring
@@ -12,6 +15,7 @@ import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import com.music.aurelis.ui.theme.LocalReduceMotion
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -42,7 +46,8 @@ internal fun rubberBand(rawDistance: Float, containerPx: Float): Float {
 }
 
 private class IosOverscrollEffect(
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val reduceMotion: Boolean,
 ) : OverscrollEffect {
     private val rawPullX = mutableFloatStateOf(0f)
     private val rawPullY = mutableFloatStateOf(0f)
@@ -52,7 +57,7 @@ private class IosOverscrollEffect(
     private var settlingY: kotlinx.coroutines.Job? = null
 
     override val isInProgress: Boolean
-        get() = rawPullX.floatValue != 0f || rawPullY.floatValue != 0f
+        get() = !reduceMotion && (rawPullX.floatValue != 0f || rawPullY.floatValue != 0f)
 
     // ✅ CORREGIDO: OverscrollEffect ahora requiere 'effectModifier' en lugar de 'node' o 'OverscrollFactory'
     override val effectModifier: Modifier = Modifier.layout { measurable, constraints ->
@@ -61,8 +66,8 @@ private class IosOverscrollEffect(
         containerHeightPx = (if (constraints.hasBoundedHeight) constraints.maxHeight else placeable.height).toFloat()
         layout(placeable.width, placeable.height) {
             placeable.placeWithLayer(0, 0) {
-                translationX = rubberBand(rawPullX.floatValue, containerWidthPx)
-                translationY = rubberBand(rawPullY.floatValue, containerHeightPx)
+                translationX = if (reduceMotion) 0f else rubberBand(rawPullX.floatValue, containerWidthPx)
+                translationY = if (reduceMotion) 0f else rubberBand(rawPullY.floatValue, containerHeightPx)
             }
         }
     }
@@ -72,6 +77,11 @@ private class IosOverscrollEffect(
         source: NestedScrollSource,
         performScroll: (Offset) -> Offset,
     ): Offset {
+        if (reduceMotion) {
+            // F065: keep scrolling and nested-scroll consumption intact, but
+            // never allocate bounce springs or deform the screen when reduced.
+            return performScroll(delta)
+        }
         // Touch input starts a fresh gesture, even if a previous settle spring
         // is still running. It must not race to move the list underneath.
         if (source == NestedScrollSource.UserInput) {
@@ -106,6 +116,7 @@ private class IosOverscrollEffect(
         performFling: suspend (Velocity) -> Velocity,
     ) {
         val consumed = performFling(velocity)
+        if (reduceMotion) return
         val leftover = velocity - consumed
         if (!isInProgress && leftover == Velocity.Zero) return
 
@@ -148,7 +159,9 @@ private class IosOverscrollEffect(
 @Composable
 fun rememberIosOverscrollEffect(): OverscrollEffect {
     val scope = rememberCoroutineScope()
-    return remember(scope) {
-        IosOverscrollEffect(scope)
+    val reduced = LocalReduceMotion.current
+    // A preference flip replaces the effect so an old spring cannot survive.
+    return remember(scope, reduced) {
+        IosOverscrollEffect(scope, reduceMotion = reduced)
     }
 }
