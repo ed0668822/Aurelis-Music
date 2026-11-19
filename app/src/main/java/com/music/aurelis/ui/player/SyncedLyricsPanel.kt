@@ -136,9 +136,16 @@ fun SyncedLyricsPanel(
     val activeOnScreen by remember(listState, scrollFocus) { derivedStateOf {
         listState.layoutInfo.visibleItemsInfo.any { it.index == scrollFocus }
     } }
-    LaunchedEffect(dragging, scrolling, following, manuallyPaused, isPlaying, picking, activeOnScreen) {
-        if (!following && !manuallyPaused && !dragging && !scrolling && isPlaying && !picking) {
-            delay(if (activeOnScreen) 600 else 5_000)
+    // Keep explicit pause, touch drags and line selection independent. A user
+    // reading while playback is stopped must never be pulled back automatically.
+    val followDelay = lyricFollowResumeDelay(
+        playing = isPlaying, following = following, manuallyPaused = manuallyPaused,
+        dragging = dragging, scrolling = scrolling, picking = picking,
+        activeOnScreen = activeOnScreen,
+    )
+    LaunchedEffect(followDelay, scrollFocus) {
+        if (followDelay != null) {
+            delay(followDelay)
             following = true
         }
     }
@@ -169,7 +176,8 @@ fun SyncedLyricsPanel(
     val controlsOnScroll = rememberPlayerControlsOnScroll(enabled = !picking, onReveal = onRevealControls, onHide = onHideControls)
     Column(modifier.fillMaxSize()) {
         if (synchronise && (showFollowControls || !following)) TextButton(onClick = {
-            following = !following; manuallyPaused = !following
+            following = !following
+            manuallyPaused = !following
         }, colors = ButtonDefaults.textButtonColors(contentColor = Color.White)) {
             Text(stringResource(if (following) R.string.lyrics_ui_pause_follow else R.string.lyrics_ui_follow))
         } else if (!synchronise) Text(stringResource(if (isSynced) R.string.lyrics_ui_sync_disabled else R.string.lyrics_ui_unsynced),

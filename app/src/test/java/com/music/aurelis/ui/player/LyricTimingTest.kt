@@ -150,6 +150,21 @@ class LyricTimingTest {
         assertEquals(1f, lyricGapProgress(Long.MAX_VALUE, 0, Long.MAX_VALUE), 0f)
         assertTrue(lyricGapProgress(Long.MAX_VALUE / 2, 0, Long.MAX_VALUE).isFinite())
     }
+    @Test fun browsingResumeOnlyOccursForPlayingAndIdleManualScroll() {
+        fun delay(playing: Boolean = true, following: Boolean = false,
+                  paused: Boolean = false, dragging: Boolean = false,
+                  scrolling: Boolean = false, picking: Boolean = false,
+                  active: Boolean = true): Long? =
+            lyricFollowResumeDelay(playing, following, paused, dragging, scrolling, picking, active)
+        assertEquals(600L, delay())
+        assertEquals(5_000L, delay(active = false))
+        assertNull(delay(playing = false))
+        assertNull(delay(following = true))
+        assertNull(delay(paused = true))
+        assertNull(delay(dragging = true))
+        assertNull(delay(scrolling = true))
+        assertNull(delay(picking = true))
+    }
     @Test fun overlappingVoicesRemainFocusedUntilTheirActualEnds() {
         val first = LyricLine(0, "Uno", listOf(LyricWord(0, 3000, "Uno")))
         val second = LyricLine(1000, "Dos", listOf(LyricWord(1000, 2000, "Dos")))

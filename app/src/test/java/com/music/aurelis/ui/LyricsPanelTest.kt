@@ -123,6 +123,34 @@ class LyricsPanelTest {
         compose.onNodeWithText("Pausar seguimiento").assertIsDisplayed()
     }
 
+    @Test fun explicitPauseAndManualReadingRemainPausedWhenPlayerIsStopped() {
+        val position = PlaybackPosition().apply { report(0); advancing = false }
+        var seek = -1L
+        val lines = (0..25).map { LyricLine(it * 1000L, "Lectura pausada $it") }
+        compose.setContent { AurelisTheme {
+            CompositionLocalProvider(LocalReduceMotion provides true) {
+                Surface { SyncedLyricsPanel(lines, "paused-manual", position, true, false, { seek = it }) }
+            }
+        } }
+        compose.onNodeWithText("Pausar seguimiento").performClick()
+        compose.onNodeWithText("Seguir letras").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-list").performTouchInput { swipeUp() }
+        compose.runOnIdle { position.report(4000) }
+        compose.onNodeWithText("Seguir letras").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(-1L, seek) }
+        compose.onNodeWithText("Seguir letras").performClick()
+        compose.onNodeWithText("Pausar seguimiento").assertIsDisplayed()
+    }
+
+    @Test fun disablingSyncAlsoDisablesTapToSeekForTimestampedVerses() {
+        val position = PlaybackPosition().apply { report(1500) }
+        compose.setContent { AurelisTheme { Surface { SyncedLyricsPanel(
+            listOf(LyricLine(1000, "Verso sin seek")), "sync-paused",
+            position, true, false, { fail("Seeking must be disabled") },
+            syncEnabled = false) } } }
+        compose.onNodeWithText("Verso sin seek").assertIsNotEnabled().assertIsNotSelected()
+    }
+
     @Test fun centerFocusUsesMeasuredRowsIncludingWrappedText() {
         val lines = (0..12).map { LyricLine(it * 1000L, "Línea $it con texto suficientemente largo para ocupar más de una fila") }
         val position = PlaybackPosition().apply { report(5000) }
