@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -58,7 +60,11 @@ internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> 
         enabled = enabled, interactionSource = interaction, indication = null,
         onClick = { haptics.play(haptic); onClick() },
     )
-    Box(Modifier.size(48.dp).then(touch), contentAlignment = Alignment.Center) {
+    // The icon is decorative inside this clickable/toggleable target. Attach
+    // its accessible name to the *interactive* node so UI automation and
+    // TalkBack find the same action after the target grows to 48dp.
+    Box(Modifier.size(48.dp).then(touch).semantics { contentDescription = label },
+        contentAlignment = Alignment.Center) {
         Box(Modifier.size(34.dp).graphicsLayer {
             scaleX = pressScale
             scaleY = pressScale
