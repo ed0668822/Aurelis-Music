@@ -30,7 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
@@ -62,15 +62,19 @@ fun ShimmerBox(modifier: Modifier = Modifier, shape: Shape = BlockShape) {
     Box(
         modifier
             .clip(shape)
-            .drawWithCache {
+            // F060: read the animated offset in the DRAW phase, not the
+            // cache-building phase. The 1.4s sweep needs no remeasure,
+            // recomposition or full-screen image processing on each frame.
+            .drawBehind {
                 val band = size.width * 0.5f
                 val startX = -band + sweep.value * (size.width + band * 2)
-                val brush = Brush.horizontalGradient(
-                    colors = listOf(base, highlight, base),
-                    startX = startX,
-                    endX = startX + band,
+                drawRect(
+                    Brush.horizontalGradient(
+                        colors = listOf(base, highlight, base),
+                        startX = startX,
+                        endX = startX + band,
+                    ),
                 )
-                onDrawBehind { drawRect(brush) }
             },
     )
 }
