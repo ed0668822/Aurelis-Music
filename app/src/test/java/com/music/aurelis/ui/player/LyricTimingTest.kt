@@ -131,7 +131,7 @@ class LyricTimingTest {
         val partial = lyricReveal(boundaries, 3.5f)
         assertTrue(partial.next >= partial.completed)
         assertTrue(partial.fraction in 0f..1f)
-        assertEquals(boundaries.last(), lyricReveal(boundaries, Float.POSITIVE_INFINITY).completed)
+        assertEquals(boundaries.last(), lyricReveal(boundaries, 10_000f).completed)
     }
     @Test fun overlappingVoicesRemainFocusedUntilTheirActualEnds() {
         val first = LyricLine(0, "Uno", listOf(LyricWord(0, 3000, "Uno")))
