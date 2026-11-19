@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import androidx.compose.foundation.background
@@ -7,6 +9,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +38,7 @@ internal fun AudioOutputSheet(
     hazeState: HazeState,
     outputs: List<AudioOutputDevice>,
     onOpenSystemPicker: () -> Unit,
+    onOpenPipeline: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     reduceDynamicBlur: Boolean = false,
@@ -55,8 +61,79 @@ internal fun AudioOutputSheet(
                 )
             }
         }
+        // Android owns route selection. Never mark a Bluetooth/USB/Cast route
+        // active before Android reports it as the one actually being used.
+        Spacer(Modifier.height(6.dp))
+        OutputActionRow(
+            icon = Icons.Rounded.Speaker,
+            title = "Elegir salida de audio",
+            subtitle = "Seleccionar dispositivo mediante Android",
+            onClick = onOpenSystemPicker,
+            testTag = "audio-output-system-picker",
+        )
         Spacer(Modifier.height(10.dp))
-        com.music.aurelis.ui.components.PlayerVolumeRow(onOpenOutput = onOpenSystemPicker)
+        Box(
+            Modifier.fillMaxWidth().clip(ROW_SHAPE)
+                .background(Color.White.copy(alpha = 0.05f))
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .testTag("audio-output-volume"),
+        ) {
+            com.music.aurelis.ui.components.PlayerVolumeRow()
+        }
+        Spacer(Modifier.height(6.dp))
+        OutputActionRow(
+            icon = Icons.Rounded.GraphicEq,
+            title = stringResource(R.string.audio_pipeline),
+            subtitle = "Ruta y procesamiento disponibles",
+            onClick = onOpenPipeline,
+            testTag = "audio-output-pipeline",
+        )
+    }
+}
+
+/** Shared BitChord-style inset row. This never performs unconfirmed routing. */
+@Composable
+private fun OutputActionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    testTag: String,
+) {
+    val haptics = rememberHaptics()
+    Row(
+        Modifier.fillMaxWidth()
+            .clip(ROW_SHAPE)
+            .background(Color.White.copy(alpha = 0.05f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { haptics.play(Haptic.Select); onClick() }
+            .testTag(testTag)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp).clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.08f)),
+            contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null,
+                tint = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.size(21.dp))
+        }
+        Spacer(Modifier.width(13.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = Color.White.copy(alpha = 0.85f),
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(2.dp))
+            Text(subtitle, color = Color.White.copy(alpha = 0.55f),
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.35f),
+            modifier = Modifier.size(20.dp))
     }
 }
 

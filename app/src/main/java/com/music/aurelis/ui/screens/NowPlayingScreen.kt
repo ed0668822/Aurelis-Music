@@ -22,6 +22,7 @@ import com.music.aurelis.ui.player.showAndroidOutputSwitcher
 import com.music.aurelis.ui.player.rememberAndroidAudioOutputs
 import com.music.aurelis.ui.player.confirmedOutput
 import com.music.aurelis.ui.player.outputDeviceLabel
+import com.music.aurelis.ui.player.AudioOutputSheet
 import androidx.compose.material.icons.rounded.Speaker
 import android.content.Intent
 import android.provider.Settings
@@ -230,7 +231,10 @@ fun NowPlayingScreen(
     val effectiveOutput = confirmedOutput(audioOutputs)
     var showPlaybackTools by rememberSaveable { mutableStateOf(false) }
     var showOutputHelp by rememberSaveable { mutableStateOf(false) }
-    val openOutput: () -> Unit = {
+    var showOutputSheet by rememberSaveable { mutableStateOf(false) }
+    val openOutput: () -> Unit = { showOutputSheet = true }
+    val requestAndroidOutput: () -> Unit = {
+        showOutputSheet = false
         if (!showAndroidOutputSwitcher(context)) showOutputHelp = true
     }
     var showQuality by rememberSaveable { mutableStateOf(false) }
@@ -923,6 +927,15 @@ fun NowPlayingScreen(
                 }
 
                 lyricsShareRequest?.let { request -> AndroidLyricsShareSheet(hazeState, request, { lyricsShareRequest = null }) }
+                if (showOutputSheet) AudioOutputSheet(
+                    hazeState = hazeState,
+                    outputs = audioOutputs,
+                    onOpenSystemPicker = requestAndroidOutput,
+                    onOpenPipeline = { showOutputSheet = false; showQuality = true },
+                    onDismiss = { showOutputSheet = false },
+                    reduceDynamicBlur = reduceBlur,
+                    modifier = Modifier.testTag("audio-output-sheet"),
+                )
                 if (showOutputHelp) androidx.compose.material3.AlertDialog(
                     onDismissRequest = { showOutputHelp = false },
                     title = { Text(stringResource(R.string.audio_output)) },

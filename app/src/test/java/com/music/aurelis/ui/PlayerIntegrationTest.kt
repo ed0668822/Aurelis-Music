@@ -605,6 +605,22 @@ class PlayerIntegrationTest {
         }
     }
 
+    @Test fun audioOutputOpensOwnDrawerWithoutClaimingAnUnconfirmedDevice() {
+        start()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.audio_output)).onFirst().performClick()
+        compose.onNodeWithTag("audio-output-sheet").assertIsDisplayed()
+        compose.onNodeWithTag("audio-output-system-picker").assertIsDisplayed()
+        compose.onNodeWithTag("audio-output-volume").assertIsDisplayed()
+        compose.onNodeWithTag("audio-output-pipeline").performClick()
+        compose.onNodeWithTag("audio-output-sheet").assertDoesNotExist()
+        compose.onNodeWithText(app.getString(R.string.audio_pipeline)).assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals("1", vm.state.value.currentSong?.id)
+            assertFalse(player.playWhenReady)
+        }
+    }
+
     @Test fun songMenuInfoAndTimerUseNestedPagesWithoutChangingPlayback() {
         start()
         compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
