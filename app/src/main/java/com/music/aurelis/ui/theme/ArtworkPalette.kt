@@ -1,6 +1,8 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.theme
 
+import android.content.Context
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.snap
@@ -17,10 +19,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.SingletonImageLoader
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
 import com.music.aurelis.ui.graphics.ColorUtils
 import com.music.aurelis.ui.graphics.paletteSwatches
+import com.music.aurelis.ui.graphics.forPixelAccess
+import com.music.aurelis.ui.graphics.toImageBitmap
 import com.music.aurelis.ui.player.PlayerPlatform
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -100,12 +111,69 @@ private fun Color.chroma(): Float = maxOf(red, green, blue) - minOf(red, green, 
 
 private const val TINT_MIN_CHROMA = 0.08f
 
+/**
+ * Keep the local artwork URL as the cache identity. Coil already supports the
+ * MediaStore content:// URIs used by Aurelis's active player.
+ */
 @Composable
 private fun rememberArtworkSeed(artworkUri: String?): Seed? {
-    var seed by remember(artworkUri) { mutableStateOf<Seed?>(null) }
-    // Para archivos locales, la decodificación se hace vía MediaMetadataRetriever
-    // o BitmapFactory. Se mantiene la estructura de seed.
+    val context = LocalPlatformContext.current
+    var seed by remember(artworkUri) {
+        mutableStateOf(artworkUri?.let { synchronized(seedCache) { seedCache[it] } })
+    }
+
+    LaunchedEffect(artworkUri, context) {
+        if (artworkUri.isNullOrBlank() || seed != null) return@LaunchedEffect
+        val decoded = decodeArtworkSeed(context, artworkUri) ?: return@LaunchedEffect
+        currentCoroutineContext().ensureActive()
+        synchronized(seedCache) { seedCache[artworkUri] = decoded }
+        seed = decoded
+    }
     return seed
+}
+
+/** A stable palette from the same cache is also consumed by Now Playing's theme. */
+internal suspend fun extractArtworkThemeColors(context: Context, artworkUri: String): ArtworkColors? {
+    if (artworkUri.isBlank()) return null
+    val cached = synchronized(seedCache) { seedCache[artworkUri] }
+    val seed = cached ?: decodeArtworkSeed(context, artworkUri)?.also {
+        currentCoroutineContext().ensureActive()
+        synchronized(seedCache) { seedCache[artworkUri] = it }
+    }
+    return seed?.toPalette(dark = true)?.toArtworkColors()
+}
+
+@Composable
+fun rememberArtworkTopBandLuminance(artworkUri: String?): Float? =
+    rememberArtworkSeed(artworkUri)?.topBandLuminance
+
+private suspend fun decodeArtworkSeed(context: Context, artworkUri: String): Seed? {
+    val request = ImageRequest.Builder(context)
+        .data(artworkUri)
+        .size(PALETTE_PX)
+        .forPixelAccess()
+        .build()
+    val image = try {
+        (SingletonImageLoader.get(context).execute(request) as? SuccessResult)?.image
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        null
+    } ?: return null
+    val bitmap = try {
+        image.toImageBitmap()
+    } catch (_: Exception) {
+        return null
+    }
+    return withContext(Dispatchers.Default) {
+        // Palette and bitmap sampling are CPU operations, never UI-thread work.
+        try { seedOf(bitmap) } catch (_: Exception) { null }
+    }
+}
+
+/** 128 tiny color records; never retain decoded album-art bitmaps. */
+private val seedCache = object : LinkedHashMap<String, Seed>(0, 0.75f, true) {
+    override fun removeEldestEntry(eldest: Map.Entry<String, Seed>): Boolean = size > 128
 }
 
 private const val PALETTE_PX = 128
@@ -117,6 +185,73 @@ private data class Seed(
     val edge: Color,
     val topBandLuminance: Float,
 )
+
+/** Preserve near-black and near-white artwork instead of treating it as red. */
+private fun seedOf(image: ImageBitmap): Seed? {
+    val swatches = paletteSwatches(image, SWATCH_COUNT, clearFilters = true)
+    val dominant = swatches.maxByOrNull { it.population } ?: return null
+    val accents = paletteSwatches(image, SWATCH_COUNT, clearFilters = false).ifEmpty { swatches }
+    val accent = accents.maxByOrNull { swatch ->
+        val hsl = FloatArray(3).also { ColorUtils.colorToHSL(swatch.rgb, it) }
+        hsl[1] * sqrt(swatch.population.toFloat())
+    } ?: dominant
+    return Seed(
+        dominant = Color(dominant.rgb),
+        vibrant = Color(accent.rgb),
+        edge = image.bottomEdgeColor(),
+        topBandLuminance = image.topBandRelativeLuminance(),
+    )
+}
+
+/** Adapt the BitChord-like page palette to Aurelis's Material3 player roles. */
+internal fun ArtworkPalette.toArtworkColors(): ArtworkColors {
+    val foregroundOnAccent = if (relativeLuminance(accent.toArgb()) > 0.179f) Color.Black else Color.White
+    val foregroundOnSecondary = if (relativeLuminance(onBackgroundVariant.toArgb()) > 0.179f) Color.Black else Color.White
+    return ArtworkColors(
+        primary = accent,
+        onPrimary = foregroundOnAccent,
+        primaryContainer = elevated,
+        onPrimaryContainer = onBackground,
+        secondary = onBackgroundVariant,
+        onSecondary = foregroundOnSecondary,
+        secondaryContainer = background,
+        onSecondaryContainer = onBackground,
+        background = background,
+        onBackground = onBackground,
+        surface = wash,
+        onSurface = onBackground,
+        surfaceVariant = elevated,
+        onSurfaceVariant = onBackgroundVariant,
+    )
+}
+
+private fun ImageBitmap.bottomEdgeColor(): Color {
+    val band = (height * EDGE_BAND).toInt().coerceIn(1, height)
+    val pixels = IntArray(width * band)
+    readPixels(pixels, startX = 0, startY = height - band, width = width, height = band)
+    var r = 0L
+    var g = 0L
+    var b = 0L
+    for (pixel in pixels) {
+        r += ((pixel shr 16) and 0xFF)
+        g += ((pixel shr 8) and 0xFF)
+        b += (pixel and 0xFF)
+    }
+    val count = pixels.size.coerceAtLeast(1)
+    return Color(
+        (0xFF shl 24) or
+            ((r / count).toInt() shl 16) or
+            ((g / count).toInt() shl 8) or
+            (b / count).toInt()
+    )
+}
+
+private fun ImageBitmap.topBandRelativeLuminance(): Float {
+    val band = (height * TOP_BAND).toInt().coerceIn(1, height)
+    val pixels = IntArray(width * band)
+    readPixels(pixels, startX = 0, startY = 0, width = width, height = band)
+    return averageRelativeLuminance(pixels)
+}
 
 private fun ArtworkKeyColors.toSeed() = Seed(
     dominant = background,
