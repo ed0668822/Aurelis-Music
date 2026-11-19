@@ -950,6 +950,11 @@ fun NowPlayingScreen(
                     anchorBounds = songMenuAnchor,
                     onLyricsOffset = { showLyricsOffset = true },
                     onPlaybackTools = { showPlaybackTools = true },
+                    onSetSleepTimer = { duration, after ->
+                        playbackViewModel.setSleepTimer(duration, after)
+                    },
+                    timerRemainingMs = state.sleepRemainingMs,
+                    sleepAfterTrack = state.sleepAfterTrack,
                 )
                 if (showLyricsSources) {
                     LyricsSourcesDialog(onDismiss = { showLyricsSources = false },

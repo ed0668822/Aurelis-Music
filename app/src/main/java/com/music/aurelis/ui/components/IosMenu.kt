@@ -135,7 +135,7 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
     // A Popup is drawn in a separate Android window. Sampling the player's
     // animated backdrop from there refractions OTHER controls through the
     // menu's text. Use an opaque iOS-style material for legible actions.
-    val fallbackFill = if (dark) Color(0xFF202024) else Color(0xFFF7F7F9)
+    val fallbackFill = if (dark) Color(0xFF1C1C1E) else Color(0xFFF6F6F7)
     Popup(popupPositionProvider = positionProvider, onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true, dismissOnBackPress = true,
             dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
@@ -161,7 +161,7 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
                 if (dark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f),
             ),
         ) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp), content = content)
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp), content = content)
         }
     }
 }

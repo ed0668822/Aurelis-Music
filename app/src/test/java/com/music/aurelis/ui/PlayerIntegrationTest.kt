@@ -595,12 +595,27 @@ class PlayerIntegrationTest {
         }
     }
 
+    @Test fun songMenuInfoAndTimerUseNestedPagesWithoutChangingPlayback() {
+        start()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions)).performClick()
+        compose.onNodeWithText("Información de la canción").performScrollTo().performClick()
+        compose.onNodeWithText("Canción local 1").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Volver").performClick()
+        compose.onNodeWithText("Temporizador").performScrollTo().performClick()
+        compose.onNodeWithText("15 min").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(vm.state.value.sleepRemainingMs > 0L) }
+    }
+
     @Test fun songActionsPersistFavoritePlaylistAndAppendWithoutRestartingQueue() {
         start()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_song_actions)).performClick()
         compose.onNodeWithText("Añadir a favoritos").performClick()
         compose.runOnIdle { assertEquals(setOf("1"), app.userLibrary.state.value.favorites) }
+        compose.onNodeWithText("Nueva playlist").assertDoesNotExist()
+        compose.onNodeWithText("Añadir a playlist").performClick()
+        compose.onNodeWithText("Nueva playlist").assertIsDisplayed()
         compose.onNode(hasSetTextAction()).performTextInput("Mi lista")
         compose.onNodeWithText("Crear playlist con esta canción").performClick()
         compose.runOnIdle { assertEquals(listOf("1"), app.userLibrary.state.value.playlists.single().songIds) }
