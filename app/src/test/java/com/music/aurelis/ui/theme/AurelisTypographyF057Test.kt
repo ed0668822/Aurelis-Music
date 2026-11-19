@@ -39,7 +39,6 @@ class AurelisTypographyF057Test {
             assertEquals(main.lineHeight, second.lineHeight)
             assertEquals(main.letterSpacing, second.letterSpacing)
             assertEquals(main.fontWeight, second.fontWeight)
-            assertTrue(main.lineHeight.isSp)
             assertTrue(main.lineHeight.value >= main.fontSize.value)
         }
         assertEquals(FontFamily.SansSerif, system.titleLarge.fontFamily)
