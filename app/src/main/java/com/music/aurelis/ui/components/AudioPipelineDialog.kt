@@ -87,7 +87,8 @@ fun AudioPipelineDialog(
                 }
                 PipelineStage(Icons.Rounded.Headphones, stringResource(R.string.pipeline_stage_output)) {
                     PipelineFact(stringResource(R.string.pipeline_route_expected),
-                        routedOutput?.let { outputDeviceLabel(it) } ?: unknown)
+                        routedOutput?.let { outputDeviceLabel(it) }
+                            ?: stringResource(R.string.pipeline_route_not_confirmed))
                     Text(stringResource(R.string.pipeline_output_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
