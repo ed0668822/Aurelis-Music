@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Speaker
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -43,6 +45,7 @@ internal fun PlayerPlaybackActions(
     canSetAutoplay: Boolean, reduceMotion: Boolean,
     onToggleLyrics: () -> Unit, onToggleQueue: () -> Unit,
     onToggleShuffle: () -> Unit, onCycleRepeat: () -> Unit, onToggleAutoplay: () -> Unit,
+    onOpenOutput: () -> Unit,
 ) {
     val on = stringResource(R.string.player_enabled)
     val off = stringResource(R.string.player_disabled)
@@ -57,8 +60,14 @@ internal fun PlayerPlaybackActions(
             horizontalArrangement = Arrangement.SpaceBetween) {
             PlayerBottomGlyph(AurelisPlayerIcons.LyricsQuote, stringResource(R.string.player_lyrics),
                 onToggleLyrics, highlighted = lyricsOpen)
-            Row(Modifier.height(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.12f))
-                .testTag("player-mode-pill"), verticalAlignment = Alignment.CenterVertically) {
+            // BitChord: the three playback modes belong to the queue pane.
+            // In the main player the center slot opens local audio output instead.
+            Crossfade(targetState = queueOpen,
+                animationSpec = tween(if (reduceMotion) 0 else 220),
+                label = "player-center-mode") { showQueueModes ->
+            if (showQueueModes) Row(Modifier.height(44.dp).clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.12f)).testTag("player-mode-pill"),
+                verticalAlignment = Alignment.CenterVertically) {
                 ModeSegment(AurelisPlayerIcons.Shuffle, stringResource(R.string.player_shuffle),
                     if (shuffleEnabled) on else off, shuffleEnabled, connected, width, reduceMotion,
                     400L, if (shuffleEnabled) Haptic.ToggleOff else Haptic.ToggleOn, onToggleShuffle)
@@ -76,6 +85,13 @@ internal fun PlayerPlaybackActions(
                     if (autoplayEnabled) on else off, autoplayEnabled, canSetAutoplay, width,
                     reduceMotion, 700L, if (autoplayEnabled) Haptic.ToggleOff else Haptic.ToggleOn,
                     onToggleAutoplay)
+            } else {
+                PlayerBottomGlyph(
+                    Icons.Rounded.Speaker,
+                    stringResource(R.string.audio_output),
+                    onOpenOutput,
+                )
+            }
             }
             PlayerBottomGlyph(AurelisPlayerIcons.Queue, stringResource(R.string.player_queue),
                 onToggleQueue, highlighted = queueOpen)

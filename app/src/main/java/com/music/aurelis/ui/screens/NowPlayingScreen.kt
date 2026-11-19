@@ -574,6 +574,7 @@ fun NowPlayingScreen(
                         onToggleShuffle = playbackViewModel::toggleShuffle,
                         onCycleRepeat = playbackViewModel::cycleRepeat,
                         onToggleAutoplay = { playbackViewModel.setAutoplay(!state.autoplayEnabled) },
+                        onOpenOutput = openOutput,
                     )
                 }
                 val transport: @Composable (Boolean) -> Unit = { compact ->

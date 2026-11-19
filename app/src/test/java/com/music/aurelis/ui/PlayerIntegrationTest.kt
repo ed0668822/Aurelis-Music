@@ -301,6 +301,9 @@ class PlayerIntegrationTest {
         val position = vm.state.value.positionMs
         val prepares = player.prepares; val replacements = player.replacements
         compose.onNodeWithContentDescription("Cerrar").performClick()
+        // BitChord shows shuffle/repeat/autoplay in the queue's center capsule.
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_queue)).performClick()
+        compose.onNodeWithTag("player-mode-pill").assertIsDisplayed()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_shuffle)).performClick()
         compose.runOnIdle {
             assertFalse(vm.state.value.shuffleEnabled)
@@ -473,10 +476,15 @@ class PlayerIntegrationTest {
         compose.onNodeWithTag("mini-player").assertIsDisplayed()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).assertIsDisplayed().performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).assertIsDisplayed()
+        // Main player presents output in the center; queue presents playback modes.
+        compose.onNodeWithTag("player-mode-pill").assertDoesNotExist()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_queue)).performClick()
+        compose.onNodeWithTag("player-mode-pill").assertIsDisplayed()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_shuffle)).performClick()
         compose.runOnIdle { assertTrue(player.shuffleModeEnabled) }
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_repeat)).performClick()
         compose.runOnIdle { assertEquals(Player.REPEAT_MODE_ALL, player.repeatMode) }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_queue)).performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_seek))
             .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(0.5f) }
         compose.runOnIdle { assertEquals(30_000, vm.state.value.positionMs) }
@@ -509,7 +517,8 @@ class PlayerIntegrationTest {
         start()
         capture("mini-player")
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
-        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_repeat)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).assertIsDisplayed()
+        compose.onNodeWithTag("player-mode-pill").assertDoesNotExist()
         compose.onNodeWithText("0:00").assertIsDisplayed()
         compose.onNodeWithText("-1:00").assertIsDisplayed()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).assertIsDisplayed()
@@ -520,7 +529,7 @@ class PlayerIntegrationTest {
     fun landscapeKeepsTransportVisibleWithoutScrolling() {
         start()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
-        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_repeat)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_queue)).assertIsDisplayed()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).performClick()
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id) }
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).performClick()
