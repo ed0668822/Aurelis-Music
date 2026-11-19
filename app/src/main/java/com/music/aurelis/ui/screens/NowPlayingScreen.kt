@@ -598,8 +598,9 @@ fun NowPlayingScreen(
                         contentColor = Color.White,
                     ) {
                         Box(Modifier.fillMaxSize().then(if (lyricsShareRequest != null) Modifier.clearAndSetSemantics { } else Modifier)) {
-                        if (meshPalette != null) MeshGradientBackground(meshPalette, Modifier.fillMaxSize(), trackKey = s.id, reduceAnimation = reduceAnimation)
-                        else Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+                        // F051/F052: a single shared backdrop is already drawn
+                        // underneath this transparent lyrics panel. Do not
+                        // decode/render a second legacy four-blob mesh here.
                         Column(Modifier.fillMaxSize().then(if (landscape) Modifier else Modifier.statusBarsPadding().navigationBarsPadding())) {
                             if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
                                 IconButton(onClick = { showLyrics = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(28.dp)) {
