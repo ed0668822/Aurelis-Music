@@ -32,7 +32,7 @@ import dev.chrisbanes.haze.HazeState
 internal fun AudioOutputSheet(
     hazeState: HazeState,
     outputs: List<AudioOutputDevice>,
-    onSelectOutput: (Int) -> Unit,
+    onOpenSystemPicker: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     reduceDynamicBlur: Boolean = false,
@@ -51,12 +51,12 @@ internal fun AudioOutputSheet(
             outputs.forEach { device ->
                 OutputRow(
                     device = device,
-                    onSelect = { onSelectOutput(device.id) },
+                    onSelect = onOpenSystemPicker,
                 )
             }
         }
         Spacer(Modifier.height(10.dp))
-        VolumeRow(outputs = outputs)
+        com.music.aurelis.ui.components.PlayerVolumeRow(onOpenOutput = onOpenSystemPicker)
     }
 }
 
@@ -125,33 +125,6 @@ private fun OutputRow(
                 modifier = Modifier.size(20.dp),
             )
         }
-    }
-}
-
-@Composable
-private fun VolumeRow(outputs: List<AudioOutputDevice>) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(ROW_SHAPE)
-            .background(Color.White.copy(alpha = 0.05f))
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
-            contentDescription = null,
-            tint = Color.White.copy(alpha = 0.6f),
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(Modifier.width(12.dp))
-        ThinSlider(
-            value = 0.5f,
-            onValueChange = {},
-            idleHeight = 6.dp,
-            activeHeight = 10.dp,
-            modifier = Modifier.weight(1f),
-        )
     }
 }
 

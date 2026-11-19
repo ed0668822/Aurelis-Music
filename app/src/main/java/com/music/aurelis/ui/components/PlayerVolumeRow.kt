@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -40,7 +41,7 @@ import kotlin.math.roundToInt
 
 /** F042: BitChord's 6/10dp volume geometry, controlling Android's real music stream. */
 @Composable
-fun PlayerVolumeRow(modifier: Modifier = Modifier) {
+fun PlayerVolumeRow(modifier: Modifier = Modifier, onOpenOutput: (() -> Unit)? = null) {
     val context = LocalContext.current.applicationContext
     val audio = remember(context) { context.getSystemService(AudioManager::class.java) }
     var maximum by remember { mutableIntStateOf(0) }
@@ -111,7 +112,10 @@ fun PlayerVolumeRow(modifier: Modifier = Modifier) {
             },
         )
         Spacer(Modifier.width(10.dp))
-        Icon(Icons.AutoMirrored.Rounded.VolumeUp, contentDescription = null,
-            modifier = Modifier.size(20.dp), tint = Color.White.copy(alpha = 0.5f))
+        Icon(Icons.AutoMirrored.Rounded.VolumeUp,
+            contentDescription = if (onOpenOutput != null) stringResource(R.string.audio_output) else null,
+            modifier = Modifier.size(20.dp).then(if (onOpenOutput != null)
+                Modifier.clickable(onClick = onOpenOutput) else Modifier),
+            tint = Color.White.copy(alpha = 0.5f))
     }
 }

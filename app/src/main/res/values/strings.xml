@@ -173,6 +173,8 @@
 
     <!-- Audio output -->
     <string name="audio_output">Salida de audio</string>
+    <string name="player_output_system_unavailable">No se pudo abrir el selector de salida de Android. Puedes elegir el dispositivo desde los ajustes del sistema. La aplicación no marcará ninguna salida sin confirmación.</string>
+    <string name="player_output_open_settings">Abrir ajustes de sonido</string>
     <string name="audio_output_playing">Reproduciendo aquí</string>
     <string name="wired_headphones">Auriculares con cable</string>
     <string name="usb_audio">Audio USB</string>

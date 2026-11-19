@@ -18,6 +18,10 @@ import com.music.aurelis.ui.components.PlaybackOriginCaption
 import com.music.aurelis.data.model.PlaybackSourceType
 import com.music.aurelis.ui.components.PlayerCircleGlyph
 import com.music.aurelis.ui.components.PlayerVolumeRow
+import com.music.aurelis.ui.player.showAndroidOutputSwitcher
+import androidx.compose.material.icons.rounded.Speaker
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.material.icons.rounded.IosShare
 import com.music.aurelis.ui.player.LyricsShareRequest
 import com.music.aurelis.ui.player.LyricsShareLine
@@ -210,6 +214,10 @@ fun NowPlayingScreen(
     )
 
     var showPlaybackTools by rememberSaveable { mutableStateOf(false) }
+    var showOutputHelp by rememberSaveable { mutableStateOf(false) }
+    val openOutput: () -> Unit = {
+        if (!showAndroidOutputSwitcher(context)) showOutputHelp = true
+    }
     var showQuality by rememberSaveable { mutableStateOf(false) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var lyricsControlsOpen by rememberSaveable { mutableStateOf(true) }
@@ -367,6 +375,9 @@ fun NowPlayingScreen(
                         Spacer(Modifier.weight(1f))
                         val timerState = if (state.sleepRemainingMs > 0 || state.sleepAfterTrack)
                             stringResource(R.string.player_timer_active) else stringResource(R.string.player_disabled)
+                        IconButton(onClick = openOutput) {
+                            Icon(Icons.Rounded.Speaker, stringResource(R.string.audio_output))
+                        }
                         IconButton(onClick = { showPlaybackTools = true }, modifier = Modifier.semantics { stateDescription = timerState }) {
                             Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools))
                         }
@@ -508,10 +519,17 @@ fun NowPlayingScreen(
                         Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
                         transport(compact)
                         Spacer(Modifier.height(if (compact) 0.dp else 6.dp))
-                        if (hideVolumeBar) Spacer(Modifier.fillMaxWidth().height(32.dp)) else PlayerVolumeRow()
+                        if (hideVolumeBar) {
+                            Box(Modifier.fillMaxWidth().height(32.dp), contentAlignment = Alignment.CenterEnd) {
+                                IconButton(onClick = openOutput, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Rounded.Speaker, stringResource(R.string.audio_output))
+                                }
+                            }
+                        } else PlayerVolumeRow(onOpenOutput = openOutput)
                         actions()
                         if (!compact && !lyricsMode) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             IconButton(onClick = { showPlaybackTools = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools)) }
+                            IconButton(onClick = openOutput) { Icon(Icons.Rounded.Speaker, stringResource(R.string.audio_output)) }
                             IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
                         }
                         if (!compact) Text(stringResource(R.string.player_local_device),
@@ -728,6 +746,18 @@ fun NowPlayingScreen(
                 }
 
                 lyricsShareRequest?.let { request -> AndroidLyricsShareSheet(hazeState, request, { lyricsShareRequest = null }) }
+                if (showOutputHelp) androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showOutputHelp = false },
+                    title = { Text(stringResource(R.string.audio_output)) },
+                    text = { Text(stringResource(R.string.player_output_system_unavailable)) },
+                    confirmButton = { TextButton(onClick = {
+                        showOutputHelp = false
+                        runCatching { context.startActivity(Intent(Settings.ACTION_SOUND_SETTINGS)) }
+                    }) { Text(stringResource(R.string.player_output_open_settings)) } },
+                    dismissButton = { TextButton(onClick = { showOutputHelp = false }) {
+                        Text(stringResource(R.string.player_close_dialog))
+                    } },
+                )
                 if (showPlaybackTools) com.music.aurelis.ui.components.PlaybackToolsDialog(
                     state, { duration, after -> playbackViewModel.setSleepTimer(duration, after) },
                     playbackViewModel::setPlaybackSpeed, playbackViewModel::setSkipSilence, playbackViewModel::setAutoplay, { showPlaybackTools = false })

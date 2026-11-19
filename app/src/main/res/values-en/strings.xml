@@ -240,6 +240,8 @@
     <string name="reset_to_default">Reset to default</string>
     <string name="enabled">Enabled</string>
     <string name="audio_output">Audio output</string>
+    <string name="player_output_system_unavailable">Android could not open its media output switcher. You can choose an output in system settings. The app will not claim an output without confirmation.</string>
+    <string name="player_output_open_settings">Open sound settings</string>
     <string name="audio_output_playing">Playing here</string>
     <string name="wired_headphones">Wired headphones</string>
     <string name="usb_audio">USB audio</string>

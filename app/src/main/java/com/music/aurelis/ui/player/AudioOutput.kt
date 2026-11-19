@@ -1,8 +1,12 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import android.content.Context
 import android.media.AudioManager
+import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -37,29 +41,35 @@ internal fun rememberAndroidAudioOutputs(): List<AudioOutputDevice> {
 }
 
 private fun readOutputs(manager: AudioManager): List<AudioOutputDevice> {
-    val devices = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).toList()
-    val result = mutableListOf(
-        AudioOutputDevice(0, "", AudioOutputKind.PHONE, isActive = true)
-    )
-    devices.forEach { device ->
+    val devices = runCatching {
+        manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).toList()
+    }.getOrDefault(emptyList())
+    // On API 33+ the OS reports the *anticipated media route* for USAGE_MEDIA.
+    // That is a stronger signal than the list of attached devices, but it is
+    // still not a decoder/hardware bit-perfect attestation.
+    val routedIds: Set<Int> = if (Build.VERSION.SDK_INT >= 33) {
+        runCatching {
+            manager.getAudioDevicesForAttributes(
+                AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()
+            ).map(AudioDeviceInfo::getId).toSet()
+        }.getOrDefault(emptySet())
+    } else emptySet()
+    return devices.mapNotNull { device ->
         val kind = when (device.type) {
-            android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET,
-            android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> AudioOutputKind.WIRED
-            android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> AudioOutputKind.BLUETOOTH
-            android.media.AudioDeviceInfo.TYPE_USB_DEVICE,
-            android.media.AudioDeviceInfo.TYPE_USB_HEADSET -> AudioOutputKind.USB
-            android.media.AudioDeviceInfo.TYPE_HDMI -> AudioOutputKind.HDMI
-            else -> return@forEach
+            AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> AudioOutputKind.PHONE
+            AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> AudioOutputKind.WIRED
+            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, AudioDeviceInfo.TYPE_BLE_HEADSET,
+            AudioDeviceInfo.TYPE_BLE_SPEAKER -> AudioOutputKind.BLUETOOTH
+            AudioDeviceInfo.TYPE_USB_DEVICE, AudioDeviceInfo.TYPE_USB_HEADSET -> AudioOutputKind.USB
+            AudioDeviceInfo.TYPE_HDMI, AudioDeviceInfo.TYPE_HDMI_ARC -> AudioOutputKind.HDMI
+            else -> return@mapNotNull null
         }
-        result.add(
-            AudioOutputDevice(
-                id = device.id,
-                name = device.productName?.toString() ?: "",
-                kind = kind,
-                isActive = false,
-                form = if (kind == AudioOutputKind.BLUETOOTH) BluetoothForm.HEADPHONES else BluetoothForm.UNKNOWN
-            )
+        AudioOutputDevice(
+            id = device.id,
+            name = device.productName?.toString().orEmpty(),
+            kind = kind,
+            isActive = device.id in routedIds,
+            form = if (kind == AudioOutputKind.BLUETOOTH) BluetoothForm.UNKNOWN else BluetoothForm.UNKNOWN,
         )
     }
-    return result
 }
