@@ -25,6 +25,12 @@ class GlassRenderingTest {
         }
         assertTrue(glassShadersAvailable())
     }
+    @Test fun glassModeRefusesUnrecordedAndSoftwareBackdrops() {
+        assertEquals(GlassRenderMode.SOLID, glassRenderMode(true, false, false, true, true, true))
+        assertEquals(GlassRenderMode.BLUR, glassRenderMode(true, false, true, false, true, true))
+        assertEquals(GlassRenderMode.SOLID, glassRenderMode(true, true, true, true, true, true))
+    }
+
     @Test fun unsupportedRenderersAndReducedEffectsNeverRequestRefraction() {
         assertEquals(GlassRenderMode.SOLID, glassRenderMode(true,false,false,true,true,true))
         assertEquals(GlassRenderMode.SOLID, glassRenderMode(true,true,true,true,true,true))

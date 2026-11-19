@@ -322,7 +322,8 @@ internal fun AurelisNavigationContent(
     val pageBackdropModifier = Modifier.hazeSource(hazeState)
         .then(if (captureGlass) Modifier.layerBackdrop(appBackdrop) else Modifier)
     androidx.compose.runtime.CompositionLocalProvider(
-        com.music.aurelis.ui.components.LocalAppBackdrop provides appBackdrop,
+        // Never supply a stale, unrecorded layer to a lens when capture is off.
+        com.music.aurelis.ui.components.LocalAppBackdrop provides (if (captureGlass) appBackdrop else null),
         com.music.aurelis.ui.components.LocalAppHazeState provides hazeState,
     ) {
     AppNavigationHost(

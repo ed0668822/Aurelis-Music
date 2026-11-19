@@ -1,4 +1,5 @@
-// Aurelis © 2026. GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
 /*
  * The glass rendering itself is Kyant0/backdrop (Apache-2.0), vendored at
  * [com.music.aurelis.ui.components.backdrop] — see that package for the
@@ -78,6 +79,8 @@ private const val SURFACE_OPACITY = 0.4f
  * radius. The blur is what hides the upscale.
  */
 private const val GLASS_RESOLUTION_SCALE = 0.33f
+private const val FROST_BLUR_RADIUS_DP = 16f
+private const val FROST_RESOLUTION_SCALE = 0.25f
 
 /**
  * The hairline along a bar's edge, and what stands in for the glass rim
@@ -175,6 +178,7 @@ fun Modifier.liquidGlass(
     fallbackColor: Color = MaterialTheme.colorScheme.surface,
 ): Modifier {
     val reduceDynamicBlur by SettingsRepository.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val glassPerformance by SettingsRepository.glassPerformance.collectAsStateWithLifecycle()
     val backdrop = LocalAppBackdrop.current
     val hardware = LocalGlassHardware.current
     val shaders = remember(hardware, backdrop != null) { hardware && backdrop != null && glassShadersAvailable() }
@@ -185,9 +189,13 @@ fun Modifier.liquidGlass(
         style = HazeMaterials.regular(fallbackColor))).border(GLASS_EDGE_WIDTH, GLASS_EDGE_COLOR, shape)
     val exportedBackdrop = LocalGlassExport.current
     val density = LocalDensity.current
-    val blurPx = with(density) { BLUR_RADIUS_DP.dp.toPx() } * GLASS_RESOLUTION_SCALE
-    val lensHeightPx = with(density) { (LENS_HEIGHT * LENS_MAX_DP).dp.toPx() } * GLASS_RESOLUTION_SCALE
-    val lensAmountPx = with(density) { (LENS_AMOUNT * LENS_MAX_DP).dp.toPx() } * GLASS_RESOLUTION_SCALE
+    // F053: match BitChord's two pipeline budgets. Frost mode performs the
+    // larger blur on only a quarter-size recording, and never runs refraction.
+    val scale = if (glassPerformance) FROST_RESOLUTION_SCALE else GLASS_RESOLUTION_SCALE
+    val blurRadius = if (glassPerformance) FROST_BLUR_RADIUS_DP else BLUR_RADIUS_DP
+    val blurPx = with(density) { blurRadius.dp.toPx() } * scale
+    val lensHeightPx = with(density) { (LENS_HEIGHT * LENS_MAX_DP).dp.toPx() } * scale
+    val lensAmountPx = with(density) { (LENS_AMOUNT * LENS_MAX_DP).dp.toPx() } * scale
     val themeTint = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) {
         Color(0xFFFAFAFA)
     } else {
@@ -201,12 +209,14 @@ fun Modifier.liquidGlass(
         effects = {
             colorControls(saturation = 1f + 0.5f * VIBRANCY)
             blur(blurPx)
-            lens(
-                refractionHeight = lensHeightPx,
-                refractionAmount = lensAmountPx,
-                depthEffect = true,
-                chromaticAberration = true,
-            )
+            if (!glassPerformance) {
+                lens(
+                    refractionHeight = lensHeightPx,
+                    refractionAmount = lensAmountPx,
+                    depthEffect = true,
+                    chromaticAberration = true,
+                )
+            }
         },
         highlight = { Highlight.Default },
         shadow = { Shadow.Default },
@@ -214,6 +224,6 @@ fun Modifier.liquidGlass(
             drawRect(color = surfaceTintColor, size = size)
         },
         exportedBackdrop = exportedBackdrop,
-        backdropScale = GLASS_RESOLUTION_SCALE,
+        backdropScale = scale,
     )
 }

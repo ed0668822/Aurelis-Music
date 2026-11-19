@@ -24,6 +24,8 @@ object SettingsRepository {
     val themeMode = MutableStateFlow(0)
     val dolbyAtmos = MutableStateFlow(true)
     val liquidGlass = MutableStateFlow(true)
+    /** Frost-only glass avoids refraction shaders on lower-power devices. */
+    val glassPerformance = MutableStateFlow(false)
     val reduceAnimation = MutableStateFlow(false)
     val reduceDynamicBlur = MutableStateFlow(false)
     val hapticFeedback = MutableStateFlow(true)
@@ -83,6 +85,7 @@ object SettingsRepository {
         themeMode.value = readInt("theme_mode", 0).takeIf { it in 0..2 } ?: 0
         dolbyAtmos.value = readBoolean("dolby_atmos", true)
         liquidGlass.value = readBoolean("liquid_glass", true)
+        glassPerformance.value = readBoolean("glass_performance", false)
         reduceAnimation.value = readBoolean("reduce_animation", false)
         reduceDynamicBlur.value = readBoolean("reduce_dynamic_blur", false)
         hapticFeedback.value = readBoolean("haptic_feedback", true)
@@ -159,6 +162,7 @@ object SettingsRepository {
     fun setThemeMode(value: Int) { writable(); themeMode.value = value.takeIf { it in 0..2 } ?: 0; prefs.edit { putInt("theme_mode", themeMode.value) } }
     fun setDolbyAtmos(value: Boolean) { writable(); dolbyAtmos.value = value; prefs.edit { putBoolean("dolby_atmos", value) } }
     fun setLiquidGlass(value: Boolean) { writable(); liquidGlass.value = value; prefs.edit { putBoolean("liquid_glass", value) } }
+    fun setGlassPerformance(value: Boolean) { writable(); glassPerformance.value = value; prefs.edit { putBoolean("glass_performance", value) } }
     fun setReduceAnimation(value: Boolean) { writable(); reduceAnimation.value = value; prefs.edit { putBoolean("reduce_animation", value) } }
     fun setReduceDynamicBlur(value: Boolean) { writable(); reduceDynamicBlur.value = value; prefs.edit { putBoolean("reduce_dynamic_blur", value) } }
     fun setHapticFeedback(value: Boolean) {
