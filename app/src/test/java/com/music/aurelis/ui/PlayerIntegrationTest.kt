@@ -43,8 +43,15 @@ class PlayerIntegrationTest {
     private lateinit var player: RecordingPlayer
     private fun song(id: String) = LocalSong(id, "Canción local $id", "Artista local", "Álbum local",
         "content://media/external/audio/media/$id", null, 60_000, null, 1, 2026)
-    @After fun cleanup() { compose.runOnIdle { store.clear() } }
-    private fun start(fontScale: Float? = null) {
+    @After fun cleanup() { compose.runOnIdle {
+        store.clear()
+        SettingsRepository.setLastPlayerScreen(LastPlayerScreen.MAIN)
+    } }
+    private fun start(
+        fontScale: Float? = null,
+        playerScreen: LastPlayerScreen = LastPlayerScreen.MAIN,
+    ) {
+        SettingsRepository.setLastPlayerScreen(playerScreen)
         SettingsRepository.setReduceAnimation(true)
         SettingsRepository.setShowQueueHistory(false)
         SettingsRepository.lyricsSources.value = emptySet()
@@ -749,14 +756,48 @@ class PlayerIntegrationTest {
             compose.runOnIdle { SettingsRepository.setLyricsOffsetMs(previousOffset) }
         }
     }
+    @Test fun restoredLyricsPaneShowsTransportAndSurvivesTrackChange() {
+        start(playerScreen = LastPlayerScreen.LYRICS)
+        val before = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        compose.onNodeWithTag("player-queue-pane").assertDoesNotExist()
+        compose.runOnIdle { assertEquals(LastPlayerScreen.LYRICS, SettingsRepository.lastPlayerScreen.value) }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_next)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals("2", vm.state.value.currentSong?.id)
+            assertEquals(before, vm.state.value.queue.map { it.queueEntryId })
+            assertEquals(LastPlayerScreen.LYRICS, SettingsRepository.lastPlayerScreen.value)
+        }
+    }
+
+    @Test fun restoredQueuePaneAndBackPersistMainWithoutChangingPlayback() {
+        start(playerScreen = LastPlayerScreen.QUEUE)
+        val before = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithTag("player-queue-pane").assertIsDisplayed()
+        compose.onNodeWithTag("player-mode-pill").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(LastPlayerScreen.QUEUE, SettingsRepository.lastPlayerScreen.value) }
+        compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithTag("player-queue-pane").assertDoesNotExist()
+        compose.runOnIdle {
+            assertEquals(LastPlayerScreen.MAIN, SettingsRepository.lastPlayerScreen.value)
+            assertEquals(before, vm.state.value.queue.map { it.queueEntryId })
+        }
+    }
+
     @Test fun fullScreenLyricsNeverShrinkTheirViewportWhenTransportIsRevealed() {
         start(); importTranslationFixture()
         compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
         compose.onNodeWithContentDescription(app.getString(R.string.player_lyrics)).performClick()
         compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
         val before = compose.onNodeWithTag("lyrics-list").fetchSemanticsNode().boundsInRoot
-        compose.onNodeWithTag("lyrics-floating-transport").assertDoesNotExist()
-        compose.onNodeWithTag("lyrics-deck-mask").assertDoesNotExist()
+        // Match BitChord: opening lyrics reveals a collapsed sleeve and transport.
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-deck-mask").assertIsDisplayed()
         revealFullScreenLyricsControls()
         compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
         compose.onNodeWithTag("lyrics-deck-mask").assertIsDisplayed()
@@ -775,10 +816,8 @@ class PlayerIntegrationTest {
         SettingsRepository.setTranslationLanguage("es")
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
-        // Full-screen lyrics must start with the controls hidden. Reveal by a
-        // real bottom-half tap, instead of assuming the old toolbar is visible.
-        compose.onNodeWithContentDescription("Traducir").assertDoesNotExist()
-        revealFullScreenLyricsControls()
+        // BitChord opens the lyric sleeve with the controls available.
+        compose.onNodeWithContentDescription("Traducir").assertIsDisplayed()
         compose.onNodeWithContentDescription("Traducir").assertIsDisplayed().performClick()
         compose.onNodeWithText("Cancelar").performClick()
         compose.runOnIdle { assertEquals(0, requests) }

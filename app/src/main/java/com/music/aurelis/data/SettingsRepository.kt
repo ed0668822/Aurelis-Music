@@ -17,6 +17,9 @@ enum class AudioQuality { STANDARD, HIGH, LOSSLESS }
 
 enum class AppFont { SYSTEM, VAZIRMATN }
 
+/** Which expanded-player pane to restore when opening the player. */
+enum class LastPlayerScreen { MAIN, LYRICS, QUEUE }
+
 object SettingsRepository {
     private lateinit var prefs: SharedPreferences
 
@@ -56,6 +59,7 @@ object SettingsRepository {
     val hideVolumeBar = MutableStateFlow(false)
     val showNerdStats = MutableStateFlow(false)
     val lyricsOffsetMs = MutableStateFlow(0)
+    val lastPlayerScreen = MutableStateFlow(LastPlayerScreen.MAIN)
 
     // ── Queue ─────────────────────────────────────────────────────────────────
     val showQueueHistory = MutableStateFlow(false)
@@ -112,6 +116,9 @@ object SettingsRepository {
         hideVolumeBar.value = readBoolean("hide_volume_bar", false)
         showNerdStats.value = readBoolean("show_nerd_stats", false)
         lyricsOffsetMs.value = readInt("lyrics_offset_ms", 0)
+        lastPlayerScreen.value = LastPlayerScreen.entries.getOrElse(readInt("last_player_screen", 0)) {
+            LastPlayerScreen.MAIN
+        }
         showQueueHistory.value = readBoolean("show_queue_history", false)
 
         // Lyrics / translation: the two collections need rebuilding from names
@@ -222,6 +229,13 @@ object SettingsRepository {
     }
 
     // ── Player setters ────────────────────────────────────────────────────────
+    /** Player navigation preference; no playback or queue mutation. */
+    fun setLastPlayerScreen(value: LastPlayerScreen) {
+        if (lastPlayerScreen.value == value) return
+        lastPlayerScreen.value = value
+        if (::prefs.isInitialized) prefs.edit { putInt("last_player_screen", value.ordinal) }
+    }
+
     fun setHideVolumeBar(value: Boolean) { writable(); hideVolumeBar.value = value; prefs.edit { putBoolean("hide_volume_bar", value) } }
     fun setShowNerdStats(value: Boolean) { writable(); showNerdStats.value = value; prefs.edit { putBoolean("show_nerd_stats", value) } }
     fun setLyricsOffsetMs(value: Int) { writable(); lyricsOffsetMs.value = value; prefs.edit { putInt("lyrics_offset_ms", value) } }

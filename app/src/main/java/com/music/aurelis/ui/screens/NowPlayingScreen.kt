@@ -147,6 +147,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.aurelis.data.SettingsRepository
+import com.music.aurelis.data.LastPlayerScreen
 import com.music.aurelis.data.lyrics.TranslationLanguages
 import com.music.aurelis.playback.LyricsLookupState
 import com.music.aurelis.playback.LyricsState
@@ -238,25 +239,46 @@ fun NowPlayingScreen(
         if (!showAndroidOutputSwitcher(context)) showOutputHelp = true
     }
     var showQuality by rememberSaveable { mutableStateOf(false) }
-    var showLyrics by rememberSaveable { mutableStateOf(false) }
-    // Enter lyrics as the full reading pane; the transport can be summoned by a tap.
-    var lyricsControlsOpen by rememberSaveable { mutableStateOf(false) }
-    var showInlineQueue by rememberSaveable { mutableStateOf(false) }
+    // BitChord restores the last expanded pane. Only one of lyrics/queue may be open.
+    val restoredPlayerScreen = remember { SettingsRepository.lastPlayerScreen.value }
+    var showLyrics by rememberSaveable {
+        mutableStateOf(restoredPlayerScreen == LastPlayerScreen.LYRICS)
+    }
+    // The collapsed sleeve initially includes the transport; scrolling down hides it.
+    var lyricsControlsOpen by rememberSaveable {
+        mutableStateOf(restoredPlayerScreen == LastPlayerScreen.LYRICS)
+    }
+    var showInlineQueue by rememberSaveable {
+        mutableStateOf(restoredPlayerScreen == LastPlayerScreen.QUEUE)
+    }
     val queueListState = rememberLazyListState()
     var lyricsShareRequest by remember { mutableStateOf<LyricsShareRequest?>(null) }
     var showLyricsTools by remember { mutableStateOf(false) }
-    LaunchedEffect(song?.queueEntryId, song?.id, isVisible) {
+    LaunchedEffect(song?.queueEntryId, song?.id) {
         lyricsShareRequest = null
         showLyricsTools = false
-        // Switching tracks must not reveal the transport over full-screen lyrics.
-        lyricsControlsOpen = !showLyrics
+        // Keep the current pane and its controls across tracks, as in BitChord.
+    }
+    LaunchedEffect(isVisible, song != null, showLyrics, showInlineQueue) {
+        if (isVisible && song != null) {
+            SettingsRepository.setLastPlayerScreen(
+                when {
+                    showLyrics -> LastPlayerScreen.LYRICS
+                    showInlineQueue -> LastPlayerScreen.QUEUE
+                    else -> LastPlayerScreen.MAIN
+                },
+            )
+        }
     }
     var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
 
     BackHandler(enabled = isVisible && showInlineQueue) { showInlineQueue = false }
-    BackHandler(enabled = isVisible && showLyrics) { showLyrics = false }
+    BackHandler(enabled = isVisible && showLyrics) {
+        showLyrics = false
+        lyricsControlsOpen = false
+    }
     BackHandler(enabled = isVisible && lyricsShareRequest != null) { lyricsShareRequest = null }
 
     val lyricsOffset by SettingsRepository.lyricsOffsetMs.collectAsState()
@@ -399,19 +421,26 @@ fun NowPlayingScreen(
                 )
 
                 val openLyrics: () -> Unit = {
-                    showInlineQueue = false
                     val opening = !showLyrics
-                    showLyrics = opening
                     if (opening) {
-                        lyricsControlsOpen = false
+                        // Commit pane and transport together to avoid a one-frame flash.
+                        lyricsControlsOpen = true
                         showLyricsTools = false
+                        showInlineQueue = false
+                    } else {
+                        lyricsControlsOpen = false
                     }
+                    showLyrics = opening
                 }
                 // F046: the queue belongs to this player in both orientations;
                 // switching panes never creates a second MediaController or queue.
                 val openQueue: () -> Unit = {
-                    showLyrics = false
-                    showInlineQueue = !showInlineQueue
+                    val opening = !showInlineQueue
+                    if (opening) {
+                        showLyrics = false
+                        lyricsControlsOpen = false
+                    }
+                    showInlineQueue = opening
                 }
                 val header: @Composable () -> Unit = {
                     if (!landscape) Column(Modifier.fillMaxWidth().testTag("player-handle").playerSwipeTrigger(1, closePlayer, panelMotion), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -679,7 +708,7 @@ fun NowPlayingScreen(
                             if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                                 // BitChord keeps the artwork, credits and menu in a compact
                                 // collapsed sleeve above an otherwise full-height lyric pane.
-                                IconButton(onClick = { showLyrics = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(22.dp)) {
+                                IconButton(onClick = { showLyrics = false; lyricsControlsOpen = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(22.dp)) {
                                     Box(Modifier.size(38.dp, 5.dp).background(Color.White, CircleShape)
                                         .semantics { contentDescription = context.getString(R.string.lyrics_ui_close) })
                                 }
@@ -689,7 +718,7 @@ fun NowPlayingScreen(
                                     Box(Modifier.weight(1f)) { credits(true) }
                                 }
                             } else Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { showLyrics = false }) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.lyrics_ui_close)) }
+                                IconButton(onClick = { showLyrics = false; lyricsControlsOpen = false }) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.lyrics_ui_close)) }
                                 Text(s.title, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             if (showLyricsTools || lines.isEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
