@@ -428,7 +428,12 @@ class PlayerIntegrationTest {
             compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
             compose.runOnIdle { assertTrue("Media3 must offer real seeking", vm.state.value.canSeek) }
             val seeksBeforeTap = player.seeks
-            compose.onNodeWithTag("lyrics-line-1").performScrollTo().assertIsEnabled().performClick()
+            // In landscape the lyric transport is a floating bottom overlay (360dp high
+            // window: it starts around y=236dp). The next line sits under it, so a
+            // coordinate tap would hit the play/pause button instead of the lyric.
+            // Invoke the line's own click action; seek behaviour is what is under test.
+            compose.onNodeWithTag("lyrics-line-1").performScrollTo().assertIsEnabled()
+                .performSemanticsAction(SemanticsActions.OnClick) { it() }
             compose.waitUntil(5_000) {
                 compose.runOnIdle { player.seeks > seeksBeforeTap }
             }
@@ -618,7 +623,9 @@ class PlayerIntegrationTest {
         compose.onNodeWithTag("audio-output-system-picker").assertIsDisplayed()
         // This is a real bottom sheet with a vertically scrolling content area.
         // On small phones the volume and pipeline rows start below the fold.
-        compose.onNodeWithTag("audio-output-volume").performScrollTo().assertIsDisplayed()
+        // PlayerDrawer's content column is clickable, so it merges the descendants that
+        // are not clickable themselves; the volume wrapper only exists unmerged.
+        compose.onNodeWithTag("audio-output-volume", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("audio-output-pipeline").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("audio-output-sheet").assertDoesNotExist()
         compose.onNodeWithText(app.getString(R.string.audio_pipeline)).assertIsDisplayed()
