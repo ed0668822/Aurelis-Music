@@ -951,6 +951,12 @@ fun NowPlayingScreen(
                 if (showPlaybackTools) com.music.aurelis.ui.components.PlaybackToolsDialog(
                     state, { duration, after -> playbackViewModel.setSleepTimer(duration, after) },
                     playbackViewModel::setPlaybackSpeed, playbackViewModel::setSkipSilence, playbackViewModel::setAutoplay, { showPlaybackTools = false })
+                // `if (cond) { a, b -> ... }` parses the braces as an if-block, not a
+                // lambda, so declare the nullable callback explicitly.
+                val sleepTimerAction: ((Long, Boolean) -> Unit)? =
+                    if (state.canUsePlaybackTools) {
+                        { duration: Long, after: Boolean -> playbackViewModel.setSleepTimer(duration, after) }
+                    } else null
                 if (showSongActions) SongActionsDialog(s, userStore,
                     onEnqueue = { playbackViewModel.enqueue(listOf(s)) }, onDismiss = { showSongActions = false },
                     onPlayNext = { playbackViewModel.playNext(listOf(s)) },
@@ -965,9 +971,7 @@ fun NowPlayingScreen(
                     onPlaybackTools = { showPlaybackTools = true },
                     // Timer commands require a live MediaSession; plain Media3
                     // players (and offline UI previews) cannot accept them.
-                    onSetSleepTimer = if (state.canUsePlaybackTools) { duration, after ->
-                        playbackViewModel.setSleepTimer(duration, after)
-                    } else null,
+                    onSetSleepTimer = sleepTimerAction,
                     timerRemainingMs = state.sleepRemainingMs,
                     sleepAfterTrack = state.sleepAfterTrack,
                 )
