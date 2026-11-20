@@ -1,6 +1,16 @@
 package com.music.aurelis.ui.onboarding
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import coil3.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.music.aurelis.ui.icons.SfIcons
+import com.music.aurelis.data.settings.LocalProfile
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -105,6 +115,13 @@ fun OnboardingScreen(
 ) {
     var page by rememberSaveable { mutableIntStateOf(PAGE_NAME) }
     var name by rememberSaveable { mutableStateOf(initialName) }
+    val photoUri by LocalProfile.photoUri.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null && !LocalProfile.setPhoto(context, uri)) {
+            Toast.makeText(context, context.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
+        }
+    }
     val focusManager = LocalFocusManager.current
 
     BackHandler(enabled = page == PAGE_CONNECT) { page = PAGE_NAME }
@@ -168,6 +185,8 @@ fun OnboardingScreen(
                 when (shown) {
                     PAGE_NAME -> NamePage(
                         name = name,
+                        photoUri = photoUri,
+                        onPickPhoto = { photoPicker.launch("image/*") },
                         onNameChange = { name = it.take(NAME_LIMIT) },
                         onNext = next@{
                             val chosen = name.trim()
@@ -206,6 +225,8 @@ private fun OnboardingPage(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 private fun ColumnScope.NamePage(
     name: String,
+    photoUri: String?,
+    onPickPhoto: () -> Unit,
     onNameChange: (String) -> Unit,
     onNext: () -> Unit,
 ) {
@@ -230,6 +251,11 @@ private fun ColumnScope.NamePage(
     Title(stringResource(R.string.onboarding_title))
 
     Spacer(Modifier.weight(1f))
+
+    AnimatedVisibility(visible = !keyboardUp) {
+        LocalPhotoChooser(photoUri = photoUri, onClick = onPickPhoto)
+    }
+    Spacer(Modifier.height(18.dp))
 
     Text(
         text = stringResource(R.string.onboarding_name_prompt),
@@ -311,6 +337,49 @@ private fun Title(text: String) {
         ),
         color = Color.White,
     )
+}
+
+
+/** Optional image chosen with Android's picker and copied to private on-device storage. */
+@Composable
+private fun LocalPhotoChooser(photoUri: String?, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White.copy(alpha = 0.13f))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (!photoUri.isNullOrBlank()) {
+                AsyncImage(
+                    model = photoUri,
+                    contentDescription = stringResource(R.string.local_profile_photo),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                )
+            } else {
+                Icon(SfIcons.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+            }
+        }
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(stringResource(R.string.local_profile_change_photo), color = Color.White,
+                style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(3.dp))
+            Text(stringResource(R.string.local_profile_private_photo),
+                color = Color.White.copy(alpha = 0.65f),
+                style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 /**

@@ -350,6 +350,7 @@ import com.music.aurelis.ui.screens.MoodGenrePlaylistsScreen
 import com.music.aurelis.ui.screens.SearchScreen
 import com.music.aurelis.data.settings.SongSort
 import com.music.aurelis.ui.onboarding.OnboardingScreen
+import com.music.aurelis.data.settings.LocalProfile
 import com.music.aurelis.ui.festive.DiwaliGate
 import com.music.aurelis.ui.festive.DiwaliGreetingScreen
 import com.music.aurelis.ui.replay.ReplayScreen
@@ -5312,9 +5313,9 @@ private fun AurelisApp(
             OnboardingScreen(
                 signedIn = signedIn,
                 initialName = remember {
-                    ListenTogether.nickname().ifBlank { account?.name.orEmpty() }
+                    LocalProfile.displayName.value.ifBlank { ListenTogether.nickname().ifBlank { account?.name.orEmpty() } }
                 },
-                onNameChosen = ListenTogether::setNickname,
+                onNameChosen = LocalProfile::setName,
                 onSignIn = { webSession = WebSessionMode.SIGN_IN },
                 onFinish = AppSettings::setOnboardingComplete,
             )

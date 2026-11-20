@@ -933,6 +933,7 @@ object AppSettings {
      */
     fun init(context: Context, authStore: AuthStore) {
         prefs = context.getSharedPreferences("aurelis_settings", Context.MODE_PRIVATE)
+        LocalProfile.init(context)
         this.authStore = authStore
         com.music.aurelis.data.spotify.LocalPlaylistStore.init(context)
         com.music.aurelis.data.OfflinePlaylists.init(
@@ -995,7 +996,8 @@ object AppSettings {
         loudnessNormalization.value = prefs.getBoolean(KEY_LOUDNESS_NORMALIZATION, true)
         loudnessOffOnSpeaker.value = prefs.getBoolean(KEY_LOUDNESS_OFF_ON_SPEAKER, true)
         dolbyAtmos.value = prefs.getBoolean(KEY_DOLBY_ATMOS, true)
-        directSourceStream.value = prefs.getBoolean(KEY_DIRECT_SOURCE_STREAM, false)
+        directSourceStream.value = AurelisFeatures.ADVANCED_STREAMING_SETTINGS &&
+            prefs.getBoolean(KEY_DIRECT_SOURCE_STREAM, false)
         spatialAudio.value = prefs.getBoolean(KEY_SPATIAL_AUDIO, false)
         equalizerEnabled.value = prefs.getBoolean(KEY_EQ_ENABLED, false)
         equalizerMode.value = runCatching {
@@ -1313,8 +1315,11 @@ object AppSettings {
     }
 
     fun setDirectSourceStream(value: Boolean) {
-        directSourceStream.value = value
-        prefs.edit().putBoolean(KEY_DIRECT_SOURCE_STREAM, value).apply()
+        // Preserve the user's prior preference while the advanced stream UI is paused.
+        directSourceStream.value = AurelisFeatures.ADVANCED_STREAMING_SETTINGS && value
+        if (AurelisFeatures.ADVANCED_STREAMING_SETTINGS) {
+            prefs.edit().putBoolean(KEY_DIRECT_SOURCE_STREAM, value).apply()
+        }
     }
 
     fun setSpatialAudio(value: Boolean) {

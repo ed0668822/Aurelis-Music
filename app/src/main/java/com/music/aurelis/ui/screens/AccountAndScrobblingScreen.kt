@@ -1,6 +1,23 @@
 package com.music.aurelis.ui.screens
 
 import com.music.aurelis.ui.icons.SfIcons
+import com.music.aurelis.data.settings.AurelisFeatures
+import com.music.aurelis.data.settings.LocalProfile
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import coil3.compose.AsyncImage
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.music.aurelis.auth.clearSpotifyWebSession
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.HorizontalDivider
@@ -66,6 +83,16 @@ fun AccountAndScrobblingScreen(
     val discordUsername by AppSettings.discordUsername.collectAsStateWithLifecycle()
     val discordRpcEnabled by AppSettings.discordRpcEnabled.collectAsStateWithLifecycle()
     val spotifyConnected by AppSettings.spotifySpdcToken.collectAsStateWithLifecycle()
+    val localName by LocalProfile.displayName.collectAsStateWithLifecycle()
+    val localPhoto by LocalProfile.photoUri.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var editingLocalName by remember { mutableStateOf(false) }
+    var draftName by remember { mutableStateOf("") }
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null && !LocalProfile.setPhoto(context, uri)) {
+            Toast.makeText(context, context.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -74,6 +101,62 @@ fun AccountAndScrobblingScreen(
             .padding(contentPadding),
     ) {
         SettingsPageTitle(stringResource(R.string.account_integrations))
+
+        // This profile is entirely local; signing in below is optional.
+        SettingsGroup(header = stringResource(R.string.local_profile_title), topSpacing = 0.dp) {
+            SettingsRow(
+                icon = SfIcons.Person,
+                iconContent = localPhoto?.let { uri ->
+                    {
+                        AsyncImage(model = uri, contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(36.dp).clip(CircleShape))
+                    }
+                },
+                title = localName.ifBlank { stringResource(R.string.local_profile_title) },
+                subtitle = stringResource(R.string.local_profile_change_photo),
+                onClick = { photoPicker.launch("image/*") },
+            )
+            FullWidthDivider()
+            SettingsRow(
+                icon = SfIcons.Person,
+                title = stringResource(R.string.local_profile_edit_name),
+                subtitle = localName,
+                onClick = { draftName = localName; editingLocalName = true },
+            )
+            if (localPhoto != null) {
+                FullWidthDivider()
+                DestructiveRow(label = stringResource(R.string.local_profile_remove_photo),
+                    onClick = LocalProfile::clearPhoto)
+            }
+        }
+        if (editingLocalName) {
+            AlertDialog(
+                onDismissRequest = { editingLocalName = false },
+                title = { Text(stringResource(R.string.local_profile_edit_name)) },
+                text = {
+                    OutlinedTextField(
+                        value = draftName,
+                        onValueChange = { draftName = it.take(40) },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.onboarding_name_hint)) },
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        LocalProfile.setName(draftName)
+                        editingLocalName = false
+                    }, enabled = draftName.isNotBlank()) {
+                        Text(stringResource(R.string.save))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { editingLocalName = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                },
+            )
+        }
 
         // One card: who is signed in, which profile is listening, and the way
         // out, with the explanation of profiles underneath.
@@ -101,6 +184,7 @@ fun AccountAndScrobblingScreen(
             }
         }
 
+        if (AurelisFeatures.SPOTIFY_ACCOUNT_INTEGRATION) {
         SettingsGroup(
             header = stringResource(R.string.spotify),
             footer = stringResource(R.string.spotify_connect_subtitle),
@@ -121,6 +205,17 @@ fun AccountAndScrobblingScreen(
                         clearSpotifyWebSession()
                         AppSettings.setSpotifySpdcToken("")
                     },
+                )
+            }
+        }
+
+        } else {
+            SettingsGroup(header = stringResource(R.string.spotify)) {
+                SettingsRow(
+                    iconPainter = painterResource(Res.drawable.spotify_logo),
+                    title = stringResource(R.string.spotify),
+                    subtitle = stringResource(R.string.local_feature_paused),
+                    enabled = false,
                 )
             }
         }

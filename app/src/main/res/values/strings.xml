@@ -1332,4 +1332,13 @@
     <string name="diwali_title">Aurelis Music wishes you a Happy Diwali</string>
     <string name="diwali_subtitle">May this festival of lights fill your home with joy and your days with music.</string>
     <string name="diwali_cta">Let\'s Celebrate</string>
+    <string name="local_profile_title">Local profile</string>
+    <string name="local_profile_photo">Profile photo</string>
+    <string name="local_profile_change_photo">Choose a profile photo</string>
+    <string name="local_profile_private_photo">Optional · stored only on this device</string>
+    <string name="local_profile_photo_error">Could not open that image. Choose a smaller photo.</string>
+    <string name="local_profile_optional_sign_in">Local profile · Google sign-in is optional</string>
+    <string name="local_profile_edit_name">Edit local name</string>
+    <string name="local_profile_remove_photo">Remove local photo</string>
+    <string name="local_feature_paused">Temporarily unavailable</string>
 </resources>

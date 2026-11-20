@@ -158,6 +158,8 @@ import com.music.aurelis.data.NerdStats
 import com.music.aurelis.data.scrobbling.LastFM
 import com.music.aurelis.data.listentogether.ListenTogether
 import com.music.aurelis.data.settings.AppSettings
+import com.music.aurelis.data.settings.AurelisFeatures
+import com.music.aurelis.data.settings.LocalProfile
 import com.music.aurelis.data.settings.OutputPcmMode
 import com.music.aurelis.data.settings.BitPerfectMode
 import com.music.aurelis.playback.AudioOutputStatus
@@ -331,6 +333,8 @@ fun SettingsScreen(
     // Read here so the row can say "In a party · ABC123" rather than making
     // somebody open the screen to find out whether they are still in one.
     val party by ListenTogether.state.collectAsStateWithLifecycle()
+    val localPhoto by LocalProfile.photoUri.collectAsStateWithLifecycle()
+    val localName by LocalProfile.displayName.collectAsStateWithLifecycle()
 
     // Filters the rows below — see [SettingsSearch]. Blank shows everything,
     // exactly as if the field weren't there.
@@ -463,7 +467,7 @@ fun SettingsScreen(
                 // signs into are worth typing at this field even though none of
                 // them is named on the row itself.
                 row(accountTitle, "scrobbling", "last.fm", "listenbrainz") {
-                    val avatarUrl = account?.thumbnailUrl?.takeIf { signedIn }
+                    val avatarUrl = localPhoto ?: account?.thumbnailUrl?.takeIf { signedIn }
                     SettingsRow(
                         icon = SfIcons.Person,
                         iconContent = avatarUrl?.let { url ->
@@ -477,14 +481,16 @@ fun SettingsScreen(
                             }
                         },
                         title = accountTitle,
-                        subtitle = account?.email?.takeIf { it.isNotBlank() }
-                            ?: stringResource(if (signedIn) R.string.signed_in else R.string.not_signed_in),
+                        subtitle = account?.email?.takeIf { signedIn && it.isNotBlank() }
+                            ?: localName.takeIf { it.isNotBlank() }
+                            ?: stringResource(if (signedIn) R.string.signed_in else R.string.local_profile_optional_sign_in),
                         onClick = onAccountScrobbling,
                     )
                 }
                 // Sits with the account rather than with Playback: a party is up to
                 // five signed-in people, and being signed in is the whole of what
                 // the row needs before it will do anything.
+                if (AurelisFeatures.LISTEN_TOGETHER_SETTINGS) {
                 val listenTogetherTitle = stringResource(R.string.listen_together)
                 row(listenTogetherTitle, "jam", "party", "sync", "friends") {
                     SettingsRow(
@@ -497,6 +503,7 @@ fun SettingsScreen(
                         onClick = onListenTogether,
                     )
                 }
+                }
             }
 
             // The row that used to sit at the top of this group was called
@@ -506,6 +513,7 @@ fun SettingsScreen(
             // longer a setting at all — see
             // [SourceResolver.requestForNow][com.music.aurelis.data.sources.SourceResolver.requestForNow].
             SearchableSettingsGroup(search, header = stringResource(R.string.audio_quality)) {
+                if (AurelisFeatures.ADVANCED_STREAMING_SETTINGS) {
                 val sourceTitle = stringResource(R.string.source)
                 val sourceSubtitle = stringResource(R.string.sources_subtitle)
                 row(sourceTitle, sourceSubtitle, "addon", "lossless") {
@@ -551,6 +559,7 @@ fun SettingsScreen(
                         value = cellularQuality.localizedLabel(),
                         onClick = { onOpenChoice(SettingsChoiceKind.AUDIO_QUALITY_CELLULAR) },
                     )
+                }
                 }
                 // Sits with the quality ceilings rather than with Playback: it
                 // decides which version of a track gets fetched, the same question
@@ -2157,6 +2166,8 @@ internal fun AccountCard(
     /** Sits inside a [SettingsGroup] that already supplies the card, so draws none of its own. */
     grouped: Boolean = false,
 ) {
+    val localAvatar by LocalProfile.photoUri.collectAsStateWithLifecycle()
+    val localName by LocalProfile.displayName.collectAsStateWithLifecycle()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -2180,9 +2191,9 @@ internal fun AccountCard(
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (account?.thumbnailUrl != null) {
+        if (localAvatar != null || account?.thumbnailUrl != null) {
             AsyncImage(
-                model = account.thumbnailUrl,
+                model = localAvatar ?: account?.thumbnailUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(52.dp).clip(CircleShape).thumbnailBorder(CircleShape),
@@ -2205,7 +2216,7 @@ internal fun AccountCard(
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                text = account?.name
+                text = localName.takeIf { it.isNotBlank() } ?: account?.name
                     ?: stringResource(if (signedIn) R.string.signed_in else R.string.not_signed_in),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -2214,9 +2225,9 @@ internal fun AccountCard(
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = account?.email?.takeIf { it.isNotBlank() }
+                text = account?.email?.takeIf { signedIn && it.isNotBlank() }
                     ?: stringResource(
-                        if (signedIn) R.string.youtube_music_account else R.string.tap_to_sign_in_google,
+                        if (signedIn) R.string.youtube_music_account else R.string.local_profile_optional_sign_in,
                     ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
