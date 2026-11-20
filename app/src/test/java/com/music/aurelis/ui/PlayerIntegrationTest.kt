@@ -788,6 +788,23 @@ class PlayerIntegrationTest {
         }
     }
 
+    @Test fun lyricsReturnToFullReadingPaneWithoutChangingPlaybackState() {
+        start(); importTranslationFixture()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_lyrics)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        val queueBefore = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        val trackBefore = compose.runOnIdle { vm.state.value.currentSong?.queueEntryId }
+        val positionBefore = compose.runOnIdle { vm.state.value.positionMs }
+        compose.onNodeWithTag("lyrics-list").performTouchInput { swipeUp() }
+        compose.onNodeWithTag("lyrics-list").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals(trackBefore, vm.state.value.currentSong?.queueEntryId)
+            assertEquals(positionBefore, vm.state.value.positionMs)
+            assertEquals(queueBefore, vm.state.value.queue.map { it.queueEntryId })
+        }
+    }
+
     @Test fun fullScreenLyricsNeverShrinkTheirViewportWhenTransportIsRevealed() {
         start(); importTranslationFixture()
         compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()

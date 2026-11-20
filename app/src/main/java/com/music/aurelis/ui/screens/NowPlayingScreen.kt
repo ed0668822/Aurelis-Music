@@ -786,7 +786,9 @@ fun NowPlayingScreen(
                                     isPlaying = state.isPlaying,
                                     onSeekToLine = { playbackViewModel.seekTo(com.music.aurelis.ui.player.adjustedLyricsSeekTarget(it, lyricsOffset)) },
                                     offsetMs = lyricsOffset,
-                                    centerFocus = landscape,
+                                    // BitChord keeps the sung phrase at the visual center
+                                    // in portrait as well as on wide screens.
+                                    centerFocus = true,
                                     isSynced = loaded?.isSynced == true,
                                     translatedLines = translated,
                                     syncEnabled = syncEnabled, blurUnfocused = blurLyrics && !reduceBlur,
@@ -809,9 +811,9 @@ fun NowPlayingScreen(
                                     .testTag("lyrics-deck-mask")
                                     .background(Brush.verticalGradient(
                                         0f to Color.Transparent,
-                                        0.17f to Color.Black.copy(alpha = 0.92f),
-                                        0.30f to Color.Black,
-                                        1f to Color.Black,
+                                        0.17f to Color.Black.copy(alpha = 0.70f),
+                                        0.30f to Color.Black.copy(alpha = 0.82f),
+                                        1f to Color.Black.copy(alpha = 0.90f),
                                     )))
                             }
                             AnimatedVisibility(
@@ -905,8 +907,8 @@ fun NowPlayingScreen(
                     }
                 }
                 AnimatedVisibility(visible = showLyrics && !landscape,
-                    enter = if (reduceAnimation) androidx.compose.animation.EnterTransition.None else fadeIn(tween(420, easing = FastOutSlowInEasing)),
-                    exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else fadeOut(tween(420, easing = FastOutSlowInEasing))) {
+                    enter = if (reduceAnimation) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280, easing = FastOutSlowInEasing)),
+                    exit = if (reduceAnimation) androidx.compose.animation.ExitTransition.None else fadeOut(tween(220, easing = FastOutSlowInEasing))) {
                     Box(Modifier.fillMaxSize().then(if (!showLyrics) Modifier.clearAndSetSemantics { } else Modifier)) { lyricsContent() }
                 }
                 // The queue is a pane of the current player, not an independent
