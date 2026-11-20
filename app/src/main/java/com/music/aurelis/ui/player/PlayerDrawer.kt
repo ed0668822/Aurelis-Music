@@ -57,6 +57,7 @@ fun PlayerDrawer(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     reduceDynamicBlur: Boolean = false,
+    opaqueSurface: Boolean = false,
     titleGap: Dp = 14.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -129,8 +130,10 @@ fun PlayerDrawer(
                     .offset { IntOffset(0, offset.roundToInt()) }
                     .clip(DRAWER_SHAPE)
                     .then(
-                        if (reduceDynamicBlur) {
-                            Modifier.background(Color(0xFF121212))
+                        if (reduceDynamicBlur || opaqueSurface) {
+                            // Device/output controls must never reveal song titles
+                            // and buttons from the player behind the drawer.
+                            Modifier.background(Color(0xFF171719))
                         } else {
                             Modifier
                                 .optimizedHazeEffect(

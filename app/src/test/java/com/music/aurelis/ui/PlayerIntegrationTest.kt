@@ -756,8 +756,10 @@ class PlayerIntegrationTest {
         compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
         val before = compose.onNodeWithTag("lyrics-list").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithTag("lyrics-floating-transport").assertDoesNotExist()
+        compose.onNodeWithTag("lyrics-deck-mask").assertDoesNotExist()
         revealFullScreenLyricsControls()
         compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-deck-mask").assertIsDisplayed()
         val after = compose.onNodeWithTag("lyrics-list").fetchSemanticsNode().boundsInRoot
         assertEquals("Showing controls must not shrink the lyric viewport", before.height, after.height, 1f)
         assertEquals(before.top, after.top, 1f)

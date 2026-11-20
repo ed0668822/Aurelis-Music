@@ -49,6 +49,7 @@ internal fun AudioOutputSheet(
         onDismiss = onDismiss,
         modifier = modifier,
         reduceDynamicBlur = reduceDynamicBlur,
+        opaqueSurface = true,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

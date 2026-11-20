@@ -771,6 +771,20 @@ fun NowPlayingScreen(
                             if (picker.picking) LyricsPickBar(picker.picks.isNotEmpty(), picker.cancel, picker.share)
                             if (picker.overBudget) Text(stringResource(R.string.lyrics_share_pick_limit), Modifier.padding(horizontal = 24.dp), color = Color.White)
                         } // The reading pane stays measured at full height.
+                            // A separate bottom fade masks verses behind the
+                            // transport. Keeping this OUTSIDE the list prevents
+                            // any scroll-jump or change in focus/word timing.
+                            if (!landscape && lyricsControlsOpen && !picker.picking) {
+                                Spacer(Modifier.align(Alignment.BottomCenter)
+                                    .fillMaxWidth().height(330.dp)
+                                    .testTag("lyrics-deck-mask")
+                                    .background(Brush.verticalGradient(
+                                        0f to Color.Transparent,
+                                        0.17f to Color.Black.copy(alpha = 0.92f),
+                                        0.30f to Color.Black,
+                                        1f to Color.Black,
+                                    )))
+                            }
                             AnimatedVisibility(
                                 visible = (lyricsControlsOpen || landscape) && !picker.picking,
                                 modifier = Modifier.align(Alignment.BottomCenter)

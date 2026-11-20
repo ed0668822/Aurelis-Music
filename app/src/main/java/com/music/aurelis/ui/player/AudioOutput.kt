@@ -54,6 +54,26 @@ internal fun rememberAndroidAudioOutputs(): List<AudioOutputDevice> {
     return outputs
 }
 
+/**
+ * Android exposes the built-in earpiece and speaker separately. Both are the
+ * same physical phone in a user-facing output chooser. Preserve the confirmed
+ * active built-in route when selecting the one visible phone row; do not
+ * collapse Bluetooth, wired or USB devices.
+ */
+internal fun collapseBuiltInPhoneOutputs(outputs: List<AudioOutputDevice>): List<AudioOutputDevice> {
+    val phone = outputs.firstOrNull { it.kind == AudioOutputKind.PHONE && it.isActive }
+        ?: outputs.firstOrNull { it.kind == AudioOutputKind.PHONE }
+        ?: return outputs
+    var inserted = false
+    return outputs.mapNotNull { output ->
+        if (output.kind != AudioOutputKind.PHONE) output
+        else if (!inserted) {
+            inserted = true
+            phone
+        } else null
+    }
+}
+
 private fun readOutputs(manager: AudioManager): List<AudioOutputDevice> {
     val devices = runCatching {
         manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).toList()
@@ -71,7 +91,7 @@ private fun readOutputs(manager: AudioManager): List<AudioOutputDevice> {
     // Several reported destinations are not proof of an effective single route.
     // Mark only a uniquely identified media device; otherwise show unknown.
     val activeId = confirmedMediaRouteId(routedIds)
-    return devices.mapNotNull { device ->
+    return collapseBuiltInPhoneOutputs(devices.mapNotNull { device ->
         val kind = when (device.type) {
             AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> AudioOutputKind.PHONE
             AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> AudioOutputKind.WIRED
@@ -88,7 +108,7 @@ private fun readOutputs(manager: AudioManager): List<AudioOutputDevice> {
             isActive = device.id == activeId,
             form = BluetoothForm.UNKNOWN,
         )
-    }
+    })
 }
 
 /** A routing report with zero or multiple candidate devices is not a confirmed route. */
