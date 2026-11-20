@@ -1,0 +1,126 @@
+name: Migrate Aurelis package (one time)
+on:
+  push:
+    branches: [Aurelis-Music-Redesign]
+    paths: ['.github/workflows/rename-aurelis-package-once.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.ref == 'refs/heads/Aurelis-Music-Redesign'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Rename all first-party package paths and references
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          def git(*args):
+              return subprocess.check_output(["git", *args]).decode("utf-8", "replace")
+
+          old_dot = "com.music.bitchord"
+          new_dot = "com.music.aurelis"
+          old_dev = "com.dev.bitchord"
+          new_dev = "com.dev.aurelis"
+          old_path = "com/music/bitchord"
+          new_path = "com/music/aurelis"
+          old_dev_path = "com/dev/bitchord"
+          new_dev_path = "com/dev/aurelis"
+          tracked = git("ls-files", "-z").split("\0")
+          roots = set()
+          for path in tracked:
+              if not path:
+                  continue
+              for before in (old_path, old_dev_path):
+                  pos = path.find(before)
+                  if pos >= 0:
+                      roots.add(path[:pos] + before)
+          for src in sorted(roots, key=lambda path: (-len(path), path)):
+              dst = src.replace(old_path, new_path).replace(old_dev_path, new_dev_path)
+              if not Path(src).exists():
+                  continue
+              Path(dst).parent.mkdir(parents=True, exist_ok=True)
+              subprocess.run(["git", "mv", src, dst], check=True)
+              print(f"Renamed directory: {src} -> {dst}")
+
+          replaced = 0
+          for filename in git("ls-files", "-z").split("\0"):
+              if not filename:
+                  continue
+              path = Path(filename)
+              if not path.is_file() or path.is_symlink():
+                  continue
+              try:
+                  data = path.read_bytes()
+                  if b"\0" in data or len(data) > 3_000_000:
+                      continue
+                  original = data.decode("utf-8")
+              except UnicodeDecodeError:
+                  continue
+              updated = original.replace(old_dot, new_dot).replace(old_dev, new_dev)
+              # Carry over Aurelis' app identity in addition to package declarations.
+              if filename == "settings.gradle.kts":
+                  updated = updated.replace('rootProject.name = "BitChord"', 'rootProject.name = "AurelisMusic"')
+              if filename == "app/build.gradle.kts":
+                  updated = updated.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Aurelis Music Dev")')
+                  updated = updated.replace('buildConfigField("String", "UPDATE_APK_PREFIX", "\\\"BitChord-\\\"")',
+                                            'buildConfigField("String", "UPDATE_APK_PREFIX", "\\\"Aurelis-\\\"")')
+              if filename == "app/src/main/res/values/strings.xml":
+                  updated = updated.replace('<string name="app_name">BitChord</string>',
+                                            '<string name="app_name">Aurelis Music</string>')
+              if filename.endswith("/data/AppUpdateChecker.kt"):
+                  updated = updated.replace("https://api.github.com/repos/kushagrasinghx/BitChord/releases/latest",
+                                            "https://api.github.com/repos/ed0668822/Aurelis-Music/releases/latest")
+              if updated != original:
+                  path.write_text(updated, encoding="utf-8")
+                  replaced += 1
+
+          migration_path = Path(".github/workflows/rename-aurelis-package-once.yml")
+          migration_path.unlink()
+          subprocess.run(["git", "add", "-A"], check=True)
+          status = git("status", "--short")
+          assert status, "No changes staged for migration"
+          print(f"Updated text files: {replaced}")
+          print(f"Paths moved: {len(roots)} package roots")
+          # No stale first-party package names should remain in source/config text.
+          for filename in git("ls-files", "-z").split("\0"):
+              if not filename or filename == str(migration_path):
+                  continue
+              if old_path in filename or old_dev_path in filename:
+                  raise SystemExit(f"Old package path remains: {filename}")
+              path = Path(filename)
+              if not path.is_file():
+                  continue
+              try:
+                  data = path.read_bytes()
+              except OSError:
+                  continue
+              if len(data) <= 3_000_000 and b"\0" not in data:
+                  if old_dot.encode() in data or old_dev.encode() in data:
+                      raise SystemExit(f"Old Java/Kotlin package reference remains: {filename}")
+
+          subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+          subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+          subprocess.run(["git", "commit", "-m", "refactor(android): migrate all app packages to com.music.aurelis"], check=True)
+          subprocess.run(["git", "push", "origin", "HEAD:Aurelis-Music-Redesign"], check=True)
+          print("Migration committed and pushed to Aurelis-Music-Redesign")
+          PY
+
+      - name: Configure JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Check Android build after package migration
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDevDebug :app:assembleProdRelease -Pbitchord.abis=arm64-v8a -Pbitchord.bundleWear=false --stacktrace
