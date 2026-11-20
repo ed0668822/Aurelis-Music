@@ -285,8 +285,12 @@ class PlaybackViewModel internal constructor(
 
     fun seekTo(positionMs: Long) {
         val player = controller ?: return
-        if (!_state.value.canSeek) return
-        val target = positionMs.coerceIn(0, _state.value.durationMs.coerceAtLeast(0))
+        // A touch-triggered seek must check the live Media3 controller. The
+        // previously published StateFlow may lag a timeline/command change.
+        if (!player.isCommandAvailable(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)) return
+        val mediaDuration = duration(player)
+        if (mediaDuration <= 0L) return
+        val target = positionMs.coerceIn(0L, mediaDuration)
         player.seekTo(target)
         syncState()
     }

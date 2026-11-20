@@ -963,9 +963,11 @@ fun NowPlayingScreen(
                     anchorBounds = songMenuAnchor,
                     onLyricsOffset = { showLyricsOffset = true },
                     onPlaybackTools = { showPlaybackTools = true },
-                    onSetSleepTimer = { duration, after ->
+                    // Timer commands require a live MediaSession; plain Media3
+                    // players (and offline UI previews) cannot accept them.
+                    onSetSleepTimer = if (state.canUsePlaybackTools) { duration, after ->
                         playbackViewModel.setSleepTimer(duration, after)
-                    },
+                    } else null,
                     timerRemainingMs = state.sleepRemainingMs,
                     sleepAfterTrack = state.sleepAfterTrack,
                 )

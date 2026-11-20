@@ -426,7 +426,12 @@ class PlayerIntegrationTest {
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
             compose.onNodeWithTag("landscape-lyrics").assertIsDisplayed()
+            compose.runOnIdle { assertTrue("Media3 must offer real seeking", vm.state.value.canSeek) }
+            val seeksBeforeTap = player.seeks
             compose.onNodeWithTag("lyrics-line-1").performScrollTo().assertIsEnabled().performClick()
+            compose.waitUntil(5_000) {
+                compose.runOnIdle { player.seeks > seeksBeforeTap }
+            }
             compose.waitUntil(5_000) {
                 compose.runOnIdle { vm.state.value.positionMs == 1500L }
             }
@@ -611,8 +616,10 @@ class PlayerIntegrationTest {
         compose.onAllNodesWithContentDescription(app.getString(R.string.audio_output)).onFirst().performClick()
         compose.onNodeWithTag("audio-output-sheet").assertIsDisplayed()
         compose.onNodeWithTag("audio-output-system-picker").assertIsDisplayed()
-        compose.onNodeWithTag("audio-output-volume").assertIsDisplayed()
-        compose.onNodeWithTag("audio-output-pipeline").performClick()
+        // This is a real bottom sheet with a vertically scrolling content area.
+        // On small phones the volume and pipeline rows start below the fold.
+        compose.onNodeWithTag("audio-output-volume").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("audio-output-pipeline").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("audio-output-sheet").assertDoesNotExist()
         compose.onNodeWithText(app.getString(R.string.audio_pipeline)).assertIsDisplayed()
         compose.runOnIdle {
@@ -628,9 +635,11 @@ class PlayerIntegrationTest {
         compose.onNodeWithText("Información de la canción").performScrollTo().performClick()
         compose.onAllNodesWithText("Canción local 1").onLast().assertIsDisplayed()
         compose.onNodeWithContentDescription("Volver").performClick()
-        compose.onNodeWithText("Temporizador").performScrollTo().performClick()
-        compose.onNodeWithText("15 min").performScrollTo().performClick()
-        compose.runOnIdle { assertTrue(vm.state.value.sleepRemainingMs > 0L) }
+        // RecordingPlayer is not a MediaSession controller. A timer command
+        // cannot be sent to this test double, and must not be shown as usable.
+        compose.onNodeWithText("Temporizador").assertDoesNotExist()
+        compose.onNodeWithText("Desplazamiento de letras").performScrollTo().assertIsDisplayed()
+        compose.runOnIdle { assertEquals(0L, vm.state.value.sleepRemainingMs) }
     }
 
     @Test fun songActionsPersistFavoritePlaylistAndAppendWithoutRestartingQueue() {
