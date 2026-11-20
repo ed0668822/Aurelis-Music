@@ -60,10 +60,27 @@ class TranslationTest {
         val client = client { fail("Same-language text must not be sent"); "" }
         assertEquals(LyricsTranslation.Result.SameLanguage("es"), LyricsTranslation.translate("same", lines(), "es", endpoint, "es", httpClient = client))
     }
+    @Test fun publicTranslationUsesBitChordEndpointWithoutUrlAndKeepsTimestamps() = runTest {
+        var calls = 0
+        val mock = client { req ->
+            calls++
+            assertEquals("translate.googleapis.com", req.url.host)
+            assertEquals("/translate_a/single", req.url.encodedPath)
+            assertTrue(okio.Buffer().also { req.body!!.writeTo(it) }.readUtf8().contains("tl=es"))
+            """[[["Hola","Hello",null,null]],null,"en"]"""
+        }
+        val response = LyricsTranslation.translate("public-fixture",
+            listOf(LyricLine(1234, "Hello")), "es", endpoint = "",
+            sourceLanguageTag = "auto", httpClient = mock) as LyricsTranslation.Result.Translated
+        assertEquals("Hola", response.lines.single().text)
+        assertEquals(1234L, response.lines.single().timeMs)
+        assertEquals(1, calls)
+    }
+
     @Test fun unsafeEndpointCredentialsAndUnsupportedTargetsAreRejected() = runTest {
         for (url in listOf("http://example.org", "https://user:secret@example.org", "https://example.org?key=secret", "not a URL")) assertNull(LyricsTranslation.normaliseEndpoint(url))
         assertEquals(LyricsTranslation.Result.Unavailable, LyricsTranslation.translate("bad-target", lines(), "xx", endpoint, "auto"))
-        assertEquals(LyricsTranslation.Result.Unavailable, LyricsTranslation.translate("no-server", lines(), "es", "", "auto"))
+        assertEquals(LyricsTranslation.Result.Unavailable, LyricsTranslation.translate("public-offline", lines(), "es", "", "auto", allowNetwork = false))
     }
     @Test fun cancellationPropagatesAndDoesNotPersistPartialResults() = runTest {
         val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()

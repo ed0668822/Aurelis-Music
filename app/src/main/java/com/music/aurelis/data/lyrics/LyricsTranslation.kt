@@ -42,8 +42,9 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 
-/** Explicit translation through a configured LibreTranslate-compatible HTTPS server.
- * Legacy romanization helpers are retained but are not called by the active translator.
+/** BitChord-style public translation by default; an explicitly chosen
+ * LibreTranslate HTTPS server remains available. Nothing is transmitted
+ * before the user confirms translation, and original timing is preserved.
  */
 object LyricsTranslation {
     sealed interface Result {
@@ -146,7 +147,8 @@ object LyricsTranslation {
         trackId: String,
         lines: List<LyricLine>,
         targetLanguageTag: String,
-        endpoint: String = SettingsRepository.translationEndpoint.value,
+        endpoint: String = if (SettingsRepository.translationProvider.value == "custom")
+            SettingsRepository.translationEndpoint.value else "",
         sourceLanguageTag: String = SettingsRepository.translationSourceLanguage.value,
         allowNetwork: Boolean = true,
         httpClient: okhttp3.OkHttpClient = client,
@@ -157,10 +159,15 @@ object LyricsTranslation {
         if (target !in TranslationLanguages.supportedLanguages ||
             (sourceTag != "auto" && sourceTag !in TranslationLanguages.supportedLanguages) || lines.isEmpty()) return Result.Unavailable
         if (sourceTag != "auto" && sameLanguage(sourceTag, target)) return Result.SameLanguage(sourceTag)
-        val server = normaliseEndpoint(endpoint) ?: return Result.Unavailable
+        // An invalid custom address cannot silently fall back to a public host.
+        val usePublic = endpoint.isBlank()
+        val server = if (usePublic) null else
+            (normaliseEndpoint(endpoint) ?: return Result.Unavailable)
         val slots = flatten(lines)
         if (slots.isEmpty() || slots.size > 500 || slots.sumOf { it.text.length } > 30_000 || slots.any { it.text.length > MAX_BATCH_CHARS }) return Result.Failed(LyricsFailure(LyricsFailureKind.TOO_LARGE))
-        val key = cacheKey(trackId, "libre:$server:$sourceTag:$target", slots)
+        val key = cacheKey(trackId,
+            if (usePublic) "google-public:$sourceTag:$target"
+            else "libre:$server:$sourceTag:$target", slots)
         val cached = memory.get(key) ?: readCache(key)?.also { memory.put(key, it) }
         if (cached != null && cached.version == CACHE_VERSION && cached.targetLanguage == target && cached.texts.size == slots.size && cached.texts.all { it.isNotBlank() }) {
             return if (sameLanguage(cached.sourceLanguage, target)) Result.SameLanguage(cached.sourceLanguage)
@@ -170,15 +177,20 @@ object LyricsTranslation {
         val complete = try {
             coroutineScope {
                 batches(slots).chunked(MAX_PARALLEL_REQUESTS).flatMap { group ->
-                    group.map { batch -> async { requestConfiguredBatch(batch, target, sourceTag, server, httpClient) } }.awaitAll()
+                    group.map { batch -> async {
+                        if (usePublic) requestBatch(batch, target, sourceTag, httpClient)
+                        else requestConfiguredBatch(batch, target, sourceTag, server!!, httpClient)
+                    } }.awaitAll()
                 }
             }
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: LyricsRequestException) { return Result.Failed(error.failure) }
         currentCoroutineContext().ensureActive()
-        val texts = complete.flatMap { it.translations }
+        if (complete.any { it == null }) return Result.Unavailable
+        val resolved = complete.filterNotNull()
+        val texts = resolved.flatMap { it.translations }
         if (texts.size != slots.size || texts.sumOf { it.length } > 100_000) return Result.Failed(LyricsFailure(LyricsFailureKind.TOO_LARGE))
-        val source = complete.groupBy { it.sourceLanguage }.maxByOrNull { (_, values) -> values.sumOf { it.sourceWeight } }?.key ?: "und"
+        val source = resolved.groupBy { it.sourceLanguage }.maxByOrNull { (_, values) -> values.sumOf { it.sourceWeight } }?.key ?: "und"
         val entry = CachedTranslation(sourceLanguage = source, targetLanguage = target, texts = texts)
         memory.put(key, entry)
         try { writeCache(key, entry) }
@@ -335,6 +347,7 @@ object LyricsTranslation {
         batch: Batch,
         target: String,
         sourceLanguage: String = "auto",
+        httpClient: okhttp3.OkHttpClient = client,
     ): BatchAnswer? {
         val body = FormBody.Builder()
             .add("client", "dict-chrome-ex")
@@ -350,11 +363,11 @@ object LyricsTranslation {
             .post(body)
             .build()
         val response = try {
-            client.newCall(request).awaitBody()
+            requestLyricsBody(request, httpClient, 524_288)
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (_: IOException) {
-            return null
+        } catch (error: LyricsRequestException) {
+            throw error
         }
         return runCatching {
             val root = json.parseToJsonElement(response).jsonArray

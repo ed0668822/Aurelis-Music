@@ -69,6 +69,8 @@ object SettingsRepository {
      *  as naming today's app language and pinning it. */
     val translationLanguage = MutableStateFlow("")
     val translationEndpoint = MutableStateFlow("")
+    // Public translation is the default; legacy custom servers remain opt-in.
+    val translationProvider = MutableStateFlow("public")
     val translationSourceLanguage = MutableStateFlow("auto")
     val lyricsSources = MutableStateFlow(LyricsSource.offered.toSet())
     val lyricsSourceOrder = MutableStateFlow(LyricsSource.offered)
@@ -126,6 +128,8 @@ object SettingsRepository {
         // an unreachable one.
         translationLanguage.value = readString("translation_language", "") ?: ""
         translationEndpoint.value = readString("translation_endpoint", "") ?: ""
+        translationProvider.value = readString("translation_provider", "public")
+            .takeIf { it == "public" || it == "custom" } ?: "public"
         translationSourceLanguage.value = readString("translation_source", "auto") ?: "auto"
         paxSenixApiKey.value = readString("paxsenix_api_key", "") ?: ""
         val savedSources = readStringSet("lyrics_sources", null)
@@ -251,6 +255,20 @@ object SettingsRepository {
         require(source == "auto" || source in com.music.aurelis.data.lyrics.TranslationLanguages.supportedLanguages)
         translationEndpoint.value = normalised; translationSourceLanguage.value = source
         prefs.edit { putString("translation_endpoint", normalised); putString("translation_source", source) }
+    }
+
+    fun setTranslationSourceLanguage(source: String) {
+        writable()
+        require(source == "auto" || source in com.music.aurelis.data.lyrics.TranslationLanguages.supportedLanguages)
+        translationSourceLanguage.value = source
+        prefs.edit { putString("translation_source", source) }
+    }
+
+    fun setTranslationProvider(value: String) {
+        writable()
+        require(value == "public" || value == "custom")
+        translationProvider.value = value
+        prefs.edit { putString("translation_provider", value) }
     }
 
     fun setTranslationLanguage(value: String) { writable();
