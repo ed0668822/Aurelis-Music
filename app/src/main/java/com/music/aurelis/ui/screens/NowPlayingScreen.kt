@@ -786,9 +786,10 @@ fun NowPlayingScreen(
                                     isPlaying = state.isPlaying,
                                     onSeekToLine = { playbackViewModel.seekTo(com.music.aurelis.ui.player.adjustedLyricsSeekTarget(it, lyricsOffset)) },
                                     offsetMs = lyricsOffset,
-                                    // BitChord keeps the sung phrase at the visual center
-                                    // in portrait as well as on wide screens.
+                                    // Keep the highlighted verse ABOVE the floating player
+                                    // deck while preserving full-viewport auto-follow.
                                     centerFocus = true,
+                                    focusAnchorFraction = if (landscape) 0.5f else 0.30f,
                                     isSynced = loaded?.isSynced == true,
                                     translatedLines = translated,
                                     syncEnabled = syncEnabled, blurUnfocused = blurLyrics && !reduceBlur,

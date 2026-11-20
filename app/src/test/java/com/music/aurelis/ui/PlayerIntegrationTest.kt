@@ -721,6 +721,10 @@ class PlayerIntegrationTest {
             compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
             compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertIsDisplayed()
             compose.onNodeWithText("Primera frase propia").assertIsSelected()
+            val verseBounds = compose.onNodeWithTag("lyrics-line-1").fetchSemanticsNode().boundsInRoot
+            val deckBounds = compose.onNodeWithTag("lyrics-floating-transport").fetchSemanticsNode().boundsInRoot
+            assertTrue("The tap-to-seek verse must not be covered by the floating scrubber",
+                verseBounds.bottom < deckBounds.top)
             compose.onNodeWithText("Segunda frase propia").performClick()
             // Positive delays lyrics: media1500 - offset500 = lyric1000.
             compose.runOnIdle { assertEquals(1500L, vm.state.value.positionMs) }

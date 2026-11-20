@@ -68,6 +68,8 @@ fun SyncedLyricsPanel(
     onSeekToLine: (Long) -> Unit,
     modifier: Modifier = Modifier,
     centerFocus: Boolean = false,
+    /** Anchor for the sung row within the unchanged viewport (0..1). */
+    focusAnchorFraction: Float = 0.5f,
     isSynced: Boolean = true,
     translatedLines: List<LyricLine>? = null,
     syncEnabled: Boolean = true,
@@ -150,8 +152,9 @@ fun SyncedLyricsPanel(
         }
     }
 
+    val focusAnchor = focusAnchorFraction.coerceIn(0.2f, 0.5f)
     var firstPlacement by remember(trackKey) { mutableStateOf(false) }
-    LaunchedEffect(trackKey, lines, scrollFocus, following, looking, synchronise, dragging, picking, viewportHeight, centerFocus, reduceMotion) {
+    LaunchedEffect(trackKey, lines, scrollFocus, following, looking, synchronise, dragging, picking, viewportHeight, centerFocus, focusAnchor, reduceMotion) {
         if (!synchronise || !looking || !following || dragging || picking || scrollFocus !in lines.indices || viewportHeight <= 0) return@LaunchedEffect
         if (!firstPlacement) {
             listState.scrollToItem(scrollFocus)
@@ -166,7 +169,9 @@ fun SyncedLyricsPanel(
             withFrameNanos { }
             val layout = listState.layoutInfo
             val item = layout.visibleItemsInfo.firstOrNull { it.index == scrollFocus } ?: return@LaunchedEffect
-            val delta = item.offset + item.size / 2f - (layout.viewportStartOffset + layout.viewportEndOffset) / 2f
+            val desiredOffset = layout.viewportStartOffset +
+                (layout.viewportEndOffset - layout.viewportStartOffset) * focusAnchor
+            val delta = item.offset + item.size / 2f - desiredOffset
             if (abs(delta) > 0.5f) {
                 if (reduceMotion) listState.scrollBy(delta)
                 else listState.animateScrollBy(delta, tween(lyricScrollLeadMs(lines, playhead.value).toInt(), easing = LyricSettleEasing))
@@ -182,8 +187,11 @@ fun SyncedLyricsPanel(
             Text(stringResource(if (following) R.string.lyrics_ui_pause_follow else R.string.lyrics_ui_follow))
         } else if (!synchronise) Text(stringResource(if (isSynced) R.string.lyrics_ui_sync_disabled else R.string.lyrics_ui_unsynced),
             style = MaterialTheme.typography.labelMedium)
-        val pad = if (centerFocus) with(density) { (viewportHeight / 2f).toDp() } else 30.dp
-        val bottom = with(density) { (viewportHeight * if (centerFocus) 0.5f else 0.8f).toDp() }
+        // Reserve a stable reading anchor above the floating playback controls.
+        // These are LazyColumn content insets, not outer layout padding: revealing
+        // or hiding controls never resizes the lyric viewport.
+        val pad = if (centerFocus) with(density) { (viewportHeight * focusAnchor).toDp() } else 30.dp
+        val bottom = with(density) { (viewportHeight * if (centerFocus) 1f - focusAnchor else 0.8f).toDp() }
         LazyColumn(state = listState, contentPadding = PaddingValues(top = pad, bottom = bottom),
             modifier = Modifier.weight(1f).fillMaxWidth().nestedScroll(controlsOnScroll)
                 .revealLyricsControlsOnTap(!controlsOpen && !picking, onRevealControls).testTag("lyrics-list").onSizeChanged { viewportHeight = it.height }) {
