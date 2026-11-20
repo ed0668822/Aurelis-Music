@@ -301,6 +301,7 @@ fun NowPlayingScreen(
     LaunchedEffect(isVisible, showLyrics, lyricsControlsOpen, state.isPlaying,
         showLyricsTools, showLyricsSources, showTranslationLanguages, showLyricsOffset) {
         if (isVisible && showLyrics && lyricsControlsOpen && state.isPlaying &&
+            (state.lyrics as? LyricsState.Loaded)?.lines?.isNotEmpty() == true &&
             !showLyricsTools && !showLyricsSources &&
             !showTranslationLanguages && !showLyricsOffset) {
             delay(4_500L)
