@@ -27,6 +27,8 @@ fun LyricsSourcesDialog(
     onSearch: (() -> Unit)? = null,
 ) {
     val selected by SettingsRepository.lyricsSources.collectAsState()
+    val sourceOrder by SettingsRepository.lyricsSourceOrder.collectAsState()
+    val ordered = (sourceOrder + LyricsProviderRegistry.providers.map { it.source }).distinct()
     AlertDialog(
         modifier = Modifier.testTag("lyrics-sources-dialog"),
         onDismissRequest = onDismiss,
@@ -36,18 +38,53 @@ fun LyricsSourcesDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.lyrics_sources_privacy))
                 currentSource?.let { Text(stringResource(R.string.lyrics_source_current, lyricsSourceTitle(it))) }
-                LyricsProviderRegistry.providers.forEach { provider ->
+                Text("Orden de búsqueda: usa ↑ y ↓ para cambiar prioridad. Los proveedores sin verificar permanecen inactivos.",
+                    style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = SettingsRepository::resetLyricsSourceSettings) {
+                    Text("Restablecer proveedores")
+                }
+                ordered.forEach { source ->
+                    val provider = LyricsProviderRegistry.providers.firstOrNull { it.source == source }
+                        ?: return@forEach
                     if (provider.availability == LyricsProviderRegistry.Availability.AVAILABLE) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(provider.source.label, style = MaterialTheme.typography.titleSmall)
                                 Text(stringResource(R.string.lyrics_lrclib_detail), style = MaterialTheme.typography.bodySmall)
                             }
-                            Switch(checked = provider.source in selected,
-                                modifier = Modifier.testTag("lyrics-provider-${provider.source.name}").semantics { contentDescription = provider.source.label },
-                                onCheckedChange = { enabled ->
-                                    SettingsRepository.setLyricsSources(if (enabled) selected + provider.source else selected - provider.source)
-                                })
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(
+                                    enabled = ordered.indexOf(source) > 0,
+                                    modifier = Modifier.testTag("lyrics-priority-up-${source.name}"),
+                                    onClick = {
+                                        val rank = LyricsSource.ordered(sourceOrder).toMutableList()
+                                        val index = rank.indexOf(source)
+                                        if (index > 0) {
+                                            java.util.Collections.swap(rank, index, index - 1)
+                                            SettingsRepository.setLyricsSourceOrder(rank)
+                                        }
+                                    },
+                                ) { Text("↑") }
+                                TextButton(
+                                    enabled = ordered.indexOf(source) < ordered.lastIndex,
+                                    modifier = Modifier.testTag("lyrics-priority-down-${source.name}"),
+                                    onClick = {
+                                        val rank = LyricsSource.ordered(sourceOrder).toMutableList()
+                                        val index = rank.indexOf(source)
+                                        if (index >= 0 && index < rank.lastIndex) {
+                                            java.util.Collections.swap(rank, index, index + 1)
+                                            SettingsRepository.setLyricsSourceOrder(rank)
+                                        }
+                                    },
+                                ) { Text("↓") }
+                                Switch(checked = source in selected,
+                                    modifier = Modifier.testTag("lyrics-provider-${source.name}")
+                                        .semantics { contentDescription = source.label },
+                                    onCheckedChange = { enabled ->
+                                        SettingsRepository.setLyricsSources(
+                                            if (enabled) selected + source else selected - source)
+                                    })
+                            }
                         }
                     } else {
                         Column(Modifier.testTag("lyrics-provider-${provider.source.name}-disabled")) {
@@ -67,7 +104,8 @@ fun LyricsSourcesDialog(
         },
         confirmButton = {
             if (onSearch != null) TextButton(onClick = onSearch,
-                enabled = LyricsSource.LRCLIB in selected && lookupState !is LyricsLookupState.Loading) {
+                enabled = selected.any(LyricsProviderRegistry::isAvailable) &&
+                    lookupState !is LyricsLookupState.Loading) {
                 Text(stringResource(R.string.lyrics_search_lrclib))
             }
         },

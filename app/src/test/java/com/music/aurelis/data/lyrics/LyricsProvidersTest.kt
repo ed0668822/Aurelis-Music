@@ -39,6 +39,15 @@ class LyricsProvidersTest {
         block(); error("Expected a typed lookup failure")
     } catch (error: LyricsRequestException) { error.failure }
 
+    @Test fun registryReadyForFutureProvidersUsesSavedOrderWithoutEnablingUnverifiedOnes() {
+        val sources = LyricsSource.entries.reversed()
+        val restored = LyricsSource.ordered(sources)
+        assertEquals(LyricsSource.offered, restored)
+        assertTrue(LyricsSource.offered.all(LyricsProviderRegistry::isAvailable))
+        assertFalse(LyricsProviderRegistry.isAvailable(LyricsSource.BETTER_LYRICS))
+        assertFalse(LyricsProviderRegistry.isAvailable(LyricsSource.BINI_LYRICS))
+    }
+
     @Test fun registryOffersOnlyApprovedSourcesAndSavedPreferencesCannotReactivateOthers() {
         assertEquals(listOf(LyricsSource.LRCLIB), LyricsSource.offered)
         assertEquals(listOf(LyricsSource.LRCLIB), LyricsSource.ordered(LyricsSource.entries.reversed()))

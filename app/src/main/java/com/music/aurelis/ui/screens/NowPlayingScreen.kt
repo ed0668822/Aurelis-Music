@@ -120,6 +120,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -292,6 +293,34 @@ fun NowPlayingScreen(
     var showLyricsSources by rememberSaveable { mutableStateOf(false) }
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
+
+    // On every entry, keep the same transport dimensions as Now Playing.
+    // When music advances, the lyrics reclaim the full-height reading area
+    // after a short inactivity period. Pausing or opening a menu preserves
+    // the controls, and a tap can reveal them again.
+    LaunchedEffect(isVisible, showLyrics, lyricsControlsOpen, state.isPlaying,
+        showLyricsTools, showLyricsSources, showTranslationLanguages, showLyricsOffset) {
+        if (isVisible && showLyrics && lyricsControlsOpen && state.isPlaying &&
+            !showLyricsTools && !showLyricsSources &&
+            !showTranslationLanguages && !showLyricsOffset) {
+            delay(4_500L)
+            lyricsControlsOpen = false
+        }
+    }
+
+    // Automatic provider lookup is opt-in through the configured sources.
+    // Do not send metadata for local/embedded lyrics or when all remote
+    // providers are disabled. Track-local Missing is reached only after local
+    // discovery and the bounded cache have been examined.
+    LaunchedEffect(isVisible, showLyrics, song?.id, state.lyrics) {
+        if (isVisible && showLyrics && song != null &&
+            state.lyrics is LyricsState.Missing &&
+            SettingsRepository.lyricsSources.value.any(
+                com.music.aurelis.data.lyrics.LyricsProviderRegistry::isAvailable
+            ) && state.lyricsLookup == LyricsLookupState.Idle) {
+            playbackViewModel.searchLyrics()
+        }
+    }
 
     BackHandler(enabled = isVisible && showInlineQueue) {
         userSelectedPane = true
@@ -825,7 +854,8 @@ fun NowPlayingScreen(
                                     onLineLongClick = { index -> lines.getOrNull(index)?.takeIf { !it.isGap }?.let { picker.pick(index) } },
                                     picking = picker.picking, picked = picker.picks, onTogglePick = picker.toggle,
                                     showFollowControls = false, controlsOpen = lyricsControlsOpen || landscape,
-                                    onRevealControls = { lyricsControlsOpen = true }, onHideControls = { if (!landscape) lyricsControlsOpen = false },
+                                    onRevealControls = { lyricsControlsOpen = true },
+                                    onHideControls = { if (!landscape) lyricsControlsOpen = false },
                                     modifier = Modifier.weight(1f),
                                 )
                             }

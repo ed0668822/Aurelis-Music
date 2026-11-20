@@ -394,6 +394,20 @@ class PlayerIntegrationTest {
         }
     }
 
+    @Test fun lyricDeckAutoHidesOnlyDuringPlaybackAndReturnsOnTap() {
+        start()
+        compose.runOnIdle { vm.resume() }
+        compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.isPlaying } }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        compose.mainClock.advanceTimeBy(4_800)
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-floating-transport").assertDoesNotExist()
+        compose.onNodeWithTag("lyrics-list").performTouchInput { click(center) }
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+    }
+
     @Test fun playbackStartAutomaticallyOpensFullScreenLyricsAndDoesNotReopenOverQueue() {
         start()
         val entries = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }

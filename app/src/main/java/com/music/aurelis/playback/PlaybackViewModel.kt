@@ -136,7 +136,18 @@ class PlaybackViewModel internal constructor(
     }
     private var lastLyricsSongId: String? = null
     private var lyricsGeneration = 0L
-    internal var remoteLyricsRequest: suspend (LocalSong) -> LyricsRepository.Result? = { LyricsProviderRegistry.lookup(it) }
+    // Provider order and selection are read for every request, so new audited
+    // providers become available through the registry without changing the player.
+    internal var remoteLyricsRequest: suspend (LocalSong) -> LyricsRepository.Result? = { song ->
+        LyricsRepository.lyrics(
+            title = song.title,
+            artist = song.artist,
+            durationMs = song.durationMs,
+            sources = SettingsRepository.lyricsSources.value,
+            order = SettingsRepository.lyricsSourceOrder.value,
+            prioritizeSyllableSync = SettingsRepository.prioritizeSyllableSync.value,
+        )
+    }
     private val localLyrics = LocalLyricsRepository(application) { remoteLyricsRequest(it) }
 
     private val _state = MutableStateFlow(PlaybackState())
@@ -486,7 +497,7 @@ class PlaybackViewModel internal constructor(
 
     fun searchLyrics() {
         val song = _state.value.currentSong ?: return
-        if (LyricsSource.LRCLIB !in SettingsRepository.lyricsSources.value) {
+        if (SettingsRepository.lyricsSources.value.none(LyricsProviderRegistry::isAvailable)) {
             _state.update { it.copy(lyricsLookup = LyricsLookupState.Failed(LyricsFailure(LyricsFailureKind.DISABLED))) }
             return
         }
