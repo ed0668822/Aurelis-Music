@@ -1,0 +1,244 @@
+name: Aplicar marca Aurelis Music (una vez)
+on:
+  push:
+    branches: [Aurelis-Music-Redesign]
+    paths:
+      - '.github/workflows/brand-aurelis-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  brand:
+    if: github.ref == 'refs/heads/Aurelis-Music-Redesign'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Aplicar nombre, rutas propias e icono oficial anterior
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import re
+          import xml.etree.ElementTree as ET
+
+          def git(*args):
+              return subprocess.check_output(["git", *args])
+
+          old_ref = "refs/remotes/origin/feature/bitchord-local-migration"
+          subprocess.run([
+              "git", "fetch", "--no-tags", "--depth=1", "origin",
+              "refs/heads/feature/bitchord-local-migration:" + old_ref
+          ], check=True)
+
+          # Rename first-party classes, including matching Kotlin references.
+          renames = (
+              ("app/src/main/java/com/music/aurelis/BitChordApplication.kt",
+               "app/src/main/java/com/music/aurelis/AurelisApplication.kt"),
+              ("sharedUi/src/jvmSharedMain/kotlin/com/music/aurelis/ui/icons/BitChordIcons.kt",
+               "sharedUi/src/jvmSharedMain/kotlin/com/music/aurelis/ui/icons/AurelisIcons.kt"),
+          )
+          for source, target in renames:
+              if Path(source).is_file():
+                  subprocess.run(["git", "mv", source, target], check=True)
+                  print("Renamed:", source, "=>", target)
+
+          extensions = {
+              ".kt", ".java", ".kts", ".xml", ".gradle", ".properties", ".pro",
+              ".json", ".toml", ".yaml", ".yml", ".svg", ".sh",
+          }
+          # Protect URLs of outside services. Replacing them with fictitious
+          # Aurelis domains would break login, deep links and add-on verification.
+          protected = re.compile(
+              r'https?://[^\s"\'<>)]*|'
+              r'bitchord(?:-auth)?\.kushagrasingh\.in|'
+              r'bitchord-listen-together\.onrender\.com',
+              re.IGNORECASE
+          )
+          changed = []
+          for filename in git("ls-files", "-z").decode().split("\0"):
+              if not filename or filename == ".github/workflows/brand-aurelis-once.yml":
+                  continue
+              p = Path(filename)
+              if not p.is_file() or p.is_symlink() or p.suffix.lower() not in extensions:
+                  continue
+              if (filename.startswith(("native/third_party/", "app/src/main/cpp/dsd/dst/"))
+                  or filename.startswith("LICENSES/")):
+                  continue
+              raw = p.read_bytes()
+              if b"\0" in raw or len(raw) > 3_000_000:
+                  continue
+              try:
+                  original = raw.decode("utf-8")
+              except UnicodeDecodeError:
+                  continue
+              preserved = []
+              def hold(m):
+                  preserved.append(m.group(0))
+                  return "__AURELIS_PROTECTED_EXTERNAL_%04d__" % (len(preserved)-1)
+
+              body = protected.sub(hold, original)
+              # Internal identifiers, class references, storage/URI schemes and
+              # Gradle properties are renamed consistently across every module.
+              body = body.replace("BitChord", "Aurelis").replace("bitchord", "aurelis")
+              body = body.replace("Bitchord", "Aurelis")
+              # Human-facing strings should use the full product name, not the
+              # shorter Kotlin class prefix.
+              if ("/res/values" in filename or
+                  "/composeResources/values/" in filename or
+                  filename.endswith("/strings.xml")):
+                  body = body.replace(">Aurelis<", ">Aurelis Music<")
+                  body = re.sub(r'(?<=\>)Aurelis(?=[\s.,!?;:])', 'Aurelis Music', body)
+              # Preserve the full display name for standalone UI string values.
+              body = body.replace('"Aurelis Dev"', '"Aurelis Music Dev"')
+              body = body.replace('"Aurelis"', '"Aurelis Music"') if p.suffix.lower() == ".kt" else body
+              if filename == "settings.gradle.kts":
+                  body = re.sub(r'rootProject\.name\s*=\s*"[^"]+"',
+                                'rootProject.name = "Aurelis-Music"', body)
+              for idx, url in enumerate(preserved):
+                  body = body.replace("__AURELIS_PROTECTED_EXTERNAL_%04d__" % idx, url)
+              if body != original:
+                  p.write_text(body, encoding="utf-8")
+                  changed.append(filename)
+          print("Updated first-party text/config files:", len(changed))
+
+          # Restore the three original vector drawables from the previous
+          # feature/bitchord-local-migration branch, without redrawing anything.
+          drawables = (
+              "ic_launcher_foreground.xml",
+              "ic_launcher_background.xml",
+              "ic_launcher_monochrome.xml",
+          )
+          for filename in drawables:
+              path = "app/src/main/res/drawable/" + filename
+              content = git("show", old_ref + ":" + path)
+              Path(path).write_bytes(content)
+              print("Restored official icon:", path)
+              ET.parse(path)
+
+          icon_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/ic_launcher_background" />
+              <foreground android:drawable="@drawable/ic_launcher_foreground" />
+              <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
+          </adaptive-icon>
+          """
+          for filename in (
+              "app/src/main/res/mipmap-anydpi/ic_launcher.xml",
+              "app/src/main/res/mipmap-anydpi/ic_launcher_round.xml",
+          ):
+              Path(filename).write_text(icon_xml, encoding="utf-8")
+              ET.parse(filename)
+
+          # The optional monochrome launcher should use the same music note.
+          mono_icon = "app/src/main/res/mipmap-anydpi/ic_monochrome.xml"
+          Path(mono_icon).write_text(icon_xml, encoding="utf-8")
+          ET.parse(mono_icon)
+
+          old_mono = Path("app/src/main/res/drawable/ic_launcher_monochrome.xml").read_text()
+          paths = re.findall(r'<path\b[\s\S]*?/>', old_mono)
+          assert len(paths) == 3, "Unexpected number of paths in Aurelis icon"
+
+          # Keep notifications and in-app title marks consistent with the
+          # restored launcher icon. Both are scaled versions of the SAME paths.
+          def scaled_vector(width, height, sx, sy, tx, ty):
+              return (
+                  '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
+                  '    android:width="%ddp" android:height="%ddp"\n'
+                  '    android:viewportWidth="%d" android:viewportHeight="%d">\n'
+                  '    <group android:scaleX="%s" android:scaleY="%s"\n'
+                  '           android:translateX="%s" android:translateY="%s">\n'
+                  '%s\n'
+                  '    </group>\n</vector>\n'
+              ) % (width, height, width, height, sx, sy, tx, ty, "\n".join(paths))
+
+          for filename, body in (
+              ("app/src/main/res/drawable/ic_notification_logo.xml",
+               scaled_vector(24, 24, "0.32", "0.32", "-5", "-5")),
+              ("app/src/main/res/drawable/ic_logo.xml",
+               scaled_vector(28, 18, "0.27", "0.27", "-0.58", "-5.71")),
+              ("sharedUi/src/commonMain/composeResources/drawable/ic_logo.xml",
+               scaled_vector(28, 18, "0.27", "0.27", "-0.58", "-5.71")),
+          ):
+              Path(filename).write_text(body, encoding="utf-8")
+              ET.parse(filename)
+
+          # SVG art used by the application's artwork components.
+          d = re.findall(r'android:pathData="([^"]+)"', old_mono)
+          assert len(d) == 3
+          svg_paths = "".join('<path fill="white" d="' + path + '"/>' for path in d)
+          prefix = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">'
+          Path("app/src/main/assets/LogoTransparent.svg").write_text(
+              prefix + svg_paths + '</svg>\n', encoding="utf-8")
+          Path("app/src/main/assets/Logo.svg").write_text(
+              prefix + '<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">'
+              '<stop stop-color="#303138"/><stop offset=".48" stop-color="#141417"/>'
+              '<stop offset="1" stop-color="#060608"/></linearGradient></defs>'
+              '<rect width="108" height="108" fill="url(#bg)"/>'
+              + svg_paths + '</svg>\n', encoding="utf-8")
+
+          # The repo was already moved to com.music.aurelis in the earlier
+          # commit; check that this and the release package ID still hold.
+          build = Path("app/build.gradle.kts").read_text(encoding="utf-8")
+          assert 'namespace = "com.music.aurelis"' in build
+          assert 'applicationId = "com.music.aurelis"' in build
+          assert 'applicationId = "com.dev.aurelis"' in build
+          strings = Path("app/src/main/res/values/strings.xml").read_text()
+          assert '<string name="app_name">Aurelis Music</string>' in strings
+          manifest = Path("app/src/main/AndroidManifest.xml").read_text()
+          assert 'android:name=".AurelisApplication"' in manifest
+          assert "Theme.Aurelis" in manifest
+
+          # One-time action is deleted from the commit once its changes have
+          # been applied. CI/build checks below still run from this workflow.
+          Path(".github/workflows/brand-aurelis-once.yml").unlink()
+          subprocess.run(["git", "add", "-A"], check=True)
+          changes = git("status", "--porcelain").decode()
+          if not changes:
+              raise SystemExit("No branding changes were staged")
+          subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+          subprocess.run(["git", "config", "user.email",
+                          "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+          subprocess.run([
+              "git", "commit", "-m",
+              "refactor: restore official Aurelis Music brand and launcher icon"
+          ], check=True)
+          subprocess.run([
+              "git", "push", "origin", "HEAD:Aurelis-Music-Redesign"
+          ], check=True)
+          print("Committed full Aurelis branding migration.")
+          PY
+
+      - name: Preparar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Verificar compilacion Android debug y release
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDevDebug :app:assembleProdRelease \
+            -Paurelis.abis=arm64-v8a -Paurelis.bundleWear=false --stacktrace
+
+      - name: Pruebas unitarias
+        shell: bash
+        run: ./gradlew :app:testDevDebugUnitTest -Paurelis.abis=arm64-v8a -Paurelis.bundleWear=false --stacktrace
+
+      - name: Publicar informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurelis-branding-build-reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+            app/build/outputs/apk/dev/debug/*.apk
+          if-no-files-found: ignore
