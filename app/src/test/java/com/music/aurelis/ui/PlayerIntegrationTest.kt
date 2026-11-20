@@ -265,7 +265,11 @@ class PlayerIntegrationTest {
         start()
         val current = vm.state.value.currentSong?.queueEntryId
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
-        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_tools)).performClick()
+        // UI-R11 moved playback tools into the song menu: exercise the real
+        // route, not a removed redundant button.
+        compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions)).performClick()
+        compose.onNodeWithText("Herramientas de reproducción").performScrollTo()
+            .assertIsEnabled().performClick()
         compose.onNodeWithText("El servicio conectado no ofrece este control.").assertExists()
         compose.onNodeWithText("1.5×").assertIsNotEnabled()
         compose.onNodeWithText("Activar salto de silencio").assertIsNotEnabled()
@@ -926,7 +930,11 @@ class PlayerIntegrationTest {
         var requests = 0
         vm.remoteLyricsRequest = { requests++; error("Selecting a provider must not send metadata") }
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
-        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_sources)).performClick()
+        // Providers remain reachable via ••• after removal of the duplicate
+        // playback toolbar; changing a switch must not trigger any request.
+        compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions)).performClick()
+        compose.onNodeWithText(app.getString(R.string.player_sources)).performScrollTo()
+            .assertIsEnabled().performClick()
         compose.onNodeWithTag("lyrics-provider-LRCLIB").performScrollTo().assertIsOff().performClick().assertIsOn()
         compose.onNodeWithTag("lyrics-provider-BETTER_LYRICS-disabled").assertExists()
         compose.onNodeWithTag("lyrics-provider-BINI_LYRICS-disabled").assertExists()
@@ -934,7 +942,10 @@ class PlayerIntegrationTest {
         capture("lyrics-source-registry")
         compose.onNodeWithText("Cerrar").performClick()
         compose.runOnIdle { SettingsRepository.init(app); assertEquals(setOf(com.music.aurelis.data.lyrics.LyricsSource.LRCLIB), SettingsRepository.lyricsSources.value); assertEquals(0, requests) }
-        compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_sources)).performClick()
+        // Reopen through the same user-visible entry point after persisting.
+        compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions)).performClick()
+        compose.onNodeWithText(app.getString(R.string.player_sources)).performScrollTo()
+            .assertIsEnabled().performClick()
         compose.onNodeWithTag("lyrics-provider-LRCLIB").performScrollTo().assertIsOn()
         compose.onNodeWithText("Cerrar").performClick()
     }
