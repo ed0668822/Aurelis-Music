@@ -717,10 +717,9 @@ class PlayerIntegrationTest {
             val replacements = player.replacements
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_open)).performClick()
             compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
-            // BitChord presents full-height lyrics first; the source/transport
-            // is deliberately hidden until the reader reveals controls.
+            // BitChord opens lyrics with the transport and source shortcut visible.
             compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
-            compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertDoesNotExist()
+            compose.onNode(hasText("Archivo local") and hasAnyAncestor(hasTestTag("lyrics-overlay"))).assertIsDisplayed()
             compose.onNodeWithText("Primera frase propia").assertIsSelected()
             compose.onNodeWithText("Segunda frase propia").performClick()
             // Positive delays lyrics: media1500 - offset500 = lyric1000.
@@ -876,9 +875,7 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_lyrics)).performClick()
         val lookupLabel = compose.activity.getString(R.string.lyrics_search_lrclib)
         compose.onNodeWithText(lookupLabel).assertDoesNotExist()
-        // The controls are intentionally hidden on entry to full-screen lyrics.
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.lyrics_ui_tools)).assertDoesNotExist()
-        revealFullScreenLyricsControls()
+        // The tools shortcut is part of the initially visible BitChord-style deck.
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.lyrics_ui_tools))
             .assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(0, requests) }
