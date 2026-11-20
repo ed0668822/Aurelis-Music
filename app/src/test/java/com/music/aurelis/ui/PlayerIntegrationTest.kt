@@ -396,6 +396,7 @@ class PlayerIntegrationTest {
 
     @Test fun lyricDeckAutoHidesOnlyDuringPlaybackAndReturnsOnTap() {
         start()
+        importTranslationFixture()
         compose.runOnIdle { vm.resume() }
         compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.isPlaying } }
         compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
@@ -404,7 +405,7 @@ class PlayerIntegrationTest {
         compose.mainClock.advanceTimeBy(4_800)
         compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
         compose.onNodeWithTag("lyrics-floating-transport").assertDoesNotExist()
-        compose.onNodeWithTag("lyrics-list").performTouchInput { click(center) }
+        revealFullScreenLyricsControls()
         compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
     }
 
