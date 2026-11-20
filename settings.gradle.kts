@@ -35,8 +35,6 @@ val androidSdk: String? = file("local.properties")
 
 if (androidSdk != null && file(androidSdk).isDirectory) {
     include(":app")
-    include(":tv")
-    include(":wearos")
 } else {
     logger.lifecycle("No Android SDK found — building the desktop targets only.")
 }
