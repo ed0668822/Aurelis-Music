@@ -74,7 +74,7 @@ enum class BitPerfectMode {
     OFF,
 
     /**
-     * BitChord's own USB Audio Class driver on libusb: any Android version,
+     * Aurelis's own USB Audio Class driver on libusb: any Android version,
      * volume set on the DAC itself. Requires USB permission.
      */
     USB_DIRECT,
@@ -237,7 +237,7 @@ object AppSettings {
     val wifiOnlyDownloads = MutableStateFlow(true)
 
     /**
-     * Keep ordinary downloads in Music/BitChord where other music apps can see
+     * Keep ordinary downloads in Music/Aurelis where other music apps can see
      * them. Off (the default) keeps downloads in this app's private storage.
      * HLS downloads always stay private because they are a playlist package,
      * not one portable audio file.
@@ -289,7 +289,7 @@ object AppSettings {
     val bitPerfectMode = MutableStateFlow(BitPerfectMode.OFF)
 
     /**
-     * Lets direct USB play to a DAC with no volume control BitChord can set:
+     * Lets direct USB play to a DAC with no volume control Aurelis can set:
      * full scale, with the DAC's own knob (if any) the only volume. Off unless
      * the listener accepts a second warning.
      */
@@ -316,7 +316,7 @@ object AppSettings {
      * normalizes by default for the same reason.
      *
      * The case against it is that a constant gain is still a multiplication,
-     * so this is the first thing in BitChord that is *on* out of the box and
+     * so this is the first thing in Aurelis that is *on* out of the box and
      * alters samples. Rather than hide that, the Audio Pipeline readout names
      * it: its Bit-exact row reports the first stage in the chain that is
      * altering samples, and switching this off is the first thing a listener
@@ -884,7 +884,7 @@ object AppSettings {
 
     /**
      * A temporary cap on [effectiveAudioQuality], for as long as something other
-     * than this phone's own speaker is playing — the BitChord watch app, whose
+     * than this phone's own speaker is playing — the Aurelis watch app, whose
      * audio goes over a Bluetooth link that cannot keep up with lossless. Never
      * persisted, never shown: the listener's own settings are untouched, and
      * apply again the moment the phone takes the music back.
@@ -932,7 +932,7 @@ object AppSettings {
      * one here was a measurable slice of cold start.
      */
     fun init(context: Context, authStore: AuthStore) {
-        prefs = context.getSharedPreferences("bitchord_settings", Context.MODE_PRIVATE)
+        prefs = context.getSharedPreferences("aurelis_settings", Context.MODE_PRIVATE)
         this.authStore = authStore
         com.music.aurelis.data.spotify.LocalPlaylistStore.init(context)
         com.music.aurelis.data.OfflinePlaylists.init(
@@ -1154,7 +1154,7 @@ object AppSettings {
      * the very first call seeds the stored value from [currentVersionCode]
      * rather than reporting an update.
      *
-     * BitChord ships sideloaded (see [com.music.aurelis.data.AppUpdateChecker]),
+     * Aurelis ships sideloaded (see [com.music.aurelis.data.AppUpdateChecker]),
      * so installing a new APK over the old one is the only "update" there is —
      * app data, this pref included, survives it exactly like a Play Store
      * update. Call once per process start, before anything reads a cache that

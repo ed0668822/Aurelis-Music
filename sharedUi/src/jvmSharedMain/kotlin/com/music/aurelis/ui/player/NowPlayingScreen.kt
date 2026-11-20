@@ -159,7 +159,7 @@ import com.music.aurelis.ui.theme.topBandScrimAlpha
 import com.music.aurelis.ui.LyricsProviderState
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
-import com.music.aurelis.ui.icons.BitChordIcons
+import com.music.aurelis.ui.icons.AurelisIcons
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.aurelis.data.canvas.CanvasSource
 import com.music.aurelis.data.lyrics.LyricLine
@@ -3362,7 +3362,7 @@ fun NowPlayingScreen(
                             ) {
                                 if (!art.loaded && !canvasRendered) {
                                     Icon(
-                                        imageVector = BitChordIcons.MusicNote,
+                                        imageVector = AurelisIcons.MusicNote,
                                         contentDescription = null,
                                         tint = Color.White.copy(alpha = 0.35f),
                                         modifier = Modifier
@@ -3779,7 +3779,7 @@ fun NowPlayingScreen(
                             if (signedIn || song.localUri != null) {
                                 val liked = likeStatus == LikeStatus.LIKE
                                 CircleGlyph(
-                                    icon = if (liked) BitChordIcons.StarFilled else BitChordIcons.Star,
+                                    icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,
                                     contentDescription = stringResource(
                                         if (liked) Res.string.remove_from_liked else Res.string.like,
                                     ),

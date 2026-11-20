@@ -544,7 +544,7 @@ object QueueShuffle {
 }
 
 /** Repeat-all cycle identity for a bounded CONTEXT materialization. */
-const val EXTRA_CONTEXT_CYCLE_ID = "bitchord.contextCycleId"
+const val EXTRA_CONTEXT_CYCLE_ID = "aurelis.contextCycleId"
 
 val MediaItem.contextCycleId: Long?
     get() = mediaMetadata.extras

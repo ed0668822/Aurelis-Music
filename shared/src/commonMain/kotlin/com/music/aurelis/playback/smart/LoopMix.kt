@@ -1,5 +1,5 @@
 /*
- * BitChord: the Automix loop mix, a DJ transition on two beat-tracked songs.
+ * Aurelis: the Automix loop mix, a DJ transition on two beat-tracked songs.
  * Ported from the web player's playback/automix/engine/loopMix.ts (which
  * builds on AutoMix by David Finnegan, AGPL-3.0; see that folder's NOTICE.md).
  *
@@ -8,7 +8,7 @@
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version. Combined into BitChord (GPL-3.0-or-later) under
+ * option) any later version. Combined into Aurelis (GPL-3.0-or-later) under
  * section 13 of the AGPL.
  */
 

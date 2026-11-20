@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 BitChord Project
+ * Copyright (C) 2026 Aurelis Project
  *
  * Adapted in part from Mornye (https://github.com/mornyeapp/Mornye),
  * android/app/src/main/kotlin/com/zarz/mornye/UsbDirectPlayback.kt,

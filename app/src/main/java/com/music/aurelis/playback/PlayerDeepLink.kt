@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Tapping a widget's artwork should land on the now-playing sheet, and there is
  * nothing to hand that intent to: whether the sheet is up is `showNowPlaying`, a
- * `remember`ed boolean inside `BitChordApp`, which only exists once the
+ * `remember`ed boolean inside `AurelisApp`, which only exists once the
  * composition is running and which
  * [MainActivity][com.music.aurelis.MainActivity] cannot reach. Because the
  * activity is `singleTask`, the intent also arrives down two different paths
@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 object PlayerDeepLink {
 
     /** Set on the widget's artwork intent. Nothing else sets it. */
-    const val EXTRA_OPEN_PLAYER = "bitchord.openPlayer"
+    const val EXTRA_OPEN_PLAYER = "aurelis.openPlayer"
 
     private val _pending = MutableStateFlow(false)
 

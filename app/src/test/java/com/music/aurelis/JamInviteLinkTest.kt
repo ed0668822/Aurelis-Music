@@ -77,25 +77,25 @@ class JamInviteLinkTest {
     @Test
     fun `builds custom scheme URL`() {
         assertEquals(
-            "bitchord://party/ABC123?server=https%3A%2F%2Fmy-party.onrender.com",
+            "aurelis://party/ABC123?server=https%3A%2F%2Fmy-party.onrender.com",
             JamInviteLink.schemeUrl("abc123", "https://my-party.onrender.com"),
         )
         assertEquals(
-            "bitchord://party/ABC123",
+            "aurelis://party/ABC123",
             JamInviteLink.schemeUrl("abc123", null),
         )
     }
 
     @Test
     fun `parses custom scheme invite with server`() {
-        val invite = JamInviteLink.parseInvite("bitchord://party/a1b2c3?server=https%3A%2F%2Fmy-party.onrender.com")
+        val invite = JamInviteLink.parseInvite("aurelis://party/a1b2c3?server=https%3A%2F%2Fmy-party.onrender.com")
         assertEquals("A1B2C3", invite?.code)
         assertEquals("https://my-party.onrender.com", invite?.serverUrl)
     }
 
     @Test
     fun `parses custom scheme invite without server`() {
-        val invite = JamInviteLink.parseInvite("bitchord://party/XYZ789")
+        val invite = JamInviteLink.parseInvite("aurelis://party/XYZ789")
         assertEquals("XYZ789", invite?.code)
         assertNull(invite?.serverUrl)
     }
@@ -479,7 +479,7 @@ class JamInviteLinkTest {
         assertTrue(validatePayload(true, """{"ok":true,"serverMs":1789836652479}"""))
 
         // Catch-all root response (from invalid subpath like /1324/healthz)
-        assertFalse(validatePayload(true, """{"maxMembers":5,"parties":0,"serverMs":1789836644489,"service":"bitchord-listen-together"}"""))
+        assertFalse(validatePayload(true, """{"maxMembers":5,"parties":0,"serverMs":1789836644489,"service":"aurelis-listen-together"}"""))
 
         // Captive portal / proxy HTML response
         assertFalse(validatePayload(true, "<!DOCTYPE html><html><body>Login Required</body></html>"))

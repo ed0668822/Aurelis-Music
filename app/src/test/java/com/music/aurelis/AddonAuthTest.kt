@@ -40,8 +40,8 @@ class AddonAuthTest {
     private fun ok() = MockResponse().setBody("""{"tracks":[{"id":"1","title":"Song","artist":"Artist"}]}""")
 
     private fun challenge(code: String) = MockResponse().setResponseCode(401)
-        .setHeader("WWW-Authenticate", """BitChord realm="bitchord-addons", error="$code", error_description="x"""")
-        .setBody("""{"error":"bitchord_auth","code":"$code"}""")
+        .setHeader("WWW-Authenticate", """Aurelis realm="aurelis-addons", error="$code", error_description="x"""")
+        .setBody("""{"error":"aurelis_auth","code":"$code"}""")
 
     @Before
     fun setUp() {
@@ -84,7 +84,7 @@ class AddonAuthTest {
     }
 
     @Test
-    fun `a 401 BitChord challenge is answered with credentials, once`() = runBlocking {
+    fun `a 401 Aurelis challenge is answered with credentials, once`() = runBlocking {
         search = { token -> if (token == null) challenge("missing") else ok() }
         val result = client().search("song", AddonClient.TIER_LOSSLESS)
         assertTrue(result.exceptionOrNull()?.message, result.isSuccess)
@@ -96,8 +96,8 @@ class AddonAuthTest {
     }
 
     @Test
-    fun `a manifest declaring bitchordAuth gets credentials from the first request`() = runBlocking {
-        manifest = """{"id":"t","name":"T","resources":["search","stream"],"bitchordAuth":true}"""
+    fun `a manifest declaring aurelisAuth gets credentials from the first request`() = runBlocking {
+        manifest = """{"id":"t","name":"T","resources":["search","stream"],"aurelisAuth":true}"""
         search = { token -> if (token == null) challenge("missing") else ok() }
         assertTrue(client().search("song", AddonClient.TIER_LOSSLESS).isSuccess)
         assertEquals(1, searches().size)
@@ -107,7 +107,7 @@ class AddonAuthTest {
 
     @Test
     fun `an expired token is replaced once and the request retried`() = runBlocking {
-        manifest = """{"id":"t","name":"T","resources":["search","stream"],"bitchordAuth":1}"""
+        manifest = """{"id":"t","name":"T","resources":["search","stream"],"aurelisAuth":1}"""
         search = { token -> if (token == "token-1") challenge("expired") else ok() }
         assertTrue(client().search("song", AddonClient.TIER_LOSSLESS).isSuccess)
         assertEquals(listOf("token-1", "token-2"), searches().map { it.getHeader(AddonAuth.TOKEN_HEADER) })
@@ -117,7 +117,7 @@ class AddonAuthTest {
     fun `a final refusal says why instead of looping`() = runBlocking {
         search = { challenge("invalid_proof") }
         val failure = client().search("song", AddonClient.TIER_LOSSLESS).exceptionOrNull()
-        assertEquals("This addon didn't accept BitChord's verification (invalid_proof)", failure?.message)
+        assertEquals("This addon didn't accept Aurelis's verification (invalid_proof)", failure?.message)
         assertEquals(2, searches().size)
     }
 
@@ -133,7 +133,7 @@ class AddonAuthTest {
         val pair = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
         // Enough rounds to hit r and s with leading zero bytes, the case naive conversions get wrong.
         repeat(300) { i ->
-            val message = "bitchord-addon-proof/v1\naddon.example.com\n$i\nhash".toByteArray()
+            val message = "aurelis-addon-proof/v1\naddon.example.com\n$i\nhash".toByteArray()
             val der = Signature.getInstance("SHA256withECDSA").run { initSign(pair.private); update(message); sign() }
             val raw = AddonAuth.derToRaw(der)
             assertEquals(64, raw.size)
@@ -147,7 +147,7 @@ class AddonAuthTest {
     @Test
     fun `the signed message matches the protocol exactly`() {
         assertEquals(
-            "bitchord-addon-proof/v1\naddon.example.com\n1762300000000\nabc",
+            "aurelis-addon-proof/v1\naddon.example.com\n1762300000000\nabc",
             AddonAuth.proofMessage("addon.example.com", 1762300000000, "abc"),
         )
         assertEquals("addon.example.com", AddonAuth.normalizeHost(" Addon.Example.COM. "))

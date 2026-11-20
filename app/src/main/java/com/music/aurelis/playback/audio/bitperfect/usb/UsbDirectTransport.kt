@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 BitChord Project
+ * Copyright (C) 2026 Aurelis Project
  *
  * Adapted from Mornye (https://github.com/mornyeapp/Mornye),
  * android/app/src/main/kotlin/com/zarz/mornye/UsbDirectPlayback.kt,
@@ -20,7 +20,7 @@ import java.nio.ByteBuffer
 /** JNI over `usb_transport.cpp`. Handles are opaque ids, never pointers. */
 internal object UsbDirectNative {
     init {
-        System.loadLibrary("bitchord_usb")
+        System.loadLibrary("aurelis_usb")
     }
 
     /** [candidates] holds [CANDIDATE_INTS] values per candidate, in preference order. */

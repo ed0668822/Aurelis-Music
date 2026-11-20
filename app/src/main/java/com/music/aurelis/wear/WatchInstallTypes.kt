@@ -1,7 +1,7 @@
 package com.music.aurelis.wear
 
 /**
- * What Settings → "BitChord for Wear OS" draws, kept apart from
+ * What Settings → "Aurelis for Wear OS" draws, kept apart from
  * [WatchInstaller] so the TV build — which replaces that file with a stub —
  * still has the types.
  */
@@ -19,7 +19,7 @@ enum class WatchAppStatus {
     /** Asked; no answer yet. */
     CHECKING,
 
-    /** This build of BitChord (dev or prod) isn't on the watch. */
+    /** This build of Aurelis (dev or prod) isn't on the watch. */
     NOT_INSTALLED,
 
     /** The watch has exactly the build this phone carries. */
@@ -32,7 +32,7 @@ enum class WatchAppStatus {
     UNKNOWN,
 }
 
-/** Sending this phone's watch build to a watch that already has BitChord. */
+/** Sending this phone's watch build to a watch that already has Aurelis. */
 sealed interface WatchUpdateState {
     data object Idle : WatchUpdateState
     data class Sending(val nodeId: String) : WatchUpdateState

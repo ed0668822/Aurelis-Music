@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * ### How the swap reaches the player
  *
- * The queue holds `bitchord://watch?v=…` URIs that
+ * The queue holds `aurelis://watch?v=…` URIs that
  * [PlaybackService][PlaybackService]'s resolving data source turns into real
  * URLs at open time. An upgrade re-points that indirection rather than
  * touching the queue: the stream is parked in [forced], the item is replaced
@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object QualityUpgrade {
 
-    private const val TAG = "BitChord"
+    private const val TAG = "Aurelis Music"
 
     /** The marker that distinguishes an upgraded item from the one it replaced. */
     const val MARKER = "q"

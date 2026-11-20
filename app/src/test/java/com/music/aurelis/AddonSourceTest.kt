@@ -32,7 +32,7 @@ import org.junit.Test
  * The addon protocol, end to end, against a real HTTP server.
  *
  * Everything here is about the seam between somebody else's server and this
- * app: what BitChord puts on the wire, and what it does with what comes back.
+ * app: what Aurelis puts on the wire, and what it does with what comes back.
  * That is not a seam a hand-rolled fake can test honestly — a fake client
  * would encode the same assumptions the code under test makes, and the bugs
  * worth catching here all live in the gap between an assumption and an actual
@@ -63,7 +63,7 @@ class AddonSourceTest {
         // format never depends on what the machine running it can decode.
         DeviceCodecs.forced = true
         AppSettings.dolbyAtmos.value = true
-        // Every fixture manifest declares `bitchordAuth`, as an up-to-date
+        // Every fixture manifest declares `aurelisAuth`, as an up-to-date
         // addon must. Attestation needs secure hardware, so this stands in.
         AddonAuth.testHeaders = { _, _ -> mapOf(AddonAuth.TOKEN_HEADER to "test-token", AddonAuth.PROOF_HEADER to "test-proof") }
     }
@@ -139,7 +139,7 @@ class AddonSourceTest {
      */
     @Test
     fun `an addon that cannot be searched is rejected, not merely unreachable`() = runBlocking {
-        route("/manifest.json", json("""{"id":"x","name":"X","bitchordAuth":true,"resources":["stream"]}"""))
+        route("/manifest.json", json("""{"id":"x","name":"X","aurelisAuth":true,"resources":["stream"]}"""))
         // No search endpoint either, so the behavioural fallback cannot save it.
         val health = source().health()
         assertTrue("expected Rejected, got $health", health is SourceHealth.Rejected)
@@ -153,13 +153,13 @@ class AddonSourceTest {
      */
     @Test
     fun `an addon that declares search but not stream is accepted`() = runBlocking {
-        route("/manifest.json", json("""{"id":"x","name":"X","bitchordAuth":true,"resources":["search"]}"""))
+        route("/manifest.json", json("""{"id":"x","name":"X","aurelisAuth":true,"resources":["search"]}"""))
         assertTrue(source().health() is SourceHealth.Ok)
     }
 
     /**
      * An addon that never published a manifest still answers a search, so it is
-     * healthy. It has nowhere to declare `bitchordAuth`, which the sources row
+     * healthy. It has nowhere to declare `aurelisAuth`, which the sources row
      * flags on a line of its own, but that doesn't stop it working.
      */
     @Test
@@ -171,7 +171,7 @@ class AddonSourceTest {
         assertTrue("expected Ok, got $health", health is SourceHealth.Ok)
     }
 
-    // ── Out-of-date addons (no `bitchordAuth`) ────────────────────────────
+    // ── Out-of-date addons (no `aurelisAuth`) ────────────────────────────
 
     private fun outdatedManifest() = json(
         """{"id":"com.test.old","name":"Old Addon","version":"1.0.0","resources":["search","stream"]}""",
@@ -179,7 +179,7 @@ class AddonSourceTest {
 
     /** Flagged on the sources row, not refused: the health line reads as for any working addon. */
     @Test
-    fun `a manifest without bitchordAuth is still healthy`() = runBlocking {
+    fun `a manifest without aurelisAuth is still healthy`() = runBlocking {
         route("/manifest.json", outdatedManifest())
 
         val health = source().health()
@@ -197,7 +197,7 @@ class AddonSourceTest {
         route("/manifest.json", outdatedManifest())
         route("/search", json("""{"tracks":[{"id":"t1","title":"S","artist":"A"}]}"""))
         route("/stream/t1", json("""{"url":"https://cdn/a.flac"}"""))
-        AddonAuth.refuseForTest("BitChord couldn't verify this device: The bootloader is unlocked")
+        AddonAuth.refuseForTest("Aurelis couldn't verify this device: The bootloader is unlocked")
         val source = source()
 
         assertEquals(1, source.search("S", 10, false, null).size)
@@ -208,10 +208,10 @@ class AddonSourceTest {
 
     /** A manifest that says `false` is the same as one that says nothing. */
     @Test
-    fun `bitchordAuth false is out of date but still searched`() = runBlocking {
+    fun `aurelisAuth false is out of date but still searched`() = runBlocking {
         route(
             "/manifest.json",
-            json("""{"id":"x","name":"X","bitchordAuth":false,"resources":["search","stream"]}"""),
+            json("""{"id":"x","name":"X","aurelisAuth":false,"resources":["search","stream"]}"""),
         )
         route("/search", json("""{"tracks":[{"id":"t1","title":"S","artist":"A"}]}"""))
 
@@ -223,14 +223,14 @@ class AddonSourceTest {
     fun `a device the auth service refuses is reported in its words`() = runBlocking {
         route("/manifest.json", manifest())
         AddonAuth.testHeaders = { _, _ ->
-            throw AddonException("BitChord couldn't verify this device: The bootloader is unlocked")
+            throw AddonException("Aurelis couldn't verify this device: The bootloader is unlocked")
         }
 
         val health = source().health()
 
         assertTrue("expected Rejected, got $health", health is SourceHealth.Rejected)
         assertEquals(
-            "BitChord couldn't verify this device: The bootloader is unlocked",
+            "Aurelis couldn't verify this device: The bootloader is unlocked",
             (health as SourceHealth.Rejected).reason,
         )
     }
@@ -238,7 +238,7 @@ class AddonSourceTest {
     @Test
     fun `an auth service that can't be reached reads as unreachable`() = runBlocking {
         route("/manifest.json", manifest())
-        AddonAuth.testHeaders = { _, _ -> throw AddonUnavailable("Couldn't reach BitChord's addon verification service") }
+        AddonAuth.testHeaders = { _, _ -> throw AddonUnavailable("Couldn't reach Aurelis's addon verification service") }
 
         assertTrue(source().health() is SourceHealth.Unreachable)
     }
@@ -249,7 +249,7 @@ class AddonSourceTest {
         route("/manifest.json", manifest())
         route("/search", json("""{"tracks":[{"id":"t1","title":"S","artist":"A"}]}"""))
         route("/stream/t1", json("""{"url":"https://cdn/a.flac"}"""))
-        AddonAuth.refuseForTest("BitChord couldn't verify this device: revoked")
+        AddonAuth.refuseForTest("Aurelis couldn't verify this device: revoked")
         val source = source()
 
         assertTrue(source.search("S", 10, false, null).isEmpty())
@@ -272,22 +272,22 @@ class AddonSourceTest {
     }
 
     @Test
-    fun `identify records whether the manifest declares bitchordAuth`() = runBlocking {
+    fun `identify records whether the manifest declares aurelisAuth`() = runBlocking {
         route("/manifest.json", manifest())
-        assertEquals(true, SourceRegistry.identify(config().baseUrl).getOrThrow().bitchordAuth)
+        assertEquals(true, SourceRegistry.identify(config().baseUrl).getOrThrow().aurelisAuth)
 
         route("/manifest.json", outdatedManifest())
-        assertEquals(false, SourceRegistry.identify(config().baseUrl).getOrThrow().bitchordAuth)
+        assertEquals(false, SourceRegistry.identify(config().baseUrl).getOrThrow().aurelisAuth)
     }
 
     @Test
-    fun `only an addon known to lack bitchordAuth counts as needing an update`() {
-        assertTrue(SourceConfig(kind = SourceKind.ADDON, bitchordAuth = false).needsAddonUpdate)
-        assertFalse(SourceConfig(kind = SourceKind.ADDON, bitchordAuth = true).needsAddonUpdate)
+    fun `only an addon known to lack aurelisAuth counts as needing an update`() {
+        assertTrue(SourceConfig(kind = SourceKind.ADDON, aurelisAuth = false).needsAddonUpdate)
+        assertFalse(SourceConfig(kind = SourceKind.ADDON, aurelisAuth = true).needsAddonUpdate)
         // Not read yet: the manifest is checked before the first request instead.
-        assertFalse(SourceConfig(kind = SourceKind.ADDON, bitchordAuth = null).needsAddonUpdate)
+        assertFalse(SourceConfig(kind = SourceKind.ADDON, aurelisAuth = null).needsAddonUpdate)
         // Module indexes are a different protocol and aren't gated.
-        assertFalse(SourceConfig(kind = SourceKind.CUSTOM_MODULE, bitchordAuth = false).needsAddonUpdate)
+        assertFalse(SourceConfig(kind = SourceKind.CUSTOM_MODULE, aurelisAuth = false).needsAddonUpdate)
     }
 
     @Test
@@ -428,7 +428,7 @@ class AddonSourceTest {
             "/manifest.json",
             json(
                 """
-                {"id":"a","name":"A","bitchordAuth":true,"resources":["search","stream","settings"],
+                {"id":"a","name":"A","aurelisAuth":true,"resources":["search","stream","settings"],
                  "settings":[
                    {"key":"quality","type":"select","default":"normal",
                     "options":[{"value":"lossless"},{"value":"high"},{"value":"normal"}]},
@@ -469,7 +469,7 @@ class AddonSourceTest {
     /** "lossless" on this list is CD quality, so asking for that word would never reach "max". */
     private fun qualityManifest() = json(
         """
-        {"id":"a","name":"A","bitchordAuth":true,"resources":["search","stream"],
+        {"id":"a","name":"A","aurelisAuth":true,"resources":["search","stream"],
          "settings":[{"key":"quality","type":"select","default":"max","perNetwork":true,
            "options":[{"value":"max","label":"MAX"},{"value":"hires","label":"HiRes"},
                       {"value":"lossless","label":"CD"},{"value":"low","label":"Low"}]}]}
@@ -561,7 +561,7 @@ class AddonSourceTest {
         route("/stream/t1", json("""{"url":"https://cdn/a.flac"}"""))
 
         // Seen up to date before, so a manifest that is down right now doesn't shut it out.
-        AddonSource(config().copy(pickedQuality = "hires", bitchordAuth = true)).stream("t1", StreamRequest.Lossless)
+        AddonSource(config().copy(pickedQuality = "hires", aurelisAuth = true)).stream("t1", StreamRequest.Lossless)
 
         assertEquals("hires", requestFor("/stream/t1").queryParameter("quality"))
     }
@@ -672,7 +672,7 @@ class AddonSourceTest {
             "/manifest.json",
             json(
                 """
-                {"id":"a","name":"A","bitchordAuth":true,"resources":["search","stream","settings"],
+                {"id":"a","name":"A","aurelisAuth":true,"resources":["search","stream","settings"],
                  "settings":[{"key":"atmos","type":"select","default":"only",
                               "options":[{"value":"only"},{"value":"auto"},{"value":"off"}]}]}
                 """.trimIndent(),
@@ -868,7 +868,7 @@ class AddonSourceTest {
             "/manifest.json",
             json(
                 """
-                {"id":"a","name":"A","bitchordAuth":true,"resources":["search","stream","settings"],
+                {"id":"a","name":"A","aurelisAuth":true,"resources":["search","stream","settings"],
                  "settings":[{"key":"atmos","type":"select","default":"auto",
                               "options":[{"value":"only"},{"value":"auto"},{"value":"off"}]}]}
                 """.trimIndent(),
@@ -1298,7 +1298,7 @@ class AddonSourceTest {
         .setBody(body)
 
     private fun manifest() = json(
-        """{"id":"com.test.addon","name":"Test Addon","version":"2.1.0","bitchordAuth":true,"resources":["search","stream"]}""",
+        """{"id":"com.test.addon","name":"Test Addon","version":"2.1.0","aurelisAuth":true,"resources":["search","stream"]}""",
     )
 
     private fun config() = SourceConfig(

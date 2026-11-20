@@ -15,7 +15,7 @@ import java.util.Locale
  * `HlsMediaSource`. What it will not do is work out which of those to build
  * after the fact: `DefaultMediaSourceFactory` chooses off the [MediaItem]
  * before a byte is fetched, and this app's playback URIs are
- * `bitchord://watch?v=…` and `bitchord://source?…`. Neither carries an
+ * `aurelis://watch?v=…` and `aurelis://source?…`. Neither carries an
  * extension to infer from, so the choice defaults to a progressive source — and
  * a progressive source handed a manifest fails on the only error it can raise:
  * it offers the XML to every extractor it has and none of them can sniff it.
@@ -57,7 +57,7 @@ object StreamContainer {
      * does not send the item back through `DefaultMediaSourceFactory` to build
      * a DASH source.
      *
-     * The marker changes only the app's virtual `bitchord://` URI. The resolver
+     * The marker changes only the app's virtual `aurelis://` URI. The resolver
      * ignores it, and [AudioCache] keys YouTube tracks from `v`/`q` and source
      * tracks from `s`/`t`, so it neither changes the real stream selected nor
      * invents another cache rendition. Its sole job is to make Media3 construct
@@ -146,7 +146,7 @@ object StreamContainer {
      * What each track was last actually served, keyed by media id.
      *
      * The resolving data source is the only place that knows: everything above
-     * it sees `bitchord://…` and everything below it sees bytes. Recorded on
+     * it sees `aurelis://…` and everything below it sees bytes. Recorded on
      * every resolve rather than only the interesting ones, so the entry is
      * never a stale claim about a track that has since moved to another source
      * — last write wins, and the last write is what is playing.

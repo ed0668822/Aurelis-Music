@@ -74,7 +74,7 @@ import com.music.aurelis.sharedui.resources.Res
 import com.music.aurelis.sharedui.resources.ic_google_g
 import com.music.aurelis.sharedui.resources.ic_logo
 import org.jetbrains.compose.resources.painterResource
-import com.music.aurelis.ui.icons.BitChordIcons
+import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.player.MeshGradientBackground
 import com.music.aurelis.ui.player.MESH_CYCLE_MILLIS
 import com.music.aurelis.ui.player.MeshPalette
@@ -423,7 +423,7 @@ private fun BackButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = BitChordIcons.ChevronRight,
+            imageVector = AurelisIcons.ChevronRight,
             contentDescription = stringResource(R.string.onboarding_back),
             tint = Color.White,
             modifier = Modifier

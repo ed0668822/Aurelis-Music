@@ -199,16 +199,16 @@ private val BOUNDED_CONTINUATION_RETRIES_MS = longArrayOf(2_000L, 5_000L, 15_000
 /** Session command used by album/playlist playback to install a bounded context. */
 const val ACTION_START_BOUNDED_CONTEXT = "com.music.aurelis.action.START_BOUNDED_CONTEXT"
 const val ACTION_CLEAR_BOUNDED_CONTEXT = "com.music.aurelis.action.CLEAR_BOUNDED_CONTEXT"
-const val EXTRA_BOUNDED_CONTEXT_SONGS = "bitchord.boundedContext.songs"
-const val EXTRA_BOUNDED_CONTEXT_START_INDEX = "bitchord.boundedContext.startIndex"
-const val EXTRA_BOUNDED_CONTEXT_SOURCE_TITLE = "bitchord.boundedContext.sourceTitle"
-const val EXTRA_BOUNDED_CONTEXT_SOURCE_TYPE = "bitchord.boundedContext.sourceType"
-const val EXTRA_BOUNDED_CONTEXT_SOURCE_ID = "bitchord.boundedContext.sourceId"
-const val EXTRA_BOUNDED_CONTEXT_CONTINUATION = "bitchord.boundedContext.continuation"
+const val EXTRA_BOUNDED_CONTEXT_SONGS = "aurelis.boundedContext.songs"
+const val EXTRA_BOUNDED_CONTEXT_START_INDEX = "aurelis.boundedContext.startIndex"
+const val EXTRA_BOUNDED_CONTEXT_SOURCE_TITLE = "aurelis.boundedContext.sourceTitle"
+const val EXTRA_BOUNDED_CONTEXT_SOURCE_TYPE = "aurelis.boundedContext.sourceType"
+const val EXTRA_BOUNDED_CONTEXT_SOURCE_ID = "aurelis.boundedContext.sourceId"
+const val EXTRA_BOUNDED_CONTEXT_CONTINUATION = "aurelis.boundedContext.continuation"
 
 /** Session command used to smoothly swap the current track's version (film vs release). */
 const val ACTION_SWAP_VERSION = "com.music.aurelis.action.SWAP_VERSION"
-const val EXTRA_SWAP_MEDIA_ITEM = "bitchord.swap.media_item"
+const val EXTRA_SWAP_MEDIA_ITEM = "aurelis.swap.media_item"
 
 /** Session command used by the media notification's and the 4×1 widget's Favorite button. */
 /** How long the service may stay in the foreground, paused, while the watch plays. */
@@ -262,7 +262,7 @@ internal class ManualUpgradeThrottle(private val cooldownMs: Long) {
  * hears about the reorder once, when the row is dropped, not mid-drag.
  */
 const val ACTION_QUEUE_DRAG = "com.music.aurelis.action.QUEUE_DRAG"
-const val EXTRA_QUEUE_DRAG_ACTIVE = "bitchord.queueDrag.active"
+const val EXTRA_QUEUE_DRAG_ACTIVE = "aurelis.queueDrag.active"
 
 /** A full first page for an explicitly requested station. */
 private const val INITIAL_STATION_TRACKS = 24
@@ -300,7 +300,7 @@ private fun Song.canStartStation(): Boolean =
  * notification, lockscreen/Bluetooth controls, and Android Auto surface for
  * free; UI processes attach with a MediaController.
  *
- * Queue items carry a `bitchord://watch?v=<videoId>` URI. The actual stream
+ * Queue items carry a `aurelis://watch?v=<videoId>` URI. The actual stream
  * URL is resolved lazily by [ResolvingDataSource] the moment ExoPlayer opens
  * the item — stream URLs expire after a few hours, so resolving at play time
  * (on Media3's loader thread, hence runBlocking is safe) keeps queues valid.
@@ -758,7 +758,7 @@ class PlaybackService : MediaLibraryService() {
     )
 
     /**
-     * The BitChord watch app as the speaker — the same model as Cast: the phone
+     * The Aurelis watch app as the speaker — the same model as Cast: the phone
      * keeps the queue paused, the watch plays it and owns the clock. See
      * [WearBridge.createSpeaker].
      */
@@ -876,7 +876,7 @@ class PlaybackService : MediaLibraryService() {
             if (isPlaying) {
                 trackSelectedAt?.let {
                     TrackLog.d(
-                        "BitChord",
+                        "Aurelis Music",
                         "TIMING first audio: ${SystemClock.elapsedRealtime() - it}ms since track selected",
                         about = exoPlayer.currentMediaItem?.mediaId,
                     )
@@ -1205,7 +1205,7 @@ class PlaybackService : MediaLibraryService() {
             val cutAt = swapCutAt ?: return
             swapCutAt = null
             TrackLog.d(
-                "BitChord",
+                "Aurelis Music",
                 "swap seam: ${SystemClock.elapsedRealtime() - cutAt}ms of silence",
                 about = eventTime.mediaId(),
             )
@@ -1221,7 +1221,7 @@ class PlaybackService : MediaLibraryService() {
             val cutAt = swapCutAt ?: return
             if (state == Player.STATE_READY) {
                 TrackLog.d(
-                    "BitChord",
+                    "Aurelis Music",
                     "swap leg: ready ${SystemClock.elapsedRealtime() - cutAt}ms after the cut",
                     about = eventTime.mediaId(),
                 )
@@ -1242,7 +1242,7 @@ class PlaybackService : MediaLibraryService() {
             )
             val cutAt = swapCutAt ?: return
             TrackLog.d(
-                "BitChord",
+                "Aurelis Music",
                 "swap leg: $decoderName stood up in ${initializationDurationMs}ms, " +
                     "${SystemClock.elapsedRealtime() - cutAt}ms after the cut",
                 about = eventTime.mediaId(),
@@ -1480,7 +1480,7 @@ class PlaybackService : MediaLibraryService() {
                     throw java.io.IOException("Direct YouTube resolution timed out for $videoId", e)
                 }
                 val headers = StreamResolver.mediaHeadersFor(streamUrl)
-                TrackLog.d("BitChord", "serving original YouTube version for $videoId", about = videoId)
+                TrackLog.d("Aurelis Music", "serving original YouTube version for $videoId", about = videoId)
                 return@Resolver dataSpec.buildUpon()
                     .setUri(Uri.parse(streamUrl))
                     .setHttpRequestHeaders(headers)
@@ -1527,7 +1527,7 @@ class PlaybackService : MediaLibraryService() {
                 // one that reached it and got nothing back, and the two have
                 // opposite fixes.
                 TrackLog.d(
-                    "BitChord",
+                    "Aurelis Music",
                     "${if (proving) "auditioning" else "serving"} upgraded $videoId " +
                         "from ${Uri.parse(upgraded.url).host} " +
                         "at ${dataSpec.position} (${upgraded.format.summary})",
@@ -1727,7 +1727,7 @@ class PlaybackService : MediaLibraryService() {
             // is made in one place for every branch of it, and made from what
             // the resolver *returned* rather than from what each branch meant
             // to return. Nothing above this line knows what is really on the
-            // end of a `bitchord://` URI and nothing below it knows which
+            // end of a `aurelis://` URI and nothing below it knows which
             // track's bytes it is fetching; this is the seam where both are in
             // hand. See [StreamContainer].
             streamResolver.resolveDataSpec(dataSpec).also { resolved ->
@@ -1904,7 +1904,7 @@ class PlaybackService : MediaLibraryService() {
             // local files whose videoId is a content:// URI that cannot resolve.
             val fallback = if (uri.scheme == "content" || uri.scheme == "file") {
                 item.mediaId.takeIf { it.isNotBlank() }?.let { vid ->
-                    if (Downloads.saved.value.containsKey(vid)) "bitchord://watch?v=$vid" else null
+                    if (Downloads.saved.value.containsKey(vid)) "aurelis://watch?v=$vid" else null
                 }
             } else null
             if (fallback != null) {
@@ -2151,7 +2151,7 @@ class PlaybackService : MediaLibraryService() {
                 limit = INITIAL_STATION_TRACKS,
             ).getOrElse {
                 TrackLog.w(
-                    "BitChord",
+                    "Aurelis Music",
                     "Android Auto station failed: ${it.message}",
                     about = seed.videoId,
                 )
@@ -2207,7 +2207,7 @@ class PlaybackService : MediaLibraryService() {
         // the same reason. The toggle is hidden client-side for this, but the
         // command can still arrive from a controller that predates the hide.
         if (ListenTogether.state.value.inParty) {
-            TrackLog.d("BitChord", "version swap ignored: in a Listen Together party", about = currentItem.mediaId)
+            TrackLog.d("Aurelis Music", "version swap ignored: in a Listen Together party", about = currentItem.mediaId)
             return
         }
         // Never while Automix is mid-blend: both fades share the same
@@ -2216,7 +2216,7 @@ class PlaybackService : MediaLibraryService() {
         // reverse — Automix arming while a version swap is running — is
         // guarded symmetrically in [createCrossfadeController].
         if (crossfade?.isTransitioning() == true) {
-            TrackLog.d("BitChord", "version swap deferred: Automix is mid-transition", about = currentItem.mediaId)
+            TrackLog.d("Aurelis Music", "version swap deferred: Automix is mid-transition", about = currentItem.mediaId)
             return
         }
 
@@ -2264,7 +2264,7 @@ class PlaybackService : MediaLibraryService() {
                         mapped - startPosition,
                     )
                     TrackLog.d(
-                        "BitChord",
+                        "Aurelis Music",
                         "version swap using YouTube's time map: ${startPosition}ms -> ${mapped}ms",
                         about = sourceSong.videoId,
                     )
@@ -2346,7 +2346,7 @@ class PlaybackService : MediaLibraryService() {
             }
 
             if (!isReady) {
-                TrackLog.w("BitChord", "version swap standby player failed to prepare, applying directly", about = mediaId)
+                TrackLog.w("Aurelis Music", "version swap standby player failed to prepare, applying directly", about = mediaId)
                 standbyPlayer.stop()
                 standbyPlayer.clearMediaItems()
                 standbyPlayer.volume = 1f
@@ -2517,7 +2517,7 @@ class PlaybackService : MediaLibraryService() {
                         // whatever opening is largest on disk, and a short one
                         // still correlates better than not trying at all.
                         TrackLog.w(
-                            "BitChord",
+                            "Aurelis Music",
                             "version alignment head short on disk (source=$sourceReady, " +
                                 "target=$targetReady) for '${sourceSong.title}'",
                             sourceId,
@@ -2569,7 +2569,7 @@ class PlaybackService : MediaLibraryService() {
             val measured = deferred.await()
             if (measured == null) {
                 TrackLog.w(
-                    "BitChord",
+                    "Aurelis Music",
                     "version alignment found nothing to measure for '${sourceSong.title}'; switching with no shift",
                     sourceId,
                 )
@@ -3186,7 +3186,7 @@ class PlaybackService : MediaLibraryService() {
                 val result = loadAutoplayTracks(existing, seedSong, remaining)
                 val resolved = result.getOrElse {
                     TrackLog.w(
-                        "BitChord",
+                        "Aurelis Music",
                         "notification autoplay failed: ${it.message}",
                         about = current.videoId,
                     )
@@ -3210,7 +3210,7 @@ class PlaybackService : MediaLibraryService() {
                         val landed = topUpPartyAutoplay(current.videoId, resolved)
                         if (!landed) {
                             TrackLog.w(
-                                "BitChord",
+                                "Aurelis Music",
                                 "party did not take AutoPlay's tracks; releasing the seed to retry",
                                 about = current.videoId,
                             )
@@ -3439,7 +3439,7 @@ class PlaybackService : MediaLibraryService() {
                 .onFailure {
                     LikeState.set(videoId, previous)
                     refreshCustomLayouts()
-                    TrackLog.w("BitChord", "notification favorite failed: ${it.message}", about = videoId)
+                    TrackLog.w("Aurelis Music", "notification favorite failed: ${it.message}", about = videoId)
                 }
         }
     }
@@ -3727,7 +3727,7 @@ class PlaybackService : MediaLibraryService() {
         trackSelectedAt = if (alreadyAudible) null else SystemClock.elapsedRealtime()
         if (alreadyAudible) {
             TrackLog.d(
-                "BitChord",
+                "Aurelis Music",
                 "TIMING first audio: 0ms, the crossfade covered it",
                 about = mediaItem?.mediaId,
             )
@@ -3752,7 +3752,7 @@ class PlaybackService : MediaLibraryService() {
             )
         }
         TrackLog.d(
-            "BitChord",
+            "Aurelis Music",
             "TIMING track selected: ${mediaItem?.mediaId} (reason=$reason)",
             about = mediaItem?.mediaId,
         )
@@ -3988,7 +3988,7 @@ class PlaybackService : MediaLibraryService() {
         val attempts = recoveries.getOrDefault(mediaId, 0) + 1
         recoveries[mediaId] = attempts
         TrackLog.w(
-            "BitChord",
+            "Aurelis Music",
             "playback failed for $mediaId at ${position}ms (${error.errorCodeName}), attempt $attempts",
             error,
             about = mediaId,
@@ -4065,9 +4065,9 @@ class PlaybackService : MediaLibraryService() {
         // player on in between.
         val neverStarted = audibleMediaId != mediaId
         if (verdict != null) {
-            TrackLog.w("BitChord", "$mediaId cannot be played: $verdict", about = mediaId)
+            TrackLog.w("Aurelis Music", "$mediaId cannot be played: $verdict", about = mediaId)
         } else if (givingUp) {
-            TrackLog.w("BitChord", "$mediaId has failed $attempts times; leaving it alone", about = mediaId)
+            TrackLog.w("Aurelis Music", "$mediaId has failed $attempts times; leaving it alone", about = mediaId)
         }
         // The upgraded rendition goes with the cache entry it lived in, so the
         // marker on the URI would otherwise point at nothing.
@@ -4117,7 +4117,7 @@ class PlaybackService : MediaLibraryService() {
             ?.let { videoId ->
                 StreamChoice.refuseSubstitutes(videoId)
                 TrackLog.w(
-                    "BitChord",
+                    "Aurelis Music",
                     "$videoId broke on a substituted stream; YouTube serves it for now",
                     about = mediaId,
                 )
@@ -4157,7 +4157,7 @@ class PlaybackService : MediaLibraryService() {
             withContext(Dispatchers.Main) {
                 val player = this@PlaybackService.player ?: return@withContext
                 if (player.currentMediaItem?.mediaId != mediaId) return@withContext
-                TrackLog.d("BitChord", "retrying $mediaId from ${position}ms")
+                TrackLog.d("Aurelis Music", "retrying $mediaId from ${position}ms")
                 // Claimed before the seek, so the transition it may fire is
                 // recognised as this retry rather than read as a fresh start and
                 // handed a fresh attempt budget.
@@ -4224,7 +4224,7 @@ class PlaybackService : MediaLibraryService() {
         NerdStats.clearDeclared(mediaId)
         recoveries.remove(mediaId)
         TrackLog.w(
-            "BitChord",
+            "Aurelis Music",
             "$mediaId $why; falling back to YouTube audio",
             about = mediaId,
         )
@@ -4282,7 +4282,7 @@ class PlaybackService : MediaLibraryService() {
         val restreamed = item.toSong().copy(localUri = null, localPath = null).toMediaItem()
         if (restreamed.localConfiguration?.uri == uri) {
             TrackLog.w(
-                "BitChord",
+                "Aurelis Music",
                 "$mediaId is a local file that is gone and has no stream behind it",
                 about = mediaId,
             )
@@ -4290,7 +4290,7 @@ class PlaybackService : MediaLibraryService() {
         }
 
         TrackLog.w(
-            "BitChord",
+            "Aurelis Music",
             "$mediaId was downloaded but $uri is gone; streaming it instead",
             about = mediaId,
         )
@@ -4314,8 +4314,8 @@ class PlaybackService : MediaLibraryService() {
      * manifest through a progressive source — [StreamContainer] has the full
      * account of why one cannot be played that way and how it happens anyway.
      * The live path now declines to substitute one at all, but that is only the
-     * `bitchord://watch?v=…` half: a track queued from a module's own search
-     * results plays through `bitchord://source?…`, is resolved by that module
+     * `aurelis://watch?v=…` half: a track queued from a module's own search
+     * results plays through `aurelis://source?…`, is resolved by that module
      * and by nothing else, and has no YouTube copy to start on. For those there
      * is no choice to make in advance, and this is the only place that can see
      * what actually came back.
@@ -4359,7 +4359,7 @@ class PlaybackService : MediaLibraryService() {
         if (reopenedUri == playbackUri.toString()) return false
 
         TrackLog.w(
-            "BitChord",
+            "Aurelis Music",
             "$mediaId was served a manifest through a progressive source; reopening it as $mime",
             about = mediaId,
         )
@@ -4434,7 +4434,7 @@ class PlaybackService : MediaLibraryService() {
         if (!neverStarted) return null
         if (consecutiveErrorSkips >= MAX_CONSECUTIVE_SKIPS) {
             TrackLog.w(
-                "BitChord",
+                "Aurelis Music",
                 "$MAX_CONSECUTIVE_SKIPS tracks in a row failed to start; " +
                     "this is the queue or the connection, not the track — stopping here",
             )
@@ -4467,10 +4467,10 @@ class PlaybackService : MediaLibraryService() {
         val exoPlayer = player ?: return
         if (exoPlayer.currentMediaItem?.mediaId != mediaId) return
         if (!exoPlayer.hasNextMediaItem()) {
-            TrackLog.w("BitChord", "$reason — and nothing after it in the queue", about = mediaId)
+            TrackLog.w("Aurelis Music", "$reason — and nothing after it in the queue", about = mediaId)
             return
         }
-        TrackLog.w("BitChord", "$reason — skipping to the next track", about = mediaId)
+        TrackLog.w("Aurelis Music", "$reason — skipping to the next track", about = mediaId)
         exoPlayer.seekToNextMediaItem()
         // No play() here: an error does not clear playWhenReady, so prepare()
         // resumes exactly as far as the listener had asked for. Calling play()
@@ -4574,7 +4574,7 @@ class PlaybackService : MediaLibraryService() {
         }
         upgradeFor = mediaId
         if (alreadyPending) {
-            TrackLog.d("BitChord", "looking again for a better copy of $mediaId", about = mediaId)
+            TrackLog.d("Aurelis Music", "looking again for a better copy of $mediaId", about = mediaId)
         }
         upgradeJob = scope.launch(TrackLog.about(mediaId)) {
             // A previous visit to this track already did all the expensive
@@ -4583,7 +4583,7 @@ class PlaybackService : MediaLibraryService() {
             // on disk — so this goes straight to the swap and skips the ten
             // seconds of catalogue searching it would otherwise repeat.
             if (shelved != null) {
-                TrackLog.d("BitChord", "re-offering the upgrade already proved for $mediaId")
+                TrackLog.d("Aurelis Music", "re-offering the upgrade already proved for $mediaId")
                 NerdStats.onLosslessRaceStart(mediaId)
                 try {
                     swapIn(mediaId, shelved)
@@ -4684,13 +4684,13 @@ class PlaybackService : MediaLibraryService() {
         if (mediaId in NerdStats.racingLossless.value ||
             (upgradeJob?.isActive == true && upgradeFor == mediaId)
         ) {
-            TrackLog.d("BitChord", "manual upgrade ignored for $mediaId: upgrade already running", about = mediaId)
+            TrackLog.d("Aurelis Music", "manual upgrade ignored for $mediaId: upgrade already running", about = mediaId)
             return
         }
         val remaining = manualUpgradeThrottle.tryAcquire(SystemClock.elapsedRealtime())
         if (remaining > 0) {
             TrackLog.d(
-                "BitChord",
+                "Aurelis Music",
                 "manual upgrade ignored for $mediaId: ${remaining}ms cooldown remaining",
                 about = mediaId,
             )
@@ -4704,7 +4704,7 @@ class PlaybackService : MediaLibraryService() {
         // answers are discarded. The manifest is intentionally unaffected.
         SourceRegistry.clearCompletedAddonTrackCalls()
         QualityUpgrade.askByHand(mediaId)
-        TrackLog.d("BitChord", "upgrade asked for by hand for $mediaId", about = mediaId)
+        TrackLog.d("Aurelis Music", "upgrade asked for by hand for $mediaId", about = mediaId)
         lookForBetterCopy(player)
     }
 
@@ -4748,7 +4748,7 @@ class PlaybackService : MediaLibraryService() {
         val expectedSec = target.durationSec
         if (TrackMatcher.isSevereMismatch(expectedSec, durationSec)) {
             TrackLog.w(
-                "BitChord",
+                "Aurelis Music",
                 "cached rendition duration mismatch: playing ${durationSec}s vs catalogue ${expectedSec}s for $videoId; discarding cache rendition",
                 about = mediaId,
             )
@@ -4770,7 +4770,7 @@ class PlaybackService : MediaLibraryService() {
      * Two measurements, in order of directness:
      *
      *  - **What the decoder says.** `Format.bitrate` is populated for the
-     *    containers that carry the field, which for what BitChord plays means
+     *    containers that carry the field, which for what Aurelis plays means
      *    MP4/AAC — the 320kbps copy a module served last session reports itself
      *    exactly.
      *  - **What the cache entry weighs.** Opus in WebM, which is what YouTube
@@ -4834,12 +4834,12 @@ class PlaybackService : MediaLibraryService() {
         // under — see [onCeilingLowered]. Asked again here, where it decides
         // whether the audio is cut, rather than only where it was found.
         if (!SourceRegistry.permitsForPlayback(stream.sourceConfigId)) {
-            TrackLog.d("BitChord", "upgrade dropped: the quality ceiling no longer allows its source", about = mediaId)
+            TrackLog.d("Aurelis Music", "upgrade dropped: the quality ceiling no longer allows its source", about = mediaId)
             return
         }
         val at = withContext(Dispatchers.Main) { swapPointFor(mediaId) } ?: return
         if (at.duration > 0 && at.duration - at.position < UPGRADE_MIN_REMAINING_MS) {
-            TrackLog.d("BitChord", "upgrade abandoned: only ${at.duration - at.position}ms of the track left")
+            TrackLog.d("Aurelis Music", "upgrade abandoned: only ${at.duration - at.position}ms of the track left")
             return
         }
 
@@ -4933,7 +4933,7 @@ class PlaybackService : MediaLibraryService() {
         withContext(Dispatchers.Main) { crossfade?.msSinceTransition() }?.let { since ->
             if (since < UPGRADE_AFTER_CROSSFADE_MS) {
                 val settle = UPGRADE_AFTER_CROSSFADE_MS - since
-                TrackLog.d("BitChord", "upgrade for $mediaId holding ${settle}ms; a transition just ended")
+                TrackLog.d("Aurelis Music", "upgrade for $mediaId holding ${settle}ms; a transition just ended")
                 delay(settle)
             }
         }
@@ -4946,7 +4946,7 @@ class PlaybackService : MediaLibraryService() {
                 // for next time rather than throwing away, exactly like the
                 // "queue moved on" case just below.
                 QualityUpgrade.shelve(mediaId, stream)
-                TrackLog.d("BitChord", "upgrade for $mediaId shelved: a crossfade was still running")
+                TrackLog.d("Aurelis Music", "upgrade for $mediaId shelved: a crossfade was still running")
                 return@withContext
             }
             if (now == null) {
@@ -4958,12 +4958,12 @@ class PlaybackService : MediaLibraryService() {
                 // and from the logs "found a FLAC, cached it, swapped nothing"
                 // was indistinguishable from never having looked.
                 QualityUpgrade.shelve(mediaId, stream)
-                TrackLog.d("BitChord", "upgrade for $mediaId proved but the queue moved on; shelved")
+                TrackLog.d("Aurelis Music", "upgrade for $mediaId proved but the queue moved on; shelved")
                 return@withContext
             }
             val player = player ?: return@withContext
             if (now.duration > 0 && now.duration - now.position < UPGRADE_MIN_REMAINING_MS) {
-                TrackLog.d("BitChord", "upgrade abandoned: only ${now.duration - now.position}ms of the track left")
+                TrackLog.d("Aurelis Music", "upgrade abandoned: only ${now.duration - now.position}ms of the track left")
                 QualityUpgrade.forget(mediaId)
                 return@withContext
             }
@@ -4975,7 +4975,7 @@ class PlaybackService : MediaLibraryService() {
             // into the rendition entry the audition just filled — two files,
             // one key, which is the corruption the audition exists to avoid.
             if (QualityUpgrade.forcedStream(Uri.parse(upgradedUri)) == null) {
-                TrackLog.d("BitChord", "upgrade abandoned: its stream was dropped while it was being proved")
+                TrackLog.d("Aurelis Music", "upgrade abandoned: its stream was dropped while it was being proved")
                 return@withContext
             }
             // Not fatal, just slower than intended, and worth being able to see
@@ -4983,7 +4983,7 @@ class PlaybackService : MediaLibraryService() {
             // only lose that race on a connection that is barely keeping up.
             if (now.position > warmedThrough) {
                 TrackLog.d(
-                    "BitChord",
+                    "Aurelis Music",
                     "upgrade landing at ${now.position}ms, past the ${warmedThrough}ms warmed for it",
                 )
             }
@@ -5014,7 +5014,7 @@ class PlaybackService : MediaLibraryService() {
             player.seekTo(player.currentMediaItemIndex, now.position)
             player.prepare()
             QualityUpgrade.unshelve(mediaId)
-            TrackLog.d("BitChord", "upgraded to ${stream.format.summary} at ${now.position}ms ($upgradedSourceName)")
+            TrackLog.d("Aurelis Music", "upgraded to ${stream.format.summary} at ${now.position}ms ($upgradedSourceName)")
             watchUpgrade(mediaId, now.uri, now.position, now.duration, previousFormat)
             if (QualityUpgrade.continueAfterLossySwap(mediaId)) {
                 // The immediate JioSaavn improvement stays audible while a
@@ -5081,7 +5081,7 @@ class PlaybackService : MediaLibraryService() {
         // unpins the track, and swapping against that item is the whole point.
         // See [OriginalVersion] and [QualityUpgrade.askByHand].
         if (OriginalVersion.isPinned(mediaId)) {
-            TrackLog.d("BitChord", "no swap for $mediaId: it is held on the original", about = mediaId)
+            TrackLog.d("Aurelis Music", "no swap for $mediaId: it is held on the original", about = mediaId)
             return null
         }
         return SwapPoint(item, uri, player.currentPosition, player.duration)
@@ -5188,7 +5188,7 @@ class PlaybackService : MediaLibraryService() {
                     when (verdict) {
                         is Audition.Ready -> return@withTimeoutOrNull verdict.bufferedTo
                         is Audition.Rejected -> {
-                            TrackLog.w("BitChord", "upgrade dropped before it was heard: ${verdict.why}")
+                            TrackLog.w("Aurelis Music", "upgrade dropped before it was heard: ${verdict.why}")
                             return@withTimeoutOrNull null
                         }
                         Audition.Waiting -> delay(UPGRADE_PROVE_STEP_MS)
@@ -5205,11 +5205,11 @@ class PlaybackService : MediaLibraryService() {
         }
         val took = SystemClock.elapsedRealtime() - startedAt
         if (warmedThrough == null) {
-            TrackLog.d("BitChord", "upgrade for $mediaId never proved itself in ${took}ms")
+            TrackLog.d("Aurelis Music", "upgrade for $mediaId never proved itself in ${took}ms")
             return null
         }
         TrackLog.d(
-            "BitChord",
+            "Aurelis Music",
             "upgrade to ${stream.format.summary} proved in ${took}ms, buffered through ${warmedThrough}ms",
         )
         // Media3 locks a cache entry to one writer, and the audition lets go of
@@ -5219,13 +5219,13 @@ class PlaybackService : MediaLibraryService() {
         // the stall [AudioCache]'s key factory documents. Free to wait for: the
         // old stream is still playing.
         delay(AUDITION_RELEASE_MS)
-        TrackLog.d("BitChord", AudioCache.cachedSummary(Uri.parse(upgradedUri)))
+        TrackLog.d("Aurelis Music", AudioCache.cachedSummary(Uri.parse(upgradedUri)))
         return warmedThrough
     }
 
     /**
      * Tells Media3 the type of a stream found behind one of our virtual
-     * `bitchord://` playback URIs.
+     * `aurelis://` playback URIs.
      *
      * The resolver replaces that URI with the real URL only after
      * [DefaultMediaSourceFactory] has selected a source implementation. A
@@ -5411,7 +5411,7 @@ class PlaybackService : MediaLibraryService() {
             // to one that never loaded at all, and only the second is a fault
             // in the stream rather than a wrong match.
             TrackLog.w(
-                "BitChord",
+                "Aurelis Music",
                 "upgrade reverted: replacement reports ${player.duration}ms against " +
                     "${previousDuration}ms (state=${player.playbackState}, " +
                     "buffered=${player.bufferedPosition}ms)",
@@ -5559,7 +5559,7 @@ class PlaybackService : MediaLibraryService() {
         // A manifest cannot be substituted here, however good it is. This
         // function runs on the loader thread, *inside* the open of a media
         // source that was built minutes ago from an extensionless
-        // `bitchord://` URI — so the source is already progressive and cannot
+        // `aurelis://` URI — so the source is already progressive and cannot
         // be told otherwise, and handing it a manifest is a track that fails
         // at 0ms rather than a track that plays lossless. See [StreamContainer]
         // for the log of exactly that.
@@ -5574,7 +5574,7 @@ class PlaybackService : MediaLibraryService() {
             val url = runCatching { fallback.await().getOrThrow() }.getOrNull()
             if (url != null) {
                 TrackLog.d(
-                    "BitChord",
+                    "Aurelis Music",
                     "'${target.title}' was offered ${quick.format.summary} as a manifest; " +
                         "starting on YouTube and swapping to it under the music",
                     about = videoId,
@@ -5594,7 +5594,7 @@ class PlaybackService : MediaLibraryService() {
             // with the type declared and prepares it again. A cut before the
             // first note beats a track that does not play at all.
             TrackLog.w(
-                "BitChord",
+                "Aurelis Music",
                 "'${target.title}' has only a manifest and YouTube cannot serve it; " +
                     "letting it fail once to declare its type",
                 about = videoId,
@@ -5665,7 +5665,7 @@ class PlaybackService : MediaLibraryService() {
         if (direct != null) return Resolved.Module(direct)
         val running = DirectSourceGate.stillLooking(videoId)
         TrackLog.d(
-            "BitChord",
+            "Aurelis Music",
             if (running != null) {
                 "no addon answered for '${target.title}' within " +
                     "${DirectSourceGate.LOOKUP_TIMEOUT_MS / 1000}s; starting it on YouTube and still looking"
@@ -5886,7 +5886,7 @@ class PlaybackService : MediaLibraryService() {
             if (!name.isNullOrBlank()) return name
         }
 
-        // 5. Virtual bitchord://source?s=... playback URI
+        // 5. Virtual aurelis://source?s=... playback URI
         if (uri?.authority == "source") {
             val configId = uri.getQueryParameter("s")
             val name = configId?.let { SourceRegistry.config(it)?.displayName }
@@ -6382,7 +6382,7 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         TrackLog.d(
-            "BitChord",
+            "Aurelis Music",
             "quality ceiling now ${ceiling.name}; letting go of ${lost.joinToString { it.label }} " +
                 "except for ${keep.joinToString()}",
         )
@@ -6489,7 +6489,7 @@ class PlaybackService : MediaLibraryService() {
             }
             musicOnlyLookups.remove(video.videoId)
             if (audio == null || audio.videoId == video.videoId) {
-                TrackLog.d("BitChord", "music-only: no audio version, playing the video's own audio", about = video.videoId)
+                TrackLog.d("Aurelis Music", "music-only: no audio version, playing the video's own audio", about = video.videoId)
                 MusicOnlyPlayback.settle(video.videoId)
             }
             val live = player ?: return@launch
@@ -6499,7 +6499,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun applyMusicOnly(exoPlayer: ExoPlayer, index: Int, item: MediaItem, video: Song, audio: Song) {
-        TrackLog.d("BitChord", "music-only: playing '${audio.title}' (${audio.videoId})", about = video.videoId)
+        TrackLog.d("Aurelis Music", "music-only: playing '${audio.title}' (${audio.videoId})", about = video.videoId)
         YtMusicRepository.rememberVideoVersion(audio.videoId, video)
         val replacement = QueueShuffle.withQueueMetadata(
             audio.asMusicOnlyOf(video).toMediaItem(),
@@ -6560,7 +6560,7 @@ class PlaybackService : MediaLibraryService() {
         // A track picked from an addon is that addon's or nothing, an upgrade
         // was auditioned before it was swapped in, and a revert is YouTube's
         // own audio — none of them is a substitute to measure.
-        if (uri.scheme != "bitchord" || uri.authority == "source") return
+        if (uri.scheme != "aurelis" || uri.authority == "source") return
         if (QualityUpgrade.cacheTag(uri) != null) return
         val key = uri.toString()
         if (key == lengthCheckedUri) return
@@ -6581,7 +6581,7 @@ class PlaybackService : MediaLibraryService() {
         }
         if (!wrong) return
         TrackLog.w(
-            "BitChord",
+            "Aurelis Music",
             "'${item.mediaMetadata.title}' decodes to ${decodedMs}ms against ${expectedSec}s listed " +
                 "(tolerance ±${AppSettings.upgradeLengthSlackSeconds.value}s) on " +
                 if (substituted) "an addon copy" else "a cached copy of unknown origin",
@@ -6647,7 +6647,7 @@ class PlaybackService : MediaLibraryService() {
         if (remaining > DirectSourceGate.WINDOW_MS) return
         if (!DirectSourceGate.openNext(next.mediaId)) return
         TrackLog.d(
-            "BitChord",
+            "Aurelis Music",
             "direct window open: ${next.mediaId} with ${remaining}ms to the transition",
             about = next.mediaId,
         )
@@ -7749,7 +7749,7 @@ class PlaybackService : MediaLibraryService() {
                 activityName = AppSettings.discordActivityName.value,
                 audioQuality = audioQuality,
             ).onFailure {
-                TrackLog.d("BitChord", "Discord presence failed: ${it.message}", about = song.videoId)
+                TrackLog.d("Aurelis Music", "Discord presence failed: ${it.message}", about = song.videoId)
             }
         }
     }
@@ -9517,8 +9517,8 @@ class PlaybackService : MediaLibraryService() {
         /** Length of a FLAC STREAMINFO block, which the format fixes at 34 bytes. */
         const val STREAM_INFO_BYTES = 34
 
-        const val CHANNEL_ID = "bitchord_playback"
-        const val SESSION_ID = "BitChordPlayback"
+        const val CHANNEL_ID = "aurelis_playback"
+        const val SESSION_ID = "AurelisPlayback"
 
         /** How often played-seconds are sampled off the player. */
         const val PROGRESS_SAMPLE_MS = 5_000L

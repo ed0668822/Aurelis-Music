@@ -62,14 +62,14 @@ data class SourceConfig(
     /** Which of [qualityOptions] the user chose, or null for the first one listed. */
     val pickedQuality: String? = null,
     /**
-     * Whether the addon's manifest declares `bitchordAuth`, as it last said;
+     * Whether the addon's manifest declares `aurelisAuth`, as it last said;
      * null until it has been read. Addons that don't are out of date. They are
      * still searched and streamed from, without credentials, but the sources
      * screen flags them and tells the user to ask the developer to update.
      * Stored so the flag shows while the addon is down, and refreshed whenever
      * the manifest is next read.
      */
-    val bitchordAuth: Boolean? = null,
+    val aurelisAuth: Boolean? = null,
 ) {
     /** The entry of [qualityOptions] in force: the pick while the addon still lists it, else its first. */
     val activeQuality: AddonQualityOption?
@@ -81,11 +81,11 @@ data class SourceConfig(
 
     /**
      * Whether this is an addon known to be out of date: its manifest doesn't
-     * declare `bitchordAuth`, or it has no manifest at all. Not yet knowing
-     * (null) doesn't count. Only flagged, never gated on: see [bitchordAuth].
+     * declare `aurelisAuth`, or it has no manifest at all. Not yet knowing
+     * (null) doesn't count. Only flagged, never gated on: see [aurelisAuth].
      */
     val needsAddonUpdate: Boolean
-        get() = kind == SourceKind.ADDON && bitchordAuth == false
+        get() = kind == SourceKind.ADDON && aurelisAuth == false
 
     /** What the manifest last said, without the parts of the config the user set. */
     internal fun withPolicyOf(other: SourceConfig) =
@@ -93,7 +93,7 @@ data class SourceConfig(
             allowDownloads = other.allowDownloads,
             checkValidLossless = other.checkValidLossless,
             qualityOptions = other.qualityOptions,
-            bitchordAuth = other.bitchordAuth,
+            aurelisAuth = other.aurelisAuth,
         )
 
     /** What the sources screen and the player show. Never blank. */
@@ -122,7 +122,7 @@ data class SourceConfig(
  */
 object SourceRegistry {
 
-    private const val TAG = "BitChord"
+    private const val TAG = "Aurelis Music"
 
     private lateinit var prefs: SharedPreferences
 
@@ -142,7 +142,7 @@ object SourceRegistry {
 
     fun init(context: Context) {
         // Same repair and degradation as AuthStore; see EncryptedPrefs.
-        prefs = EncryptedPrefs.open(context, "bitchord_sources", "bitchord_sources_plain")
+        prefs = EncryptedPrefs.open(context, "aurelis_sources", "aurelis_sources_plain")
 
         val stored = prefs.getString(KEY_SOURCES, null)?.let(::decodeStored) ?: emptyList()
         val jioOptInMigrationDone = prefs.getBoolean(KEY_JIOSAAVN_OPT_IN_V1, false)
@@ -229,7 +229,7 @@ object SourceRegistry {
             // Nor, for an addon that asks for auth, while this device was just
             // refused verification: back in the walk once the backoff lapses,
             // when the next resolve asks the auth service again.
-            .filterNot { unverified && it.kind == SourceKind.ADDON && it.bitchordAuth == true }
+            .filterNot { unverified && it.kind == SourceKind.ADDON && it.aurelisAuth == true }
             .sortedBy { it.kind.rank }
             .mapNotNull { instances[it.id] }
     }
@@ -283,13 +283,13 @@ object SourceRegistry {
         allowDownloads: Boolean,
         checkValidLossless: Boolean,
         qualityOptions: List<AddonQualityOption>,
-        bitchordAuth: Boolean,
+        aurelisAuth: Boolean,
     ) {
         val current = config(configId) ?: return
         if (current.allowDownloads == allowDownloads &&
             current.checkValidLossless == checkValidLossless &&
             current.qualityOptions == qualityOptions &&
-            current.bitchordAuth == bitchordAuth
+            current.aurelisAuth == aurelisAuth
         ) {
             return
         }
@@ -297,7 +297,7 @@ object SourceRegistry {
             TAG,
             "${current.displayName}: manifest now says allowDownloads=$allowDownloads " +
                 "checkValidLossless=$checkValidLossless qualityOptions=${qualityOptions.map { it.value }} " +
-                "bitchordAuth=$bitchordAuth",
+                "aurelisAuth=$aurelisAuth",
         )
         publish(
             configs.value.map {
@@ -306,7 +306,7 @@ object SourceRegistry {
                         allowDownloads = allowDownloads,
                         checkValidLossless = checkValidLossless,
                         qualityOptions = qualityOptions,
-                        bitchordAuth = bitchordAuth,
+                        aurelisAuth = aurelisAuth,
                     )
                 } else {
                     it
@@ -317,14 +317,14 @@ object SourceRegistry {
 
     /**
      * Records that an addon is out of date because it has no usable manifest,
-     * and so cannot declare `bitchordAuth`. The other stored policy is left as
+     * and so cannot declare `aurelisAuth`. The other stored policy is left as
      * it was: there is nothing new to replace it with.
      */
     fun markAddonOutdated(configId: String) {
         val current = config(configId) ?: return
-        if (current.bitchordAuth == false) return
-        TrackLog.d(TAG, "${current.displayName}: no usable manifest, so it can't declare bitchordAuth")
-        publish(configs.value.map { if (it.id == configId) it.copy(bitchordAuth = false) else it })
+        if (current.aurelisAuth == false) return
+        TrackLog.d(TAG, "${current.displayName}: no usable manifest, so it can't declare aurelisAuth")
+        publish(configs.value.map { if (it.id == configId) it.copy(aurelisAuth = false) else it })
     }
 
     /** The common eligibility gate used by playback and download source walks. */
@@ -509,7 +509,7 @@ object SourceRegistry {
                     allowDownloads = detected.manifest.downloadsAllowed,
                     checkValidLossless = detected.manifest.requiresLosslessOutput,
                     qualityOptions = detected.manifest.qualityOptions,
-                    bitchordAuth = detected.manifest.requiresBitChordAuth,
+                    aurelisAuth = detected.manifest.requiresAurelisAuth,
                     // The address may now name a different addon, whose list
                     // this pick was never on.
                     pickedQuality = existing?.pickedQuality?.takeIf { picked ->
@@ -624,7 +624,7 @@ object SourceRegistry {
     /** The playback URI for a source-backed track; [PlaybackService] resolves it at open time. */
     fun trackUri(configId: String, trackId: String): String =
         Uri.Builder()
-            .scheme("bitchord")
+            .scheme("aurelis")
             .authority("source")
             .appendQueryParameter("s", configId)
             .appendQueryParameter("t", trackId)

@@ -137,7 +137,7 @@ import com.music.aurelis.data.lyrics.translationLanguageName
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.Haptics
 import com.music.aurelis.ui.haptics.rememberHaptics
-import com.music.aurelis.ui.icons.BitChordIcons
+import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.rememberIsForeground
 import java.util.Locale
 import kotlin.math.PI
@@ -2817,7 +2817,7 @@ private fun CurrentLyricLine(
                 .padding(vertical = 4.dp),
         ) {
             Icon(
-                imageVector = BitChordIcons.Instrumental,
+                imageVector = AurelisIcons.Instrumental,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(16.dp),
@@ -2833,7 +2833,7 @@ private fun CurrentLyricLine(
             )
             Spacer(Modifier.width(6.dp))
             Icon(
-                imageVector = BitChordIcons.ChevronRight,
+                imageVector = AurelisIcons.ChevronRight,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.size(14.dp),
@@ -2890,7 +2890,7 @@ private fun CurrentLyricLine(
     ) {
         if (instrumental) {
             Icon(
-                imageVector = BitChordIcons.Instrumental,
+                imageVector = AurelisIcons.Instrumental,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(16.dp),
@@ -2972,7 +2972,7 @@ private fun CurrentLyricLine(
             Spacer(Modifier.width(6.dp))
             // Disclosure hint: this strip opens the full lyrics screen.
             Icon(
-                imageVector = BitChordIcons.ChevronRight,
+                imageVector = AurelisIcons.ChevronRight,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.size(14.dp),
@@ -2980,7 +2980,7 @@ private fun CurrentLyricLine(
         } else {
             Spacer(Modifier.width(6.dp))
             Icon(
-                imageVector = BitChordIcons.ChevronRight,
+                imageVector = AurelisIcons.ChevronRight,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier

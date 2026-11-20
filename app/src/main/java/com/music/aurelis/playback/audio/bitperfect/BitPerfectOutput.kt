@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 BitChord Project
+ * Copyright (C) 2026 Aurelis Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,7 +172,7 @@ internal object BitPerfectOutput {
     private val _hardwareVolume = MutableStateFlow<UsbVolume.Snapshot?>(null)
     val hardwareVolume: StateFlow<UsbVolume.Snapshot?> = _hardwareVolume.asStateFlow()
     private val pendingVolume = AtomicReference<Double?>(null)
-    private val volumeExecutor = Executors.newSingleThreadExecutor { Thread(it, "BitChord-USB-volume") }
+    private val volumeExecutor = Executors.newSingleThreadExecutor { Thread(it, "Aurelis-USB-volume") }
 
     init {
         // A detached DAC stops its stream at once rather than at the next write.

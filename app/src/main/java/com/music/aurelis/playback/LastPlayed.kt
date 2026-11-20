@@ -202,7 +202,7 @@ object LastPlayed {
     }
 
     private const val KEEP_AHEAD = 50
-    private const val PREFS_NAME = "bitchord_last_played"
+    private const val PREFS_NAME = "aurelis_last_played"
     private const val KEY_QUEUE = "queue"
     private const val KEY_INDEX = "index"
     private const val KEY_POSITION = "position"

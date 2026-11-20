@@ -69,13 +69,13 @@ import kotlin.coroutines.coroutineContext
  * expire within hours, and differ between resolves of the same track, so
  * keying on them would cache every track afresh on every play. Because
  * [CacheDataSource] sits *outside* the resolving data source it sees the
- * original `bitchord://watch?v=<id>` request, and a cache hit never resolves a
+ * original `aurelis://watch?v=<id>` request, and a cache hit never resolves a
  * URL at all.
  */
 @UnstableApi
 object AudioCache {
 
-    private const val TAG = "BitChord"
+    private const val TAG = "Aurelis Music"
 
     /**
      * The disk budget, straight from [AppSettings] — 512MB by default, roughly
@@ -425,7 +425,7 @@ object AudioCache {
      * read-ahead builds the same URI, so both land on one cache entry.
      */
     /**
-     * Marks a read made for the BitChord watch app. Its streams are capped below
+     * Marks a read made for the Aurelis watch app. Its streams are capped below
      * lossless — see [AppSettings.streamCeilingOverride] — and so are kept apart
      * from this phone's own: a lossless file cached by the phone must never be
      * what the watch is handed, and the other way round.
@@ -553,7 +553,7 @@ object AudioCache {
      * resolved at all.
      */
     fun originOf(uri: Uri): Origin? {
-        if (!::cache.isInitialized || uri.scheme != "bitchord") return null
+        if (!::cache.isInitialized || uri.scheme != "aurelis") return null
         val key = keyFactory.buildCacheKey(DataSpec(uri))
         return runCatching { cache.getContentMetadata(key).get(META_ORIGIN, null as String?) }
             .getOrNull()
@@ -729,7 +729,7 @@ object AudioCache {
         if (playedIds.size > MAX_NOTED_SONGS) playedIds.clear()
         playedIds += song.videoId
         noteSongs(listOf(song))
-        if (!::cache.isInitialized || uri?.scheme != "bitchord") return
+        if (!::cache.isInitialized || uri?.scheme != "aurelis") return
         scope.launch {
             val key = keyFactory.buildCacheKey(DataSpec(uri))
             runCatching {
@@ -748,7 +748,7 @@ object AudioCache {
      * Tags the cache entry [spec] is filling with who is serving it.
      *
      * Called from the player's resolving data source, the one place where the
-     * `bitchord://` request and the real stream URL it resolved to are both in
+     * `aurelis://` request and the real stream URL it resolved to are both in
      * hand — see PlaybackService. [CacheDataSource] has already put the cache
      * key it is writing under into [DataSpec.key], so the tag lands on exactly
      * the entry being filled, whichever rendition that is.
@@ -759,7 +759,7 @@ object AudioCache {
      */
     fun recordServed(spec: DataSpec, servedUrl: String) {
         if (!::cache.isInitialized) return
-        if (spec.uri.scheme != "bitchord") return
+        if (spec.uri.scheme != "aurelis") return
         val mediaId = mediaIdIn(spec.uri) ?: return
         val key = spec.key ?: keyFactory.buildCacheKey(spec)
         val origin = originOf(spec.uri, mediaId, servedUrl)
@@ -1036,7 +1036,7 @@ object AudioCache {
         // No upstream factory, so anything not on disk fails rather than streams.
         val source = CacheDataSource.Factory().setCache(cache).createDataSource()
         val spec = DataSpec.Builder()
-            .setUri(Uri.parse("bitchord://cache"))
+            .setUri(Uri.parse("aurelis://cache"))
             .setKey(copy.key)
             .setPosition(0)
             .setLength(copy.length)
@@ -1240,7 +1240,7 @@ object AudioCache {
      * way on a direct-mode miss.
      */
     private fun settleDirectEntry(uri: Uri) {
-        if (uri.scheme != "bitchord" || uri.authority != "watch") return
+        if (uri.scheme != "aurelis" || uri.authority != "watch") return
         val videoId = uri.getQueryParameter("v") ?: return
         // A rendition of its own (an upgrade, a revert), the watch's capped
         // copy and Automix's Opus are none of this: each has its own entry.
@@ -1438,7 +1438,7 @@ object AudioCache {
                 // earlier play: the player reads that head straight off disk,
                 // and the pin would then stream the substitute after it. That
                 // track's way up is the second look — see [heldByYouTube].
-                val youTubeFilled = heldByYouTube(cacheKeyOf(Uri.parse("bitchord://watch?v=$next")))
+                val youTubeFilled = heldByYouTube(cacheKeyOf(Uri.parse("aurelis://watch?v=$next")))
                 val warmed = if (substitutable && target != null && !pinnedToYouTube && !youTubeFilled) {
                     runCatching { SourceResolver.prefetchSubstitute(target) }
                         .onFailure { TrackLog.d(TAG, "warm-up substitute failed for $next: ${it.message}", about = next) }
@@ -1523,7 +1523,7 @@ object AudioCache {
                     // rest streamed after it — see [settleDirectEntry]. The
                     // Opus goes first, or the addon is not pinned at all and
                     // playback's own open settles it.
-                    val key = cacheKeyOf(Uri.parse("bitchord://watch?v=$id"))
+                    val key = cacheKeyOf(Uri.parse("aurelis://watch?v=$id"))
                     if (addon != null && heldByYouTube(key)) dropYouTubeEntry(key, id)
                     if (addon != null && heldByYouTube(key)) return@launch
                     StreamChoice.remember(id, stream, substituted = addon != null)
@@ -1546,7 +1546,7 @@ object AudioCache {
      * [target] is what a cross-source match is made on, and read-ahead cannot
      * reach it any other way: it runs for tracks that are not the current item,
      * so the session's metadata is the wrong track's, and the plain
-     * `bitchord://watch?v=…` URI it builds for itself carries an id and nothing
+     * `aurelis://watch?v=…` URI it builds for itself carries an id and nothing
      * else. It rides along from the queue instead — see
      * [PlaybackService.prefetchAround][com.music.aurelis.playback.PlaybackService].
      */
@@ -1846,7 +1846,7 @@ object AudioCache {
      * "openable with exactly these bytes".
      */
     private fun alignmentPrefixBytes(videoId: String): Long {
-        val watch = Uri.parse("bitchord://watch?v=$videoId")
+        val watch = Uri.parse("aurelis://watch?v=$videoId")
         val opus = Uri.parse(AutomixAnalysisSource.opusUri(videoId))
         val renditions = renditionsOf(watch)
         val sameSource = renditions
@@ -1923,7 +1923,7 @@ object AudioCache {
                     // regardless.
                     pull(
                         videoId,
-                        Uri.parse("bitchord://watch?v=$videoId"),
+                        Uri.parse("aurelis://watch?v=$videoId"),
                         0,
                         want,
                         /* pinKey = */ false,
@@ -2323,7 +2323,7 @@ object AudioCache {
      * from a track played earlier, or skipped back to — costs only the rest.
      */
     private suspend fun fetch(videoId: String, position: Long, length: Long) =
-        fetch(videoId, Uri.parse("bitchord://watch?v=$videoId"), position, length)
+        fetch(videoId, Uri.parse("aurelis://watch?v=$videoId"), position, length)
 
     /**
      * [pinKey] forces the write to land under [cacheKey] instead of wherever

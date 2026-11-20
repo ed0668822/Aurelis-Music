@@ -21,7 +21,7 @@ import android.content.SharedPreferences
 class AuthStore(context: Context) {
 
     private val prefs: SharedPreferences =
-        EncryptedPrefs.open(context, "bitchord_auth", "bitchord_auth_plain")
+        EncryptedPrefs.open(context, "aurelis_auth", "aurelis_auth_plain")
 
     var cookie: String?
         get() = prefs.getString(KEY_COOKIE, null)

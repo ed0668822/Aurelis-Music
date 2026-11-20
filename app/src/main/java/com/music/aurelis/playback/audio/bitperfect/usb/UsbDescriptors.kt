@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 BitChord Project
+ * Copyright (C) 2026 Aurelis Project
  *
  * Adapted from Mornye (https://github.com/mornyeapp/Mornye),
  * rust_backend/crates/mobile/src/usb_audio/descriptors.rs,

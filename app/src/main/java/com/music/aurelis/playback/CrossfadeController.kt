@@ -1381,7 +1381,7 @@ class CrossfadeController(
         return if (seconds > 0) seconds * 1000L else 0L
     }
 
-    /** BitChord doesn't carry album metadata on [MediaMetadata] yet, so [TransitionTrackInfo.album] stays blank. */
+    /** Aurelis doesn't carry album metadata on [MediaMetadata] yet, so [TransitionTrackInfo.album] stays blank. */
     private fun MediaItem.toTransitionInfo(durationMs: Long) = TransitionTrackInfo(
         id = mediaId,
         durationMs = durationMs,
@@ -3853,7 +3853,7 @@ class CrossfadeController(
         /** How long the popup's preview outlives the last plan that laid it out. */
         const val MIX_PREVIEW_STALE_MS = 1_500L
 
-        const val TAG = "BitChordCrossfade"
+        const val TAG = "AurelisCrossfade"
 
         /**
          * Used only before a pair has been analysed, or when the evidence is

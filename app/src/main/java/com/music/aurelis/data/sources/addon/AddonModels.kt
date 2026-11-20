@@ -49,7 +49,7 @@ data class AddonManifest(
      *
      * Read mostly for its *defaults*. The protocol has the host render a form
      * for these and send whatever the user picked back as query parameters on
-     * every request; BitChord draws that form for `quality` alone — see
+     * every request; Aurelis draws that form for `quality` alone — see
      * [qualityOptions] — and sends the declared defaults for the rest. That is
      * explicitly enough — the spec says an addon "that never reads a setting
      * still behaves correctly", and the default is what the reference host
@@ -73,15 +73,15 @@ data class AddonManifest(
      */
     @SerialName("checkValidLossless") val checkValidLossless: JsonElement? = null,
     /**
-     * `bitchordAuth`: the addon only serves the genuine BitChord app, so every
+     * `aurelisAuth`: the addon only serves the genuine Aurelis app, so every
      * request has to carry [AddonAuth]'s token and proof. Absent means nothing
      * is sent. An addon that leaves it out but answers `401` with
-     * `WWW-Authenticate: BitChord` is handled the same way, one round trip
-     * later. Read through [requiresBitChordAuth].
+     * `WWW-Authenticate: Aurelis` is handled the same way, one round trip
+     * later. Read through [requiresAurelisAuth].
      */
-    @SerialName("bitchordAuth") val bitchordAuth: JsonElement? = null,
+    @SerialName("aurelisAuth") val aurelisAuth: JsonElement? = null,
 ) {
-    val requiresBitChordAuth: Boolean get() = bitchordAuth.asFlag() ?: false
+    val requiresAurelisAuth: Boolean get() = aurelisAuth.asFlag() ?: false
 
     val downloadsAllowed: Boolean get() = allowDownloads.asFlag() ?: true
 

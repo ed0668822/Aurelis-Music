@@ -19,5 +19,5 @@ object NativeAnalysisLibrary {
     }
 
     /** The name both builds give it, so neither spells it out separately. */
-    const val LIBRARY_NAME = "bitchord_analysis"
+    const val LIBRARY_NAME = "aurelis_analysis"
 }

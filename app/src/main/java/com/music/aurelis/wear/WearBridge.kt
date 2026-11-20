@@ -86,7 +86,7 @@ import com.music.aurelis.wear.WearProtocol as P
  *
  * Costs nothing on a phone without a watch. State is always remembered, but it
  * is only encoded, given artwork and handed to Play services once a watch with
- * the BitChord app on it is known to be reachable — and a phone with no Wear OS
+ * the Aurelis app on it is known to be reachable — and a phone with no Wear OS
  * app at all answers that with an error, once, and is left alone after it.
  *
  * TV builds from these sources too, and carries a no-op file at this same path
@@ -95,7 +95,7 @@ import com.music.aurelis.wear.WearProtocol as P
  */
 object WearBridge {
 
-    private const val TAG = "BitChordWear"
+    private const val TAG = "AurelisWear"
 
     /** Coalesces the bursts the player reports in — play is two or three callbacks in a row. */
     private const val COALESCE_MS = 120L
@@ -416,7 +416,7 @@ object WearBridge {
                                     // only those: the tag is in the address, so
                                     // it also misses the resolver's own cache.
                                     Uri.parse(uri).let { parsed ->
-                                        if (parsed.scheme != "bitchord" || parsed.authority != "source") parsed else parsed.buildUpon()
+                                        if (parsed.scheme != "aurelis" || parsed.authority != "source") parsed else parsed.buildUpon()
                                             .appendQueryParameter(AudioCache.WATCH_READ_PARAM, "1")
                                             .build()
                                     },
@@ -654,7 +654,7 @@ class WearCommandService : WearableListenerService() {
         val done = CountDownLatch(1)
         Controllers.use(applicationContext, onMissing = { done.countDown() }) { controller ->
             runCatching { execute(controller, command, arg) }
-                .onFailure { Log.w("BitChordWear", "command $command failed", it) }
+                .onFailure { Log.w("AurelisWear", "command $command failed", it) }
             done.countDown()
         }
         done.await(8, TimeUnit.SECONDS)

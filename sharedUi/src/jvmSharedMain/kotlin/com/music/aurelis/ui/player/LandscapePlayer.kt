@@ -63,7 +63,7 @@ import coil3.request.ImageRequest
 import com.music.aurelis.ui.components.ExplicitBadge
 import com.music.aurelis.ui.components.menuAnchor
 import com.music.aurelis.ui.haptics.Haptic
-import com.music.aurelis.ui.icons.BitChordIcons
+import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.theme.stableStatusBarInsets
 import com.music.aurelis.data.canvas.CanvasArtwork
 import com.music.aurelis.data.model.LikeStatus
@@ -322,7 +322,7 @@ internal fun LandscapeArtwork(
         ) {
             if (!artLoaded && !canvasRendered) {
                 Icon(
-                    imageVector = BitChordIcons.MusicNote,
+                    imageVector = AurelisIcons.MusicNote,
                     contentDescription = null,
                     tint = Color.White.copy(alpha = 0.35f),
                     modifier = Modifier.fillMaxSize(0.36f),
@@ -470,7 +470,7 @@ internal fun LandscapeCredits(
         if (signedIn || song.localUri != null) {
             val liked = likeStatus == LikeStatus.LIKE
             CircleGlyph(
-                icon = if (liked) BitChordIcons.StarFilled else BitChordIcons.Star,
+                icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,
                 contentDescription = stringResource(
                     if (liked) Res.string.remove_from_liked else Res.string.like,
                 ),

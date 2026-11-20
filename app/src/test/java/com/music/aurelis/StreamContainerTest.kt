@@ -9,7 +9,7 @@ class StreamContainerTest {
 
     @Test
     fun `dash reopen changes virtual uri while preserving playback identity`() {
-        val original = "bitchord://watch?v=iQnRCdtECl8&n=Wait&a=M83&d=344"
+        val original = "aurelis://watch?v=iQnRCdtECl8&n=Wait&a=M83&d=344"
 
         val reopened = StreamContainer.markedForManifestReopen(
             original,
@@ -22,10 +22,10 @@ class StreamContainerTest {
 
     @Test
     fun `hls source-track reopen preserves source parameters and fragment`() {
-        val original = "bitchord://source?s=addon-1&t=track-2&n=Wait#part"
+        val original = "aurelis://source?s=addon-1&t=track-2&n=Wait#part"
 
         assertEquals(
-            "bitchord://source?s=addon-1&t=track-2&n=Wait&manifest_reopen=hls#part",
+            "aurelis://source?s=addon-1&t=track-2&n=Wait&manifest_reopen=hls#part",
             StreamContainer.markedForManifestReopen(
                 original,
                 "application/x-mpegURL",
@@ -35,7 +35,7 @@ class StreamContainerTest {
 
     @Test
     fun `non-manifest mime does not force a source rebuild`() {
-        val original = "bitchord://watch?v=iQnRCdtECl8"
+        val original = "aurelis://watch?v=iQnRCdtECl8"
 
         assertEquals(
             original,

@@ -76,8 +76,8 @@ internal fun WearOsSettingsRow(onClick: () -> Unit) {
 }
 
 /**
- * Settings → BitChord for Wear OS, a page of its own: every watch paired with
- * this phone, whether it has this build of BitChord, and the one action that
+ * Settings → Aurelis for Wear OS, a page of its own: every watch paired with
+ * this phone, whether it has this build of Aurelis, and the one action that
  * makes it so. Install switches the page to the steps for it; Back steps out of
  * them before it leaves the page.
  */

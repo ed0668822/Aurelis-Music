@@ -90,7 +90,7 @@ import com.music.aurelis.ui.components.SongRow
 import com.music.aurelis.ui.components.longPressMenuClickable
 import com.music.aurelis.ui.components.rememberRemoteArtworkUrl
 import com.music.aurelis.ui.components.thumbnailBorder
-import com.music.aurelis.ui.icons.BitChordIcons
+import com.music.aurelis.ui.icons.AurelisIcons
 import com.music.aurelis.ui.theme.ArtworkPalette
 
 /**
@@ -432,7 +432,7 @@ private fun NewPlaylistRow(palette: ArtworkPalette, onClick: () -> Unit) {
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                BitChordIcons.Plus,
+                AurelisIcons.Plus,
                 contentDescription = null,
                 tint = palette.accent,
                 modifier = Modifier.size(22.dp),
@@ -794,7 +794,7 @@ private fun GroupLabels(title: String, subtitle: String, palette: ArtworkPalette
 @Composable
 private fun TrailingGlyph(selected: Boolean, palette: ArtworkPalette) {
     Icon(
-        imageVector = if (selected) Icons.Rounded.CheckCircle else BitChordIcons.ChevronRight,
+        imageVector = if (selected) Icons.Rounded.CheckCircle else AurelisIcons.ChevronRight,
         contentDescription = if (selected) stringResource(R.string.selected) else null,
         tint = if (selected) MaterialTheme.colorScheme.primary else palette.onBackgroundVariant,
         modifier = Modifier.size(if (selected) 22.dp else 16.dp),

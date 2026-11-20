@@ -1995,7 +1995,7 @@ class SourcesTest {
     fun `rejects a stream URL the player's own parser would refuse`() {
         assertTrue(ModuleSource.malformed("/mediatracks/blob/0.mp4"))
         assertTrue(ModuleSource.malformed("sp-ad-fa.audio.tidal.com/mediatracks/blob/0.mp4"))
-        assertTrue(ModuleSource.malformed("bitchord://watch?v=rpemDBaFK0c"))
+        assertTrue(ModuleSource.malformed("aurelis://watch?v=rpemDBaFK0c"))
         assertTrue(ModuleSource.malformed(""))
         // A module returning its error text, or nothing, in the URL field.
         assertTrue(ModuleSource.malformed("undefined"))

@@ -73,8 +73,8 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
      * Whether this addon only answers the genuine app, so every request has to
      * carry [AddonAuth]'s token and proof.
      *
-     * Learned rather than configured: the manifest declares `bitchordAuth`, or
-     * a request comes back `401` with `WWW-Authenticate: BitChord`. Until then
+     * Learned rather than configured: the manifest declares `aurelisAuth`, or
+     * a request comes back `401` with `WWW-Authenticate: Aurelis`. Until then
      * nothing is sent, so an addon that never asked never sees a credential.
      */
     @Volatile
@@ -103,9 +103,9 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
             }
             if (!manifest.isPlayable) {
                 val declared = manifest.resources.joinToString(", ")
-                throw AddonException("This addon declares $declared — BitChord needs search")
+                throw AddonException("This addon declares $declared — Aurelis needs search")
             }
-            if (manifest.requiresBitChordAuth) authRequired = true
+            if (manifest.requiresAurelisAuth) authRequired = true
             manifest
         }.recoverCatching { failure ->
             // A manifest 404 is not "no such track", it is "no addon here" —
@@ -271,7 +271,7 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
      *
      * Without it an addon holding an Atmos mix has no way to know it may serve
      * one, so it takes its default branch and sends stereo. That is the whole
-     * of why BitChord never heard Atmos from an addon: not a detection bug —
+     * of why Aurelis never heard Atmos from an addon: not a detection bug —
      * [AddonStream.isDolbyAtmos] reads every spelling an addon sends — but a
      * question that was never asked.
      *
@@ -357,7 +357,7 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
      * is precisely the miss the caller is equipped to handle and not something
      * to log as a fault.
      *
-     * A `401` carrying `WWW-Authenticate: BitChord` is the addon asking for
+     * A `401` carrying `WWW-Authenticate: Aurelis` is the addon asking for
      * [AddonAuth]. The request is sent again at once with credentials. If an
      * addon reports the token `expired` or `invalid_token`, one fresh token is
      * fetched and the request tried once more. Any other refusal is final and
@@ -380,7 +380,7 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
             val wait = client.newCall(request).execute().use { response ->
                 val authChallenge = response.takeIf { it.code == 401 }
                     ?.header("WWW-Authenticate")
-                    ?.takeIf { it.trimStart().startsWith("BitChord", ignoreCase = true) }
+                    ?.takeIf { it.trimStart().startsWith("Aurelis Music", ignoreCase = true) }
                 when {
                     response.isSuccessful ->
                         return@withContext response.body?.string()?.takeIf { it.isNotBlank() }
@@ -406,7 +406,7 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
                     // sends people to re-paste a URL that was always correct.
                     response.code >= 500 -> throw AddonUnavailable("HTTP ${response.code}")
                     response.code != 429 -> throw AddonException("HTTP ${response.code}")
-                    attempt >= MAX_RETRIES -> throw AddonUnavailable("This addon is rate limiting BitChord")
+                    attempt >= MAX_RETRIES -> throw AddonUnavailable("This addon is rate limiting Aurelis")
                     else -> retryAfterMs(response.header("Retry-After"), attempt)
                 }
             }
@@ -429,7 +429,7 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
         val parsed = url.toHttpUrlOrNull() ?: throw AddonException("Invalid addon URL")
         val loopback = parsed.host == "localhost" || parsed.host == "127.0.0.1" || parsed.host == "::1"
         if (!parsed.isHttps && !loopback) {
-            throw AddonException("This addon asks for BitChord verification but isn't using HTTPS")
+            throw AddonException("This addon asks for Aurelis verification but isn't using HTTPS")
         }
         return AddonAuth.headersFor(parsed.host, rejectedToken)
     }
@@ -485,7 +485,7 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
     private fun keyOf(vararg parts: String) = parts.joinToString("|") { "${it.length}:$it" }
 
     companion object {
-        private const val TAG = "BitChord"
+        private const val TAG = "Aurelis Music"
 
         /** The tiers [AddonSource][com.music.aurelis.data.sources.AddonSource] asks in. */
         const val TIER_LOSSLESS = "LOSSLESS"
@@ -575,12 +575,12 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
         /** [body]'s "send again now": an auth handshake, not back-pressure. */
         private const val RETRY_NOW = -1L
 
-        /** The `error="..."` parameter of a `WWW-Authenticate: BitChord` challenge. */
+        /** The `error="..."` parameter of a `WWW-Authenticate: Aurelis` challenge. */
         private val AUTH_ERROR = Regex("""error="([^"]*)"""")
         private const val BACKOFF_BASE_MS = 500L
         private const val BACKOFF_CAP_MS = 8_000L
 
-        private val USER_AGENT = "BitChord/v${com.music.aurelis.BuildConfig.VERSION_NAME}"
+        private val USER_AGENT = "Aurelis/v${com.music.aurelis.BuildConfig.VERSION_NAME}"
 
         /**
          * What [probeSearch] asks for. Deliberately an ordinary word rather

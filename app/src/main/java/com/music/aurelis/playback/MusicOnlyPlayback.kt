@@ -39,7 +39,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 object MusicOnlyPlayback {
 
-    private const val TAG = "BitChord"
+    private const val TAG = "Aurelis Music"
 
     /** How long a row waits for its audio version before playing the video's own audio. */
     const val ANSWER_TIMEOUT_MS = 15_000L
@@ -62,7 +62,7 @@ object MusicOnlyPlayback {
 
     /** Whether this playback URI is a music video still owed its answer. */
     fun holds(uri: Uri): Boolean {
-        if (uri.scheme != "bitchord" || uri.authority != "watch") return false
+        if (uri.scheme != "aurelis" || uri.authority != "watch") return false
         // `m` marks a video row, and a row reverted by hand is that exact upload.
         if (uri.getQueryParameter("m") != "1") return false
         if (uri.getQueryParameter(DIRECT_YOUTUBE_PARAMETER) == "1") return false
@@ -70,7 +70,7 @@ object MusicOnlyPlayback {
         return isActive() && videoId !in kept.value && videoId !in settled.value
     }
 
-    /** A download has no `bitchord` URI, so it is never converted: it is what's on the device. */
+    /** A download has no `aurelis` URI, so it is never converted: it is what's on the device. */
     fun wants(item: MediaItem): Boolean = item.localConfiguration?.uri?.let(::holds) == true
 
     /** [videoId] plays as itself: no audio version, or none in time. */

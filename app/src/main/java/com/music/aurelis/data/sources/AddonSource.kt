@@ -87,7 +87,7 @@ class AddonSource(
      * rather than after it. The manifest is the client's shared, cached copy,
      * which the request was about to read for its settings anyway.
      *
-     * An addon that doesn't declare `bitchordAuth` is out of date but still
+     * An addon that doesn't declare `aurelisAuth` is out of date but still
      * used: the sources screen flags it, and nothing is sent to it but the
      * plain requests it has always had. One that declares it needs this device
      * verified. While the device was just refused, every request would fail
@@ -98,7 +98,7 @@ class AddonSource(
         if (shutOut(what)) return false
         val declared = refreshPolicy()
         if (shutOut(what)) return false
-        if ((declared ?: live.bitchordAuth) != true) return true
+        if ((declared ?: live.aurelisAuth) != true) return true
         AddonAuth.standingRefusal()?.let { reason ->
             if (reason != loggedRefusal) {
                 loggedRefusal = reason
@@ -117,7 +117,7 @@ class AddonSource(
     /**
      * Reads the manifest (the client's cached copy when there is one) and
      * stores what it says. An addon with no usable manifest is recorded as out
-     * of date, since it has nowhere to declare `bitchordAuth`; a manifest that
+     * of date, since it has nowhere to declare `aurelisAuth`; a manifest that
      * merely couldn't be fetched just now changes nothing.
      *
      * Returns whether the addon is up to date by what was just read, or null
@@ -127,7 +127,7 @@ class AddonSource(
         client.manifest().fold(
             onSuccess = { manifest ->
                 recordPolicy(manifest)
-                manifest.requiresBitChordAuth
+                manifest.requiresAurelisAuth
             },
             onFailure = { failure ->
                 if (failure is AddonException) {
@@ -145,7 +145,7 @@ class AddonSource(
             manifest.downloadsAllowed,
             manifest.requiresLosslessOutput,
             manifest.qualityOptions,
-            manifest.requiresBitChordAuth,
+            manifest.requiresAurelisAuth,
         )
 
     // ── Health ────────────────────────────────────────────────────────────
@@ -175,8 +175,8 @@ class AddonSource(
                 // because otherwise the row reads healthy while every search
                 // fails, and the reason is only in the log. One that doesn't ask
                 // is out of date, which the row flags on its own line, but works.
-                if (manifest.requiresBitChordAuth) client.checkAuth().exceptionOrNull()?.let { failure ->
-                    val reason = failure.message ?: "BitChord couldn't verify this device"
+                if (manifest.requiresAurelisAuth) client.checkAuth().exceptionOrNull()?.let { failure ->
+                    val reason = failure.message ?: "Aurelis couldn't verify this device"
                     return@fold if (failure is AddonUnavailable) {
                         SourceHealth.Unreachable(reason)
                     } else {
@@ -194,7 +194,7 @@ class AddonSource(
                 // No readable manifest is not the same as no addon: one that
                 // never published a manifest still answers a search, and is
                 // healthy the moment it does. It has nowhere to declare
-                // `bitchordAuth`, though, so it is recorded as out of date and
+                // `aurelisAuth`, though, so it is recorded as out of date and
                 // the row flags that on its own line.
                 if (failure is AddonException) SourceRegistry.markAddonOutdated(config.id)
                 if (client.probeSearch().isSuccess) {
@@ -397,7 +397,7 @@ class AddonSource(
         if (answer.isEncrypted) {
             TrackLog.w(
                 TAG,
-                "${config.displayName}: $trackId came back encrypted, which BitChord never asked for — passing",
+                "${config.displayName}: $trackId came back encrypted, which Aurelis never asked for — passing",
             )
             return null
         }
@@ -493,7 +493,7 @@ class AddonSource(
     }
 
     private companion object {
-        const val TAG = "BitChord"
+        const val TAG = "Aurelis Music"
 
         /** What a gated addon's health says, for the editor's Test line. The sources list draws its own. */
         const val NEEDS_LOSSLESS_OUTPUT =

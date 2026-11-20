@@ -65,7 +65,7 @@ interface CastSink {
  * around a seek would already be down by the time the report arrives, whereas
  * "the receiver is already on this track" stays true.
  *
- * A receiver cannot ask the service to resolve a `bitchord://` address, so the
+ * A receiver cannot ask the service to resolve a `aurelis://` address, so the
  * stream URL is resolved here, on the phone, and the receiver is handed the
  * finished URL. It cannot send the headers a resolver may have wanted either,
  * and it cannot reach a file on this phone at all; those tracks are refused
@@ -596,7 +596,7 @@ class CastPlayback(
         }
 
     companion object {
-        private const val TAG = "BitChordCast"
+        private const val TAG = "AurelisCast"
         private const val KEY_MEDIA_ID = "mediaId"
 
         /** Tracks kept queued on the receiver after the playing one. */

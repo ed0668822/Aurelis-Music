@@ -184,6 +184,6 @@ object PartyPersonalQueueStash {
     private fun Song.isDeviceFile(): Boolean =
         videoId.startsWith("content://") || videoId.startsWith("file://")
 
-    private const val PREFS_NAME = "bitchord_party_queue_stash"
+    private const val PREFS_NAME = "aurelis_party_queue_stash"
     private const val KEY_STASH = "stashed_queue"
 }

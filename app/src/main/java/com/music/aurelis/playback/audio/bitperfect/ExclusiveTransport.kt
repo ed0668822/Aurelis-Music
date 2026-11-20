@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 BitChord Project
+ * Copyright (C) 2026 Aurelis Project
  *
  * Adapted from Mornye (https://github.com/mornyeapp/Mornye),
  * android/app/src/main/kotlin/com/zarz/mornye/HiResPlayback.kt and NativeAudio.kt,
@@ -19,7 +19,7 @@ import java.nio.ByteBuffer
 /** JNI over `exclusive_output.cpp`. Handles are opaque ids, never pointers. */
 internal object ExclusiveNative {
     init {
-        System.loadLibrary("bitchord_exclusive")
+        System.loadLibrary("aurelis_exclusive")
     }
 
     external fun open(rate: Int, channels: Int, bits: Int, device: Int): Long

@@ -12,7 +12,7 @@ class PlaybackFallbackTest {
     fun `failed upgraded YouTube item is an alternative`() {
         assertTrue(
             PlaybackFallback.isAlternative(
-                "bitchord://watch?v=5IX-nUxDtJI&n=Bin%20Tere&q=hifi",
+                "aurelis://watch?v=5IX-nUxDtJI&n=Bin%20Tere&q=hifi",
                 substitutedYouTube = false,
             ),
         )
@@ -22,7 +22,7 @@ class PlaybackFallbackTest {
     fun `failed substituted base item is an alternative`() {
         assertTrue(
             PlaybackFallback.isAlternative(
-                "bitchord://watch?v=5IX-nUxDtJI&n=Bin%20Tere",
+                "aurelis://watch?v=5IX-nUxDtJI&n=Bin%20Tere",
                 substitutedYouTube = true,
             ),
         )
@@ -32,7 +32,7 @@ class PlaybackFallbackTest {
     fun `direct YouTube fallback never falls back recursively`() {
         assertFalse(
             PlaybackFallback.isAlternative(
-                "bitchord://watch?v=5IX-nUxDtJI&direct_youtube=1&q=original",
+                "aurelis://watch?v=5IX-nUxDtJI&direct_youtube=1&q=original",
                 substitutedYouTube = true,
             ),
         )
@@ -42,7 +42,7 @@ class PlaybackFallbackTest {
     fun `ordinary YouTube audio is not treated as a failed alternative`() {
         assertFalse(
             PlaybackFallback.isAlternative(
-                "bitchord://watch?v=5IX-nUxDtJI&n=Bin%20Tere",
+                "aurelis://watch?v=5IX-nUxDtJI&n=Bin%20Tere",
                 substitutedYouTube = false,
             ),
         )
@@ -52,7 +52,7 @@ class PlaybackFallbackTest {
     fun `source already forced to YouTube never falls back recursively`() {
         assertFalse(
             PlaybackFallback.isAlternative(
-                "bitchord://source?s=addon-1&t=3919244&n=Bin%20Tere&direct_youtube=1&q=original",
+                "aurelis://source?s=addon-1&t=3919244&n=Bin%20Tere&direct_youtube=1&q=original",
                 substitutedYouTube = false,
             ),
         )
@@ -61,11 +61,11 @@ class PlaybackFallbackTest {
     @Test
     fun `source fallback removes manifest and upgrade markers and gets its own rendition`() {
         val failed =
-            "bitchord://source?s=addon-1&t=3919244&n=Bin%20Tere&a=Vishal%20%26%20Shekhar" +
+            "aurelis://source?s=addon-1&t=3919244&n=Bin%20Tere&a=Vishal%20%26%20Shekhar" +
                 "&manifest_reopen=dash&q=hifi#part"
 
         assertEquals(
-            "bitchord://source?s=addon-1&t=3919244&n=Bin%20Tere&a=Vishal%20%26%20Shekhar" +
+            "aurelis://source?s=addon-1&t=3919244&n=Bin%20Tere&a=Vishal%20%26%20Shekhar" +
                 "&direct_youtube=1&q=original#part",
             PlaybackFallback.directYouTubeSourceUri(failed),
         )

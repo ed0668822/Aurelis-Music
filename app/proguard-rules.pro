@@ -79,7 +79,7 @@
 -dontwarn jdk.dynalink.**
 -dontwarn org.ietf.jgss.**
 
-# ---- "BitChord for Wear OS": the ADB client that installs the watch app ----
+# ---- "Aurelis for Wear OS": the ADB client that installs the watch app ----
 # libadb-android drives the pairing and transport through Conscrypt and SPAKE2,
 # both of which reach their native halves by name.
 -keep class io.github.muntashirakon.adb.** { *; }

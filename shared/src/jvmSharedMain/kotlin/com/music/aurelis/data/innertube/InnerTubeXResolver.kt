@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap
 /** YouTube stream extraction through InnerTubeX's live-benchmarked client catalog and cipher tiers. */
 object InnerTubeXResolver {
 
-    private const val TAG = "BitChord"
+    private const val TAG = "Aurelis Music"
 
     /** A stream InnerTubeX found, and the identity its media fetch has to wear. */
     class Extracted(

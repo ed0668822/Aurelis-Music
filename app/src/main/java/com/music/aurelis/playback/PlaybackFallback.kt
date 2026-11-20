@@ -18,7 +18,7 @@ internal object PlaybackFallback {
     /** Whether [uri] is currently allowed to resolve to something above YouTube. */
     fun isAlternative(uri: String, substitutedYouTube: Boolean): Boolean {
         if (parameter(uri, DIRECT_YOUTUBE_PARAMETER) == "1") return false
-        if (uri.substringBefore('?').substringBefore('#') == "bitchord://source") return true
+        if (uri.substringBefore('?').substringBefore('#') == "aurelis://source") return true
         val rendition = parameter(uri, QualityUpgrade.MARKER)
         return substitutedYouTube || rendition == "hifi" || rendition?.startsWith("hifi-") == true
     }

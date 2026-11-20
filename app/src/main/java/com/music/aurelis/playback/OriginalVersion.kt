@@ -81,6 +81,6 @@ object OriginalVersion {
     }
 
     private const val MAX_PINNED = 500
-    private const val PREFS_NAME = "bitchord_original_versions"
+    private const val PREFS_NAME = "aurelis_original_versions"
     private const val KEY_PINNED = "pinned"
 }

@@ -61,7 +61,7 @@
         android:maxSdkVersion="28" />
 
     <application
-        android:name=".BitChordApplication"
+        android:name=".AurelisApplication"
         android:allowBackup="true"
         android:appCategory="audio"
         android:usesCleartextTraffic="false"
@@ -72,7 +72,7 @@
         android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BitChord"
+        android:theme="@style/Theme.Aurelis"
         tools:targetApi="34">
 
         <!--
@@ -131,7 +131,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
-            android:theme="@style/Theme.BitChord">
+            android:theme="@style/Theme.Aurelis">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <!--
@@ -139,7 +139,7 @@
                   the assistant, Android Auto's media list and the OEM pickers
                   that put up "Complete action using" all ask for
                   MAIN/APP_MUSIC by name and list whoever answers — a launcher
-                  entry alone is not enough, which is why BitChord was missing
+                  entry alone is not enough, which is why Aurelis was missing
                   from that dialog while every other player on the device was in
                   it.
                 -->
@@ -173,10 +173,10 @@
               tapped anywhere on the device.
 
               Not autoVerify. Verification is a claim to *own* these domains,
-              which BitChord doesn't — and on Android 12+ an app that has
+              which Aurelis doesn't — and on Android 12+ an app that has
               verified them (the YouTube Music app itself) takes the link
               without a dialog either way. Declaring the filter is what puts
-              BitChord in the "Open with" list once the user turns YT Music's
+              Aurelis in the "Open with" list once the user turns YT Music's
               "Open supported links" off; the SEND filter below is the path
               that always works, because sharing asks rather than routing.
 
@@ -217,7 +217,7 @@
             </intent-filter>
 
             <!-- Public Listen Together invites. autoVerify makes a tap open
-                 BitChord directly once the domain publishes its assetlinks
+                 Aurelis directly once the domain publishes its assetlinks
                  association for the production signing certificate. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -235,12 +235,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="bitchord"
+                    android:scheme="aurelis"
                     android:host="party" />
             </intent-filter>
 
             <!--
-              Share → BitChord, from YT Music's own share sheet or from
+              Share → Aurelis, from YT Music's own share sheet or from
               anywhere a link can be sent. The text is whatever the sending app
               wrote around the URL, so the URL is picked out of it rather than
               parsed whole.
@@ -609,7 +609,7 @@
         </service>
 
         <!--
-          Commands from the BitChord watch app (wearos/). Exported because Play
+          Commands from the Aurelis watch app (wearos/). Exported because Play
           services binds it; only messages from the same package and signing key
           on a paired watch are ever delivered, and only under this path.
         -->
@@ -620,7 +620,7 @@
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <data
                     android:host="*"
-                    android:pathPrefix="/bitchord/command"
+                    android:pathPrefix="/aurelis/command"
                     android:scheme="wear" />
             </intent-filter>
             <!-- The watch's player reading a track through the phone. -->
@@ -628,7 +628,7 @@
                 <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
                 <data
                     android:host="*"
-                    android:pathPrefix="/bitchord/stream"
+                    android:pathPrefix="/aurelis/stream"
                     android:scheme="wear" />
             </intent-filter>
         </service>

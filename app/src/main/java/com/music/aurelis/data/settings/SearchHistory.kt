@@ -62,7 +62,7 @@ object SearchHistory {
     }
 
     fun init(context: Context) {
-        prefs = context.getSharedPreferences("bitchord_settings", Context.MODE_PRIVATE)
+        prefs = context.getSharedPreferences("aurelis_settings", Context.MODE_PRIVATE)
         reload()
     }
 

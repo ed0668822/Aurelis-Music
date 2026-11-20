@@ -184,7 +184,7 @@ object AudioRouting {
         AudioDeviceInfo.TYPE_USB_ACCESSORY,
         -> Kind.USB
         // Compile-time constants, so naming the newer ones costs nothing on an
-        // older device — see [bitchord-minsdk-api-landmines]; the sinks they
+        // older device — see [aurelis-minsdk-api-landmines]; the sinks they
         // name simply never appear there.
         // TYPE_BLUETOOTH_SCO is deliberately absent: it is the telephony
         // profile, it cannot play music, and offering it is what made

@@ -274,7 +274,7 @@ object VersionAudioAligner {
                 return LocalAudioSource.open(context.contentResolver, uri)
             }
         }
-        val watch = Uri.parse("bitchord://watch?v=${song.videoId}")
+        val watch = Uri.parse("aurelis://watch?v=${song.videoId}")
         val onDisk = AudioCache.renditionsOf(watch)
         val sameSource = onDisk
             .filter { !it.key.endsWith("#alt") }

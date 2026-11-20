@@ -54,10 +54,10 @@ import java.util.concurrent.TimeUnit
  */
 object PlaylistSync {
 
-    private const val TAG = "BitChord"
+    private const val TAG = "Aurelis Music"
     private const val PERIODIC_WORK = "playlist_sync"
     private const val ONE_OFF_WORK = "playlist_sync_now"
-    private const val PREFS = "bitchord_playlist_sync"
+    private const val PREFS = "aurelis_playlist_sync"
     private const val KEY_LAST_CHECK = "last_complete_check"
     private const val CHANNEL_ID = "playlist_updates"
     internal const val KEY_APPROVED = "approved"

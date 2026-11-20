@@ -639,7 +639,7 @@ object BoundedContextPersistence {
     private const val MAX_PHYSICAL_ENTRIES = 100_000
     private const val MAX_HISTORY = 25
     private const val MAX_CONTEXT_UPCOMING = 25
-    private const val PREFS_NAME = "bitchord_bounded_context"
+    private const val PREFS_NAME = "aurelis_bounded_context"
     private const val KEY_STATE = "state"
     private const val KEY_CURRENT_ENTRY_ID = "current_entry_id"
     private const val KEY_POSITION = "position"

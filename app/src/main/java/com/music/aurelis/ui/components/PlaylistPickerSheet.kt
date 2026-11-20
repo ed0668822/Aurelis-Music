@@ -75,7 +75,7 @@ import com.music.aurelis.data.model.Song
 import com.music.aurelis.data.model.UserPlaylist
 import com.music.aurelis.data.model.artworkAt
 import com.music.aurelis.ui.components.thumbnailBorder
-import com.music.aurelis.ui.icons.BitChordIcons
+import com.music.aurelis.ui.icons.AurelisIcons
 import java.util.Locale
 import kotlinx.coroutines.launch
 
@@ -185,7 +185,7 @@ fun PlaylistPickerSheet(
                 )
 
                 ActionRow(
-                    icon = BitChordIcons.Plus,
+                    icon = AurelisIcons.Plus,
                     label = stringResource(R.string.new_playlist),
                     onClick = { creating = true },
                 )
