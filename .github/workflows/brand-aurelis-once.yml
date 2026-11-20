@@ -62,7 +62,7 @@ jobs:
           )
           changed = []
           for filename in git("ls-files", "-z").decode().split("\0"):
-              if not filename or filename == ".github/workflows/brand-aurelis-once.yml":
+              if not filename or filename.startswith(".github/workflows/"):
                   continue
               p = Path(filename)
               if not p.is_file() or p.is_symlink() or p.suffix.lower() not in extensions:
@@ -196,7 +196,8 @@ jobs:
 
           # One-time action is deleted from the commit once its changes have
           # been applied. CI/build checks below still run from this workflow.
-          Path(".github/workflows/brand-aurelis-once.yml").unlink()
+          # Keep the bootstrap workflow unchanged: the workflow token cannot edit GitHub workflow files.
+          # It is path-triggered, so regular source commits will not rerun it.
           subprocess.run(["git", "add", "-A"], check=True)
           changes = git("status", "--porcelain").decode()
           if not changes:
