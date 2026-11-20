@@ -103,12 +103,18 @@ android {
         buildConfigField("String", "UPDATE_APK_PREFIX", "\"BitChord-\"")
     }
 
+    // Por defecto compila las tres arquitecturas más un APK universal (cuatro
+    // APKs). Con -Pbitchord.abis=arm64-v8a (lo usa el CI) genera un solo APK,
+    // sin universal: cada APK lleva sus propias libs nativas (ONNX Runtime,
+    // FFmpeg, QuickJS), así que compilar las cuatro multiplica el peso.
+    val abis = (providers.gradleProperty("bitchord.abis").orNull ?: "armeabi-v7a,arm64-v8a,x86_64")
+        .split(",").map { it.trim() }.filter { it.isNotEmpty() }
     splits {
         abi {
             isEnable = true
             reset()
-            include("armeabi-v7a", "arm64-v8a", "x86_64")
-            isUniversalApk = true
+            include(*abis.toTypedArray())
+            isUniversalApk = abis.size > 1
         }
     }
 
