@@ -21,6 +21,7 @@ import com.music.aurelis.ui.theme.LocalReduceMotion
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.dp
 import com.music.aurelis.ui.player.MiniPlayerPull
@@ -56,7 +57,10 @@ internal fun Modifier.miniPlayerGestures(
     val lift = remember { mutableFloatStateOf(0f) }
     val settle = remember { arrayOfNulls<Job>(1) }
     val scope = rememberCoroutineScope()
-    return pointerInput(Unit) {
+    // Gesture thresholds are in physical pixels. Recreate the detector if
+    // Android changes density while this mini-player stays composed.
+    val density = LocalDensity.current.density
+    return pointerInput(density) {
         val trackThreshold = 72.dp.toPx()
         val expandThreshold = 48.dp.toPx()
         val ease = 72.dp.toPx()

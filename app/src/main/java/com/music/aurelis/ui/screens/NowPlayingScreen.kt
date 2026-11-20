@@ -240,17 +240,35 @@ fun NowPlayingScreen(
         if (!showAndroidOutputSwitcher(context)) showOutputHelp = true
     }
     var showQuality by rememberSaveable { mutableStateOf(false) }
-    // BitChord restores the last expanded pane. Only one of lyrics/queue may be open.
+    // BitChord remembers the selected pane; Aurelis also opens lyrics
+    // automatically on active playback as requested. Never navigate away from
+    // the library merely because a background track starts playing.
     val restoredPlayerScreen = remember { SettingsRepository.lastPlayerScreen.value }
+    val initialAutoLyrics = isVisible && state.isPlaying && song != null
     var showLyrics by rememberSaveable {
-        mutableStateOf(restoredPlayerScreen == LastPlayerScreen.LYRICS)
+        mutableStateOf(initialAutoLyrics || restoredPlayerScreen == LastPlayerScreen.LYRICS)
     }
-    // The collapsed sleeve initially includes the transport; scrolling down hides it.
     var lyricsControlsOpen by rememberSaveable {
-        mutableStateOf(restoredPlayerScreen == LastPlayerScreen.LYRICS)
+        mutableStateOf(initialAutoLyrics || restoredPlayerScreen == LastPlayerScreen.LYRICS)
     }
     var showInlineQueue by rememberSaveable {
-        mutableStateOf(restoredPlayerScreen == LastPlayerScreen.QUEUE)
+        mutableStateOf(!initialAutoLyrics && restoredPlayerScreen == LastPlayerScreen.QUEUE)
+    }
+    // Opening or resuming music offers the lyric pane once per expanded-player
+    // visit. Closing it, choosing the queue, or changing tracks is never
+    // mistaken for permission to force lyrics over the user's choice.
+    var automaticLyricsOpened by remember { mutableStateOf(false) }
+    var userSelectedPane by remember { mutableStateOf(false) }
+    LaunchedEffect(isVisible, state.isPlaying, song != null) {
+        if (!isVisible || song == null) {
+            automaticLyricsOpened = false
+            userSelectedPane = false
+        } else if (state.isPlaying && !automaticLyricsOpened && !userSelectedPane) {
+            lyricsControlsOpen = true
+            showInlineQueue = false
+            showLyrics = true
+            automaticLyricsOpened = true
+        }
     }
     val queueListState = rememberLazyListState()
     var lyricsShareRequest by remember { mutableStateOf<LyricsShareRequest?>(null) }
@@ -275,8 +293,12 @@ fun NowPlayingScreen(
     var showTranslationLanguages by remember { mutableStateOf(false) }
     var showLyricsOffset by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = isVisible && showInlineQueue) { showInlineQueue = false }
+    BackHandler(enabled = isVisible && showInlineQueue) {
+        userSelectedPane = true
+        showInlineQueue = false
+    }
     BackHandler(enabled = isVisible && showLyrics) {
+        userSelectedPane = true
         showLyrics = false
         lyricsControlsOpen = false
     }
@@ -423,6 +445,7 @@ fun NowPlayingScreen(
                 )
 
                 val openLyrics: () -> Unit = {
+                    userSelectedPane = true
                     val opening = !showLyrics
                     if (opening) {
                         // Commit pane and transport together to avoid a one-frame flash.
@@ -437,6 +460,7 @@ fun NowPlayingScreen(
                 // F046: the queue belongs to this player in both orientations;
                 // switching panes never creates a second MediaController or queue.
                 val openQueue: () -> Unit = {
+                    userSelectedPane = true
                     val opening = !showInlineQueue
                     if (opening) {
                         showLyrics = false
@@ -713,7 +737,7 @@ fun NowPlayingScreen(
                             if (!landscape) Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                                 // BitChord keeps the artwork, credits and menu in a compact
                                 // collapsed sleeve above an otherwise full-height lyric pane.
-                                IconButton(onClick = { showLyrics = false; lyricsControlsOpen = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(22.dp)) {
+                                IconButton(onClick = { userSelectedPane = true; showLyrics = false; lyricsControlsOpen = false }, modifier = Modifier.align(Alignment.CenterHorizontally).height(22.dp)) {
                                     Box(Modifier.size(38.dp, 5.dp).background(Color.White, CircleShape)
                                         .semantics { contentDescription = context.getString(R.string.lyrics_ui_close) })
                                 }
@@ -723,7 +747,7 @@ fun NowPlayingScreen(
                                     Box(Modifier.weight(1f)) { credits(true) }
                                 }
                             } else Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { showLyrics = false; lyricsControlsOpen = false }) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.lyrics_ui_close)) }
+                                IconButton(onClick = { userSelectedPane = true; showLyrics = false; lyricsControlsOpen = false }) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.lyrics_ui_close)) }
                                 Text(s.title, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             if (showLyricsTools || lines.isEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -877,7 +901,7 @@ fun NowPlayingScreen(
                             },
                             lyricsPane = { Box(Modifier.fillMaxSize().testTag("landscape-lyrics")) { lyricsContent() } },
                             queuePane = { Box(Modifier.fillMaxSize().testTag("landscape-queue")) {
-                                QueueScreen(playbackViewModel, true, { showInlineQueue = false }, embedded = true, listState = queueListState)
+                                QueueScreen(playbackViewModel, true, { userSelectedPane = true; showInlineQueue = false }, embedded = true, listState = queueListState)
                             } },
                         )
                     } else {
@@ -949,7 +973,7 @@ fun NowPlayingScreen(
                             Column(Modifier.fillMaxWidth()
                                 .testTag("player-queue-collapsed-header")) {
                                 IconButton(
-                                    onClick = { showInlineQueue = false },
+                                    onClick = { userSelectedPane = true; showInlineQueue = false },
                                     modifier = Modifier.align(Alignment.CenterHorizontally)
                                         .height(28.dp)
                                         .semantics { contentDescription = "Cerrar" },
@@ -968,7 +992,7 @@ fun NowPlayingScreen(
                             }
                             Box(Modifier.weight(1f).fillMaxWidth()) {
                                 QueueScreen(
-                                    playbackViewModel, true, { showInlineQueue = false },
+                                    playbackViewModel, true, { userSelectedPane = true; showInlineQueue = false },
                                     embedded = true, listState = queueListState,
                                     compactPlayerHeader = true,
                                 )

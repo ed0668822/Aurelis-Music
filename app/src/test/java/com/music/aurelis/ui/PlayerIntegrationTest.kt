@@ -394,6 +394,66 @@ class PlayerIntegrationTest {
         }
     }
 
+    @Test fun playbackStartAutomaticallyOpensFullScreenLyricsAndDoesNotReopenOverQueue() {
+        start()
+        val entries = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertDoesNotExist()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_play)).performClick()
+        compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.isPlaying } }
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_next)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_queue)).performClick()
+        compose.onNodeWithTag("player-queue-pane").assertIsDisplayed()
+        // Once the listener chooses the queue, track changes must not steal it.
+        compose.onNodeWithContentDescription(app.getString(R.string.player_previous)).performClick()
+        compose.onNodeWithTag("player-queue-pane").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals(entries, vm.state.value.queue.map { it.queueEntryId })
+            assertEquals(LastPlayerScreen.QUEUE, SettingsRepository.lastPlayerScreen.value)
+        }
+    }
+
+    @Test fun expandedPlayerAlreadyPlayingStartsOnFullScreenLyricsWithoutReplacingQueue() {
+        start()
+        val entries = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        compose.runOnIdle { vm.resume() }
+        compose.waitUntil(5000) { compose.runOnIdle { vm.state.value.isPlaying } }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertIsDisplayed()
+        compose.onNodeWithTag("lyrics-floating-transport").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(entries, vm.state.value.queue.map { it.queueEntryId }) }
+        compose.onNodeWithContentDescription(app.getString(R.string.lyrics_ui_close)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertDoesNotExist()
+        compose.onNodeWithTag("player-portrait").assertIsDisplayed()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_next)).performClick()
+        compose.onNodeWithTag("lyrics-overlay").assertDoesNotExist()
+    }
+
+    @Test fun miniPlayerHorizontalSwipeChangesOneTrackAndCancelledSwipeDoesNotChangeQueue() {
+        start()
+        val entries = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        compose.onNodeWithTag("mini-player").performTouchInput {
+            swipe(center, center + androidx.compose.ui.geometry.Offset(-225f, 0f))
+        }
+        compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id) }
+        compose.onNodeWithTag("mini-player").performTouchInput {
+            down(center)
+            moveBy(androidx.compose.ui.geometry.Offset(-200f, 0f))
+            cancel()
+        }
+        compose.runOnIdle {
+            assertEquals("2", vm.state.value.currentSong?.id)
+            assertEquals(entries, vm.state.value.queue.map { it.queueEntryId })
+        }
+        compose.onNodeWithTag("mini-player").performTouchInput {
+            swipe(center, center + androidx.compose.ui.geometry.Offset(225f, 0f))
+        }
+        compose.runOnIdle { assertEquals("1", vm.state.value.currentSong?.id) }
+    }
+
     @Test fun miniPlayerSwipeOpensAndHeaderSwipeClosesWithoutChangingTheQueue() {
         start()
         compose.onNodeWithTag("mini-player").performTouchInput {
