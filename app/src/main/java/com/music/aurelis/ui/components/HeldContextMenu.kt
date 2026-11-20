@@ -99,6 +99,7 @@ fun Modifier.heldContextMenuInteractions(onClick: () -> Unit, onLongClick: () ->
 @Composable
 fun HeldContextMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
     anchorBounds: IntRect? = null,
+    artworkFrost: androidx.compose.ui.graphics.ImageBitmap? = null,
     actions: @Composable ColumnScope.() -> Unit) {
-    IosMenu(onDismiss, compactSongStyle, anchorBounds, actions)
+    IosMenu(onDismiss, compactSongStyle, anchorBounds, artworkFrost, actions)
 }

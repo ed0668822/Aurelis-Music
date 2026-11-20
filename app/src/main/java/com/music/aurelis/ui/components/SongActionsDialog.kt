@@ -49,6 +49,7 @@ fun SongActionsDialog(
     onOpenAlbum: (() -> Unit)? = null,
     onOpenArtist: (() -> Unit)? = null,
     anchorBounds: IntRect? = null,
+    artworkFrost: androidx.compose.ui.graphics.ImageBitmap? = null,
     onLyricsOffset: (() -> Unit)? = null,
     onPlaybackTools: (() -> Unit)? = null,
     onSetSleepTimer: ((Long, Boolean) -> Unit)? = null,
@@ -64,6 +65,7 @@ fun SongActionsDialog(
         onDismiss = onDismiss,
         compactSongStyle = true,
         anchorBounds = anchorBounds,
+        artworkFrost = artworkFrost,
     ) {
         if (page == SongMenuPage.Actions) {
             SongFavoriteQuickAction(

@@ -9,6 +9,13 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,6 +86,8 @@ internal fun heldMenuTransformOrigin(anchor: IntRect?, panel: IntRect): Transfor
 @Composable
 fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
     anchorBounds: IntRect? = null,
+    /** Pre-blurred cover of the current local track, not a live screenshot. */
+    artworkFrost: ImageBitmap? = null,
     content: @Composable ColumnScope.() -> Unit) {
     val menuState = LocalHeldMenuState.current
     // Consume only the opener of this menu; later button-opened menus cannot reuse it.
@@ -132,9 +141,9 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
     }
     val origin = heldMenuTransformOrigin(bounds, panelBounds)
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    // A Popup is drawn in a separate Android window. Sampling the player's
-    // animated backdrop from there refractions OTHER controls through the
-    // menu's text. Use an opaque iOS-style material for legible actions.
+    // Popups are separate windows and cannot haze-sample the player beneath
+    // them. A cached, pre-blurred album still is the safe, static frost.
+    val useArtworkFrost = compactSongStyle && artworkFrost != null && !reduced && dark
     val fallbackFill = if (dark) Color(0xFF1C1C1E) else Color(0xFFF6F6F7)
     Popup(popupPositionProvider = positionProvider, onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true, dismissOnBackPress = true,
@@ -155,13 +164,29 @@ fun IosMenu(onDismiss: () -> Unit, compactSongStyle: Boolean = false,
                 }
                 .shadow(if (reduced) 0.dp else 20.dp, shape, clip = false),
             shape = shape,
-            color = fallbackFill,
+            color = if (useArtworkFrost) Color.Transparent else fallbackFill,
             border = androidx.compose.foundation.BorderStroke(
                 1.dp,
                 if (dark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f),
             ),
         ) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp), content = content)
+            Box {
+                if (useArtworkFrost && artworkFrost != null) {
+                    Image(
+                        painter = remember(artworkFrost) { BitmapPainter(artworkFrost) },
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize().clip(shape),
+                    )
+                    Box(Modifier.matchParentSize().background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF181719).copy(alpha = 0.68f),
+                                Color(0xFF181719).copy(alpha = 0.84f)),
+                        ),
+                    ))
+                }
+                Column(Modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp), content = content)
+            }
         }
     }
 }

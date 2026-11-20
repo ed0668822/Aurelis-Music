@@ -880,15 +880,17 @@ fun NowPlayingScreen(
                         // the remaining space. Transport never depends on scrolling.
                         val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
                         val compactPortrait = maxHeight < 650.dp
+                        val mainPaneAlpha by androidx.compose.animation.core.animateFloatAsState(
+                            targetValue = if (showLyrics || showInlineQueue) 0f else 1f,
+                            animationSpec = if (reduceAnimation) androidx.compose.animation.core.snap()
+                                else tween(220, easing = FastOutSlowInEasing),
+                            label = "mainPaneCrossfade",
+                        )
                         Box(
                             Modifier.fillMaxSize().testTag("player-portrait")
-                                // Keep geometry/dock tracking in place, but
-                                // never paint the main player behind an opened
-                                // lyrics or queue pane. It caused duplicate
-                                // transport buttons and overlapping captions.
-                                .graphicsLayer {
-                                    alpha = if (showLyrics || showInlineQueue) 0f else 1f
-                                },
+                                // Fade the cover into the prepared lyric backdrop,
+                                // keeping only one visible control deck.
+                                .graphicsLayer { alpha = mainPaneAlpha },
                         ) {
                             Box(Modifier.fillMaxWidth().align(Alignment.TopCenter),
                                 contentAlignment = Alignment.TopCenter) {
@@ -1013,6 +1015,7 @@ fun NowPlayingScreen(
                         { onOpenCollection(destination) }
                     },
                     anchorBounds = songMenuAnchor,
+                    artworkFrost = if (reduceBlur) null else rememberFullArtworkBlurImage(coverUri),
                     onLyricsOffset = { showLyricsOffset = true },
                     onPlaybackTools = { showPlaybackTools = true },
                     // Timer commands require a live MediaSession; plain Media3
