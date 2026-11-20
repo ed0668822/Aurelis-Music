@@ -1,6 +1,6 @@
-name: Android
+name: Android · Prueba (debug)
 
-# Compila solo la app de Android (variante dev/debug). No necesita keystore ni
+# Build de PRUEBA: APK dev/debug sin firma de producción. No necesita keystore ni
 # secrets de firma: AGP genera una clave de depuración propia.
 on:
   push:
