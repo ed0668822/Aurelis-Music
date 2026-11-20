@@ -53,7 +53,7 @@ jobs:
 
       # El módulo del reloj ya no existe aquí, así que no se empaqueta.
       - name: Build the dev APK
-        run: ./gradlew assembleDevDebug -Pbitchord.abis="$ABIS" -Pbitchord.bundleWear=false
+        run: ./gradlew assembleDevDebug -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
 
       - name: APK size report
         run: |
@@ -106,21 +106,21 @@ jobs:
           printf 'LASTFM_API_KEY=%s\nLASTFM_SECRET=%s\nLISTEN_TOGETHER_SERVER=%s\n' \
             "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
 
-          echo "$KEYSTORE_BASE64" | base64 -d > bitchord-release.jks
-          printf 'storeFile=bitchord-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+          echo "$KEYSTORE_BASE64" | base64 -d > aurelis-release.jks
+          printf 'storeFile=aurelis-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
 
       # Comprueba que el keystore, la contraseña y el alias son correctos.
       - name: Validate keystore
         run: |
-          keytool -list -keystore bitchord-release.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null \
+          keytool -list -keystore aurelis-release.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null \
             || { echo "::error title=Firma inválida::El keystore, la contraseña o el alias no coinciden"; exit 1; }
           echo "Keystore OK"
 
       - run: chmod +x gradlew
 
       - name: Build signed prod release APK
-        run: ./gradlew assembleProdRelease -Pbitchord.abis="$ABIS" -Pbitchord.bundleWear=false
+        run: ./gradlew assembleProdRelease -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
 
       # Falla si el APK quedó sin firmar o si apksigner no lo da por válido.
       - name: Verify signature
@@ -150,4 +150,4 @@ jobs:
 
       - name: Remove signing files
         if: always()
-        run: rm -f bitchord-release.jks keystore.properties local.properties
+        run: rm -f aurelis-release.jks keystore.properties local.properties
