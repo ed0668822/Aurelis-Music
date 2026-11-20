@@ -505,6 +505,7 @@ fun NowPlayingScreen(
                                 .semantics { contentDescription = context.getString(R.string.player_close) })
                         }
                         val originName = s.playbackSource?.trim()?.takeIf { it.isNotEmpty() }
+                        val knownAlbum = s.album?.trim()?.takeIf { it.isNotEmpty() }
                         val originId = s.playbackSourceId?.takeIf { it.isNotBlank() }
                         // Link only to a source that the local catalog can still resolve.
                         val originRoute: AppRoute.Collection? = when (s.playbackSourceType) {
@@ -525,12 +526,14 @@ fun NowPlayingScreen(
                         }
                         val originClick: (() -> Unit)? = when {
                             originRoute != null -> { { onOpenCollection(originRoute) } }
-                            originName == null -> openQueue
+                            originName == null && knownAlbum != null && albumRoute != null ->
+                                { { onOpenCollection(albumRoute) } }
+                            originName == null && knownAlbum == null -> openQueue
                             else -> null
                         }
                         PlaybackOriginCaption(
                             text = stringResource(R.string.player_playing_album,
-                                originName ?: stringResource(R.string.queue)),
+                                originName ?: knownAlbum ?: stringResource(R.string.queue)),
                             onClick = originClick,
                             modifier = Modifier.testTag("player-playback-origin"),
                         )
@@ -702,9 +705,12 @@ fun NowPlayingScreen(
                                     }
                                 })
                         }
-                        Spacer(Modifier.height(if (compact) 0.dp else 8.dp))
+                        // BitChord distributes the tall-screen slack around the
+                        // transport rather than leaving one empty block above
+                        // the title. Compact/large-text layouts keep zero gaps.
+                        Spacer(Modifier.height(if (compact) 0.dp else 22.dp))
                         transport(compact)
-                        Spacer(Modifier.height(if (compact) 0.dp else 6.dp))
+                        Spacer(Modifier.height(if (compact) 0.dp else 28.dp))
                         if (hideVolumeBar) {
                             Box(Modifier.fillMaxWidth().height(32.dp), contentAlignment = Alignment.CenterEnd) {
                                 IconButton(onClick = openOutput, modifier = Modifier.size(32.dp)) {
@@ -712,6 +718,7 @@ fun NowPlayingScreen(
                                 }
                             }
                         } else PlayerVolumeRow(onOpenOutput = openOutput)
+                        if (!compact) Spacer(Modifier.height(10.dp))
                         actions()
                         // BitChord keeps a single action row. Audio output is
                         // already available in the bottom action slot and via
@@ -961,8 +968,16 @@ fun NowPlayingScreen(
                                 contentAlignment = Alignment.TopCenter) {
                                 Box(Modifier.size(portraitArtwork)) {
                                     artwork(Modifier, portraitArtwork)
+                                    // Keep the artwork's own bottom-edge hues at the
+                                    // hand-off to ArtworkMeshBackdrop. Previously the
+                                    // last pixel faded to a flat theme colour, creating
+                                    // a sharp horizontal stripe across the album mesh.
                                     Box(Modifier.fillMaxSize().background(
-                                        Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background))))
+                                        Brush.verticalGradient(
+                                            0f to Color.Transparent,
+                                            0.72f to Color.Transparent,
+                                            1f to Color.Black.copy(alpha = 0.14f),
+                                        )))
                                 }
                             }
                             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {

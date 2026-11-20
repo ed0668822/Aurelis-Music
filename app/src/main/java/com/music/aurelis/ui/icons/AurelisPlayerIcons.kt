@@ -15,6 +15,28 @@ import androidx.compose.ui.unit.dp
 internal object AurelisPlayerIcons {
     private const val STROKE = 2.2f
     private val stroke = SolidColor(Color.Black)
+    /** Screen-with-waves visual family for local audio output routing.
+     * It opens the Android output sheet, NOT an unsupported Cast session.
+     */
+    val AudioOutput: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "aurelis_audio_output",
+            defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f,
+        ).apply {
+            addPath(
+                pathData = addPathNodes(
+                    "M4 5 H20 Q21 5 21 6 V18 Q21 19 20 19 H14 " +
+                    "M3 12 Q11 12 11 20 M3 16 Q7 16 7 20 M3 20 H3.1",
+                ),
+                stroke = stroke,
+                strokeLineWidth = 2.1f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     val Queue: ImageVector by lazy {
         ImageVector.Builder(
             name = "bc_queue", defaultWidth = 24.dp, defaultHeight = 24.dp,

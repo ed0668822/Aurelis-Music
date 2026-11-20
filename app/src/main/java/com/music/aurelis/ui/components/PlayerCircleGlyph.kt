@@ -43,7 +43,10 @@ internal fun PlayerCircleGlyph(icon: ImageVector, label: String, onClick: () -> 
     // distinguish favorite states, not a theme-primary tint.
     val tint = androidx.compose.ui.graphics.Color.White
     val reduced = LocalReduceMotion.current
-    val alpha by animateFloatAsState(if (active) 0.34f else 0.18f,
+    // BitChord's vibrant-chrome material brightens the disc over dark covers.
+    // A light, translucent overlay approximates that effect without requiring
+    // a different compositing pipeline or sacrificing the 48dp touch target.
+    val alpha by animateFloatAsState(if (active) 0.55f else 0.38f,
         animationSpec = if (reduced) snap() else spring(), label = "glyphDisc")
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()

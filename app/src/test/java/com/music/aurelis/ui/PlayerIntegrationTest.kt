@@ -163,9 +163,10 @@ class PlayerIntegrationTest {
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.player_open)).performClick()
         for (album in listOf(null, "", "   ", "Álbum 100% local")) {
             compose.runOnIdle { vm.playSongs(listOf(song("1").copy(album = album))) }
-            // Tags alone cannot prove the source of the queue.
+            val shownOrigin = album?.trim()?.takeIf(String::isNotEmpty)
+                ?: compose.activity.getString(R.string.queue)
             compose.onNodeWithText(compose.activity.getString(
-                R.string.player_playing_album, compose.activity.getString(R.string.queue))).assertIsDisplayed()
+                R.string.player_playing_album, shownOrigin)).assertIsDisplayed()
             compose.runOnIdle { assertEquals("1", vm.state.value.currentSong?.id) }
         }
         compose.runOnIdle { vm.playSongs(listOf(song("1").copy(

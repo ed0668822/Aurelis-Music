@@ -87,7 +87,7 @@ internal fun PlayerPlaybackActions(
                     onToggleAutoplay)
             } else {
                 PlayerBottomGlyph(
-                    Icons.Rounded.Speaker,
+                    AurelisPlayerIcons.AudioOutput,
                     stringResource(R.string.audio_output),
                     onOpenOutput,
                 )

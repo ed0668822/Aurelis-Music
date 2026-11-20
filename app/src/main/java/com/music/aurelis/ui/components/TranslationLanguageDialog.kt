@@ -63,7 +63,7 @@ fun TranslationLanguageDialog(onDismiss: () -> Unit, onTranslate: (String) -> Un
                 if (sendOnConfirm) onTranslate(target) else onDismiss()
             }) { Text(if (sendOnConfirm) "Traducir" else "Guardar") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
     )
 }
 
