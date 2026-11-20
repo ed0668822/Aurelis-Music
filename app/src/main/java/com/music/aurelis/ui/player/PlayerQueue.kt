@@ -174,6 +174,8 @@ internal fun InlineQueue(
     onRevealPlayer: () -> Unit = {},
     onHidePlayer: () -> Unit = {},
     showHeader: Boolean = true,
+    /** The host may render a single authoritative clear button above the list. */
+    showSectionClearButton: Boolean = true,
     groupByTier: Boolean = true,
     listState: LazyListState = rememberLazyListState(),
     scrollToCurrentOnAttach: Boolean = true,
@@ -212,7 +214,8 @@ internal fun InlineQueue(
     Column(modifier.fillMaxWidth()) {
         if (showHeader) Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(text = stringResource(R.string.queue), style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
-            if (tracks.user.isNotEmpty()) QueueClearButton(MaterialTheme.typography.titleMedium, controlsLocked, onClear)
+            if (tracks.user.isNotEmpty() && showSectionClearButton)
+                QueueClearButton(MaterialTheme.typography.titleMedium, controlsLocked, onClear)
         }
         Spacer(Modifier.height(4.dp))
         // F061/F062: a gradient is needed only on an edge that has
@@ -254,7 +257,8 @@ internal fun InlineQueue(
                 if (tracks.user.isNotEmpty()) {
                     item(key = "header-user-queue") {
                         QueueHeading(stringResource(R.string.next_in_queue), Modifier.padding(top = 16.dp, bottom = 6.dp).queueMotion(this, reduceMotion)) {
-                            QueueClearButton(MaterialTheme.typography.labelLarge, controlsLocked, onClear)
+                            if (showSectionClearButton)
+                                QueueClearButton(MaterialTheme.typography.labelLarge, controlsLocked, onClear)
                         }
                     }
                     queueSection(tracks.user, QueueSection.USER, drag, controlsLocked, onJumpTo, onRemove, reduceMotion, canReorder)

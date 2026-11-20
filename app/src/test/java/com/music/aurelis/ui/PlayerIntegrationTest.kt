@@ -288,6 +288,47 @@ class PlayerIntegrationTest {
         assertFalse(queueSectionsPreservePlaybackOrder(songs, listOf(0, 1, 1, 3), 0))
     }
 
+    @Test fun portraitNowPlayingHasNoRedundantToolsRowAndLyricsSourcesRemainAvailable() {
+        start()
+        val initialEntries = compose.runOnIdle { vm.state.value.queue.map { it.queueEntryId } }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onAllNodesWithContentDescription(app.getString(R.string.player_sources))
+            .assertCountEquals(0)
+        compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions))
+            .performClick()
+        compose.onNodeWithText(app.getString(R.string.player_sources)).performScrollTo()
+            .assertIsEnabled().performClick()
+        compose.onNodeWithTag("lyrics-sources-dialog").assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.lyrics_sources_close)).performClick()
+        compose.runOnIdle {
+            assertEquals(initialEntries, vm.state.value.queue.map { it.queueEntryId })
+            assertEquals("1", vm.state.value.currentSong?.id)
+        }
+    }
+
+    @Test
+    @Config(sdk = [33], qualifiers = "es-rES-w360dp-h720dp-mdpi", application = AurelisApplication::class)
+    fun mediumPhoneWithLargeTextKeepsTransportAccessible() {
+        start(fontScale = 1.5f)
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        assertPrimaryTransportInsidePlayer("player-portrait")
+        compose.onNodeWithContentDescription(app.getString(R.string.player_queue)).performClick()
+        compose.onNodeWithTag("player-queue-shared-deck").assertIsDisplayed()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_next)).assertIsDisplayed()
+    }
+
+    @Test fun queueShowsSingleClearControlForUpcomingUserSongs() {
+        start()
+        compose.runOnIdle { vm.playNext(listOf(song("2"))) }
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_queue)).performClick()
+        compose.onAllNodesWithText(app.getString(R.string.queue_clear_user)).assertCountEquals(1)
+        compose.onAllNodesWithText(app.getString(R.string.clear)).assertCountEquals(0)
+        compose.onNodeWithText(app.getString(R.string.queue_clear_user)).performClick()
+        compose.runOnIdle { assertEquals(listOf("1", "2", "3"), vm.state.value.queue.map { it.id }) }
+    }
+
     @Test fun queueUsesSongSleeveAndTheSameTransportDeckAsThePlayer() {
         start()
         compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()

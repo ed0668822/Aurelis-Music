@@ -41,6 +41,8 @@ internal object AurelisMenuIcons {
         "M15.5 3.5 Q10 7.5 12.5 13 Q14.5 18 20 17.5 Q17.5 21 12 21 Q4 21 4 13 Q4 7 9 4.5 M17 3 H22 L17 8 H22") }
     val LyricsOffset by lazy { glyph("menu_offset",
         "M3 6 H21 M3 12 H21 M3 18 H21 M8 3 V9 M16 9 V15 M10 15 V21") }
+    val LyricsSources by lazy { glyph("menu_lyrics_sources",
+        "M5 4 H19 V20 H5 Z M8 8 H16 M8 12 H16 M8 16 H13") }
     val PlaybackTools by lazy { glyph("menu_tools",
         "M4 6 H20 M4 12 H20 M4 18 H20 M8 4 V8 M15 10 V14 M10 16 V20") }
     val MixOverview by lazy { glyph("menu_mix",

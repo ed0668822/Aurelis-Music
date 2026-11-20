@@ -178,6 +178,7 @@ private fun QueuePanelContent(
                 onClear = playbackViewModel::clearUserQueue,
                 modifier = Modifier.weight(1f),
                 showHeader = false,
+                showSectionClearButton = false,
                 groupByTier = groupedSections, // Only group when Media3 order stays unchanged.
                 listState = queueListState,
                 scrollToCurrentOnAttach = listState == null,

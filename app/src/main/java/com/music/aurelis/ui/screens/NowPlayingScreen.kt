@@ -108,7 +108,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -584,7 +583,7 @@ fun NowPlayingScreen(
                         if (!landscape) {
                             Spacer(Modifier.width(8.dp))
                             PlayerCircleGlyph(
-                                Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions),
+                                com.music.aurelis.ui.icons.AurelisMenuIcons.More, stringResource(R.string.player_song_actions),
                                 { showSongActions = true },
                                 modifier = Modifier.onGloballyPositioned { coordinates ->
                                     val b = coordinates.boundsInWindow()
@@ -660,11 +659,9 @@ fun NowPlayingScreen(
                             }
                         } else PlayerVolumeRow(onOpenOutput = openOutput)
                         actions()
-                        if (!compact && !lyricsMode) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            IconButton(onClick = { showPlaybackTools = true }) { Icon(Icons.Rounded.Timer, stringResource(R.string.player_tools)) }
-                            IconButton(onClick = openOutput) { Icon(Icons.Rounded.Speaker, stringResource(R.string.audio_output)) }
-                            IconButton(onClick = { showLyricsSources = true }) { Icon(Icons.AutoMirrored.Rounded.Subject, stringResource(R.string.player_sources)) }
-                        }
+                        // BitChord keeps a single action row. Audio output is
+                        // already available in the bottom action slot and via
+                        // the output caption; tools and sources live in •••.
                         if (!compact) Text(
                             text = effectiveOutput?.let { outputDeviceLabel(it) }
                                 ?: stringResource(R.string.pipeline_route_not_confirmed),
@@ -887,7 +884,8 @@ fun NowPlayingScreen(
                         // Measure the deck at its natural height first; artwork receives
                         // the remaining space. Transport never depends on scrolling.
                         val portraitArtwork = portraitArtworkSize(maxWidth, maxHeight)
-                        val compactPortrait = maxHeight < 650.dp
+                        val compactPortrait = maxHeight < 650.dp ||
+                            androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.35f
                         val mainPaneAlpha by androidx.compose.animation.core.animateFloatAsState(
                             targetValue = if (showLyrics || showInlineQueue) 0f else 1f,
                             animationSpec = if (reduceAnimation) androidx.compose.animation.core.snap()
@@ -898,7 +896,11 @@ fun NowPlayingScreen(
                             Modifier.fillMaxSize().testTag("player-portrait")
                                 // Fade the cover into the prepared lyric backdrop,
                                 // keeping only one visible control deck.
-                                .graphicsLayer { alpha = mainPaneAlpha },
+                                .graphicsLayer { alpha = mainPaneAlpha }
+                                // The old deck must not remain in TalkBack when
+                                // the lyrics/queue sleeve owns the controls.
+                                .then(if (showLyrics || showInlineQueue)
+                                    Modifier.clearAndSetSemantics { } else Modifier),
                         ) {
                             Box(Modifier.fillMaxWidth().align(Alignment.TopCenter),
                                 contentAlignment = Alignment.TopCenter) {
@@ -1025,6 +1027,7 @@ fun NowPlayingScreen(
                     anchorBounds = songMenuAnchor,
                     artworkFrost = if (reduceBlur) null else rememberFullArtworkBlurImage(coverUri),
                     onLyricsOffset = { showLyricsOffset = true },
+                    onLyricsSources = { showLyricsSources = true },
                     onPlaybackTools = { showPlaybackTools = true },
                     onStartLocalRadio = if (state.isConnected && localSongs.any {
                         it.id == s.id && it.durationMs >= 500L &&

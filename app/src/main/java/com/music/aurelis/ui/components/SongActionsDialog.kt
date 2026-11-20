@@ -44,6 +44,7 @@ fun SongActionsDialog(
     anchorBounds: IntRect? = null,
     artworkFrost: androidx.compose.ui.graphics.ImageBitmap? = null,
     onLyricsOffset: (() -> Unit)? = null,
+    onLyricsSources: (() -> Unit)? = null,
     onPlaybackTools: (() -> Unit)? = null,
     onStartLocalRadio: (() -> Unit)? = null,
     onCopyDiagnostics: (() -> Unit)? = null,
@@ -129,7 +130,8 @@ fun SongActionsDialog(
                 onClick = { page = SongMenuPage.Info },
             )
 
-            if (onSetSleepTimer != null || onLyricsOffset != null || onPlaybackTools != null) {
+            if (onSetSleepTimer != null || onLyricsOffset != null ||
+                onLyricsSources != null || onPlaybackTools != null) {
                 SongMenuSeparator()
                 if (onSetSleepTimer != null) {
                     SongMenuAction(AurelisMenuIcons.SleepTimer, "Temporizador", true) {
@@ -138,6 +140,11 @@ fun SongActionsDialog(
                 }
                 onLyricsOffset?.let { action ->
                     SongMenuAction(AurelisMenuIcons.LyricsOffset, "Desplazamiento de letras", true) {
+                        onDismiss(); action()
+                    }
+                }
+                onLyricsSources?.let { action ->
+                    SongMenuAction(AurelisMenuIcons.LyricsSources, "Fuentes de letras", true) {
                         onDismiss(); action()
                     }
                 }

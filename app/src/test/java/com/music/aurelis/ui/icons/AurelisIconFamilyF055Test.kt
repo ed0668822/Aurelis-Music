@@ -31,6 +31,7 @@ class AurelisIconFamilyF055Test {
             AurelisMenuIcons.Info, AurelisMenuIcons.SleepTimer,
             AurelisMenuIcons.LyricsOffset, AurelisMenuIcons.PlaybackTools,
             AurelisMenuIcons.MixOverview, AurelisMenuIcons.CopyDiagnostic,
+            AurelisMenuIcons.LyricsSources,
             AurelisMenuIcons.Album, AurelisMenuIcons.Artist, AurelisMenuIcons.More)
         glyphs.forEach {
             assertEquals(24f, it.viewportWidth, 0f)
