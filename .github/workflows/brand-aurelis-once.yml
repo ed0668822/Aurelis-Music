@@ -93,7 +93,7 @@ jobs:
                   "/composeResources/values/" in filename or
                   filename.endswith("/strings.xml")):
                   body = body.replace(">Aurelis<", ">Aurelis Music<")
-                  body = re.sub(r'(?<=\>)Aurelis(?=[\s.,!?;:])', 'Aurelis Music', body)
+                  body = re.sub(r'(?<=\>)Aurelis(?=(?! Music)[\s.,!?;:])', 'Aurelis Music', body)
               # Preserve the full display name for standalone UI string values.
               body = body.replace('"Aurelis Dev"', '"Aurelis Music Dev"')
               body = body.replace('"Aurelis"', '"Aurelis Music"') if p.suffix.lower() == ".kt" else body
