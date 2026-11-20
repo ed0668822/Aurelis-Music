@@ -154,6 +154,7 @@ import com.music.aurelis.playback.LyricsState
 import com.music.aurelis.playback.PlaybackViewModel
 import com.music.aurelis.data.model.LocalAlbum
 import com.music.aurelis.data.model.LocalArtist
+import com.music.aurelis.data.model.LocalSong
 import com.music.aurelis.ui.navigation.AppRoute
 import com.music.aurelis.ui.navigation.LocalCollectionKind
 import com.music.aurelis.playback.TranslationState
@@ -300,6 +301,7 @@ fun NowPlayingScreen(
         AudioPipelineDialog(
             onDismiss = { showQuality = false },
             info = state.sourceQuality,
+            isPlaying = state.isPlaying,
             fileName = song.displayName ?: song.title,
             fileMimeType = song.mimeType,
             routedOutput = effectiveOutput,
@@ -635,10 +637,15 @@ fun NowPlayingScreen(
                             PlayerSlider(state.positionMs, state.durationMs, playbackViewModel::seekTo,
                                 enabled = state.isConnected && state.canSeek, showRemaining = true,
                                 centerLabel = {
-                                    TextButton(onClick = { showQuality = true },
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                                        modifier = Modifier.align(Alignment.Center).height(24.dp)) {
-                                        SourceQualityBadge(state.sourceQuality.formatLabel)
+                                    // The label describes the confirmed source MIME.
+                                    // It never implies USB DAC bit-perfect output.
+                                    val label = state.sourceQuality.playbackBadgeLabel
+                                    if (label != null) {
+                                        SourceQualityBadge(
+                                            qualityText = label,
+                                            modifier = Modifier.align(Alignment.Center).height(24.dp),
+                                            onClick = { showQuality = true },
+                                        )
                                     }
                                 })
                         }

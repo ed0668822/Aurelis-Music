@@ -374,11 +374,20 @@ class PlayerIntegrationTest {
         compose.onNodeWithTag("player-landscape").assertIsDisplayed()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_next)).performClick()
         compose.runOnIdle { assertEquals("2", vm.state.value.currentSong?.id); assertEquals(3, player.mediaItemCount) }
-        compose.onNodeWithText("Formato desconocido").performClick()
+        // An unknown source must not be mislabelled Lossless. The pipeline
+        // remains accessible from the actual Android output control.
+        compose.onNodeWithTag("player-source-quality").assertDoesNotExist()
+        compose.onAllNodesWithContentDescription(app.getString(R.string.audio_output))
+            .onFirst().performClick()
+        compose.onNodeWithTag("audio-output-pipeline").performScrollTo().performClick()
+        compose.onNodeWithTag("audio-pipeline-dialog").assertIsDisplayed()
         compose.onNode(hasText("Salida del dispositivo: no medida", substring = true)).assertIsDisplayed()
         compose.onNodeWithText(app.getString(R.string.pipeline_route_not_confirmed)).assertExists()
         compose.onNodeWithText(app.getString(R.string.pipeline_stage_decoder)).assertExists()
         compose.onNodeWithText(app.getString(R.string.pipeline_stage_processing)).assertExists()
+        for (index in 0..4) {
+            compose.onNodeWithTag("audio-pipeline-stage-$index").assertExists()
+        }
         compose.onNodeWithText("Cerrar").performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(com.music.aurelis.R.string.player_close)).performClick()
         compose.onNodeWithTag("mini-player").assertIsDisplayed()

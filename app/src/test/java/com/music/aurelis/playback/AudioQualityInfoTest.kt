@@ -47,6 +47,23 @@ class AudioQualityInfoTest {
         assertEquals("DSD", AudioQualityInfo.from(song.copy(mimeType = "audio/x-dsf")).compactLabel)
         assertEquals("AIFF", AudioQualityInfo.from(song.copy(mimeType = "audio/aiff")).compactLabel)
     }
+    @Test fun losslessBadgeOnlyUsesConfirmedInputCodecAndMeasuredHiResFields() {
+        val flac = AudioQualityInfo.from(song)
+        assertTrue(flac.isLosslessSource)
+        assertEquals("Lossless", flac.playbackBadgeLabel)
+        assertEquals("FLAC", flac.compactLabel)
+        assertEquals("Hi-Res Lossless",
+            flac.copy(sampleRateHz = 96_000).playbackBadgeLabel)
+        assertEquals("Hi-Res Lossless",
+            flac.copy(pcmBits = 24).playbackBadgeLabel)
+        assertEquals("Lossless",
+            flac.copy(sampleRateHz = 48_000, pcmBits = null).playbackBadgeLabel)
+        assertNull(AudioQualityInfo.from(song.copy(mimeType = "audio/mpeg")).playbackBadgeLabel)
+        assertNull(AudioQualityInfo.from(song.copy(mimeType = null)).playbackBadgeLabel)
+        assertNull(AudioQualityInfo.from(song.copy(mimeType = "audio/x-dsf")).playbackBadgeLabel)
+        assertNull(AudioQualityInfo().playbackBadgeLabel)
+    }
+
     @Test fun multipleAdaptiveCandidatesDoNotBecomeMeasuredDecoderValues() {
         val a = Format.Builder().setSampleMimeType("audio/aac").setSampleRate(44100).build()
         val b = a.buildUpon().setSampleRate(48000).build()

@@ -37,7 +37,25 @@ data class AudioQualityInfo(
         "audio/ape", "audio/x-ape" -> "APE"
         else -> "Formato desconocido"
     }
-    /** Only expose a label when we can identify a real audio input MIME type. */
+    /**
+     * Codec-only source classification. Neither FLAC nor a high-rate source
+     * verifies resampling, AudioTrack negotiation or bit-perfect DAC output.
+     */
+    val isLosslessSource: Boolean get() =
+        origin != AudioQualityOrigin.UNKNOWN && mimeType?.lowercase(Locale.ROOT) in setOf(
+            "audio/flac", "audio/x-flac", "audio/alac", "audio/x-alac",
+            "audio/raw", "audio/wav", "audio/x-wav",
+            "audio/aiff", "audio/x-aiff", "audio/ape", "audio/x-ape",
+        )
+
+    /** BitChord-style display for independently identified lossless inputs. */
+    val playbackBadgeLabel: String? get() = when {
+        !isLosslessSource -> null
+        (sampleRateHz ?: 0) >= 88_200 || (pcmBits ?: 0) > 16 -> "Hi-Res Lossless"
+        else -> "Lossless"
+    }
+
+    /** Preserve the original codec name for file info and the MiniPlayer. */
     val compactLabel: String? get() = formatLabel.takeIf {
         origin != AudioQualityOrigin.UNKNOWN && it != "Formato desconocido"
     }
