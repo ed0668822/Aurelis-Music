@@ -960,6 +960,36 @@ class PlayerIntegrationTest {
         file.parentFile!!.mkdirs()
         file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
     }
+    @Test fun menuStartsLocalRadioWithRealLibraryKeepingCurrentTrackAndPosition() {
+        start()
+        val original = compose.runOnIdle { player.currentMediaItem }
+        compose.runOnIdle { player.seekTo(12_345) }
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions)).performClick()
+        compose.onNodeWithText("Iniciar radio local").performScrollTo().assertIsEnabled().performClick()
+        compose.waitUntil(5000) {
+            compose.runOnIdle { !vm.state.value.isCreatingMix && vm.state.value.queue.isNotEmpty() }
+        }
+        compose.runOnIdle {
+            assertNull(vm.state.value.mixError)
+            assertSame(original, player.currentMediaItem)
+            assertEquals("1", vm.state.value.currentSong?.id)
+            assertEquals(12_345L, vm.state.value.positionMs)
+            assertEquals(setOf("1", "2", "3"), vm.state.value.queue.map { it.id }.toSet())
+        }
+    }
+
+    @Test fun menuMixOverviewReportsActualLocalQueueWithoutClaimingBpm() {
+        start()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_open)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.player_song_actions)).performClick()
+        compose.onNodeWithText("Resumen de AutoMix").performScrollTo().performClick()
+        compose.onNodeWithText("Recomendaciones de música local").assertIsDisplayed()
+        compose.onNodeWithText("Sin análisis de mezcla en curso").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Volver").performClick()
+        compose.onNodeWithText("Copiar diagnóstico").performScrollTo().assertIsEnabled()
+    }
+
     @Test fun songMenuPlayNextInsertsADuplicateAndKeepsThePausedPlayerAndQueueInSync() {
         start()
         compose.runOnIdle { player.seekTo(12_345) }

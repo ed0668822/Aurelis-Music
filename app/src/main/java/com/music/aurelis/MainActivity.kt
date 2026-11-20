@@ -640,6 +640,7 @@ internal fun AurelisNavigationContent(
                 dock = dock, panelMotion = panelMotion,
                 localAlbums = librarySuccess?.albums.orEmpty(),
                 localArtists = librarySuccess?.artists.orEmpty(),
+                localSongs = allSongs,
                 onOpenCollection = { navigator.push(it) },
             )
             DockedArtworkOverlay(dock, playbackState.currentSong)

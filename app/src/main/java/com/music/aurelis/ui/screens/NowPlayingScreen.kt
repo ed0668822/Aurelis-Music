@@ -201,6 +201,7 @@ fun NowPlayingScreen(
     panelMotion: PlayerSheetMotion? = null,
     localAlbums: List<LocalAlbum> = emptyList(),
     localArtists: List<LocalArtist> = emptyList(),
+    localSongs: List<LocalSong> = emptyList(),
     onOpenCollection: (AppRoute.Collection) -> Unit = {},
 ) {
     val state by playbackViewModel.state.collectAsState()
@@ -501,7 +502,7 @@ fun NowPlayingScreen(
                                 songMenuAnchor = IntRect(b.left.roundToInt(), b.top.roundToInt(),
                                     b.right.roundToInt(), b.bottom.roundToInt())
                             }) {
-                            Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.player_song_actions), Modifier.size(26.dp))
+                            Icon(com.music.aurelis.ui.icons.AurelisMenuIcons.More, stringResource(R.string.player_song_actions), Modifier.size(26.dp))
                         }
                     }
                 }
@@ -1018,6 +1019,31 @@ fun NowPlayingScreen(
                     artworkFrost = if (reduceBlur) null else rememberFullArtworkBlurImage(coverUri),
                     onLyricsOffset = { showLyricsOffset = true },
                     onPlaybackTools = { showPlaybackTools = true },
+                    onStartLocalRadio = if (state.isConnected && localSongs.any {
+                        it.id == s.id && it.durationMs >= 500L &&
+                            (it.contentUri.startsWith("content://") || it.contentUri.startsWith("file://"))
+                    }) {
+                        { playbackViewModel.startAutoMix(localSongs, userLibraryState) }
+                    } else null,
+                    mixQueueSize = state.queue.size,
+                    mixInProgress = state.isCreatingMix,
+                    mixError = state.mixError,
+                    onCopyDiagnostics = {
+                        // Copy known metadata only, not private paths or an invented decoder log.
+                        val report = buildString {
+                            appendLine("Aurelis Music - diagnóstico local de reproducción")
+                            appendLine("Título: ${s.title}")
+                            appendLine("Artista: ${s.artist}")
+                            appendLine("Formato de origen: ${state.sourceQuality.formatLabel}")
+                            appendLine("Canciones en cola: ${state.queue.size}")
+                            appendLine("Reproduciendo: ${state.isPlaying}")
+                            appendLine("Salida real: no verificada por este diagnóstico")
+                        }
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                            as? android.content.ClipboardManager
+                        clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Aurelis", report))
+                        android.widget.Toast.makeText(context, "Diagnóstico copiado", android.widget.Toast.LENGTH_SHORT).show()
+                    },
                     // Timer commands require a live MediaSession; plain Media3
                     // players (and offline UI previews) cannot accept them.
                     onSetSleepTimer = sleepTimerAction,

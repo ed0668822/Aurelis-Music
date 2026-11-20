@@ -9,13 +9,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.PlaylistAdd
-import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,11 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.aurelis.data.LocalUserLibrary
 import com.music.aurelis.data.model.LocalSong
-import com.music.aurelis.ui.icons.AurelisIcons
-import com.music.aurelis.ui.icons.AurelisPlayerIcons
+import com.music.aurelis.ui.icons.AurelisMenuIcons
 
 /** BitChord-style grouping, limited to approved Aurelis local-music actions. */
-internal enum class SongMenuPage { Actions, Playlists, Info, Timer }
+internal enum class SongMenuPage { Actions, Playlists, Info, Timer, Mix }
 
 @Composable
 fun SongActionsDialog(
@@ -52,6 +45,11 @@ fun SongActionsDialog(
     artworkFrost: androidx.compose.ui.graphics.ImageBitmap? = null,
     onLyricsOffset: (() -> Unit)? = null,
     onPlaybackTools: (() -> Unit)? = null,
+    onStartLocalRadio: (() -> Unit)? = null,
+    onCopyDiagnostics: (() -> Unit)? = null,
+    mixQueueSize: Int = 0,
+    mixInProgress: Boolean = false,
+    mixError: String? = null,
     onSetSleepTimer: ((Long, Boolean) -> Unit)? = null,
     timerRemainingMs: Long = 0L,
     sleepAfterTrack: Boolean = false,
@@ -69,7 +67,7 @@ fun SongActionsDialog(
     ) {
         if (page == SongMenuPage.Actions) {
             SongFavoriteQuickAction(
-                icon = if (favorite) AurelisPlayerIcons.StarFilled else AurelisPlayerIcons.Star,
+                icon = if (favorite) AurelisMenuIcons.StarFilled else AurelisMenuIcons.Star,
                 label = if (favorite) "Quitar de favoritos" else "Añadir a favoritos",
                 enabled = !user.readOnly,
                 selected = favorite,
@@ -77,15 +75,23 @@ fun SongActionsDialog(
             )
             SongMenuSeparator()
             SongMenuAction(
-                icon = Icons.Rounded.PlaylistAdd,
+                icon = AurelisMenuIcons.PlaylistAdd,
                 label = "Añadir a playlist",
                 enabled = !user.readOnly,
                 onClick = { page = SongMenuPage.Playlists },
             )
 
             SongMenuSeparator()
+            onStartLocalRadio?.let { start ->
+                SongMenuAction(AurelisMenuIcons.Radio, "Iniciar radio local", !mixInProgress) {
+                    onDismiss(); start()
+                }
+                SongMenuAction(AurelisMenuIcons.MixOverview, "Resumen de AutoMix", true) {
+                    page = SongMenuPage.Mix
+                }
+            }
             SongMenuAction(
-                icon = Icons.Rounded.SkipNext,
+                icon = AurelisMenuIcons.PlayNext,
                 label = "Reproducir después",
                 enabled = queueActionsEnabled && playNextEnabled,
                 onClick = { onPlayNext(); onDismiss() },
@@ -99,7 +105,7 @@ fun SongActionsDialog(
                 )
             }
             SongMenuAction(
-                icon = Icons.AutoMirrored.Rounded.QueueMusic,
+                icon = AurelisMenuIcons.PlayLast,
                 label = "Añadir a la cola",
                 enabled = queueActionsEnabled,
                 onClick = { onEnqueue(); onDismiss() },
@@ -107,17 +113,17 @@ fun SongActionsDialog(
 
             SongMenuSeparator()
             onOpenAlbum?.let { action ->
-                SongMenuAction(AurelisIcons.Album, "Abrir álbum", true) {
+                SongMenuAction(AurelisMenuIcons.Album, "Abrir álbum", true) {
                     onDismiss(); action()
                 }
             }
             onOpenArtist?.let { action ->
-                SongMenuAction(AurelisIcons.Artist, "Abrir artista", true) {
+                SongMenuAction(AurelisMenuIcons.Artist, "Abrir artista", true) {
                     onDismiss(); action()
                 }
             }
             SongMenuAction(
-                icon = Icons.Rounded.Info,
+                icon = AurelisMenuIcons.Info,
                 label = "Información de la canción",
                 enabled = true,
                 onClick = { page = SongMenuPage.Info },
@@ -126,19 +132,25 @@ fun SongActionsDialog(
             if (onSetSleepTimer != null || onLyricsOffset != null || onPlaybackTools != null) {
                 SongMenuSeparator()
                 if (onSetSleepTimer != null) {
-                    SongMenuAction(Icons.Rounded.Timer, "Temporizador", true) {
+                    SongMenuAction(AurelisMenuIcons.SleepTimer, "Temporizador", true) {
                         page = SongMenuPage.Timer
                     }
                 }
                 onLyricsOffset?.let { action ->
-                    SongMenuAction(Icons.Rounded.Tune, "Desplazamiento de letras", true) {
+                    SongMenuAction(AurelisMenuIcons.LyricsOffset, "Desplazamiento de letras", true) {
                         onDismiss(); action()
                     }
                 }
                 onPlaybackTools?.let { action ->
-                    SongMenuAction(Icons.Rounded.Timer, "Herramientas de reproducción", true) {
+                    SongMenuAction(AurelisMenuIcons.PlaybackTools, "Herramientas de reproducción", true) {
                         onDismiss(); action()
                     }
+                }
+            }
+            onCopyDiagnostics?.let { copy ->
+                SongMenuSeparator()
+                SongMenuAction(AurelisMenuIcons.CopyDiagnostic, "Copiar diagnóstico", true) {
+                    onDismiss(); copy()
                 }
             }
         } else {
@@ -154,6 +166,7 @@ fun SongActionsDialog(
                         SongMenuPage.Playlists -> "Añadir a playlist"
                         SongMenuPage.Info -> "Información de la canción"
                         SongMenuPage.Timer -> "Temporizador"
+                        SongMenuPage.Mix -> "Resumen de AutoMix"
                         SongMenuPage.Actions -> ""
                     },
                     style = MaterialTheme.typography.titleSmall,
@@ -165,7 +178,7 @@ fun SongActionsDialog(
                 SongMenuPage.Playlists -> {
                     user.playlists.forEach { playlist ->
                         SongMenuAction(
-                            icon = Icons.Rounded.PlaylistAdd,
+                            icon = AurelisMenuIcons.PlaylistAdd,
                             label = playlist.name,
                             enabled = !user.readOnly,
                             onClick = {
@@ -184,7 +197,7 @@ fun SongActionsDialog(
                             .padding(horizontal = 8.dp, vertical = 5.dp),
                     )
                     SongMenuAction(
-                        icon = Icons.Rounded.PlaylistAdd,
+                        icon = AurelisMenuIcons.PlaylistAdd,
                         label = "Crear playlist con esta canción",
                         enabled = !user.readOnly && newPlaylistName.isNotBlank(),
                         onClick = {
@@ -210,7 +223,7 @@ fun SongActionsDialog(
                     SongInfoValue("Estado", status)
                     for (minutes in listOf(15, 30, 45, 60)) {
                         SongMenuAction(
-                            icon = Icons.Rounded.Timer,
+                            icon = AurelisMenuIcons.SleepTimer,
                             label = minutes.toString() + " min",
                             enabled = onSetSleepTimer != null,
                             onClick = {
@@ -219,16 +232,30 @@ fun SongActionsDialog(
                             },
                         )
                     }
-                    SongMenuAction(Icons.Rounded.Timer, "Al terminar esta canción",
+                    SongMenuAction(AurelisMenuIcons.SleepTimer, "Al terminar esta canción",
                         onSetSleepTimer != null) {
                         onSetSleepTimer?.invoke(0L, true)
                         onDismiss()
                     }
-                    SongMenuAction(Icons.Rounded.Timer, "Cancelar temporizador",
+                    SongMenuAction(AurelisMenuIcons.SleepTimer, "Cancelar temporizador",
                         onSetSleepTimer != null) {
                         onSetSleepTimer?.invoke(0L, false)
                         onDismiss()
                     }
+                }
+                SongMenuPage.Mix -> {
+                    SongInfoValue("Modo", "Recomendaciones de música local")
+                    SongInfoValue("Estado", when {
+                        mixInProgress -> "Preparando la mezcla"
+                        mixError != null -> mixError
+                        else -> "Sin análisis de mezcla en curso"
+                    })
+                    SongInfoValue("Canciones en cola", mixQueueSize.toString())
+                    Text("Este resumen utiliza datos reales de la cola. " +
+                        "No certifica BPM ni transiciones medidas.",
+                        Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = neutralMenuInk().copy(alpha = 0.72f))
                 }
                 SongMenuPage.Actions -> Unit
             }
@@ -335,7 +362,7 @@ private fun SongMenuAction(
         Spacer(Modifier.width(10.dp))
         Text(label, modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 17.sp, lineHeight = 21.sp,
+                fontSize = 17.sp, lineHeight = 21.sp, letterSpacing = (-0.3).sp,
             ),
             color = ink.copy(alpha = if (enabled) 1f else 0.4f))
     }
