@@ -18,4 +18,12 @@ class ReplayYearPlanTest {
         assertTrue(ReplayYearMoment.ARTIST_REVEAL.revealAtMs > ReplayYearMoment.MINUTES.revealAtMs)
         assertTrue(ReplayYearMoment.SONG_REVEAL.revealAtMs > ReplayYearMoment.GENRES.revealAtMs)
     }
+    @Test fun annualMomentsLinkToExistingReplaySharePages() {
+        assertEquals(ReplayStoryPage.INTRO, ReplayYearMoment.OPENER.storyPage())
+        assertEquals(ReplayStoryPage.HABITS, ReplayYearMoment.BUSIEST_DAY.storyPage())
+        assertEquals(ReplayStoryPage.ARTISTS, ReplayYearMoment.ARTIST_REVEAL.storyPage())
+        assertEquals(ReplayStoryPage.SONGS, ReplayYearMoment.SONG_REVEAL.storyPage())
+        assertEquals(ReplayStoryPage.SUMMARY, ReplayYearMoment.SUMMARY.storyPage())
+    }
+
 }
