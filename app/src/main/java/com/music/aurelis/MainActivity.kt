@@ -561,9 +561,10 @@ private fun AurelisApp(
     // rather than inside the bar because the page's scroll is what drives it,
     // and the page is a sibling of the bar rather than a child.
     val navBarScroll = rememberFloatingTabBarScrollConnection()
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    // Explore loads the first time it's shown, not at launch beside Home.
+    // Reopen on the same main section, including its saved Local Music category.
+    var selectedTab by rememberSaveable { mutableIntStateOf(AppSettings.lastMainTab.value) }
     LaunchedEffect(selectedTab) {
+        AppSettings.setLastMainTab(selectedTab)
         if (selectedTab == TAB_EXPLORE) viewModel.onExploreShown()
     }
     /**
