@@ -428,7 +428,7 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
                         stringResource(Res.string.automix_not_supported_video)
                     // The detailed line once the controller has one: each song's
                     // grid, then the planned mix — the loops and what cleared them.
-                    automixDetail != null -> automixDetail!!
+                    automixDetail != null -> readableAutomixStatus(automixDetail!!)
                     else -> stringResource(
                         Res.string.automix_analysis_status,
                         smartAnalysis.current.localizedLabel(),
@@ -448,6 +448,30 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+/**
+ * The mixer publishes machine-readable reasons for diagnostics. Translate these
+ * before they reach the artwork overlay; detailed raw codes remain in logs.
+ */
+internal fun readableAutomixStatus(raw: String): String {
+    val spanish = Locale.getDefault().language == "es"
+    val time = Regex("""\\bin (\\d+) s\\b""").find(raw)?.groupValues?.get(1)
+    val duration = Regex("""\\b(\\d+) s(?=\\s*[·]|$)""").findAll(raw).lastOrNull()?.groupValues?.get(1)
+    val method = when {
+        raw.contains("filter mix") -> if (spanish) "mezcla con filtro" else "filter mix"
+        raw.contains("crossfading") -> if (spanish) "transición suave" else "crossfade"
+        raw.contains("mixing") -> if (spanish) "mezcla inteligente" else "smart mix"
+        else -> return raw.substringBefore(" · automix:").substringBefore(" · no loop:")
+    }
+    val timing = if (time != null) {
+        if (spanish) "en ${time} s" else "in ${time} s"
+    } else if (spanish) "ahora" else "now"
+    val fallback = if (raw.contains("analysisUnavailable")) {
+        if (spanish) "ritmo no analizado" else "beat analysis unavailable"
+    } else null
+    val length = duration?.let { " · ${it} s" }.orEmpty()
+    return "AutoMix · $method $timing$length" + (fallback?.let { " · $it" } ?: "")
 }
 
 /**
