@@ -3,8 +3,8 @@
 package com.music.aurelis.ui.player
 
 /** Audio-clock mapping for a future MP4 export, independent of rendering or player. */
-internal data class LyricsVideoLineWindow(val lineIndex: Int, val fromUs: Long, val toUs: Long)
-internal data class LyricsShareTimeline(
+data class LyricsVideoLineWindow(val lineIndex: Int, val fromUs: Long, val toUs: Long)
+data class LyricsShareTimeline(
     val segments: List<Pair<Long, Long>>,
     val windows: List<LyricsVideoLineWindow>,
     val durationMs: Long,
@@ -25,7 +25,7 @@ internal data class LyricsShareTimeline(
  * rejects unknown/invalid timestamps and limits output to a minute.
  * Never invents timing for lyrics whose provider has no synchronized data.
  */
-internal fun lyricsShareTimeline(lines: List<LyricsShareLine>): LyricsShareTimeline? {
+fun lyricsShareTimeline(lines: List<LyricsShareLine>): LyricsShareTimeline? {
     val segments = mutableListOf<Pair<Long, Long>>()
     val windows = mutableListOf<LyricsVideoLineWindow>()
     var outputMs = 0L
