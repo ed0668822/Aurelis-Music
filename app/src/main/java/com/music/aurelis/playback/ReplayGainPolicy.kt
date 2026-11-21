@@ -20,7 +20,7 @@ internal data class ReplayGainMeasurement(
     val albumTruePeakLinear: Double? = null,
 )
 
-internal enum class ReplayGainMode { TRACK, ALBUM }
+enum class ReplayGainMode { TRACK, ALBUM }
 
 internal object ReplayGainPolicy {
     const val TARGET_LUFS = -18.0
