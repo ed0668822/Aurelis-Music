@@ -1462,4 +1462,17 @@
     <string name="bit_perfect_status_inexact">%1$s · לא מדויק: המקור הזה אינו PCM ללא אובדן</string>
     <string name="bit_perfect_status_waiting">ממתין לרצועת Lossless ביציאה נתמכת</string>
     <string name="bit_perfect_status_unavailable">לא זמין עבור רצועה זו (%1$s)</string>
+    <string name="automix_overview">סקירת Automix</string>
+    <string name="diwali_title">Aurelis Music מאחלת חג דיוואלי שמח</string>
+    <string name="diwali_subtitle">מי ייתן וחג האורות ימלא את ביתך בשמחה ואת ימיך במוזיקה.</string>
+    <string name="diwali_cta">בואו נחגוג</string>
+    <string name="local_profile_title">פרופיל מקומי</string>
+    <string name="local_profile_photo">תמונת פרופיל</string>
+    <string name="local_profile_change_photo">בחירת תמונת פרופיל</string>
+    <string name="local_profile_private_photo">אופציונלי · נשמר במכשיר זה בלבד</string>
+    <string name="local_profile_photo_error">לא ניתן לפתוח את התמונה. יש לבחור תמונה קטנה יותר.</string>
+    <string name="local_profile_optional_sign_in">פרופיל מקומי · התחברות ל-Google היא אופציונלית</string>
+    <string name="local_profile_edit_name">עריכת שם מקומי</string>
+    <string name="local_profile_remove_photo">הסרת תמונה מקומית</string>
+    <string name="local_feature_paused">לא זמין כרגע</string>
 </resources>

@@ -1434,4 +1434,17 @@
     <string name="bit_perfect_status_inexact">%1$s · tidak persis: sumber ini bukan PCM lossless</string>
     <string name="bit_perfect_status_waiting">Menunggu trek lossless pada output yang didukung</string>
     <string name="bit_perfect_status_unavailable">Tidak tersedia untuk trek ini (%1$s)</string>
+    <string name="automix_overview">Ringkasan Automix</string>
+    <string name="diwali_title">Aurelis Music mengucapkan Selamat Diwali</string>
+    <string name="diwali_subtitle">Semoga festival cahaya ini memenuhi rumah Anda dengan sukacita dan hari-hari Anda dengan musik.</string>
+    <string name="diwali_cta">Mari Rayakan</string>
+    <string name="local_profile_title">Profil lokal</string>
+    <string name="local_profile_photo">Foto profil</string>
+    <string name="local_profile_change_photo">Pilih foto profil</string>
+    <string name="local_profile_private_photo">Opsional · hanya disimpan di perangkat ini</string>
+    <string name="local_profile_photo_error">Gambar tidak dapat dibuka. Pilih foto yang lebih kecil.</string>
+    <string name="local_profile_optional_sign_in">Profil lokal · masuk dengan Google bersifat opsional</string>
+    <string name="local_profile_edit_name">Edit nama lokal</string>
+    <string name="local_profile_remove_photo">Hapus foto lokal</string>
+    <string name="local_feature_paused">Untuk sementara tidak tersedia</string>
 </resources>

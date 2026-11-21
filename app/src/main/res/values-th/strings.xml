@@ -1440,4 +1440,17 @@
     <string name="bit_perfect_status_inexact">%1$s · ไม่ตรงทุกบิต: แหล่งนี้ไม่ใช่ PCM แบบไม่สูญเสียคุณภาพ</string>
     <string name="bit_perfect_status_waiting">กำลังรอแทร็กแบบไม่สูญเสียคุณภาพบนเอาต์พุตที่รองรับ</string>
     <string name="bit_perfect_status_unavailable">ไม่พร้อมใช้งานสำหรับแทร็กนี้ (%1$s)</string>
+    <string name="automix_overview">ภาพรวม Automix</string>
+    <string name="diwali_title">Aurelis Music ขอให้คุณมีความสุขในวันดิวาลี</string>
+    <string name="diwali_subtitle">ขอให้เทศกาลแห่งแสงสว่างเติมเต็มบ้านของคุณด้วยความสุขและทุกวันด้วยเสียงเพลง</string>
+    <string name="diwali_cta">มาฉลองกัน</string>
+    <string name="local_profile_title">โปรไฟล์ในเครื่อง</string>
+    <string name="local_profile_photo">รูปโปรไฟล์</string>
+    <string name="local_profile_change_photo">เลือกรูปโปรไฟล์</string>
+    <string name="local_profile_private_photo">ไม่บังคับ · บันทึกไว้ในอุปกรณ์นี้เท่านั้น</string>
+    <string name="local_profile_photo_error">ไม่สามารถเปิดรูปภาพได้ โปรดเลือกรูปที่มีขนาดเล็กลง</string>
+    <string name="local_profile_optional_sign_in">โปรไฟล์ในเครื่อง · การลงชื่อเข้าใช้ Google เป็นทางเลือก</string>
+    <string name="local_profile_edit_name">แก้ไขชื่อในเครื่อง</string>
+    <string name="local_profile_remove_photo">ลบรูปในเครื่อง</string>
+    <string name="local_feature_paused">ไม่พร้อมใช้งานชั่วคราว</string>
 </resources>

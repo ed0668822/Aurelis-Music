@@ -1497,4 +1497,17 @@
     <string name="bit_perfect_status_inexact">%1$s · niedokładne: to źródło nie jest bezstratnym PCM</string>
     <string name="bit_perfect_status_waiting">Oczekiwanie na bezstratny utwór na obsługiwanym wyjściu</string>
     <string name="bit_perfect_status_unavailable">Niedostępne dla tego utworu (%1$s)</string>
+    <string name="automix_overview">Przegląd Automix</string>
+    <string name="diwali_title">Aurelis Music życzy radosnego Diwali</string>
+    <string name="diwali_subtitle">Niech święto świateł napełni Twój dom radością, a dni muzyką.</string>
+    <string name="diwali_cta">Świętujmy</string>
+    <string name="local_profile_title">Profil lokalny</string>
+    <string name="local_profile_photo">Zdjęcie profilowe</string>
+    <string name="local_profile_change_photo">Wybierz zdjęcie profilowe</string>
+    <string name="local_profile_private_photo">Opcjonalne · zapisane tylko na tym urządzeniu</string>
+    <string name="local_profile_photo_error">Nie można otworzyć zdjęcia. Wybierz mniejszy plik.</string>
+    <string name="local_profile_optional_sign_in">Profil lokalny · logowanie Google jest opcjonalne</string>
+    <string name="local_profile_edit_name">Edytuj nazwę profilu</string>
+    <string name="local_profile_remove_photo">Usuń lokalne zdjęcie</string>
+    <string name="local_feature_paused">Tymczasowo niedostępne</string>
 </resources>

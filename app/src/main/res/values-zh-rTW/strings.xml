@@ -1434,4 +1434,17 @@
     <string name="bit_perfect_status_inexact">%1$s · 不精確：此音源不是無損 PCM</string>
     <string name="bit_perfect_status_waiting">正在等待受支援輸出上的無損曲目</string>
     <string name="bit_perfect_status_unavailable">此曲目無法使用（%1$s）</string>
+    <string name="automix_overview">自動混音總覽</string>
+    <string name="diwali_title">Aurelis Music 祝你排燈節快樂</string>
+    <string name="diwali_subtitle">願這個光明的節日讓你的家充滿歡樂，讓每一天充滿音樂。</string>
+    <string name="diwali_cta">一起慶祝</string>
+    <string name="local_profile_title">本機個人資料</string>
+    <string name="local_profile_photo">個人頭像</string>
+    <string name="local_profile_change_photo">選擇個人頭像</string>
+    <string name="local_profile_private_photo">選用 · 僅儲存在此裝置上</string>
+    <string name="local_profile_photo_error">無法開啟此圖片。請選擇較小的照片。</string>
+    <string name="local_profile_optional_sign_in">本機個人資料 · 可選擇使用 Google 登入</string>
+    <string name="local_profile_edit_name">編輯本機名稱</string>
+    <string name="local_profile_remove_photo">移除本機照片</string>
+    <string name="local_feature_paused">暫時無法使用</string>
 </resources>

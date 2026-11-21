@@ -1414,4 +1414,17 @@
     <string name="bit_perfect_status_inexact">%1$s · tam değil: bu kaynak kayıpsız PCM değil</string>
     <string name="bit_perfect_status_waiting">Desteklenen bir çıkışta kayıpsız parça bekleniyor</string>
     <string name="bit_perfect_status_unavailable">Bu parça için kullanılamıyor (%1$s)</string>
+    <string name="automix_overview">Automix genel bakış</string>
+    <string name="diwali_title">Aurelis Music mutlu Diwali diler</string>
+    <string name="diwali_subtitle">Bu ışık festivali evinizi neşeyle, günlerinizi müzikle doldursun.</string>
+    <string name="diwali_cta">Kutlayalım</string>
+    <string name="local_profile_title">Yerel profil</string>
+    <string name="local_profile_photo">Profil fotoğrafı</string>
+    <string name="local_profile_change_photo">Profil fotoğrafı seç</string>
+    <string name="local_profile_private_photo">İsteğe bağlı · yalnızca bu cihazda saklanır</string>
+    <string name="local_profile_photo_error">Görüntü açılamadı. Daha küçük bir fotoğraf seçin.</string>
+    <string name="local_profile_optional_sign_in">Yerel profil · Google ile giriş isteğe bağlıdır</string>
+    <string name="local_profile_edit_name">Yerel adı düzenle</string>
+    <string name="local_profile_remove_photo">Yerel fotoğrafı kaldır</string>
+    <string name="local_feature_paused">Geçici olarak kullanılamıyor</string>
 </resources>

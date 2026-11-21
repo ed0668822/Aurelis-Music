@@ -1396,4 +1396,17 @@
     <string name="bit_perfect_status_inexact">%1$s · non esatto: questa sorgente non è PCM lossless</string>
     <string name="bit_perfect_status_waiting">In attesa di un brano lossless su un\'uscita supportata</string>
     <string name="bit_perfect_status_unavailable">Non disponibile per questo brano (%1$s)</string>
+    <string name="automix_overview">Panoramica Automix</string>
+    <string name="diwali_title">Aurelis Music ti augura un felice Diwali</string>
+    <string name="diwali_subtitle">Che questa festa delle luci riempia la tua casa di gioia e le tue giornate di musica.</string>
+    <string name="diwali_cta">Festeggiamo</string>
+    <string name="local_profile_title">Profilo locale</string>
+    <string name="local_profile_photo">Foto del profilo</string>
+    <string name="local_profile_change_photo">Scegli una foto del profilo</string>
+    <string name="local_profile_private_photo">Facoltativo · salvato solo su questo dispositivo</string>
+    <string name="local_profile_photo_error">Impossibile aprire l’immagine. Scegli una foto più piccola.</string>
+    <string name="local_profile_optional_sign_in">Profilo locale · accesso con Google facoltativo</string>
+    <string name="local_profile_edit_name">Modifica nome locale</string>
+    <string name="local_profile_remove_photo">Rimuovi foto locale</string>
+    <string name="local_feature_paused">Temporaneamente non disponibile</string>
 </resources>

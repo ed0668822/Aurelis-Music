@@ -1460,4 +1460,14 @@
     <string name="diwali_title">Aurelis Music की ओर से दीपावली की शुभकामनाएँ</string>
     <string name="diwali_subtitle">रोशनी का यह त्योहार आपके घर को खुशियों से और आपके दिनों को संगीत से भर दे।</string>
     <string name="diwali_cta">चलो जश्न मनाएँ</string>
+    <string name="automix_overview">ऑटोमिक्स अवलोकन</string>
+    <string name="local_profile_title">स्थानीय प्रोफ़ाइल</string>
+    <string name="local_profile_photo">प्रोफ़ाइल फ़ोटो</string>
+    <string name="local_profile_change_photo">प्रोफ़ाइल फ़ोटो चुनें</string>
+    <string name="local_profile_private_photo">वैकल्पिक · केवल इस डिवाइस पर सहेजा गया</string>
+    <string name="local_profile_photo_error">यह फ़ोटो नहीं खुल सकी। छोटी फ़ोटो चुनें।</string>
+    <string name="local_profile_optional_sign_in">स्थानीय प्रोफ़ाइल · Google से साइन इन करना वैकल्पिक है</string>
+    <string name="local_profile_edit_name">स्थानीय नाम बदलें</string>
+    <string name="local_profile_remove_photo">स्थानीय फ़ोटो हटाएँ</string>
+    <string name="local_feature_paused">अस्थायी रूप से उपलब्ध नहीं</string>
 </resources>

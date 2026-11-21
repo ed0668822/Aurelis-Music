@@ -1307,4 +1307,17 @@
     <string name="bit_perfect_status_inexact">%1$s · 정확하지 않음: 이 소스는 무손실 PCM이 아닙니다</string>
     <string name="bit_perfect_status_waiting">지원되는 출력에서 무손실 트랙을 기다리는 중</string>
     <string name="bit_perfect_status_unavailable">이 트랙에서 사용할 수 없음(%1$s)</string>
+    <string name="automix_overview">Automix 개요</string>
+    <string name="diwali_title">Aurelis Music가 행복한 디왈리를 기원합니다</string>
+    <string name="diwali_subtitle">빛의 축제가 집에는 기쁨을, 매일에는 음악을 채워 주길 바랍니다.</string>
+    <string name="diwali_cta">함께 축하해요</string>
+    <string name="local_profile_title">로컬 프로필</string>
+    <string name="local_profile_photo">프로필 사진</string>
+    <string name="local_profile_change_photo">프로필 사진 선택</string>
+    <string name="local_profile_private_photo">선택 사항 · 이 기기에만 저장됨</string>
+    <string name="local_profile_photo_error">이미지를 열 수 없습니다. 더 작은 사진를 선택하세요.</string>
+    <string name="local_profile_optional_sign_in">로컬 프로필 · Google 로그인은 선택 사항입니다</string>
+    <string name="local_profile_edit_name">로컬 이름 수정</string>
+    <string name="local_profile_remove_photo">로컬 사진 삭제</string>
+    <string name="local_feature_paused">일시적으로 사용할 수 없음</string>
 </resources>
