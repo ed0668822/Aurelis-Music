@@ -1546,4 +1546,7 @@
     <string name="replay_annual_play_local">Einen lokalen Jahreshit abspielen</string>
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Bild</string>
+    <string name="radio">Radio</string>
+    <string name="replay_year_months">Deine Musikmonate</string>
+    <string name="replay_year_watch">Deine animierte Jahresgeschichte ansehen</string>
 </resources>

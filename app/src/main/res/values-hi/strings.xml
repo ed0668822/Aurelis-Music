@@ -1546,4 +1546,7 @@
     <string name="replay_annual_play_local">इस डिवाइस का एक प्रमुख गाना चलाएँ</string>
     <string name="lyrics_share_video">वीडियो</string>
     <string name="lyrics_share_image">चित्र</string>
+    <string name="radio">रेडियो</string>
+    <string name="replay_year_months">संगीत में आपके महीने</string>
+    <string name="replay_year_watch">अपने साल की एनिमेटेड कहानी देखें</string>
 </resources>

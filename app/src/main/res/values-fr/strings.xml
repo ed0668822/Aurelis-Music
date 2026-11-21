@@ -1547,4 +1547,7 @@
     <string name="replay_annual_play_local">Écouter un titre marquant de cet appareil</string>
     <string name="lyrics_share_video">Vidéo</string>
     <string name="lyrics_share_image">Image</string>
+    <string name="radio">Radio</string>
+    <string name="replay_year_months">Vos mois en musique</string>
+    <string name="replay_year_watch">Voir votre récapitulatif annuel animé</string>
 </resources>

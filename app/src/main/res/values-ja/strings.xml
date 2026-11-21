@@ -1524,4 +1524,7 @@
     <string name="replay_annual_play_local">この端末の注目曲を再生</string>
     <string name="lyrics_share_video">動画</string>
     <string name="lyrics_share_image">画像</string>
+    <string name="radio">ラジオ</string>
+    <string name="replay_year_months">音楽と過ごした月々</string>
+    <string name="replay_year_watch">アニメーションで一年を振り返る</string>
 </resources>

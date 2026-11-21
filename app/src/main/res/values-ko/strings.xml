@@ -1396,4 +1396,7 @@
     <string name="replay_annual_play_local">이 기기의 올해의 추천곡 재생</string>
     <string name="lyrics_share_video">동영상</string>
     <string name="lyrics_share_image">이미지</string>
+    <string name="radio">라디오</string>
+    <string name="replay_year_months">음악과 함께한 달들</string>
+    <string name="replay_year_watch">움직이는 연간 스토리 보기</string>
 </resources>

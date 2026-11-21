@@ -1485,4 +1485,7 @@
     <string name="replay_annual_play_local">Riproduci un brano in evidenza dal dispositivo</string>
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Immagine</string>
+    <string name="radio">Radio</string>
+    <string name="replay_year_months">I tuoi mesi di musica</string>
+    <string name="replay_year_watch">Guarda la storia animata del tuo anno</string>
 </resources>
