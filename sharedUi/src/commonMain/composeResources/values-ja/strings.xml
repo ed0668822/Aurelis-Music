@@ -199,4 +199,6 @@
     <string name="search_library_hint">曲・アーティスト・アルバム</string>
     <string name="search_library_no_results">ローカル音楽に「%1$s」に一致するものはありません。</string>
     <string name="best_part">ベストパート</string>
+    <string name="mixes_yours">あなたのミックス</string>
+    <string name="mixes_none">ミックスはまだありません。再生を続けると YouTube Music が作成します。</string>
 </resources>
