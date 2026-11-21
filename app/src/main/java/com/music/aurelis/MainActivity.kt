@@ -2512,6 +2512,23 @@ private fun AurelisApp(
     val replayOpen = route == AppRoute.Replay || replayStory != null || showReplayShare ||
         (selectedTab == TAB_LIBRARY && detail == null && route == null)
     val (replay, setReplayPeriod) = rememberReplayState(replayOpen)
+    var annualReplayData by remember { mutableStateOf<com.music.aurelis.data.stats.ReplayYearData?>(null) }
+    var annualReplayReady by remember { mutableStateOf(false) }
+    LaunchedEffect(replayStory, replay.period) {
+        annualReplayData = null
+        annualReplayReady = false
+        if (replayStory != null && replay.period == com.music.aurelis.data.stats.ReplayPeriod.THIS_YEAR) {
+            annualReplayData = try {
+                com.music.aurelis.data.stats.ListeningStats.year(java.time.LocalDate.now().year)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                android.util.Log.w("AurelisReplay", "Annual story uses standard Replay fallback", e)
+                null
+            }
+        }
+        annualReplayReady = true
+    }
     val replayCards = remember(replay.summary) {
         replay.summary?.takeUnless { it.isEmpty }?.cards(context).orEmpty()
     }
@@ -3096,6 +3113,7 @@ private fun AurelisApp(
                                 holder = account?.name.orEmpty(),
                                 onPeriodChange = setReplayPeriod,
                                 onOpenStory = { replayStory = it },
+                                onOpenYearStory = { replayStory = com.music.aurelis.ui.replay.ReplayStoryPage.INTRO },
                                 // A track tapped on a chart is one the user already
                                 // knows they like, so it starts a station off itself
                                 // rather than queueing the chart it was on — the
@@ -5154,8 +5172,13 @@ private fun AurelisApp(
         // instead of over it.
         replayStory?.let { start ->
             replay.summary?.takeUnless { it.isEmpty }?.let { summary ->
-                ReplayStories(
+                if (replay.period == com.music.aurelis.data.stats.ReplayPeriod.THIS_YEAR && !annualReplayReady) {
+                    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.CircularProgressIndicator()
+                    }
+                } else ReplayStories(
                     summary = summary,
+                    yearData = annualReplayData,
                     start = start,
                     onClose = { replayStory = null },
                     onShare = { card ->

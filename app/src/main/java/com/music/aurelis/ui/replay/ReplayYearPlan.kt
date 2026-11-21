@@ -19,6 +19,7 @@ internal enum class ReplayYearMoment(val revealAtMs: Long) {
     SONG_REVEAL(3_000L),
     TOP_SONGS(1_600L),
     ALBUMS(1_600L),
+    MONTHS(1_600L),
     SUMMARY(1_600L),
 }
 
@@ -35,6 +36,7 @@ internal fun ReplaySummary.yearMoments(): List<ReplayYearMoment> {
             ReplayYearMoment.SONG_REVEAL -> songs.isNotEmpty()
             ReplayYearMoment.TOP_SONGS -> songs.size >= 3
             ReplayYearMoment.ALBUMS -> albums.size >= 3
+            ReplayYearMoment.MONTHS -> false // Only an annual snapshot knows monthly top tracks
             else -> true
         }
     }

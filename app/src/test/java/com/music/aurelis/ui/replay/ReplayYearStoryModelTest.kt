@@ -6,6 +6,8 @@ import com.music.aurelis.data.stats.RankedSong
 import com.music.aurelis.data.stats.ReplayPeriod
 import com.music.aurelis.data.stats.ReplaySummary
 import com.music.aurelis.data.stats.ReplayYearData
+import com.music.aurelis.data.stats.ReplayMonthTop
+import java.time.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -64,6 +66,19 @@ class ReplayYearStoryModelTest {
         assertTrue(story.clips.filterKeys {
             it != ReplayYearMoment.SONG_REVEAL && it != ReplayYearMoment.SUMMARY
         }.values.none { it?.videoId == "song0" })
+    }
+
+    @Test fun monthPageUsesOnlyRecordedMonthTops() {
+        val original = year(12)
+        val withMonths = original.copy(monthTops = listOf(
+            ReplayMonthTop(YearMonth.of(2026, 1), original.summary.songs[5]),
+            ReplayMonthTop(YearMonth.of(2026, 2), original.summary.songs[6]),
+        ))
+        val story = ReplayYearStoryModel(withMonths)
+        assertTrue(ReplayYearMoment.MONTHS in story.moments)
+        assertEquals(ReplayYearMoment.SUMMARY, story.moments.last())
+        assertEquals("song6", story.clips[ReplayYearMoment.MONTHS]?.videoId)
+        assertTrue(ReplayYearMoment.MONTHS !in ReplayYearStoryModel(original).moments)
     }
 
     @Test fun nonHeadlineClipsDoNotReuseTopFive() {

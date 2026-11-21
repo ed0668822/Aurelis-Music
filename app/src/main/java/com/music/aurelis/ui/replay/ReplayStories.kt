@@ -73,6 +73,7 @@ import com.music.aurelis.data.model.CARD_ART_PX
 import com.music.aurelis.data.model.HEADER_ART_PX
 import com.music.aurelis.data.model.ROW_ART_PX
 import com.music.aurelis.data.model.artworkAt
+import com.music.aurelis.data.stats.ReplayYearData
 import com.music.aurelis.data.stats.ReplaySummary
 import com.music.aurelis.data.stats.ReplayPeriod
 import com.music.aurelis.ui.player.MeshGradientBackground
@@ -126,11 +127,13 @@ fun ReplayStories(
      * was two cards further on than the one on screen.
      */
     paused: Boolean = false,
+    yearData: ReplayYearData? = null,
 ) {
     // A category with nothing in it has no card: an empty page in the middle of
     // a story reads as the app having lost something.
-    val annualMoments = remember(summary) {
-        if (summary.period == ReplayPeriod.THIS_YEAR) summary.yearMoments() else emptyList()
+    val yearStory = remember(yearData) { yearData?.takeUnless { it.isEmpty }?.let(::ReplayYearStoryModel) }
+    val annualMoments = remember(summary, yearStory) {
+        if (summary.period == ReplayPeriod.THIS_YEAR) yearStory?.moments ?: summary.yearMoments() else emptyList()
     }
     val pages = remember(summary, annualMoments) {
         if (annualMoments.isNotEmpty()) annualMoments.map { it.storyPage() }
@@ -214,10 +217,11 @@ fun ReplayStories(
 
 
     val page = pages.getOrElse(current) { ReplayStoryPage.INTRO }
-    val artwork = summary.storyArtwork(page)
+    val artwork = yearStory?.clips?.get(annualMoments.getOrNull(current))?.thumbnailUrl
+        ?: summary.storyArtwork(page)
     // Rotated per card, so the backdrop is visibly a different colour on every
     // one — see [storyHue].
-    val palette = rememberArtworkColors(artwork).rotated(storyHue(page))
+    val palette = rememberArtworkColors(artwork).rotated(storyHue(page) + current * 19f)
 
     // The system bars are kept outside the frame rather than padded for inside
     // it: the card is a fixed canvas and its own margins are part of the
@@ -236,6 +240,7 @@ fun ReplayStories(
             Stage(
                 pages = pages,
                 annualMoments = annualMoments,
+                yearStory = yearStory,
                 pagerState = pagerState,
                 summary = summary,
                 current = current,
@@ -286,6 +291,7 @@ private fun StoryFrame(content: @Composable () -> Unit) {
 private fun Stage(
     pages: List<ReplayStoryPage>,
     annualMoments: List<ReplayYearMoment>,
+    yearStory: ReplayYearStoryModel?,
     pagerState: PagerState,
     summary: ReplaySummary,
     current: Int,
@@ -358,6 +364,8 @@ private fun Stage(
                         moment = annualMoments[index],
                         summary = summary,
                         visible = index == current,
+                        progressMs = if (index == current) progress.value * PAGE_MILLIS else 0f,
+                        yearStory = yearStory,
                         onShare = { onShare(pages[index]) },
                     )
                 } else {

@@ -12,7 +12,10 @@ import java.util.Locale
  * A clip is selected once for the entire story, never per recomposition.
  */
 internal class ReplayYearStoryModel(val data: ReplayYearData) {
-    val moments: List<ReplayYearMoment> = data.summary.yearMoments()
+    val moments: List<ReplayYearMoment> = data.summary.yearMoments().let { regular ->
+        if (data.monthTops.size < 2 || regular.isEmpty()) regular
+        else regular.dropLast(1) + ReplayYearMoment.MONTHS + regular.takeLast(1)
+    }
     val personality: AnnualListeningPersonality? =
         annualListeningPersonality(data.summary.hourOfDay)
     val clips: Map<ReplayYearMoment, Song?> = chooseClips()
@@ -50,6 +53,8 @@ internal class ReplayYearStoryModel(val data: ReplayYearData) {
                 ReplayYearMoment.TOP_SONGS -> take(ranked.take(5), allowTop = true)
                 ReplayYearMoment.BUSIEST_DAY ->
                     take(listOfNotNull(data.busiestDaySong)) ?: take(ranked.drop(5))
+                ReplayYearMoment.MONTHS ->
+                    take(data.monthTops.asReversed().map { it.song.song }) ?: take(ranked.drop(5))
                 ReplayYearMoment.ALBUMS -> {
                     val album = data.summary.albums.firstOrNull()?.title
                     take(ranked.filter { !album.isNullOrBlank() && it.albumName == album })

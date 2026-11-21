@@ -97,6 +97,7 @@ fun ReplayScreen(
     holder: String,
     onPeriodChange: (ReplayPeriod) -> Unit,
     onOpenStory: (ReplayStoryPage) -> Unit,
+    onOpenYearStory: () -> Unit,
     onPlaySong: (Song) -> Unit,
     /**
      * Opens the artist's page. The browse id is null for most rows — an artist
@@ -271,6 +272,17 @@ fun ReplayScreen(
                                         color = textColor,
                                     )
                                 }
+                                Text(
+                                    text = stringResource(R.string.replay_year_watch),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textColor,
+                                    modifier = Modifier.padding(top = 10.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(textColor.copy(alpha = 0.10f))
+                                        .clickable(onClick = onOpenYearStory)
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                )
                                 annual.localHighlight?.let { highlight ->
                                     Text(
                                         text = stringResource(R.string.replay_annual_play_local),

@@ -1418,4 +1418,6 @@
     <string name="replay_annual_play_local">Play a highlight from this device</string>
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Image</string>
+    <string name="replay_year_months">Your months in music</string>
+    <string name="replay_year_watch">Watch your animated year story</string>
 </resources>

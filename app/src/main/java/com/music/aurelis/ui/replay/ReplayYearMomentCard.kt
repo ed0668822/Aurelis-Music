@@ -47,6 +47,8 @@ import com.music.aurelis.data.model.artworkAt
 import com.music.aurelis.data.stats.ReplaySummary
 import kotlinx.coroutines.delay
 import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 /** A unique page per annual fact; backed only by observed local listening data. */
 internal fun ReplayYearMoment.storyPage(): ReplayStoryPage = when (this) {
@@ -57,6 +59,7 @@ internal fun ReplayYearMoment.storyPage(): ReplayStoryPage = when (this) {
     ReplayYearMoment.ARTIST_REVEAL, ReplayYearMoment.TOP_ARTISTS -> ReplayStoryPage.ARTISTS
     ReplayYearMoment.SONG_REVEAL, ReplayYearMoment.TOP_SONGS -> ReplayStoryPage.SONGS
     ReplayYearMoment.ALBUMS -> ReplayStoryPage.ALBUMS
+    ReplayYearMoment.MONTHS -> ReplayStoryPage.SUMMARY
     ReplayYearMoment.SUMMARY -> ReplayStoryPage.SUMMARY
 }
 
@@ -65,9 +68,13 @@ internal fun ReplayYearMomentCard(
     moment: ReplayYearMoment,
     summary: ReplaySummary,
     visible: Boolean,
+    progressMs: Float,
+    yearStory: ReplayYearStoryModel? = null,
     onShare: () -> Unit,
 ) {
-    val annual = remember(summary) { summary.annualHighlights(LocalDate.now().year) }
+    val annual = remember(summary, yearStory) {
+        summary.annualHighlights(yearStory?.data?.year ?: LocalDate.now().year)
+    }
     val personality = annual.personality?.let {
         when (it) {
             AnnualListeningPersonality.NIGHT_OWL -> R.string.replay_personality_night
@@ -87,6 +94,7 @@ internal fun ReplayYearMomentCard(
         ReplayYearMoment.SONG_REVEAL -> R.string.top_song
         ReplayYearMoment.TOP_SONGS -> R.string.top_songs
         ReplayYearMoment.ALBUMS -> R.string.top_albums
+        ReplayYearMoment.MONTHS -> R.string.replay_year_months
     }
     val highlight = when (moment) {
         ReplayYearMoment.OPENER -> "Replay " + annual.year
@@ -99,23 +107,26 @@ internal fun ReplayYearMomentCard(
         ReplayYearMoment.SONG_REVEAL -> annual.topSong.orEmpty()
         ReplayYearMoment.TOP_SONGS -> summary.songs.take(3).joinToString("\n") { it.song.title }
         ReplayYearMoment.ALBUMS -> summary.albums.take(3).joinToString("\n") { it.title }
+        ReplayYearMoment.MONTHS -> yearStory?.data?.monthTops.orEmpty()
+            .takeLast(6).joinToString("\n") { top ->
+                val month = top.month.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                "$month · ${top.song.song.title}"
+            }
         ReplayYearMoment.SUMMARY -> stringResource(R.string.replay_annual_unique_songs, annual.uniqueSongs)
     }
-    val coverUrl = when (moment) {
+    val assignedCover = yearStory?.clips?.get(moment)?.thumbnailUrl
+    val coverUrl = assignedCover ?: when (moment) {
         ReplayYearMoment.SONG_REVEAL, ReplayYearMoment.TOP_SONGS ->
             summary.songs.firstOrNull()?.song?.thumbnailUrl
         ReplayYearMoment.ARTIST_REVEAL, ReplayYearMoment.TOP_ARTISTS ->
             summary.artists.firstOrNull()?.artworkUrl
         ReplayYearMoment.ALBUMS -> summary.albums.firstOrNull()?.artworkUrl
+        ReplayYearMoment.MONTHS -> yearStory?.data?.monthTops?.lastOrNull()?.song?.song?.thumbnailUrl
         else -> null
     }
-    var revealed by remember(moment, visible) { mutableStateOf(false) }
-    LaunchedEffect(moment, visible) {
-        if (visible) {
-            delay(moment.revealAtMs)
-            revealed = true
-        }
-    }
+    // The same progress clock drives the bar and the card reveal: holding the
+    // story or opening Share freezes both instead of completing a hidden timer.
+    val revealed = visible && progressMs >= moment.revealAtMs
     Column(
         Modifier.fillMaxSize().padding(start = 22.dp, end = 22.dp, top = 82.dp, bottom = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
