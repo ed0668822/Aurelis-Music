@@ -74,6 +74,7 @@ import com.music.aurelis.data.model.HEADER_ART_PX
 import com.music.aurelis.data.model.ROW_ART_PX
 import com.music.aurelis.data.model.artworkAt
 import com.music.aurelis.data.stats.ReplaySummary
+import com.music.aurelis.data.stats.ReplayPeriod
 import com.music.aurelis.ui.player.MeshGradientBackground
 import com.music.aurelis.ui.player.MeshPalette
 import com.music.aurelis.ui.player.rememberArtworkColors
@@ -128,8 +129,12 @@ fun ReplayStories(
 ) {
     // A category with nothing in it has no card: an empty page in the middle of
     // a story reads as the app having lost something.
-    val pages = remember(summary) {
-        ReplayStoryPage.ordered.filter { page ->
+    val annualMoments = remember(summary) {
+        if (summary.period == ReplayPeriod.THIS_YEAR) summary.yearMoments() else emptyList()
+    }
+    val pages = remember(summary, annualMoments) {
+        if (annualMoments.isNotEmpty()) annualMoments.map { it.storyPage() }
+        else ReplayStoryPage.ordered.filter { page ->
             when (page) {
                 ReplayStoryPage.ALBUMS -> summary.albums.isNotEmpty()
                 ReplayStoryPage.GENRES -> summary.genres.isNotEmpty()
@@ -230,6 +235,7 @@ fun ReplayStories(
         StoryFrame {
             Stage(
                 pages = pages,
+                annualMoments = annualMoments,
                 pagerState = pagerState,
                 summary = summary,
                 current = current,
@@ -279,6 +285,7 @@ private fun StoryFrame(content: @Composable () -> Unit) {
 @Composable
 private fun Stage(
     pages: List<ReplayStoryPage>,
+    annualMoments: List<ReplayYearMoment>,
     pagerState: PagerState,
     summary: ReplaySummary,
     current: Int,
@@ -346,7 +353,16 @@ private fun Stage(
                 visible = index == current,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                StoryPage(page = pages[index], summary = summary, onShare = onShare)
+                if (annualMoments.isNotEmpty()) {
+                    ReplayYearMomentCard(
+                        moment = annualMoments[index],
+                        summary = summary,
+                        visible = index == current,
+                        onShare = { onShare(pages[index]) },
+                    )
+                } else {
+                    StoryPage(page = pages[index], summary = summary, onShare = onShare)
+                }
             }
         }
 
