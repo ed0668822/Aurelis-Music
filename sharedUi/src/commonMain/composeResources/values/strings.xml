@@ -283,4 +283,5 @@
     <string name="queue_select_all">Select all</string>
     <string name="queue_selected_count">%1$d selected</string>
     <string name="queue_undo">Undo</string>
+    <string name="best_part">Best Part</string>
 </resources>
