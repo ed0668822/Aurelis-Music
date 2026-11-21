@@ -1448,4 +1448,10 @@
     <string name="local_profile_edit_name">ローカル名を編集</string>
     <string name="local_profile_remove_photo">ローカル写真を削除</string>
     <string name="local_feature_paused">一時的に利用できません</string>
+    <string name="discord_no_credentials">APIキーやトークン、Discordへの手動ログインは不要です。共有は任意です。</string>
+    <string name="discord_sdk_not_bundled">ライブ共有は利用できません。このビルドにはDiscord公式SDKが含まれていません。</string>
+    <string name="discord_app_not_installed">音楽を共有するにはDiscordをインストールしてログインしてください。</string>
+    <string name="discord_official_available">再生中の曲とアーティストをDiscordで共有します。</string>
+    <string name="discord_preview_disclaimer">これは端末内のプレビューです。公式SDKが組み込まれ、共有を有効にした場合のみDiscordのプロフィールに表示されます。Discordには開発者ポータルで登録したAurelis Musicのアイコンが表示されます。</string>
+    <string name="discord_listening_aurelis">Aurelis Musicで音楽を再生中</string>
 </resources>

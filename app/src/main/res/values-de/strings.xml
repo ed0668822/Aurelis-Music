@@ -1470,4 +1470,10 @@
     <string name="local_profile_edit_name">Lokalen Namen bearbeiten</string>
     <string name="local_profile_remove_photo">Lokales Foto entfernen</string>
     <string name="local_feature_paused">Vorübergehend nicht verfügbar</string>
+    <string name="discord_no_credentials">Kein API-Schlüssel, Token oder manuelles Discord-Login erforderlich. Das Teilen ist optional.</string>
+    <string name="discord_sdk_not_bundled">Live-Freigabe ist nicht verfügbar: Das offizielle Discord-SDK ist in diesem Build nicht enthalten.</string>
+    <string name="discord_app_not_installed">Installiere Discord und melde dich an, um deine Musik zu teilen.</string>
+    <string name="discord_official_available">Teile den aktuellen Titel und Interpreten über Discord.</string>
+    <string name="discord_preview_disclaimer">Dies ist nur eine lokale Vorschau. Die Aktivität erscheint in deinem Discord-Profil nur, wenn das offizielle SDK enthalten und die Freigabe aktiviert ist. Discord verwendet das im Entwicklerportal hinterlegte Aurelis-Music-Symbol.</string>
+    <string name="discord_listening_aurelis">Hört Musik mit Aurelis Music</string>
 </resources>

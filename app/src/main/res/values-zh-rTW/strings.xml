@@ -1447,4 +1447,10 @@
     <string name="local_profile_edit_name">編輯本機名稱</string>
     <string name="local_profile_remove_photo">移除本機照片</string>
     <string name="local_feature_paused">暫時無法使用</string>
+    <string name="discord_no_credentials">不需要 API 金鑰、權杖或手動登入 Discord。分享功能可自行選擇開啟。</string>
+    <string name="discord_sdk_not_bundled">無法即時分享：此版本未包含 Discord 官方 SDK。</string>
+    <string name="discord_app_not_installed">請安裝 Discord 並登入，以分享你正在聆聽的音樂。</string>
+    <string name="discord_official_available">在 Discord 上分享目前的歌曲和藝人。</string>
+    <string name="discord_preview_disclaimer">這只是本機預覽。只有包含官方 SDK 且啟用分享時，動態才會顯示在你的 Discord 個人檔案中。Discord 會使用開發者入口網站設定的 Aurelis Music 圖示。</string>
+    <string name="discord_listening_aurelis">正在使用 Aurelis Music 聽音樂</string>
 </resources>

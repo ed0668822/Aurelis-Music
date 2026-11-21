@@ -1475,4 +1475,10 @@
     <string name="local_profile_edit_name">עריכת שם מקומי</string>
     <string name="local_profile_remove_photo">הסרת תמונה מקומית</string>
     <string name="local_feature_paused">לא זמין כרגע</string>
+    <string name="discord_no_credentials">אין צורך במפתח API, באסימון או בהתחברות ידנית ל-Discord. השיתוף הוא לבחירתך.</string>
+    <string name="discord_sdk_not_bundled">שיתוף בזמן אמת אינו זמין: גרסה זו אינה כוללת את ערכת הפיתוח הרשמית של Discord.</string>
+    <string name="discord_app_not_installed">כדי לשתף מוזיקה, יש להתקין את Discord ולהתחבר.</string>
+    <string name="discord_official_available">אפשר לשתף ב-Discord את השיר המתנגן ואת שם האמן.</string>
+    <string name="discord_preview_disclaimer">זוהי תצוגה מקדימה מקומית בלבד. הפעילות תופיע בפרופיל Discord רק אם ערכת הפיתוח הרשמית כלולה והשיתוף מופעל. Discord משתמש בסמל Aurelis Music שהוגדר בפורטל המפתחים.</string>
+    <string name="discord_listening_aurelis">מאזין למוזיקה באמצעות Aurelis Music</string>
 </resources>

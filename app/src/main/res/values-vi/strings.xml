@@ -1387,4 +1387,10 @@
     <string name="local_profile_edit_name">Sửa tên cục bộ</string>
     <string name="local_profile_remove_photo">Xóa ảnh cục bộ</string>
     <string name="local_feature_paused">Tạm thời không khả dụng</string>
+    <string name="discord_no_credentials">Không cần khóa API, mã thông báo hoặc đăng nhập Discord thủ công. Việc chia sẻ là tùy chọn.</string>
+    <string name="discord_sdk_not_bundled">Không thể chia sẻ trực tiếp: bản dựng này không bao gồm SDK Discord chính thức.</string>
+    <string name="discord_app_not_installed">Cài đặt Discord và đăng nhập để chia sẻ nhạc của bạn.</string>
+    <string name="discord_official_available">Chia sẻ bài hát đang phát và nghệ sĩ trên Discord.</string>
+    <string name="discord_preview_disclaimer">Đây chỉ là bản xem trước trên thiết bị. Hoạt động chỉ xuất hiện trên hồ sơ Discord khi có SDK chính thức và bạn bật chia sẻ. Discord sử dụng biểu tượng Aurelis Music đã thiết lập trong cổng dành cho nhà phát triển.</string>
+    <string name="discord_listening_aurelis">Đang nghe nhạc bằng Aurelis Music</string>
 </resources>

@@ -1453,4 +1453,10 @@
     <string name="local_profile_edit_name">แก้ไขชื่อในเครื่อง</string>
     <string name="local_profile_remove_photo">ลบรูปในเครื่อง</string>
     <string name="local_feature_paused">ไม่พร้อมใช้งานชั่วคราว</string>
+    <string name="discord_no_credentials">ไม่ต้องใช้คีย์ API โทเค็น หรือเข้าสู่ระบบ Discord ด้วยตนเอง การแชร์เป็นทางเลือก</string>
+    <string name="discord_sdk_not_bundled">ไม่สามารถแชร์แบบสดได้ เนื่องจากบิลด์นี้ไม่มี SDK ทางการของ Discord</string>
+    <string name="discord_app_not_installed">ติดตั้ง Discord และเข้าสู่ระบบเพื่อแชร์เพลงของคุณ</string>
+    <string name="discord_official_available">แชร์ชื่อเพลงและศิลปินที่กำลังเล่นไปยัง Discord</string>
+    <string name="discord_preview_disclaimer">นี่เป็นเพียงตัวอย่างบนอุปกรณ์ กิจกรรมจะแสดงบนโปรไฟล์ Discord เมื่อมี SDK ทางการและเปิดการแชร์แล้วเท่านั้น Discord ใช้ไอคอน Aurelis Music ที่ตั้งค่าในพอร์ทัลนักพัฒนา</string>
+    <string name="discord_listening_aurelis">กำลังฟังเพลงผ่าน Aurelis Music</string>
 </resources>

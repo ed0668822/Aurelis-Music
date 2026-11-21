@@ -1447,4 +1447,10 @@
     <string name="local_profile_edit_name">Edit nama lokal</string>
     <string name="local_profile_remove_photo">Hapus foto lokal</string>
     <string name="local_feature_paused">Untuk sementara tidak tersedia</string>
+    <string name="discord_no_credentials">Tidak memerlukan kunci API, token, atau login Discord manual. Berbagi bersifat opsional.</string>
+    <string name="discord_sdk_not_bundled">Berbagi secara langsung tidak tersedia: SDK resmi Discord tidak disertakan dalam build ini.</string>
+    <string name="discord_app_not_installed">Instal Discord dan masuk untuk membagikan musikmu.</string>
+    <string name="discord_official_available">Bagikan lagu yang sedang diputar dan artisnya melalui Discord.</string>
+    <string name="discord_preview_disclaimer">Ini hanya pratinjau lokal. Aktivitas muncul di profil Discord hanya jika SDK resmi disertakan dan berbagi diaktifkan. Discord menggunakan ikon Aurelis Music yang diatur di portal pengembang.</string>
+    <string name="discord_listening_aurelis">Mendengarkan musik di Aurelis Music</string>
 </resources>

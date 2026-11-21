@@ -1502,4 +1502,10 @@
     <string name="local_profile_edit_name">Изменить локальное имя</string>
     <string name="local_profile_remove_photo">Удалить локальное фото</string>
     <string name="local_feature_paused">Временно недоступно</string>
+    <string name="discord_no_credentials">Ключ API, токен и ручной вход в Discord не нужны. Передача данных включается по желанию.</string>
+    <string name="discord_sdk_not_bundled">Публикация активности недоступна: в этой сборке нет официального SDK Discord.</string>
+    <string name="discord_app_not_installed">Установите Discord и войдите в аккаунт, чтобы делиться музыкой.</string>
+    <string name="discord_official_available">Показывайте в Discord текущую песню и исполнителя.</string>
+    <string name="discord_preview_disclaimer">Это только локальный предварительный просмотр. Активность появится в профиле Discord, только если официальный SDK включён в сборку и публикация разрешена. Discord использует значок Aurelis Music из портала разработчиков.</string>
+    <string name="discord_listening_aurelis">Слушает музыку в Aurelis Music</string>
 </resources>

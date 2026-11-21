@@ -1471,4 +1471,10 @@
     <string name="local_profile_edit_name">Modifier le nom local</string>
     <string name="local_profile_remove_photo">Supprimer la photo locale</string>
     <string name="local_feature_paused">Temporairement indisponible</string>
+    <string name="discord_no_credentials">Aucune clé API, aucun jeton ni connexion manuelle à Discord ne sont nécessaires. Le partage est facultatif.</string>
+    <string name="discord_sdk_not_bundled">Le partage en direct est indisponible : le SDK officiel de Discord manque dans cette version.</string>
+    <string name="discord_app_not_installed">Installez Discord et connectez-vous pour partager votre musique.</string>
+    <string name="discord_official_available">Partagez le morceau en cours et son artiste sur Discord.</string>
+    <string name="discord_preview_disclaimer">Ceci est un aperçu local. Il apparaît sur votre profil Discord uniquement si le SDK officiel est inclus et si le partage est activé. Discord utilise l’icône Aurelis Music enregistrée dans le portail des développeurs.</string>
+    <string name="discord_listening_aurelis">Écoute de musique avec Aurelis Music</string>
 </resources>

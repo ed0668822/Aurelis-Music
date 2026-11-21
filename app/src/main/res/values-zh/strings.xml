@@ -1447,4 +1447,10 @@
     <string name="local_profile_edit_name">编辑本地名称</string>
     <string name="local_profile_remove_photo">删除本地照片</string>
     <string name="local_feature_paused">暂时不可用</string>
+    <string name="discord_no_credentials">无需 API 密钥、令牌或手动登录 Discord。分享功能可自行选择开启。</string>
+    <string name="discord_sdk_not_bundled">无法实时分享：此版本未包含 Discord 官方 SDK。</string>
+    <string name="discord_app_not_installed">请安装 Discord 并登录，以分享你正在听的音乐。</string>
+    <string name="discord_official_available">在 Discord 上分享当前歌曲和艺人。</string>
+    <string name="discord_preview_disclaimer">这只是本地预览。只有安装了官方 SDK 并开启分享后，动态才会显示在你的 Discord 个人资料中。Discord 使用开发者门户中设置的 Aurelis Music 图标。</string>
+    <string name="discord_listening_aurelis">正在使用 Aurelis Music 听音乐</string>
 </resources>

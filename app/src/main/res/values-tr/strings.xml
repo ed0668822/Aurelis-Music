@@ -1427,4 +1427,10 @@
     <string name="local_profile_edit_name">Yerel adı düzenle</string>
     <string name="local_profile_remove_photo">Yerel fotoğrafı kaldır</string>
     <string name="local_feature_paused">Geçici olarak kullanılamıyor</string>
+    <string name="discord_no_credentials">API anahtarı, jeton veya Discord hesabına elle giriş gerekmez. Paylaşım isteğe bağlıdır.</string>
+    <string name="discord_sdk_not_bundled">Canlı paylaşım kullanılamıyor: Bu derlemede resmi Discord SDK bulunmuyor.</string>
+    <string name="discord_app_not_installed">Müziğini paylaşmak için Discord uygulamasını yükle ve giriş yap.</string>
+    <string name="discord_official_available">Çalan şarkıyı ve sanatçıyı Discord üzerinden paylaş.</string>
+    <string name="discord_preview_disclaimer">Bu yalnızca yerel bir önizlemedir. Etkinlik, resmi SDK eklendiğinde ve paylaşım açıldığında Discord profilinde görünür. Discord, geliştirici portalında tanımlanan Aurelis Music simgesini kullanır.</string>
+    <string name="discord_listening_aurelis">Aurelis Music ile müzik dinliyor</string>
 </resources>

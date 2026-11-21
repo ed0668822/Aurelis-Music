@@ -1470,4 +1470,10 @@
     <string name="local_profile_edit_name">स्थानीय नाम बदलें</string>
     <string name="local_profile_remove_photo">स्थानीय फ़ोटो हटाएँ</string>
     <string name="local_feature_paused">अस्थायी रूप से उपलब्ध नहीं</string>
+    <string name="discord_no_credentials">किसी API कुंजी, टोकन या Discord पर मैन्युअल लॉगिन की आवश्यकता नहीं है। साझा करना वैकल्पिक है।</string>
+    <string name="discord_sdk_not_bundled">लाइव साझा करना उपलब्ध नहीं है: इस बिल्ड में Discord का आधिकारिक SDK शामिल नहीं है।</string>
+    <string name="discord_app_not_installed">अपना संगीत साझा करने के लिए Discord इंस्टॉल करें और साइन इन करें।</string>
+    <string name="discord_official_available">Discord पर वर्तमान गीत और कलाकार का नाम साझा करें।</string>
+    <string name="discord_preview_disclaimer">यह केवल स्थानीय पूर्वावलोकन है। गतिविधि आपके Discord प्रोफ़ाइल पर तभी दिखाई देगी जब आधिकारिक SDK शामिल हो और साझा करना चालू हो। Discord डेवलपर पोर्टल में सेट किया गया Aurelis Music आइकन उपयोग करता है।</string>
+    <string name="discord_listening_aurelis">Aurelis Music पर संगीत सुन रहे हैं</string>
 </resources>

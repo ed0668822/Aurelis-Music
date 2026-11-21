@@ -1510,4 +1510,10 @@
     <string name="local_profile_edit_name">Edytuj nazwę profilu</string>
     <string name="local_profile_remove_photo">Usuń lokalne zdjęcie</string>
     <string name="local_feature_paused">Tymczasowo niedostępne</string>
+    <string name="discord_no_credentials">Nie potrzebujesz klucza API, tokenu ani ręcznego logowania do Discorda. Udostępnianie jest opcjonalne.</string>
+    <string name="discord_sdk_not_bundled">Udostępnianie na żywo jest niedostępne: ta wersja nie zawiera oficjalnego SDK Discorda.</string>
+    <string name="discord_app_not_installed">Zainstaluj Discord i zaloguj się, aby udostępniać muzykę.</string>
+    <string name="discord_official_available">Udostępniaj aktualnie odtwarzany utwór i wykonawcę na Discordzie.</string>
+    <string name="discord_preview_disclaimer">To tylko podgląd lokalny. Aktywność pojawi się na profilu Discord wyłącznie po dołączeniu oficjalnego SDK i włączeniu udostępniania. Discord korzysta z ikony Aurelis Music ustawionej w portalu dewelopera.</string>
+    <string name="discord_listening_aurelis">Słucha muzyki w Aurelis Music</string>
 </resources>
