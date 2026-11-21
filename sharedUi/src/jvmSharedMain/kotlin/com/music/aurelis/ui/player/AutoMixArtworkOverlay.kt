@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.music.aurelis.data.settings.AutoMixArtworkTuning
 import com.music.aurelis.data.model.Song
 import com.music.aurelis.data.model.artworkAt
 import com.music.aurelis.data.model.PLAYER_ART_PX
@@ -93,7 +94,7 @@ fun AutoMixArtworkOverlay(
     if (outgoing.isNullOrBlank() && incoming.isNullOrBlank()) return
 
     val progress = mix.progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
-    val eased = progress * progress * (3f - 2f * progress)
+    val eased = AutoMixArtworkTuning.revealProgress(progress)
     Box(modifier) {
         if (!outgoing.isNullOrBlank()) {
             AsyncImage(
