@@ -437,7 +437,14 @@ dependencies {
     // The full android artifact, not onnxruntime-mobile: mobile only loads .ort
     // files, which would put an offline conversion step between the model and
     // the app for a saving that does not matter in a self-distributed APK.
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.28.0")
+    // Optional locally verified ARM64-only reduced CPU runtime.
+    // Never make regular CI depend on a private/prebuilt AAR.
+    val slimAutomixRuntime = file("libs/onnxruntime-android-1.28.0-automix.aar")
+    if (slimAutomixRuntime.isFile) {
+        implementation(files(slimAutomixRuntime))
+    } else {
+        implementation("com.microsoft.onnxruntime:onnxruntime-android:1.28.0")
+    }
 
     // ---- Casting: Google Cast sender + the route discovery it sits on ----
     // The framework and the router only. media3-cast is left out on purpose:
