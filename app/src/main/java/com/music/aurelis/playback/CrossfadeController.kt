@@ -817,6 +817,7 @@ class CrossfadeController(
         AppSettings.smartMixPreview.value = null
         filters.open()
         filters.parkEchoes()
+        filters.parkExperimentalEchoes()
         onBlendHeadroom(1f)
     }
 
@@ -1126,13 +1127,22 @@ class CrossfadeController(
             // is known. The pure planner retains its 45 s default elsewhere.
             minSmartDurationSeconds = if (incomingDurationSeconds >= 20.0) 20.0 else 45.0,
         )
-        val plan = adjustAutoMixTiming(
+        val timedPlan = adjustAutoMixTiming(
             original = basePlan,
             options = requestedOptions,
             outgoingLength = duration / 1000.0,
             incomingLength = incomingDurationSeconds,
             outgoingBpm = currentAnalysis.bpm,
             beatConfidence = currentAnalysis.beatConfidence,
+            playbackTime = playbackSeconds,
+        )
+        val plan = alignAutoMixBeats(
+            original = timedPlan,
+            options = requestedOptions,
+            outgoing = currentAnalysis,
+            incoming = nextAnalysis,
+            outgoingLength = duration / 1000.0,
+            incomingLength = incomingDurationSeconds,
             playbackTime = playbackSeconds,
         )
         // One line per distinct verdict rather than one per 250ms tick, so the
