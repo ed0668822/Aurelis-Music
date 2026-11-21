@@ -13,8 +13,8 @@ class ReplayYearProjectionTest {
         totalMs = 2500L,
         totalPlays = 3,
         songs = listOf(
-            RankedSong(Song(videoId = "a", title = "A", artist = "Artist"), 1500L, 2),
-            RankedSong(Song(videoId = "b", title = "B", artist = "Artist"), 1000L, 1),
+            RankedSong(Song(videoId = "a", title = "A", artist = "Artist", thumbnailUrl = null, fromAutoplay = false), 1500L, 2),
+            RankedSong(Song(videoId = "b", title = "B", artist = "Artist", thumbnailUrl = null, fromAutoplay = false), 1000L, 1),
         ),
         artists = emptyList(),
         albums = emptyList(),

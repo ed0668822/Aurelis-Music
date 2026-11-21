@@ -359,6 +359,7 @@ import com.music.aurelis.data.OfflinePlaylists
 import com.music.aurelis.data.toGroup
 import com.music.aurelis.data.settings.LibraryViewType
 import com.music.aurelis.data.settings.LocalMusicSort
+import com.music.aurelis.ui.screens.MixesScreen
 import com.music.aurelis.ui.screens.HomeScreen
 import com.music.aurelis.ui.screens.LibraryGridPage
 import com.music.aurelis.ui.screens.LibraryScreen
@@ -920,6 +921,7 @@ private fun AurelisApp(
     val selectedMoodGenre by viewModel.selectedMoodGenre.collectAsStateWithLifecycle()
     val moodGenreShelves by viewModel.moodGenreShelves.collectAsStateWithLifecycle()
     val libraryState by viewModel.library.collectAsStateWithLifecycle()
+    val mixesState by viewModel.mixes.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val searchSource by viewModel.searchSource.collectAsStateWithLifecycle()
     val libraryResults by viewModel.libraryResults.collectAsStateWithLifecycle()
@@ -1253,6 +1255,7 @@ private fun AurelisApp(
     val exploreListState = rememberLazyListState()
     val moodGenreListState = rememberLazyListState()
     val libraryListState = rememberLazyListState()
+    val mixesListState = rememberLazyListState()
     val historyListState = rememberLazyListState()
     val libraryShowAllGridState = rememberLazyGridState()
     val moodsGridState = rememberLazyGridState()
@@ -1261,6 +1264,7 @@ private fun AurelisApp(
         TAB_HOME -> homeListState
         TAB_EXPLORE -> if (selectedMoodGenre == null) exploreListState else moodGenreListState
         TAB_LIBRARY -> libraryListState
+        TAB_RADIO -> mixesListState
         else -> searchListState
     }
 
@@ -1269,12 +1273,14 @@ private fun AurelisApp(
     val homePull = rememberPullToRefreshState()
     val explorePull = rememberPullToRefreshState()
     val libraryPull = rememberPullToRefreshState()
+    val mixesPull = rememberPullToRefreshState()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val currentFeed = when {
         route != null || detail != null -> null
         selectedTab == TAB_HOME -> MainViewModel.Feed.HOME
         selectedTab == TAB_EXPLORE -> MainViewModel.Feed.EXPLORE
         selectedTab == TAB_LIBRARY -> MainViewModel.Feed.LIBRARY
+        selectedTab == TAB_RADIO -> MainViewModel.Feed.MIXES
         else -> null
     }
     // The lead shelf is listening history, so opening Home after playing
@@ -1286,10 +1292,14 @@ private fun AurelisApp(
         if (currentFeed == MainViewModel.Feed.LIBRARY) viewModel.onLibraryShown()
     }
 
+    LaunchedEffect(currentFeed, signedIn, account) {
+        if (currentFeed == MainViewModel.Feed.MIXES) viewModel.onMixesShown()
+    }
     val currentPull = when (currentFeed) {
         MainViewModel.Feed.HOME -> homePull
         MainViewModel.Feed.EXPLORE -> explorePull
         MainViewModel.Feed.LIBRARY -> libraryPull
+        MainViewModel.Feed.MIXES -> mixesPull
         null -> null
     }
     val scrolled by remember(currentListState) {
@@ -1369,18 +1379,20 @@ private fun AurelisApp(
     val playLabel = stringResource(R.string.play)
     val exploreLabel = stringResource(R.string.explore)
     val libraryLabel = stringResource(R.string.library)
+    val radioLabel = stringResource(R.string.radio)
     val searchLabel = stringResource(R.string.search)
     val historyLabel = stringResource(R.string.history)
     val replayLabel = stringResource(R.string.replay)
     val queueLabel = stringResource(R.string.queue)
     val sharedLinkLabel = stringResource(R.string.shared_link)
     val openedFileLabel = stringResource(R.string.opened_file)
-    val tabs = remember(homeLabel, exploreLabel, libraryLabel, searchLabel) {
+    val tabs = remember(homeLabel, exploreLabel, libraryLabel, searchLabel, radioLabel) {
         listOf(
             BottomTab(homeLabel, AurelisIcons.Home),
             BottomTab(exploreLabel, AurelisIcons.TabExplore),
             BottomTab(libraryLabel, AurelisIcons.TabLibrary),
             BottomTab(searchLabel, AurelisIcons.TabSearch),
+            BottomTab(radioLabel, com.music.aurelis.ui.icons.SfIcons.Radio),
         )
     }
 
@@ -3570,6 +3582,29 @@ private fun AurelisApp(
                                 refreshing = MainViewModel.Feed.EXPLORE in refreshing,
                                 onRefresh = { viewModel.refresh(MainViewModel.Feed.EXPLORE) },
                                 pullState = explorePull,
+                                contentPadding = listPadding,
+                            )
+                            TAB_RADIO -> MixesScreen(
+                                title = radioLabel,
+                                state = mixesState,
+                                signedIn = signedIn,
+                                listState = mixesListState,
+                                onItemClick = { item ->
+                                    item.browseId?.let { browseId ->
+                                        viewModel.openDetail(
+                                            browseId = browseId,
+                                            title = item.title,
+                                            subtitle = item.subtitle,
+                                            thumbnailUrl = item.thumbnailUrl,
+                                        )
+                                    }
+                                },
+                                onItemLongPress = onBrowseLongPress,
+                                onRetry = viewModel::loadMixes,
+                                onSignIn = { webSession = WebSessionMode.SIGN_IN },
+                                refreshing = MainViewModel.Feed.MIXES in refreshing,
+                                onRefresh = { viewModel.refresh(MainViewModel.Feed.MIXES) },
+                                pullState = mixesPull,
                                 contentPadding = listPadding,
                             )
                             TAB_SEARCH -> SearchScreen(
@@ -6544,3 +6579,4 @@ private const val TAB_HOME = 0
 private const val TAB_EXPLORE = 1
 private const val TAB_LIBRARY = 2
 private const val TAB_SEARCH = 3
+private const val TAB_RADIO = 4

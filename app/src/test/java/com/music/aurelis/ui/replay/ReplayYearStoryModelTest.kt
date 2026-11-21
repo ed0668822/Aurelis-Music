@@ -19,6 +19,8 @@ class ReplayYearStoryModelTest {
                     videoId = "song" + index,
                     title = "Track " + index,
                     artist = if (index < 3) "Lead" else "Second",
+                    thumbnailUrl = null,
+                    fromAutoplay = false,
                 ),
                 (20 - index).toLong() * 1000L,
                 1,

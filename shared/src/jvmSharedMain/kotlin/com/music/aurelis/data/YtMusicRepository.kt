@@ -1204,6 +1204,37 @@ object YtMusicRepository {
         InnertubeParser.parseTwoRowItemsDeep(Innertube.browse("FEmusic_mixed_for_you"))
     }
 
+    /** User-facing mixes are localized; grouping uses their stable English titles. */
+    suspend fun mixedForYouKeyed(): Result<List<com.music.aurelis.data.model.KeyedMix>> =
+        call("mixedForYouKeyed") {
+            if (Innertube.cookie == null) return@call emptyList()
+            coroutineScope {
+                val shown = async {
+                    InnertubeParser.parseTwoRowItemsDeep(Innertube.browse("FEmusic_mixed_for_you"))
+                }
+                val english = if (Innertube.currentLanguage.startsWith("en")) null else async {
+                    try {
+                        InnertubeParser.parseTwoRowItemsDeep(
+                            Innertube.browse("FEmusic_mixed_for_you", language = "en"),
+                        )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Radio mix title fallback: ${e.message}")
+                        null
+                    }
+                }
+                val items = shown.await()
+                val names = english?.await().orEmpty()
+                    .associate { (it.browseId ?: it.title) to it.title }
+                items.map {
+                    com.music.aurelis.data.model.KeyedMix(
+                        it, names[it.browseId ?: it.title] ?: it.title,
+                    )
+                }
+            }
+        }
+
     /**
      * Listening history for a caller that can live with it being a minute or
      * two old — Top Picks, built right after Recents fetched the same feed.

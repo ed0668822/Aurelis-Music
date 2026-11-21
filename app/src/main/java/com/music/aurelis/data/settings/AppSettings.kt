@@ -1147,7 +1147,7 @@ object AppSettings {
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, true)
-        lastMainTab.value = prefs.getInt(KEY_LAST_MAIN_TAB, 0).coerceIn(0, 3)
+        lastMainTab.value = prefs.getInt(KEY_LAST_MAIN_TAB, 0).coerceIn(0, 4)
         localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
             ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }
             ?: "SONGS"
@@ -2082,7 +2082,7 @@ object AppSettings {
     }
 
     fun setLastMainTab(tab: Int) {
-        if (tab !in 0..3 || lastMainTab.value == tab) return
+        if (tab !in 0..4 || lastMainTab.value == tab) return
         lastMainTab.value = tab
         prefs.edit().putInt(KEY_LAST_MAIN_TAB, tab).apply()
     }

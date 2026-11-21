@@ -51,6 +51,7 @@ import com.music.aurelis.data.model.Account
 import com.music.aurelis.data.model.AccountChannel
 import com.music.aurelis.data.model.BrowseType
 import com.music.aurelis.data.model.DetailPage
+import com.music.aurelis.data.model.KeyedMix
 import com.music.aurelis.data.model.HomeShelf
 import com.music.aurelis.data.model.withoutRepeatsOf
 import com.music.aurelis.data.model.LibraryPage
@@ -171,6 +172,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _topPicksLoading = MutableStateFlow(false)
     val topPicksLoading: StateFlow<Boolean> = _topPicksLoading.asStateFlow()
     private var topPicksJob: Job? = null
+
+    private val _mixes = MutableStateFlow<UiState<List<KeyedMix>>>(UiState.Loading)
+    val mixes: StateFlow<UiState<List<KeyedMix>>> = _mixes.asStateFlow()
 
     private val _explore = MutableStateFlow<UiState<List<MoodGenreSection>>>(UiState.Loading)
     val explore: StateFlow<UiState<List<MoodGenreSection>>> = _explore.asStateFlow()
@@ -1599,7 +1603,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * as one flag: a pull on Library while Home is still refreshing in the
      * background shouldn't leave the wrong tab showing a loader.
      */
-    enum class Feed { HOME, EXPLORE, LIBRARY }
+    enum class Feed { HOME, EXPLORE, LIBRARY, MIXES }
 
     private val _refreshing = MutableStateFlow(emptySet<Feed>())
     val refreshing: StateFlow<Set<Feed>> = _refreshing.asStateFlow()
@@ -1612,7 +1616,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun refresh(feed: Feed) {
         if (feed in _refreshing.value) return
-        if (feed == Feed.LIBRARY && !_signedIn.value) return
+        if ((feed == Feed.LIBRARY || feed == Feed.MIXES) && !_signedIn.value) return
         val identity = listenerKey()
         _refreshing.value = _refreshing.value + feed
         viewModelScope.launch {
@@ -1620,9 +1624,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 Feed.HOME -> refreshHome(identity)
                 Feed.EXPLORE -> fetchExplore()
                 Feed.LIBRARY -> fetchLibrary(identity)
+                Feed.MIXES -> fetchMixes(identity)
             }
             _refreshing.value = _refreshing.value - feed
         }
+    }
+
+    private var mixesRequestedFor: String? = null
+    private var mixesRequested = false
+
+    fun loadMixes() {
+        mixesRequested = true
+        val identity = listenerKey()
+        mixesRequestedFor = identity
+        _mixes.value = UiState.Loading
+        viewModelScope.launch { fetchMixes(identity) }
+    }
+
+    fun onMixesShown() {
+        if (!_signedIn.value) return
+        if (!mixesRequested || mixesRequestedFor != listenerKey()) loadMixes()
+    }
+
+    private suspend fun fetchMixes(identity: String?) {
+        val state: UiState<List<KeyedMix>> = YtMusicRepository.mixedForYouKeyed().fold(
+            onSuccess = { UiState.Success(it) },
+            onFailure = { UiState.Error(it.friendly()) },
+        )
+        if (identity == listenerKey()) _mixes.value = state
     }
 
     fun loadExplore() {

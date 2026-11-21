@@ -284,4 +284,6 @@
     <string name="queue_selected_count">%1$d selected</string>
     <string name="queue_undo">Undo</string>
     <string name="best_part">Best Part</string>
+    <string name="mixes_none">No mixes yet. Keep listening and YouTube Music will make some for you.</string>
+    <string name="mixes_yours">Your Mixes</string>
 </resources>

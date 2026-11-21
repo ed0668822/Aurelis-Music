@@ -199,4 +199,6 @@
     <string name="search_library_hint">Canciones, artistas y álbumes</string>
     <string name="search_library_no_results">Nada en Música local coincide con “%1$s”.</string>
     <string name="best_part">Mejor parte</string>
+    <string name="mixes_none">Todavía no hay mezclas. Sigue escuchando y YouTube Music preparará algunas para ti.</string>
+    <string name="mixes_yours">Tus mezclas</string>
 </resources>
