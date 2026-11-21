@@ -29,8 +29,24 @@ object LocalProfile {
         if (!::application.isInitialized) return
         val preferences = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         displayName.value = preferences.getString(NAME, "").orEmpty()
-        photoUri.value = preferences.getString(PHOTO, null)?.takeIf { saved ->
-            Uri.parse(saved).path?.let { File(it).isFile } == true
+        // Older builds saved an absolute file:// URI; newer builds persist only
+        // the basename so Android's device-to-device restore can relocate the
+        // private app directory without losing the photo.
+        val dir = File(application.filesDir, "aurelis_profile").canonicalFile
+        val saved = preferences.getString(PHOTO, null)
+        val resolved = saved?.let { value ->
+            val candidate = if (value.startsWith("file:")) {
+                Uri.parse(value).path?.let(::File)
+            } else {
+                File(dir, value)
+            }
+            candidate?.takeIf { image ->
+                image.canonicalFile.parentFile == dir && image.isFile
+            }
+        }
+        photoUri.value = resolved?.let { Uri.fromFile(it).toString() }
+        if (resolved != null && saved != resolved.name) {
+            preferences.edit().putString(PHOTO, resolved.name).apply()
         }
     }
 
@@ -69,7 +85,7 @@ object LocalProfile {
             val previous = photoUri.value
             val newUri = Uri.fromFile(file).toString()
             application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .edit().putString(PHOTO, newUri).apply()
+                .edit().putString(PHOTO, file.name).apply()
             photoUri.value = newUri
             previous?.let { old ->
                 Uri.parse(old).path?.let { oldPath ->
@@ -80,6 +96,12 @@ object LocalProfile {
         if (saved.isFailure) file.delete()
         return saved.isSuccess
     }
+
+    /** Returns only the non-sensitive local display name for portable JSON backups. */
+    fun exportDisplayName(): String = displayName.value
+
+    /** Updates the existing profile during import without touching its image. */
+    fun importDisplayName(name: String) = setName(name)
 
     fun clearPhoto() {
         if (!::application.isInitialized) return
