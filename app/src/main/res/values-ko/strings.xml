@@ -1372,4 +1372,15 @@
     <string name="hide_lyrics_preview">가사 미리보기 숨기기</string>
     <string name="hide_lyrics_preview_subtitle">탐색 막대 위의 가사 한 줄을 숨깁니다. 전체 가사는 계속 볼 수 있습니다.</string>
     <string name="sleep_timer_fade_out">마지막 30초 동안 음량 서서히 줄이기</string>
+    <string name="find_a_playlist">재생목록 찾기</string>
+    <string name="no_playlists_match">“%1$s”와(과) 일치하는 재생목록이 없습니다</string>
+    <string name="queue_selected_count">%1$d개 선택됨</string>
+    <string name="queue_playlist_added">%2$d곡 중 %1$d곡 추가됨</string>
+    <string name="queue_playlist_partial">%1$s (호환되지 않음 %2$d, 이미 있음 %3$d, 실패 %4$d)</string>
+    <string name="queue_undo_action">실행취소</string>
+    <string name="queue_removed_song">%1$s 제거됨</string>
+    <string name="queue_cleared">대기열을 비웠습니다</string>
+    <string name="queue_selection_remove">제거</string>
+    <string name="queue_add_to_playlist">재생목록에 추가</string>
+    <string name="queue_download">다운로드</string>
 </resources>

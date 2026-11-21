@@ -1562,4 +1562,15 @@
     <string name="hide_lyrics_preview">Ukryj podgląd tekstu</string>
     <string name="hide_lyrics_preview_subtitle">Ukrywa wers nad paskiem; pełny tekst pozostaje dostępny.</string>
     <string name="sleep_timer_fade_out">Stopniowo wyciszaj przez ostatnie 30 sekund</string>
+    <string name="find_a_playlist">Znajdź playlistę</string>
+    <string name="no_playlists_match">Brak playlist pasujących do „%1$s”</string>
+    <string name="queue_selected_count">Wybrano: %1$d</string>
+    <string name="queue_playlist_added">Dodano %1$d z %2$d utworów</string>
+    <string name="queue_playlist_partial">%1$s (niezgodne: %2$d, już dodane: %3$d, błędy: %4$d)</string>
+    <string name="queue_undo_action">Cofnij</string>
+    <string name="queue_removed_song">Usunięto %1$s</string>
+    <string name="queue_cleared">Kolejka wyczyszczona</string>
+    <string name="queue_selection_remove">Usuń</string>
+    <string name="queue_add_to_playlist">Dodaj do playlisty</string>
+    <string name="queue_download">Pobierz</string>
 </resources>

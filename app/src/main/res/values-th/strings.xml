@@ -1505,4 +1505,15 @@
     <string name="hide_lyrics_preview">ซ่อนตัวอย่างเนื้อเพลง</string>
     <string name="hide_lyrics_preview_subtitle">ซ่อนบรรทัดเหนือแถบเล่นเพลง โดยยังเปิดเนื้อเพลงเต็มได้</string>
     <string name="sleep_timer_fade_out">ค่อย ๆ ลดเสียงในช่วง 30 วินาทีสุดท้าย</string>
+    <string name="find_a_playlist">ค้นหาเพลย์ลิสต์</string>
+    <string name="no_playlists_match">ไม่มีเพลย์ลิสต์ที่ตรงกับ “%1$s”</string>
+    <string name="queue_selected_count">เลือก %1$d รายการ</string>
+    <string name="queue_playlist_added">เพิ่มแล้ว %1$d จาก %2$d เพลง</string>
+    <string name="queue_playlist_partial">%1$s (ใช้ไม่ได้ %2$d, มีอยู่แล้ว %3$d, ล้มเหลว %4$d)</string>
+    <string name="queue_undo_action">เลิกทำ</string>
+    <string name="queue_removed_song">นำ %1$s ออกแล้ว</string>
+    <string name="queue_cleared">ล้างคิวแล้ว</string>
+    <string name="queue_selection_remove">นำออก</string>
+    <string name="queue_add_to_playlist">เพิ่มลงเพลย์ลิสต์</string>
+    <string name="queue_download">ดาวน์โหลด</string>
 </resources>

@@ -1554,4 +1554,15 @@
     <string name="hide_lyrics_preview">Скрыть предпросмотр текста</string>
     <string name="hide_lyrics_preview_subtitle">Скрывает строку над полосой; полный текст песни остаётся доступен.</string>
     <string name="sleep_timer_fade_out">Плавно снижать громкость в последние 30 секунд</string>
+    <string name="find_a_playlist">Найти плейлист</string>
+    <string name="no_playlists_match">Нет плейлистов по запросу «%1$s»</string>
+    <string name="queue_selected_count">Выбрано: %1$d</string>
+    <string name="queue_playlist_added">Добавлено %1$d из %2$d треков</string>
+    <string name="queue_playlist_partial">%1$s (несовместимых: %2$d, уже есть: %3$d, ошибок: %4$d)</string>
+    <string name="queue_undo_action">Отменить</string>
+    <string name="queue_removed_song">Удалено: %1$s</string>
+    <string name="queue_cleared">Очередь очищена</string>
+    <string name="queue_selection_remove">Удалить</string>
+    <string name="queue_add_to_playlist">Добавить в плейлист</string>
+    <string name="queue_download">Загрузить</string>
 </resources>

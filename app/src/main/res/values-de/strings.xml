@@ -1522,4 +1522,15 @@
     <string name="hide_lyrics_preview">Liedtextvorschau ausblenden</string>
     <string name="hide_lyrics_preview_subtitle">Blendet die Textzeile über der Zeitleiste aus. Der vollständige Liedtext bleibt verfügbar.</string>
     <string name="sleep_timer_fade_out">In den letzten 30 Sekunden ausblenden</string>
+    <string name="find_a_playlist">Playlist finden</string>
+    <string name="no_playlists_match">Keine Playlists für „%1$s“</string>
+    <string name="queue_selected_count">%1$d ausgewählt</string>
+    <string name="queue_playlist_added">%1$d von %2$d Songs hinzugefügt</string>
+    <string name="queue_playlist_partial">%1$s (%2$d nicht kompatibel, %3$d bereits vorhanden, %4$d fehlgeschlagen)</string>
+    <string name="queue_undo_action">Rückgängig</string>
+    <string name="queue_removed_song">%1$s entfernt</string>
+    <string name="queue_cleared">Warteschlange geleert</string>
+    <string name="queue_selection_remove">Entfernen</string>
+    <string name="queue_add_to_playlist">Zur Playlist hinzufügen</string>
+    <string name="queue_download">Herunterladen</string>
 </resources>

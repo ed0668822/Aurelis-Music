@@ -1479,4 +1479,15 @@
     <string name="hide_lyrics_preview">Şarkı sözü önizlemesini gizle</string>
     <string name="hide_lyrics_preview_subtitle">Çubuğun üstündeki satırı gizler; tam şarkı sözleri erişilebilir kalır.</string>
     <string name="sleep_timer_fade_out">Son 30 saniyede sesi yavaşça kıs</string>
+    <string name="find_a_playlist">Çalma listesi bul</string>
+    <string name="no_playlists_match">“%1$s” ile eşleşen çalma listesi yok</string>
+    <string name="queue_selected_count">%1$d seçildi</string>
+    <string name="queue_playlist_added">%2$d şarkıdan %1$d tanesi eklendi</string>
+    <string name="queue_playlist_partial">%1$s (%2$d uyumsuz, %3$d zaten var, %4$d başarısız)</string>
+    <string name="queue_undo_action">Geri al</string>
+    <string name="queue_removed_song">%1$s kaldırıldı</string>
+    <string name="queue_cleared">Sıra temizlendi</string>
+    <string name="queue_selection_remove">Kaldır</string>
+    <string name="queue_add_to_playlist">Çalma listesine ekle</string>
+    <string name="queue_download">İndir</string>
 </resources>

@@ -1522,4 +1522,15 @@
     <string name="hide_lyrics_preview">गीत के बोल का पूर्वावलोकन छिपाएँ</string>
     <string name="hide_lyrics_preview_subtitle">प्रगति पट्टी के ऊपर की पंक्ति छिपाएँ; पूरे बोल फिर भी उपलब्ध रहेंगे।</string>
     <string name="sleep_timer_fade_out">आख़िरी 30 सेकंड में आवाज़ धीरे-धीरे कम करें</string>
+    <string name="find_a_playlist">प्लेलिस्ट खोजें</string>
+    <string name="no_playlists_match">“%1$s” से कोई प्लेलिस्ट मेल नहीं खाती</string>
+    <string name="queue_selected_count">%1$d चुने गए</string>
+    <string name="queue_playlist_added">%2$d में से %1$d गाने जोड़े गए</string>
+    <string name="queue_playlist_partial">%1$s (%2$d असंगत, %3$d पहले से मौजूद, %4$d विफल)</string>
+    <string name="queue_undo_action">पहले जैसा करें</string>
+    <string name="queue_removed_song">%1$s हटाया गया</string>
+    <string name="queue_cleared">कतार खाली की गई</string>
+    <string name="queue_selection_remove">हटाएं</string>
+    <string name="queue_add_to_playlist">प्लेलिस्ट में जोड़ें</string>
+    <string name="queue_download">डाउनलोड करें</string>
 </resources>

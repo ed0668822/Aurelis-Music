@@ -1499,4 +1499,15 @@
     <string name="hide_lyrics_preview">Sembunyikan pratinjau lirik</string>
     <string name="hide_lyrics_preview_subtitle">Sembunyikan baris lirik di atas bilah; lirik lengkap tetap tersedia.</string>
     <string name="sleep_timer_fade_out">Perlahan kecilkan volume selama 30 detik terakhir</string>
+    <string name="find_a_playlist">Cari playlist</string>
+    <string name="no_playlists_match">Tidak ada playlist yang cocok dengan “%1$s”</string>
+    <string name="queue_selected_count">%1$d dipilih</string>
+    <string name="queue_playlist_added">%1$d dari %2$d lagu ditambahkan</string>
+    <string name="queue_playlist_partial">%1$s (%2$d tidak kompatibel, %3$d sudah ada, %4$d gagal)</string>
+    <string name="queue_undo_action">Urungkan</string>
+    <string name="queue_removed_song">%1$s dihapus</string>
+    <string name="queue_cleared">Antrean dikosongkan</string>
+    <string name="queue_selection_remove">Hapus</string>
+    <string name="queue_add_to_playlist">Tambahkan ke playlist</string>
+    <string name="queue_download">Unduh</string>
 </resources>

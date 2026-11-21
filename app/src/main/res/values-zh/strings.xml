@@ -1499,4 +1499,15 @@
     <string name="hide_lyrics_preview">隐藏歌词预览</string>
     <string name="hide_lyrics_preview_subtitle">隐藏进度条上方的歌词行，仍可查看完整歌词。</string>
     <string name="sleep_timer_fade_out">在最后 30 秒逐渐降低音量</string>
+    <string name="find_a_playlist">查找播放列表</string>
+    <string name="no_playlists_match">没有与“%1$s”匹配的播放列表</string>
+    <string name="queue_selected_count">已选择 %1$d 项</string>
+    <string name="queue_playlist_added">已添加 %1$d/%2$d 首歌曲</string>
+    <string name="queue_playlist_partial">%1$s（%2$d 首不兼容，%3$d 首已存在，%4$d 首失败）</string>
+    <string name="queue_undo_action">撤销</string>
+    <string name="queue_removed_song">已移除 %1$s</string>
+    <string name="queue_cleared">已清空队列</string>
+    <string name="queue_selection_remove">移除</string>
+    <string name="queue_add_to_playlist">添加到播放列表</string>
+    <string name="queue_download">下载</string>
 </resources>

@@ -1439,4 +1439,15 @@
     <string name="hide_lyrics_preview">Ẩn xem trước lời bài hát</string>
     <string name="hide_lyrics_preview_subtitle">Ẩn dòng lời phía trên thanh phát; vẫn có thể xem toàn bộ lời bài hát.</string>
     <string name="sleep_timer_fade_out">Giảm dần âm lượng trong 30 giây cuối</string>
+    <string name="find_a_playlist">Tìm danh sách phát</string>
+    <string name="no_playlists_match">Không có danh sách phát nào khớp với “%1$s”</string>
+    <string name="queue_selected_count">Đã chọn %1$d</string>
+    <string name="queue_playlist_added">Đã thêm %1$d/%2$d bài hát</string>
+    <string name="queue_playlist_partial">%1$s (%2$d không tương thích, %3$d đã có, %4$d thất bại)</string>
+    <string name="queue_undo_action">Hoàn tác</string>
+    <string name="queue_removed_song">Đã xóa %1$s</string>
+    <string name="queue_cleared">Đã xóa hàng đợi</string>
+    <string name="queue_selection_remove">Xóa</string>
+    <string name="queue_add_to_playlist">Thêm vào danh sách phát</string>
+    <string name="queue_download">Tải xuống</string>
 </resources>

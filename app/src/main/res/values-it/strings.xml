@@ -1461,4 +1461,15 @@
     <string name="hide_lyrics_preview">Nascondi anteprima del testo</string>
     <string name="hide_lyrics_preview_subtitle">Nasconde la riga sopra la barra; il testo completo resta disponibile.</string>
     <string name="sleep_timer_fade_out">Diminuisci gradualmente il volume negli ultimi 30 secondi</string>
+    <string name="find_a_playlist">Cerca una playlist</string>
+    <string name="no_playlists_match">Nessuna playlist corrisponde a “%1$s”</string>
+    <string name="queue_selected_count">Selezionati: %1$d</string>
+    <string name="queue_playlist_added">Aggiunti %1$d brani su %2$d</string>
+    <string name="queue_playlist_partial">%1$s (%2$d incompatibili, %3$d già presenti, %4$d non riusciti)</string>
+    <string name="queue_undo_action">Annulla</string>
+    <string name="queue_removed_song">%1$s rimosso</string>
+    <string name="queue_cleared">Coda svuotata</string>
+    <string name="queue_selection_remove">Rimuovi</string>
+    <string name="queue_add_to_playlist">Aggiungi alla playlist</string>
+    <string name="queue_download">Download</string>
 </resources>

@@ -1527,4 +1527,15 @@
     <string name="hide_lyrics_preview">הסתרת תצוגת מילים מקדימה</string>
     <string name="hide_lyrics_preview_subtitle">הסתרת שורת המילים מעל פס ההתקדמות; המילים המלאות עדיין זמינות.</string>
     <string name="sleep_timer_fade_out">הנמכת עוצמת השמע בהדרגה ב-30 השניות האחרונות</string>
+    <string name="find_a_playlist">חיפוש פלייליסט</string>
+    <string name="no_playlists_match">אין פלייליסטים שתואמים ל־“%1$s”</string>
+    <string name="queue_selected_count">%1$d נבחרו</string>
+    <string name="queue_playlist_added">נוספו %1$d מתוך %2$d שירים</string>
+    <string name="queue_playlist_partial">%1$s (%2$d לא תואמים, %3$d כבר קיימים, %4$d נכשלו)</string>
+    <string name="queue_undo_action">ביטול</string>
+    <string name="queue_removed_song">הוסר %1$s</string>
+    <string name="queue_cleared">התור נוקה</string>
+    <string name="queue_selection_remove">הסר</string>
+    <string name="queue_add_to_playlist">הוספה לפלייליסט</string>
+    <string name="queue_download">הורד</string>
 </resources>
