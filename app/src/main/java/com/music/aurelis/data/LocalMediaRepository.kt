@@ -166,6 +166,7 @@ object LocalMediaRepository {
             val tags = scanned[uri] ?: return@map song
             song.copy(
                 albumName = song.albumName ?: tags.albumName,
+                thumbnailUrl = song.thumbnailUrl ?: tags.artworkUrl,
                 localDateAddedSeconds = tags.dateAddedSeconds,
                 localDateModifiedSeconds = tags.dateModifiedSeconds,
             )
@@ -269,12 +270,37 @@ object LocalMediaRepository {
                     if (filterNonMusic && !isEligibleLocalMusic(durationMs, displayName, path)) continue
                     if (treeUri.isNotBlank() && !isInFolder(path, chosen)) continue
 
-                    songs.add(columns.song(cursor, videoIdByUri))
+                    songs.add(fillMissingLocalTags(context, columns.song(cursor, videoIdByUri)))
                 }
             }
         }.onFailure { Log.w(TAG, "Failed scanning device local music: ${it.message}") }
 
         extraLocalMusic?.invoke(context, songs) ?: songs
+    }
+
+    /**
+     * MediaStore can mark the artist as unknown even when FLAC/MP3 tags exist.
+     * Probe only incomplete rows, on the scanner's IO dispatcher. Never replace
+     * usable MediaStore tags with a guessed online match.
+     */
+    private fun fillMissingLocalTags(context: Context, song: Song): Song {
+        val unknownArtist = song.artist.equals("Unknown Artist", ignoreCase = true)
+        if (!unknownArtist && !song.albumName.isNullOrBlank()) return song
+        val uri = song.localUri ?: return song
+        return runCatching {
+            val retriever = MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(context, Uri.parse(uri))
+                val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST).cleanTag()
+                val album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM).cleanTag()
+                song.copy(
+                    artist = if (unknownArtist) artist ?: song.artist else song.artist,
+                    albumName = song.albumName ?: album,
+                )
+            } finally {
+                retriever.release()
+            }
+        }.getOrDefault(song)
     }
 
     private val AUDIO_PROJECTION = arrayOf(
