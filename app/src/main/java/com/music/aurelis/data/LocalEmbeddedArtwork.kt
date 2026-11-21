@@ -22,7 +22,11 @@ object LocalEmbeddedArtwork {
             .joinToString("") { "%02x".format(it) }
         val directory = File(context.cacheDir, "embedded-album-art")
         val cover = File(directory, "$name.jpg")
-        if (cover.isFile && cover.length() > 0L) return@withContext(Uri.fromFile(cover).toString())
+        if (cover.isFile && cover.length() > 0L) {
+            cover.setLastModified(System.currentTimeMillis())
+            return@withContext Uri.fromFile(cover).toString()
+        }
+        if (cover.isFile) cover.delete()
         val bytes = runCatching {
             val reader = MediaMetadataRetriever()
             try {
@@ -44,7 +48,23 @@ object LocalEmbeddedArtwork {
             } finally {
                 temporary.delete()
             }
+            pruneEmbeddedArtworkCache(directory, MAX_CACHE_BYTES, cover)
             Uri.fromFile(cover).toString()
         }.getOrNull()
+    }
+
+    private const val MAX_CACHE_BYTES = 64L * 1024 * 1024
+}
+
+/** Evict the oldest complete cover files, preserving the active art and temporary writes. */
+internal fun pruneEmbeddedArtworkCache(directory: File, maxBytes: Long, protectedFile: File? = null) {
+    val covers = directory.listFiles()?.filter { it.isFile && it.extension == "jpg" } ?: return
+    var total = covers.sumOf { it.length().coerceAtLeast(0L) }
+    if (total <= maxBytes) return
+    for (candidate in covers.sortedBy(File::lastModified)) {
+        if (total <= maxBytes) break
+        if (candidate == protectedFile) continue
+        val size = candidate.length().coerceAtLeast(0L)
+        if (candidate.delete()) total -= size
     }
 }

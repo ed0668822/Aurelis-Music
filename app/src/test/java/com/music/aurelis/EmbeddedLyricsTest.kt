@@ -97,6 +97,9 @@ class EmbeddedLyricsTest {
             EmbeddedLyrics.linesOf("[ar:Artist]\n[length:04:21]\nsing this"),
         )
         assertNull(EmbeddedLyrics.linesOf("[ar:Artist]\n[ti:Title]"))
+        assertNull(EmbeddedLyrics.linesOf("[custom_tag:123]\n[venue-id:4]"))
+        assertEquals(listOf(LyricLine(0L, "[Chorus]"), LyricLine(0L, "sing again")),
+            EmbeddedLyrics.linesOf("[Chorus]\nsing again"))
     }
 
     @Test

@@ -501,7 +501,7 @@ object EmbeddedLyrics {
     private const val FLAC_VORBIS_COMMENT = 4
     private val FLAC_MAGIC = "fLaC".toByteArray(Charsets.US_ASCII)
     private val ID3_MAGIC = "ID3".toByteArray(Charsets.US_ASCII)
-    private val LRC_METADATA = Regex("""\[(?:ar|al|ti|by|length|offset|re|ve):[^\]]*\]""", RegexOption.IGNORE_CASE)
+    private val LRC_METADATA = Regex("""\[[A-Za-z#][A-Za-z0-9_#-]*:[^]]*]""")
     private val MATROSKA_MAGIC = byteArrayOf(0x1A, 0x45, 0xDF.toByte(), 0xA3.toByte())
     private val DATA_ATOM = "data".toByteArray(Charsets.ISO_8859_1)
     private val LYR_ATOM = byteArrayOf(0xA9.toByte()) + "lyr".toByteArray(Charsets.ISO_8859_1)
