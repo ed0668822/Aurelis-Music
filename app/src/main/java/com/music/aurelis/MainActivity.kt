@@ -4119,8 +4119,10 @@ private fun AurelisApp(
                                 account = account,
                                 signedIn = signedIn,
                                 onClick = {
-                                    if (route != AppRoute.AccountScrobbling) {
-                                        navigator.push(AppRoute.AccountScrobbling)
+                                    // The top-right avatar is the shortcut to Settings,
+                                    // where the local profile and optional accounts live.
+                                    if (route != AppRoute.Settings) {
+                                        navigator.push(AppRoute.Settings)
                                     }
                                 },
                                 onSwipeProfile = if (signedIn) {
