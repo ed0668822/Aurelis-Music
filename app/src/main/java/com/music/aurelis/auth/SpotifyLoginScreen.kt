@@ -26,7 +26,7 @@ private const val LOGIN_URL =
 // DiscordLoginScreen. Spotify still needs its own implementation: the
 // embedded WebView must identify as the device's mobile Chrome, not as
 // an obsolete Android Browser 4.0.
-private val WEBVIEW_VERSION_MARKER = Regex("""Version/\\d+(\\.\\d+)*\\s*""")
+private val WEBVIEW_VERSION_MARKER = Regex("""Version/\d+(\.\d+)*\s*""")
 private const val FALLBACK_MOBILE_USER_AGENT =
     "Mozilla/5.0 (Linux; Android 14; SM-S921U; Build/UP1A.231005.007) " +
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36"
