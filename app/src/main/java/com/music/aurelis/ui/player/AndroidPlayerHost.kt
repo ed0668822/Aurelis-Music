@@ -68,6 +68,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val hideSongStatus get() = AppSettings.hideSongStatus
         override val showQueueHistory get() = AppSettings.showQueueHistory
         override val hideVolumeBar get() = AppSettings.hideVolumeBar
+        override val showTotalDuration get() = AppSettings.showTotalDuration
         override val hideStatusBar get() = AppSettings.hideStatusBarInPlayer
         override val lastPlayerScreen get() = AppSettings.lastPlayerScreen
         override val playerTheme get() = AppSettings.playerTheme
@@ -97,6 +98,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val smartTransitionWindow get() = AppSettings.smartTransitionWindow
         override val spotifyCanvasAutoHide get() = AppSettings.spotifyCanvasAutoHide
         override val syncedLyrics get() = AppSettings.syncedLyrics
+        override val hideLyricsPreview get() = AppSettings.hideLyricsPreview
         override val translationLanguage get() = AppSettings.translationLanguage
         override val versionAlignmentInProgress get() = AppSettings.versionAlignmentInProgress
 

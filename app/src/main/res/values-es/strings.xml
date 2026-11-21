@@ -1490,4 +1490,8 @@
     <string name="automix_artwork_transition_subtitle">Mezcla las dos carátulas durante AutoMix sin modificar el audio.</string>
     <string name="automix_mini_artwork_transition">Animar carátula del MiniPlayer</string>
     <string name="automix_mini_artwork_transition_subtitle">Muestra la misma transición en el reproductor compacto.</string>
+    <string name="show_total_duration">Mostrar duración total</string>
+    <string name="show_total_duration_subtitle">Muestra la duración completa en lugar del tiempo restante junto a la barra.</string>
+    <string name="hide_lyrics_preview">Ocultar vista previa de letras</string>
+    <string name="hide_lyrics_preview_subtitle">Oculta la línea sobre la barra; las letras completas siguen disponibles.</string>
 </resources>

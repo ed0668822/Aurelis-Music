@@ -247,6 +247,7 @@ interface PlayerSettingsSource {
     val hideSongStatus: StateFlow<Boolean>
     val showQueueHistory: StateFlow<Boolean>
     val hideVolumeBar: StateFlow<Boolean>
+    val showTotalDuration: StateFlow<Boolean>
     /** Hide the device status bar while the player is up. Always false where there is none. */
     val hideStatusBar: StateFlow<Boolean>
     val lastPlayerScreen: StateFlow<LastPlayerScreen>
@@ -290,6 +291,7 @@ interface PlayerSettingsSource {
     val smartTransitionWindow: StateFlow<TransitionWindow?>
     val spotifyCanvasAutoHide: StateFlow<Boolean>
     val syncedLyrics: StateFlow<Boolean>
+    val hideLyricsPreview: StateFlow<Boolean>
     val translationLanguage: StateFlow<String>
     val versionAlignmentInProgress: StateFlow<Boolean>
 

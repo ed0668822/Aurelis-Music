@@ -1389,4 +1389,8 @@
     <string name="automix_artwork_transition_subtitle">Blend both covers during AutoMix without changing the audio.</string>
     <string name="automix_mini_artwork_transition">Animate MiniPlayer artwork</string>
     <string name="automix_mini_artwork_transition_subtitle">Show the same cover transition in the compact player.</string>
+    <string name="show_total_duration">Show total song duration</string>
+    <string name="show_total_duration_subtitle">Show the full length instead of remaining time beside the seek bar.</string>
+    <string name="hide_lyrics_preview">Hide lyrics preview</string>
+    <string name="hide_lyrics_preview_subtitle">Hide the small lyric line above the seek bar; full lyrics remain available.</string>
 </resources>
