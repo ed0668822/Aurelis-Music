@@ -12,7 +12,6 @@ import com.music.aurelis.data.LocalMediaRepository
 import com.music.aurelis.data.OfflinePlaylists
 import com.music.aurelis.data.model.Song
 import com.music.aurelis.data.stats.ListeningStats
-import com.music.aurelis.data.stats.ReplayPeriod
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -71,10 +70,7 @@ internal object LocalAutoplaySource {
             }
             candidates.addAll(readBounded(context, null, MAX_MEDIA_ROWS))
             mediaCandidates = candidates.distinctBy { it.localUri }.take(MAX_MEDIA_ROWS)
-            historyCounts = runCatching {
-                ListeningStats.summary(ReplayPeriod.THIS_MONTH).songs.take(200)
-                    .associate { it.song.videoId to it.plays }
-            }.getOrDefault(emptyMap())
+            historyCounts = ListeningStats.currentMonthTrackPlays(limit = 200)
             cachedAt = android.os.SystemClock.elapsedRealtime()
         } finally {
             mutex.unlock()

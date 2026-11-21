@@ -117,6 +117,21 @@ object ListeningStats {
 
     private val ready: Boolean get() = this::directory.isInitialized
 
+    /**
+     * B08: read only the in-memory counters for the current month.
+     * Unlike [summary], this does not enrich artists, resolve artwork,
+     * trigger metadata lookups, flush to disk, or perform any network request.
+     */
+    fun currentMonthTrackPlays(limit: Int = 200): Map<String, Int> = synchronized(lock) {
+        val bucket = open?.takeIf { it.key == YearMonth.now().toString() }
+            ?: return@synchronized emptyMap()
+        bucket.tracks.values.asSequence()
+            .filter { it.plays > 0 }
+            .sortedByDescending { it.plays }
+            .take(limit.coerceIn(0, 500))
+            .associate { it.id to it.plays }
+    }
+
     // ── Writing ─────────────────────────────────────────────────────────────
 
     /**
