@@ -17,6 +17,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.File
 
 /**
@@ -114,9 +115,12 @@ object AppUpdateChecker {
             ?.mapNotNull { asset ->
                 val name = asset["name"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
                 val url = asset["browser_download_url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                // Never offer an APK from another repository, even if a
+                // malformed release asset supplies a matching name.
                 val ours = name.startsWith(BuildConfig.UPDATE_APK_PREFIX, ignoreCase = true) &&
                     name.endsWith(".apk", ignoreCase = true) &&
-                    asset["state"]?.jsonPrimitive?.contentOrNull == "uploaded"
+                    asset["state"]?.jsonPrimitive?.contentOrNull == "uploaded" &&
+                    isOfficialReleaseAssetUrl(url)
                 if (ours) name.removeSuffix(".apk").removeSuffix(".APK") to url else null
             }
             .orEmpty()
@@ -125,6 +129,17 @@ object AppUpdateChecker {
                 apks.firstOrNull { (name, _) -> name.endsWith("_$abi") }?.second
             }
     }.getOrNull()
+
+    /**
+     * A010: accept installation assets only from this project's GitHub Releases,
+     * never from a third-party API field or a lookalike hostname.
+     */
+    internal fun isOfficialReleaseAssetUrl(url: String): Boolean {
+        val parsed = url.toHttpUrlOrNull() ?: return false
+        return parsed.isHttps &&
+            parsed.host == "github.com" &&
+            parsed.encodedPath.startsWith("/ed0668822/Aurelis-Music/releases/download/")
+    }
 
     /**
      * Streams the current update's APK into the app cache, reporting progress
