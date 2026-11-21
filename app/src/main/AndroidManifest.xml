@@ -216,18 +216,9 @@
                 <data android:host="youtu.be" />
             </intent-filter>
 
-            <!-- Public Listen Together invites. autoVerify makes a tap open
-                 Aurelis directly once the domain publishes its assetlinks
-                 association for the production signing certificate. -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="https"
-                    android:host="bitchord.kushagrasingh.in"
-                    android:pathPattern="/invite/......" />
-            </intent-filter>
+            <!-- Public invitation App Links remain disabled until Aurelis owns
+                 an HTTPS host and publishes Digital Asset Links for its signing
+                 certificate. Custom scheme links below are retained. -->
 
             <!-- Custom scheme for Listen Together invites on custom server deployments. -->
             <intent-filter>
