@@ -1105,16 +1105,35 @@ class CrossfadeController(
         // The DJ planner is Automix now; there is no separate mode switch.
         val advanced = true
 
-        val plan = planTransition(
+        val requestedOptions = AppSettings.autoMixOptions.value.normalized()
+        val incomingDurationSeconds = if (nextDuration > 0L) {
+            nextDuration / 1000.0
+        } else {
+            nextAnalysis.duration.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
+        }
+        val playbackSeconds = player.currentPosition / 1000.0
+        val basePlan = planTransition(
             analysis = currentAnalysis,
             nextAnalysis = nextAnalysis,
             currentTrack = currentItem.toTransitionInfo(duration),
             nextTrack = nextItem.toTransitionInfo(nextDuration),
-            currentTime = player.currentPosition / 1000.0,
+            currentTime = playbackSeconds,
             duration = duration / 1000.0,
             fadeSeconds = fallbackSeconds,
             mode = CrossfadeMode.SMART,
             advanced = advanced,
+            // Mornye's shorter-song guard is safe only when the next duration
+            // is known. The pure planner retains its 45 s default elsewhere.
+            minSmartDurationSeconds = if (incomingDurationSeconds >= 20.0) 20.0 else 45.0,
+        )
+        val plan = adjustAutoMixTiming(
+            original = basePlan,
+            options = requestedOptions,
+            outgoingLength = duration / 1000.0,
+            incomingLength = incomingDurationSeconds,
+            outgoingBpm = currentAnalysis.bpm,
+            beatConfidence = currentAnalysis.beatConfidence,
+            playbackTime = playbackSeconds,
         )
         // One line per distinct verdict rather than one per 250ms tick, so the
         // log says what the planner decided for this pair without burying it.
@@ -1814,7 +1833,10 @@ class CrossfadeController(
             .takeIf { it != C.TIME_UNSET && it > 0L }
             ?.minus(incomingCueTimeMs)
             ?.coerceAtLeast(0L)
-        val incomingCap = remainingIncoming?.div(3) ?: Long.MAX_VALUE
+        // The experimental timing already limits overlap to half of the
+        // incoming song *after its cue*. Keep the older one-third safeguard for
+        // ordinary crossfades, but do not silently shorten a manual 60 s mix.
+        val incomingCap = remainingIncoming?.div(if (smartFadeActive) 2L else 3L) ?: Long.MAX_VALUE
         val span = minOf(fadeMs, incomingCap).coerceAtLeast(1L)
         val elapsed = (inClock.read(player) - incomingCueTimeMs).coerceAtLeast(0.0).toFloat()
         // Advanced: [fadeMs] is outgoing time, and a stretched incoming track

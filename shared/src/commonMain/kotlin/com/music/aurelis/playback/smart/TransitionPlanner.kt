@@ -1404,6 +1404,9 @@ private fun analysisReadyForTrack(analysis: TrackAnalysis, track: TransitionTrac
  * @param mixWindow Confine the mix to the last and first [MIX_WINDOW_SECONDS] of the pair — see
  *   [clampToMixWindow]. The desktop asks for it; the phone leaves it off, so its plans are
  *   unchanged.
+ * @param minSmartDurationSeconds Minimum eligible outgoing length. The default
+ *   preserves the original 45-second safeguard; experimental local AutoMix may
+ *   request 20 seconds when the incoming length is separately verified.
  */
 fun planTransition(
     analysis: TrackAnalysis = TrackAnalysis(),
@@ -1419,6 +1422,7 @@ fun planTransition(
     advanced: Boolean = false,
     phraseBars: Int = 0,
     mixWindow: Boolean = false,
+    minSmartDurationSeconds: Double = MIN_SMART_DURATION_SECONDS,
 ): TransitionPlan {
     val plan = planTransitionInner(
         analysis = analysis,
@@ -1433,6 +1437,7 @@ fun planTransition(
         albumSequential = albumSequential,
         advanced = advanced,
         phraseBars = phraseBars,
+        minSmartDurationSeconds = minSmartDurationSeconds,
     )
     if (!mixWindow) return plan
     return clampToMixWindow(
@@ -1481,6 +1486,7 @@ private fun planTransitionInner(
     albumSequential: Boolean = false,
     advanced: Boolean = false,
     phraseBars: Int = 0,
+    minSmartDurationSeconds: Double = MIN_SMART_DURATION_SECONDS,
 ): TransitionPlan {
     val length = max(duration.orZero(), trackDurationSeconds(currentTrack))
     val playbackTime = max(0.0, currentTime.orZero())
@@ -1491,7 +1497,7 @@ private fun planTransitionInner(
         return standardTransition(length, playbackTime, standardFade, minFadeSeconds)
     }
 
-    if (length < MIN_SMART_DURATION_SECONDS) {
+    if (length < minSmartDurationSeconds.coerceAtLeast(20.0)) {
         return blocked("short-duration-guard", transitionStart = length, transitionEnd = length)
     }
 
