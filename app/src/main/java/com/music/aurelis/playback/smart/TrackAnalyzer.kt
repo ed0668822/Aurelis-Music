@@ -24,6 +24,8 @@
 package com.music.aurelis.playback.smart
 
 import android.content.Context
+import android.app.ActivityManager
+import com.music.aurelis.playback.smart.AutomixThreadBudget
 import android.media.MediaDataSource
 import android.net.Uri
 import android.os.Build
@@ -65,16 +67,31 @@ import java.util.Locale
 @UnstableApi
 class TrackAnalyzer(private val context: Context, private val cache: AudioCache) {
 
+    private val models by lazy { AutomixModelDepot(context.applicationContext) }
+
+    /** One adaptive budget, used by both ONNX models and both analysis passes. */
+    private fun inferenceThreads(): Int {
+        thermalWatch
+        val lowRam = context.getSystemService(ActivityManager::class.java)?.isLowRamDevice == true
+        return AutomixThreadBudget.choose(
+            requested = AppSettings.automixPerformanceMode.value.inferenceThreads,
+            availableCpus = Runtime.getRuntime().availableProcessors(),
+            lowRam = lowRam,
+            thermalModerate = thermalStatus >= PowerManager.THERMAL_STATUS_MODERATE,
+            thermalSevere = thermalStatus >= PowerManager.THERMAL_STATUS_SEVERE,
+        )
+    }
+
     private val tracker = BeatTracker(
         modelPath = {
             java.io.File(context.filesDir, BeatTracker.RETIRED_MODEL_ASSET).delete()
-            unpackedAsset(BeatTracker.MODEL_ASSET)
+            models.path(BeatTracker.MODEL_ASSET)
         },
-        inferenceThreads = { AppSettings.automixPerformanceMode.value.inferenceThreads },
+        inferenceThreads = ::inferenceThreads,
     )
     private val vocals = VocalTracker(
-        modelPath = { unpackedAsset(VocalTracker.MODEL_ASSET) },
-        inferenceThreads = { AppSettings.automixPerformanceMode.value.inferenceThreads },
+        modelPath = { models.path(VocalTracker.MODEL_ASSET) },
+        inferenceThreads = ::inferenceThreads,
     )
 
     init {
@@ -84,23 +101,8 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         AnalysisLog.install { message, error -> Log.w(TAG, message, error) }
     }
 
-    /**
-     * A model's weights on disk, unpacked from assets the first time they are
-     * asked for.
-     *
-     * ONNX Runtime wants a file it can memory-map, and an asset inside the APK
-     * is not one. This used to live inside each tracker; it moved out when they
-     * became shared with the desktop build, which unpacks from the jar instead.
-     */
-    private fun unpackedAsset(name: String): String {
-        val file = java.io.File(context.filesDir, name)
-        if (!file.exists() || file.length() == 0L) {
-            context.assets.open(name).use { input ->
-                file.outputStream().use { output -> input.copyTo(output) }
-            }
-        }
-        return file.absolutePath
-    }
+    // Models stay bundled for offline AutoMix. The depot validates their hashes,
+    // writes atomically, and only downloads if an asset is absent or corrupt.
 
     /**
      * Whether analysis is switched off entirely right now.
