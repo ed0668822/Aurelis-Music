@@ -168,7 +168,6 @@ import com.music.aurelis.data.settings.OutputPcmMode
 import com.music.aurelis.data.settings.BitPerfectMode
 import com.music.aurelis.playback.AudioOutputStatus
 import com.music.aurelis.playback.audio.bitperfect.BitPerfectOutput
-import com.music.aurelis.data.settings.AutomixPerformanceMode
 import com.music.aurelis.data.settings.AutoMixEffect
 import com.music.aurelis.R
 import com.music.aurelis.data.sources.DeviceCodecs
@@ -238,7 +237,6 @@ fun SettingsScreen(
     val metered by AppSettings.meteredConnection.collectAsStateWithLifecycle()
     val crossfade by AppSettings.crossfadeSeconds.collectAsStateWithLifecycle()
     val smartFade by AppSettings.smartFadeEnabled.collectAsStateWithLifecycle()
-    val automixPerformance by AppSettings.automixPerformanceMode.collectAsStateWithLifecycle()
     val autoMixOptions by AppSettings.autoMixOptions.collectAsStateWithLifecycle()
     val skipSilence by AppSettings.skipSilence.collectAsStateWithLifecycle()
     val dolbyAtmos by AppSettings.dolbyAtmos.collectAsStateWithLifecycle()
@@ -949,18 +947,6 @@ fun SettingsScreen(
                             )
                         }
                     }
-                }
-            }
-            val automixPerformanceTitle = stringResource(R.string.automix_performance)
-            row(automixPerformanceTitle, "cpu", "battery") {
-                BypassedByBitPerfect(bitPerfectReady) {
-                    SettingsRow(
-                        icon = SfIcons.Tune,
-                        title = automixPerformanceTitle,
-                        subtitle = stringResource(R.string.automix_performance_subtitle),
-                        value = automixPerformance.localizedLabel(),
-                        onClick = { onOpenChoice(SettingsChoiceKind.AUTOMIX_PERFORMANCE) },
-                    )
                 }
             }
             val skipSilenceTitle = stringResource(R.string.skip_silence)
@@ -2247,15 +2233,6 @@ private fun AutoMixEffect.description(): String = stringResource(
     },
 )
 
-@Composable
-private fun AutomixPerformanceMode.localizedLabel(): String = stringResource(
-    when (this) {
-        AutomixPerformanceMode.EFFICIENT -> R.string.automix_mode_efficient
-        AutomixPerformanceMode.BALANCED -> R.string.automix_mode_balanced
-        AutomixPerformanceMode.PERFORMANCE -> R.string.automix_mode_performance
-    },
-)
-
 /**
  * Hands the device's own effect panel this app's audio session.
  *
@@ -2995,7 +2972,6 @@ enum class SettingsChoiceKind(@param:StringRes val title: Int) {
     AUDIO_QUALITY_WIFI(R.string.on_wifi),
     AUDIO_QUALITY_CELLULAR(R.string.on_mobile_data),
     DOWNLOAD_QUALITY(R.string.download_quality),
-    AUTOMIX_PERFORMANCE(R.string.automix_performance),
     AUTOMIX_EFFECT(R.string.automix_effect),
     BIT_PERFECT(R.string.bit_perfect_output),
     FONT(R.string.font),
@@ -3091,28 +3067,6 @@ fun SettingsChoicePage(
                     footer = null,
                 ) { effect ->
                     AppSettings.setAutoMixEffect(effect)
-                    onChosen()
-                }
-            }
-
-            SettingsChoiceKind.AUTOMIX_PERFORMANCE -> {
-                val selected by AppSettings.automixPerformanceMode.collectAsStateWithLifecycle()
-                ChoiceGroup(
-                    options = AutomixPerformanceMode.entries,
-                    selected = selected,
-                    label = { it.localizedLabel() },
-                    detail = {
-                        stringResource(
-                            when (it) {
-                                AutomixPerformanceMode.EFFICIENT -> R.string.automix_mode_efficient_subtitle
-                                AutomixPerformanceMode.BALANCED -> R.string.automix_mode_balanced_subtitle
-                                AutomixPerformanceMode.PERFORMANCE -> R.string.automix_mode_performance_subtitle
-                            },
-                        )
-                    },
-                    footer = stringResource(R.string.automix_performance_warning),
-                ) { mode ->
-                    AppSettings.setAutomixPerformanceMode(mode)
                     onChosen()
                 }
             }
