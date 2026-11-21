@@ -22,10 +22,12 @@ if (url.scheme != "https"
     sys.exit("::error title=Discord SDK::Use an official signed ZIP download URL from Discord Developer Portal")
 PY
     echo "Downloading the official Discord Social SDK archive..."
-    curl --fail --silent --show-error --location --retry 2 \
+    if ! curl --fail --silent --show-error --location --retry 2 \
         --connect-timeout 30 --max-time 1200 \
         --proto '=https' --proto-redir '=https' \
-        --output "$tmpdir/discord-sdk.zip" "$DISCORD_SDK_ZIP_URL"
+        --output "$tmpdir/discord-sdk.zip" "$DISCORD_SDK_ZIP_URL"; then
+        echo "::warning title=Discord SDK::Official signed SDK URL unavailable or expired. The optional SDK will not be bundled; refresh DISCORD_SDK_ZIP_URL to restore Discord Social features."
+    else
     if [[ -n "${DISCORD_SDK_ZIP_SHA256:-}" ]]; then
         if [[ ! "$DISCORD_SDK_ZIP_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
             echo "::error title=Discord SDK::ZIP SHA-256 must be 64 hexadecimal characters."
@@ -55,6 +57,7 @@ except (BadZipFile, ValueError, OSError, EOFError) as exc:
     sys.exit(f"::error title=Discord SDK::Cannot extract release AAR: {exc}")
 PY
     mv "$tmpdir/discord_partner_sdk.aar" "$aar"
+    fi
 fi
 
 # Existing route: separately hosted, integrity-checked Android AAR.

@@ -76,7 +76,7 @@ internal fun PlaylistFileActions() {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         TextButton(enabled = !busy, onClick = {
-            importPicker.launch(arrayOf("audio/x-mpegurl", "audio/mpegurl", "text/plain", "application/octet-stream"))
+            importPicker.launch(arrayOf("*/*"))
         }) { Text("Import M3U/M3U8") }
         TextButton(enabled = !busy, onClick = { choosingExport = true }) { Text("Export M3U8") }
     }

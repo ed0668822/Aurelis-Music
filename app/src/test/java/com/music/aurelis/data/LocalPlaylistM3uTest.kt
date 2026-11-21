@@ -10,7 +10,7 @@ import org.junit.Test
 
 class LocalPlaylistM3uTest {
     private fun song(title: String, path: String): Song =
-        Song(videoId = "content://media/" + title, title = title, artist = "Artist",
+        Song(videoId = "content://media/" + title, title = title, artist = "Artist", thumbnailUrl = null,
             localUri = "content://media/" + title, localPath = path, durationText = "03:17")
 
     @Test fun parsesBomExtinfAndCommentsInOrder() {
