@@ -33,6 +33,43 @@ class NativeAurelisLinkageContractTest {
                 "Java_com_music_aurelis_playback_audio_bitperfect_*"))
     }
 
+    private fun repositoryFile(path: String): String {
+        return listOf(File("."), File(".."), File("../.."))
+            .map { File(it, path) }
+            .firstOrNull { it.isFile }
+            ?.readText()
+            ?: error("Missing first-party C++ source: $path")
+    }
+
+    @Test fun nativeAutomixNamespacesAreConsistent() {
+        val namespaces = mapOf(
+            "native/analyzer/audio_analysis.h" to "aurelis::smart",
+            "native/analyzer/mel_spectrogram.h" to "aurelis::smart",
+            "native/analyzer/resampler.h" to "aurelis::smart",
+            "native/analyzer/vocal_spectrogram.h" to "aurelis::smart",
+            "native/loopmix/loop_mix_renderer.h" to "aurelis::loopmix",
+        )
+        for ((path, namespace) in namespaces) {
+            val content = repositoryFile(path)
+            assertTrue("$path must define the Aurelis C++ namespace",
+                content.contains("namespace $namespace"))
+            assertFalse("$path must not define the old BitChord namespace",
+                content.contains("namespace bitchord::"))
+        }
+        for (bridge in listOf(
+            "jni/analysis_jni.cpp",
+            "jni/mel_jni.cpp",
+            "jni/vocal_jni.cpp",
+            "jni/loopmix_jni.cpp",
+        )) {
+            val content = nativeFile(bridge)
+            assertFalse("$bridge still references the old native C++ namespace",
+                content.contains("bitchord::"))
+            assertTrue("$bridge no longer matches pre-rename JNI function names",
+                content.contains("Java_com_music_aurelis_"))
+        }
+    }
+
     @Test fun jniBindingsUseCurrentAndroidPackage() {
         val bridges = mapOf(
             "jni/analysis_jni.cpp" to "playback_smart_TrackFeatures_nativeAnalyze",

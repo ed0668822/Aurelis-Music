@@ -39,7 +39,7 @@
 #include <numeric>
 #include <vector>
 
-namespace bitchord::smart {
+namespace aurelis::smart {
 namespace {
 
 constexpr double kPi = 3.14159265358979323846;
@@ -550,4 +550,4 @@ TempoResult AnalyzeTempo(
   return result;
 }
 
-}  // namespace bitchord::smart
+}  // namespace aurelis::smart

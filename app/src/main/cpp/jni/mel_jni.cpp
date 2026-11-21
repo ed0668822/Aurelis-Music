@@ -52,7 +52,7 @@ Java_com_music_aurelis_playback_smart_MelSpectrogram_nativeResample(
   }
 
   const std::vector<float> resampled =
-      bitchord::smart::Resample(input, input_rate, output_rate);
+      aurelis::smart::Resample(input, input_rate, output_rate);
 
   const jsize produced = static_cast<jsize>(resampled.size());
   jfloatArray result = env->NewFloatArray(produced);
@@ -81,8 +81,8 @@ Java_com_music_aurelis_playback_smart_MelSpectrogram_nativeCompute(
     env->GetFloatArrayRegion(samples, 0, count, input.data());
   }
 
-  const bitchord::smart::BeatSpectrogram spectrogram =
-      bitchord::smart::ComputeBeatSpectrogram(input, sample_rate);
+  const aurelis::smart::BeatSpectrogram spectrogram =
+      aurelis::smart::ComputeBeatSpectrogram(input, sample_rate);
 
   const jsize produced = static_cast<jsize>(spectrogram.values.size());
   jfloatArray result = env->NewFloatArray(produced);
@@ -101,21 +101,21 @@ JNIEXPORT jint JNICALL
 Java_com_music_aurelis_playback_smart_MelSpectrogram_nativeMelCount(
     JNIEnv* /* env */,
     jclass /* clazz */) {
-  return static_cast<jint>(bitchord::smart::kBeatSpectrogramMels);
+  return static_cast<jint>(aurelis::smart::kBeatSpectrogramMels);
 }
 
 JNIEXPORT jdouble JNICALL
 Java_com_music_aurelis_playback_smart_MelSpectrogram_nativeSampleRate(
     JNIEnv* /* env */,
     jclass /* clazz */) {
-  return bitchord::smart::kBeatSpectrogramSampleRate;
+  return aurelis::smart::kBeatSpectrogramSampleRate;
 }
 
 JNIEXPORT jint JNICALL
 Java_com_music_aurelis_playback_smart_MelSpectrogram_nativeHop(
     JNIEnv* /* env */,
     jclass /* clazz */) {
-  return static_cast<jint>(bitchord::smart::kBeatSpectrogramHop);
+  return static_cast<jint>(aurelis::smart::kBeatSpectrogramHop);
 }
 
 }  // extern "C"

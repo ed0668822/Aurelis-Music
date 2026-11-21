@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace bitchord::loopmix {
+namespace aurelis::loopmix {
 
 namespace {
 
@@ -283,4 +283,4 @@ void Renderer::renderDeck(Deck& deck, int64_t frame, int frames) {
   if (fadeAt >= 0 && heardStart > fadeAt + fadeSamples) deck.finished = true;
 }
 
-}  // namespace bitchord::loopmix
+}  // namespace aurelis::loopmix

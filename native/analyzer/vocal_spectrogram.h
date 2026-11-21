@@ -44,7 +44,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace bitchord::smart {
+namespace aurelis::smart {
 
 inline constexpr double kVocalSpectrogramSampleRate = 44100;
 inline constexpr size_t kVocalSpectrogramChannels = 2;
@@ -76,4 +76,4 @@ VocalSpectrogram ComputeVocalSpectrogram(
   double sample_rate
 );
 
-}  // namespace bitchord::smart
+}  // namespace aurelis::smart

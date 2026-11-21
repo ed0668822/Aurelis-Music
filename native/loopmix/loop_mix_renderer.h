@@ -19,7 +19,7 @@
 
 #include "signalsmith-stretch/signalsmith-stretch.h"
 
-namespace bitchord::loopmix {
+namespace aurelis::loopmix {
 
 /** A piecewise-linear automation curve over mix time (seconds since t0). */
 struct Envelope {
@@ -134,4 +134,4 @@ class Renderer {
   std::vector<float> mixLeft_, mixRight_;
 };
 
-}  // namespace bitchord::loopmix
+}  // namespace aurelis::loopmix

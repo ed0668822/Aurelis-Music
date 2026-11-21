@@ -10,9 +10,9 @@
 
 #include "loopmix/loop_mix_renderer.h"
 
-using bitchord::loopmix::Deck;
-using bitchord::loopmix::Envelope;
-using bitchord::loopmix::Renderer;
+using aurelis::loopmix::Deck;
+using aurelis::loopmix::Envelope;
+using aurelis::loopmix::Renderer;
 
 namespace {
 
