@@ -115,7 +115,11 @@ fun AutoMixArtworkOverlay(
             )
         }
         if (!incoming.isNullOrBlank()) {
-            val transitionModifier = if (reducedMotion) {
+            // With no outgoing cover there is nothing to reveal *over*.
+            // Show the incoming cover directly instead of fading in from black.
+            val transitionModifier = if (outgoing.isNullOrBlank()) {
+                Modifier
+            } else if (reducedMotion) {
                 Modifier.graphicsLayer { alpha = eased }
             } else {
                 Modifier

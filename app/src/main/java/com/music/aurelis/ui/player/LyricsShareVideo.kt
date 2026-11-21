@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -35,7 +36,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 import kotlin.coroutines.resume
-import kotlin.math.roundToInt
 
 /**
  * Local-only version of BitChord's lyrics video export.
@@ -52,12 +52,25 @@ internal suspend fun exportLocalLyricsVideo(
 ): File? {
     val timeline = lyricsShareTimeline(request.lines) ?: return null
     val folder = File(context.cacheDir, "shared").apply { mkdirs() }
-    val image = File(folder, "lyrics-video-background.png")
-    val output = File(folder, "lyrics-" + System.nanoTime() + ".mp4")
+    // Every share has a private backing image: simultaneous exports must not
+    // overwrite the PNG while Media3 is still decoding it.
+    val exportId = System.nanoTime()
+    val image = File(folder, "lyrics-background-$exportId.png")
+    val output = File(folder, "lyrics-$exportId.mp4")
     val width = 720
-    val height = (((poster.height.toDouble() / poster.width) * width)
-        .roundToInt().coerceIn(720, 1280)) and 1.inv()
-    val resized = Bitmap.createScaledBitmap(poster, width, height, true)
+    val height = 1280 // Story videos are always 9:16, regardless of source-card size.
+    val resized = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val scale = maxOf(width.toFloat() / poster.width, height.toFloat() / poster.height)
+    val drawnWidth = poster.width * scale
+    val drawnHeight = poster.height * scale
+    Canvas(resized).drawBitmap(
+        poster,
+        null,
+        RectF((width - drawnWidth) / 2f, (height - drawnHeight) / 2f,
+            (width + drawnWidth) / 2f, (height + drawnHeight) / 2f),
+        Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG),
+    )
+    var exportedOk = false
     try {
         val saved = withContext(Dispatchers.IO) {
             image.outputStream().use { resized.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -72,10 +85,12 @@ internal suspend fun exportLocalLyricsVideo(
         val succeeded = withAudio || transformLyricsVideo(
             context, image, output, width, height, timeline, request.lines, null,
         )
-        return output.takeIf { succeeded && it.exists() && it.length() > 0L }
+        exportedOk = succeeded && output.exists() && output.length() > 0L
+        return output.takeIf { exportedOk }
     } finally {
         resized.recycle()
         image.delete()
+        if (!exportedOk) output.delete()
     }
 }
 

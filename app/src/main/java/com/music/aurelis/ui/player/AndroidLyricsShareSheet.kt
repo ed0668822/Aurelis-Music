@@ -157,7 +157,13 @@ internal fun AndroidLyricsShareSheet(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.White.copy(alpha = if (asVideo) 0.25f else 0.08f))
-                        .clickable(enabled = timeline != null) { asVideo = true; saved = false }
+                        .clickable(enabled = timeline != null) {
+                            // Switching to video selects the portrait story layout.
+                            // The image-only share retains its chosen aspect ratio.
+                            asVideo = true
+                            story = true
+                            saved = false
+                        }
                         .padding(12.dp),
                 )
             }
