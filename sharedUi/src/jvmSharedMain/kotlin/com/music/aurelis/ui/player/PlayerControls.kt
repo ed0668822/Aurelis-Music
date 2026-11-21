@@ -543,6 +543,7 @@ internal fun TransportRow(
                 touchSize = playTouch,
                 onClick = onPlayPause,
                 haptic = if (isPlaying) Haptic.Pause else Haptic.Resume,
+                playbackActive = isPlaying,
             )
         }
         TransportGlyph(
@@ -838,6 +839,8 @@ private fun TransportGlyph(
     /** Vertical squash of the glyph alone; its width and touch box are untouched. */
     heightScale: Float = 1f,
     skipDirection: Int = 0,
+    /** Playback state is owned by MediaSession, not a local button toggle. */
+    playbackActive: Boolean? = null,
 ) {
     val haptics = rememberHaptics()
     val reduceMotion by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
@@ -881,21 +884,63 @@ private fun TransportGlyph(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Crossfade(
-            targetState = icon,
-            animationSpec = tween(durationMillis = if (reduceMotion) 0 else 170),
-            label = "transportGlyph",
-        ) { displayed ->
-            Icon(
-                painter = painterResource(displayed),
-                contentDescription = contentDescription,
-                tint = Color.White.copy(alpha = alpha),
-                modifier = Modifier.size(size).graphicsLayer {
-                    scaleX = scale.value
-                    scaleY = scale.value * heightScale
-                    translationX = skipOffset.value * pixelDensity
-                },
+        if (playbackActive != null) {
+            // Apple Music-style compact handoff: two silhouettes scale through
+            // one spring driven by the actual player state, including remote
+            // changes. No optimistic UI flag on a tap or pending media command.
+            val phase by animateFloatAsState(
+                targetValue = if (playbackActive) 1f else 0f,
+                animationSpec = if (reduceMotion) tween(0) else spring(
+                    dampingRatio = 0.72f,
+                    stiffness = 280f,
+                ),
+                label = "aurelisPlayPausePhase",
             )
+            val playWeight = (1f - phase).coerceIn(0f, 1f)
+            val pauseWeight = phase.coerceIn(0f, 1f)
+            if (playWeight > 0.001f) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_player_play),
+                    contentDescription = if (playWeight >= 0.5f) contentDescription else null,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        alpha = playWeight * playWeight * (3f - 2f * playWeight)
+                        val glyphScale = (0.56f + 0.44f * playWeight) * scale.value
+                        scaleX = glyphScale
+                        scaleY = glyphScale * heightScale
+                    },
+                )
+            }
+            if (pauseWeight > 0.001f) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_player_pause),
+                    contentDescription = if (pauseWeight > 0.5f) contentDescription else null,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        alpha = pauseWeight * pauseWeight * (3f - 2f * pauseWeight)
+                        val glyphScale = (0.56f + 0.44f * pauseWeight) * scale.value
+                        scaleX = glyphScale
+                        scaleY = glyphScale * heightScale
+                    },
+                )
+            }
+        } else {
+            Crossfade(
+                targetState = icon,
+                animationSpec = tween(durationMillis = if (reduceMotion) 0 else 170),
+                label = "transportGlyph",
+            ) { displayed ->
+                Icon(
+                    painter = painterResource(displayed),
+                    contentDescription = contentDescription,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        scaleX = scale.value
+                        scaleY = scale.value * heightScale
+                        translationX = skipOffset.value * pixelDensity
+                    },
+                )
+            }
         }
     }
 }
