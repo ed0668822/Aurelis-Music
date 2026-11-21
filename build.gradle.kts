@@ -33,16 +33,25 @@ buildscript {
     }
 }
 /*
- * The version of the phone app and of the watch app that ships inside it, in
- * one place. The watch has to move with the phone: it is installed and updated
- * from the phone's own APK (see app/build.gradle.kts), and Android refuses an
- * update whose versionCode is lower than the one installed.
+ * Shared phone / watch version: v2.7.<build number>.
  *
- * No "v" in the name — the in-app updater reads it as a number; the "v" is the
- * release tag's alone.
+ * GitHub Actions sets -Paurelis.buildNumber to github.run_number, so every
+ * workflow run generates a monotonically increasing Android versionCode and
+ * the same numeric patch version for Debug and signed Release.
+ * Local builds default to 41, one higher than the previously published 40.
+ *
+ * Keep the literal "v" out of Android's versionName: the in-app updater
+ * compares dot-separated numeric versions. Release tags can use "v2.7.N".
  */
-extra["aurelisVersionCode"] = 40
-extra["aurelisVersionName"] = "2.5"
+val requestedBuildNumber = providers.gradleProperty("aurelis.buildNumber").orNull
+val aurelisBuildNumber = requestedBuildNumber?.toIntOrNull()
+    ?: if (requestedBuildNumber == null) 41
+    else error("Invalid aurelis.buildNumber: expected a positive integer")
+require(aurelisBuildNumber in 41..2_100_000_000) {
+    "aurelis.buildNumber must be >= 41 and valid as Android versionCode"
+}
+extra["aurelisVersionCode"] = aurelisBuildNumber
+extra["aurelisVersionName"] = "2.7.$aurelisBuildNumber"
 
 /*
  * Bump this by hand before cutting each sideloaded test build ("beta2",

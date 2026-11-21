@@ -67,7 +67,7 @@ jobs:
       # Compilar primero: aunque fallen los tests, el APK de prueba queda
       # disponible como artefacto independiente para diagnostico.
       - name: Validate identity and build debug APK
-        run: ./gradlew :app:verifyAurelisBuildIdentity :app:assembleDevDebug --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+        run: ./gradlew :app:verifyAurelisBuildIdentity :app:assembleDevDebug --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
 
       - name: APK size report
         run: |
@@ -85,7 +85,7 @@ jobs:
           compression-level: 0
 
       - name: Run unit regression tests
-        run: ./gradlew :app:testDevDebugUnitTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+        run: ./gradlew :app:testDevDebugUnitTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
 
       - name: Upload unit test reports
         if: always()
@@ -160,7 +160,7 @@ jobs:
       - run: chmod +x gradlew
 
       - name: Build signed prod release APK
-        run: ./gradlew :app:assembleProdRelease --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+        run: ./gradlew :app:assembleProdRelease --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
 
       # Falla si el APK quedó sin firmar o si apksigner no lo da por válido.
       - name: Verify signature
