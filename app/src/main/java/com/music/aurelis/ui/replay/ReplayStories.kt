@@ -146,7 +146,8 @@ fun ReplayStories(
         }
     }
     val pagerState = rememberPagerState(
-        initialPage = pages.indexOf(start).coerceAtLeast(0),
+        initialPage = (if (start == ReplayStoryPage.SUMMARY) pages.lastIndex
+            else pages.indexOf(start)).coerceAtLeast(0),
         pageCount = { pages.size },
     )
     val scope = rememberCoroutineScope()
