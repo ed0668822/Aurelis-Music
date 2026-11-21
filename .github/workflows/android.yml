@@ -233,3 +233,60 @@ jobs:
       - name: Remove signing files
         if: always()
         run: rm -f aurelis-release.jks keystore.properties local.properties
+
+  estabilidad:
+    name: B13 | Lint y pruebas adicionales
+    needs: [prueba]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Write optional local integration settings
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
+          LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
+        run: |
+          printf 'LASTFM_API_KEY=%s\nLASTFM_SECRET=%s\nLISTEN_TOGETHER_SERVER=%s\n' \
+            "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
+          chmod +x gradlew
+
+      # B13 validates the independent desktop/JVM shared UI source-set as well:
+      # Android app tests do not execute src/jvmTest in :sharedUi.
+      - name: Shared UI JVM regression tests
+        run: ./gradlew :sharedUi:jvmTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+
+      - name: Release variant unit regression tests
+        run: ./gradlew :app:testProdReleaseUnitTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+
+      - name: Android Lint (dev debug)
+        run: ./gradlew :app:lintDevDebug --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+
+      # Compile the instrumentation APK, even without an ARM64 emulator/device.
+      # An assembled test APK is not evidence of a successful runtime test.
+      - name: Compile Android instrumentation tests
+        run: ./gradlew :app:assembleDevDebugAndroidTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+
+      - name: Upload stability reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurelis-informes-b13
+          path: |
+            app/build/reports/lint-results-*.html
+            app/build/reports/lint-results-*.xml
+            app/build/test-results/testProdReleaseUnitTest/
+            app/build/reports/tests/testProdReleaseUnitTest/
+            sharedUi/build/test-results/jvmTest/
+            sharedUi/build/reports/tests/jvmTest/
+          if-no-files-found: ignore
