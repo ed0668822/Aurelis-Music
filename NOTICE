@@ -1,0 +1,11 @@
+Aurelis Music — Third-party notices
+
+Parte de la lógica de AutoMix adaptada de Mornye (LGPL-3.0-only, Copyright 2026 zarzet)
+Source: https://github.com/mornyeapp/Mornye
+
+The AutoMix concepts in this experiment are being reimplemented for Aurelis Music
+using Kotlin and the existing native playback engine. No Mornye Dart or Rust
+source files are copied. Mornye's original copyright and LGPL-3.0-only
+license designation are acknowledged above.
+
+This notice does not replace any other third-party notices or license obligations.
