@@ -65,8 +65,10 @@ object MostReplayed {
     fun isYouTubeId(id: String): Boolean =
         id.length == 11 && id.all { it.isLetterOrDigit() || it == '_' || it == '-' }
 
-    private fun fresh(entry: Entry, now: Long): Boolean =
-        now - entry.checkedAt in 0 until if (entry.heatmap() == null) NEGATIVE_TTL_MS else POSITIVE_TTL_MS
+    private fun fresh(entry: Entry, now: Long): Boolean {
+        val ttl = if (entry.heatmap() == null) NEGATIVE_TTL_MS else POSITIVE_TTL_MS
+        return (now - entry.checkedAt) in 0L until ttl
+    }
 
     /** A nonblocking first value for the seek button, when previously fetched. */
     fun knownPeak(videoId: String, durationMs: Long): Long? =
@@ -76,10 +78,11 @@ object MostReplayed {
     suspend fun peakFor(videoId: String, durationMs: Long): Long? {
         if (!isYouTubeId(videoId) || durationMs < MIN_DURATION_MS) return null
         ensureLoaded()
-        knownPeak(videoId, durationMs)?.let { return it }
-        // A cached confirmed absence is not a network failure; do not refetch.
-        entries[videoId]?.takeIf { fresh(it, System.currentTimeMillis()) && it.heatmap() == null }
-            ?.let { return null }
+        // A valid cached response is authoritative even if no prominent peak
+        // was present: otherwise a flat video triggers repeated web requests.
+        entries[videoId]?.takeIf { fresh(it, System.currentTimeMillis()) }?.let {
+            return it.heatmap()?.let { curve -> peakMs(curve, durationMs) }
+        }
         val answer = withTimeoutOrNull(NETWORK_TIMEOUT_MS) {
             try {
                 Innertube.webNext(videoId)

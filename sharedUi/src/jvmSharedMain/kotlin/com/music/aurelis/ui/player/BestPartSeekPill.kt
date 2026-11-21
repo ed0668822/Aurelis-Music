@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.produceState
 import com.music.aurelis.data.innertube.MostReplayed
@@ -65,7 +66,7 @@ internal fun BestPartSeekPill(
     onSeek: (Long) -> Unit,
 ) {
     val publicPeak by produceState<Long?>(
-        initialValue = MostReplayed.knownPeak(videoId, durationMs),
+        initialValue = if (isLocal) null else MostReplayed.knownPeak(videoId, durationMs),
         key1 = videoId,
         key2 = durationMs,
         key3 = isLocal,
