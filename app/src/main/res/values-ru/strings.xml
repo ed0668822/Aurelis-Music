@@ -1576,4 +1576,6 @@
     <string name="replay_personality_day">Дневной слушатель</string>
     <string name="replay_personality_all">Слушает в любое время</string>
     <string name="replay_annual_play_local">Воспроизвести избранную песню с устройства</string>
+    <string name="lyrics_share_video">Видео</string>
+    <string name="lyrics_share_image">Изображение</string>
 </resources>

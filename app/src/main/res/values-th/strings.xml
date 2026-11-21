@@ -1527,4 +1527,6 @@
     <string name="replay_personality_day">ผู้ฟังช่วงกลางวัน</string>
     <string name="replay_personality_all">ผู้ฟังตลอดวัน</string>
     <string name="replay_annual_play_local">เล่นเพลงเด่นจากอุปกรณ์นี้</string>
+    <string name="lyrics_share_video">วิดีโอ</string>
+    <string name="lyrics_share_image">รูปภาพ</string>
 </resources>

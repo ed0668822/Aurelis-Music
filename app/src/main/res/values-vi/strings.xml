@@ -1461,4 +1461,6 @@
     <string name="replay_personality_day">Nghe nhạc ban ngày</string>
     <string name="replay_personality_all">Nghe nhạc cả ngày</string>
     <string name="replay_annual_play_local">Phát bài hát nổi bật trên thiết bị này</string>
+    <string name="lyrics_share_video">Video</string>
+    <string name="lyrics_share_image">Hình ảnh</string>
 </resources>

@@ -1497,4 +1497,6 @@
     <string name="replay_personality_day">白天聆聽型</string>
     <string name="replay_personality_all">全天聆聽型</string>
     <string name="replay_annual_play_local">播放此裝置上的年度精選歌曲</string>
+    <string name="lyrics_share_video">影片</string>
+    <string name="lyrics_share_image">圖片</string>
 </resources>

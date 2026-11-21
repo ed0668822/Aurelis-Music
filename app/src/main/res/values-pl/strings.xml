@@ -1596,4 +1596,6 @@
     <string name="replay_personality_day">Słuchacz dzienny</string>
     <string name="replay_personality_all">Słucha o każdej porze</string>
     <string name="replay_annual_play_local">Odtwórz wyróżniony utwór z urządzenia</string>
+    <string name="lyrics_share_video">Wideo</string>
+    <string name="lyrics_share_image">Obraz</string>
 </resources>

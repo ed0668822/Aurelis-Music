@@ -1549,4 +1549,6 @@
     <string name="replay_personality_day">Ouvinte diurno</string>
     <string name="replay_personality_all">Ouvinte de todas as horas</string>
     <string name="replay_annual_play_local">Reproduzir um destaque deste dispositivo</string>
+    <string name="lyrics_share_video">Vídeo</string>
+    <string name="lyrics_share_image">Imagem</string>
 </resources>

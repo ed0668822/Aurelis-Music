@@ -1521,4 +1521,6 @@
     <string name="replay_personality_day">白天听歌型</string>
     <string name="replay_personality_all">全天听歌型</string>
     <string name="replay_annual_play_local">播放此设备上的年度精选歌曲</string>
+    <string name="lyrics_share_video">视频</string>
+    <string name="lyrics_share_image">图片</string>
 </resources>

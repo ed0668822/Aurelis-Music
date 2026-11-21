@@ -1501,4 +1501,6 @@
     <string name="replay_personality_day">Gündüz dinleyicisi</string>
     <string name="replay_personality_all">Gün boyu dinleyici</string>
     <string name="replay_annual_play_local">Bu cihazdaki öne çıkan şarkıyı çal</string>
+    <string name="lyrics_share_video">Video</string>
+    <string name="lyrics_share_image">Görsel</string>
 </resources>
