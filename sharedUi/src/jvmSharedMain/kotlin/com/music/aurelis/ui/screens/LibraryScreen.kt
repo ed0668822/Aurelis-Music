@@ -198,7 +198,11 @@ fun LibraryScreen(
                             )
                         }
                     }
-                    shelves.forEach { shelf ->
+                    // Keep Library focused on playlists and local device music.
+                    // Artists and Subscriptions are YouTube Music shelves, not the
+                    // on-device Artists tab. Hide them here without removing data
+                    // or changing the local music grouping and playback.
+                    shelves.filterNot { it.title in HIDDEN_LIBRARY_SHELVES }.forEach { shelf ->
                         item(key = "shelf:${shelf.title}") {
                             if (shelf.title == PLAYLISTS) {
                                 val pinnedFirst = shelf.pinnedFirst(pinnedPlaylists)
@@ -474,4 +478,7 @@ private fun HomeShelf.sortedForLibrary(sort: LibrarySort): HomeShelf = when (sor
 }
 
 /** The library feed whose cards are the account's own — see [PlaylistShelf]. */
+/** Remote account shelves excluded from the Aurelis local-first Library layout. */
+private val HIDDEN_LIBRARY_SHELVES = setOf("Artists", "Subscriptions")
+
 private const val PLAYLISTS = YtMusicRepository.PLAYLISTS_SHELF
