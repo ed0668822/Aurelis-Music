@@ -10,6 +10,13 @@ enum class QueueTier {
     AUTOPLAY,
 }
 
+/** Identifies one occurrence, not just a song, in a live queue snapshot. */
+data class QueueEntryIdentity(
+    val mediaId: String,
+    val queueEntryId: String?,
+    val occurrence: Int,
+)
+
 /**
  * One credited artist, as YouTube Music itself states them.
  *
