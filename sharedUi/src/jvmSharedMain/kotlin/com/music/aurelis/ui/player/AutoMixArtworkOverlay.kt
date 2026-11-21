@@ -11,10 +11,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.graphicsLayer
@@ -115,18 +111,9 @@ fun AutoMixArtworkOverlay(
                     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                     .drawWithContent {
                         drawContent()
-                        // A soft diagonal mask reaches both ends precisely at p=0/1.
-                        // GPU masking is considerably cheaper than another Canvas decoder.
-                        val leading = (-0.35f + 1.70f * eased) * size.width
-                        val feather = size.width * 0.28f
-                        drawRect(
-                            brush = Brush.linearGradient(
-                                colors = listOf(Color.Black, Color.Transparent),
-                                start = Offset(leading - feather, size.height * 0.20f),
-                                end = Offset(leading + feather, size.height * 0.80f),
-                            ),
-                            blendMode = BlendMode.DstIn,
-                        )
+                        // Audio-driven organic reveal; reduced-motion still uses alpha.
+                        // No independent UI timer or extra Canvas decoder is created.
+                        drawOrganicArtworkMask(eased, mix.generation)
                     }
             }
             AsyncImage(
