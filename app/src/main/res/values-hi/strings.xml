@@ -1517,4 +1517,8 @@
     <string name="automix_artwork_transition_subtitle">ऑडियो बदले बिना AutoMix के दौरान दोनों कवर के बीच सहज बदलाव दिखाएँ।</string>
     <string name="automix_mini_artwork_transition">मिनी प्लेयर कवर एनिमेट करें</string>
     <string name="automix_mini_artwork_transition_subtitle">छोटे प्लेयर में भी वही कवर बदलाव दिखाएँ।</string>
+    <string name="show_total_duration">गाने की कुल अवधि दिखाएँ</string>
+    <string name="show_total_duration_subtitle">प्रगति पट्टी के पास बचे हुए समय के बजाय कुल अवधि दिखाएँ।</string>
+    <string name="hide_lyrics_preview">गीत के बोल का पूर्वावलोकन छिपाएँ</string>
+    <string name="hide_lyrics_preview_subtitle">प्रगति पट्टी के ऊपर की पंक्ति छिपाएँ; पूरे बोल फिर भी उपलब्ध रहेंगे।</string>
 </resources>

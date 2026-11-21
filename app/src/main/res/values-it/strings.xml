@@ -1456,4 +1456,8 @@
     <string name="automix_artwork_transition_subtitle">Sfuma tra le due copertine durante AutoMix senza modificare l\'audio.</string>
     <string name="automix_mini_artwork_transition">Anima la copertina del MiniPlayer</string>
     <string name="automix_mini_artwork_transition_subtitle">Mostra la stessa transizione nel lettore compatto.</string>
+    <string name="show_total_duration">Mostra la durata totale</string>
+    <string name="show_total_duration_subtitle">Mostra la durata totale invece del tempo rimanente accanto alla barra.</string>
+    <string name="hide_lyrics_preview">Nascondi anteprima del testo</string>
+    <string name="hide_lyrics_preview_subtitle">Nasconde la riga sopra la barra; il testo completo resta disponibile.</string>
 </resources>

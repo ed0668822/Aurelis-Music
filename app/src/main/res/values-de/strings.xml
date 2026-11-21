@@ -1517,4 +1517,8 @@
     <string name="automix_artwork_transition_subtitle">Blendet beide Cover während AutoMix über, ohne den Ton zu verändern.</string>
     <string name="automix_mini_artwork_transition">MiniPlayer-Cover animieren</string>
     <string name="automix_mini_artwork_transition_subtitle">Zeigt denselben Cover-Übergang im kompakten Player.</string>
+    <string name="show_total_duration">Gesamtdauer anzeigen</string>
+    <string name="show_total_duration_subtitle">Zeigt neben der Zeitleiste die Gesamtdauer statt der verbleibenden Zeit.</string>
+    <string name="hide_lyrics_preview">Liedtextvorschau ausblenden</string>
+    <string name="hide_lyrics_preview_subtitle">Blendet die Textzeile über der Zeitleiste aus. Der vollständige Liedtext bleibt verfügbar.</string>
 </resources>

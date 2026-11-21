@@ -1518,4 +1518,8 @@
     <string name="automix_artwork_transition_subtitle">Fait apparaître les deux pochettes pendant AutoMix sans modifier le son.</string>
     <string name="automix_mini_artwork_transition">Animer la pochette du minilecteur</string>
     <string name="automix_mini_artwork_transition_subtitle">Affiche la même transition dans le lecteur compact.</string>
+    <string name="show_total_duration">Afficher la durée totale</string>
+    <string name="show_total_duration_subtitle">Affiche la durée totale au lieu du temps restant près de la barre de lecture.</string>
+    <string name="hide_lyrics_preview">Masquer l\'aperçu des paroles</string>
+    <string name="hide_lyrics_preview_subtitle">Masque la ligne au-dessus de la barre; les paroles complètes restent accessibles.</string>
 </resources>

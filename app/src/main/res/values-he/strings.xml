@@ -1522,4 +1522,8 @@
     <string name="automix_artwork_transition_subtitle">מעבר חלק בין שתי העטיפות במהלך AutoMix בלי לשנות את השמע.</string>
     <string name="automix_mini_artwork_transition">הנפשת העטיפה בנגן המוקטן</string>
     <string name="automix_mini_artwork_transition_subtitle">הצגת אותו מעבר עטיפות בנגן המוקטן.</string>
+    <string name="show_total_duration">הצגת משך השיר המלא</string>
+    <string name="show_total_duration_subtitle">הצגת משך השיר המלא במקום הזמן שנותר ליד פס ההתקדמות.</string>
+    <string name="hide_lyrics_preview">הסתרת תצוגת מילים מקדימה</string>
+    <string name="hide_lyrics_preview_subtitle">הסתרת שורת המילים מעל פס ההתקדמות; המילים המלאות עדיין זמינות.</string>
 </resources>
