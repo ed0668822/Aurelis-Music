@@ -3201,7 +3201,23 @@ class PlaybackService : MediaLibraryService() {
                     val at = activePlayer.currentMediaItemIndex - seedBack
                     if (at >= 0) activePlayer.getMediaItemAt(at).toSong() else current
                 }
-                val result = loadAutoplayTracks(existing, seedSong, remaining)
+                // A local file must stay local: no YouTube radio/search requests,
+                // no whole-library audio analysis, and no shared-party queue edits.
+                val result = if (!activeParty.inParty && current.localUri != null) {
+                    Result.success(
+                        LocalAutoplaySource.suggestions(
+                            context = this@PlaybackService,
+                            seed = seedSong,
+                            existing = existing,
+                            limit = remaining,
+                            bpmFor = { id ->
+                                trackAnalyzer.analysisFor(id).bpm.takeIf { it in 45.0..230.0 }
+                            },
+                        ),
+                    )
+                } else {
+                    loadAutoplayTracks(existing, seedSong, remaining)
+                }
                 val resolved = result.getOrElse {
                     TrackLog.w(
                         "Aurelis Music",
