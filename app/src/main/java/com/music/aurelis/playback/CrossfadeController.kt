@@ -1,9 +1,13 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 package com.music.aurelis.playback
 
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -11,6 +15,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.music.aurelis.data.listentogether.ListenTogether
 import com.music.aurelis.data.settings.AppSettings
+import com.music.aurelis.data.settings.AutoMixEffect
+import com.music.aurelis.data.settings.AutoMixOptions
 import com.music.aurelis.data.settings.MixBlend
 import com.music.aurelis.data.settings.MixDeck
 import com.music.aurelis.data.settings.MixTransitionView
@@ -382,6 +388,9 @@ class CrossfadeController(
      * halfway through the blend would be heard as the low end flapping.
      */
     private var render = Render()
+
+    /** Snapshot per transition so moving a control cannot change an active effect mid-fade. */
+    private var experimentalOptions = AutoMixOptions()
 
     /** The Automix plan the transition in flight was armed from, for the mix popup; null for a standard fade. */
     private var planInFlight: TransitionPlan? = null
@@ -1434,7 +1443,10 @@ class CrossfadeController(
         rampStepMs = beatMs
         rampStartMs = endMs - fade - rampSteps * beatMs
         rampStep = 0
-        render = renderStyle
+        experimentalOptions = if (smart) AppSettings.autoMixOptions.value.normalized() else AutoMixOptions()
+        // Explicit effect presets replace the plan's filter/echo/phase ride, not
+        // the two-deck handoff or its automatic cue and timing decisions.
+        render = if (smart && experimentalOptions.effect != AutoMixEffect.AUTO) Render() else renderStyle
         planInFlight = plan
         armDeadline = SystemClock.elapsedRealtime() + ARM_TIMEOUT_MS + rampSteps * beatMs
         handedOff = false
@@ -1472,7 +1484,9 @@ class CrossfadeController(
         // Stacks on top of the listener's speed control rather than replacing
         // it, so a beatmatched transition and "play everything at 1.25x" don't
         // fight each other. Undone in [finish].
-        into.setPlaybackSpeed((AppSettings.playbackSpeed.value * incomingPlaybackRate).toFloat())
+        into.setPlaybackParameters(
+            PlaybackParameters((AppSettings.playbackSpeed.value * incomingPlaybackRate).toFloat(), 1f),
+        )
         into.volume = 0f
         val setNanos0 = SystemClock.elapsedRealtimeNanos()
         into.setMediaItems(items, nextIndex, incomingCueTimeMs)
@@ -1676,6 +1690,14 @@ class CrossfadeController(
         if (rampSteps > 0 && rampStep < rampSteps) {
             rampStep = rampSteps
             out.setPlaybackSpeed((AppSettings.playbackSpeed.value * outgoingPlaybackRate).toFloat())
+        }
+        if (smartFadeActive && experimentalOptions.effect != AutoMixEffect.AUTO &&
+            (experimentalOptions.effectiveSpeed != 1f || experimentalOptions.effectivePitchSemitones != 0f)
+        ) {
+            val effectSpeed = (AppSettings.playbackSpeed.value *
+                outgoingPlaybackRate * experimentalOptions.effectiveSpeed).toFloat()
+            val effectPitch = 2.0.pow(experimentalOptions.effectivePitchSemitones / 12.0).toFloat()
+            out.setPlaybackParameters(PlaybackParameters(effectSpeed.coerceIn(0.1f, 4f), effectPitch))
         }
         outgoingAnalysis = out.currentMediaItem?.let(analysisFor) ?: TrackAnalysis()
         incomingAnalysis = into.currentMediaItem?.let(analysisFor) ?: TrackAnalysis()
@@ -2989,8 +3011,10 @@ class CrossfadeController(
         if (handedOff && render.echo) outgoing?.volume = 0f
         filters.open()
         filters.parkEchoes()
+        filters.parkExperimentalEchoes()
         onBlendHeadroom(1f)
         render = Render()
+        experimentalOptions = AutoMixOptions()
         nudgeUntil = 0L
 
         if (handedOff) {
@@ -3010,6 +3034,10 @@ class CrossfadeController(
             // moved and the standby is the one to throw away.
             outgoing?.let { out ->
                 out.volume = 1f
+                // An experimental pitch effect must never leak into ordinary playback.
+                out.setPlaybackParameters(
+                    PlaybackParameters((AppSettings.playbackSpeed.value * outgoingPlaybackRate).toFloat(), 1f),
+                )
                 // Sped up for a blend that never came: walk it back like any stretch.
                 if (outgoingPlaybackRate != 1.0) {
                     beginEase(out, outgoingPlaybackRate, out.currentMediaItem?.let(analysisFor) ?: TrackAnalysis())
@@ -3055,7 +3083,7 @@ class CrossfadeController(
         // the session: a hold left on it would pause every track at its end.
         player.pauseAtEndOfMediaItems = false
         player.volume = 1f
-        player.setPlaybackSpeed(AppSettings.playbackSpeed.value)
+        player.setPlaybackParameters(PlaybackParameters(AppSettings.playbackSpeed.value, 1f))
     }
 
     // ---- Numbers ------------------------------------------------------------
@@ -3108,6 +3136,12 @@ class CrossfadeController(
                 filters.incomingEcho(delaySeconds, send, dry)
             }
         }
+
+        override fun outgoingExperimentalEcho(wet: Float) {
+            if (!aimOutgoing) return
+            if (handedOff) filters.outgoingExperimentalEcho(wet)
+            else filters.incomingExperimentalEcho(wet)
+        }
     }
 
     /**
@@ -3158,6 +3192,10 @@ class CrossfadeController(
      * locked: a pause parks the filter exactly where it parks the fade.
      */
     private fun rideStyle(progress: Float) {
+        if (smartFadeActive && experimentalOptions.effect != AutoMixEffect.AUTO) {
+            rideExperimentalEffect(progress)
+            return
+        }
         when (render.style) {
             TransitionStyle.DJ_FILTER -> when (render.filterVariant) {
                 FilterTransitionVariant.BASS_HANDOFF -> rideFallbackBassHandoff(progress)
@@ -3186,6 +3224,27 @@ class CrossfadeController(
             TransitionStyle.EQUAL_POWER -> rideVocalSeparation(progress)
         }
         if (render.echo) rideEchoOut(progress)
+    }
+
+    /**
+     * Realtime version of Mornye's dry-first wet effect. The initial 240 ms
+     * keep the outgoing deck untouched; afterwards the wet amount follows a
+     * smoothstep over at most 1.5 s. Lead-compensated by [rideFilters].
+     */
+    private fun rideExperimentalEffect(progress: Float) {
+        val seconds = (fadeMs / 1000f).coerceAtLeast(0.001f)
+        val ramp = minOf(1.5f, seconds / 3f).coerceAtLeast(0.1f)
+        val t = ((progress.coerceIn(0f, 1f) * seconds - 0.24f) / ramp).coerceIn(0f, 1f)
+        val wet = t * t * (3f - 2f * t)
+        tracks.incoming(TransitionFilterProcessor.OPEN_HZ, TransitionFilterProcessor.OFF_HZ)
+        val cutoff = if (experimentalOptions.useLowPass) {
+            TransitionFilterProcessor.OPEN_HZ *
+                (1_200f / TransitionFilterProcessor.OPEN_HZ).pow(wet)
+        } else {
+            TransitionFilterProcessor.OPEN_HZ
+        }
+        tracks.outgoing(cutoff, TransitionFilterProcessor.OFF_HZ)
+        if (experimentalOptions.useEcho && wet > 0f) tracks.outgoingExperimentalEcho(wet)
     }
 
     /**

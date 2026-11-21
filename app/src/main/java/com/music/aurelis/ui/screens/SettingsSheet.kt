@@ -841,16 +841,6 @@ fun SettingsScreen(
             // The experimental settings are stored now but are deliberately not applied
             // until the corresponding renderer/planner stages have been implemented.
             if (smartFade) {
-                val optionsTitle = stringResource(R.string.automix_options_title)
-                row(optionsTitle, "automix", "effects", "experiment") {
-                    BypassedByBitPerfect(bitPerfectReady) {
-                        SettingsRow(
-                            icon = SfIcons.Tune,
-                            title = optionsTitle,
-                            subtitle = stringResource(R.string.automix_options_pending),
-                        )
-                    }
-                }
                 val durationTitle = stringResource(R.string.automix_duration)
                 row(durationTitle, "automix", "seconds", "length") {
                     BypassedByBitPerfect(bitPerfectReady) {
@@ -3082,7 +3072,7 @@ fun SettingsChoicePage(
                     selected = options.effect,
                     label = { it.localizedLabel() },
                     detail = { it.description() },
-                    footer = stringResource(R.string.automix_effect_footer),
+                    footer = null,
                 ) { effect ->
                     AppSettings.setAutoMixEffect(effect)
                     onChosen()

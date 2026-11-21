@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 package com.music.aurelis.playback
 
 import android.app.PendingIntent
@@ -1955,6 +1958,17 @@ class PlaybackService : MediaLibraryService() {
                 override fun parkEchoes() {
                     transitionFilterA.parkEcho()
                     transitionFilterB.parkEcho()
+                }
+
+                override fun incomingExperimentalEcho(wet: Float) =
+                    activeFilter.setExperimentalEcho(wet)
+
+                override fun outgoingExperimentalEcho(wet: Float) =
+                    spareFilter.setExperimentalEcho(wet)
+
+                override fun parkExperimentalEchoes() {
+                    transitionFilterA.parkExperimentalEcho()
+                    transitionFilterB.parkExperimentalEcho()
                 }
             },
             analysisRunningFor = { item -> trackAnalyzer.isAnalysing(item.mediaId) },
