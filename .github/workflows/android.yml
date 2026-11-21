@@ -261,6 +261,9 @@ jobs:
             "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
           chmod +x gradlew
 
+      - name: B20 | Validate lyrics sharing translations
+        run: python3 scripts/verify_b20_locales.py
+
       # B13 validates the independent desktop/JVM shared UI source-set as well:
       # Android app tests do not execute src/jvmTest in :sharedUi.
       - name: Shared UI JVM regression tests
