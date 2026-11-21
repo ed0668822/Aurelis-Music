@@ -1,6 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!-- SPDX-FileCopyrightText: 2026 Aurelis -->
 <!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">Đang phát</string>
