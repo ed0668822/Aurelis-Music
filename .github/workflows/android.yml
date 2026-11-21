@@ -51,6 +51,12 @@ jobs:
 
       - run: chmod +x gradlew
 
+      # A004/A005: checks first-party identities, JNI paths, and ABI defaults
+      # before building APKs. Tests catch package migration regressions even
+      # when Gradle can compile unresolved native calls.
+      - name: Validate Aurelis identity and unit regression tests
+        run: ./gradlew :app:verifyAurelisBuildIdentity :app:testDevDebugUnitTest -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+
       # El módulo del reloj ya no existe aquí, así que no se empaqueta.
       - name: Build the dev APK
         run: ./gradlew assembleDevDebug -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
