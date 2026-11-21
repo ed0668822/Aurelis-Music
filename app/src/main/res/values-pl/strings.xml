@@ -1553,4 +1553,8 @@
     <string name="discord_oauth_browser_error">Nie udało się otworzyć przeglądarki do autoryzacji Discorda.</string>
     <string name="discord_oauth_failed">Autoryzację Discorda anulowano, wygasła lub jest nieprawidłowa. Spróbuj ponownie.</string>
     <string name="discord_oauth_config_error">Nie udało się zakończyć autoryzacji. Włącz klienta publicznego i zarejestruj dokładny adres przekierowania w portalu Discord.</string>
+    <string name="automix_artwork_transition">Animowane okładki AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">Płynnie łączy obie okładki podczas AutoMix bez zmiany dźwięku.</string>
+    <string name="automix_mini_artwork_transition">Animuj okładkę miniodtwarzacza</string>
+    <string name="automix_mini_artwork_transition_subtitle">Pokazuje to samo przejście w małym odtwarzaczu.</string>
 </resources>

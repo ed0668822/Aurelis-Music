@@ -1513,4 +1513,8 @@
     <string name="discord_oauth_browser_error">Discord की अनुमति के लिए ब्राउज़र नहीं खुल सका।</string>
     <string name="discord_oauth_failed">Discord की अनुमति रद्द, समाप्त या अमान्य हो गई। फिर से कोशिश करें।</string>
     <string name="discord_oauth_config_error">अनुमति पूरी नहीं हो सकी। Public Client सक्षम करें और Discord डेवलपर पोर्टल में सही रीडायरेक्ट URI जोड़ें।</string>
+    <string name="automix_artwork_transition">AutoMix में एनिमेटेड कवर</string>
+    <string name="automix_artwork_transition_subtitle">ऑडियो बदले बिना AutoMix के दौरान दोनों कवर के बीच सहज बदलाव दिखाएँ।</string>
+    <string name="automix_mini_artwork_transition">मिनी प्लेयर कवर एनिमेट करें</string>
+    <string name="automix_mini_artwork_transition_subtitle">छोटे प्लेयर में भी वही कवर बदलाव दिखाएँ।</string>
 </resources>

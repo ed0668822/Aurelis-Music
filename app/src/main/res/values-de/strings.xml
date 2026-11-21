@@ -1513,4 +1513,8 @@
     <string name="discord_oauth_browser_error">Der Browser für die Discord-Autorisierung konnte nicht geöffnet werden.</string>
     <string name="discord_oauth_failed">Die Discord-Autorisierung wurde abgebrochen, ist abgelaufen oder ungültig. Erneut versuchen.</string>
     <string name="discord_oauth_config_error">Autorisierung fehlgeschlagen. Aktiviere Public Client und hinterlege die exakte Weiterleitungs-URI im Discord-Entwicklerportal.</string>
+    <string name="automix_artwork_transition">Animierte AutoMix-Cover</string>
+    <string name="automix_artwork_transition_subtitle">Blendet beide Cover während AutoMix über, ohne den Ton zu verändern.</string>
+    <string name="automix_mini_artwork_transition">MiniPlayer-Cover animieren</string>
+    <string name="automix_mini_artwork_transition_subtitle">Zeigt denselben Cover-Übergang im kompakten Player.</string>
 </resources>

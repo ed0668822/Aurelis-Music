@@ -1363,4 +1363,8 @@
     <string name="discord_oauth_browser_error">Discord 인증용 브라우저를 열 수 없습니다.</string>
     <string name="discord_oauth_failed">Discord 인증이 취소되었거나 만료되었거나 유효하지 않습니다. 다시 시도하세요.</string>
     <string name="discord_oauth_config_error">인증을 완료할 수 없습니다. Discord 개발자 포털에서 Public Client를 켜고 정확한 리디렉션 URI를 등록하세요.</string>
+    <string name="automix_artwork_transition">AutoMix 앨범 아트 전환</string>
+    <string name="automix_artwork_transition_subtitle">오디오를 변경하지 않고 AutoMix 중 두 앨범 아트를 부드럽게 전환합니다.</string>
+    <string name="automix_mini_artwork_transition">미니 플레이어 아트 애니메이션</string>
+    <string name="automix_mini_artwork_transition_subtitle">작은 플레이어에서도 동일한 전환을 표시합니다.</string>
 </resources>

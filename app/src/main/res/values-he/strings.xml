@@ -1518,4 +1518,8 @@
     <string name="discord_oauth_browser_error">לא ניתן לפתוח דפדפן לאישור Discord.</string>
     <string name="discord_oauth_failed">אישור Discord בוטל, פג תוקפו או אינו תקין. יש לנסות שוב.</string>
     <string name="discord_oauth_config_error">לא ניתן להשלים את האישור. הפעלת Public Client ורישום כתובת ההפניה המדויקת בפורטל המפתחים של Discord נדרשים.</string>
+    <string name="automix_artwork_transition">עטיפות מונפשות ב-AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">מעבר חלק בין שתי העטיפות במהלך AutoMix בלי לשנות את השמע.</string>
+    <string name="automix_mini_artwork_transition">הנפשת העטיפה בנגן המוקטן</string>
+    <string name="automix_mini_artwork_transition_subtitle">הצגת אותו מעבר עטיפות בנגן המוקטן.</string>
 </resources>
