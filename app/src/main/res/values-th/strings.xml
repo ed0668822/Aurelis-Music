@@ -1504,4 +1504,5 @@
     <string name="show_total_duration_subtitle">แสดงระยะเวลาทั้งหมดแทนเวลาที่เหลืออยู่ข้างแถบเล่นเพลง</string>
     <string name="hide_lyrics_preview">ซ่อนตัวอย่างเนื้อเพลง</string>
     <string name="hide_lyrics_preview_subtitle">ซ่อนบรรทัดเหนือแถบเล่นเพลง โดยยังเปิดเนื้อเพลงเต็มได้</string>
+    <string name="sleep_timer_fade_out">ค่อย ๆ ลดเสียงในช่วง 30 วินาทีสุดท้าย</string>
 </resources>

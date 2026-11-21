@@ -1478,4 +1478,5 @@
     <string name="show_total_duration_subtitle">İlerleme çubuğunda kalan süre yerine şarkının toplam süresini gösterir.</string>
     <string name="hide_lyrics_preview">Şarkı sözü önizlemesini gizle</string>
     <string name="hide_lyrics_preview_subtitle">Çubuğun üstündeki satırı gizler; tam şarkı sözleri erişilebilir kalır.</string>
+    <string name="sleep_timer_fade_out">Son 30 saniyede sesi yavaşça kıs</string>
 </resources>

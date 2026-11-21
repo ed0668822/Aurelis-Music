@@ -1498,4 +1498,5 @@
     <string name="show_total_duration_subtitle">在进度条旁显示歌曲总时长，而非剩余时间。</string>
     <string name="hide_lyrics_preview">隐藏歌词预览</string>
     <string name="hide_lyrics_preview_subtitle">隐藏进度条上方的歌词行，仍可查看完整歌词。</string>
+    <string name="sleep_timer_fade_out">在最后 30 秒逐渐降低音量</string>
 </resources>

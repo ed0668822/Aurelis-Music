@@ -1438,4 +1438,5 @@
     <string name="show_total_duration_subtitle">Hiện thời lượng đầy đủ thay vì thời gian còn lại cạnh thanh phát.</string>
     <string name="hide_lyrics_preview">Ẩn xem trước lời bài hát</string>
     <string name="hide_lyrics_preview_subtitle">Ẩn dòng lời phía trên thanh phát; vẫn có thể xem toàn bộ lời bài hát.</string>
+    <string name="sleep_timer_fade_out">Giảm dần âm lượng trong 30 giây cuối</string>
 </resources>

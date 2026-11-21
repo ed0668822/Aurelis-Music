@@ -1553,4 +1553,5 @@
     <string name="show_total_duration_subtitle">Показывает полную длительность вместо оставшегося времени у полосы воспроизведения.</string>
     <string name="hide_lyrics_preview">Скрыть предпросмотр текста</string>
     <string name="hide_lyrics_preview_subtitle">Скрывает строку над полосой; полный текст песни остаётся доступен.</string>
+    <string name="sleep_timer_fade_out">Плавно снижать громкость в последние 30 секунд</string>
 </resources>
