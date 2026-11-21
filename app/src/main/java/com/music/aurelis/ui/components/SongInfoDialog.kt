@@ -117,8 +117,13 @@ internal fun SongInfoDialog(song: Song, onDismiss: () -> Unit) {
                         value = value ?: unavailable.takeIf { info != null },
                     )
                 }
-                // B08: only show credits backed by fields in the local audio file.
-                // Do not label the artist/composer as producer without an actual producer tag.
+                // YouTube Music returns role labels in the requested locale.
+                // Missing roles stay absent: never invent producers or performers.
+                info?.credits.orEmpty().forEach { credit ->
+                    AlertRule(Modifier.padding(start = 16.dp))
+                    SongInfoRow(credit.role, credit.text)
+                }
+                // Local-file credits remain sourced only from actual tags.
                 localCredits.forEach { credit ->
                     val label = when (credit.role) {
                         LocalCreditRole.COMPOSER -> R.string.song_info_composer
