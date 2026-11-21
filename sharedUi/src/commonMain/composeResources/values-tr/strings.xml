@@ -199,4 +199,6 @@
     <string name="search_library_hint">Şarkılar, Sanatçılar ve Albümler</string>
     <string name="search_library_no_results">Yerel Müzik’te “%1$s” ile eşleşen bir şey yok.</string>
     <string name="best_part">En iyi bölüm</string>
+    <string name="mixes_yours">Karışımların</string>
+    <string name="mixes_none">Henüz karışım yok. Dinlemeye devam et, YouTube Music senin için karışımlar oluştursun.</string>
 </resources>

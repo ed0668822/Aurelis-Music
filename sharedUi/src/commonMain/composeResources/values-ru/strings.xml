@@ -199,4 +199,6 @@
     <string name="search_library_hint">Треки, исполнители и альбомы</string>
     <string name="search_library_no_results">В локальной музыке нет ничего, совпадающего с «%1$s».</string>
     <string name="best_part">Лучший фрагмент</string>
+    <string name="mixes_yours">Ваши миксы</string>
+    <string name="mixes_none">Миксов пока нет. Слушайте музыку, и YouTube Music создаст подборки для вас.</string>
 </resources>

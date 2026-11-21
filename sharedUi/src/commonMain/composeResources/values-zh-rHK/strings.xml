@@ -199,4 +199,6 @@
     <string name="search_library_hint">歌曲、藝人和專輯</string>
     <string name="search_library_no_results">本地音樂中沒有與「%1$s」匹配的內容。</string>
     <string name="best_part">精彩片段</string>
+    <string name="mixes_yours">你的混音</string>
+    <string name="mixes_none">目前還沒有混音。繼續聆聽，YouTube Music 就會為你製作混音。</string>
 </resources>

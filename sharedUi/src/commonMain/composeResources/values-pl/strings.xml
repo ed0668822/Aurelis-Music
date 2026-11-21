@@ -199,4 +199,6 @@
     <string name="search_library_hint">Utwory, wykonawcy i albumy</string>
     <string name="search_library_no_results">NIC w muzyce lokalnej nie pasuje do „%1$s”.</string>
     <string name="best_part">Najlepszy fragment</string>
+    <string name="mixes_yours">Twoje miksy</string>
+    <string name="mixes_none">Brak miksów. Słuchaj dalej, a YouTube Music przygotuje je dla Ciebie.</string>
 </resources>

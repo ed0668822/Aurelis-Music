@@ -199,4 +199,6 @@
     <string name="search_library_hint">Bài hát, nghệ sĩ và album</string>
     <string name="search_library_no_results">Không có gì trong Nhạc cục bộ khớp với “%1$s”.</string>
     <string name="best_part">Đoạn hay nhất</string>
+    <string name="mixes_yours">Bản phối của bạn</string>
+    <string name="mixes_none">Chưa có bản phối nào. Hãy tiếp tục nghe để YouTube Music tạo bản phối cho bạn.</string>
 </resources>

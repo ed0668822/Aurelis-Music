@@ -199,4 +199,6 @@
     <string name="search_library_hint">เพลง ศิลปิน และอัลบั้ม</string>
     <string name="search_library_no_results">ไม่มีอะไรในเพลงในเครื่องตรงกับ “%1$s”</string>
     <string name="best_part">ช่วงที่ดีที่สุด</string>
+    <string name="mixes_yours">มิกซ์ของคุณ</string>
+    <string name="mixes_none">ยังไม่มีมิกซ์ ฟังเพลงต่อไปแล้ว YouTube Music จะสร้างมิกซ์ให้คุณ</string>
 </resources>
