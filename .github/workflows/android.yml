@@ -270,6 +270,8 @@ jobs:
         run: ./gradlew :app:testProdReleaseUnitTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
 
       - name: Android Lint (dev debug)
+        id: b13_lint
+        continue-on-error: true
         run: ./gradlew :app:lintDevDebug --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
 
       # Compile the instrumentation APK, even without an ARM64 emulator/device.
@@ -290,3 +292,11 @@ jobs:
             sharedUi/build/test-results/jvmTest/
             sharedUi/build/reports/tests/jvmTest/
           if-no-files-found: ignore
+
+      # Keep the full Lint report and complete instrumented-test compilation
+      # before reporting unresolved Lint issues as a failing CI job.
+      - name: Fail on unresolved Android Lint issues
+        if: always() && steps.b13_lint.outcome == 'failure'
+        run: |
+          echo "::error title=B13 Android Lint::Existing Android Lint issues remain. See aurelis-informes-b13."
+          exit 1
