@@ -480,12 +480,13 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
                 val tap360 = ring[endTap + channel]
                 ring[endTap + channel] = input
                 // 0.6 dry + 0.75 echo with delayed tap weights 0.3 / 0.15.
-                val effected = input * EXPERIMENTAL_ECHO_DRY +
-                    EXPERIMENTAL_ECHO_WET * (0.3f * tap180 + 0.15f * tap360)
-                val mixed = input * (1f - wet) + effected * wet
-                // Only effect samples are peak-bounded: untouched tracks keep
-                // their original Float32 dynamic range and bit-perfect bypass.
-                samples[index] = if (wet > 0f) mixed.coerceIn(-0.98f, 0.98f) else input
+                val effected = (input * EXPERIMENTAL_ECHO_DRY +
+                    EXPERIMENTAL_ECHO_WET * (0.3f * tap180 + 0.15f * tap360))
+                    .coerceIn(-0.98f, 0.98f)
+                // Limit the wet branch, not the dry+wet result. Otherwise the
+                // first tiny nonzero wet amount hard-clips a full-scale source
+                // and introduces a click before the smoothstep has ramped in.
+                samples[index] = input * (1f - wet) + effected * wet
             }
             if (++position == frames360) position = 0
         }

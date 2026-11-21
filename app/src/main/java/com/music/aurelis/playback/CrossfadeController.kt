@@ -123,6 +123,8 @@ import java.util.Locale
  * transition has no dip in the middle. That is the standard crossfade law, and
  * it is what makes a long crossfade sound like a blend instead of a dip.
  */
+private const val ASSISTED_HIGH_PASS_HZ = 260f
+
 @UnstableApi
 class CrossfadeController(
     private val scope: CoroutineScope,
@@ -391,6 +393,9 @@ class CrossfadeController(
 
     /** Snapshot per transition so moving a control cannot change an active effect mid-fade. */
     private var experimentalOptions = AutoMixOptions()
+
+    /** 0.25+ confidence fallback: bass-only handoff with no tempo stretching. */
+    private var assistedAutoMix = false
 
     /** The Automix plan the transition in flight was armed from, for the mix popup; null for a standard fade. */
     private var planInFlight: TransitionPlan? = null
@@ -818,6 +823,8 @@ class CrossfadeController(
         filters.open()
         filters.parkEchoes()
         filters.parkExperimentalEchoes()
+        experimentalOptions = AutoMixOptions()
+        assistedAutoMix = false
         onBlendHeadroom(1f)
     }
 
@@ -1473,9 +1480,14 @@ class CrossfadeController(
         rampStartMs = endMs - fade - rampSteps * beatMs
         rampStep = 0
         experimentalOptions = if (smart) AppSettings.autoMixOptions.value.normalized() else AutoMixOptions()
-        // Explicit effect presets replace the plan's filter/echo/phase ride, not
-        // the two-deck handoff or its automatic cue and timing decisions.
-        render = if (smart && experimentalOptions.effect != AutoMixEffect.AUTO) Render() else renderStyle
+        assistedAutoMix = smart && plan?.policyReasons?.contains("automix:assisted") == true
+        // The explicit effects replace the plan's DJ filter gesture, not
+        // the timebase: retain the speed ratio when the two beats were matched.
+        render = if (smart && experimentalOptions.effect != AutoMixEffect.AUTO) {
+            Render(advanced = true)
+        } else {
+            renderStyle
+        }
         planInFlight = plan
         armDeadline = SystemClock.elapsedRealtime() + ARM_TIMEOUT_MS + rampSteps * beatMs
         handedOff = false
@@ -2944,7 +2956,8 @@ class CrossfadeController(
             val whenText = if (inSeconds > 0) "in ${ceil(inSeconds).toInt()} s" else "now"
             val bars = if (plan.beatSeconds > 0) (plan.fadeSeconds / (4 * plan.beatSeconds)).roundToInt() else 0
             val length = if (bars > 0) "$bars bars" else "${"%.1f".format(Locale.ROOT, plan.fadeSeconds)} s"
-            val why = plan.policyReasons.firstOrNull()?.let { " · $it" }.orEmpty()
+            val why = (plan.policyReasons.lastOrNull { it.startsWith("automix:") }
+                ?: plan.policyReasons.firstOrNull())?.let { " · $it" }.orEmpty()
             val noLoop = loopRefusal?.let { " · no loop: $it" }.orEmpty()
             return when (plan.transitionStyle) {
                 TransitionStyle.EQUAL_POWER -> "Automix · crossfading $whenText · ${"%.0f".format(Locale.ROOT, plan.fadeSeconds)} s$why$noLoop"
@@ -3047,6 +3060,7 @@ class CrossfadeController(
         onBlendHeadroom(1f)
         render = Render()
         experimentalOptions = AutoMixOptions()
+        assistedAutoMix = false
         nudgeUntil = 0L
 
         if (handedOff) {
@@ -3226,6 +3240,17 @@ class CrossfadeController(
     private fun rideStyle(progress: Float) {
         if (smartFadeActive && experimentalOptions.effect != AutoMixEffect.AUTO) {
             rideExperimentalEffect(progress)
+            return
+        }
+        if (smartFadeActive && assistedAutoMix) {
+            val t = progress.coerceIn(0f, 1f)
+            val smooth = t * t * (3f - 2f * t)
+            tracks.incoming(TransitionFilterProcessor.OPEN_HZ, TransitionFilterProcessor.OFF_HZ)
+            tracks.outgoing(
+                TransitionFilterProcessor.OPEN_HZ,
+                TransitionFilterProcessor.OFF_HZ +
+                    (ASSISTED_HIGH_PASS_HZ - TransitionFilterProcessor.OFF_HZ) * smooth,
+            )
             return
         }
         when (render.style) {
@@ -3568,6 +3593,8 @@ class CrossfadeController(
         render.style == TransitionStyle.DJ_BLEND ||
             render.style == TransitionStyle.DJ_FILTER ||
             incomingCueTimeMs > 0L ||
+            assistedAutoMix ||
+            experimentalOptions.hasEffects ||
             incomingPlaybackRate != 1.0 ||
             outgoingPlaybackRate != 1.0
         )
