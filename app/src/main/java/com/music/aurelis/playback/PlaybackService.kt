@@ -165,6 +165,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.collect
@@ -183,6 +184,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -616,6 +618,7 @@ class PlaybackService : MediaLibraryService() {
     private val loudnessA = LoudnessProcessor().apply { gainFor = ::loudnessGainFor }
     private val loudnessB = LoudnessProcessor().apply { gainFor = ::loudnessGainFor }
     private var loudnessRetryJob: Job? = null
+    private var replayGainScanJob: Job? = null
 
     /** The platform audio session currently advertised to system audio tools. */
     private var advertisedAudioEffectSessionId: Int = C.AUDIO_SESSION_ID_UNSET
@@ -3198,7 +3201,23 @@ class PlaybackService : MediaLibraryService() {
                     val at = activePlayer.currentMediaItemIndex - seedBack
                     if (at >= 0) activePlayer.getMediaItemAt(at).toSong() else current
                 }
-                val result = loadAutoplayTracks(existing, seedSong, remaining)
+                // A local file must stay local: no YouTube radio/search requests,
+                // no whole-library audio analysis, and no shared-party queue edits.
+                val result = if (!activeParty.inParty && current.localUri != null) {
+                    Result.success(
+                        LocalAutoplaySource.suggestions(
+                            context = this@PlaybackService,
+                            seed = seedSong,
+                            existing = existing,
+                            limit = remaining,
+                            bpmFor = { id ->
+                                trackAnalyzer.analysisFor(id).bpm.takeIf { it in 45.0..230.0 }
+                            },
+                        ),
+                    )
+                } else {
+                    loadAutoplayTracks(existing, seedSong, remaining)
+                }
                 val resolved = result.getOrElse {
                     TrackLog.w(
                         "Aurelis Music",
@@ -7346,6 +7365,11 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         scope.launch {
+            AppSettings.replayGainMode.drop(1).collect {
+                setupLoudness(player?.currentMediaItem?.mediaId)
+            }
+        }
+        scope.launch {
             // Same route the player's output caption reads, so "on speaker"
             // means the same thing here as there.
             combine(
@@ -7431,9 +7455,27 @@ class PlaybackService : MediaLibraryService() {
      * the YouTube stream alongside the substitute lookup rather than only when
      * one fails — see [StreamResolver.loudnessDbFor]'s own doc.
      */
-    private fun loudnessGainFor(mediaId: String): Float = loudnessGainMb(mediaId)
-        ?.let { 10.0.pow(it / 2000.0).toFloat() }
-        ?: 1f
+    private fun loudnessGainFor(mediaId: String): Float {
+        // B04: choose one source of normalization, never stack two gains.
+        // Measurements arrive from background analysis only; if unavailable,
+        // retain the existing streaming loudness normalization unchanged.
+        if (!AppSettings.loudnessNormalization.value ||
+            AppSettings.bitPerfectMode.value != BitPerfectMode.OFF
+        ) return 1f
+        if (AppSettings.loudnessOffOnSpeaker.value &&
+            AudioOutputStatus.current.value.routeKind == AudioRouting.Kind.PHONE
+        ) return 1f
+        ReplayGainMeasurements.get(mediaId)?.let { measurement ->
+            return ReplayGainPolicy.gain(
+                measurement = measurement,
+                mode = AppSettings.replayGainMode.value,
+                bitPerfect = AppSettings.bitPerfectMode.value != BitPerfectMode.OFF,
+            )
+        }
+        return loudnessGainMb(mediaId)
+            ?.let { 10.0.pow(it / 2000.0).toFloat() }
+            ?: 1f
+    }
 
     private fun loudnessGainMb(mediaId: String?): Int? {
         if (!AppSettings.loudnessNormalization.value) return null
@@ -7457,6 +7499,43 @@ class PlaybackService : MediaLibraryService() {
         val exoPlayer = player ?: return
         activeLoudness().track(mediaId, nextMediaIdOf(exoPlayer))
         publishLoudnessFor(mediaId)
+        // R128 is read-only and runs on a bounded IO worker. Cancel any previous
+        // track's analysis on a transition; audio rendering never waits for it.
+        replayGainScanJob?.cancel()
+        replayGainScanJob = null
+        val uri = exoPlayer.currentMediaItem?.localConfiguration?.uri
+        val id = mediaId?.takeIf { it.isNotBlank() }
+        if (id != null && uri != null &&
+            (uri.scheme == "file" || uri.scheme == "content") &&
+            (ReplayGainMeasurements.get(id) == null ||
+                (AppSettings.replayGainMode.value == ReplayGainMode.ALBUM &&
+                    ReplayGainMeasurements.get(id)?.albumIntegratedLufs == null))
+        ) {
+            replayGainScanJob = scope.launch(Dispatchers.IO) {
+                val job = currentCoroutineContext()[Job]
+                val stop = { job?.isActive != true }
+                if (AppSettings.replayGainMode.value == ReplayGainMode.ALBUM) {
+                    val album = LocalReplayGainAlbumAnalyzer.analyze(this@PlaybackService, id, uri, stop)
+                    if (album != null && job?.isActive == true) {
+                        album.forEach { (albumId, measurement) ->
+                            ReplayGainMeasurements.publish(albumId, measurement)
+                        }
+                        withContext(Dispatchers.Main) {
+                            if (player?.currentMediaItem?.mediaId == id) publishLoudnessFor(id)
+                        }
+                        return@launch
+                    }
+                }
+                val measurement = LocalReplayGainAnalyzer.analyze(this@PlaybackService, uri, stop)
+                    ?: return@launch
+                if (job?.isActive == true) {
+                    ReplayGainMeasurements.publish(id, measurement)
+                    withContext(Dispatchers.Main) {
+                        if (player?.currentMediaItem?.mediaId == id) publishLoudnessFor(id)
+                    }
+                }
+            }
+        }
     }
 
     /** The track [exoPlayer] will move onto gaplessly, if any. */
@@ -7467,6 +7546,26 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun publishLoudnessFor(mediaId: String?) {
+        if (AppSettings.bitPerfectMode.value != BitPerfectMode.OFF ||
+            !AppSettings.loudnessNormalization.value ||
+            (AppSettings.loudnessOffOnSpeaker.value &&
+                AudioOutputStatus.current.value.routeKind == AudioRouting.Kind.PHONE)
+        ) {
+            AudioOutputStatus.publishLoudness(gainDb = null, lufs = null)
+            return
+        }
+        val measured = mediaId?.let(ReplayGainMeasurements::get)
+        if (measured != null) {
+            val album = AppSettings.replayGainMode.value == ReplayGainMode.ALBUM &&
+                measured.albumIntegratedLufs != null
+            val loudness = if (album) measured.albumIntegratedLufs!! else measured.integratedLufs
+            val gain = ReplayGainPolicy.gain(measured, AppSettings.replayGainMode.value)
+            AudioOutputStatus.publishLoudness(
+                gainDb = (20.0 * log10(gain.toDouble())).toFloat(),
+                lufs = loudness.toFloat(),
+            )
+            return
+        }
         val gainMb = loudnessGainMb(mediaId)
         val lufs = mediaId?.takeIf { it.isNotBlank() }?.let(StreamResolver::loudnessDbFor)
         if (gainMb == null || lufs == null) {

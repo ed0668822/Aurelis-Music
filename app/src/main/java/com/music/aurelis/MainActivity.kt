@@ -336,6 +336,7 @@ import com.music.aurelis.ui.screens.DetailScreen
 import com.music.aurelis.ui.screens.sortedForDetail
 import com.music.aurelis.ui.screens.ExploreScreen
 import com.music.aurelis.ui.screens.LocalFolder
+import com.music.aurelis.ui.screens.DuplicateReviewSheet
 import com.music.aurelis.ui.screens.LocalFolderState
 import com.music.aurelis.ui.screens.LocalFolderTab
 import com.music.aurelis.ui.screens.rememberLocalFolderGroups
@@ -3675,6 +3676,7 @@ private fun AurelisApp(
                                 // A single scroll surface: offline playlists stay above
                                 // the existing Local Music tabs and MediaStore songs.
                                 var localReload by remember { mutableIntStateOf(0) }
+                                var showDuplicateReview by remember { mutableStateOf(false) }
                                 val canReadLocal = LocalMediaRepository.hasStoragePermission(context)
                                 val requestLocalPermission = rememberLauncherForActivityResult(
                                     ActivityResultContracts.RequestPermission(),
@@ -3694,6 +3696,13 @@ private fun AurelisApp(
                                 val folderState = remember { LocalFolderState() }
                                 val localSongs = remember(deviceSongs, localMusicSort) {
                                     deviceSongs.orEmpty().sortedForLibrary(localMusicSort)
+                                }
+                                if (showDuplicateReview) {
+                                    DuplicateReviewSheet(
+                                        songs = localSongs,
+                                        onDismiss = { showDuplicateReview = false },
+                                        onLibraryChanged = { localReload++ },
+                                    )
                                 }
                                 val folder = LocalFolder(
                                     state = folderState,
@@ -3786,6 +3795,18 @@ private fun AurelisApp(
                                                         Spacer(Modifier.width(6.dp))
                                                         Text(stringResource(R.string.shuffle))
                                                     }
+                                                }
+                                                Spacer(Modifier.height(12.dp))
+                                                TextButton(
+                                                    onClick = { showDuplicateReview = true },
+                                                    enabled = localSongs.isNotEmpty(),
+                                                ) {
+                                                    Text(
+                                                        if (Locale.getDefault().language == "es")
+                                                            "Revisar duplicados"
+                                                        else
+                                                            "Review duplicates",
+                                                    )
                                                 }
                                             } else {
                                                 Button(onClick = {

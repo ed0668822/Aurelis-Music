@@ -158,6 +158,26 @@ object AudioDecoder {
             onChunk(toMono(buffer, info, channels), info.presentationTimeUs / 1_000_000.0, rate)
         }
 
+    /**
+     * Streams stereo PCM to a reducer without retaining the decoded song.
+     * The existing decode loop still owns codec/extractor cleanup and cancellation.
+     * 16-bit PCM only; callers should not mistake output for high precision audio.
+     */
+    fun streamRegionStereo(
+        source: MediaDataSource,
+        startSeconds: Double,
+        endSeconds: Double,
+        abort: () -> Boolean = { false },
+        onChunk: (left: FloatArray, right: FloatArray, sampleRate: Int, channels: Int) -> Unit,
+    ): Pair<Double, Double>? =
+        decodeRaw(source, startSeconds, endSeconds, abort) { buffer, info, channels, rate ->
+            if (channels !in 1..2 || rate <= 0) return@decodeRaw
+            val left = ArrayList<FloatArray>(1)
+            val right = ArrayList<FloatArray>(1)
+            toStereo(buffer, info, channels, left, right)
+            if (left.isNotEmpty()) onChunk(left[0], right[0], rate, channels)
+        }
+
     /** Concatenates the decoded chunks into one contiguous buffer. */
     private fun flatten(chunks: List<FloatArray>): FloatArray {
         val samples = FloatArray(chunks.sumOf { it.size })

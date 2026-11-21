@@ -161,6 +161,7 @@ import com.music.aurelis.data.NerdStats
 import com.music.aurelis.data.scrobbling.LastFM
 import com.music.aurelis.data.listentogether.ListenTogether
 import com.music.aurelis.data.settings.AppSettings
+import com.music.aurelis.playback.ReplayGainMode
 import com.music.aurelis.data.settings.AurelisFeatures
 import com.music.aurelis.data.settings.LocalProfile
 import com.music.aurelis.data.settings.OutputPcmMode
@@ -280,6 +281,7 @@ fun SettingsScreen(
     val convertForLimitedDac by AppSettings.convertForLimitedDac.collectAsStateWithLifecycle()
     val loudnessNormalization by AppSettings.loudnessNormalization.collectAsStateWithLifecycle()
     val loudnessOffOnSpeaker by AppSettings.loudnessOffOnSpeaker.collectAsStateWithLifecycle()
+    val replayGainMode by AppSettings.replayGainMode.collectAsStateWithLifecycle()
     val outputStatus by AudioOutputStatus.current.collectAsStateWithLifecycle()
     val playingFormat by NerdStats.current.collectAsStateWithLifecycle()
     val playingDolbyAtmos = playingFormat?.isDolbyAtmos == true
@@ -784,6 +786,20 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { AppSettings.setLoudnessNormalization(!loudnessNormalization) },
+                    )
+                }
+            }
+            row("ReplayGain album mode", "replaygain", "album", "volume", "lufs") {
+                BypassedByBitPerfect(bitPerfectReady) {
+                    SettingsSubRow(
+                        title = "Normalize a complete album",
+                        subtitle = "Scans only this album; otherwise uses each track's gain",
+                        checked = replayGainMode == ReplayGainMode.ALBUM,
+                        onCheckedChange = { enabled ->
+                            AppSettings.setReplayGainMode(
+                                if (enabled) ReplayGainMode.ALBUM else ReplayGainMode.TRACK
+                            )
+                        },
                     )
                 }
             }
