@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyListScope
 import com.music.aurelis.ui.components.ShelfRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -114,6 +115,8 @@ fun LibraryScreen(
      * whole. Left off the page entirely while there are none.
      */
     deviceItems: List<ShelfItem>,
+    /** One lazy list for playlists and the expanded on-device music section. */
+    inlineLocalMusic: (LazyListScope.() -> Unit)? = null,
     /** The big "Library" heading; the desktop's pages carry none. */
     showTitle: Boolean = true,
 ) {
@@ -167,13 +170,8 @@ fun LibraryScreen(
                         onShowAll = { onShowAll(emptyPlaylists) },
                     )
                 }
-                item {
-                    MessageState(
-                        message = stringResource(Res.string.library_sign_in_description),
-                        actionLabel = stringResource(Res.string.sign_in),
-                        onAction = onSignIn,
-                    )
-                }
+                // Local music is usable without Google sign-in.
+                inlineLocalMusic?.invoke(this)
                 return@LazyColumn
             }
             when (state) {
@@ -225,6 +223,7 @@ fun LibraryScreen(
                     }
                 }
             }
+            inlineLocalMusic?.invoke(this)
         }
     }
 }

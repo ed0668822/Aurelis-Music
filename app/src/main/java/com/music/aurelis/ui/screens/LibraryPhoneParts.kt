@@ -32,9 +32,8 @@ import com.music.aurelis.ui.replay.ReplayStoryPage
 // sits on its "On device" shelf, and the way in to Replay at its head.
 
 /**
- * The phone's folders, drawn as a list under the Replay cards: Downloads and
- * Local Music, the song cache when Settings has it shown, and the two remote
- * libraries it can reach.
+ * Optional cache and remote folder links. The device's local collection
+ * is instead part of the main Library, directly below the playlists.
  */
 @Composable
 fun libraryLinks(): List<LibraryLink> {
@@ -54,16 +53,8 @@ fun libraryLinks(): List<LibraryLink> {
         icon = icon,
     )
     return listOfNotNull(
-        link(
-            stringResource(R.string.downloads),
-            stringResource(R.string.downloaded_songs),
-            "local:downloads",
-        ),
-        link(
-            stringResource(R.string.local_music),
-            stringResource(R.string.audio_files_on_device),
-            "local:all",
-        ),
+        // Downloads and Local Music stay functional but are no longer
+        // navigation rows. The latter is expanded after Playlists below.
         // Opt-in from Settings → Storage: what the song cache is holding from
         // YouTube and JioSaavn. See [com.music.aurelis.playback.AudioCache.cachedSongs].
         link(
