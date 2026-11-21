@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import com.music.aurelis.ui.replay.saveToGallery
 import com.music.aurelis.ui.replay.sendIntent
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * The picked lines, drawn, with the two things you can do to the picture.
@@ -79,6 +81,21 @@ internal fun AndroidLyricsShareSheet(
     // Same picture, cut to the 9:16 frame a story wants instead of to its lines.
     var story by remember(request) { mutableStateOf(false) }
 
+    // The selected lines must have real timestamps before video export is offered.
+    val timeline = remember(request) { lyricsShareTimeline(request.lines) }
+    var asVideo by remember(request) { mutableStateOf(false) }
+    var exporting by remember(request) { mutableStateOf(false) }
+    var exported by remember(request, story) { mutableStateOf<File?>(null) }
+    suspend fun videoFile(poster: Bitmap): File? {
+        exported?.takeIf { it.exists() && it.length() > 0L }?.let { return it }
+        exporting = true
+        return try {
+            exportLocalLyricsVideo(context, request, poster)?.also { exported = it }
+        } finally {
+            exporting = false
+        }
+    }
+
     LaunchedEffect(request, story) {
         image = null
         failed = false
@@ -107,6 +124,43 @@ internal fun AndroidLyricsShareSheet(
                 textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
             )
+
+            // The same choice as BitChord 1.10; fallback is always the existing
+            // still card for providers without synchronized lyric timestamps.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.lyrics_share_image),
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = if (!asVideo) 0.25f else 0.08f))
+                        .clickable { asVideo = false; saved = false }
+                        .padding(12.dp),
+                )
+                Text(
+                    text = stringResource(R.string.lyrics_share_video),
+                    color = Color.White.copy(alpha = if (timeline == null) 0.4f else 1f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = if (asVideo) 0.25f else 0.08f))
+                        .clickable(enabled = timeline != null) { asVideo = true; saved = false }
+                        .padding(12.dp),
+                )
+            }
+            if (exporting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.5.dp,
+                    color = Color.White,
+                )
+            }
 
             val bitmap = image
             // The card is only as tall as its lines, so the frame follows it:
@@ -166,7 +220,7 @@ internal fun AndroidLyricsShareSheet(
                     label = stringResource(R.string.save),
                     icon = Icons.Rounded.Download,
                     accent = false,
-                    enabled = image != null,
+                    enabled = image != null && !exporting,
                     modifier = Modifier.weight(1f),
                     // Once the picture is in the gallery the button says so
                     // itself — a check and "Saved!" — so the line under the
@@ -178,12 +232,15 @@ internal fun AndroidLyricsShareSheet(
                         if (drawn != null) {
                             haptics.play(Haptic.Tap)
                             scope.launch {
-                                saved = saveToGallery(
-                                    context,
-                                    drawn,
-                                    request.song.title,
-                                    LYRICS_FILE_PREFIX,
-                                )
+                                saved = runCatching {
+                                    if (asVideo) {
+                                        val file = videoFile(drawn)
+                                        file != null && saveLocalLyricsVideo(context, file, request.song.title)
+                                    } else {
+                                        saveToGallery(context, drawn, request.song.title, LYRICS_FILE_PREFIX)
+                                    }
+                                }.getOrDefault(false)
+                                if (!saved) failed = true
                             }
                         }
                     },
@@ -199,16 +256,19 @@ internal fun AndroidLyricsShareSheet(
                         if (drawn != null) {
                             haptics.play(Haptic.Tap)
                             scope.launch {
-                                val uri = cacheForSharing(context, drawn, LYRICS_FILE_NAME)
-                                if (uri == null) {
+                                val intent = runCatching {
+                                    if (asVideo) {
+                                        videoFile(drawn)?.let { shareLocalLyricsVideoIntent(context, it) }
+                                    } else {
+                                        cacheForSharing(context, drawn, LYRICS_FILE_NAME)?.let(::sendIntent)
+                                    }
+                                }.getOrNull()
+                                if (intent == null) {
                                     failed = true
                                     saved = false
                                 } else {
                                     context.startActivity(
-                                        Intent.createChooser(
-                                            sendIntent(uri),
-                                            uiResources.getString(R.string.share_your_lyrics),
-                                        ),
+                                        Intent.createChooser(intent, uiResources.getString(R.string.share_your_lyrics)),
                                     )
                                 }
                             }
