@@ -73,9 +73,23 @@ object EmbeddedLyrics {
                 ?: return@withContext null
             // The same last pass the network sources get, so a downloaded track
             // and a streamed one draw their backing vocals the same way.
-            LrcLib.parseLrc(raw).takeIf { lines -> lines.any { it.text.isNotBlank() } }
-                ?.withBackgroundVocals()
+            linesOf(raw)?.withBackgroundVocals()
         }
+
+    /** Parse timed LRC when available; otherwise show ordinary un-timed lyric lines. */
+    internal fun linesOf(raw: String): List<LyricLine>? {
+        val parsed = LrcLib.parseLrc(raw).takeIf { it.any { line -> line.text.isNotBlank() } }
+        if (parsed != null) return parsed
+        return raw.lineSequence()
+            .map(String::trim)
+            .filter { it.isNotEmpty() && !LRC_METADATA.matches(it) }
+            .map { LyricLine(0L, it) }
+            .toList()
+            .ifEmpty { null }
+    }
+
+    /** An un-timed local tag must not prevent a better synchronized provider result. */
+    fun isSynced(lines: List<LyricLine>): Boolean = lines.any { it.timeMs > 0L }
 
     /** The raw LRC text for the file, preferring this app's word-timed field. */
     private fun read(context: Context, uri: Uri): String? =
@@ -118,6 +132,7 @@ object EmbeddedLyrics {
     internal fun fromBytes(head: ByteArray): String? {
         val found = when {
             head.startsWith(FLAC_MAGIC) -> flac(head)
+            head.startsWith(ID3_MAGIC) -> id3Lyrics(head)
             head.startsWith(MATROSKA_MAGIC) -> matroska(head)
             head.isMp4() -> mp4(head)
             else -> null
@@ -348,6 +363,105 @@ object EmbeddedLyrics {
         return out.toByteArray()
     }
 
+    // MP3 ID3v2: prefer the standard USLT/ULT lyrics frame. Only bounded tag
+    // bytes are inspected; malformed sizes cannot escape the supplied prefix.
+    private fun id3Lyrics(head: ByteArray): String? {
+        if (head.size < 10) return null
+        val version = head[3].toInt() and 0xFF
+        if (version !in 2..4) return null
+        val tagLength = syncSafeInt(head, 6)
+        if (tagLength <= 0) return null
+        val end = minOf(head.size.toLong(), 10L + tagLength).toInt()
+        var data = head.copyOfRange(10, end)
+        val tagFlags = head[5].toInt() and 0xFF
+        // Older ID3 versions may insert 00 after FF to avoid MPEG sync bytes.
+        if (version < 4 && tagFlags and 0x80 != 0) data = removeId3Unsync(data)
+
+        var cursor = 0
+        if (version >= 3 && tagFlags and 0x40 != 0) {
+            if (data.size < 4) return null
+            val length = if (version == 4) syncSafeInt(data, 0).toLong()
+                else readU32(data, 0) + 4L
+            if (length < 4 || length > data.size) return null
+            cursor = length.toInt()
+        }
+
+        val headerSize = if (version == 2) 6 else 10
+        val identifier = if (version == 2) "ULT" else "USLT"
+        while (cursor <= data.size - headerSize) {
+            if (data[cursor] == 0.toByte()) break
+            val nameLength = if (version == 2) 3 else 4
+            val name = String(data, cursor, nameLength, Charsets.ISO_8859_1)
+            val frameLength = when (version) {
+                2 -> ((data[cursor + 3].toInt() and 0xFF) shl 16) or
+                    ((data[cursor + 4].toInt() and 0xFF) shl 8) or
+                    (data[cursor + 5].toInt() and 0xFF)
+                4 -> syncSafeInt(data, cursor + 4)
+                else -> readU32(data, cursor + 4).takeIf { it <= Int.MAX_VALUE }?.toInt()
+                    ?: return null
+            }
+            val bodyStart = cursor + headerSize
+            if (frameLength <= 0 || frameLength > data.size - bodyStart) break
+
+            if (name == identifier) {
+                // Compressed, encrypted, grouped and per-frame unsynchronised
+                // frames require transforms we deliberately do not guess.
+                val formatFlags = if (version == 2) 0 else data[cursor + 9].toInt() and 0xFF
+                val unsupported = if (version == 4) formatFlags and 0x4F != 0
+                    else version == 3 && formatFlags and 0xE0 != 0
+                if (!unsupported) {
+                    decodeUslt(data, bodyStart, bodyStart + frameLength)?.let { return it }
+                }
+            }
+            cursor = bodyStart + frameLength
+        }
+        return null
+    }
+
+    private fun decodeUslt(bytes: ByteArray, from: Int, until: Int): String? {
+        if (until - from < 5) return null
+        val encoding = bytes[from].toInt() and 0xFF
+        val charset = when (encoding) {
+            0 -> Charsets.ISO_8859_1
+            1 -> Charsets.UTF_16
+            2 -> Charsets.UTF_16BE
+            3 -> Charsets.UTF_8
+            else -> return null
+        }
+        val width = if (encoding == 1 || encoding == 2) 2 else 1
+        var at = from + 4 // Encoding byte + the three-language-code bytes.
+        while (at + width <= until) {
+            val endOfDescription = if (width == 1) bytes[at] == 0.toByte()
+                else bytes[at] == 0.toByte() && bytes[at + 1] == 0.toByte()
+            at += width
+            if (endOfDescription) {
+                if (at >= until) return null
+                return String(bytes, at, until - at, charset)
+                    .trimEnd('\u0000')
+                    .takeIf(String::isNotBlank)
+            }
+        }
+        return null
+    }
+
+    private fun syncSafeInt(bytes: ByteArray, at: Int): Int =
+        ((bytes[at].toInt() and 0x7F) shl 21) or
+            ((bytes[at + 1].toInt() and 0x7F) shl 14) or
+            ((bytes[at + 2].toInt() and 0x7F) shl 7) or
+            (bytes[at + 3].toInt() and 0x7F)
+
+    private fun removeId3Unsync(bytes: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream(bytes.size)
+        var at = 0
+        while (at < bytes.size) {
+            out.write(bytes[at].toInt())
+            at += if (bytes[at] == 0xFF.toByte() && at + 1 < bytes.size &&
+                bytes[at + 1] == 0.toByte()
+            ) 2 else 1
+        }
+        return out.toByteArray()
+    }
+
     private fun ByteArray.startsWith(prefix: ByteArray): Boolean {
         if (size < prefix.size) return false
         return prefix.indices.all { this[it] == prefix[it] }
@@ -386,6 +500,8 @@ object EmbeddedLyrics {
 
     private const val FLAC_VORBIS_COMMENT = 4
     private val FLAC_MAGIC = "fLaC".toByteArray(Charsets.US_ASCII)
+    private val ID3_MAGIC = "ID3".toByteArray(Charsets.US_ASCII)
+    private val LRC_METADATA = Regex("""[(?:ar|al|ti|by|length|offset|re|ve):[^]]*]""", RegexOption.IGNORE_CASE)
     private val MATROSKA_MAGIC = byteArrayOf(0x1A, 0x45, 0xDF.toByte(), 0xA3.toByte())
     private val DATA_ATOM = "data".toByteArray(Charsets.ISO_8859_1)
     private val LYR_ATOM = byteArrayOf(0xA9.toByte()) + "lyr".toByteArray(Charsets.ISO_8859_1)

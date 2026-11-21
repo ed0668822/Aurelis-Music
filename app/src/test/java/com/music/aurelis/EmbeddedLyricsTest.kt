@@ -10,6 +10,8 @@ import com.music.aurelis.download.FlacTagger
 import com.music.aurelis.download.Mp4Tagger
 import com.music.aurelis.download.WebmTagger
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 import java.io.File
@@ -29,6 +31,73 @@ import kotlin.io.path.createTempDirectory
 class EmbeddedLyricsTest {
 
     private val lrc = "[00:01.00]first line\n[00:05.00]second line"
+
+
+    private fun id3Tag(version: Int, encoding: Int, value: String): ByteArray {
+        val textCharset = when (encoding) {
+            0 -> Charsets.ISO_8859_1
+            1 -> Charsets.UTF_16
+            2 -> Charsets.UTF_16BE
+            else -> Charsets.UTF_8
+        }
+        val terminator = if (encoding in 1..2) byteArrayOf(0, 0) else byteArrayOf(0)
+        val valueBytes = value.toByteArray(textCharset)
+        val data = byteArrayOf(encoding.toByte()) + "eng".toByteArray() + terminator + valueBytes
+        val frameName = if (version == 2) "ULT" else "USLT"
+        val frameSize = when (version) {
+            2 -> byteArrayOf((data.size ushr 16).toByte(), (data.size ushr 8).toByte(), data.size.toByte())
+            4 -> safeSize(data.size)
+            else -> byteArrayOf(
+                (data.size ushr 24).toByte(), (data.size ushr 16).toByte(),
+                (data.size ushr 8).toByte(), data.size.toByte(),
+            )
+        }
+        val frame = frameName.toByteArray() + frameSize +
+            (if (version == 2) byteArrayOf() else byteArrayOf(0, 0)) + data
+        val header = "ID3".toByteArray() + byteArrayOf(version.toByte(), 0, 0) + safeSize(frame.size)
+        return header + frame
+    }
+
+    private fun safeSize(size: Int) = byteArrayOf(
+        ((size ushr 21) and 0x7F).toByte(), ((size ushr 14) and 0x7F).toByte(),
+        ((size ushr 7) and 0x7F).toByte(), (size and 0x7F).toByte(),
+    )
+
+    @Test fun id3UnsynchronisedLyricsAreAvailableInThreeTagVersions() {
+        assertEquals(lrc, EmbeddedLyrics.fromBytes(id3Tag(2, 0, lrc)))
+        assertEquals(lrc, EmbeddedLyrics.fromBytes(id3Tag(3, 0, lrc)))
+        assertEquals(lrc, EmbeddedLyrics.fromBytes(id3Tag(4, 3, lrc)))
+    }
+
+    @Test fun id3Utf16LyricsAreDecodedWithoutLosingNonLatinText() {
+        val words = "слова песни"
+        assertEquals(words, EmbeddedLyrics.fromBytes(id3Tag(3, 1, words)))
+        assertEquals(words, EmbeddedLyrics.fromBytes(id3Tag(4, 2, words)))
+    }
+
+    @Test fun id3WithoutLyricsAndCorruptFrameLengthsAreIgnored() {
+        assertNull(EmbeddedLyrics.fromBytes("ID3".toByteArray() + byteArrayOf(3, 0, 0, 0, 0, 0, 0)))
+        val invalid = id3Tag(3, 0, "words").copyOfRange(0, 14)
+        assertNull(EmbeddedLyrics.fromBytes(invalid))
+    }
+
+    @Test fun plainEmbeddedLyricsRemainVisibleWithoutTiming() {
+        assertEquals(
+            listOf(LyricLine(0L, "one"), LyricLine(0L, "two")),
+            EmbeddedLyrics.linesOf("one\n\ntwo\n"),
+        )
+        assertFalse(EmbeddedLyrics.isSynced(EmbeddedLyrics.linesOf("one\ntwo")!!))
+        assertTrue(EmbeddedLyrics.isSynced(EmbeddedLyrics.linesOf(lrc)!!))
+        assertNull(EmbeddedLyrics.linesOf(" \n\t "))
+    }
+
+    @Test fun lrcMetadataDoesNotAppearAsAnUntimedLyric() {
+        assertEquals(
+            listOf(LyricLine(0L, "sing this")),
+            EmbeddedLyrics.linesOf("[ar:Artist]\n[length:04:21]\nsing this"),
+        )
+        assertNull(EmbeddedLyrics.linesOf("[ar:Artist]\n[ti:Title]"))
+    }
 
     @Test
     fun `an m4a written by the tagger reads back`() {
