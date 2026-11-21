@@ -67,6 +67,7 @@ import com.music.aurelis.data.webdav.WebDavUploads
 import com.music.aurelis.download.DownloadState
 import com.music.aurelis.download.Downloads
 import com.music.aurelis.playback.SleepTimer
+import com.music.aurelis.data.settings.AppSettings
 import com.music.aurelis.ui.components.thumbnailBorder
 import com.music.aurelis.ui.theme.ArtworkPalette
 import kotlinx.coroutines.delay
@@ -638,6 +639,14 @@ private fun SleepTimerPicker(palette: ArtworkPalette, onBack: () -> Unit) {
             selected = custom != null,
             accent = palette.accent,
         ) { pickingCustom = true }
+        HorizontalDivider(thickness = 0.5.dp, color = palette.divider)
+        val fadeOut by AppSettings.sleepTimerFadeOut.collectAsStateWithLifecycle()
+        IosMenuRow(
+            label = stringResource(R.string.sleep_timer_fade_out),
+            icon = if (fadeOut) SfIcons.Check else null,
+            onClick = { AppSettings.setSleepTimerFadeOut(!fadeOut) },
+            iconTint = palette.accent,
+        )
         if (chosen != null || afterTrack) {
             ActionRow(SfIcons.Close, stringResource(R.string.turn_off_timer), accent = palette.accent) {
                 SleepTimer.cancel()

@@ -279,6 +279,9 @@ object AppSettings {
      */
     val smartFadeEnabled = MutableStateFlow(true)
 
+    /** End of timed sleep sessions fades locally over the last 30 seconds. */
+    val sleepTimerFadeOut = MutableStateFlow(true)
+
     /** The CPU budget used by Beat This! and vocal analysis for Automix. */
     val automixPerformanceMode = MutableStateFlow(AutomixPerformanceMode.BALANCED)
 
@@ -1000,6 +1003,7 @@ object AppSettings {
         syncDownloadedPlaylists.value = prefs.getBoolean(KEY_SYNC_DOWNLOADED_PLAYLISTS, false)
         crossfadeSeconds.value = prefs.getInt(KEY_CROSSFADE, 0)
         smartFadeEnabled.value = prefs.getBoolean(KEY_SMART_FADE, true)
+        sleepTimerFadeOut.value = prefs.getBoolean(KEY_SLEEP_TIMER_FADE_OUT, true)
         autoMixArtworkEnabled.value = prefs.getBoolean(KEY_AUTOMIX_ARTWORK_ENABLED, true)
         autoMixMiniArtworkEnabled.value = prefs.getBoolean(KEY_AUTOMIX_MINI_ARTWORK_ENABLED, true)
         automixPerformanceMode.value = runCatching {
@@ -1343,6 +1347,11 @@ object AppSettings {
     fun setCrossfadeSeconds(value: Int) {
         crossfadeSeconds.value = value
         prefs.edit().putInt(KEY_CROSSFADE, value).apply()
+    }
+
+    fun setSleepTimerFadeOut(value: Boolean) {
+        sleepTimerFadeOut.value = value
+        prefs.edit().putBoolean(KEY_SLEEP_TIMER_FADE_OUT, value).apply()
     }
 
     fun setSmartFadeEnabled(value: Boolean) {
@@ -2383,6 +2392,7 @@ object AppSettings {
     private const val KEY_SYNC_DOWNLOADED_PLAYLISTS = "sync_downloaded_playlists"
     private const val KEY_CROSSFADE = "crossfade_seconds"
     private const val KEY_SMART_FADE = "smart_fade_enabled"
+    private const val KEY_SLEEP_TIMER_FADE_OUT = "sleep_timer_fade_out"
     private const val KEY_AUTOMIX_ARTWORK_ENABLED = "automix_artwork_enabled"
     private const val KEY_AUTOMIX_MINI_ARTWORK_ENABLED = "automix_mini_artwork_enabled"
     private const val KEY_AUTOMIX_PERFORMANCE_MODE = "automix_performance_mode"

@@ -1393,4 +1393,5 @@
     <string name="show_total_duration_subtitle">Show the full length instead of remaining time beside the seek bar.</string>
     <string name="hide_lyrics_preview">Hide lyrics preview</string>
     <string name="hide_lyrics_preview_subtitle">Hide the small lyric line above the seek bar; full lyrics remain available.</string>
+    <string name="sleep_timer_fade_out">Fade out over last 30 seconds</string>
 </resources>
