@@ -29,9 +29,12 @@ fun rememberRemoteArtworkUrl(song: Song?): String? {
     var resolved by remember(key, initial) { mutableStateOf(initial) }
     LaunchedEffect(key, initial, song?.localDateModifiedSeconds) {
         when {
-            song == null || !initial.isNullOrBlank() -> Unit
+            song == null -> Unit
+            // A per-track embedded cover can be more accurate than MediaStore's
+            // album-level URI (which may exist but no longer resolve).
             song.localUri != null ->
                 resolved = LocalEmbeddedArtwork.resolve(context, song) ?: initial
+            !initial.isNullOrBlank() -> Unit
             song.videoId.startsWith("webdav:") || song.videoId.startsWith("smb:") ->
                 resolved = RemoteArtworkStore.resolveArt(context, song)
         }
