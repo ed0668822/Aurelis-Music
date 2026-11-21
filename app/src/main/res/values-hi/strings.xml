@@ -1549,4 +1549,6 @@
     <string name="radio">रेडियो</string>
     <string name="replay_year_months">संगीत में आपके महीने</string>
     <string name="replay_year_watch">अपने साल की एनिमेटेड कहानी देखें</string>
+    <string name="youtube_premium_audio">YouTube Premium ऑडियो</string>
+    <string name="youtube_premium_audio_subtitle">लॉग इन किए गए खाते में उपलब्ध होने पर बेहतर गुणवत्ता वाला Opus माँगें। वास्तविक गुणवत्ता उपलब्ध स्ट्रीम पर निर्भर करती है।</string>
 </resources>

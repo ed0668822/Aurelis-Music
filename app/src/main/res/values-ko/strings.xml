@@ -1399,4 +1399,6 @@
     <string name="radio">라디오</string>
     <string name="replay_year_months">음악과 함께한 달들</string>
     <string name="replay_year_watch">움직이는 연간 스토리 보기</string>
+    <string name="youtube_premium_audio">YouTube Premium 오디오</string>
+    <string name="youtube_premium_audio_subtitle">로그인한 계정에서 지원하는 경우 더 높은 음질의 Opus를 요청합니다. 실제 음질은 제공되는 스트림에 따라 달라집니다.</string>
 </resources>

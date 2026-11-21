@@ -1502,4 +1502,6 @@
     <string name="radio">廣播</string>
     <string name="replay_year_months">你的音樂月份</string>
     <string name="replay_year_watch">觀看年度動畫回顧</string>
+    <string name="youtube_premium_audio">YouTube Premium 音訊</string>
+    <string name="youtube_premium_audio_subtitle">如果已登入的帳戶支援，則要求更高音質的 Opus。實際音質取決於提供的音訊串流。</string>
 </resources>

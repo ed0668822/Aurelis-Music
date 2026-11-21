@@ -1527,4 +1527,6 @@
     <string name="radio">ラジオ</string>
     <string name="replay_year_months">音楽と過ごした月々</string>
     <string name="replay_year_watch">アニメーションで一年を振り返る</string>
+    <string name="youtube_premium_audio">YouTube Premium 音声</string>
+    <string name="youtube_premium_audio_subtitle">ログインしたアカウントが対応している場合、高音質の Opus を要求します。実際の音質は配信形式によって異なります。</string>
 </resources>

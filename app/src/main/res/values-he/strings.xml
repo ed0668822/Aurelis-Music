@@ -1576,4 +1576,6 @@
     <string name="radio">רדיו</string>
     <string name="replay_year_months">חודשי המוזיקה שלך</string>
     <string name="replay_year_watch">צפייה בסיפור השנה המונפש שלך</string>
+    <string name="youtube_premium_audio">אודיו YouTube Premium</string>
+    <string name="youtube_premium_audio_subtitle">בקשת שמע Opus באיכות גבוהה יותר כשהחשבון המחובר תומך בכך. האיכות בפועל תלויה בזרם הזמין.</string>
 </resources>
