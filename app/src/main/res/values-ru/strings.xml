@@ -1578,4 +1578,7 @@
     <string name="replay_annual_play_local">Воспроизвести избранную песню с устройства</string>
     <string name="lyrics_share_video">Видео</string>
     <string name="lyrics_share_image">Изображение</string>
+    <string name="radio">Радио</string>
+    <string name="replay_year_months">Ваши музыкальные месяцы</string>
+    <string name="replay_year_watch">Посмотреть анимированную историю года</string>
 </resources>

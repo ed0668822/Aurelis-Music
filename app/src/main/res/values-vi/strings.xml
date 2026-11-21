@@ -1463,4 +1463,7 @@
     <string name="replay_annual_play_local">Phát bài hát nổi bật trên thiết bị này</string>
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Hình ảnh</string>
+    <string name="radio">Radio</string>
+    <string name="replay_year_months">Những tháng nghe nhạc của bạn</string>
+    <string name="replay_year_watch">Xem câu chuyện năm qua bằng hoạt ảnh</string>
 </resources>

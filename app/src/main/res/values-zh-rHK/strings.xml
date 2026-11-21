@@ -1499,4 +1499,7 @@
     <string name="replay_annual_play_local">播放此裝置上的年度精選歌曲</string>
     <string name="lyrics_share_video">影片</string>
     <string name="lyrics_share_image">圖片</string>
+    <string name="radio">電台</string>
+    <string name="replay_year_months">你的音樂月份</string>
+    <string name="replay_year_watch">觀看年度動畫回顧</string>
 </resources>

@@ -1503,4 +1503,7 @@
     <string name="replay_annual_play_local">Bu cihazdaki öne çıkan şarkıyı çal</string>
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Görsel</string>
+    <string name="radio">Radyo</string>
+    <string name="replay_year_months">Müzikle geçen ayların</string>
+    <string name="replay_year_watch">Animasyonlu yıl hikâyeni izle</string>
 </resources>

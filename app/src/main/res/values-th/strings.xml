@@ -1529,4 +1529,7 @@
     <string name="replay_annual_play_local">เล่นเพลงเด่นจากอุปกรณ์นี้</string>
     <string name="lyrics_share_video">วิดีโอ</string>
     <string name="lyrics_share_image">รูปภาพ</string>
+    <string name="radio">วิทยุ</string>
+    <string name="replay_year_months">เดือนแห่งเสียงเพลงของคุณ</string>
+    <string name="replay_year_watch">ดูเรื่องราวประจำปีแบบเคลื่อนไหว</string>
 </resources>

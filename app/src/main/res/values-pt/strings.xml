@@ -1551,4 +1551,7 @@
     <string name="replay_annual_play_local">Reproduzir um destaque deste dispositivo</string>
     <string name="lyrics_share_video">Vídeo</string>
     <string name="lyrics_share_image">Imagem</string>
+    <string name="radio">Rádio</string>
+    <string name="replay_year_months">Seus meses de música</string>
+    <string name="replay_year_watch">Veja sua retrospectiva anual animada</string>
 </resources>

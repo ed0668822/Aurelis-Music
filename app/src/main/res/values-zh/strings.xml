@@ -1523,4 +1523,7 @@
     <string name="replay_annual_play_local">播放此设备上的年度精选歌曲</string>
     <string name="lyrics_share_video">视频</string>
     <string name="lyrics_share_image">图片</string>
+    <string name="radio">电台</string>
+    <string name="replay_year_months">你的音乐月份</string>
+    <string name="replay_year_watch">查看年度动画回顾</string>
 </resources>
