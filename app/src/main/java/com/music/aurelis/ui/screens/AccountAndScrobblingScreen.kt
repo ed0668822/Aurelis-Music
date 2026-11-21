@@ -20,6 +20,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.music.aurelis.auth.clearSpotifyWebSession
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.Icon
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.HorizontalDivider
 import com.music.aurelis.sharedui.resources.Res
 import com.music.aurelis.sharedui.resources.spotify_logo
@@ -102,21 +112,61 @@ fun AccountAndScrobblingScreen(
     ) {
         SettingsPageTitle(stringResource(R.string.account_integrations))
 
-        // This profile is entirely local; signing in below is optional.
+        // The local identity is the primary profile and never depends on Google.
         SettingsGroup(header = stringResource(R.string.local_profile_title), topSpacing = 0.dp) {
-            SettingsRow(
-                icon = SfIcons.Person,
-                iconContent = localPhoto?.let { uri ->
-                    {
-                        AsyncImage(model = uri, contentDescription = null,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { photoPicker.launch("image/*") }
+                    .padding(horizontal = 18.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(70.dp)
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.65f), CircleShape)
+                        .padding(3.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (localPhoto != null) {
+                        AsyncImage(
+                            model = localPhoto,
+                            contentDescription = stringResource(R.string.local_profile_photo),
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(36.dp).clip(CircleShape))
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Icon(
+                            SfIcons.Person, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(30.dp),
+                        )
                     }
-                },
-                title = localName.ifBlank { stringResource(R.string.local_profile_title) },
-                subtitle = stringResource(R.string.local_profile_change_photo),
-                onClick = { photoPicker.launch("image/*") },
-            )
+                }
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = localName.ifBlank { stringResource(R.string.local_profile_title) },
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.local_profile_private_photo),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    SfIcons.ChevronRight, contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
             FullWidthDivider()
             SettingsRow(
                 icon = SfIcons.Person,
@@ -126,8 +176,10 @@ fun AccountAndScrobblingScreen(
             )
             if (localPhoto != null) {
                 FullWidthDivider()
-                DestructiveRow(label = stringResource(R.string.local_profile_remove_photo),
-                    onClick = LocalProfile::clearPhoto)
+                DestructiveRow(
+                    label = stringResource(R.string.local_profile_remove_photo),
+                    onClick = LocalProfile::clearPhoto,
+                )
             }
         }
         if (editingLocalName) {
@@ -158,20 +210,20 @@ fun AccountAndScrobblingScreen(
             )
         }
 
-        // One card: who is signed in, which profile is listening, and the way
-        // out, with the explanation of profiles underneath.
-        SettingsGroup(
-            footer = if (signedIn) stringResource(R.string.account_profiles_help) else null,
-            topSpacing = 0.dp,
-        ) {
-            AccountCard(
-                signedIn = signedIn,
-                account = account,
-                onSignIn = onSignIn,
-                onClick = onSwitchChannel,
-                grouped = true,
-            )
-            if (signedIn) {
+        // Only show an online account card when it is connected; otherwise,
+        // present a single optional sign-in action, without a duplicate profile.
+        if (signedIn) {
+            SettingsGroup(
+                header = stringResource(R.string.youtube_music_account),
+                footer = stringResource(R.string.account_profiles_help),
+            ) {
+                AccountCard(
+                    signedIn = signedIn,
+                    account = account,
+                    onSignIn = onSignIn,
+                    onClick = onSwitchChannel,
+                    grouped = true,
+                )
                 FullWidthDivider()
                 SettingsRow(
                     icon = SfIcons.SwitchAccount,
@@ -181,6 +233,15 @@ fun AccountAndScrobblingScreen(
                 )
                 FullWidthDivider()
                 DestructiveRow(label = stringResource(R.string.sign_out), onClick = onSignOut)
+            }
+        } else {
+            SettingsGroup {
+                SettingsRow(
+                    icon = SfIcons.Person,
+                    title = stringResource(R.string.onboarding_sign_in_google),
+                    subtitle = stringResource(R.string.local_profile_optional_sign_in),
+                    onClick = onSignIn,
+                )
             }
         }
 

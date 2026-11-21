@@ -4113,18 +4113,19 @@ private fun AurelisApp(
                             if (route != AppRoute.Downloads) {
                                 TopBarDownloadButton(onClick = { navigator.push(AppRoute.Downloads) })
                             }
-                            // Not on a release page, whose pill already carries
-                            // three of its own controls — Apple Music leaves the
-                            // profile off its album pages too.
-                            if (!isReleaseDetail) TopBarAccountButton(
+                            // Persistent avatar, from Google if connected or the
+                            // on-device Aurelis profile if signed out.
+                            TopBarAccountButton(
                                 account = account,
+                                signedIn = signedIn,
                                 onClick = {
-                                    if (signedIn) {
-                                        viewModel.loadChannels()
-                                        showAccountSelector = true
-                                    } else navigator.push(AppRoute.Settings)
+                                    if (route != AppRoute.AccountScrobbling) {
+                                        navigator.push(AppRoute.AccountScrobbling)
+                                    }
                                 },
-                                onSwipeProfile = { forward -> viewModel.stepProfile(forward) },
+                                onSwipeProfile = if (signedIn) {
+                                    { forward -> viewModel.stepProfile(forward) }
+                                } else null,
                             )
                         }
                     },

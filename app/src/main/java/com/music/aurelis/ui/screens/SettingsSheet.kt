@@ -130,6 +130,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
 import com.music.aurelis.AppIcon
+import com.music.aurelis.data.settings.AurelisFeatures
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -426,7 +427,9 @@ fun SettingsScreen(
     // rows that answer from all of them, as the single page Settings once was.
     val search = SettingsSearch(if (section == null) searchQuery else "", inPage = section != null)
     val searching = section == null && searchQuery.isNotBlank()
-    fun shows(category: SettingsCategory) = section == category || searching
+    fun shows(category: SettingsCategory) =
+        (category != SettingsCategory.DOWNLOADS || AurelisFeatures.DOWNLOADS_SETTINGS) &&
+            (section == category || searching)
     val watchAvailable = remember { WatchInstaller.available(context) }
 
     // What is left after a keystroke is a different list, and the offset the
@@ -467,7 +470,7 @@ fun SettingsScreen(
                 // signs into are worth typing at this field even though none of
                 // them is named on the row itself.
                 row(accountTitle, "scrobbling", "last.fm", "listenbrainz") {
-                    val avatarUrl = localPhoto ?: account?.thumbnailUrl?.takeIf { signedIn }
+                    val avatarUrl = account?.thumbnailUrl?.takeIf { signedIn } ?: localPhoto
                     SettingsRow(
                         icon = SfIcons.Person,
                         iconContent = avatarUrl?.let { url ->
@@ -1711,6 +1714,7 @@ fun SettingsScreen(
                     onClick = { AppSettings.setShowNerdStats(!nerdStats) },
                 )
             }
+            if (AurelisFeatures.APP_ICON_PICKER) {
             val appIconTitle = stringResource(R.string.app_icon)
             row(appIconTitle, "icon", "launcher", "logo") {
                 var selectedIcon by remember { mutableStateOf(AppIcon.current(context)) }
@@ -1772,6 +1776,7 @@ fun SettingsScreen(
                     }
                 }
             }
+            }
         }
 
         if (shows(SettingsCategory.LANGUAGE)) SearchableSettingsGroup(search, header = stringResource(R.string.language)) {
@@ -1794,42 +1799,29 @@ fun SettingsScreen(
             MessageState(stringResource(R.string.settings_search_empty, searchQuery))
         }
 
-        // The version line is the page's colophon, not a setting: it belongs to
-        // the whole list, so it goes when the list is narrowed to a few rows.
+        // Single Aurelis identity: community links are retained only in future
+        // feature configuration, never shown before official endpoints exist.
         if (section == null && searchQuery.isBlank()) {
-        Text(
-            text = buildAnnotatedString {
-                append("aurelis $version  ")
-                val linkStyles = TextLinkStyles(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                    ),
-                )
-                withLink(LinkAnnotation.Url("https://github.com/kushagrasinghx/BitChord", linkStyles)) {
-                    append("GitHub")
-                }
-                append("  ")
-                withLink(LinkAnnotation.Url("https://github.com/kushagrasinghx", linkStyles)) {
-                    append("Developer")
-                }
-                append("  ")
-                withLink(LinkAnnotation.Url("https://discord.gg/pDdKfrdHY6", linkStyles)) {
-                    append("Discord")
-                }
-                append("  ")
-                withLink(LinkAnnotation.Url("https://bitchord.kushagrasingh.in/", linkStyles)) {
-                    append("Website")
-                }
-                append("\n~YouTube Music & Listen Together Backend")
-            },
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp, bottom = 8.dp),
-        )
+            Text(
+                text = buildAnnotatedString {
+                    append("Aurelis Music $version  ·  ")
+                    val linkStyles = TextLinkStyles(
+                        style = SpanStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                            textDecoration = TextDecoration.Underline,
+                        ),
+                    )
+                    withLink(LinkAnnotation.Url("https://github.com/ed0668822/Aurelis-Music", linkStyles)) {
+                        append("GitHub")
+                    }
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, bottom = 8.dp),
+            )
         }
     }
 
@@ -2191,9 +2183,9 @@ internal fun AccountCard(
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (localAvatar != null || account?.thumbnailUrl != null) {
+        if ((signedIn && account?.thumbnailUrl != null) || localAvatar != null) {
             AsyncImage(
-                model = localAvatar ?: account?.thumbnailUrl,
+                model = account?.thumbnailUrl?.takeIf { signedIn } ?: localAvatar,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(52.dp).clip(CircleShape).thumbnailBorder(CircleShape),
@@ -2216,7 +2208,8 @@ internal fun AccountCard(
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                text = localName.takeIf { it.isNotBlank() } ?: account?.name
+                text = (if (signedIn) account?.name else null)
+                    ?: localName.takeIf { it.isNotBlank() }
                     ?: stringResource(if (signedIn) R.string.signed_in else R.string.not_signed_in),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -2870,7 +2863,9 @@ enum class SettingsChoiceKind(@param:StringRes val title: Int) {
 @Composable
 private fun SettingsCategoryList(onOpen: (SettingsCategory) -> Unit) {
     SettingsGroup {
-        SettingsCategory.entries.forEachIndexed { index, category ->
+        SettingsCategory.entries
+            .filter { it != SettingsCategory.DOWNLOADS || AurelisFeatures.DOWNLOADS_SETTINGS }
+            .forEachIndexed { index, category ->
             if (index > 0) RowDivider()
             SettingsRow(
                 icon = category.icon,

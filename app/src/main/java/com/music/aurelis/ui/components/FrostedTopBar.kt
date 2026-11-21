@@ -74,6 +74,7 @@ import kotlinx.coroutines.launch
 import com.music.aurelis.R
 import com.music.aurelis.data.model.Account
 import com.music.aurelis.data.settings.AppSettings
+import com.music.aurelis.data.settings.LocalProfile
 import com.music.aurelis.ui.theme.stableStatusBarInsets
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
@@ -526,11 +527,13 @@ private fun artworkPageSurface(
 @Composable
 fun TopBarAccountButton(
     account: Account?,
+    signedIn: Boolean,
     onClick: () -> Unit,
     onSwipeProfile: ((forward: Boolean) -> Boolean)? = null,
     modifier: Modifier = Modifier,
 ) {
     val translation = remember { Animatable(0f) }
+    val localPhoto by LocalProfile.photoUri.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     // Wrapped in an IconButton so it keeps the touch target, the ripple and the
     // spacing every other action in this bar has.
@@ -553,11 +556,11 @@ fun TopBarAccountButton(
                 )
             },
     ) {
-        val photo = account?.thumbnailUrl
+        val photo = account?.thumbnailUrl?.takeIf { signedIn } ?: localPhoto
         if (photo != null) {
             AsyncImage(
                 model = photo,
-                contentDescription = stringResource(R.string.switch_account),
+                contentDescription = stringResource(R.string.account_integrations),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(AVATAR_SIZE)
@@ -575,7 +578,7 @@ fun TopBarAccountButton(
             ) {
                 Icon(
                     Icons.Rounded.Person,
-                    contentDescription = stringResource(R.string.switch_account),
+                    contentDescription = stringResource(R.string.account_integrations),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp),
                 )

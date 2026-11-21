@@ -25,6 +25,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -346,15 +347,18 @@ private fun LocalPhotoChooser(photoUri: String?, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(Color.White.copy(alpha = 0.13f))
+            .clip(RoundedCornerShape(28.dp))
+            .background(Color.White.copy(alpha = 0.11f))
+            .border(1.dp, Color.White.copy(alpha = 0.23f), RoundedCornerShape(28.dp))
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(74.dp)
+                .border(1.dp, Color.White.copy(alpha = 0.45f), CircleShape)
+                .padding(3.dp)
                 .clip(CircleShape)
                 .background(Color.White.copy(alpha = 0.16f)),
             contentAlignment = Alignment.Center,
@@ -371,7 +375,7 @@ private fun LocalPhotoChooser(photoUri: String?, onClick: () -> Unit) {
             }
         }
         Spacer(Modifier.width(16.dp))
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.local_profile_change_photo), color = Color.White,
                 style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(3.dp))
@@ -397,9 +401,10 @@ private fun NameField(value: String, onValueChange: (String) -> Unit, onDone: ()
     Box(
         Modifier
             .fillMaxWidth()
-            .height(64.dp)
+            .height(70.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.14f))
+            .background(Color.White.copy(alpha = 0.13f))
+            .border(1.dp, Color.White.copy(alpha = if (value.isNotBlank()) 0.42f else 0.20f), CircleShape)
             .padding(horizontal = 24.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
