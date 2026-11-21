@@ -76,7 +76,9 @@ internal object LocalReplayGainAnalyzer {
             }
             if (result == null || incompatible || cancelled()) null else meter?.finish()
         }
-        if (measurement != null && !cancelled() && stamp(context, uri) == stamp) {
+        // A file that changed during decoding must never publish stale gain.
+        if (cancelled() || stamp(context, uri) != stamp) return@withContext null
+        if (measurement != null) {
             // Bounded preference store; eviction is conservative and affects
             // only cached analysis, never originals or playback metadata.
             val editor = prefs.edit()
