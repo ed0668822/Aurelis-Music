@@ -56,7 +56,7 @@ object LocalDuplicateScanner {
             // Hash only same-size members of an already plausible metadata
             // group. Mixed encodes are still displayed for manual review.
             val hashCandidates = metadataGroups.flatMap { batch ->
-                batch.mapNotNull(enriched::get).filter { (it.bytes ?: 0L) > 0L }
+                batch.mapNotNull { candidate -> enriched[candidate.uri] }.filter { (it.bytes ?: 0L) > 0L }
                     .groupBy { it.bytes }.values.filter { it.size >= 2 }.flatten()
             }.map { it.uri }.toSet()
             for (uri in hashCandidates) {
