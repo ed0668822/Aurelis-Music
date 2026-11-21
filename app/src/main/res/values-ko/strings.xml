@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">지금 재생 중</string>
@@ -1320,4 +1322,32 @@
     <string name="local_profile_edit_name">로컬 이름 수정</string>
     <string name="local_profile_remove_photo">로컬 사진 삭제</string>
     <string name="local_feature_paused">일시적으로 사용할 수 없음</string>
+    <string name="automix_options_title">AutoMix · 실험적 옵션</string>
+    <string name="automix_options_pending">설정은 저장되며 오디오 효과는 다음 단계에서 활성화됩니다.</string>
+    <string name="automix_duration">AutoMix 길이</string>
+    <string name="automix_duration_subtitle">자동 또는 곡 길이에 따라 3~60초로 설정합니다.</string>
+    <string name="automix_duration_auto">자동</string>
+    <string name="automix_effect">전환 효과</string>
+    <string name="automix_effect_subtitle">다음 곡 전환에 사용할 효과를 선택하세요.</string>
+    <string name="automix_effect_footer">실험적 프리셋은 현재 저장됩니다. 오디오 처리는 다음 단계에서 추가됩니다.</string>
+    <string name="automix_effect_auto">자동</string>
+    <string name="automix_effect_crossfade">크로스페이드</string>
+    <string name="automix_effect_muffled">먹먹한 소리</string>
+    <string name="automix_effect_echo">에코</string>
+    <string name="automix_effect_pitch">피치</string>
+    <string name="automix_effect_custom">사용자 설정</string>
+    <string name="automix_effect_auto_description">기존의 스마트 AutoMix 동작을 유지합니다.</string>
+    <string name="automix_effect_crossfade_description">일정한 음량의 표준 크로스페이드를 사용합니다.</string>
+    <string name="automix_effect_muffled_description">끝나는 곡에 로우패스 필터를 적용합니다.</string>
+    <string name="automix_effect_echo_description">끝나는 곡에 지연 에코를 추가합니다.</string>
+    <string name="automix_effect_pitch_description">선택한 피치 변경을 적용합니다.</string>
+    <string name="automix_effect_custom_description">속도, 피치, 에코, 로우패스를 함께 설정합니다.</string>
+    <string name="automix_speed">전환 속도</string>
+    <string name="automix_speed_subtitle">사용자 설정 속도: 0.80~1.20배.</string>
+    <string name="automix_pitch">피치 조절</string>
+    <string name="automix_pitch_subtitle">피치를 −6~+6반음으로 조절합니다.</string>
+    <string name="automix_echo_toggle">에코</string>
+    <string name="automix_echo_subtitle">사용자 전환에서 지연 에코를 켭니다.</string>
+    <string name="automix_low_pass">로우패스 필터</string>
+    <string name="automix_low_pass_subtitle">사용자 전환에서 먹먹한 소리를 켭니다.</string>
 </resources>

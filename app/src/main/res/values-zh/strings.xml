@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">正在播放</string>
@@ -1447,4 +1449,32 @@
     <string name="local_profile_edit_name">编辑本地名称</string>
     <string name="local_profile_remove_photo">删除本地照片</string>
     <string name="local_feature_paused">暂时不可用</string>
+    <string name="automix_options_title">AutoMix · 实验性选项</string>
+    <string name="automix_options_pending">设置会被保存；音效将在后续阶段启用。</string>
+    <string name="automix_duration">AutoMix 时长</string>
+    <string name="automix_duration_subtitle">自动设置，或根据歌曲长度选择 3 至 60 秒。</string>
+    <string name="automix_duration_auto">自动</string>
+    <string name="automix_effect">过渡效果</string>
+    <string name="automix_effect_subtitle">选择后续歌曲过渡时使用的效果。</string>
+    <string name="automix_effect_footer">实验性预设目前会被保存，音频处理将在后续阶段加入。</string>
+    <string name="automix_effect_auto">自动</string>
+    <string name="automix_effect_crossfade">交叉淡化</string>
+    <string name="automix_effect_muffled">闷音</string>
+    <string name="automix_effect_echo">回声</string>
+    <string name="automix_effect_pitch">音高</string>
+    <string name="automix_effect_custom">自定义</string>
+    <string name="automix_effect_auto_description">保留现有的智能 AutoMix 行为。</string>
+    <string name="automix_effect_crossfade_description">使用标准等功率交叉淡化。</string>
+    <string name="automix_effect_muffled_description">对即将结束的歌曲应用低通滤波器。</string>
+    <string name="automix_effect_echo_description">为即将结束的歌曲添加延迟回声。</string>
+    <string name="automix_effect_pitch_description">应用所选的音高调整。</string>
+    <string name="automix_effect_custom_description">同时配置速度、音高、回声和低通滤波器。</string>
+    <string name="automix_speed">过渡速度</string>
+    <string name="automix_speed_subtitle">自定义速度：0.80 至 1.20 倍。</string>
+    <string name="automix_pitch">音高调整</string>
+    <string name="automix_pitch_subtitle">在 −6 至 +6 个半音之间调整音高。</string>
+    <string name="automix_echo_toggle">回声</string>
+    <string name="automix_echo_subtitle">在自定义过渡中启用延迟回声。</string>
+    <string name="automix_low_pass">低通滤波器</string>
+    <string name="automix_low_pass_subtitle">在自定义过渡中启用闷音效果。</string>
 </resources>

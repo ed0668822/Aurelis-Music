@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">Reproduciendo</string>
@@ -1442,4 +1444,32 @@
     <string name="diwali_title">Aurelis Music te desea un feliz Diwali</string>
     <string name="diwali_subtitle">Que esta fiesta de las luces llene tu hogar de alegría y tus días de música.</string>
     <string name="diwali_cta">Celebremos juntos</string>
+    <string name="automix_options_title">AutoMix · Opciones experimentales</string>
+    <string name="automix_options_pending">Los ajustes se guardan; los efectos de audio se activarán en las próximas etapas.</string>
+    <string name="automix_duration">Duración de AutoMix</string>
+    <string name="automix_duration_subtitle">Automática o de 3 a 60 segundos; se limita según la duración de las canciones.</string>
+    <string name="automix_duration_auto">Automática</string>
+    <string name="automix_effect">Efecto de transición</string>
+    <string name="automix_effect_subtitle">Elige el efecto para las próximas transiciones.</string>
+    <string name="automix_effect_footer">Los efectos experimentales ya se guardan. Su procesamiento de audio se añadirá en las siguientes etapas.</string>
+    <string name="automix_effect_auto">Automático</string>
+    <string name="automix_effect_crossfade">Fundido cruzado</string>
+    <string name="automix_effect_muffled">Amortiguado</string>
+    <string name="automix_effect_echo">Eco</string>
+    <string name="automix_effect_pitch">Tono</string>
+    <string name="automix_effect_custom">Personalizado</string>
+    <string name="automix_effect_auto_description">Mantener el comportamiento inteligente actual de AutoMix.</string>
+    <string name="automix_effect_crossfade_description">Usar un fundido cruzado estándar de potencia constante.</string>
+    <string name="automix_effect_muffled_description">Aplicar un filtro de paso bajo a la canción saliente.</string>
+    <string name="automix_effect_echo_description">Añadir ecos retardados a la canción saliente.</string>
+    <string name="automix_effect_pitch_description">Aplicar un ajuste de tono seleccionado.</string>
+    <string name="automix_effect_custom_description">Configurar conjuntamente velocidad, tono, eco y paso bajo.</string>
+    <string name="automix_speed">Velocidad de transición</string>
+    <string name="automix_speed_subtitle">Velocidad personalizada: de 0,80 a 1,20×.</string>
+    <string name="automix_pitch">Ajuste de tono</string>
+    <string name="automix_pitch_subtitle">Ajusta el tono entre −6 y +6 semitonos.</string>
+    <string name="automix_echo_toggle">Eco</string>
+    <string name="automix_echo_subtitle">Activar un eco retardado en las transiciones personalizadas.</string>
+    <string name="automix_low_pass">Filtro de paso bajo</string>
+    <string name="automix_low_pass_subtitle">Activar un sonido amortiguado en las transiciones personalizadas.</string>
 </resources>

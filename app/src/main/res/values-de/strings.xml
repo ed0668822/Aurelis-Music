@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">Wird wiedergegeben</string>
@@ -1470,4 +1472,32 @@
     <string name="local_profile_edit_name">Lokalen Namen bearbeiten</string>
     <string name="local_profile_remove_photo">Lokales Foto entfernen</string>
     <string name="local_feature_paused">Vorübergehend nicht verfügbar</string>
+    <string name="automix_options_title">AutoMix · Experimentelle Optionen</string>
+    <string name="automix_options_pending">Die Einstellungen werden gespeichert; die Audioeffekte folgen in späteren Schritten.</string>
+    <string name="automix_duration">AutoMix-Dauer</string>
+    <string name="automix_duration_subtitle">Automatisch oder 3 bis 60 Sekunden, abhängig von der Titellänge.</string>
+    <string name="automix_duration_auto">Automatisch</string>
+    <string name="automix_effect">Übergangseffekt</string>
+    <string name="automix_effect_subtitle">Wähle den Effekt für kommende Übergänge.</string>
+    <string name="automix_effect_footer">Experimentelle Vorgaben werden bereits gespeichert. Die Audioverarbeitung folgt in den nächsten Schritten.</string>
+    <string name="automix_effect_auto">Automatisch</string>
+    <string name="automix_effect_crossfade">Überblendung</string>
+    <string name="automix_effect_muffled">Gedämpft</string>
+    <string name="automix_effect_echo">Echo</string>
+    <string name="automix_effect_pitch">Tonhöhe</string>
+    <string name="automix_effect_custom">Benutzerdefiniert</string>
+    <string name="automix_effect_auto_description">Das bisherige intelligente AutoMix-Verhalten beibehalten.</string>
+    <string name="automix_effect_crossfade_description">Eine normale Überblendung mit konstanter Leistung verwenden.</string>
+    <string name="automix_effect_muffled_description">Den ausklingenden Titel mit einem Tiefpass dämpfen.</string>
+    <string name="automix_effect_echo_description">Verzögerte Echos zum ausklingenden Titel hinzufügen.</string>
+    <string name="automix_effect_pitch_description">Die ausgewählte Tonhöhenänderung anwenden.</string>
+    <string name="automix_effect_custom_description">Tempo, Tonhöhe, Echo und Tiefpass gemeinsam einstellen.</string>
+    <string name="automix_speed">Übergangstempo</string>
+    <string name="automix_speed_subtitle">Benutzerdefiniertes Tempo: 0,80 bis 1,20×.</string>
+    <string name="automix_pitch">Tonhöhenänderung</string>
+    <string name="automix_pitch_subtitle">Tonhöhe um −6 bis +6 Halbtöne ändern.</string>
+    <string name="automix_echo_toggle">Echo</string>
+    <string name="automix_echo_subtitle">Ein verzögertes Echo bei benutzerdefinierten Übergängen aktivieren.</string>
+    <string name="automix_low_pass">Tiefpassfilter</string>
+    <string name="automix_low_pass_subtitle">Gedämpften Klang bei benutzerdefinierten Übergängen aktivieren.</string>
 </resources>

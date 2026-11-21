@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">Şu an çalıyor</string>
@@ -1427,4 +1429,32 @@
     <string name="local_profile_edit_name">Yerel adı düzenle</string>
     <string name="local_profile_remove_photo">Yerel fotoğrafı kaldır</string>
     <string name="local_feature_paused">Geçici olarak kullanılamıyor</string>
+    <string name="automix_options_title">AutoMix · Deneysel seçenekler</string>
+    <string name="automix_options_pending">Ayarlar kaydedilir; ses efektleri sonraki aşamalarda etkinleştirilecek.</string>
+    <string name="automix_duration">AutoMix süresi</string>
+    <string name="automix_duration_subtitle">Otomatik veya parça uzunluğuna göre 3 ile 60 saniye arası.</string>
+    <string name="automix_duration_auto">Otomatik</string>
+    <string name="automix_effect">Geçiş efekti</string>
+    <string name="automix_effect_subtitle">Sonraki geçişler için bir efekt seçin.</string>
+    <string name="automix_effect_footer">Deneysel ön ayarlar şimdi kaydediliyor. Ses işleme sonraki aşamalarda eklenecek.</string>
+    <string name="automix_effect_auto">Otomatik</string>
+    <string name="automix_effect_crossfade">Çapraz geçiş</string>
+    <string name="automix_effect_muffled">Boğuk</string>
+    <string name="automix_effect_echo">Yankı</string>
+    <string name="automix_effect_pitch">Perde</string>
+    <string name="automix_effect_custom">Özel</string>
+    <string name="automix_effect_auto_description">Mevcut akıllı AutoMix davranışını koruyun.</string>
+    <string name="automix_effect_crossfade_description">Standart eşit güçlü çapraz geçiş kullanın.</string>
+    <string name="automix_effect_muffled_description">Biten parçaya alçak geçiren filtre uygulayın.</string>
+    <string name="automix_effect_echo_description">Biten parçaya gecikmeli yankılar ekleyin.</string>
+    <string name="automix_effect_pitch_description">Seçilen perde değişikliğini uygulayın.</string>
+    <string name="automix_effect_custom_description">Hız, perde, yankı ve filtreyi birlikte ayarlayın.</string>
+    <string name="automix_speed">Geçiş hızı</string>
+    <string name="automix_speed_subtitle">Özel hız: 0,80 ile 1,20× arası.</string>
+    <string name="automix_pitch">Perde ayarı</string>
+    <string name="automix_pitch_subtitle">Perdeyi −6 ile +6 yarım ses arasında değiştirin.</string>
+    <string name="automix_echo_toggle">Yankı</string>
+    <string name="automix_echo_subtitle">Özel geçişlerde gecikmeli yankıyı etkinleştirin.</string>
+    <string name="automix_low_pass">Alçak geçiren filtre</string>
+    <string name="automix_low_pass_subtitle">Özel geçişlerde boğuk sesi etkinleştirin.</string>
 </resources>

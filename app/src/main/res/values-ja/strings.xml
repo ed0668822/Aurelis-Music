@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">再生中</string>
@@ -1448,4 +1450,32 @@
     <string name="local_profile_edit_name">ローカル名を編集</string>
     <string name="local_profile_remove_photo">ローカル写真を削除</string>
     <string name="local_feature_paused">一時的に利用できません</string>
+    <string name="automix_options_title">AutoMix · 試験的なオプション</string>
+    <string name="automix_options_pending">設定は保存されます。音声エフェクトは今後の段階で有効になります。</string>
+    <string name="automix_duration">AutoMix の長さ</string>
+    <string name="automix_duration_subtitle">自動、または曲の長さに応じて3〜60秒に設定します。</string>
+    <string name="automix_duration_auto">自動</string>
+    <string name="automix_effect">切り替えエフェクト</string>
+    <string name="automix_effect_subtitle">今後の曲の切り替えに使うエフェクトを選びます。</string>
+    <string name="automix_effect_footer">試験的なプリセットは保存されます。音声処理は今後の段階で追加されます。</string>
+    <string name="automix_effect_auto">自動</string>
+    <string name="automix_effect_crossfade">クロスフェード</string>
+    <string name="automix_effect_muffled">こもった音</string>
+    <string name="automix_effect_echo">エコー</string>
+    <string name="automix_effect_pitch">ピッチ</string>
+    <string name="automix_effect_custom">カスタム</string>
+    <string name="automix_effect_auto_description">現在のスマートな AutoMix の動作を維持します。</string>
+    <string name="automix_effect_crossfade_description">一定パワーの標準クロスフェードを使います。</string>
+    <string name="automix_effect_muffled_description">終了する曲にローパスフィルターをかけます。</string>
+    <string name="automix_effect_echo_description">終了する曲に遅延エコーを加えます。</string>
+    <string name="automix_effect_pitch_description">選択したピッチ調整を適用します。</string>
+    <string name="automix_effect_custom_description">速度、ピッチ、エコー、ローパスをまとめて設定します。</string>
+    <string name="automix_speed">切り替え速度</string>
+    <string name="automix_speed_subtitle">カスタム速度：0.80〜1.20倍。</string>
+    <string name="automix_pitch">ピッチ調整</string>
+    <string name="automix_pitch_subtitle">ピッチを−6〜＋6半音で調整します。</string>
+    <string name="automix_echo_toggle">エコー</string>
+    <string name="automix_echo_subtitle">カスタム切り替えで遅延エコーを有効にします。</string>
+    <string name="automix_low_pass">ローパスフィルター</string>
+    <string name="automix_low_pass_subtitle">カスタム切り替えでこもった音を有効にします。</string>
 </resources>

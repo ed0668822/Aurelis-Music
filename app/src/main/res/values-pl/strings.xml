@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Aurelis Music</string>
@@ -1510,4 +1512,32 @@
     <string name="local_profile_edit_name">Edytuj nazwę profilu</string>
     <string name="local_profile_remove_photo">Usuń lokalne zdjęcie</string>
     <string name="local_feature_paused">Tymczasowo niedostępne</string>
+    <string name="automix_options_title">AutoMix · Opcje eksperymentalne</string>
+    <string name="automix_options_pending">Ustawienia są zapisywane; efekty dźwiękowe zostaną włączone w kolejnych etapach.</string>
+    <string name="automix_duration">Czas AutoMix</string>
+    <string name="automix_duration_subtitle">Automatycznie lub od 3 do 60 sekund, zależnie od długości utworów.</string>
+    <string name="automix_duration_auto">Automatycznie</string>
+    <string name="automix_effect">Efekt przejścia</string>
+    <string name="automix_effect_subtitle">Wybierz efekt dla następnych przejść.</string>
+    <string name="automix_effect_footer">Eksperymentalne ustawienia są już zapisywane. Obsługa dźwięku pojawi się w kolejnych etapach.</string>
+    <string name="automix_effect_auto">Automatyczny</string>
+    <string name="automix_effect_crossfade">Przenikanie</string>
+    <string name="automix_effect_muffled">Przytłumiony</string>
+    <string name="automix_effect_echo">Echo</string>
+    <string name="automix_effect_pitch">Wysokość dźwięku</string>
+    <string name="automix_effect_custom">Niestandardowy</string>
+    <string name="automix_effect_auto_description">Zachowaj obecne inteligentne działanie AutoMix.</string>
+    <string name="automix_effect_crossfade_description">Użyj standardowego przenikania o stałej mocy.</string>
+    <string name="automix_effect_muffled_description">Zastosuj filtr dolnoprzepustowy do kończącego się utworu.</string>
+    <string name="automix_effect_echo_description">Dodaj opóźnione echo do kończącego się utworu.</string>
+    <string name="automix_effect_pitch_description">Zastosuj wybraną zmianę wysokości dźwięku.</string>
+    <string name="automix_effect_custom_description">Skonfiguruj razem tempo, wysokość dźwięku, echo i filtr.</string>
+    <string name="automix_speed">Tempo przejścia</string>
+    <string name="automix_speed_subtitle">Niestandardowe tempo: od 0,80 do 1,20×.</string>
+    <string name="automix_pitch">Zmiana wysokości</string>
+    <string name="automix_pitch_subtitle">Zmień wysokość o −6 do +6 półtonów.</string>
+    <string name="automix_echo_toggle">Echo</string>
+    <string name="automix_echo_subtitle">Włącz opóźnione echo w przejściach niestandardowych.</string>
+    <string name="automix_low_pass">Filtr dolnoprzepustowy</string>
+    <string name="automix_low_pass_subtitle">Włącz przytłumiony dźwięk w przejściach niestandardowych.</string>
 </resources>

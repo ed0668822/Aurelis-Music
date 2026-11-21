@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">Sedang diputar</string>
@@ -1447,4 +1449,32 @@
     <string name="local_profile_edit_name">Edit nama lokal</string>
     <string name="local_profile_remove_photo">Hapus foto lokal</string>
     <string name="local_feature_paused">Untuk sementara tidak tersedia</string>
+    <string name="automix_options_title">AutoMix · Opsi eksperimental</string>
+    <string name="automix_options_pending">Pengaturan disimpan; efek audio akan diaktifkan pada tahap berikutnya.</string>
+    <string name="automix_duration">Durasi AutoMix</string>
+    <string name="automix_duration_subtitle">Otomatis atau 3 hingga 60 detik, tergantung durasi lagu.</string>
+    <string name="automix_duration_auto">Otomatis</string>
+    <string name="automix_effect">Efek transisi</string>
+    <string name="automix_effect_subtitle">Pilih efek untuk transisi berikutnya.</string>
+    <string name="automix_effect_footer">Preset eksperimental sudah tersimpan. Pemrosesan audionya akan ditambahkan pada tahap berikutnya.</string>
+    <string name="automix_effect_auto">Otomatis</string>
+    <string name="automix_effect_crossfade">Crossfade</string>
+    <string name="automix_effect_muffled">Terendam</string>
+    <string name="automix_effect_echo">Gema</string>
+    <string name="automix_effect_pitch">Nada</string>
+    <string name="automix_effect_custom">Kustom</string>
+    <string name="automix_effect_auto_description">Pertahankan perilaku AutoMix cerdas yang sudah ada.</string>
+    <string name="automix_effect_crossfade_description">Gunakan crossfade standar dengan daya konstan.</string>
+    <string name="automix_effect_muffled_description">Terapkan filter lolos rendah pada lagu yang berakhir.</string>
+    <string name="automix_effect_echo_description">Tambahkan gema tertunda pada lagu yang berakhir.</string>
+    <string name="automix_effect_pitch_description">Terapkan penyesuaian nada yang dipilih.</string>
+    <string name="automix_effect_custom_description">Atur kecepatan, nada, gema, dan filter sekaligus.</string>
+    <string name="automix_speed">Kecepatan transisi</string>
+    <string name="automix_speed_subtitle">Kecepatan kustom: 0,80 hingga 1,20×.</string>
+    <string name="automix_pitch">Penyesuaian nada</string>
+    <string name="automix_pitch_subtitle">Ubah nada dari −6 hingga +6 semiton.</string>
+    <string name="automix_echo_toggle">Gema</string>
+    <string name="automix_echo_subtitle">Aktifkan gema tertunda dalam transisi kustom.</string>
+    <string name="automix_low_pass">Filter lolos rendah</string>
+    <string name="automix_low_pass_subtitle">Aktifkan suara teredam dalam transisi kustom.</string>
 </resources>
