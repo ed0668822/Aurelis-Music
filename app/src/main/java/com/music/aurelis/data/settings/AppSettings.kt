@@ -384,6 +384,12 @@ object AppSettings {
      * pipeline. Not true object-based spatial audio — YouTube only ever hands
      * us a stereo stream, so there's no Atmos-style source to render.
      */
+    /**
+     * Explicit preference, not a claim that the signed-in session has Premium.
+     * The displayed bitrate always comes from the actual resolved format.
+     */
+    val youtubePremiumAudio = MutableStateFlow(false)
+
     val spatialAudio = MutableStateFlow(false)
 
     /**
@@ -1042,6 +1048,7 @@ object AppSettings {
         dolbyAtmos.value = prefs.getBoolean(KEY_DOLBY_ATMOS, true)
         directSourceStream.value = AurelisFeatures.ADVANCED_STREAMING_SETTINGS &&
             prefs.getBoolean(KEY_DIRECT_SOURCE_STREAM, false)
+        youtubePremiumAudio.value = prefs.getBoolean(KEY_YOUTUBE_PREMIUM_AUDIO, false)
         spatialAudio.value = prefs.getBoolean(KEY_SPATIAL_AUDIO, false)
         equalizerEnabled.value = prefs.getBoolean(KEY_EQ_ENABLED, false)
         equalizerMode.value = runCatching {
@@ -1422,6 +1429,13 @@ object AppSettings {
         if (AurelisFeatures.ADVANCED_STREAMING_SETTINGS) {
             prefs.edit().putBoolean(KEY_DIRECT_SOURCE_STREAM, value).apply()
         }
+    }
+
+    fun setYoutubePremiumAudio(value: Boolean) {
+        if (youtubePremiumAudio.value == value) return
+        youtubePremiumAudio.value = value
+        prefs.edit().putBoolean(KEY_YOUTUBE_PREMIUM_AUDIO, value).apply()
+        com.music.aurelis.data.innertube.StreamResolver.forgetResolved()
     }
 
     fun setSpatialAudio(value: Boolean) {
@@ -2413,6 +2427,7 @@ object AppSettings {
     private const val KEY_REPLAYGAIN_MODE = "replaygain_mode"
     private const val KEY_DOLBY_ATMOS = "dolby_atmos"
     private const val KEY_DIRECT_SOURCE_STREAM = "direct_source_stream"
+    private const val KEY_YOUTUBE_PREMIUM_AUDIO = "youtube_premium_audio"
     private const val KEY_SPATIAL_AUDIO = "spatial_audio"
     private const val KEY_EQ_ENABLED = "equalizer_enabled"
     private const val KEY_EQ_MODE = "equalizer_mode"

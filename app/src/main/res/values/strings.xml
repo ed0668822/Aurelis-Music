@@ -1421,4 +1421,6 @@
     <string name="replay_year_months">Your months in music</string>
     <string name="replay_year_watch">Watch your animated year story</string>
     <string name="radio">Radio</string>
+    <string name="youtube_premium_audio">YouTube Premium audio</string>
+    <string name="youtube_premium_audio_subtitle">Request high-quality Opus when your signed-in account supports it. Actual quality depends on the available stream.</string>
 </resources>
