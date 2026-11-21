@@ -97,7 +97,7 @@ internal object LocalAutoplaySource {
             if (artist != null) putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf(artist))
             putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
                 "${MediaStore.Audio.Media.DATE_ADDED} DESC")
-            putString(ContentResolver.QUERY_ARG_SQL_LIMIT, limit.toString())
+            putInt(ContentResolver.QUERY_ARG_LIMIT, limit)
         }
         val result = ArrayList<Song>(limit)
         runCatching {
