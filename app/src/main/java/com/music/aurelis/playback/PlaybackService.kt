@@ -7431,9 +7431,24 @@ class PlaybackService : MediaLibraryService() {
      * the YouTube stream alongside the substitute lookup rather than only when
      * one fails — see [StreamResolver.loudnessDbFor]'s own doc.
      */
-    private fun loudnessGainFor(mediaId: String): Float = loudnessGainMb(mediaId)
-        ?.let { 10.0.pow(it / 2000.0).toFloat() }
-        ?: 1f
+    private fun loudnessGainFor(mediaId: String): Float {
+        // B04: choose one source of normalization, never stack two gains.
+        // Measurements arrive from background analysis only; if unavailable,
+        // retain the existing streaming loudness normalization unchanged.
+        if (!AppSettings.loudnessNormalization.value) return 1f
+        if (AppSettings.loudnessOffOnSpeaker.value &&
+            AudioOutputStatus.current.value.routeKind == AudioRouting.Kind.PHONE
+        ) return 1f
+        ReplayGainMeasurements.get(mediaId)?.let { measurement ->
+            return ReplayGainPolicy.gain(
+                measurement = measurement,
+                bitPerfect = AppSettings.bitPerfectMode.value != BitPerfectMode.OFF,
+            )
+        }
+        return loudnessGainMb(mediaId)
+            ?.let { 10.0.pow(it / 2000.0).toFloat() }
+            ?: 1f
+    }
 
     private fun loudnessGainMb(mediaId: String?): Int? {
         if (!AppSettings.loudnessNormalization.value) return null
