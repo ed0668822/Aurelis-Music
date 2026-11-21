@@ -1686,6 +1686,21 @@ fun NowPlayingScreen(
             onListenTogether = onListenTogether,
             onOpenListenTogetherMembers = openListenTogetherMembers,
         )
+        // A chorus marker appears only with trustworthy timed local lyrics.
+        // This is a seek action on the existing player, never another decoder.
+        if (!sideways && !lyricsOpen && !queueOpen && !controlsLocked &&
+            !song.localUri.isNullOrBlank()
+        ) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                BestPartSeekPill(
+                    lines = lyrics,
+                    durationMs = durationMs,
+                    position = position,
+                    mixing = mixing,
+                    onSeek = onSeek,
+                )
+            }
+        }
         // Keep the current output caption visible in every state.
         Spacer(Modifier.height(18.dp))
         Box(
