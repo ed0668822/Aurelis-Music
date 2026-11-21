@@ -380,7 +380,12 @@ class AddonClient(rawBaseUrl: String, private val pickedQuality: String? = null)
             val wait = client.newCall(request).execute().use { response ->
                 val authChallenge = response.takeIf { it.code == 401 }
                     ?.header("WWW-Authenticate")
-                    ?.takeIf { it.trimStart().startsWith("Aurelis Music", ignoreCase = true) }
+                    ?.takeIf { header ->
+                        // Protocol auth scheme is "Aurelis", not the UI brand
+                        // "Aurelis Music". A package rename must not alter
+                        // challenge parsing or retry behavior.
+                        header.trimStart().startsWith("Aurelis ", ignoreCase = true)
+                    }
                 when {
                     response.isSuccessful ->
                         return@withContext response.body?.string()?.takeIf { it.isNotBlank() }
