@@ -192,6 +192,53 @@ fun ReplayScreen(
                             onCardClick = onOpenStory,
                         )
                     }
+                    // B09: an annual overview comes from the same local statistics as
+                    // the shareable story; no separate totals or online profile.
+                    if (state.period == ReplayPeriod.THIS_YEAR) {
+                        item("annual-highlights") {
+                            val year = java.time.LocalDate.now().year
+                            val annual = summary.annualHighlights(year)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = PAGE_GUTTER + 4.dp, vertical = 8.dp)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(textColor.copy(alpha = 0.075f))
+                                    .padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = state.period.localizedChip(context) + " · " + year,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textColor,
+                                )
+                                Text(
+                                    text = stringResource(R.string.minutes) + ": " + annual.minutes,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = textColor.copy(alpha = 0.8f),
+                                )
+                                annual.topSong?.let { top ->
+                                    Text(
+                                        text = stringResource(R.string.top_song) + ": " + top,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                annual.topArtist?.let { top ->
+                                    Text(
+                                        text = stringResource(R.string.top_artist) + ": " + top,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                        }
+                    }
                     item("open") {
                         ReplayActionRow(AurelisIcons.Play, stringResource(R.string.play_your_replay), dark) {
                             onOpenStory(ReplayStoryPage.INTRO)
