@@ -1538,4 +1538,15 @@
     <string name="queue_selection_remove">Remover</string>
     <string name="queue_add_to_playlist">Adicionar à playlist</string>
     <string name="queue_download">Baixar</string>
+    <string name="song_info_composer">Compositor</string>
+    <string name="song_info_lyricist">Letrista</string>
+    <string name="song_info_album_artist">Artista do álbum</string>
+    <string name="replay_annual_unique_songs">Músicas diferentes: %1$d</string>
+    <string name="replay_annual_personality">Perfil de escuta</string>
+    <string name="replay_personality_night">Coruja noturna</string>
+    <string name="replay_personality_early">Madrugador</string>
+    <string name="replay_personality_evening">Ouvinte da noite</string>
+    <string name="replay_personality_day">Ouvinte diurno</string>
+    <string name="replay_personality_all">Ouvinte de todas as horas</string>
+    <string name="replay_annual_play_local">Reproduzir um destaque deste dispositivo</string>
 </resources>

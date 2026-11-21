@@ -1533,4 +1533,15 @@
     <string name="queue_selection_remove">हटाएं</string>
     <string name="queue_add_to_playlist">प्लेलिस्ट में जोड़ें</string>
     <string name="queue_download">डाउनलोड करें</string>
+    <string name="song_info_composer">संगीतकार</string>
+    <string name="song_info_lyricist">गीतकार</string>
+    <string name="song_info_album_artist">एल्बम कलाकार</string>
+    <string name="replay_annual_unique_songs">अलग-अलग गाने: %1$d</string>
+    <string name="replay_annual_personality">सुनने की आदत</string>
+    <string name="replay_personality_night">रात में सुनने वाले</string>
+    <string name="replay_personality_early">सुबह जल्दी सुनने वाले</string>
+    <string name="replay_personality_evening">शाम के श्रोता</string>
+    <string name="replay_personality_day">दिन के श्रोता</string>
+    <string name="replay_personality_all">हर समय सुनने वाले</string>
+    <string name="replay_annual_play_local">इस डिवाइस का एक प्रमुख गाना चलाएँ</string>
 </resources>

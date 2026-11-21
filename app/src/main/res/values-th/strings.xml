@@ -1516,4 +1516,15 @@
     <string name="queue_selection_remove">นำออก</string>
     <string name="queue_add_to_playlist">เพิ่มลงเพลย์ลิสต์</string>
     <string name="queue_download">ดาวน์โหลด</string>
+    <string name="song_info_composer">ผู้ประพันธ์เพลง</string>
+    <string name="song_info_lyricist">ผู้แต่งเนื้อเพลง</string>
+    <string name="song_info_album_artist">ศิลปินอัลบั้ม</string>
+    <string name="replay_annual_unique_songs">เพลงที่แตกต่างกัน: %1$d</string>
+    <string name="replay_annual_personality">รูปแบบการฟังเพลง</string>
+    <string name="replay_personality_night">คนชอบฟังเพลงดึก</string>
+    <string name="replay_personality_early">คนตื่นเช้า</string>
+    <string name="replay_personality_evening">ผู้ฟังช่วงเย็น</string>
+    <string name="replay_personality_day">ผู้ฟังช่วงกลางวัน</string>
+    <string name="replay_personality_all">ผู้ฟังตลอดวัน</string>
+    <string name="replay_annual_play_local">เล่นเพลงเด่นจากอุปกรณ์นี้</string>
 </resources>

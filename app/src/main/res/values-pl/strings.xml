@@ -1573,4 +1573,15 @@
     <string name="queue_selection_remove">Usuń</string>
     <string name="queue_add_to_playlist">Dodaj do playlisty</string>
     <string name="queue_download">Pobierz</string>
+    <string name="song_info_composer">Kompozytor</string>
+    <string name="song_info_lyricist">Autor tekstu</string>
+    <string name="song_info_album_artist">Wykonawca albumu</string>
+    <string name="replay_annual_unique_songs">Różne utwory: %1$d</string>
+    <string name="replay_annual_personality">Styl słuchania</string>
+    <string name="replay_personality_night">Nocny marek</string>
+    <string name="replay_personality_early">Ranny ptaszek</string>
+    <string name="replay_personality_evening">Słuchacz wieczorny</string>
+    <string name="replay_personality_day">Słuchacz dzienny</string>
+    <string name="replay_personality_all">Słucha o każdej porze</string>
+    <string name="replay_annual_play_local">Odtwórz wyróżniony utwór z urządzenia</string>
 </resources>

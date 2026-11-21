@@ -1534,4 +1534,15 @@
     <string name="queue_selection_remove">Retirer</string>
     <string name="queue_add_to_playlist">Ajouter à la playlist</string>
     <string name="queue_download">Télécharger</string>
+    <string name="song_info_composer">Compositeur</string>
+    <string name="song_info_lyricist">Parolier</string>
+    <string name="song_info_album_artist">Artiste de l’album</string>
+    <string name="replay_annual_unique_songs">Titres différents : %1$d</string>
+    <string name="replay_annual_personality">Profil d’écoute</string>
+    <string name="replay_personality_night">Noctambule</string>
+    <string name="replay_personality_early">Lève-tôt</string>
+    <string name="replay_personality_evening">Écoute en soirée</string>
+    <string name="replay_personality_day">Écoute en journée</string>
+    <string name="replay_personality_all">Écoute à toute heure</string>
+    <string name="replay_annual_play_local">Écouter un titre marquant de cet appareil</string>
 </resources>

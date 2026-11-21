@@ -1533,4 +1533,15 @@
     <string name="queue_selection_remove">Entfernen</string>
     <string name="queue_add_to_playlist">Zur Playlist hinzufügen</string>
     <string name="queue_download">Herunterladen</string>
+    <string name="song_info_composer">Komponist</string>
+    <string name="song_info_lyricist">Texter</string>
+    <string name="song_info_album_artist">Albuminterpret</string>
+    <string name="replay_annual_unique_songs">Unterschiedliche Titel: %1$d</string>
+    <string name="replay_annual_personality">Hörtyp</string>
+    <string name="replay_personality_night">Nachteule</string>
+    <string name="replay_personality_early">Frühaufsteher</string>
+    <string name="replay_personality_evening">Abendhörer</string>
+    <string name="replay_personality_day">Taghörer</string>
+    <string name="replay_personality_all">Hört zu jeder Tageszeit</string>
+    <string name="replay_annual_play_local">Einen lokalen Jahreshit abspielen</string>
 </resources>

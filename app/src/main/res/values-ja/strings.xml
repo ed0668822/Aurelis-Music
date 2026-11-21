@@ -1511,4 +1511,15 @@
     <string name="queue_selection_remove">削除</string>
     <string name="queue_add_to_playlist">プレイリストに追加</string>
     <string name="queue_download">ダウンロード</string>
+    <string name="song_info_composer">作曲者</string>
+    <string name="song_info_lyricist">作詞者</string>
+    <string name="song_info_album_artist">アルバムアーティスト</string>
+    <string name="replay_annual_unique_songs">聴いた曲の種類: %1$d</string>
+    <string name="replay_annual_personality">リスニング傾向</string>
+    <string name="replay_personality_night">夜型</string>
+    <string name="replay_personality_early">朝型</string>
+    <string name="replay_personality_evening">夕方・夜型</string>
+    <string name="replay_personality_day">昼型</string>
+    <string name="replay_personality_all">一日中聴くタイプ</string>
+    <string name="replay_annual_play_local">この端末の注目曲を再生</string>
 </resources>

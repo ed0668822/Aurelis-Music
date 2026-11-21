@@ -1383,4 +1383,15 @@
     <string name="queue_selection_remove">제거</string>
     <string name="queue_add_to_playlist">재생목록에 추가</string>
     <string name="queue_download">다운로드</string>
+    <string name="song_info_composer">작곡가</string>
+    <string name="song_info_lyricist">작사가</string>
+    <string name="song_info_album_artist">앨범 아티스트</string>
+    <string name="replay_annual_unique_songs">서로 다른 곡: %1$d</string>
+    <string name="replay_annual_personality">음악 감상 유형</string>
+    <string name="replay_personality_night">올빼미형</string>
+    <string name="replay_personality_early">아침형</string>
+    <string name="replay_personality_evening">저녁형</string>
+    <string name="replay_personality_day">낮형</string>
+    <string name="replay_personality_all">하루 종일 감상형</string>
+    <string name="replay_annual_play_local">이 기기의 올해의 추천곡 재생</string>
 </resources>

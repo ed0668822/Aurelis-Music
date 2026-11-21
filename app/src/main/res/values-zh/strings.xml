@@ -1510,4 +1510,15 @@
     <string name="queue_selection_remove">移除</string>
     <string name="queue_add_to_playlist">添加到播放列表</string>
     <string name="queue_download">下载</string>
+    <string name="song_info_composer">作曲</string>
+    <string name="song_info_lyricist">作词</string>
+    <string name="song_info_album_artist">专辑艺人</string>
+    <string name="replay_annual_unique_songs">不同歌曲数：%1$d</string>
+    <string name="replay_annual_personality">听歌习惯</string>
+    <string name="replay_personality_night">夜猫子</string>
+    <string name="replay_personality_early">早起型</string>
+    <string name="replay_personality_evening">傍晚听歌型</string>
+    <string name="replay_personality_day">白天听歌型</string>
+    <string name="replay_personality_all">全天听歌型</string>
+    <string name="replay_annual_play_local">播放此设备上的年度精选歌曲</string>
 </resources>

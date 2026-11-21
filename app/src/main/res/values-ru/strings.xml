@@ -1565,4 +1565,15 @@
     <string name="queue_selection_remove">Удалить</string>
     <string name="queue_add_to_playlist">Добавить в плейлист</string>
     <string name="queue_download">Загрузить</string>
+    <string name="song_info_composer">Композитор</string>
+    <string name="song_info_lyricist">Автор текста</string>
+    <string name="song_info_album_artist">Исполнитель альбома</string>
+    <string name="replay_annual_unique_songs">Разных песен: %1$d</string>
+    <string name="replay_annual_personality">Стиль прослушивания</string>
+    <string name="replay_personality_night">Ночная сова</string>
+    <string name="replay_personality_early">Ранняя пташка</string>
+    <string name="replay_personality_evening">Любитель вечерней музыки</string>
+    <string name="replay_personality_day">Дневной слушатель</string>
+    <string name="replay_personality_all">Слушает в любое время</string>
+    <string name="replay_annual_play_local">Воспроизвести избранную песню с устройства</string>
 </resources>

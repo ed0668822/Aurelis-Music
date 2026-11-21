@@ -1450,4 +1450,15 @@
     <string name="queue_selection_remove">Xóa</string>
     <string name="queue_add_to_playlist">Thêm vào danh sách phát</string>
     <string name="queue_download">Tải xuống</string>
+    <string name="song_info_composer">Nhạc sĩ sáng tác</string>
+    <string name="song_info_lyricist">Người viết lời</string>
+    <string name="song_info_album_artist">Nghệ sĩ album</string>
+    <string name="replay_annual_unique_songs">Số bài hát khác nhau: %1$d</string>
+    <string name="replay_annual_personality">Thói quen nghe nhạc</string>
+    <string name="replay_personality_night">Cú đêm</string>
+    <string name="replay_personality_early">Dậy sớm</string>
+    <string name="replay_personality_evening">Nghe nhạc buổi tối</string>
+    <string name="replay_personality_day">Nghe nhạc ban ngày</string>
+    <string name="replay_personality_all">Nghe nhạc cả ngày</string>
+    <string name="replay_annual_play_local">Phát bài hát nổi bật trên thiết bị này</string>
 </resources>

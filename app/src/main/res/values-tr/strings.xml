@@ -1490,4 +1490,15 @@
     <string name="queue_selection_remove">Kaldır</string>
     <string name="queue_add_to_playlist">Çalma listesine ekle</string>
     <string name="queue_download">İndir</string>
+    <string name="song_info_composer">Besteci</string>
+    <string name="song_info_lyricist">Söz yazarı</string>
+    <string name="song_info_album_artist">Albüm sanatçısı</string>
+    <string name="replay_annual_unique_songs">Farklı şarkılar: %1$d</string>
+    <string name="replay_annual_personality">Dinleme alışkanlığı</string>
+    <string name="replay_personality_night">Gece kuşu</string>
+    <string name="replay_personality_early">Erkenci</string>
+    <string name="replay_personality_evening">Akşam dinleyicisi</string>
+    <string name="replay_personality_day">Gündüz dinleyicisi</string>
+    <string name="replay_personality_all">Gün boyu dinleyici</string>
+    <string name="replay_annual_play_local">Bu cihazdaki öne çıkan şarkıyı çal</string>
 </resources>

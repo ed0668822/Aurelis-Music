@@ -1472,4 +1472,15 @@
     <string name="queue_selection_remove">Rimuovi</string>
     <string name="queue_add_to_playlist">Aggiungi alla playlist</string>
     <string name="queue_download">Download</string>
+    <string name="song_info_composer">Compositore</string>
+    <string name="song_info_lyricist">Autore del testo</string>
+    <string name="song_info_album_artist">Artista dell’album</string>
+    <string name="replay_annual_unique_songs">Brani diversi: %1$d</string>
+    <string name="replay_annual_personality">Stile di ascolto</string>
+    <string name="replay_personality_night">Nottambulo</string>
+    <string name="replay_personality_early">Mattiniero</string>
+    <string name="replay_personality_evening">Ascoltatore serale</string>
+    <string name="replay_personality_day">Ascoltatore diurno</string>
+    <string name="replay_personality_all">Ascoltatore a tutte le ore</string>
+    <string name="replay_annual_play_local">Riproduci un brano in evidenza dal dispositivo</string>
 </resources>

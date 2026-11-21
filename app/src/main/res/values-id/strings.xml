@@ -1510,4 +1510,15 @@
     <string name="queue_selection_remove">Hapus</string>
     <string name="queue_add_to_playlist">Tambahkan ke playlist</string>
     <string name="queue_download">Unduh</string>
+    <string name="song_info_composer">Komposer</string>
+    <string name="song_info_lyricist">Penulis lirik</string>
+    <string name="song_info_album_artist">Artis album</string>
+    <string name="replay_annual_unique_songs">Lagu berbeda: %1$d</string>
+    <string name="replay_annual_personality">Kebiasaan mendengarkan</string>
+    <string name="replay_personality_night">Begadang</string>
+    <string name="replay_personality_early">Bangun pagi</string>
+    <string name="replay_personality_evening">Pendengar malam</string>
+    <string name="replay_personality_day">Pendengar siang</string>
+    <string name="replay_personality_all">Pendengar sepanjang hari</string>
+    <string name="replay_annual_play_local">Putar lagu unggulan dari perangkat ini</string>
 </resources>
