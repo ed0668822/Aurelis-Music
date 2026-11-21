@@ -90,6 +90,9 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val smartMixBlend get() = AppSettings.smartMixBlend
         override val smartMixView get() = AppSettings.smartMixView
         override val smartMixProgress get() = AppSettings.smartMixProgress
+        override val autoMixArtworkEnabled get() = AppSettings.autoMixArtworkEnabled
+        override val autoMixMiniArtworkEnabled get() = AppSettings.autoMixMiniArtworkEnabled
+        override val autoMixArtworkState get() = AppSettings.autoMixArtworkState
         override val smartMixPreview get() = AppSettings.smartMixPreview
         override val smartTransitionWindow get() = AppSettings.smartTransitionWindow
         override val spotifyCanvasAutoHide get() = AppSettings.spotifyCanvasAutoHide

@@ -851,6 +851,11 @@ object AppSettings {
 
     /** How far through [smartMixView]'s blend playback is, 0..1. Read it in draw. */
     val smartMixProgress = MutableStateFlow(0f)
+    /** Cosmetic animations, independent of the DSP and the output route. */
+    val autoMixArtworkEnabled = MutableStateFlow(true)
+    val autoMixMiniArtworkEnabled = MutableStateFlow(true)
+    /** One visual timeline for both internal ExoPlayers, including native LoopMix. */
+    val autoMixArtworkState = MutableStateFlow<AutoMixArtworkState?>(null)
 
     /**
      * The *next* Automix transition laid out for the mix popup, as the plan
@@ -991,6 +996,8 @@ object AppSettings {
         syncDownloadedPlaylists.value = prefs.getBoolean(KEY_SYNC_DOWNLOADED_PLAYLISTS, false)
         crossfadeSeconds.value = prefs.getInt(KEY_CROSSFADE, 0)
         smartFadeEnabled.value = prefs.getBoolean(KEY_SMART_FADE, true)
+        autoMixArtworkEnabled.value = prefs.getBoolean(KEY_AUTOMIX_ARTWORK_ENABLED, true)
+        autoMixMiniArtworkEnabled.value = prefs.getBoolean(KEY_AUTOMIX_MINI_ARTWORK_ENABLED, true)
         automixPerformanceMode.value = runCatching {
             AutomixPerformanceMode.valueOf(
                 prefs.getString(KEY_AUTOMIX_PERFORMANCE_MODE, null) ?: AutomixPerformanceMode.BALANCED.name,
@@ -1335,6 +1342,16 @@ object AppSettings {
     fun setSmartFadeEnabled(value: Boolean) {
         smartFadeEnabled.value = value
         prefs.edit().putBoolean(KEY_SMART_FADE, value).apply()
+    }
+
+    fun setAutoMixArtworkEnabled(value: Boolean) {
+        autoMixArtworkEnabled.value = value
+        prefs.edit().putBoolean(KEY_AUTOMIX_ARTWORK_ENABLED, value).apply()
+    }
+
+    fun setAutoMixMiniArtworkEnabled(value: Boolean) {
+        autoMixMiniArtworkEnabled.value = value
+        prefs.edit().putBoolean(KEY_AUTOMIX_MINI_ARTWORK_ENABLED, value).apply()
     }
 
     fun setAutomixPerformanceMode(value: AutomixPerformanceMode) {
@@ -2350,6 +2367,8 @@ object AppSettings {
     private const val KEY_SYNC_DOWNLOADED_PLAYLISTS = "sync_downloaded_playlists"
     private const val KEY_CROSSFADE = "crossfade_seconds"
     private const val KEY_SMART_FADE = "smart_fade_enabled"
+    private const val KEY_AUTOMIX_ARTWORK_ENABLED = "automix_artwork_enabled"
+    private const val KEY_AUTOMIX_MINI_ARTWORK_ENABLED = "automix_mini_artwork_enabled"
     private const val KEY_AUTOMIX_PERFORMANCE_MODE = "automix_performance_mode"
     private const val KEY_AUTOMIX_DURATION_SECONDS = "automix_mornye_duration_seconds"
     private const val KEY_AUTOMIX_EFFECT = "automix_mornye_effect"

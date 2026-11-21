@@ -3470,6 +3470,14 @@ fun NowPlayingScreen(
                             }
                         }
 
+                        // The visual handoff stays above static and live-Canvas layers
+                        // while MediaSession swaps the two internal ExoPlayers.
+                        AutoMixArtworkOverlay(
+                            song = song,
+                            mini = false,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+
                         // The card's slot: where the sleeve sits as a card, whether or
                         // not it is being drawn as one. Holds the stats line and takes
                         // the gestures, both of which belong to the card's place even

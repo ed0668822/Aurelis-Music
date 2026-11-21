@@ -1486,4 +1486,8 @@
     <string name="discord_oauth_browser_error">No se pudo abrir el navegador para autorizar Discord.</string>
     <string name="discord_oauth_failed">La autorización de Discord se canceló, caducó o no fue válida. Inténtalo de nuevo.</string>
     <string name="discord_oauth_config_error">No se pudo finalizar la autorización. Activa Cliente público y registra la URI de retorno exacta en el portal de Discord.</string>
+    <string name="automix_artwork_transition">Carátulas animadas de AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">Mezcla las dos carátulas durante AutoMix sin modificar el audio.</string>
+    <string name="automix_mini_artwork_transition">Animar carátula del MiniPlayer</string>
+    <string name="automix_mini_artwork_transition_subtitle">Muestra la misma transición en el reproductor compacto.</string>
 </resources>

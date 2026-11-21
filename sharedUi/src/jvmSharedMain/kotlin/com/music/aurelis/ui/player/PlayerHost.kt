@@ -15,6 +15,7 @@ import com.music.aurelis.data.settings.PlayerTheme
 import com.music.aurelis.data.settings.SmartAnalysis
 import com.music.aurelis.data.settings.MixBlend
 import com.music.aurelis.data.settings.MixTransitionView
+import com.music.aurelis.data.settings.AutoMixArtworkState
 import com.music.aurelis.data.settings.TransitionWindow
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -281,6 +282,9 @@ interface PlayerSettingsSource {
     val smartMixView: StateFlow<MixTransitionView?>
     /** Progress through [smartMixView]'s blend, 0..1. */
     val smartMixProgress: StateFlow<Float>
+    val autoMixArtworkEnabled: StateFlow<Boolean>
+    val autoMixMiniArtworkEnabled: StateFlow<Boolean>
+    val autoMixArtworkState: StateFlow<AutoMixArtworkState?>
     /** The next transition as planned, while the mix popup is open between blends; null otherwise. */
     val smartMixPreview: StateFlow<MixTransitionView?>
     val smartTransitionWindow: StateFlow<TransitionWindow?>

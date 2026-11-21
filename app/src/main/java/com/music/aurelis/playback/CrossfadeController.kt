@@ -3,6 +3,8 @@
 
 package com.music.aurelis.playback
 
+import com.music.aurelis.data.settings.AutoMixArtworkState
+
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.C
@@ -1730,7 +1732,10 @@ class CrossfadeController(
         // it for a frame otherwise.
         publishBlend(out, into, force = true)
         AppSettings.smartMixInProgress.value = isRealMix()
-        if (isRealMix()) publishMixView(out, into)
+        if (isRealMix()) {
+            publishMixView(out, into)
+            openArtworkTransition(out, into)
+        }
         // The bar fills to the end through the first half of the blend, which
         // would run straight over the marker for the transition now under way.
         AppSettings.smartTransitionWindow.value = null
@@ -1889,6 +1894,7 @@ class CrossfadeController(
         }
         publishBlend(out, player)
         if (AppSettings.smartMixView.value != null) AppSettings.smartMixProgress.value = progress
+        updateArtworkTransition(progress)
         rideFilters(incomingAt, outgoingAt)
 
         // Finish when the fade runs its course or its setting is switched off.
@@ -2264,6 +2270,31 @@ class CrossfadeController(
      * where the overlap sits on each timeline, its beats and the faders it
      * will ride, with whichever waveforms have already been decoded.
      */
+    /** Publish cosmetic state from the audio clock; never touch either decoder. */
+    private fun openArtworkTransition(out: ExoPlayer, into: ExoPlayer) {
+        val outgoingItem = out.currentMediaItem ?: return
+        val incomingItem = into.currentMediaItem ?: return
+        AppSettings.autoMixArtworkState.value = AutoMixArtworkState(
+            generation = SystemClock.elapsedRealtimeNanos(),
+            outgoingMediaId = outgoingItem.mediaId,
+            incomingMediaId = incomingItem.mediaId,
+            outgoingTitle = outgoingItem.mediaMetadata.title?.toString().orEmpty(),
+            outgoingArtist = outgoingItem.mediaMetadata.artist?.toString().orEmpty(),
+            incomingTitle = incomingItem.mediaMetadata.title?.toString().orEmpty(),
+            incomingArtist = incomingItem.mediaMetadata.artist?.toString().orEmpty(),
+            outgoingArtworkUrl = outgoingItem.mediaMetadata.artworkUri?.toString(),
+            incomingArtworkUrl = incomingItem.mediaMetadata.artworkUri?.toString(),
+        )
+    }
+
+    private fun updateArtworkTransition(progress: Float) {
+        val old = AppSettings.autoMixArtworkState.value ?: return
+        val safe = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: return
+        if (kotlin.math.abs(safe - old.progress) >= 0.003f || safe == 1f) {
+            AppSettings.autoMixArtworkState.value = old.copy(progress = safe)
+        }
+    }
+
     private fun publishMixView(out: ExoPlayer, into: ExoPlayer) {
         val plan = planInFlight ?: return
         val outItem = out.currentMediaItem ?: return
@@ -2320,6 +2351,7 @@ class CrossfadeController(
     }
 
     private fun clearMixView() {
+        AppSettings.autoMixArtworkState.value = null
         mixViewJob?.cancel()
         mixViewJob = null
         mixWavePair = null
@@ -2687,6 +2719,7 @@ class CrossfadeController(
             phase = Phase.LOOP_RUNNING
             AppSettings.smartTransitionWindow.value = null
             AppSettings.smartMixInProgress.value = true
+            incoming?.let { openArtworkTransition(out, it) }
             scope.launch(Dispatchers.Default) {
                 session.outPort.spliceLag()?.let { (lag, score) ->
                     Log.d(
@@ -2727,6 +2760,7 @@ class CrossfadeController(
             handOff(out, into)
         }
         publishLoopBeat(session, m, now)
+        updateArtworkTransition(AutoMixArtworkState.loopProgress(m, session.clock.handoffAt, session.clock.elementAt))
         announceLoopPosition()
         if (m >= session.clock.elementAt + LOOP_END_MARGIN_SECONDS) finishLoop()
     }

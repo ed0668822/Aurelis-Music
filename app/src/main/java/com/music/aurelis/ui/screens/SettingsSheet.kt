@@ -240,6 +240,8 @@ fun SettingsScreen(
     val smartFade by AppSettings.smartFadeEnabled.collectAsStateWithLifecycle()
     val automixPerformance by AppSettings.automixPerformanceMode.collectAsStateWithLifecycle()
     val autoMixOptions by AppSettings.autoMixOptions.collectAsStateWithLifecycle()
+    val autoMixArtworkEnabled by AppSettings.autoMixArtworkEnabled.collectAsStateWithLifecycle()
+    val autoMixMiniArtworkEnabled by AppSettings.autoMixMiniArtworkEnabled.collectAsStateWithLifecycle()
     val skipSilence by AppSettings.skipSilence.collectAsStateWithLifecycle()
     val dolbyAtmos by AppSettings.dolbyAtmos.collectAsStateWithLifecycle()
     val directSourceStream by AppSettings.directSourceStream.collectAsStateWithLifecycle()
@@ -857,6 +859,26 @@ fun SettingsScreen(
             // Experimental effects and duration presets are handled by the
             // two-deck engine. Bit-perfect output keeps its direct-path bypass.
             if (smartFade) {
+                val artworkTitle = stringResource(R.string.automix_artwork_transition)
+                row(artworkTitle, "automix", "cover", "animation", "artwork") {
+                    SettingsSubRow(
+                        title = artworkTitle,
+                        subtitle = stringResource(R.string.automix_artwork_transition_subtitle),
+                        checked = autoMixArtworkEnabled,
+                        onCheckedChange = AppSettings::setAutoMixArtworkEnabled,
+                    )
+                }
+                if (autoMixArtworkEnabled) {
+                    val miniArtworkTitle = stringResource(R.string.automix_mini_artwork_transition)
+                    row(miniArtworkTitle, "automix", "mini player", "cover") {
+                        SettingsSubRow(
+                            title = miniArtworkTitle,
+                            subtitle = stringResource(R.string.automix_mini_artwork_transition_subtitle),
+                            checked = autoMixMiniArtworkEnabled,
+                            onCheckedChange = AppSettings::setAutoMixMiniArtworkEnabled,
+                        )
+                    }
+                }
                 val durationTitle = stringResource(R.string.automix_duration)
                 row(durationTitle, "automix", "seconds", "length") {
                     BypassedByBitPerfect(bitPerfectReady) {

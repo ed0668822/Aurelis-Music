@@ -63,6 +63,7 @@ import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
 import com.music.aurelis.playback.MusicOnlyPlayback
 import com.music.aurelis.ui.player.PlayerDock
+import com.music.aurelis.ui.player.AutoMixArtworkOverlay
 import com.music.aurelis.ui.player.AndroidMusicVideo
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.fillMaxSize
@@ -437,6 +438,13 @@ fun MiniPlayer(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
+                if (!showsPicture) {
+                    AutoMixArtworkOverlay(
+                        song = song,
+                        mini = true,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
                 // A music video keeps playing in the cover's place, cropped to
                 // it, as the web player's mini player does — the full player,
                 // when it is up, takes the picture over.
