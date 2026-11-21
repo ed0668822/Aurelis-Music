@@ -1545,4 +1545,8 @@
     <string name="discord_oauth_browser_error">Не удалось открыть браузер для авторизации Discord.</string>
     <string name="discord_oauth_failed">Авторизация Discord отменена, истекла или недействительна. Повторите попытку.</string>
     <string name="discord_oauth_config_error">Не удалось завершить авторизацию. Включите публичный клиент и укажите точный URI перенаправления в портале разработчика Discord.</string>
+    <string name="automix_artwork_transition">Анимация обложек AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">Плавно сменяет две обложки во время AutoMix без изменения звука.</string>
+    <string name="automix_mini_artwork_transition">Анимация обложки миниплеера</string>
+    <string name="automix_mini_artwork_transition_subtitle">Показывает тот же переход в компактном плеере.</string>
 </resources>

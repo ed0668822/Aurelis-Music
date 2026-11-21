@@ -1496,4 +1496,8 @@
     <string name="discord_oauth_browser_error">ไม่สามารถเปิดเบราว์เซอร์เพื่ออนุญาต Discord</string>
     <string name="discord_oauth_failed">การอนุญาต Discord ถูกยกเลิก หมดอายุ หรือไม่ถูกต้อง โปรดลองอีกครั้ง</string>
     <string name="discord_oauth_config_error">ไม่สามารถอนุญาตได้ ให้เปิด Public Client และลงทะเบียน URI เปลี่ยนเส้นทางที่ตรงกันในพอร์ทัลนักพัฒนา Discord</string>
+    <string name="automix_artwork_transition">ภาพปกเคลื่อนไหวของ AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">เปลี่ยนภาพปกสองภาพอย่างนุ่มนวลระหว่าง AutoMix โดยไม่เปลี่ยนเสียง</string>
+    <string name="automix_mini_artwork_transition">แสดงภาพปกเคลื่อนไหวใน MiniPlayer</string>
+    <string name="automix_mini_artwork_transition_subtitle">แสดงการเปลี่ยนภาพปกเดียวกันในเครื่องเล่นขนาดเล็ก</string>
 </resources>

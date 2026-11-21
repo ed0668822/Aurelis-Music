@@ -1518,4 +1518,8 @@
     <string name="discord_oauth_browser_error">Não foi possível abrir o navegador para autorizar o Discord.</string>
     <string name="discord_oauth_failed">A autorização do Discord foi cancelada, expirou ou é inválida. Tenta novamente.</string>
     <string name="discord_oauth_config_error">Não foi possível concluir a autorização. Ativa o cliente público e regista o URI de retorno exato no portal do Discord.</string>
+    <string name="automix_artwork_transition">Capas animadas no AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">Faz a transição entre as duas capas durante o AutoMix sem alterar o áudio.</string>
+    <string name="automix_mini_artwork_transition">Animar capa do MiniPlayer</string>
+    <string name="automix_mini_artwork_transition_subtitle">Mostra a mesma transição no reprodutor compacto.</string>
 </resources>

@@ -1477,4 +1477,8 @@
     <string name="local_profile_edit_name">編輯本機名稱</string>
     <string name="local_profile_remove_photo">移除本機照片</string>
     <string name="local_feature_paused">暫時無法使用</string>
+    <string name="automix_artwork_transition">AutoMix 動態封面</string>
+    <string name="automix_artwork_transition_subtitle">在 AutoMix 期間平滑切換兩張封面，不改變音訊。</string>
+    <string name="automix_mini_artwork_transition">為迷你播放器封面加入動畫</string>
+    <string name="automix_mini_artwork_transition_subtitle">在迷你播放器中顯示相同的封面轉場效果。</string>
 </resources>

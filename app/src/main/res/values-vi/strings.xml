@@ -1430,4 +1430,8 @@
     <string name="discord_oauth_browser_error">Không thể mở trình duyệt để cấp quyền Discord.</string>
     <string name="discord_oauth_failed">Quyền Discord đã bị hủy, hết hạn hoặc không hợp lệ. Hãy thử lại.</string>
     <string name="discord_oauth_config_error">Không thể hoàn tất cấp quyền. Hãy bật Public Client và đăng ký chính xác URI chuyển hướng trong cổng nhà phát triển Discord.</string>
+    <string name="automix_artwork_transition">Ảnh bìa AutoMix động</string>
+    <string name="automix_artwork_transition_subtitle">Chuyển mượt giữa hai ảnh bìa trong AutoMix mà không thay đổi âm thanh.</string>
+    <string name="automix_mini_artwork_transition">Hiệu ứng ảnh bìa MiniPlayer</string>
+    <string name="automix_mini_artwork_transition_subtitle">Hiển thị cùng hiệu ứng chuyển ảnh bìa trong trình phát thu nhỏ.</string>
 </resources>
