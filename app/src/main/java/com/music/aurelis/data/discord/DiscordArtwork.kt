@@ -111,8 +111,11 @@ internal object DiscordArtwork {
                 )
                 val better = art100.replace("/100x100bb.jpg", "/512x512bb.jpg")
                 val art = publicUrl(better) ?: publicUrl(art100) ?: continue
-                val albumMatch = !song.albumName.isNullOrBlank() &&
-                    sameName(song.albumName, candidate.optString("collectionName"))
+                // Song is declared in :shared, so Kotlin cannot smart-cast
+                // its nullable public property across module boundaries.
+                val albumName = song.albumName
+                val albumMatch = !albumName.isNullOrBlank() &&
+                    sameName(albumName, candidate.optString("collectionName"))
                 val score = if (albumMatch) 2 else 1
                 if (score > bestScore) {
                     bestScore = score
