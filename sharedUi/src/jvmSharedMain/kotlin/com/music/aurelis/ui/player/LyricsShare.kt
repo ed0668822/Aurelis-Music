@@ -262,8 +262,12 @@ internal fun rememberLyricsPicker(
                         text = line.text,
                         subText = sub?.takeIf { it.isNotBlank() && it != line.text },
                         startMs = line.timeMs.takeIf { it >= 0L },
+                        // Plain LRC has start timestamps but often no line-end
+                        // field. The next actual line timestamp is an observed
+                        // boundary, not a guessed chorus or arbitrary duration.
                         endMs = line.sungUntilMs?.takeIf { it > line.timeMs }
-                            ?: line.words.lastOrNull()?.endMs?.takeIf { it > line.timeMs },
+                            ?: line.words.lastOrNull()?.endMs?.takeIf { it > line.timeMs }
+                            ?: source.drop(index + 1).firstOrNull { it.timeMs > line.timeMs }?.timeMs,
                     ),
                 )
             }
