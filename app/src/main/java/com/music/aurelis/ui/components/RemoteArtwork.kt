@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.music.aurelis.data.model.Song
+import com.music.aurelis.data.LocalEmbeddedArtwork
 import com.music.aurelis.data.remote.RemoteArtworkStore
 
 /**
@@ -24,12 +25,15 @@ import com.music.aurelis.data.remote.RemoteArtworkStore
 fun rememberRemoteArtworkUrl(song: Song?): String? {
     val context = LocalContext.current
     val key = song?.videoId
-    var resolved by remember(key) { mutableStateOf(song?.thumbnailUrl) }
-    LaunchedEffect(key) {
-        if (song != null && song.thumbnailUrl == null &&
-            (song.videoId.startsWith("webdav:") || song.videoId.startsWith("smb:"))
-        ) {
-            resolved = RemoteArtworkStore.resolveArt(context, song)
+    val initial = song?.thumbnailUrl
+    var resolved by remember(key, initial) { mutableStateOf(initial) }
+    LaunchedEffect(key, initial, song?.localDateModifiedSeconds) {
+        when {
+            song == null || !initial.isNullOrBlank() -> Unit
+            song.localUri != null ->
+                resolved = LocalEmbeddedArtwork.resolve(context, song) ?: initial
+            song.videoId.startsWith("webdav:") || song.videoId.startsWith("smb:") ->
+                resolved = RemoteArtworkStore.resolveArt(context, song)
         }
     }
     return resolved
