@@ -1506,4 +1506,7 @@
     <string name="queue_selection_remove">Eliminar</string>
     <string name="queue_add_to_playlist">Añadir a playlist</string>
     <string name="queue_download">Descargar</string>
+    <string name="song_info_composer">Compositor</string>
+    <string name="song_info_lyricist">Letrista</string>
+    <string name="song_info_album_artist">Artista del álbum</string>
 </resources>

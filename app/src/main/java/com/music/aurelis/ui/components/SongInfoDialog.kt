@@ -21,6 +21,10 @@ import androidx.compose.ui.window.DialogProperties
 import com.music.aurelis.R
 import com.music.aurelis.data.SongInfo
 import com.music.aurelis.data.SongInfoRepository
+import com.music.aurelis.data.LocalAudioCredits
+import com.music.aurelis.data.LocalCreditRole
+import com.music.aurelis.data.LocalTrackCredit
+import androidx.compose.ui.platform.LocalContext
 import com.music.aurelis.data.compactCount
 import com.music.aurelis.data.model.Song
 import androidx.compose.material.icons.Icons
@@ -42,6 +46,10 @@ private val INFO_BODY_MAX_HEIGHT = 360.dp
 @Composable
 internal fun SongInfoDialog(song: Song, onDismiss: () -> Unit) {
     var retry by remember(song.videoId) { mutableIntStateOf(0) }
+    val context = LocalContext.current
+    val localCredits by produceState<List<LocalTrackCredit>>(emptyList(), song.localUri, retry) {
+        value = song.localUri?.let { LocalAudioCredits.read(context, it) }.orEmpty()
+    }
     val info by produceState<SongInfo?>(null, song, retry) {
         value = null
         value = SongInfoRepository.load(song)
@@ -108,6 +116,17 @@ internal fun SongInfoDialog(song: Song, onDismiss: () -> Unit) {
                         label = stringResource(label),
                         value = value ?: unavailable.takeIf { info != null },
                     )
+                }
+                // B08: only show credits backed by fields in the local audio file.
+                // Do not label the artist/composer as producer without an actual producer tag.
+                localCredits.forEach { credit ->
+                    val label = when (credit.role) {
+                        LocalCreditRole.COMPOSER -> R.string.song_info_composer
+                        LocalCreditRole.LYRICIST -> R.string.song_info_lyricist
+                        LocalCreditRole.ALBUM_ARTIST -> R.string.song_info_album_artist
+                    }
+                    AlertRule(Modifier.padding(start = 16.dp))
+                    SongInfoRow(stringResource(label), credit.names.joinToString(", "))
                 }
                 if (info?.failed == true) {
                     Text(

@@ -1405,4 +1405,7 @@
     <string name="queue_selection_remove">Remove</string>
     <string name="queue_add_to_playlist">Add to playlist</string>
     <string name="queue_download">Download</string>
+    <string name="song_info_composer">Composer</string>
+    <string name="song_info_lyricist">Lyricist</string>
+    <string name="song_info_album_artist">Album artist</string>
 </resources>
