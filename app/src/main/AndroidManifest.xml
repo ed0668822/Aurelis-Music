@@ -216,19 +216,10 @@
                 <data android:host="youtu.be" />
             </intent-filter>
 
-            <!-- Public invitation App Links remain disabled until Aurelis owns
-                 an HTTPS host and publishes Digital Asset Links for its signing
-                 certificate. Custom scheme links below are retained. -->
-
-            <!-- Custom scheme for Listen Together invites on custom server deployments. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="aurelis"
-                    android:host="party" />
-            </intent-filter>
+            <!-- A006: Listen Together is suspended in Aurelis local mode.
+                 No public invitation URL or custom party:// style intent is
+                 registered until the feature is enabled. Its Kotlin handlers
+                 remain available for a future opt-in implementation. -->
 
             <!--
               Share → Aurelis, from YT Music's own share sheet or from

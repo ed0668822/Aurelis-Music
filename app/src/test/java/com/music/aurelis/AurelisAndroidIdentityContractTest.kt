@@ -47,9 +47,14 @@ class AurelisAndroidIdentityContractTest {
         val manifest = projectFile("src/main/AndroidManifest.xml").readText()
         assertTrue(manifest.contains("android:name=\".AurelisApplication\""))
         assertTrue(manifest.contains("android:theme=\"@style/Theme.Aurelis\""))
-        assertTrue(manifest.contains("android:scheme=\"aurelis\""))
+        assertFalse("Listen Together routes must stay hidden while the feature is suspended",
+            manifest.contains("android:host=\"party\""))
         assertFalse("Do not register BitChord's website as an Aurelis App Link",
             manifest.contains("android:host=\"bitchord.kushagrasingh.in\""))
+        assertTrue("The FileProvider must use the active applicationId per flavor",
+            manifest.contains("android:authorities=\"\${applicationId}.fileprovider\""))
+        assertTrue("Android must use private-content FileProvider grants",
+            manifest.contains("android:grantUriPermissions=\"true\""))
     }
 
     @Test fun releaseNativeBuildMatchesKotlinPackage() {
