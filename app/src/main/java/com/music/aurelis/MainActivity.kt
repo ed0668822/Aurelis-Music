@@ -3693,7 +3693,12 @@ private fun AurelisApp(
                                         LocalMediaRepository.getLocalMusic(context)
                                     } else emptyList()
                                 }
+                                val savedLocalTab by AppSettings.localMusicTab.collectAsStateWithLifecycle()
                                 val folderState = remember { LocalFolderState() }
+                                LaunchedEffect(savedLocalTab) {
+                                    folderState.tab = LocalFolderTab.entries.firstOrNull { it.name == savedLocalTab }
+                                        ?: LocalFolderTab.SONGS
+                                }
                                 val localSongs = remember(deviceSongs, localMusicSort) {
                                     deviceSongs.orEmpty().sortedForLibrary(localMusicSort)
                                 }
@@ -3725,6 +3730,7 @@ private fun AurelisApp(
                                     tabs = LocalFolderTab.DEVICE,
                                     playlists = offlinePlaylistGroups,
                                     onCreatePlaylist = { creatingOfflinePlaylist = true },
+                                    onTabSelected = { AppSettings.setLocalMusicTab(it.name) },
                                 )
                                 val grouped = rememberLocalFolderGroups(
                                     "local:all", folder, folderState.tab, localSongs, "",
@@ -3797,15 +3803,19 @@ private fun AurelisApp(
                                                     }
                                                 }
                                                 Spacer(Modifier.height(12.dp))
-                                                TextButton(
+                                                OutlinedButton(
                                                     onClick = { showDuplicateReview = true },
                                                     enabled = localSongs.isNotEmpty(),
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                                                 ) {
+                                                    Icon(Icons.Rounded.Check, contentDescription = null)
+                                                    Spacer(Modifier.width(10.dp))
                                                     Text(
                                                         if (Locale.getDefault().language == "es")
-                                                            "Revisar duplicados"
+                                                            "Buscar canciones duplicadas"
                                                         else
-                                                            "Review duplicates",
+                                                            "Find duplicate songs",
                                                     )
                                                 }
                                             } else {
