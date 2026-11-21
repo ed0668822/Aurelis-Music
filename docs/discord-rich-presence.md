@@ -60,8 +60,22 @@ by reflection (so builds without the licensed AAR compile). The
 `PlaybackService` waits for SDK initialization and opt-in, then calls
 `Client::SetApplicationId`, `UpdateRichPresence`, and `RunCallbacks`.
 It sends the song and artist and clears activity on pause/stop.
-The large image defaults to the icon configured for Aurelis Music in
-the Discord Developer Portal, not the Android launcher bitmap.
+When a song carries a publicly accessible artwork URL from a recognized
+music image CDN, Aurelis passes it as the Discord activity's **large image**
+(using the official `ActivityAssets.SetLargeImage` API). For local tracks
+whose artwork is stored only in MediaStore, the SDK cannot fetch a
+`content://` or `file://` URI; while Discord sharing is enabled, Aurelis
+instead makes a metadata-only query (song title and artist) to Apple's
+public iTunes Search API and uses a matching public album-cover URL. Results
+are cached, and matching requires the same song title and artist; an
+ambiguous or missing match falls back to the application's Discord icon.
+No local photo bytes, filesystem paths, private library credentials,
+user tokens, or DRM artwork are sent to Discord. Turning off Discord
+Rich Presence also stops these lookups.
+
+The URL must use HTTPS on a known public image CDN and fit Discord's
+300-character limit. Local album art is **not** automatically made public,
+and the artwork fallback will not necessarily find rare or private tracks.
 
 The SDK-enabled ARM64 path still needs a real AAR and **physical device
 test**: building successfully without the file does not validate SDK mode.

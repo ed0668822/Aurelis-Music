@@ -50,11 +50,12 @@ class DiscordSocialPresence(private val context: Context) {
         return started
     }
 
-    fun updateSong(song: Song, positionMs: Long, durationMs: Long): Boolean {
+    fun updateSong(song: Song, positionMs: Long, durationMs: Long, artworkUrl: String? = null): Boolean {
         if (!started) return false
         return runCatching {
             nativeUpdate(song.title.take(128), song.artist.take(128),
-                positionMs.coerceAtLeast(0), durationMs.coerceAtLeast(0))
+                positionMs.coerceAtLeast(0), durationMs.coerceAtLeast(0),
+                DiscordArtwork.publicUrl(artworkUrl))
             true
         }.getOrDefault(false)
     }
@@ -80,7 +81,7 @@ class DiscordSocialPresence(private val context: Context) {
     }
 
     private external fun nativeInitialize(applicationId: String): Boolean
-    private external fun nativeUpdate(title: String, artist: String, positionMs: Long, durationMs: Long)
+    private external fun nativeUpdate(title: String, artist: String, positionMs: Long, durationMs: Long, artworkUrl: String?)
     private external fun nativeRunCallbacks()
     private external fun nativeClear()
 }

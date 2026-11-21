@@ -128,6 +128,7 @@ import com.music.aurelis.data.LikeState
 import com.music.aurelis.data.NerdStats
 import com.music.aurelis.data.TrackLog
 import com.music.aurelis.data.discord.DiscordSocialPresence
+import com.music.aurelis.data.discord.DiscordArtwork
 import com.music.aurelis.data.discord.discordAudioQualityLine
 import com.music.aurelis.data.innertube.PlaybackTracker
 import com.music.aurelis.data.stats.ListeningRecorder
@@ -7642,8 +7643,17 @@ class PlaybackService : MediaLibraryService() {
         discordUpdateJob?.cancel()
         discordPresenceUp = true
         discordUpdateJob = scope.launch(Dispatchers.IO) {
-            if (!rpc.updateSong(song, positionMs, durationMs)) {
+            // Update the title immediately, even when the public artwork lookup
+            // needs an HTTPS request. Any subsequent skip cancels this job.
+            val immediateArt = DiscordArtwork.publicUrl(song.thumbnailUrl)
+            if (!rpc.updateSong(song, positionMs, durationMs, immediateArt)) {
                 TrackLog.d("Aurelis Music", "Discord SDK presence update failed", about = song.videoId)
+            }
+            if (immediateArt == null) {
+                val resolved = DiscordArtwork.resolve(song)
+                if (isActive && resolved != null && discordRpc === rpc) {
+                    rpc.updateSong(song, positionMs, durationMs, resolved)
+                }
             }
         }
     }

@@ -38,7 +38,7 @@ Java_com_music_aurelis_data_discord_DiscordSocialPresence_nativeInitialize(
 extern "C" JNIEXPORT void JNICALL
 Java_com_music_aurelis_data_discord_DiscordSocialPresence_nativeUpdate(
     JNIEnv* env, jobject, jstring title, jstring artist, jlong positionMs,
-    jlong durationMs) {
+    jlong durationMs, jstring artworkUrl) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!client) return;
     discordpp::Activity activity;
@@ -47,8 +47,15 @@ Java_com_music_aurelis_data_discord_DiscordSocialPresence_nativeUpdate(
     activity.SetDetails(fromJava(env, title));
     activity.SetState(fromJava(env, artist));
     activity.SetStatusDisplayType(discordpp::StatusDisplayTypes::Name);
-    // No image override: Discord displays the application icon registered in
-    // its Developer Portal, not a private MediaStore artwork URI.
+    // Official Social SDK accepts external public HTTPS image URLs.
+    // Never pass private Android content:// or file:// art through JNI.
+    const auto image = fromJava(env, artworkUrl);
+    if (!image.empty()) {
+        discordpp::ActivityAssets assets;
+        assets.SetLargeImage(image);
+        assets.SetLargeText(fromJava(env, title));
+        activity.SetAssets(assets);
+    }
     if (durationMs > 0) {
         const auto now = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
