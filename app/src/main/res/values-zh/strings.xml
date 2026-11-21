@@ -1494,4 +1494,8 @@
     <string name="automix_artwork_transition_subtitle">AutoMix 期间平滑切换两张封面，不改变音频。</string>
     <string name="automix_mini_artwork_transition">为迷你播放器封面添加动画</string>
     <string name="automix_mini_artwork_transition_subtitle">在迷你播放器中显示相同的封面过渡效果。</string>
+    <string name="show_total_duration">显示歌曲总时长</string>
+    <string name="show_total_duration_subtitle">在进度条旁显示歌曲总时长，而非剩余时间。</string>
+    <string name="hide_lyrics_preview">隐藏歌词预览</string>
+    <string name="hide_lyrics_preview_subtitle">隐藏进度条上方的歌词行，仍可查看完整歌词。</string>
 </resources>

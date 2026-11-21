@@ -1434,4 +1434,8 @@
     <string name="automix_artwork_transition_subtitle">Chuyển mượt giữa hai ảnh bìa trong AutoMix mà không thay đổi âm thanh.</string>
     <string name="automix_mini_artwork_transition">Hiệu ứng ảnh bìa MiniPlayer</string>
     <string name="automix_mini_artwork_transition_subtitle">Hiển thị cùng hiệu ứng chuyển ảnh bìa trong trình phát thu nhỏ.</string>
+    <string name="show_total_duration">Hiện tổng thời lượng bài hát</string>
+    <string name="show_total_duration_subtitle">Hiện thời lượng đầy đủ thay vì thời gian còn lại cạnh thanh phát.</string>
+    <string name="hide_lyrics_preview">Ẩn xem trước lời bài hát</string>
+    <string name="hide_lyrics_preview_subtitle">Ẩn dòng lời phía trên thanh phát; vẫn có thể xem toàn bộ lời bài hát.</string>
 </resources>

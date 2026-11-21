@@ -1522,4 +1522,8 @@
     <string name="automix_artwork_transition_subtitle">Faz a transição entre as duas capas durante o AutoMix sem alterar o áudio.</string>
     <string name="automix_mini_artwork_transition">Animar capa do MiniPlayer</string>
     <string name="automix_mini_artwork_transition_subtitle">Mostra a mesma transição no reprodutor compacto.</string>
+    <string name="show_total_duration">Mostrar duração total</string>
+    <string name="show_total_duration_subtitle">Mostra a duração completa em vez do tempo restante junto à barra de reprodução.</string>
+    <string name="hide_lyrics_preview">Ocultar prévia da letra</string>
+    <string name="hide_lyrics_preview_subtitle">Oculta a linha acima da barra; a letra completa continua disponível.</string>
 </resources>

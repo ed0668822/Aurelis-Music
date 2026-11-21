@@ -1500,4 +1500,8 @@
     <string name="automix_artwork_transition_subtitle">เปลี่ยนภาพปกสองภาพอย่างนุ่มนวลระหว่าง AutoMix โดยไม่เปลี่ยนเสียง</string>
     <string name="automix_mini_artwork_transition">แสดงภาพปกเคลื่อนไหวใน MiniPlayer</string>
     <string name="automix_mini_artwork_transition_subtitle">แสดงการเปลี่ยนภาพปกเดียวกันในเครื่องเล่นขนาดเล็ก</string>
+    <string name="show_total_duration">แสดงความยาวเพลงทั้งหมด</string>
+    <string name="show_total_duration_subtitle">แสดงระยะเวลาทั้งหมดแทนเวลาที่เหลืออยู่ข้างแถบเล่นเพลง</string>
+    <string name="hide_lyrics_preview">ซ่อนตัวอย่างเนื้อเพลง</string>
+    <string name="hide_lyrics_preview_subtitle">ซ่อนบรรทัดเหนือแถบเล่นเพลง โดยยังเปิดเนื้อเพลงเต็มได้</string>
 </resources>
