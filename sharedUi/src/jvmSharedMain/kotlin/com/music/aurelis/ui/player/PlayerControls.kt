@@ -904,7 +904,7 @@ private fun TransportGlyph(
                     contentDescription = if (playWeight >= 0.5f) contentDescription else null,
                     tint = Color.White.copy(alpha = alpha),
                     modifier = Modifier.size(size).graphicsLayer {
-                        alpha = playWeight * playWeight * (3f - 2f * playWeight)
+                        this.alpha = playWeight * playWeight * (3f - 2f * playWeight)
                         val glyphScale = (0.56f + 0.44f * playWeight) * scale.value
                         scaleX = glyphScale
                         scaleY = glyphScale * heightScale
@@ -917,7 +917,7 @@ private fun TransportGlyph(
                     contentDescription = if (pauseWeight > 0.5f) contentDescription else null,
                     tint = Color.White.copy(alpha = alpha),
                     modifier = Modifier.size(size).graphicsLayer {
-                        alpha = pauseWeight * pauseWeight * (3f - 2f * pauseWeight)
+                        this.alpha = pauseWeight * pauseWeight * (3f - 2f * pauseWeight)
                         val glyphScale = (0.56f + 0.44f * pauseWeight) * scale.value
                         scaleX = glyphScale
                         scaleY = glyphScale * heightScale
