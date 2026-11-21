@@ -3,6 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Required for the official Discord Social SDK on Android 11+ to detect
+         the installed Discord client when the SDK is integrated. Narrow visibility
+         to Discord rather than requesting QUERY_ALL_PACKAGES. -->
+    <queries>
+        <package android:name="com.discord" />
+    </queries>
     <!-- Tells Wi-Fi from mobile data, so the matching quality ceiling applies. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />

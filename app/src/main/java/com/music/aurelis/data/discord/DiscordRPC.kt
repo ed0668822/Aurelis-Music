@@ -11,23 +11,24 @@ import java.util.Locale
 /**
  * Publishes what's playing to Discord as a Rich Presence activity.
  *
- * This talks to Discord as a *user*, over the same gateway its own client
- * uses — there is no official API for a third-party app to set a user's
- * presence, so the token in [token] is the account's own bearer token and the
- * socket identifies itself as Discord Android (see [SuperProperties]). That is
- * the only way this feature can exist, and it is why the settings screen warns
- * about it before asking for a login.
+ * Legacy transport: KizzyRPC connects with a Discord user token. This is NOT
+ * Discord's official Social SDK. Discord Social SDK 1.10+ supports authenticated-
+ * free RPC on Android, but its native library must be supplied and integrated
+ * separately; setting an Application ID alone does not install that SDK.
+ *
+ * This class is retained for compatibility with existing configurations.
+ * Never request, log, or embed a Discord user token to enable this code.
  *
  * The presence Discord renders from one [updateSong] call:
  *
  * ```
- *   Listening to Aurelis          <- activityName, or the app's own name
+ *   Listening to Aurelis Music    <- official app's display name
  *   ┌────┐  Song title             <- details
  *   │art │  Artist                 <- state
  *   └────┘  Hi-Res Lossless · FLAC · 4608 kbps · 24-bit · 96 kHz
  *           ▁▁▁▁▁▁ 1:04 / 3:47     <- from the timestamps
- *   [ Listen on YouTube Music ]    <- button 1
- *   [ Visit Aurelis           ]   <- button 2
+ *   [ Listen on YouTube Music ]    <- only when a valid YouTube track ID exists
+ *   [ Aurelis Music on GitHub ]    <- official project link
  * ```
  */
 class DiscordRPC(
@@ -82,13 +83,16 @@ class DiscordRPC(
         val remainingDuration = durationMillis - currentPlaybackTimeMillis
         val adjustedRemainingDuration = (remainingDuration / playbackSpeed).toLong()
 
+        // A MediaStore item is not a YouTube upload. Never construct a fake
+        // YouTube link for local music or non-YouTube catalogue identifiers.
+        val youtubeUrl = youtubeWatchUrlOrNull(song)
         val buttonsList = mutableListOf<Pair<String, String>>()
-        if (button1Visible) {
+        if (button1Visible && youtubeUrl != null) {
             val resolvedText = resolveVariables(
                 button1Text.ifEmpty { DEFAULT_BUTTON_1 },
                 song,
             )
-            buttonsList.add(resolvedText to watchUrl(song))
+            buttonsList.add(resolvedText to youtubeUrl)
         }
         if (button2Visible) {
             val resolvedText = resolveVariables(
@@ -105,13 +109,13 @@ class DiscordRPC(
             else -> Type.LISTENING
         }
 
-        val name = activityName.ifEmpty { appName() }
-
+        // The official registration name takes precedence over previously
+        // persisted custom activity names from older project builds.
         setActivity(
-            name = name,
+            name = appName(),
             details = songTitleWithRate,
             state = song.artist,
-            detailsUrl = watchUrl(song),
+            detailsUrl = youtubeUrl,
             // Asked for at a size Discord's own card actually draws — the row
             // thumbnail our lists use is 160px and reads soft blown up to the
             // 96dp sleeve in a presence card.
@@ -149,16 +153,25 @@ class DiscordRPC(
         context.getString(R.string.app_name).removeSuffix(" Dev")
 
     companion object {
-        const val PROJECT_URL = "https://github.com/kushagrasinghx/BitChord"
+        const val PROJECT_URL = "https://github.com/ed0668822/Aurelis-Music"
 
         const val DEFAULT_BUTTON_1 = "Listen on YouTube Music"
-        const val DEFAULT_BUTTON_2 = "Visit Aurelis"
+        const val DEFAULT_BUTTON_2 = "Aurelis Music on GitHub"
 
         /** Discord draws the sleeve at roughly 96dp; 480px covers it on any density. */
         private const val ART_PX = 480
 
+        private val YOUTUBE_VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
+
+        /** A local file or other source must never be advertised as a YouTube link. */
+        fun youtubeWatchUrlOrNull(song: Song): String? {
+            if (song.localUri != null || !YOUTUBE_VIDEO_ID.matches(song.videoId)) return null
+            return "https://music.youtube.com/watch?v=${song.videoId}"
+        }
+
+        /** Legacy helper retained for existing callers. Prefer youtubeWatchUrlOrNull. */
         fun watchUrl(song: Song): String =
-            "https://music.youtube.com/watch?v=${song.videoId}"
+            youtubeWatchUrlOrNull(song) ?: PROJECT_URL
 
         /**
          * Resolves template variables in text.

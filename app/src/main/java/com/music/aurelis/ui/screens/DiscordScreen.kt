@@ -621,16 +621,15 @@ private fun RichPresencePreview(
             val chosen = text.ifEmpty { fallback }
             if (song != null) DiscordRPC.resolveVariables(chosen, song) else chosen
         }
-        if (button1Visible) {
+        val youtubeUrl = song?.let(DiscordRPC::youtubeWatchUrlOrNull)
+        if (button1Visible && (song == null || youtubeUrl != null)) {
             Spacer(Modifier.height(12.dp))
             PresenceButton(
                 label = resolved(button1Text, DiscordRPC.DEFAULT_BUTTON_1),
-                enabled = song != null,
+                enabled = youtubeUrl != null,
                 onClick = {
-                    song?.let {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, DiscordRPC.watchUrl(it).toUri()),
-                        )
+                    youtubeUrl?.let { url ->
+                        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                     }
                 },
             )

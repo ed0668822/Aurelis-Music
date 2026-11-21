@@ -1,7 +1,7 @@
 package com.music.aurelis.data.discord
 
 /**
- * Aurelis's own Discord application, shared by the phone and desktop presence.
+ * Official Aurelis Music Discord Application ID, shared by all presence transports.
  *
  * Discord reads more off this id than the code suggests. The local socket on
  * the desktop titles the activity with the application's registered name, some
@@ -14,5 +14,5 @@ package com.music.aurelis.data.discord
  * application's name to the activity's.
  */
 object DiscordApplication {
-    const val ID = "1543679166967193620"
+    const val ID = "1573536052935794802"
 }
