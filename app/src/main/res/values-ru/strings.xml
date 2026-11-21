@@ -1581,4 +1581,6 @@
     <string name="radio">Радио</string>
     <string name="replay_year_months">Ваши музыкальные месяцы</string>
     <string name="replay_year_watch">Посмотреть анимированную историю года</string>
+    <string name="youtube_premium_audio">Аудио YouTube Premium</string>
+    <string name="youtube_premium_audio_subtitle">Запрашивать Opus повышенного качества, если он доступен вошедшему аккаунту. Фактическое качество зависит от потока.</string>
 </resources>

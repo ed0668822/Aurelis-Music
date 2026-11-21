@@ -1466,4 +1466,6 @@
     <string name="radio">Radio</string>
     <string name="replay_year_months">Những tháng nghe nhạc của bạn</string>
     <string name="replay_year_watch">Xem câu chuyện năm qua bằng hoạt ảnh</string>
+    <string name="youtube_premium_audio">Âm thanh YouTube Premium</string>
+    <string name="youtube_premium_audio_subtitle">Yêu cầu Opus chất lượng cao hơn nếu tài khoản đã đăng nhập hỗ trợ. Chất lượng thực tế tùy vào luồng âm thanh.</string>
 </resources>

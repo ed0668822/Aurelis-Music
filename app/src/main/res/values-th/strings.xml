@@ -1532,4 +1532,6 @@
     <string name="radio">วิทยุ</string>
     <string name="replay_year_months">เดือนแห่งเสียงเพลงของคุณ</string>
     <string name="replay_year_watch">ดูเรื่องราวประจำปีแบบเคลื่อนไหว</string>
+    <string name="youtube_premium_audio">เสียง YouTube Premium</string>
+    <string name="youtube_premium_audio_subtitle">ขอเสียง Opus คุณภาพสูงกว่าเมื่อบัญชีที่เข้าสู่ระบบรองรับ คุณภาพจริงขึ้นอยู่กับสตรีมที่มีให้</string>
 </resources>

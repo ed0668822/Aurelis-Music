@@ -1506,4 +1506,6 @@
     <string name="radio">Radyo</string>
     <string name="replay_year_months">Müzikle geçen ayların</string>
     <string name="replay_year_watch">Animasyonlu yıl hikâyeni izle</string>
+    <string name="youtube_premium_audio">YouTube Premium ses</string>
+    <string name="youtube_premium_audio_subtitle">Oturum açmış hesabınız destekliyorsa daha yüksek kaliteli Opus isteyin. Gerçek kalite sunulan akışa bağlıdır.</string>
 </resources>

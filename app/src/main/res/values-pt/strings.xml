@@ -1554,4 +1554,6 @@
     <string name="radio">Rádio</string>
     <string name="replay_year_months">Seus meses de música</string>
     <string name="replay_year_watch">Veja sua retrospectiva anual animada</string>
+    <string name="youtube_premium_audio">Áudio do YouTube Premium</string>
+    <string name="youtube_premium_audio_subtitle">Solicitar Opus de maior qualidade se a conta conectada permitir. A qualidade real depende do áudio disponível.</string>
 </resources>
