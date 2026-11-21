@@ -4787,25 +4787,6 @@ private fun AurelisApp(
                 // due to look at it again — [QualityUpgrade.refuseUpgrades]
                 // takes a broken track off the automatic path for the rest
                 // of the session, and `askByHand` is what clears that.
-                onUpgradeQuality = if (fromPlayer &&
-                    (
-                        song.videoId in pinnedToOriginal ||
-                            playingYouTubesOwn(song.videoId, controller)
-                        ) &&
-                    // A track playing off a file the listener saved is not
-                    // playing a stream anything could upgrade — the pin on
-                    // it is only waiting for the day it is streamed again.
-                    song.localUri == null &&
-                    controller?.currentMediaItem?.mediaId == song.videoId
-                ) {
-                    {
-                        controller.upgradeQuality()
-                        songActions = null
-                    }
-                } else {
-                    null
-                },
-                upgradeQualityInProgress = fromPlayer && song.videoId in qualityUpgradesInFlight,
                 onToggleAudioVersion = onToggleVersion,
                 isAudioVersion = menuIsAudioVersion,
                 audioVersionMissing = song.videoId in missingVersions,
