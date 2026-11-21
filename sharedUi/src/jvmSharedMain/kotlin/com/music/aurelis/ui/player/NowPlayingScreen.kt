@@ -3750,8 +3750,19 @@ fun NowPlayingScreen(
                                         if (reduceCreditsMotion) {
                                             fadeIn(tween(0)) togetherWith fadeOut(tween(0))
                                         } else {
-                                            (slideInHorizontally(tween(270)) { it / 4 } + fadeIn(tween(240))) togetherWith
-                                                (slideOutHorizontally(tween(230)) { -it / 4 } + fadeOut(tween(200)))
+                                            // Animate in the same direction as the real queue handoff.
+                                            // Duplicate recordings are distinguished by queueEntryId.
+                                            val from = queue.indexOfFirst {
+                                                it.videoId == initialState.videoId &&
+                                                    it.queueEntryId == initialState.queueEntryId
+                                            }
+                                            val to = queue.indexOfFirst {
+                                                it.videoId == targetState.videoId &&
+                                                    it.queueEntryId == targetState.queueEntryId
+                                            }
+                                            val direction = songInfoSlideDirection(from, to, queue.size)
+                                            (slideInHorizontally(tween(280)) { direction * it / 4 } + fadeIn(tween(240))) togetherWith
+                                                (slideOutHorizontally(tween(245)) { -direction * it / 4 } + fadeOut(tween(220)))
                                         }
                                     },
                                     // Round the fade and the marquee's edge masks, whose
