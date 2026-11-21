@@ -134,3 +134,13 @@ target_link_options(aurelis_usb PRIVATE
     "-Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/bitperfect/exports.map")
 set_property(TARGET aurelis_usb APPEND PROPERTY LINK_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/bitperfect/exports.map")
+
+# Official Discord Social SDK is optional. Regular CI without its licensed AAR
+# must not offer a counterfeit user-token gateway as a fallback.
+if(AURELIS_DISCORD_SDK)
+    find_package(discord_partner_sdk REQUIRED CONFIG)
+    add_library(aurelis_discord SHARED discord/discord_presence_jni.cpp)
+    target_compile_options(aurelis_discord PRIVATE -O2 -fvisibility=hidden)
+    target_link_libraries(aurelis_discord PRIVATE discord_partner_sdk::discord_partner_sdk ${log-lib})
+    target_link_options(aurelis_discord PRIVATE "-Wl,-z,max-page-size=16384")
+endif()

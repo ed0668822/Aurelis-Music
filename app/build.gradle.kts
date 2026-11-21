@@ -67,6 +67,8 @@ val addonAuthServer: String = (
 
 // See the root build.gradle.kts: one version for the phone and its watch app.
 val betaSuffix = rootProject.extra["aurelisBetaSuffix"] as String
+// Obtained separately from the Discord Developer Portal; never committed.
+val discordSocialSdk = file("libs/discord_partner_sdk.aar")
 
 android {
     namespace = "com.music.aurelis"
@@ -83,6 +85,11 @@ android {
         versionName = rootProject.extra["aurelisVersionName"] as String
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments += "-DAURELIS_DISCORD_SDK=${if (discordSocialSdk.isFile) "ON" else "OFF"}"
+            }
+        }
 
         // Last.fm credentials are supplied locally and never committed.
         buildConfigField("String", "LASTFM_API_KEY", "\"${lastfmApiKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
@@ -231,6 +238,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        prefab = discordSocialSdk.isFile
     }
     testOptions {
         unitTests {
@@ -288,6 +296,7 @@ val newPipeExtractorStripped = tasks.register<org.gradle.api.tasks.bundling.Jar>
 dependencies {
     implementation(project(":shared"))
     implementation(project(":sharedUi"))
+    if (discordSocialSdk.isFile) implementation(files(discordSocialSdk))
 
     // ---- Compose (Material 3) ----
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")

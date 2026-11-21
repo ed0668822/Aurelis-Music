@@ -1341,4 +1341,11 @@
     <string name="local_profile_edit_name">Edit local name</string>
     <string name="local_profile_remove_photo">Remove local photo</string>
     <string name="local_feature_paused">Temporarily unavailable</string>
+
+    <string name="discord_no_credentials">No API key, token or manual Discord login required. Sharing is optional.</string>
+    <string name="discord_sdk_not_bundled">Live sharing is unavailable in this build: the official Discord Social SDK is not bundled.</string>
+    <string name="discord_app_not_installed">Install Discord and sign in to enable sharing.</string>
+    <string name="discord_official_available">Share song and artist through the official Discord integration.</string>
+    <string name="discord_preview_disclaimer">Local preview only. Your profile shows this after the official SDK is bundled and sharing is enabled. Discord uses the icon registered for Aurelis Music in the Developer Portal.</string>
+    <string name="discord_listening_aurelis">Listening to Aurelis Music</string>
 </resources>

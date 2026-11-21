@@ -1,42 +1,31 @@
-# Discord Rich Presence in Aurelis Music
+# Discord Rich Presence: Aurelis Music
 
-- **Application name:** Aurelis Music
-- **Discord Application ID:** `1573536052935794802`
-- **Official project:** https://github.com/ed0668822/Aurelis-Music
+Official application ID: `1573536052935794802`.
 
-## Current integration
+The previous Kizzy user-token transport and token-harvesting WebView login have
+been retired. The settings page has a local preview with the real launcher
+foreground, track name and artist. No API key, bot token or account token is
+required. Sharing is off by default.
 
-`DiscordRPC` can publish the current track title in `details`, artist
-in `state`, and track progress via timestamps. `PlaybackService`
-observes track changes and clears the activity when playback stops.
+## Optional official Android integration
 
-Local MediaStore songs must **never** be linked to a fictitious YouTube
-Music URL. Only YouTube-style 11-character track IDs may receive an
-external Listen button; the project's secondary button points to Aurelis.
+Discord Social SDK 1.10+ supports unauthenticated Android RPC when Discord is
+installed and signed in. To make an SDK-enabled build, obtain the official
+Android `discord_partner_sdk.aar` for this registered application from
+https://discord.com/developers/applications/1573536052935794802
+and place it in `app/libs/discord_partner_sdk.aar` (do not commit the licensed
+artifact). Gradle then enables Prefab and builds `aurelis_discord`; without the
+AAR the UI correctly displays preview-only and its switch is disabled.
 
-## IMPORTANT: Existing code is not the official Discord SDK
+The Android playback service feeds title as details, artist as state, and uses
+the **registered Discord application icon** as the large image by not overriding
+it with external artwork. Playback stop/pause clears the activity. Configure the
+Aurelis Music icon in the Discord Developer Portal: Android drawable assets do
+not automatically upload to Discord. No local filesystem paths are published.
 
-The current `KizzyRPC` connector uses a **Discord user session token**.
-Changing the Application ID does not replace that connector, authenticate
-users safely, or make it Discord Social SDK. Do not ask users to extract
-or paste their Discord account tokens as a way to activate official
-integration.
+Validate an SDK-enabled ARM64 release build and live playback on a real Android
+device signed in to the Discord app before promising it works end-to-end.
 
-For the official integration, download the Discord Social SDK **1.10+**
-for Android from the **Discord Developer Portal** for this application
-and ensure its terms permit this music player. This distributable is not
-included here; no proprietary binaries or secrets are checked into Git.
-
-When available, replace the legacy gateway transport with a native
-`discordpp::Client` adapter, call `SetApplicationId`, then publish
-`Activity` updates with `UpdateRichPresence` via JNI. Android
-`<queries>` already declares `com.discord` for app visibility.
-
-Requirements: Discord installed and signed in on the device; user
-explicitly enables sharing; stopped/paused playback clears activity.
-Use the same Media3 event feed already observed by `PlaybackService`.
-The Social SDK backend must be validated in an Android instrumented test
-before replacing the legacy transport or marking the feature supported.
-
-Official docs:
-https://docs.discord.com/developers/discord-social-sdk/development-guides/setting-rich-presence
+Docs:
+https://discord.com/developers/docs/discord-social-sdk/development-guides/setting-rich-presence
+https://discord.com/developers/docs/social-sdk/release_notes.html

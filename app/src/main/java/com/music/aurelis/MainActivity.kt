@@ -129,7 +129,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.music.aurelis.auth.DiscordLoginScreen
 import com.music.aurelis.auth.SpotifyLoginScreen
 import com.music.aurelis.auth.WebSessionMode
 import com.music.aurelis.auth.YtMusicLoginScreen
@@ -177,8 +176,6 @@ import com.music.aurelis.ui.screens.SettingsChoicePage
 import com.music.aurelis.ui.components.SpotifyImportAlert
 import com.music.aurelis.ui.screens.WearOsScreen
 import com.music.aurelis.ui.screens.AccountAndScrobblingScreen
-import com.music.aurelis.ui.screens.DiscordDialog
-import com.music.aurelis.ui.screens.DiscordDialogHost
 import com.music.aurelis.ui.screens.DiscordScreen
 import com.music.aurelis.ui.screens.EqualizerScreen
 import com.music.aurelis.ui.screens.HistoryScreen
@@ -682,9 +679,7 @@ private fun AurelisApp(
     // alerts is open. The alerts live out here rather than on the page because
     // their scrim has to cover the tab bar and mini player, which are drawn
     // after it.
-    var showDiscordLogin by remember { mutableStateOf(false) }
     var showSpotifyLogin by remember { mutableStateOf(false) }
-    var discordDialog by remember { mutableStateOf<DiscordDialog?>(null) }
     var songActions by remember { mutableStateOf<Song?>(null) }
     var showLyricsOffset by remember { mutableStateOf(false) }
     /**
@@ -2837,7 +2832,6 @@ private fun AurelisApp(
         BackHandler(enabled = showUpdateDialog) { showUpdateDialog = false }
         BackHandler(enabled = showListenBrainzLogin) { showListenBrainzLogin = false }
         BackHandler(enabled = showLastfmLogin) { showLastfmLogin = false }
-        BackHandler(enabled = discordDialog != null) { discordDialog = null }
         BackHandler(enabled = editingSource != null) { editingSource = null }
         BackHandler(enabled = choosingSourceQuality != null) { choosingSourceQuality = null }
         BackHandler(enabled = explainingOutdatedAddon != null) { explainingOutdatedAddon = null }
@@ -3043,8 +3037,6 @@ private fun AurelisApp(
                                 song = player.song,
                                 positionMs = player.position.positionMs,
                                 durationMs = player.durationMs,
-                                onOpenLogin = { showDiscordLogin = true },
-                                onOpenDialog = { discordDialog = it },
                                 contentPadding = listPadding,
                             )
                         } else if (pageRoute == AppRoute.AccountScrobbling) {
@@ -5913,41 +5905,6 @@ private fun AurelisApp(
             )
         }
 
-        // ---- Discord sign-in (full screen WebView) ----
-        if (showDiscordLogin) {
-            BackHandler { showDiscordLogin = false }
-            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                Column(Modifier.fillMaxSize()) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(onClick = { showDiscordLogin = false }) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = stringResource(R.string.close),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-                        Text(
-                            "Sign in to Discord",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                    DiscordLoginScreen(
-                        onTokenCaptured = { token ->
-                            AppSettings.setDiscordToken(token)
-                            showDiscordLogin = false
-                        },
-                    )
-                }
-            }
-        }
-
         // ---- Spotify sign-in (full screen WebView) ----
         // Out here with Discord's rather than on the Spotify page itself: see
         // SpotifyLoginScreen for what the blurred content tree does to a WebView.
@@ -5990,14 +5947,6 @@ private fun AurelisApp(
             BackHandler { showSpotifyCanvasAuth = false }
             SpotifyCanvasAuthScreen(
                 onNavigateUp = { showSpotifyCanvasAuth = false }
-            )
-        }
-
-        discordDialog?.let { which ->
-            DiscordDialogHost(
-                which = which,
-                hazeState = hazeState,
-                onDismiss = { discordDialog = null },
             )
         }
 

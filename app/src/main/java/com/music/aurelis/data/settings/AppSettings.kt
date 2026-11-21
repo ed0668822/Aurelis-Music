@@ -782,7 +782,7 @@ object AppSettings {
     val discordName = MutableStateFlow("")
     val discordAvatar = MutableStateFlow("")
 
-    val discordRpcEnabled = MutableStateFlow(true)
+    val discordRpcEnabled = MutableStateFlow(false)
 
     /** Put the track title on the bold profile line, in place of the artist. */
     val discordUseDetails = MutableStateFlow(false)
@@ -1131,11 +1131,16 @@ object AppSettings {
             webdavPassword.value,
         )
         pinnedPlaylists.value = readPinnedPlaylists()
-        discordToken.value = authStore.discordToken.orEmpty()
-        discordUsername.value = prefs.getString(KEY_DISCORD_USERNAME, "").orEmpty()
-        discordName.value = prefs.getString(KEY_DISCORD_NAME, "").orEmpty()
-        discordAvatar.value = prefs.getString(KEY_DISCORD_AVATAR, "").orEmpty()
-        discordRpcEnabled.value = prefs.getBoolean(KEY_DISCORD_RPC_ENABLED, true)
+        // Retire tokens stored by the previous unsupported WebView login.
+        if (!authStore.discordToken.isNullOrEmpty()) {
+            prefs.edit().putBoolean(KEY_DISCORD_RPC_ENABLED, false).apply()
+        }
+        authStore.discordToken = null
+        discordToken.value = ""
+        discordUsername.value = ""
+        discordName.value = ""
+        discordAvatar.value = ""
+        discordRpcEnabled.value = prefs.getBoolean(KEY_DISCORD_RPC_ENABLED, false)
         discordUseDetails.value = prefs.getBoolean(KEY_DISCORD_USE_DETAILS, false)
         discordShowAudioQuality.value = prefs.getBoolean(KEY_DISCORD_SHOW_AUDIO_QUALITY, true)
         discordAdvancedMode.value = prefs.getBoolean(KEY_DISCORD_ADVANCED_MODE, false)
@@ -1877,10 +1882,10 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, value).apply()
     }
 
-    /** Writes through to the encrypted store; pass "" to disconnect. */
+    /** Legacy compatibility: no Discord user token is ever retained. */
     fun setDiscordToken(value: String) {
-        discordToken.value = value
-        authStore.discordToken = value.ifEmpty { null }
+        discordToken.value = ""
+        authStore.discordToken = null
     }
 
     fun setDiscordAccount(username: String, name: String, avatar: String?) {

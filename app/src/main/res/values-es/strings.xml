@@ -1442,4 +1442,11 @@
     <string name="diwali_title">Aurelis Music te desea un feliz Diwali</string>
     <string name="diwali_subtitle">Que esta fiesta de las luces llene tu hogar de alegría y tus días de música.</string>
     <string name="diwali_cta">Celebremos juntos</string>
+
+    <string name="discord_no_credentials">No necesitas clave API, token ni iniciar sesión manualmente. Compartir es opcional.</string>
+    <string name="discord_sdk_not_bundled">Esta compilación no incluye el SDK Social oficial de Discord; la publicación en vivo no está disponible.</string>
+    <string name="discord_app_not_installed">Instala Discord e inicia sesión para compartir tu música.</string>
+    <string name="discord_official_available">Comparte la canción y el artista mediante la integración oficial de Discord.</string>
+    <string name="discord_preview_disclaimer">Vista previa local. Solo aparecerá en tu perfil cuando se incluya el SDK oficial y actives compartir. Discord usará el icono registrado de Aurelis Music en su portal de desarrolladores.</string>
+    <string name="discord_listening_aurelis">Escuchando Aurelis Music</string>
 </resources>
