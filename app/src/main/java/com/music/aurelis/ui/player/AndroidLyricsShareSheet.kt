@@ -2,6 +2,12 @@ package com.music.aurelis.ui.player
 
 import android.content.Intent
 import android.graphics.Bitmap
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -183,6 +190,19 @@ internal fun AndroidLyricsShareSheet(
                         color = Color.White.copy(alpha = 0.75f),
                     )
                 }
+            } else if (asVideo && timeline != null) {
+                Box(modifier = preview) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = stringResource(R.string.your_lyrics_card),
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    LyricsVideoPreview(
+                        timeline = timeline,
+                        lines = request.lines,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             } else {
                 Image(
                     bitmap = bitmap.asImageBitmap(),
@@ -289,3 +309,55 @@ internal fun AndroidLyricsShareSheet(
  */
 private const val LYRICS_FILE_NAME = "lyrics.png"
 private const val LYRICS_FILE_PREFIX = "aurelis-lyrics"
+
+
+/**
+ * Lightweight animated timeline preview. The exported MP4 uses the exact same
+ * line windows, but rendering its encoder inside the modal would be expensive.
+ * This never launches playback or holds a second media decoder.
+ */
+@Composable
+private fun LyricsVideoPreview(
+    timeline: LyricsShareTimeline,
+    lines: List<LyricsShareLine>,
+    modifier: Modifier = Modifier,
+) {
+    val motion = rememberInfiniteTransition(label = "lyricsVideoPreview")
+    val progress by motion.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(timeline.durationMs.toInt().coerceAtLeast(1000), easing = LinearEasing),
+            RepeatMode.Restart,
+        ),
+        label = "lyricsVideoPreviewPosition",
+    )
+    val playheadUs = (timeline.durationMs * 1000.0 * progress).toLong()
+    val active = timeline.windows.firstOrNull { playheadUs >= it.fromUs && playheadUs < it.toUs }
+    val text = active?.let { lines.getOrNull(it.lineIndex)?.text }?.takeIf { it.isNotBlank() }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.60f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (text != null) {
+            Text(
+                text = text,
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Box(Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.2f))) {
+            Box(
+                Modifier.fillMaxWidth(progress.coerceIn(0.001f, 1f))
+                    .background(Color.White)
+                    .padding(vertical = 2.dp),
+            )
+        }
+    }
+}
