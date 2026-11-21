@@ -1509,4 +1509,13 @@
     <string name="automix_echo_subtitle">Ativar um eco com atraso nas transições personalizadas.</string>
     <string name="automix_low_pass">Filtro passa-baixas</string>
     <string name="automix_low_pass_subtitle">Ativar um som abafado nas transições personalizadas.</string>
+    <string name="discord_oauth_account_title">Conta Discord</string>
+    <string name="discord_oauth_account_note">Liga a tua conta Discord com OAuth2 e PKCE. A presença musical requer separadamente o SDK Social oficial.</string>
+    <string name="discord_oauth_connect">Ligar ao Discord</string>
+    <string name="discord_oauth_disconnect">Desligar</string>
+    <string name="discord_oauth_connecting">A ligar ao Discord…</string>
+    <string name="discord_oauth_storage_error">O armazenamento seguro de contas não está disponível neste dispositivo.</string>
+    <string name="discord_oauth_browser_error">Não foi possível abrir o navegador para autorizar o Discord.</string>
+    <string name="discord_oauth_failed">A autorização do Discord foi cancelada, expirou ou é inválida. Tenta novamente.</string>
+    <string name="discord_oauth_config_error">Não foi possível concluir a autorização. Ativa o cliente público e regista o URI de retorno exato no portal do Discord.</string>
 </resources>

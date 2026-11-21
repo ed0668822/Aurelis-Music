@@ -1461,4 +1461,13 @@
     <string name="automix_echo_subtitle">Özel geçişlerde gecikmeli yankıyı etkinleştirin.</string>
     <string name="automix_low_pass">Alçak geçiren filtre</string>
     <string name="automix_low_pass_subtitle">Özel geçişlerde boğuk sesi etkinleştirin.</string>
+    <string name="discord_oauth_account_title">Discord hesabı</string>
+    <string name="discord_oauth_account_note">Discord hesabını OAuth2 ve PKCE ile bağla. Dinlenen müziği göstermek için ayrıca resmi Social SDK gerekir.</string>
+    <string name="discord_oauth_connect">Discord\'a bağlan</string>
+    <string name="discord_oauth_disconnect">Bağlantıyı kes</string>
+    <string name="discord_oauth_connecting">Discord\'a bağlanılıyor…</string>
+    <string name="discord_oauth_storage_error">Bu cihazda güvenli hesap depolama kullanılamıyor.</string>
+    <string name="discord_oauth_browser_error">Discord yetkilendirmesi için tarayıcı açılamadı.</string>
+    <string name="discord_oauth_failed">Discord yetkilendirmesi iptal edildi, süresi doldu veya geçersiz. Yeniden deneyin.</string>
+    <string name="discord_oauth_config_error">Yetkilendirme tamamlanamadı. Discord geliştirici portalında Public Client\'ı açın ve tam yönlendirme URI\'sini kaydedin.</string>
 </resources>

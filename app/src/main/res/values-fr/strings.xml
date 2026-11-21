@@ -1505,4 +1505,13 @@
     <string name="automix_echo_subtitle">Activer un écho retardé dans les transitions personnalisées.</string>
     <string name="automix_low_pass">Filtre passe-bas</string>
     <string name="automix_low_pass_subtitle">Activer un son étouffé dans les transitions personnalisées.</string>
+    <string name="discord_oauth_account_title">Compte Discord</string>
+    <string name="discord_oauth_account_note">Associez votre compte Discord avec OAuth2 et PKCE. La présence musicale nécessite séparément le SDK Social officiel.</string>
+    <string name="discord_oauth_connect">Se connecter avec Discord</string>
+    <string name="discord_oauth_disconnect">Déconnecter</string>
+    <string name="discord_oauth_connecting">Connexion à Discord…</string>
+    <string name="discord_oauth_storage_error">Le stockage sécurisé des comptes est indisponible sur cet appareil.</string>
+    <string name="discord_oauth_browser_error">Impossible d\'ouvrir le navigateur pour autoriser Discord.</string>
+    <string name="discord_oauth_failed">L\'autorisation Discord a été annulée, a expiré ou est invalide. Réessayez.</string>
+    <string name="discord_oauth_config_error">Impossible de terminer l\'autorisation. Activez le client public et enregistrez l\'URI de retour exacte dans le portail Discord.</string>
 </resources>

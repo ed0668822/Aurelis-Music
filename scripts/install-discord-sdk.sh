@@ -86,8 +86,8 @@ from zipfile import ZipFile, BadZipFile
 try:
     with ZipFile(sys.argv[1]) as sdk:
         files = sdk.namelist()
-        if "classes.jar" not in files:
-            raise ValueError("Android classes.jar missing")
+        # Official Discord Android AARs may be native-only and omit classes.jar.
+        # The mandatory Android integration is the Prefab module and ARM64 .so.
         if "prefab/prefab.json" not in files:
             raise ValueError("Prefab manifest missing")
         if not any(f.startswith("prefab/modules/discord_partner_sdk/") for f in files):
@@ -96,5 +96,5 @@ try:
             raise ValueError("ARM64 native SDK missing")
 except (BadZipFile, ValueError, OSError) as error:
     sys.exit(f"::error title=Discord SDK::Invalid Android AAR: {error}")
-print("Discord SDK AAR: Prefab, ARM64 and Android classes verified.")
+print("Discord SDK AAR: Prefab and ARM64 native libraries verified; classes.jar is optional.")
 PY

@@ -1481,4 +1481,13 @@
     <string name="automix_echo_subtitle">Aktifkan gema tertunda dalam transisi kustom.</string>
     <string name="automix_low_pass">Filter lolos rendah</string>
     <string name="automix_low_pass_subtitle">Aktifkan suara teredam dalam transisi kustom.</string>
+    <string name="discord_oauth_account_title">Akun Discord</string>
+    <string name="discord_oauth_account_note">Hubungkan akun Discord dengan OAuth2 dan PKCE. Kehadiran musik memerlukan Social SDK resmi secara terpisah.</string>
+    <string name="discord_oauth_connect">Hubungkan ke Discord</string>
+    <string name="discord_oauth_disconnect">Putuskan sambungan</string>
+    <string name="discord_oauth_connecting">Menghubungkan ke Discord…</string>
+    <string name="discord_oauth_storage_error">Penyimpanan akun yang aman tidak tersedia pada perangkat ini.</string>
+    <string name="discord_oauth_browser_error">Tidak dapat membuka browser untuk otorisasi Discord.</string>
+    <string name="discord_oauth_failed">Otorisasi Discord dibatalkan, kedaluwarsa, atau tidak valid. Coba lagi.</string>
+    <string name="discord_oauth_config_error">Tidak dapat menyelesaikan otorisasi. Aktifkan Public Client dan daftarkan URI pengalihan yang tepat di Portal Pengembang Discord.</string>
 </resources>

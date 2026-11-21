@@ -1481,4 +1481,13 @@
     <string name="automix_echo_subtitle">在自訂轉場中啟用延遲回音。</string>
     <string name="automix_low_pass">低通濾波器</string>
     <string name="automix_low_pass_subtitle">在自訂轉場中啟用悶音效果。</string>
+    <string name="discord_oauth_account_title">Discord 帳號</string>
+    <string name="discord_oauth_account_note">使用 OAuth2 與 PKCE 連結 Discord 帳號。顯示正在播放的音樂仍需另行整合官方 Social SDK。</string>
+    <string name="discord_oauth_connect">連結 Discord</string>
+    <string name="discord_oauth_disconnect">中斷連結</string>
+    <string name="discord_oauth_connecting">正在連結 Discord…</string>
+    <string name="discord_oauth_storage_error">此裝置無法安全儲存帳號。</string>
+    <string name="discord_oauth_browser_error">無法開啟瀏覽器授權 Discord。</string>
+    <string name="discord_oauth_failed">Discord 授權已取消、過期或無效，請重試。</string>
+    <string name="discord_oauth_config_error">無法完成授權。請在 Discord 開發者入口網站啟用公開用戶端並登記完全相同的重新導向 URI。</string>
 </resources>
