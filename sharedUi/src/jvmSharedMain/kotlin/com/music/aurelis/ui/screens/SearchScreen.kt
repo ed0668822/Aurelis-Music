@@ -296,6 +296,7 @@ fun SearchScreen(
                             typeaheadResults = typeaheadResults,
                             onSongClick = { song -> onTopResultPlay(song) },
                             onSongLongPress = onTypeaheadLongPress,
+                            onSongSwipe = onSongSwipe,
                             onBrowseClick = { item ->
                                 onBrowseClick(item)
                             },
@@ -712,6 +713,7 @@ private fun LazyListScope.searchTypeaheadDropdown(
     typeaheadResults: List<SearchResult>,
     onSongClick: (Song) -> Unit,
     onSongLongPress: ((Song) -> Unit)?,
+    onSongSwipe: (Song) -> Unit,
     onBrowseClick: (BrowseItem) -> Unit,
     currentSong: Song?,
     isPlaying: Boolean,
@@ -739,18 +741,19 @@ private fun LazyListScope.searchTypeaheadDropdown(
                 song = result.song,
                 onClick = { onSongClick(result.song) },
                 onLongPress = onSongLongPress?.let { { it(result.song) } },
+                onSwipeToQueue = { onSongSwipe(result.song) },
                 isCurrent = isCurrentRow(result.song),
                 isPlaying = isPlaying && isCurrentRow(result.song),
             )
             is SearchResult.Browse -> BrowseRow(
                 item = result.item,
                 onClick = { onBrowseClick(result.item) },
-                onLongPress = onSongLongPress?.let { { /* browse long-press not applicable */ } },
             )
             is SearchResult.TopTrack -> TypeaheadSongRow(
                 song = result.song,
                 onClick = { onSongClick(result.song) },
                 onLongPress = onSongLongPress?.let { { it(result.song) } },
+                onSwipeToQueue = { onSongSwipe(result.song) },
                 isCurrent = isCurrentRow(result.song),
                 isPlaying = isPlaying && isCurrentRow(result.song),
             )
@@ -767,12 +770,15 @@ private fun TypeaheadSongRow(
     song: Song,
     onClick: () -> Unit,
     onLongPress: (() -> Unit)? = null,
+    onSwipeToQueue: () -> Unit,
     isCurrent: Boolean = false,
     isPlaying: Boolean = false,
 ) {
+    SwipeToQueueBox(onSwipeToQueue = onSwipeToQueue, modifier = Modifier.fillMaxWidth()) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
             .longPressMenuClickable(
                 onClick = onClick,
                 onLongClick = onLongPress,
@@ -813,6 +819,7 @@ private fun TypeaheadSongRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
     }
 }
 

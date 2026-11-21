@@ -270,6 +270,18 @@ internal class ManualUpgradeThrottle(private val cooldownMs: Long) {
 const val ACTION_QUEUE_DRAG = "com.music.aurelis.action.QUEUE_DRAG"
 const val EXTRA_QUEUE_DRAG_ACTIVE = "aurelis.queueDrag.active"
 
+/** Queue edits run against native Media3 items, never controller-resolved copies. */
+const val ACTION_QUEUE_EDIT_REMOVE = "com.music.aurelis.action.QUEUE_EDIT_REMOVE"
+const val ACTION_QUEUE_EDIT_CLEAR = "com.music.aurelis.action.QUEUE_EDIT_CLEAR"
+const val ACTION_QUEUE_EDIT_UNDO = "com.music.aurelis.action.QUEUE_EDIT_UNDO"
+const val ACTION_QUEUE_EDIT_PROMOTE = "com.music.aurelis.action.QUEUE_EDIT_PROMOTE"
+const val EXTRA_QUEUE_EDIT_MEDIA = "aurelis.queueEdit.media"
+const val EXTRA_QUEUE_EDIT_ENTRIES = "aurelis.queueEdit.entries"
+const val EXTRA_QUEUE_EDIT_PRESENT = "aurelis.queueEdit.present"
+const val EXTRA_QUEUE_EDIT_OCCURRENCES = "aurelis.queueEdit.occurrences"
+const val EXTRA_QUEUE_EDIT_TOKEN = "aurelis.queueEdit.token"
+const val EXTRA_QUEUE_EDIT_INDEX = "aurelis.queueEdit.index"
+
 /** A full first page for an explicitly requested station. */
 private const val INITIAL_STATION_TRACKS = 24
 
@@ -798,6 +810,10 @@ class PlaybackService : MediaLibraryService() {
     private val upgradeQualityCommand = SessionCommand(ACTION_UPGRADE_QUALITY, Bundle.EMPTY)
     private val swapVersionCommand = SessionCommand(ACTION_SWAP_VERSION, Bundle.EMPTY)
     private val queueDragCommand = SessionCommand(ACTION_QUEUE_DRAG, Bundle.EMPTY)
+    private val queueEditRemoveCommand = SessionCommand(ACTION_QUEUE_EDIT_REMOVE, Bundle.EMPTY)
+    private val queueEditClearCommand = SessionCommand(ACTION_QUEUE_EDIT_CLEAR, Bundle.EMPTY)
+    private val queueEditUndoCommand = SessionCommand(ACTION_QUEUE_EDIT_UNDO, Bundle.EMPTY)
+    private val queueEditPromoteCommand = SessionCommand(ACTION_QUEUE_EDIT_PROMOTE, Bundle.EMPTY)
 
     private var favoriteActionJob: Job? = null
     private var stationActionJob: Job? = null
@@ -2719,6 +2735,179 @@ class PlaybackService : MediaLibraryService() {
         activePlayer.seekTo(index, position)
         if (wasPlaying) activePlayer.play()
         refreshCustomLayouts()
+    }
+
+    /** Only a future-only queue edit is undoable: keep the decoded current item intact. */
+    private data class QueueEditSnapshot(
+        val token: String,
+        val player: ExoPlayer,
+        val before: List<MediaItem>,
+        val after: List<MediaItem>,
+        val beforeWindow: QueueWindowSnapshot?,
+        val afterWindow: QueueWindowSnapshot?,
+        val currentIndex: Int,
+        val currentMediaId: String?,
+        val currentEntryId: String?,
+        val expiresAt: Long,
+    )
+
+    private var queueEditSnapshot: QueueEditSnapshot? = null
+
+    private fun queueEditAllowed(): Boolean =
+        !ListenTogether.state.value.inParty &&
+        !ListenTogether.state.value.controlsLocked &&
+        !speakers.active &&
+        crossfade?.isTransitioning() != true &&
+        versionSwapJob?.isActive != true
+
+    private fun nativeQueueItems(raw: ExoPlayer): List<MediaItem> =
+        (0 until raw.mediaItemCount).map(raw::getMediaItemAt)
+
+    /** Resolve duplicate entries against the service's authoritative timeline. */
+    private fun queueEditIndices(raw: ExoPlayer, args: Bundle): List<Int>? {
+        val media = args.getStringArrayList(EXTRA_QUEUE_EDIT_MEDIA) ?: return null
+        val entries = args.getStringArrayList(EXTRA_QUEUE_EDIT_ENTRIES) ?: return null
+        val present = args.getBooleanArray(EXTRA_QUEUE_EDIT_PRESENT) ?: return null
+        val occurrences = args.getIntArray(EXTRA_QUEUE_EDIT_OCCURRENCES) ?: return null
+        if (media.isEmpty() || media.size != entries.size || media.size != present.size ||
+            media.size != occurrences.size || occurrences.any { it < 0 }
+        ) return null
+        val indices = mutableListOf<Int>()
+        val candidates = HashMap<Pair<String, String?>, MutableList<Int>>()
+        for (i in 0 until raw.mediaItemCount) {
+            val item = raw.getMediaItemAt(i)
+            candidates.getOrPut(item.mediaId to item.queueEntryId) { mutableListOf() }.add(i)
+        }
+        media.indices.forEach { i ->
+            val entry = entries[i].takeIf { present[i] }
+            val index = candidates[media[i] to entry]?.getOrNull(occurrences[i]) ?: return null
+            if (index <= raw.currentMediaItemIndex) return null
+            indices += index
+        }
+        return indices.distinct().sorted().takeIf { it.isNotEmpty() }
+    }
+
+    private fun removeQueueOccurrences(args: Bundle, clear: Boolean): Boolean {
+        if (!queueEditAllowed()) return false
+        val raw = player ?: return false
+        val current = raw.currentMediaItemIndex
+        if (current < 0) return false
+        val indices = if (clear) {
+            (current + 1 until raw.mediaItemCount).filter {
+                raw.getMediaItemAt(it).queueTier == QueueTier.USER_QUEUE
+            }
+        } else queueEditIndices(raw, args) ?: return false
+        if (indices.isEmpty()) return false
+        val token = args.getString(EXTRA_QUEUE_EDIT_TOKEN)?.takeIf { it.isNotBlank() } ?: return false
+        val before = nativeQueueItems(raw)
+        val oldWindow = boundedContextWindow?.snapshot()
+        val staged = oldWindow?.let { QueueWindow.restore(it) }
+        for (index in indices) {
+            val item = before[index]
+            if (item.queueTier == QueueTier.CONTEXT && staged != null) {
+                val canonical = QueueShuffle.getCanonicalIndex(item) ?: return false
+                val cycle = item.contextCycleId ?: return false
+                if (!staged.exclude(QueueWindowEntry(canonical, cycle))) return false
+            }
+        }
+        queueEditSnapshot = null
+        if (staged != null) boundedContextWindow = staged
+        // Remove in descending order so repeated entries and positions never drift.
+        for (index in indices.asReversed()) raw.removeMediaItem(index)
+        val after = nativeQueueItems(raw)
+        if (after.size >= before.size) {
+            boundedContextWindow = oldWindow?.let { QueueWindow.restore(it) }
+            return false
+        }
+        queueEditSnapshot = QueueEditSnapshot(
+            token = token,
+            player = raw,
+            before = before,
+            after = after,
+            beforeWindow = oldWindow,
+            afterWindow = boundedContextWindow?.snapshot(),
+            currentIndex = current,
+            currentMediaId = raw.currentMediaItem?.mediaId,
+            currentEntryId = raw.currentMediaItem?.queueEntryId,
+            expiresAt = SystemClock.elapsedRealtime() + 4_500L,
+        )
+        saveQueueSnapshotImmediately(raw)
+        partySync?.onLocalIntent()
+        return true
+    }
+
+    private fun undoQueueOccurrences(args: Bundle): Boolean {
+        val edit = queueEditSnapshot ?: return false
+        if (!queueEditAllowed() || args.getString(EXTRA_QUEUE_EDIT_TOKEN) != edit.token ||
+            SystemClock.elapsedRealtime() >= edit.expiresAt
+        ) {
+            queueEditSnapshot = null
+            return false
+        }
+        val raw = player ?: return false
+        if (raw !== edit.player || raw.currentMediaItemIndex != edit.currentIndex ||
+            raw.currentMediaItem?.mediaId != edit.currentMediaId ||
+            raw.currentMediaItem?.queueEntryId != edit.currentEntryId ||
+            nativeQueueItems(raw) != edit.after ||
+            boundedContextWindow?.snapshot() != edit.afterWindow
+        ) {
+            queueEditSnapshot = null
+            return false
+        }
+        queueEditSnapshot = null
+        // Reinsert only deleted items; never replace the currently decoding media item.
+        boundedContextWindow = edit.beforeWindow?.let { QueueWindow.restore(it) }
+        var originalIndex = 0
+        while (originalIndex < edit.before.size) {
+            if (originalIndex < raw.mediaItemCount &&
+                raw.getMediaItemAt(originalIndex) == edit.before[originalIndex]
+            ) {
+                originalIndex++
+            } else {
+                val start = originalIndex
+                val next = raw.takeIf { originalIndex < it.mediaItemCount }
+                    ?.getMediaItemAt(originalIndex)
+                while (originalIndex < edit.before.size && edit.before[originalIndex] != next) {
+                    originalIndex++
+                }
+                raw.addMediaItems(start, edit.before.subList(start, originalIndex))
+            }
+        }
+        saveQueueSnapshotImmediately(raw)
+        partySync?.onLocalIntent()
+        return true
+    }
+
+    private fun promoteQueueOccurrence(args: Bundle): Boolean {
+        if (!queueEditAllowed()) return false
+        val raw = player ?: return false
+        val index = args.getInt(EXTRA_QUEUE_EDIT_INDEX, -1)
+        val item = (0 until raw.mediaItemCount)
+            .firstOrNull { it == index }?.let(raw::getMediaItemAt) ?: return false
+        if (queueEditIndices(raw, args)?.singleOrNull() != index) return false
+        if (item.queueTier == QueueTier.USER_QUEUE) return false
+        val originalWindow = boundedContextWindow?.snapshot()
+        val staged = originalWindow?.let { QueueWindow.restore(it) }
+        if (item.queueTier == QueueTier.CONTEXT && staged != null) {
+            val canonical = QueueShuffle.getCanonicalIndex(item) ?: return false
+            val cycle = item.contextCycleId ?: return false
+            if (!staged.exclude(QueueWindowEntry(canonical, cycle))) return false
+            boundedContextWindow = staged
+        }
+        val timeline = nativeQueueItems(raw).map { it.toSong() }
+        val insertion = QueueCoordinator.findUserQueueInsertionIndex(
+            timeline = timeline,
+            currentIndex = raw.currentMediaItemIndex,
+            isNext = AppSettings.swipeToPlayNext.value,
+        )
+        val target = if (index < insertion) insertion - 1 else insertion
+        val updated = QueueShuffle.withQueueMetadata(item, newTier = QueueTier.USER_QUEUE)
+        queueEditSnapshot = null
+        raw.replaceMediaItem(index, updated)
+        if (index != target) raw.moveMediaItem(index, target)
+        saveQueueSnapshotImmediately(raw)
+        partySync?.onLocalIntent()
+        return true
     }
 
     private fun toggleShuffleFromSession() {
@@ -8665,6 +8854,10 @@ class PlaybackService : MediaLibraryService() {
                 .add(upgradeQualityCommand)
                 .add(swapVersionCommand)
                 .add(queueDragCommand)
+                .add(queueEditRemoveCommand)
+                .add(queueEditClearCommand)
+                .add(queueEditUndoCommand)
+                .add(queueEditPromoteCommand)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailablePlayerCommands(MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS)
@@ -8713,6 +8906,18 @@ class PlaybackService : MediaLibraryService() {
                         smoothSwapCurrentTrackVersion(targetSong.toMediaItem())
                     }
                 }
+                ACTION_QUEUE_EDIT_REMOVE -> return Futures.immediateFuture(
+                    SessionResult(if (removeQueueOccurrences(args, false)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
+                ACTION_QUEUE_EDIT_CLEAR -> return Futures.immediateFuture(
+                    SessionResult(if (removeQueueOccurrences(args, true)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
+                ACTION_QUEUE_EDIT_UNDO -> return Futures.immediateFuture(
+                    SessionResult(if (undoQueueOccurrences(args)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
+                ACTION_QUEUE_EDIT_PROMOTE -> return Futures.immediateFuture(
+                    SessionResult(if (promoteQueueOccurrence(args)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
                 ACTION_QUEUE_DRAG -> {
                     if (args.getBoolean(EXTRA_QUEUE_DRAG_ACTIVE, false)) {
                         partySync?.beginQueueDrag()

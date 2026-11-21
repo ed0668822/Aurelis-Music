@@ -203,6 +203,11 @@ import com.music.aurelis.playback.OriginalVersion
 import com.music.aurelis.playback.PlayerDeepLink
 import com.music.aurelis.playback.QueueBuilder
 import com.music.aurelis.playback.QueueCoordinator
+import com.music.aurelis.playback.promoteQueueEntry
+import com.music.aurelis.playback.undoQueueEdit
+import com.music.aurelis.playback.clearQueueWithUndo
+import com.music.aurelis.playback.removeQueueItemWithUndo
+import com.music.aurelis.playback.removeQueueEntriesWithUndo
 import com.music.aurelis.playback.QueueCoordinator.asQueueEntry
 import com.music.aurelis.playback.QueueShuffle
 import com.music.aurelis.playback.QueueSource
@@ -755,6 +760,7 @@ private fun AurelisApp(
     // The same two, over the device's own playlists — for a track that is a
     // file on it, and for "New playlist" on Local Music's Playlists tab.
     var offlinePlaylistTarget by remember { mutableStateOf<Song?>(null) }
+    var offlinePlaylistBatch by remember { mutableStateOf<List<Song>>(emptyList()) }
     var creatingOfflinePlaylist by remember { mutableStateOf(false) }
     var showSpotifyImportDialog by remember { mutableStateOf(false) }
     // Which album or playlist the collection menu is open on, or null when it
@@ -1126,8 +1132,16 @@ private fun AurelisApp(
     // bar can never disagree about whether this device may drive the music.
     val controlsLocked = partyState.controlsLocked
     var queueNotice by remember { mutableStateOf<QueueActionNotice?>(null) }
+    var queueUndoToken by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(queueUndoToken) {
+        if (queueUndoToken != null) {
+            delay(4_500)
+            queueUndoToken = null
+        }
+    }
     var queueNoticeId by remember { mutableIntStateOf(0) }
     val showQueueNotice: (String) -> Unit = { message ->
+        queueUndoToken = null
         queueNoticeId += 1
         queueNotice = QueueActionNotice(queueNoticeId, message)
     }
@@ -2658,9 +2672,64 @@ private fun AurelisApp(
                     c.play()
                 }
             },
-            onRemoveFromQueue = { controller?.removeMediaItem(it) },
+            onRemoveFromQueue = { index ->
+                controller?.let { c ->
+                    player.queue.getOrNull(index)?.let { expected ->
+                        scope.launch {
+                            val token = java.util.UUID.randomUUID().toString()
+                            if (c.removeQueueItemWithUndo(index, expected, token)) {
+                                showQueueNotice(context.getString(R.string.queue_removed_song, expected.title))
+                                queueUndoToken = token
+                            }
+                        }
+                    }
+                }
+            },
             onMoveInQueue = { from, to -> controller?.moveMediaItem(from, to) },
             onQueueDragActiveChange = { active -> controller?.setQueueDragActive(active) },
+            onQueuePromote = { index, song ->
+                controller?.let { c ->
+                    scope.launch {
+                        if (c.promoteQueueEntry(index, song)) {
+                            showQueueNotice(context.getString(R.string.song_added_to_queue))
+                        }
+                    }
+                }
+            },
+            onQueueRemoveSelected = { identities ->
+                controller?.let { c ->
+                    scope.launch {
+                        val token = java.util.UUID.randomUUID().toString()
+                        if (c.removeQueueEntriesWithUndo(identities, token)) {
+                            showQueueNotice(context.getString(R.string.queue_cleared))
+                            queueUndoToken = token
+                        }
+                    }
+                }
+            },
+            onQueueAddSelectedToPlaylist = { selected ->
+                val local = selected.filter { it.localUri != null }.distinctBy { it.localUri }
+                if (local.isNotEmpty()) {
+                    offlinePlaylistBatch = local
+                    creatingOfflinePlaylist = false
+                } else {
+                    showQueueNotice(context.getString(R.string.failed))
+                }
+            },
+            queueUndoAvailable = queueUndoToken != null,
+            onQueueUndo = {
+                val token = queueUndoToken
+                if (token != null) {
+                    controller?.let { c ->
+                        scope.launch {
+                            if (c.undoQueueEdit(token)) {
+                                showQueueNotice(context.getString(R.string.queue_undo_action))
+                            }
+                            queueUndoToken = null
+                        }
+                    }
+                }
+            },
             // The enriched copy, not player.song — otherwise the menu
             // hides the album and artist rows even once their browse
             // ids have been resolved.
@@ -2787,9 +2856,14 @@ private fun AurelisApp(
                 navigator.pushAll(AppRoute.Settings, AppRoute.ListenTogether)
             },
             onClearQueue = {
-                // Keep what's playing and context/autoplay; drop user-queued tracks.
                 controller?.let { c ->
-                    QueueCoordinator.clearUserQueue(c)
+                    scope.launch {
+                        val token = java.util.UUID.randomUUID().toString()
+                        if (c.clearQueueWithUndo(token)) {
+                            showQueueNotice(context.getString(R.string.queue_cleared))
+                            queueUndoToken = token
+                        }
+                    }
                 }
             },
         )
@@ -4377,7 +4451,23 @@ private fun AurelisApp(
                         .fillMaxWidth()
                         .onSizeChanged { floatingBarsHeight.intValue = it.height },
                 ) {
-                    QueueActionNoticeHost(queueNotice)
+                    QueueActionNoticeHost(
+                    queueNotice,
+                    actionLabel = if (queueUndoToken != null) context.getString(R.string.queue_undo_action) else null,
+                    onAction = {
+                        val token = queueUndoToken
+                        if (token != null) {
+                            controller?.let { c ->
+                                scope.launch {
+                                    if (c.undoQueueEdit(token)) {
+                                        showQueueNotice(context.getString(R.string.queue_undo_action))
+                                    }
+                                    queueUndoToken = null
+                                }
+                            }
+                        }
+                    },
+                )
                     // Liquid glass replaces the two stacked bars with the single
                     // component they are stacked to imitate: the now playing
                     // controls dock into the tab bar rather than riding above it,
@@ -4420,7 +4510,23 @@ private fun AurelisApp(
                         .onSizeChanged { floatingBarsHeight.intValue = it.height },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    QueueActionNoticeHost(queueNotice)
+                    QueueActionNoticeHost(
+                    queueNotice,
+                    actionLabel = if (queueUndoToken != null) context.getString(R.string.queue_undo_action) else null,
+                    onAction = {
+                        val token = queueUndoToken
+                        if (token != null) {
+                            controller?.let { c ->
+                                scope.launch {
+                                    if (c.undoQueueEdit(token)) {
+                                        showQueueNotice(context.getString(R.string.queue_undo_action))
+                                    }
+                                    queueUndoToken = null
+                                }
+                            }
+                        }
+                    },
+                )
                     player.song?.let { song ->
                         MiniPlayer(
                             song = song,
@@ -5141,10 +5247,11 @@ private fun AurelisApp(
         // The sheet above over the offline player's own playlists, for a track
         // that is a file on this device. Nothing here waits on a network, so
         // there is no loading state and the outcome is known on the tap.
-        if (offlinePlaylistTarget != null || creatingOfflinePlaylist) {
+        if (offlinePlaylistTarget != null || creatingOfflinePlaylist || offlinePlaylistBatch.isNotEmpty()) {
             val target = offlinePlaylistTarget
             val dismiss = {
                 offlinePlaylistTarget = null
+                offlinePlaylistBatch = emptyList()
                 creatingOfflinePlaylist = false
             }
             val choices = remember(offlinePlaylists) {
@@ -5166,12 +5273,14 @@ private fun AurelisApp(
                 playlists = choices,
                 loading = false,
                 song = target,
-                startCreating = target == null,
+                songs = offlinePlaylistBatch,
+                startCreating = target == null && offlinePlaylistBatch.isEmpty(),
                 offline = true,
                 onDismiss = dismiss,
                 onAdd = { picked ->
-                    target?.let { song ->
-                        val result = OfflinePlaylists.add(picked.mapTo(HashSet()) { it.playlistId }, listOf(song))
+                    val songs = if (offlinePlaylistBatch.isNotEmpty()) offlinePlaylistBatch else listOfNotNull(target)
+                    if (songs.isNotEmpty()) {
+                        val result = OfflinePlaylists.add(picked.mapTo(HashSet()) { it.playlistId }, songs)
                         showQueueNotice(
                             when {
                                 result.added > 1 -> context.resources.getQuantityString(
@@ -5185,8 +5294,9 @@ private fun AurelisApp(
                     }
                 },
                 onCreate = { title, _ ->
-                    OfflinePlaylists.create(title, listOfNotNull(target))
-                    if (target != null) showQueueNotice(context.getString(R.string.song_added_to_playlist))
+                    val songs = if (offlinePlaylistBatch.isNotEmpty()) offlinePlaylistBatch else listOfNotNull(target)
+                    OfflinePlaylists.create(title, songs)
+                    if (songs.isNotEmpty()) showQueueNotice(context.getString(R.string.song_added_to_playlist))
                 },
             )
         }

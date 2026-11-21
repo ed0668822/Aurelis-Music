@@ -174,6 +174,7 @@ import com.music.aurelis.data.model.LikeStatus
 import com.music.aurelis.data.model.PlaybackSourceType
 import com.music.aurelis.data.model.PLAYER_ART_PX
 import com.music.aurelis.data.model.Song
+import com.music.aurelis.data.model.QueueEntryIdentity
 import com.music.aurelis.playback.BACK_RESTARTS_AFTER_MS
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeInputScale
@@ -824,6 +825,11 @@ fun NowPlayingScreen(
      */
     onQueueDragActiveChange: (Boolean) -> Unit = {},
     onClearQueue: () -> Unit,
+    onQueuePromote: (Int, Song) -> Unit = { _, _ -> },
+    onQueueRemoveSelected: (List<QueueEntryIdentity>) -> Unit = {},
+    onQueueAddSelectedToPlaylist: (List<Song>) -> Unit = {},
+    queueUndoAvailable: Boolean = false,
+    onQueueUndo: () -> Unit = {},
     onOpenMenu: () -> Unit,
     onOpenAlbum: (String) -> Unit,
     /**
@@ -2338,6 +2344,11 @@ fun NowPlayingScreen(
                             onRemove = onRemoveFromQueue,
                             onMove = onMoveInQueue,
                             onClear = onClearQueue,
+                            onPromote = onQueuePromote,
+                            onRemoveSelected = onQueueRemoveSelected,
+                            onAddSelectedToPlaylist = onQueueAddSelectedToPlaylist,
+                            undoAvailable = queueUndoAvailable,
+                            onUndo = onQueueUndo,
                             onDragActiveChange = onQueueDragActiveChange,
                             modifier = Modifier.fillMaxSize(),
                         )
@@ -4008,6 +4019,11 @@ fun NowPlayingScreen(
                                     onRemove = onRemoveFromQueue,
                                     onMove = onMoveInQueue,
                                     onClear = onClearQueue,
+                                    onPromote = onQueuePromote,
+                                    onRemoveSelected = onQueueRemoveSelected,
+                                    onAddSelectedToPlaylist = onQueueAddSelectedToPlaylist,
+                                    undoAvailable = queueUndoAvailable,
+                                    onUndo = onQueueUndo,
                                     onScrollingChange = { queueScrolling = it },
                                     onDragActiveChange = onQueueDragActiveChange,
                                     collapsePlayerOnScroll = true,

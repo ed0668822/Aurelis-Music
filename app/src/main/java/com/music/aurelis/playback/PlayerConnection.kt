@@ -298,6 +298,76 @@ fun MediaController.setQueueDragActive(active: Boolean) {
     )
 }
 
+/** Live queue identities are occurrence-scoped, not just a MediaStore song ID. */
+private fun MediaController.queueEntryIdentity(index: Int, expectedSong: Song? = null): com.music.aurelis.data.model.QueueEntryIdentity? {
+    if (index !in 0 until mediaItemCount) return null
+    val entry = getMediaItemAt(index)
+    if (expectedSong != null && (expectedSong.videoId != entry.mediaId ||
+        expectedSong.queueEntryId != entry.queueEntryId
+    )) return null
+    var occurrence = 0
+    for (i in 0 until index) {
+        val other = getMediaItemAt(i)
+        if (other.mediaId == entry.mediaId && other.queueEntryId == entry.queueEntryId) occurrence++
+    }
+    return com.music.aurelis.data.model.QueueEntryIdentity(entry.mediaId, entry.queueEntryId, occurrence)
+}
+
+/** Atomic native Media3 queue removal; the service records a short-lived inverse. */
+suspend fun MediaController.removeQueueEntriesWithUndo(
+    entries: List<com.music.aurelis.data.model.QueueEntryIdentity>,
+    token: String,
+): Boolean {
+    if (entries.isEmpty() || token.isBlank()) return false
+    val data = Bundle().apply {
+        putString(EXTRA_QUEUE_EDIT_TOKEN, token)
+        putStringArrayList(EXTRA_QUEUE_EDIT_MEDIA, ArrayList(entries.map { it.mediaId }))
+        putStringArrayList(EXTRA_QUEUE_EDIT_ENTRIES, ArrayList(entries.map { it.queueEntryId.orEmpty() }))
+        putBooleanArray(EXTRA_QUEUE_EDIT_PRESENT, entries.map { it.queueEntryId != null }.toBooleanArray())
+        putIntArray(EXTRA_QUEUE_EDIT_OCCURRENCES, entries.map { it.occurrence }.toIntArray())
+    }
+    return runCatching {
+        sendCustomCommand(SessionCommand(ACTION_QUEUE_EDIT_REMOVE, Bundle.EMPTY), data)
+            .await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+}
+
+suspend fun MediaController.removeQueueItemWithUndo(index: Int, song: Song, token: String): Boolean {
+    val identity = queueEntryIdentity(index, song) ?: return false
+    return removeQueueEntriesWithUndo(listOf(identity), token)
+}
+
+suspend fun MediaController.clearQueueWithUndo(token: String): Boolean =
+    runCatching {
+        sendCustomCommand(
+            SessionCommand(ACTION_QUEUE_EDIT_CLEAR, Bundle.EMPTY),
+            bundleOf(EXTRA_QUEUE_EDIT_TOKEN to token),
+        ).await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+
+suspend fun MediaController.undoQueueEdit(token: String): Boolean =
+    runCatching {
+        sendCustomCommand(
+            SessionCommand(ACTION_QUEUE_EDIT_UNDO, Bundle.EMPTY),
+            bundleOf(EXTRA_QUEUE_EDIT_TOKEN to token),
+        ).await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+
+suspend fun MediaController.promoteQueueEntry(index: Int, song: Song): Boolean {
+    val entry = queueEntryIdentity(index, song) ?: return false
+    val data = Bundle().apply {
+        putInt(EXTRA_QUEUE_EDIT_INDEX, index)
+        putStringArrayList(EXTRA_QUEUE_EDIT_MEDIA, arrayListOf(entry.mediaId))
+        putStringArrayList(EXTRA_QUEUE_EDIT_ENTRIES, arrayListOf(entry.queueEntryId.orEmpty()))
+        putBooleanArray(EXTRA_QUEUE_EDIT_PRESENT, booleanArrayOf(entry.queueEntryId != null))
+        putIntArray(EXTRA_QUEUE_EDIT_OCCURRENCES, intArrayOf(entry.occurrence))
+    }
+    return runCatching {
+        sendCustomCommand(SessionCommand(ACTION_QUEUE_EDIT_PROMOTE, Bundle.EMPTY), data)
+            .await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+}
+
 /** Mirrors the controller into Compose state, polling position while playing. */
 @Composable
 fun rememberPlayerState(controller: MediaController?): PlayerState {
