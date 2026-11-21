@@ -23,7 +23,6 @@
 
 package com.music.aurelis.playback.smart
 
-import android.app.ActivityManager
 import android.content.Context
 import android.media.MediaDataSource
 import android.net.Uri
@@ -38,6 +37,7 @@ import com.music.aurelis.data.listentogether.ListenTogether
 import com.music.aurelis.data.model.SearchFilter
 import com.music.aurelis.data.model.SearchResult
 import com.music.aurelis.data.settings.AppSettings
+import com.music.aurelis.data.settings.AutomixPerformanceMode
 import com.music.aurelis.data.sources.SourceResolver
 import com.music.aurelis.data.sources.TrackMatcher
 import com.music.aurelis.playback.AudioCache
@@ -70,37 +70,12 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
             java.io.File(context.filesDir, BeatTracker.RETIRED_MODEL_ASSET).delete()
             unpackedAsset(BeatTracker.MODEL_ASSET)
         },
-        inferenceThreads = ::autoInferenceThreads,
+        inferenceThreads = { AppSettings.automixPerformanceMode.value.inferenceThreads },
     )
     private val vocals = VocalTracker(
         modelPath = { unpackedAsset(VocalTracker.MODEL_ASSET) },
-        inferenceThreads = ::autoInferenceThreads,
+        inferenceThreads = { AppSettings.automixPerformanceMode.value.inferenceThreads },
     )
-
-    /**
-     * Recalculate the ONNX inference budget for every model session. The models
-     * are reopened between analyses, so a phone recovering RAM or cooling down
-     * automatically regains performance without a manual setting or restart.
-     * Native audio rendering is never assigned to these worker threads.
-     */
-    private fun autoInferenceThreads(): Int {
-        val manager = context.getSystemService(ActivityManager::class.java)
-        val memory = manager?.let { activity ->
-            runCatching { ActivityManager.MemoryInfo().also { activity.getMemoryInfo(it) } }.getOrNull()
-        }
-        val power = context.getSystemService(PowerManager::class.java)
-        thermalWatch
-        return AutoMixResourcePolicy.inferenceThreads(
-            cores = Runtime.getRuntime().availableProcessors(),
-            availableRamBytes = memory?.availMem ?: 0L,
-            lowMemoryThresholdBytes = memory?.threshold ?: 0L,
-            lowMemory = memory?.lowMemory == true,
-            lowRamDevice = manager?.isLowRamDevice == true,
-            powerSave = power?.isPowerSaveMode == true,
-            warm = thermalStatus >= PowerManager.THERMAL_STATUS_MODERATE,
-            hot = thermalStatus >= PowerManager.THERMAL_STATUS_SEVERE,
-        )
-    }
 
     init {
         // The shared trackers report model failures and their timings through
@@ -440,11 +415,14 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
 
         executor.execute {
             try {
-                // Yield when the system is under pressure; otherwise analyze on
-                // the one existing worker without restricting the audio thread.
+                // Efficient mode yields to decoding and playback rather than
+                // competing for a core. Thread count remains the speed knob.
                 Process.setThreadPriority(
-                    if (autoInferenceThreads() == 1) Process.THREAD_PRIORITY_BACKGROUND
-                    else Process.THREAD_PRIORITY_DEFAULT,
+                    if (AppSettings.automixPerformanceMode.value == AutomixPerformanceMode.EFFICIENT) {
+                        Process.THREAD_PRIORITY_BACKGROUND
+                    } else {
+                        Process.THREAD_PRIORITY_DEFAULT
+                    },
                 )
                 // [restoreOnce] queues onto this same single-threaded executor,
                 // so a stored result for this track has landed by now if there
