@@ -18,6 +18,23 @@ For local Android builds, put it at `app/libs/discord_partner_sdk.aar`.
 The repository ignores this file. Run
 `bash scripts/install-discord-sdk.sh` to check Prefab/ARM64/classes.
 
+## Direct ZIP from Discord Developer Portal
+
+The general `DiscordSocialSdk-1.11.24259.zip` contains Android and desktop
+libraries. For an authorized **short-lived signed** download URL, create a
+private repository Actions secret named `DISCORD_SDK_ZIP_URL` containing the
+exact full HTTPS Google Storage download link. Do **not** use it as
+`DISCORD_SDK_AAR_URL`; that older setting expects a direct .aar.
+
+Optionally set `DISCORD_SDK_ZIP_SHA256` to the ZIP checksum. The installer
+restricts ZIP downloads to the official Discord SDK distribution bucket,
+extracts only the Android release AAR, and validates Prefab and ARM64.
+GitHub Actions handles the extraction for Debug and signed Release independently.
+
+Signed URLs expire (typically in one hour). Generate a fresh one from the
+Developer Portal if necessary. Never commit a signed URL or proprietary SDK
+archive to GitHub.
+
 ## GitHub Actions, automatic and private
 
 To include that **official AAR** in both APKs, host a private, authorized

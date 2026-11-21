@@ -140,6 +140,8 @@ set_property(TARGET aurelis_usb APPEND PROPERTY LINK_DEPENDS
 if(AURELIS_DISCORD_SDK)
     find_package(discord_partner_sdk REQUIRED CONFIG)
     add_library(aurelis_discord SHARED discord/discord_presence_jni.cpp)
+    # Discord's discordpp.h is C++20; audio targets remain C++17.
+    target_compile_features(aurelis_discord PRIVATE cxx_std_20)
     target_compile_options(aurelis_discord PRIVATE -O2 -fvisibility=hidden)
     target_link_libraries(aurelis_discord PRIVATE discord_partner_sdk::discord_partner_sdk ${log-lib})
     target_link_options(aurelis_discord PRIVATE "-Wl,-z,max-page-size=16384")

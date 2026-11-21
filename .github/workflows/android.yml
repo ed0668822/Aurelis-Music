@@ -37,6 +37,8 @@ jobs:
 
       - name: Provision official Discord Social SDK (optional)
         env:
+          DISCORD_SDK_ZIP_URL: ${{ secrets.DISCORD_SDK_ZIP_URL }}
+          DISCORD_SDK_ZIP_SHA256: ${{ secrets.DISCORD_SDK_ZIP_SHA256 }}
           DISCORD_SDK_AAR_URL: ${{ secrets.DISCORD_SDK_AAR_URL }}
           DISCORD_SDK_AAR_SHA256: ${{ secrets.DISCORD_SDK_AAR_SHA256 }}
         run: bash scripts/install-discord-sdk.sh
@@ -113,6 +115,8 @@ jobs:
 
       - name: Provision official Discord Social SDK (optional)
         env:
+          DISCORD_SDK_ZIP_URL: ${{ secrets.DISCORD_SDK_ZIP_URL }}
+          DISCORD_SDK_ZIP_SHA256: ${{ secrets.DISCORD_SDK_ZIP_SHA256 }}
           DISCORD_SDK_AAR_URL: ${{ secrets.DISCORD_SDK_AAR_URL }}
           DISCORD_SDK_AAR_SHA256: ${{ secrets.DISCORD_SDK_AAR_SHA256 }}
         run: bash scripts/install-discord-sdk.sh
