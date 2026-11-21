@@ -18,7 +18,7 @@ class SongCreditsParserTest {
               }},
               {"dismissableDialogContentSectionRenderer":{
                 "title":{"simpleText":"Written by"},
-                "subtitle":{"runs":[{"text":"Ana Composer"},{"text":"\\n"},{"text":"Ben Writer"}]}
+                "subtitle":{"runs":[{"text":"Ana Composer"},{"text":"\n"},{"text":"Ben Writer"}]}
               }}
             ]}
         """.trimIndent())
