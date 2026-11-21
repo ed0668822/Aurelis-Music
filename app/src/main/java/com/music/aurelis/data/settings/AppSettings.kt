@@ -281,8 +281,11 @@ object AppSettings {
     /** The CPU budget used by Beat This! and vocal analysis for Automix. */
     val automixPerformanceMode = MutableStateFlow(AutomixPerformanceMode.BALANCED)
 
-    /** Experimental Mornye-inspired options; the existing playback engine is unchanged in step 1. */
+    /** User-selected experimental AutoMix options, persisted separately from playback state. */
     val autoMixOptions = MutableStateFlow(AutoMixOptions())
+
+    /** Current AutoMix handoff phase; never written to SharedPreferences. */
+    val autoMixStage = MutableStateFlow(AutoMixStage.IDLE)
     val skipSilence = MutableStateFlow(false)
 
     /** Requested PCM representation at the Android AudioTrack boundary. */

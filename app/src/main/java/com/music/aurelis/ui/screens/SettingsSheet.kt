@@ -838,8 +838,8 @@ fun SettingsScreen(
                     )
                 }
             }
-            // The experimental settings are stored now but are deliberately not applied
-            // until the corresponding renderer/planner stages have been implemented.
+            // Experimental effects and duration presets are handled by the
+            // two-deck engine. Bit-perfect output keeps its direct-path bypass.
             if (smartFade) {
                 val durationTitle = stringResource(R.string.automix_duration)
                 row(durationTitle, "automix", "seconds", "length") {

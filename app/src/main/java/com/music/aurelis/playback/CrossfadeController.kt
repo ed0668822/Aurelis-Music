@@ -17,6 +17,7 @@ import com.music.aurelis.data.listentogether.ListenTogether
 import com.music.aurelis.data.settings.AppSettings
 import com.music.aurelis.data.settings.AutoMixEffect
 import com.music.aurelis.data.settings.AutoMixOptions
+import com.music.aurelis.data.settings.AutoMixStage
 import com.music.aurelis.data.settings.MixBlend
 import com.music.aurelis.data.settings.MixDeck
 import com.music.aurelis.data.settings.MixTransitionView
@@ -820,6 +821,7 @@ class CrossfadeController(
         AppSettings.smartMixBlend.value = null
         clearMixView()
         AppSettings.smartMixPreview.value = null
+        AppSettings.autoMixStage.value = AutoMixStage.IDLE
         filters.open()
         filters.parkEchoes()
         filters.parkExperimentalEchoes()
@@ -2922,10 +2924,21 @@ class CrossfadeController(
     private fun publishAutomixDetail() {
         val player = active()
         val item = player.currentMediaItem
-        val text = when {
-            !AppSettings.smartFadeEnabled.value || item == null || ListenTogether.state.value.inParty -> null
-            else -> describeAutomix(player, item)
+        val enabled = AppSettings.smartFadeEnabled.value &&
+            item != null && !ListenTogether.state.value.inParty
+        val stage = if (!enabled) {
+            AutoMixStage.IDLE
+        } else {
+            when (phase) {
+                Phase.ARMING, Phase.LOOP_ARMING -> AutoMixStage.PREPARING
+                Phase.LOOP_RUNNING -> AutoMixStage.MIXING
+                Phase.FADING -> if (isRealMix()) AutoMixStage.MIXING else AutoMixStage.CROSSFADING
+                Phase.BAILING, Phase.SLEEP_FADE -> AutoMixStage.CROSSFADING
+                Phase.IDLE -> AutoMixStage.IDLE
+            }
         }
+        if (AppSettings.autoMixStage.value != stage) AppSettings.autoMixStage.value = stage
+        val text = if (enabled && item != null) describeAutomix(player, item) else null
         if (AppSettings.automixDetail.value != text) AppSettings.automixDetail.value = text
     }
 

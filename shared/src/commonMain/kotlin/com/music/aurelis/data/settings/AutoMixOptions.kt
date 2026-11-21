@@ -4,8 +4,8 @@
 package com.music.aurelis.data.settings
 
 /**
- * User-facing AutoMix effect selection. Playback of these experimental presets
- * is wired incrementally; AUTO keeps Aurelis's existing transition behavior.
+ * User-facing experimental AutoMix effect selection.
+ * AUTO retains Aurelis's existing transition behavior with guarded fallbacks.
  */
 enum class AutoMixEffect {
     AUTO,
@@ -14,6 +14,14 @@ enum class AutoMixEffect {
     ECHO,
     PITCH,
     CUSTOM,
+}
+
+/** Volatile playback status for MiniPlayer and diagnostics, not a persisted preference. */
+enum class AutoMixStage {
+    IDLE,
+    PREPARING,
+    MIXING,
+    CROSSFADING,
 }
 
 /** Validated settings for the opt-in Mornye-inspired AutoMix transition effects. */
