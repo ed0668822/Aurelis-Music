@@ -44,23 +44,50 @@ fun AutoMixArtworkOverlay(
     val mix = transition ?: return
     if (!enabled || (mini && !miniEnabled) || !mix.contains(song.videoId)) return
 
+    // Use the same embedded/local cover lookup as the normal player. The active
+    // song can have a precise per-file image where MediaSession metadata has an
+    // outdated album thumbnail. Hold that lookup across the handoff.
+    val currentArt = PlayerPlatform.host.rememberRemoteArtworkUrl(song)
+    var outgoingResolved by remember(mix.generation) { mutableStateOf<String?>(null) }
+    var incomingResolved by remember(mix.generation) { mutableStateOf<String?>(null) }
+    LaunchedEffect(mix.generation, song.videoId, currentArt) {
+        if (!currentArt.isNullOrBlank()) {
+            if (song.videoId == mix.outgoingMediaId) outgoingResolved = currentArt
+            if (song.videoId == mix.incomingMediaId) incomingResolved = currentArt
+        }
+    }
+    val outgoingSource = outgoingResolved ?: mix.outgoingArtworkUrl
+    val incomingSource = incomingResolved ?: mix.incomingArtworkUrl
+
     var outgoingFallback by remember(mix.generation) { mutableStateOf<String?>(null) }
     var incomingFallback by remember(mix.generation) { mutableStateOf<String?>(null) }
-    LaunchedEffect(mix.generation, mix.outgoingArtworkUrl) {
-        if (mix.outgoingArtworkUrl.isNullOrBlank() && mix.outgoingTitle.isNotBlank()) {
+    var outgoingFailed by remember(mix.generation) { mutableStateOf<String?>(null) }
+    var incomingFailed by remember(mix.generation) { mutableStateOf<String?>(null) }
+
+    // A non-null URI is not evidence that it decodes. Search by verified
+    // title/artist when Coil reports an error, once per actual image failure.
+    LaunchedEffect(mix.generation, outgoingSource, outgoingFailed) {
+        if ((outgoingSource.isNullOrBlank() || outgoingFailed == outgoingSource) &&
+            outgoingFallback == null && mix.outgoingTitle.isNotBlank()
+        ) {
             outgoingFallback = PlayerPlatform.host.resolveMixArtwork(mix.outgoingTitle, mix.outgoingArtist)
         }
     }
-    LaunchedEffect(mix.generation, mix.incomingArtworkUrl) {
-        if (mix.incomingArtworkUrl.isNullOrBlank() && mix.incomingTitle.isNotBlank()) {
+    LaunchedEffect(mix.generation, incomingSource, incomingFailed) {
+        if ((incomingSource.isNullOrBlank() || incomingFailed == incomingSource) &&
+            incomingFallback == null && mix.incomingTitle.isNotBlank()
+        ) {
             incomingFallback = PlayerPlatform.host.resolveMixArtwork(mix.incomingTitle, mix.incomingArtist)
         }
     }
-    // Match the existing 1200px hero-art / 160px row-art cache ladder.
-    // Avoid enlarging small thumbnails on the fullscreen player.
+    // Respect the existing 1200px player / 160px row artwork cache ladder.
     val requestedPx = if (mini) ROW_ART_PX else PLAYER_ART_PX
-    val outgoing = (outgoingFallback ?: mix.outgoingArtworkUrl).artworkAt(requestedPx)
-    val incoming = (incomingFallback ?: mix.incomingArtworkUrl).artworkAt(requestedPx)
+    val outgoingCandidate = (outgoingFallback ?: outgoingSource)
+        ?.takeUnless { it == outgoingFailed }
+    val incomingCandidate = (incomingFallback ?: incomingSource)
+        ?.takeUnless { it == incomingFailed }
+    val outgoing = outgoingCandidate.artworkAt(requestedPx)
+    val incoming = incomingCandidate.artworkAt(requestedPx)
     if (outgoing.isNullOrBlank() && incoming.isNullOrBlank()) return
 
     val progress = mix.progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
@@ -71,6 +98,7 @@ fun AutoMixArtworkOverlay(
                 model = outgoing,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onError = { outgoingFailed = outgoingCandidate },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -100,6 +128,7 @@ fun AutoMixArtworkOverlay(
                 model = incoming,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onError = { incomingFailed = incomingCandidate },
                 modifier = Modifier.fillMaxSize().then(transitionModifier),
             )
         }
