@@ -70,6 +70,29 @@ class NativeAurelisLinkageContractTest {
         }
     }
 
+    /**
+     * A011: every native library loaded on ARM64 must link with 16 KB
+     * page-size alignment; USB/exclusive paths must retain a restricted JNI
+     * exports map. A successful Kotlin compile alone cannot check either.
+     */
+    @Test fun allAurelisNativeLibrariesKeep16kAlignment() {
+        val cmake = nativeFile("CMakeLists.txt")
+        for (name in listOf("analysis", "loopmix", "dsd", "dst", "exclusive", "usb")) {
+            val pattern = Regex(
+                "target_link_options\\(aurelis_" + name +
+                    " PRIVATE[^)]*-Wl,-z,max-page-size=16384",
+                RegexOption.DOT_MATCHES_ALL,
+            )
+            assertTrue("libaurelis_$name.so must support Android 16 KB pages",
+                pattern.containsMatchIn(cmake))
+        }
+        for (name in listOf("exclusive", "usb")) {
+            assertTrue("libaurelis_$name.so must use JNI-only symbol exports",
+                cmake.contains("target_link_options(aurelis_$name PRIVATE") &&
+                    cmake.contains("bitperfect/exports.map"))
+        }
+    }
+
     @Test fun jniBindingsUseCurrentAndroidPackage() {
         val bridges = mapOf(
             "jni/analysis_jni.cpp" to "playback_smart_TrackFeatures_nativeAnalyze",
