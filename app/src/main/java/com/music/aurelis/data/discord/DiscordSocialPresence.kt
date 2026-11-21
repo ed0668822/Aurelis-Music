@@ -45,14 +45,20 @@ class DiscordSocialPresence(private val context: Context) {
         if (started) runCatching { nativeRunCallbacks() }
     }
 
-    fun clear() {
+    /** Clear only the activity when paused, keeping the SDK connected for resume. */
+    fun clearActivity() {
         if (started) {
             runCatching {
                 nativeClear()
                 nativeRunCallbacks()
             }
-            started = false
         }
+    }
+
+    /** Fully stop the transport when sharing is disabled or service exits. */
+    fun clear() {
+        clearActivity()
+        started = false
     }
 
     private external fun nativeInitialize(applicationId: String): Boolean

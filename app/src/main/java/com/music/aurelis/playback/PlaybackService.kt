@@ -7583,7 +7583,7 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun observeDiscord() {
         scope.launch {
-            AppSettings.discordRpcEnabled.distinctUntilChanged().collectLatest { enabled ->
+            AppSettings.discordRpcEnabled.collectLatest { enabled ->
                 discordUpdateJob?.cancel()
                 discordRpc?.clear()
                 discordRpc = null
@@ -7638,7 +7638,7 @@ class PlaybackService : MediaLibraryService() {
         if (!discordPresenceUp) return
         discordPresenceUp = false
         discordUpdateJob?.cancel()
-        discordUpdateJob = scope.launch(Dispatchers.IO) { rpc.clear() }
+        discordUpdateJob = scope.launch(Dispatchers.IO) { rpc.clearActivity() }
     }
 
     /**
