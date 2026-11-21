@@ -40,12 +40,22 @@ jobs:
           GH_TOKEN: ${{ secrets.DISCORD_SDK_READ_TOKEN }}
         run: |
           if [[ -z "$GH_TOKEN" ]]; then
-            echo "::notice title=Discord SDK::Private SDK token not configured; building without live Discord presence."
+            echo "::notice title=Discord SDK::Private SDK token not configured; compiling without optional Discord presence."
           else
             mkdir -p app/libs
-            gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs
-            printf '%s  %s\n' 'ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99' 'app/libs/discord_partner_sdk.aar' | sha256sum --check --status
-            echo "Official Discord SDK AAR: SHA-256 verified."
+            # Do not leave a partial or unverified native library behind.
+            rm -f app/libs/discord_partner_sdk.aar
+            if gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs; then
+              if printf '%s  %s\n' 'ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99' 'app/libs/discord_partner_sdk.aar' | sha256sum --check --status; then
+                echo "Official Discord SDK AAR: SHA-256 verified."
+              else
+                rm -f app/libs/discord_partner_sdk.aar
+                echo "::warning title=Discord SDK::Downloaded AAR failed integrity validation; optional integration disabled for this build."
+              fi
+            else
+              rm -f app/libs/discord_partner_sdk.aar
+              echo "::warning title=Discord SDK::Private release could not be downloaded; optional integration disabled for this build."
+            fi
           fi
 
       - name: Validate official Discord SDK AAR (optional)
@@ -126,12 +136,22 @@ jobs:
           GH_TOKEN: ${{ secrets.DISCORD_SDK_READ_TOKEN }}
         run: |
           if [[ -z "$GH_TOKEN" ]]; then
-            echo "::notice title=Discord SDK::Private SDK token not configured; building without live Discord presence."
+            echo "::notice title=Discord SDK::Private SDK token not configured; compiling without optional Discord presence."
           else
             mkdir -p app/libs
-            gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs
-            printf '%s  %s\n' 'ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99' 'app/libs/discord_partner_sdk.aar' | sha256sum --check --status
-            echo "Official Discord SDK AAR: SHA-256 verified."
+            # Do not leave a partial or unverified native library behind.
+            rm -f app/libs/discord_partner_sdk.aar
+            if gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs; then
+              if printf '%s  %s\n' 'ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99' 'app/libs/discord_partner_sdk.aar' | sha256sum --check --status; then
+                echo "Official Discord SDK AAR: SHA-256 verified."
+              else
+                rm -f app/libs/discord_partner_sdk.aar
+                echo "::warning title=Discord SDK::Downloaded AAR failed integrity validation; optional integration disabled for this build."
+              fi
+            else
+              rm -f app/libs/discord_partner_sdk.aar
+              echo "::warning title=Discord SDK::Private release could not be downloaded; optional integration disabled for this build."
+            fi
           fi
 
       - name: Validate official Discord SDK AAR (optional)
