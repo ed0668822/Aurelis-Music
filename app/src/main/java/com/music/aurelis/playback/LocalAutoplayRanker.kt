@@ -25,7 +25,7 @@ internal object LocalAutoplayRanker {
     ): List<Song> {
         if (limit <= 0 || seed.localUri.isNullOrBlank()) return emptyList()
         val excluded = existing.mapNotNullTo(HashSet()) { it.localUri }
-        excluded += seed.localUri
+        seed.localUri?.let(excluded::add)
         val seen = HashSet<String>()
         val pool = candidates.asSequence().filter { song ->
             val uri = song.localUri
