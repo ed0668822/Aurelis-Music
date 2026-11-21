@@ -42,7 +42,7 @@ internal fun lyricsShareTimeline(lines: List<LyricsShareLine>): LyricsShareTimel
         if (duration < 300L) break
         // Adjacent lines in the same passage share one source segment.
         val previous = segments.lastOrNull()
-        if (!lastGap && previous != null && start in previous.second..(previous.second + 500L)) {
+        if (!lastGap && previous != null && start == previous.second) {
             segments[segments.lastIndex] = previous.first to (start + duration)
         } else {
             segments += start to (start + duration)
