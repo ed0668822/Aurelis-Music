@@ -1438,4 +1438,8 @@
     <string name="local_profile_edit_name">Editar nombre local</string>
     <string name="local_profile_remove_photo">Quitar foto local</string>
     <string name="local_feature_paused">Temporalmente desactivado</string>
+    <string name="automix_overview">Resumen de AutoMix</string>
+    <string name="diwali_title">Aurelis Music te desea un feliz Diwali</string>
+    <string name="diwali_subtitle">Que esta fiesta de las luces llene tu hogar de alegría y tus días de música.</string>
+    <string name="diwali_cta">Celebremos juntos</string>
 </resources>
