@@ -367,6 +367,7 @@ internal fun LibraryGridShelf(
 ) {
     val leadingCount = if (leadingCard != null) 1 else 0
     val visibleItems = shelf.items.take((LIBRARY_ROW_MAX_ITEMS - leadingCount).coerceAtLeast(0))
+    val cardKeys = remember(visibleItems) { shelfCardKeys(visibleItems) }
     Column(Modifier.padding(bottom = 26.dp)) {
         SectionHeader(
             title = shelf.title,
@@ -378,7 +379,8 @@ internal fun LibraryGridShelf(
             horizontalArrangement = Arrangement.spacedBy(LIBRARY_GRID_SPACING),
         ) {
             leadingCard?.let { card -> item(key = "leading") { card() } }
-            items(visibleItems) { item ->
+            items(visibleItems.size, key = { cardKeys[it] }) { index ->
+                val item = visibleItems[index]
                 ShelfCard(
                     item = item,
                     onClick = { onItemClick(item) },
@@ -456,6 +458,17 @@ fun LibraryGridPage(
  * A no-op on any shelf that isn't Playlists: [pinned] only ever holds playlist
  * browse ids, so an album or artist shelf never has a card that matches.
  */
+internal fun shelfCardKeys(items: List<ShelfItem>): List<String> {
+    val seen = HashMap<String, Int>()
+    return items.map { item ->
+        val base = "card:" + (item.browseId ?: item.videoId ?: item.title)
+        val count = (seen[base] ?: 0) + 1
+        seen[base] = count
+        if (count == 1) base else "$base#$count"
+    }
+}
+
+
 private fun HomeShelf.pinnedFirst(pinned: List<String>): HomeShelf {
     if (pinned.isEmpty()) return this
     val byId = items.filter { it.browseId != null }.associateBy { it.browseId }
