@@ -9,6 +9,7 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
+import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -25,7 +26,7 @@ import java.util.concurrent.Executor
 class AurelisQuickSettingsTile : TileService() {
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
-    private val onMain = Executor { command -> mainExecutor.execute(command) }
+    private val onMain = Executor { command -> ContextCompat.getMainExecutor(this).execute(command) }
 
     override fun onStartListening() {
         super.onStartListening()
