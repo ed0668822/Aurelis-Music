@@ -183,7 +183,7 @@ fun PlaylistPickerSheet(
                 )
                 if (songs.isNotEmpty()) {
                     Text(
-                        text = "${'${songs.size}'} canciones seleccionadas",
+                        text = stringResource(R.string.queue_selected_count, songs.size),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(horizontal = 22.dp, vertical = 16.dp),
