@@ -103,12 +103,16 @@ android {
         buildConfigField("String", "UPDATE_APK_PREFIX", "\"Aurelis-\"")
     }
 
-    // Por defecto compila las tres arquitecturas más un APK universal (cuatro
-    // APKs). Con -Paurelis.abis=arm64-v8a (lo usa el CI) genera un solo APK,
-    // sin universal: cada APK lleva sus propias libs nativas (ONNX Runtime,
-    // FFmpeg, QuickJS), así que compilar las cuatro multiplica el peso.
-    val abis = (providers.gradleProperty("aurelis.abis").orNull ?: "armeabi-v7a,arm64-v8a,x86_64")
-        .split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    // Aurelis distributes ARM64 APKs by default. Other ABIs can be requested
+    // explicitly for local compatibility checks with -Paurelis.abis=<list>.
+    // Never silently build a universal APK or accept an empty/unknown ABI:
+    // native ONNX, FFmpeg and AutoMix libraries must match the APK split.
+    val abis = (providers.gradleProperty("aurelis.abis").orNull ?: "arm64-v8a")
+        .split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+    val supportedAbis = setOf("arm64-v8a", "armeabi-v7a", "x86_64")
+    require(abis.isNotEmpty() && abis.all { it in supportedAbis }) {
+        "Invalid -Paurelis.abis: use " + supportedAbis.sorted().joinToString(",")
+    }
     splits {
         abi {
             isEnable = true
@@ -551,5 +555,45 @@ if (providers.gradleProperty("aurelis.bundleWear").orNull != "false" && findProj
             apks.from(rootProject.layout.projectDirectory.dir("wearos/build/outputs/apk/$flavor/$type"))
         }
         variant.sources.assets?.addGeneratedSourceDirectory(bundle, BundleWearApk::outputDir)
+    }
+}
+
+
+/**
+ * A005: validates Android app identity and native build wiring at configuration
+ * level, without requiring an emulator or exposing signing credentials.
+ * Run with :app:verifyAurelisBuildIdentity before assembling release APKs.
+ */
+tasks.register("verifyAurelisBuildIdentity") {
+    group = "verification"
+    description = "Verify Aurelis namespace, package IDs, version, ABI and native build targets"
+    doLast {
+        check(android.namespace == "com.music.aurelis") {
+            "Aurelis Android namespace must remain com.music.aurelis"
+        }
+        check(android.defaultConfig.applicationId == "com.music.aurelis") {
+            "Production package must remain com.music.aurelis to preserve app updates"
+        }
+        check(android.productFlavors.findByName("dev")?.applicationId == "com.dev.aurelis") {
+            "Developer package must remain com.dev.aurelis"
+        }
+        check(android.defaultConfig.versionCode != null && android.defaultConfig.versionCode!! > 0) {
+            "Aurelis versionCode must be positive"
+        }
+        check(!android.defaultConfig.versionName.isNullOrBlank()) {
+            "Aurelis versionName must be configured"
+        }
+
+        val nativeBuild = file("src/main/cpp/CMakeLists.txt").readText()
+        listOf("analysis", "loopmix", "dsd", "dst", "exclusive", "usb").forEach { name ->
+            check(nativeBuild.contains("add_library(aurelis_$name SHARED")) {
+                "Missing native library libaurelis_$name.so"
+            }
+        }
+        val exports = file("src/main/cpp/bitperfect/exports.map").readText()
+        check(exports.contains("Java_com_music_aurelis_playback_audio_bitperfect_*")) {
+            "Native exported JNI symbols do not match com.music.aurelis"
+        }
+        logger.lifecycle("Aurelis build identity: com.music.aurelis (prod), com.dev.aurelis (dev); native targets verified")
     }
 }

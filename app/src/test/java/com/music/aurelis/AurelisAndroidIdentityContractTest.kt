@@ -21,6 +21,19 @@ class AurelisAndroidIdentityContractTest {
         return file ?: error("Missing project file: $path")
     }
 
+    @Test fun buildConfigurationKeepsArm64AndAurelisNativeTargets() {
+        val root = sequenceOf(File("."), File(".."))
+            .map { File(it, "gradle.properties") }
+            .firstOrNull { it.isFile } ?: error("Missing gradle.properties")
+        val properties = root.readText()
+        assertTrue(properties.contains("aurelis.abis=arm64-v8a"))
+        assertTrue(properties.contains("aurelis.bundleWear=false"))
+        val appBuild = projectFile("build.gradle.kts").readText()
+        assertTrue(appBuild.contains("verifyAurelisBuildIdentity"))
+        assertTrue(appBuild.contains("supportedAbis"))
+        assertFalse(appBuild.contains("bitchord.abis"))
+    }
+
     @Test fun appVariantsUseAurelisNamespace() {
         val gradle = projectFile("build.gradle.kts").readText()
         assertTrue(gradle.contains("namespace = \"com.music.aurelis\""))
