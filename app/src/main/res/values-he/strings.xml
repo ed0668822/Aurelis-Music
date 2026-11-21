@@ -1571,4 +1571,6 @@
     <string name="replay_personality_day">מאזין ביום</string>
     <string name="replay_personality_all">מאזין בכל שעות היום</string>
     <string name="replay_annual_play_local">השמעת שיר נבחר מהמכשיר</string>
+    <string name="lyrics_share_video">וידאו</string>
+    <string name="lyrics_share_image">תמונה</string>
 </resources>

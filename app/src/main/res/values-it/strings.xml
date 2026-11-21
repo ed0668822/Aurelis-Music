@@ -1483,4 +1483,6 @@
     <string name="replay_personality_day">Ascoltatore diurno</string>
     <string name="replay_personality_all">Ascoltatore a tutte le ore</string>
     <string name="replay_annual_play_local">Riproduci un brano in evidenza dal dispositivo</string>
+    <string name="lyrics_share_video">Video</string>
+    <string name="lyrics_share_image">Immagine</string>
 </resources>

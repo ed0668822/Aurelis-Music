@@ -1544,4 +1544,6 @@
     <string name="replay_personality_day">Taghörer</string>
     <string name="replay_personality_all">Hört zu jeder Tageszeit</string>
     <string name="replay_annual_play_local">Einen lokalen Jahreshit abspielen</string>
+    <string name="lyrics_share_video">Video</string>
+    <string name="lyrics_share_image">Bild</string>
 </resources>

@@ -1545,4 +1545,6 @@
     <string name="replay_personality_day">Écoute en journée</string>
     <string name="replay_personality_all">Écoute à toute heure</string>
     <string name="replay_annual_play_local">Écouter un titre marquant de cet appareil</string>
+    <string name="lyrics_share_video">Vidéo</string>
+    <string name="lyrics_share_image">Image</string>
 </resources>

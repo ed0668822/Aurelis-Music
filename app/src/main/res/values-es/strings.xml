@@ -1517,4 +1517,6 @@
     <string name="replay_personality_day">Oyente diurno</string>
     <string name="replay_personality_all">Oyente de todo el día</string>
     <string name="replay_annual_play_local">Reproducir una canción destacada del dispositivo</string>
+    <string name="lyrics_share_video">Vídeo</string>
+    <string name="lyrics_share_image">Imagen</string>
 </resources>

@@ -1521,4 +1521,6 @@
     <string name="replay_personality_day">Pendengar siang</string>
     <string name="replay_personality_all">Pendengar sepanjang hari</string>
     <string name="replay_annual_play_local">Putar lagu unggulan dari perangkat ini</string>
+    <string name="lyrics_share_video">Video</string>
+    <string name="lyrics_share_image">Gambar</string>
 </resources>

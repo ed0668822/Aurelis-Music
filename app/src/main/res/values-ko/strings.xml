@@ -1394,4 +1394,6 @@
     <string name="replay_personality_day">낮형</string>
     <string name="replay_personality_all">하루 종일 감상형</string>
     <string name="replay_annual_play_local">이 기기의 올해의 추천곡 재생</string>
+    <string name="lyrics_share_video">동영상</string>
+    <string name="lyrics_share_image">이미지</string>
 </resources>

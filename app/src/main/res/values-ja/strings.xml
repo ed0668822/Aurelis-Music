@@ -1522,4 +1522,6 @@
     <string name="replay_personality_day">昼型</string>
     <string name="replay_personality_all">一日中聴くタイプ</string>
     <string name="replay_annual_play_local">この端末の注目曲を再生</string>
+    <string name="lyrics_share_video">動画</string>
+    <string name="lyrics_share_image">画像</string>
 </resources>

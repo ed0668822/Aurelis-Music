@@ -1416,4 +1416,6 @@
     <string name="replay_personality_day">Daytime listener</string>
     <string name="replay_personality_all">All-day listener</string>
     <string name="replay_annual_play_local">Play a highlight from this device</string>
+    <string name="lyrics_share_video">Video</string>
+    <string name="lyrics_share_image">Image</string>
 </resources>
