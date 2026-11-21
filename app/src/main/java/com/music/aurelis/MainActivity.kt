@@ -1702,43 +1702,20 @@ private fun AurelisApp(
                 val seed = song.copy(
                     radioName = song.title,
                     playbackSource = song.title,
-                    playbackSourceType = if (song.localUri.isNullOrBlank()) {
-                        PlaybackSourceType.SHARED_LINK
-                    } else PlaybackSourceType.BROWSE,
+                    playbackSourceType = PlaybackSourceType.SHARED_LINK,
                     playbackSourceId = song.videoId,
                 )
-                val related = if (!seed.localUri.isNullOrBlank()) {
-                    // Local radio shares the existing ranker with offline
-                    // AutoPlay: no title matching, no YouTube lookup, no network.
-                    val deviceSongs = runCatching {
-                        (com.music.aurelis.data.LocalMediaRepository.getLocalMusic(context) +
-                            com.music.aurelis.data.LocalMediaRepository.getDownloadedSongs(context))
-                            .distinctBy { it.localUri }
-                    }.getOrElse {
-                        if (request == playRequestGeneration) {
-                            Toast.makeText(context, R.string.couldnt_load_tracks, Toast.LENGTH_SHORT).show()
-                        }
-                        return@launch
+                // Radio always uses YouTube Music. A local file is matched by
+                // title/artist to a real YouTube recording before requesting radio.
+                val related = loadAutoplayTracks(
+                    existing = listOf(seed),
+                    seedSong = seed,
+                    limit = INITIAL_RADIO_TRACKS,
+                ).getOrElse {
+                    if (request == playRequestGeneration) {
+                        Toast.makeText(context, R.string.couldnt_load_tracks, Toast.LENGTH_SHORT).show()
                     }
-                    com.music.aurelis.playback.LocalAutoplayRanker.suggest(
-                        seed = seed,
-                        candidates = deviceSongs,
-                        existing = listOf(seed),
-                        likedUris = emptySet(),
-                        playCounts = emptyMap(),
-                        limit = INITIAL_RADIO_TRACKS,
-                    )
-                } else {
-                    loadAutoplayTracks(
-                        existing = listOf(seed),
-                        seedSong = seed,
-                        limit = INITIAL_RADIO_TRACKS,
-                    ).getOrElse {
-                        if (request == playRequestGeneration) {
-                            Toast.makeText(context, R.string.couldnt_load_tracks, Toast.LENGTH_SHORT).show()
-                        }
-                        return@launch
-                    }
+                    return@launch
                 }
                 if (related.isEmpty()) {
                     if (request == playRequestGeneration) {

@@ -2181,38 +2181,19 @@ class PlaybackService : MediaLibraryService() {
         stationActionJob?.cancel()
         stationActionJob = scope.launch {
             val radioSeed = seed.copy(radioName = seed.title)
-            val related = if (!radioSeed.localUri.isNullOrBlank()) {
-                // A genuine offline radio for local files: do not send local
-                // titles to YouTube or any matching endpoint.
-                val candidates = runCatching {
-                    (com.music.aurelis.data.LocalMediaRepository.getLocalMusic(this@PlaybackService) +
-                        com.music.aurelis.data.LocalMediaRepository.getDownloadedSongs(this@PlaybackService))
-                        .distinctBy { it.localUri }
-                }.getOrElse {
-                    TrackLog.w("Aurelis Music", "Local radio scan failed: ${it.message}", about = seed.videoId)
-                    return@launch
-                }
-                LocalAutoplayRanker.suggest(
-                    seed = radioSeed,
-                    candidates = candidates,
-                    existing = listOf(radioSeed),
-                    likedUris = emptySet(),
-                    playCounts = emptyMap(),
-                    limit = INITIAL_STATION_TRACKS,
+            // Android Auto and the phone use the same YouTube Music station,
+            // even when the current recording is a local device file.
+            val related = loadAutoplayTracks(
+                existing = listOf(radioSeed),
+                seedSong = radioSeed,
+                limit = INITIAL_STATION_TRACKS,
+            ).getOrElse {
+                TrackLog.w(
+                    "Aurelis Music",
+                    "Android Auto station failed: ${it.message}",
+                    about = seed.videoId,
                 )
-            } else {
-                loadAutoplayTracks(
-                    existing = listOf(radioSeed),
-                    seedSong = radioSeed,
-                    limit = INITIAL_STATION_TRACKS,
-                ).getOrElse {
-                    TrackLog.w(
-                        "Aurelis Music",
-                        "Android Auto station failed: ${it.message}",
-                        about = seed.videoId,
-                    )
-                    return@launch
-                }
+                return@launch
             }
             if (related.isEmpty()) return@launch
 
