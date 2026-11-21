@@ -236,6 +236,51 @@ fun ReplayScreen(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                 }
+                                annual.topAlbum?.let { album ->
+                                    Text(
+                                        text = stringResource(R.string.top_album) + ": " + album,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                annual.topGenre?.let { genre ->
+                                    Text(
+                                        text = stringResource(R.string.top_genre) + ": " + genre,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                    )
+                                }
+                                Text(
+                                    text = stringResource(R.string.replay_annual_unique_songs, annual.uniqueSongs),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = textColor.copy(alpha = 0.8f),
+                                )
+                                annual.personality?.let { personality ->
+                                    val personalityLabel = when (personality) {
+                                        AnnualListeningPersonality.NIGHT_OWL -> R.string.replay_personality_night
+                                        AnnualListeningPersonality.EARLY_BIRD -> R.string.replay_personality_early
+                                        AnnualListeningPersonality.GOLDEN_HOUR -> R.string.replay_personality_evening
+                                        AnnualListeningPersonality.DAYTIME -> R.string.replay_personality_day
+                                        AnnualListeningPersonality.ALL_DAY -> R.string.replay_personality_all
+                                    }
+                                    Text(
+                                        text = stringResource(R.string.replay_annual_personality) + ": " + stringResource(personalityLabel),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                    )
+                                }
+                                annual.localHighlight?.let { highlight ->
+                                    Text(
+                                        text = stringResource(R.string.replay_annual_play_local),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = textColor,
+                                        modifier = Modifier
+                                            .padding(top = 4.dp)
+                                            .clickable { onPlaySong(highlight) },
+                                    )
+                                }
                             }
                         }
                     }

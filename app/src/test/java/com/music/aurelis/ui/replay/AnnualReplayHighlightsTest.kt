@@ -7,6 +7,7 @@ import com.music.aurelis.data.stats.ReplayPeriod
 import com.music.aurelis.data.stats.ReplaySummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AnnualReplayHighlightsTest {
@@ -35,4 +36,50 @@ class AnnualReplayHighlightsTest {
         assertNull(actual.topSong)
         assertNull(actual.topArtist)
     }
+    @Test fun `personality follows actual listening hours without invented values`() {
+        assertNull(annualListeningPersonality(emptyList()))
+        assertNull(annualListeningPersonality(List(24) { 0L }))
+        assertEquals(
+            AnnualListeningPersonality.NIGHT_OWL,
+            annualListeningPersonality(List(24) { if (it == 23) 400L else 20L }),
+        )
+        assertEquals(
+            AnnualListeningPersonality.EARLY_BIRD,
+            annualListeningPersonality(List(24) { if (it == 7) 400L else 20L }),
+        )
+        assertEquals(
+            AnnualListeningPersonality.GOLDEN_HOUR,
+            annualListeningPersonality(List(24) { if (it == 18) 700L else 20L }),
+        )
+        assertEquals(
+            AnnualListeningPersonality.DAYTIME,
+            annualListeningPersonality(List(24) { if (it == 12) 800L else 10L }),
+        )
+    }
+
+    @Test fun `no albums genres or local clips remain absent when not recorded`() {
+        val empty = ReplaySummary(
+            period = ReplayPeriod.THIS_YEAR,
+            label = "2026",
+            totalMs = 600_000L,
+            totalPlays = 1,
+            songs = emptyList(),
+            artists = emptyList(),
+            albums = emptyList(),
+            genres = emptyList(),
+            hourOfDay = emptyList(),
+            busiestDay = null,
+            busiestDayMs = 0L,
+            distinctSongs = 0,
+            distinctArtists = 0,
+            distinctAlbums = 0,
+            since = null,
+        ).annualHighlights(2026)
+        assertNull(empty.topAlbum)
+        assertNull(empty.topGenre)
+        assertNull(empty.personality)
+        assertNull(empty.localHighlight)
+        assertTrue(empty.uniqueSongs == 0)
+    }
+
 }

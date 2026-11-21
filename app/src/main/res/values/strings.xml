@@ -1408,4 +1408,12 @@
     <string name="song_info_composer">Composer</string>
     <string name="song_info_lyricist">Lyricist</string>
     <string name="song_info_album_artist">Album artist</string>
+    <string name="replay_annual_unique_songs">Distinct songs: %1$d</string>
+    <string name="replay_annual_personality">Listening personality</string>
+    <string name="replay_personality_night">Night owl</string>
+    <string name="replay_personality_early">Early bird</string>
+    <string name="replay_personality_evening">Evening listener</string>
+    <string name="replay_personality_day">Daytime listener</string>
+    <string name="replay_personality_all">All-day listener</string>
+    <string name="replay_annual_play_local">Play a highlight from this device</string>
 </resources>

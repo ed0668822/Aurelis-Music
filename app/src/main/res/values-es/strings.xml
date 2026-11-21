@@ -1509,4 +1509,12 @@
     <string name="song_info_composer">Compositor</string>
     <string name="song_info_lyricist">Letrista</string>
     <string name="song_info_album_artist">Artista del álbum</string>
+    <string name="replay_annual_unique_songs">Canciones diferentes: %1$d</string>
+    <string name="replay_annual_personality">Personalidad musical</string>
+    <string name="replay_personality_night">Noctámbulo</string>
+    <string name="replay_personality_early">Madrugador</string>
+    <string name="replay_personality_evening">Oyente de tarde-noche</string>
+    <string name="replay_personality_day">Oyente diurno</string>
+    <string name="replay_personality_all">Oyente de todo el día</string>
+    <string name="replay_annual_play_local">Reproducir una canción destacada del dispositivo</string>
 </resources>
