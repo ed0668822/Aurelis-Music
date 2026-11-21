@@ -489,6 +489,12 @@ private fun LazyListScope.librarySearchResults(
                     },
                     onLongPress = { onSongLongPress(song) },
                     onSwipeToQueue = { if (blocked) onBlockedSongClick(song) else onSongSwipe(song) },
+                    // B07: one-tap local queue action while results update with typing.
+                    // Uses the same callback as the existing swipe and respects
+                    // the user's Play Next / Add to Queue preference.
+                    trailing = if (!addons && !blocked) {
+                        { LocalSearchQueueAction(onQueue = { onSongSwipe(song) }) }
+                    } else null,
                     isCurrent = isCurrentRow(song),
                     isPlaying = isPlaying && isCurrentRow(song),
                     searchPlayingStyle = true,
@@ -503,6 +509,22 @@ private fun LazyListScope.librarySearchResults(
                 }
             }
         }
+    }
+}
+
+/** The local-search queue shortcut is independent of streaming and addons. */
+@Composable
+private fun LocalSearchQueueAction(onQueue: () -> Unit) {
+    IconButton(
+        onClick = onQueue,
+        modifier = Modifier.size(32.dp),
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.PlaylistAdd,
+            contentDescription = stringResource(Res.string.queue),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(19.dp),
+        )
     }
 }
 
