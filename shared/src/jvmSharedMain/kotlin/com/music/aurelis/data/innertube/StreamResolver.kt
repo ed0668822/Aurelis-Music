@@ -66,6 +66,11 @@ object StreamResolver {
     @Volatile
     var premiumAudio: () -> Boolean = { false }
 
+    /** Forget old bitrate decisions after the premium route or quality changes. */
+    fun forgetResolved() {
+        recent.clear()
+    }
+
 
     private const val TAG = "Aurelis Music"
 
