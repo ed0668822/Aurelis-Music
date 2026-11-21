@@ -1,3 +1,5 @@
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+
 // SPDX-FileCopyrightText: 2026 Aurelis
 // SPDX-License-Identifier: LGPL-3.0-or-later
 

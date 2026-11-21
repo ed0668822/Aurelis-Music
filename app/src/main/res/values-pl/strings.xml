@@ -53,14 +53,20 @@
     <string name="song_count">%1$d piosenka</string>
     <plurals name="song_count_plural">
         <item quantity="one">%1$d piosenka</item>
+        <item quantity="few">%1$d piosenki</item>
+        <item quantity="many">%1$d piosenek</item>
         <item quantity="other">%1$d piosenki</item>
     </plurals>
     <plurals name="artist_count">
         <item quantity="one">%1$d artysta</item>
+        <item quantity="few">%1$d artyści</item>
+        <item quantity="many">%1$d artystów</item>
         <item quantity="other">%1$d artystów</item>
     </plurals>
     <plurals name="album_count">
         <item quantity="one">%1$d album</item>
+        <item quantity="few">%1$d albumy</item>
+        <item quantity="many">%1$d albumów</item>
         <item quantity="other">%1$d albumów</item>
     </plurals>
     <string name="songs">Piosenki</string>
@@ -79,6 +85,8 @@
     <string name="already_downloaded">Już pobrane</string>
     <plurals name="downloading_song_count">
         <item quantity="one">Pobieranie %1$d piosenki</item>
+        <item quantity="few">Pobieranie %1$d piosenek</item>
+        <item quantity="many">Pobieranie %1$d piosenek</item>
         <item quantity="other">Pobieranie %1$d piosenek</item>
     </plurals>
     <string name="source">Źródła</string>
@@ -1288,10 +1296,14 @@
     <string name="song_already_in_playlist">Już jest na playliście</string>
     <plurals name="add_to_playlists_count">
         <item quantity="one">Dodaj do %1$d playlisty</item>
+        <item quantity="few">Dodaj do %1$d playlist</item>
+        <item quantity="many">Dodaj do %1$d playlist</item>
         <item quantity="other">Dodaj do %1$d playlist</item>
     </plurals>
     <plurals name="added_to_playlists_notice">
         <item quantity="one">Dodano do %1$d playlisty</item>
+        <item quantity="few">Dodano do %1$d playlist</item>
+        <item quantity="many">Dodano do %1$d playlist</item>
         <item quantity="other">Dodano do %1$d playlist</item>
     </plurals>
     <string name="party_queue_full">Kolejka jest pełna (maksymalnie %d utworów na imprezie)</string>
