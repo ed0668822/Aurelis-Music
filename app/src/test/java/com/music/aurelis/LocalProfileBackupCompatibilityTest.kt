@@ -10,7 +10,7 @@ import java.io.File
 
 /** A007: portable profile name, but no absolute private photo paths. */
 class LocalProfileBackupCompatibilityTest {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     @Test fun olderBackupWithoutProfileStillDeserializes() {
         val old = """{"app":"aurelis","version":1,"settings":{},"listening":[]}"""
