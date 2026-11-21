@@ -616,6 +616,7 @@ class PlaybackService : MediaLibraryService() {
     private val loudnessA = LoudnessProcessor().apply { gainFor = ::loudnessGainFor }
     private val loudnessB = LoudnessProcessor().apply { gainFor = ::loudnessGainFor }
     private var loudnessRetryJob: Job? = null
+    private var replayGainScanJob: Job? = null
 
     /** The platform audio session currently advertised to system audio tools. */
     private var advertisedAudioEffectSessionId: Int = C.AUDIO_SESSION_ID_UNSET
@@ -7474,6 +7475,28 @@ class PlaybackService : MediaLibraryService() {
         val exoPlayer = player ?: return
         activeLoudness().track(mediaId, nextMediaIdOf(exoPlayer))
         publishLoudnessFor(mediaId)
+        // R128 is read-only and runs on a bounded IO worker. Cancel any previous
+        // track's analysis on a transition; audio rendering never waits for it.
+        replayGainScanJob?.cancel()
+        replayGainScanJob = null
+        val uri = exoPlayer.currentMediaItem?.localConfiguration?.uri
+        val id = mediaId?.takeIf { it.isNotBlank() }
+        if (id != null && uri != null &&
+            (uri.scheme == "file" || uri.scheme == "content") &&
+            ReplayGainMeasurements.get(id) == null
+        ) {
+            replayGainScanJob = scope.launch(Dispatchers.IO) {
+                val job = currentCoroutineContext()[Job]
+                val measurement = LocalReplayGainAnalyzer.analyze(this@PlaybackService, uri) {
+                    job?.isActive != true
+                } ?: return@launch
+                if (job?.isActive == true) {
+                    ReplayGainMeasurements.publish(id, measurement)
+                    // DSP looks up gain on each block, so the level glides into
+                    // place without a player reset or a second normalization.
+                }
+            }
+        }
     }
 
     /** The track [exoPlayer] will move onto gaplessly, if any. */
