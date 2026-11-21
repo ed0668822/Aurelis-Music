@@ -1,6 +1,9 @@
 name: Android
 
-# Compila a la vez (dos jobs en paralelo) y entrega por separado:
+# Compila en paralelo y entrega dos APK independientes lo antes posible:
+# - El firmado no espera las pruebas ni la compilacion debug.
+# - El APK de prueba se sube antes de lanzar las pruebas unitarias.
+# - Gradle usa cache de compilacion entre ejecuciones de esta rama.
 #   - aurelis-prueba-debug      APK dev/debug de PRUEBA (clave de depuración)
 #   - aurelis-firmado-release   APK prod/release FIRMADO con tu clave
 #
@@ -39,6 +42,10 @@ jobs:
           distribution: 'temurin'
 
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          # La rama activa no es la predeterminada; sin esto la caché era
+          # de solo lectura y cada build recompilaba más de lo necesario.
+          cache-read-only: false
 
       - name: Write local.properties
         env:
@@ -51,15 +58,10 @@ jobs:
 
       - run: chmod +x gradlew
 
-      # A004/A005: checks first-party identities, JNI paths, and ABI defaults
-      # before building APKs. Tests catch package migration regressions even
-      # when Gradle can compile unresolved native calls.
-      - name: Validate Aurelis identity and unit regression tests
-        run: ./gradlew :app:verifyAurelisBuildIdentity :app:testDevDebugUnitTest -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
-
-      # El módulo del reloj ya no existe aquí, así que no se empaqueta.
-      - name: Build the dev APK
-        run: ./gradlew assembleDevDebug -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+      # Compilar primero: aunque fallen los tests, el APK de prueba queda
+      # disponible como artefacto independiente para diagnostico.
+      - name: Validate identity and build debug APK
+        run: ./gradlew :app:verifyAurelisBuildIdentity :app:assembleDevDebug --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
 
       - name: APK size report
         run: |
@@ -67,11 +69,27 @@ jobs:
           ls -l --block-size=M *.apk
           echo "APKs generados: $(ls *.apk | wc -l)"
 
-      - name: Upload the test APK
+      - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
           name: aurelis-prueba-debug
           path: app/build/outputs/apk/dev/debug/*.apk
+          if-no-files-found: error
+          # Los APK ya están comprimidos; recomprimirlos retrasa su entrega.
+          compression-level: 0
+
+      - name: Run unit regression tests
+        run: ./gradlew :app:testDevDebugUnitTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurelis-informes-pruebas
+          path: |
+            app/build/test-results/testDevDebugUnitTest/
+            app/build/reports/tests/testDevDebugUnitTest/
+          if-no-files-found: ignore
 
   firmado:
     name: Firmado (prod release)
@@ -106,6 +124,10 @@ jobs:
           distribution: 'temurin'
 
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          # La rama activa no es la predeterminada; sin esto la caché era
+          # de solo lectura y cada build recompilaba más de lo necesario.
+          cache-read-only: false
 
       - name: Write local.properties and signing files
         run: |
@@ -126,7 +148,7 @@ jobs:
       - run: chmod +x gradlew
 
       - name: Build signed prod release APK
-        run: ./gradlew assembleProdRelease -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
+        run: ./gradlew :app:assembleProdRelease --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false
 
       # Falla si el APK quedó sin firmar o si apksigner no lo da por válido.
       - name: Verify signature
@@ -153,6 +175,8 @@ jobs:
         with:
           name: aurelis-firmado-release
           path: app/build/outputs/apk/prod/release/*.apk
+          if-no-files-found: error
+          compression-level: 0
 
       - name: Remove signing files
         if: always()
