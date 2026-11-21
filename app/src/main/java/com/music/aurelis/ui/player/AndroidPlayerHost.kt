@@ -129,6 +129,20 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override fun rememberRemoteArtworkUrl(song: Song?): String? =
         com.music.aurelis.ui.components.rememberRemoteArtworkUrl(song)
 
+    // Called only after the current artwork is absent or cannot be decoded.
+    // DiscordArtwork uses a bounded, cached iTunes lookup and validates title
+    // and artist, rather than returning an unrelated album illustration.
+    override suspend fun resolveMixArtwork(title: String, artist: String): String? {
+        if (title.isBlank() || artist.isBlank()) return null
+        val baseTitle = title
+            .replace(Regex("""\\s*[\\[(](?:feat\\.?|ft\\.?|featuring)\\s+[^)\\]]+[)\\]]""", RegexOption.IGNORE_CASE), "")
+            .trim()
+        val primaryArtist = artist.substringBefore(',').substringBefore(" & ").trim()
+        return com.music.aurelis.data.discord.DiscordArtwork.resolve(
+            Song(videoId = "automix-artwork", title = baseTitle, artist = primaryArtist, thumbnailUrl = null),
+        )
+    }
+
     // Lazy, all three: the player is not the first thing the process does, and
     // none of these objects should be woken for a launch that never opens it.
     override val volume: SystemVolume by lazy { CastAwareVolume(MusicStreamVolume(app), scope) }
