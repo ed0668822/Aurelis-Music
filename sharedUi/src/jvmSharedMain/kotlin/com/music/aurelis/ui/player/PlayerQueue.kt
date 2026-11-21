@@ -149,7 +149,13 @@ internal fun Modifier.fadingEdges(): Modifier = this
     }
 
 /** One track in [InlineQueue], and where it sits in the player's timeline. */
-internal data class QueueTrack(val timelineIndex: Int, val song: Song, val key: String)
+internal data class QueueTrack(
+    val timelineIndex: Int,
+    val song: Song,
+    val key: String,
+    val uniqueEntryId: String? = null,
+    val uniqueSongReference: Boolean = false,
+)
 
 /** The groups a queue row can be dragged within; a drag never leaves its own. */
 internal enum class QueueSection { USER, CONTEXT, AUTOPLAY }
@@ -188,13 +194,22 @@ internal fun splitQueue(queue: List<Song>, currentIndex: Int, showHistory: Boole
     // (a queue restored twice, an add replayed); the repeat gets a suffix
     // instead of taking the whole player down.
     val usedKeys = HashSet<String>()
+    val entryCounts = queue.mapNotNull { it.queueEntryId }.groupingBy { it }.eachCount()
+    val referenceCounts = java.util.IdentityHashMap<Song, Int>()
+    queue.forEach { referenceCounts[it] = (referenceCounts[it] ?: 0) + 1 }
     fun track(index: Int, prefix: String): QueueTrack {
         val song = queue[index]
         val base = prefix + "_" + (song.queueEntryId ?: "${song.videoId}#${occurrence[index]}")
         var key = base
         var repeat = 1
         while (!usedKeys.add(key)) key = base + "~" + repeat++
-        return QueueTrack(index, song, key)
+        return QueueTrack(
+            timelineIndex = index,
+            song = song,
+            key = key,
+            uniqueEntryId = song.queueEntryId?.takeIf { entryCounts[it] == 1 },
+            uniqueSongReference = referenceCounts[song] == 1,
+        )
     }
     val user = ArrayList<QueueTrack>()
     val context = ArrayList<QueueTrack>()
