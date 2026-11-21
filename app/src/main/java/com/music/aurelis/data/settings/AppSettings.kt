@@ -692,6 +692,7 @@ object AppSettings {
     val filterNonMusicAudio = MutableStateFlow(true)
 
     /** Last Local Music category, preserved across app restarts. */
+    val lastMainTab = MutableStateFlow(0)
     val localMusicTab = MutableStateFlow("SONGS")
     val localMusicSort = MutableStateFlow(LocalMusicSort.TITLE_ASC)
     val downloadedMusicSort = MutableStateFlow(LocalMusicSort.TITLE_ASC)
@@ -1129,6 +1130,7 @@ object AppSettings {
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, true)
+        lastMainTab.value = prefs.getInt(KEY_LAST_MAIN_TAB, 0).coerceIn(0, 3)
         localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
             ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }
             ?: "SONGS"
@@ -2037,6 +2039,12 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_FILTER_NON_MUSIC_AUDIO, value).apply()
     }
 
+    fun setLastMainTab(tab: Int) {
+        if (tab !in 0..3 || lastMainTab.value == tab) return
+        lastMainTab.value = tab
+        prefs.edit().putInt(KEY_LAST_MAIN_TAB, tab).apply()
+    }
+
     fun setLocalMusicTab(tab: String) {
         if (tab !in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS")) return
         if (localMusicTab.value == tab) return
@@ -2424,6 +2432,7 @@ object AppSettings {
     private const val KEY_REPLAY_GENRES = "replay_genres"
     private const val KEY_FILTER_NON_MUSIC_AUDIO = "filter_non_music_audio"
     private const val KEY_SHOW_CACHE_FOLDER = "show_cache_folder"
+    private const val KEY_LAST_MAIN_TAB = "last_main_tab"
     private const val KEY_LOCAL_MUSIC_TAB = "local_music_tab"
     private const val KEY_LOCAL_MUSIC_SORT = "local_music_sort"
     private const val KEY_DOWNLOADED_MUSIC_SORT = "downloaded_music_sort"
