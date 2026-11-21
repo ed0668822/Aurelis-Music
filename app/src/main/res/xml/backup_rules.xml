@@ -9,6 +9,7 @@
    because they hold the same credentials in cleartext.
 -->
 <full-backup-content>
+    <exclude domain="sharedpref" path="aurelis_discord_oauth.xml" />
     <exclude domain="sharedpref" path="aurelis_auth.xml" />
     <exclude domain="sharedpref" path="aurelis_auth_plain.xml" />
     <exclude domain="sharedpref" path="aurelis_sources.xml" />

@@ -18,6 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
+import coil3.compose.AsyncImage
+import com.music.aurelis.data.discord.DiscordOAuth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -52,6 +56,7 @@ fun DiscordScreen(
 ) {
     val context = LocalContext.current
     val enabled by AppSettings.discordRpcEnabled.collectAsStateWithLifecycle()
+    val login by DiscordOAuth.state.collectAsStateWithLifecycle()
     val sdkBundled = remember { DiscordSocialPresence.sdkBundled }
     val discordInstalled = remember(context) { DiscordSocialPresence.isDiscordInstalled(context) }
     val supported = sdkBundled && discordInstalled
@@ -61,6 +66,48 @@ fun DiscordScreen(
             .padding(contentPadding),
     ) {
         SettingsPageTitle(stringResource(R.string.discord))
+        SettingsGroup(
+            header = stringResource(R.string.discord_oauth_account_title),
+            footer = stringResource(R.string.discord_oauth_account_note),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                val account = login.account
+                if (account != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (account.avatarUrl != null) {
+                            AsyncImage(
+                                model = account.avatarUrl,
+                                contentDescription = null,
+                                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)),
+                            )
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(account.displayName, style = MaterialTheme.typography.titleMedium)
+                            Text("@${account.username}", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { DiscordOAuth.disconnect(context) }) {
+                            Text(stringResource(R.string.discord_oauth_disconnect))
+                        }
+                    }
+                } else {
+                    Button(onClick = { DiscordOAuth.begin(context) }, enabled = !login.busy) {
+                        Text(stringResource(R.string.discord_oauth_connect))
+                    }
+                }
+                if (login.busy) {
+                    Text(stringResource(R.string.discord_oauth_connecting),
+                        style = MaterialTheme.typography.bodySmall)
+                }
+                login.error?.let { message ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(message, style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+
         SettingsGroup(
             header = stringResource(R.string.rich_presence),
             footer = stringResource(R.string.discord_no_credentials),

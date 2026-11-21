@@ -5,6 +5,7 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
+        <exclude domain="sharedpref" path="aurelis_discord_oauth.xml" />
         <exclude domain="sharedpref" path="aurelis_auth.xml" />
         <exclude domain="sharedpref" path="aurelis_auth_plain.xml" />
         <exclude domain="sharedpref" path="aurelis_sources.xml" />
@@ -17,6 +18,7 @@
         <exclude domain="sharedpref" path="aurelis_party_queue_stash.xml" />
     </cloud-backup>
     <device-transfer>
+        <exclude domain="sharedpref" path="aurelis_discord_oauth.xml" />
         <exclude domain="sharedpref" path="aurelis_auth.xml" />
         <exclude domain="sharedpref" path="aurelis_auth_plain.xml" />
         <exclude domain="sharedpref" path="aurelis_sources.xml" />
