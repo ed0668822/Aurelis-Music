@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
+import com.music.aurelis.data.innertube.MostReplayed
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,14 +57,29 @@ fun bestPartChorusStart(lines: List<LyricLine>, durationMs: Long): Long? {
 @Composable
 internal fun BestPartSeekPill(
     lines: List<LyricLine>?,
+    videoId: String,
+    isLocal: Boolean,
     durationMs: Long,
     position: PlaybackPosition,
     mixing: Boolean,
     onSeek: (Long) -> Unit,
 ) {
-    val target = remember(lines, durationMs) {
+    val publicPeak by produceState<Long?>(
+        initialValue = MostReplayed.knownPeak(videoId, durationMs),
+        key1 = videoId,
+        key2 = durationMs,
+        key3 = isLocal,
+    ) {
+        value = if (!isLocal && durationMs >= 60_000L &&
+            MostReplayed.isYouTubeId(videoId)
+        ) MostReplayed.peakFor(videoId, durationMs) else null
+    }
+    val chorus = remember(lines, durationMs) {
         bestPartChorusStart(lines.orEmpty(), durationMs)
-    } ?: return
+    }
+    // A real YouTube heatmap takes priority. Lyrics are evidence of a chorus,
+    // never evidence of what YouTube viewers replay most.
+    val target = publicPeak ?: chorus ?: return
     // A candidate only remains visible while ahead. A seek during AutoMix
     // would interrupt the active mix, so the action is explicitly hidden.
     if (mixing || position.positionMs >= target - 400L) return

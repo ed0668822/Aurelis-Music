@@ -463,6 +463,10 @@ object Innertube {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 
+    /** Public watch-client identity used only for anonymous most-replayed lookup. */
+    private const val WEB_CLIENT_ID = "1"
+    private const val WEB_CLIENT_VERSION = "2.20260708.00.00"
+
     private val json = Json { ignoreUnknownKeys = true }
 
     private val client = HttpClient(OkHttp) {
@@ -607,6 +611,35 @@ object Innertube {
         put("videoId", videoId)
         put("playlistId", "RDAMVM$videoId")
         put("isAudioOnly", true)
+    }
+
+    /**
+     * youtube.com watch metadata may contain the public Most Replayed curve,
+     * unlike music.youtube.com's watch queue. Always anonymous: this query
+     * must not add synthetic plays to the listener's signed-in history.
+     */
+    suspend fun webNext(videoId: String): JsonObject = withRetry(attempts = 2) {
+        client.post("$YOUTUBE_ORIGIN/youtubei/v1/next") {
+            contentType(ContentType.Application.Json)
+            parameter("prettyPrint", "false")
+            header("User-Agent", WEB_USER_AGENT)
+            header("Origin", YOUTUBE_ORIGIN)
+            header("Referer", "$YOUTUBE_ORIGIN/")
+            header("X-YouTube-Client-Name", WEB_CLIENT_ID)
+            header("X-YouTube-Client-Version", WEB_CLIENT_VERSION)
+            header("Accept-Language", acceptLanguageHeader)
+            setBody(buildJsonObject {
+                putJsonObject("context") {
+                    putJsonObject("client") {
+                        put("clientName", "WEB")
+                        put("clientVersion", WEB_CLIENT_VERSION)
+                        put("hl", currentLanguage)
+                        put("gl", currentRegion)
+                    }
+                }
+                put("videoId", videoId)
+            })
+        }.body<JsonObject>()
     }
 
     /**

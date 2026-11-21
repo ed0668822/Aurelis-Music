@@ -1686,14 +1686,14 @@ fun NowPlayingScreen(
             onListenTogether = onListenTogether,
             onOpenListenTogetherMembers = openListenTogetherMembers,
         )
-        // A chorus marker appears only with trustworthy timed local lyrics.
-        // This is a seek action on the existing player, never another decoder.
-        if (!sideways && !lyricsOpen && !queueOpen && !controlsLocked &&
-            !song.localUri.isNullOrBlank()
-        ) {
+        // The public YouTube replay curve wins for online songs; local files
+        // only use repeated, timed lyrics. The seek uses this same Media3 player.
+        if (!sideways && !lyricsOpen && !queueOpen && !controlsLocked) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 BestPartSeekPill(
                     lines = lyrics,
+                    videoId = song.videoId,
+                    isLocal = !song.localUri.isNullOrBlank(),
                     durationMs = durationMs,
                     position = position,
                     mixing = mixing,
