@@ -24,12 +24,23 @@ internal class ReplayYearStoryModel(val data: ReplayYearData) {
         val ranked = data.summary.songs.map { it.song }
         val numberOne = ranked.firstOrNull()
         val topFive = ranked.take(5).mapTo(HashSet()) { it.videoId }
+        // Give the monthly recap first refusal on its real final-month track.
+        // Otherwise opener and minutes cards consume that track before MONTHS.
+        val monthHighlight = if (ReplayYearMoment.MONTHS in moments) {
+            data.monthTops.asReversed().map { it.song.song }
+                .firstOrNull { it.videoId !in topFive }
+        } else null
         val used = HashSet<String>().apply { numberOne?.let { add(it.videoId) } }
         val results = LinkedHashMap<ReplayYearMoment, Song?>()
 
-        fun take(candidates: Iterable<Song>, allowTop: Boolean = false): Song? {
+        fun take(
+            candidates: Iterable<Song>,
+            allowTop: Boolean = false,
+            allowMonth: Boolean = false,
+        ): Song? {
             val next = candidates.firstOrNull {
-                it.videoId !in used && (allowTop || it.videoId !in topFive)
+                it.videoId !in used && (allowTop || it.videoId !in topFive) &&
+                    (allowMonth || it.videoId != monthHighlight?.videoId)
             }
             if (next != null) used.add(next.videoId)
             return next
@@ -54,7 +65,9 @@ internal class ReplayYearStoryModel(val data: ReplayYearData) {
                 ReplayYearMoment.BUSIEST_DAY ->
                     take(listOfNotNull(data.busiestDaySong)) ?: take(ranked.drop(5))
                 ReplayYearMoment.MONTHS ->
-                    take(data.monthTops.asReversed().map { it.song.song }) ?: take(ranked.drop(5))
+                    take(listOfNotNull(monthHighlight), allowMonth = true)
+                        ?: take(data.monthTops.asReversed().map { it.song.song }, allowMonth = true)
+                        ?: take(ranked.drop(5), allowMonth = true)
                 ReplayYearMoment.ALBUMS -> {
                     val album = data.summary.albums.firstOrNull()?.title
                     take(ranked.filter { !album.isNullOrBlank() && it.albumName == album })
