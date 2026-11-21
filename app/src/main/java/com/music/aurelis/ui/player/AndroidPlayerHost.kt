@@ -135,7 +135,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override suspend fun resolveMixArtwork(title: String, artist: String): String? {
         if (title.isBlank() || artist.isBlank()) return null
         val baseTitle = title
-            .replace(Regex("""\\s*[\\[(](?:feat\\.?|ft\\.?|featuring)\\s+[^)\\]]+[)\\]]""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""\s*[\[(](?:feat\.?|ft\.?|featuring)\s+[^)\]]+[)\]]""", RegexOption.IGNORE_CASE), "")
             .trim()
         val primaryArtist = artist.substringBefore(',').substringBefore(" & ").trim()
         return com.music.aurelis.data.discord.DiscordArtwork.resolve(
