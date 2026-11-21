@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +86,7 @@ fun ReplayShareSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val scope = rememberCoroutineScope()
     var poster by remember { mutableStateOf<Bitmap?>(null) }
     var failed by remember { mutableStateOf(false) }
@@ -189,7 +191,7 @@ fun ReplayShareSheet(
                 scope.launch {
                     val uri = cacheForSharing(context, image) ?: return@launch
                     context.startActivity(
-                        Intent.createChooser(sendIntent(uri), context.getString(R.string.share_your_replay)),
+                        Intent.createChooser(sendIntent(uri), uiResources.getString(R.string.share_your_replay)),
                     )
                     onDismiss()
                 }

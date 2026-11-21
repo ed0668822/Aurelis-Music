@@ -119,6 +119,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalDensity
@@ -550,6 +551,7 @@ private fun AurelisApp(
     viewModel: MainViewModel = viewModel(),
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val clipboard = LocalClipboardManager.current
     val hazeState = remember { HazeState() }
     // Recording the backdrop layer costs a draw pass, so it only runs when a
@@ -1392,7 +1394,7 @@ private fun AurelisApp(
             val summary = com.music.aurelis.data.webdav.WebDavUploads.upload(context, songs)
             if (summary.total > 0) {
                 showQueueNotice(
-                    context.getString(
+                    uiResources.getString(
                         R.string.webdav_upload_summary,
                         summary.uploaded,
                         summary.skipped,
@@ -1443,7 +1445,7 @@ private fun AurelisApp(
                 TrackLog.w("Player", "audio switch found no distinct official song", song.videoId)
                 // The switch is always offered now, so say when there was nothing to switch to.
                 if (song.videoId !in missingVersions) missingVersions += song.videoId
-                if (stillCurrent) showQueueNotice(versionContext.getString(R.string.no_audio_version))
+                if (stillCurrent) showQueueNotice(uiResources.getString(R.string.no_audio_version))
                 if (stillCurrent && resumeAfterResolution) c.play()
                 return
             }
@@ -1514,7 +1516,7 @@ private fun AurelisApp(
             if (video == null || video.videoId == song.videoId) {
                 TrackLog.w("Player", "video switch found no distinct video", song.videoId)
                 if (song.videoId !in missingVersions) missingVersions += song.videoId
-                if (stillCurrent) showQueueNotice(versionContext.getString(R.string.no_video_version))
+                if (stillCurrent) showQueueNotice(uiResources.getString(R.string.no_video_version))
                 if (stillCurrent && resumeAfterResolution) c.play()
                 return
             }
@@ -1755,7 +1757,7 @@ private fun AurelisApp(
                 activeController.commitRadioQueue()
                 Toast.makeText(
                     context,
-                    context.getString(R.string.radio_started, song.title),
+                    uiResources.getString(R.string.radio_started, song.title),
                     Toast.LENGTH_SHORT,
                 ).show()
             }
@@ -1826,7 +1828,7 @@ private fun AurelisApp(
                 if (ListenTogether.state.value.inParty) {
                     val upcoming = (it.mediaItemCount - (it.currentMediaItemIndex + 1)).coerceAtLeast(0)
                     if (upcoming >= 25) {
-                        showQueueNotice(context.getString(R.string.party_queue_full, 25))
+                        showQueueNotice(uiResources.getString(R.string.party_queue_full, 25))
                         return@launch
                     }
                 }
@@ -1845,7 +1847,7 @@ private fun AurelisApp(
                     playbackSourceId = current?.playbackSourceId,
                 ).asQueueEntry(QueueTier.USER_QUEUE)
                 it.addMediaItem(at, queued.toMediaItem())
-                showQueueNotice(context.getString(R.string.song_added_to_queue))
+                showQueueNotice(uiResources.getString(R.string.song_added_to_queue))
             }
         }
     }
@@ -1856,7 +1858,7 @@ private fun AurelisApp(
                 if (ListenTogether.state.value.inParty) {
                     val upcoming = (it.mediaItemCount - (it.currentMediaItemIndex + 1)).coerceAtLeast(0)
                     if (upcoming >= 25) {
-                        showQueueNotice(context.getString(R.string.party_queue_full, 25))
+                        showQueueNotice(uiResources.getString(R.string.party_queue_full, 25))
                         return@launch
                     }
                 }
@@ -1875,7 +1877,7 @@ private fun AurelisApp(
                     playbackSourceId = current?.playbackSourceId,
                 ).asQueueEntry(QueueTier.USER_QUEUE)
                 it.addMediaItem(at, queued.toMediaItem())
-                showQueueNotice(context.getString(R.string.song_will_play_next))
+                showQueueNotice(uiResources.getString(R.string.song_will_play_next))
             }
         }
     }
@@ -1908,7 +1910,7 @@ private fun AurelisApp(
         artwork: String? = null,
     ) {
         if (browseId != null) {
-            val credit = subtitle ?: context.getString(
+            val credit = subtitle ?: uiResources.getString(
                 if (type == BrowseType.ARTIST) R.string.artist else R.string.album,
             )
             viewModel.openDetail(browseId, name, credit, artwork, type)
@@ -1928,7 +1930,7 @@ private fun AurelisApp(
             if (hit == null) {
                 Toast.makeText(
                     context,
-                    context.getString(R.string.couldnt_find, name),
+                    uiResources.getString(R.string.couldnt_find, name),
                     Toast.LENGTH_SHORT,
                 ).show()
             } else {
@@ -1972,7 +1974,7 @@ private fun AurelisApp(
                         val upcoming = (c.mediaItemCount - (c.currentMediaItemIndex + 1)).coerceAtLeast(0)
                         val slotsLeft = (25 - upcoming).coerceAtLeast(0)
                         if (slotsLeft <= 0) {
-                            showQueueNotice(context.getString(R.string.party_queue_full, 25))
+                            showQueueNotice(uiResources.getString(R.string.party_queue_full, 25))
                             return@launch
                         }
                         songs.take(slotsLeft)
@@ -1999,7 +2001,7 @@ private fun AurelisApp(
                             ).asQueueEntry(QueueTier.USER_QUEUE).toMediaItem()
                         },
                     )
-                    val message = context.resources.getQuantityString(
+                    val message = uiResources.getQuantityString(
                         if (next) R.plurals.songs_will_play_next else R.plurals.songs_added_to_queue,
                         toAdd.size,
                         toAdd.size,
@@ -2036,7 +2038,7 @@ private fun AurelisApp(
                 if (song == null) {
                     Toast.makeText(
                         context,
-                        context.getString(R.string.couldnt_open_link),
+                        uiResources.getString(R.string.couldnt_open_link),
                         Toast.LENGTH_SHORT,
                     ).show()
                 } else {
@@ -2192,12 +2194,12 @@ private fun AurelisApp(
         when {
             target.songs.isNotEmpty() -> stamp(target.songs)
             target.browseId == null ->
-                Toast.makeText(context, context.getString(R.string.no_tracks_here), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, uiResources.getString(R.string.no_tracks_here), Toast.LENGTH_SHORT).show()
             else -> viewModel.collectSongs(target.browseId, target.thumbnailUrl) { result ->
                 result.fold(
                     onSuccess = stamp,
                     onFailure = {
-                        val message = it.message ?: context.getString(R.string.couldnt_load_tracks)
+                        val message = it.message ?: uiResources.getString(R.string.couldnt_load_tracks)
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     },
                 )
@@ -2238,7 +2240,7 @@ private fun AurelisApp(
             // The one case where refusing is fatal: below API 29 there is no
             // other way to reach the Music folder.
             else -> Toast
-                .makeText(context, context.getString(R.string.storage_required_save), Toast.LENGTH_SHORT)
+                .makeText(context, uiResources.getString(R.string.storage_required_save), Toast.LENGTH_SHORT)
                 .show()
         }
     }
@@ -2250,7 +2252,7 @@ private fun AurelisApp(
             viewModel.reloadLocalDetail("local:downloads")
             viewModel.loadLibrarySongs()
         } else {
-            Toast.makeText(context, context.getString(R.string.storage_required_read), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, uiResources.getString(R.string.storage_required_read), Toast.LENGTH_SHORT).show()
         }
     }
     val mediaPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2401,14 +2403,14 @@ private fun AurelisApp(
             // long message. So this one is said whatever the count.
             blocked -> Toast.makeText(
                 context,
-                context.getString(R.string.wifi_only_download_refusal),
+                uiResources.getString(R.string.wifi_only_download_refusal),
                 Toast.LENGTH_LONG,
             ).show()
             requested.size > 1 -> {
                 val message = if (songs.isEmpty()) {
-                    context.getString(R.string.already_downloaded)
+                    uiResources.getString(R.string.already_downloaded)
                 } else {
-                    context.resources.getQuantityString(
+                    uiResources.getQuantityString(
                         R.plurals.downloading_song_count,
                         songs.size,
                         songs.size,
@@ -2680,7 +2682,7 @@ private fun AurelisApp(
                         scope.launch {
                             val token = java.util.UUID.randomUUID().toString()
                             if (c.removeQueueItemWithUndo(index, expected, token)) {
-                                showQueueNotice(context.getString(R.string.queue_removed_song, expected.title))
+                                showQueueNotice(uiResources.getString(R.string.queue_removed_song, expected.title))
                                 queueUndoToken = token
                             }
                         }
@@ -2693,7 +2695,7 @@ private fun AurelisApp(
                 controller?.let { c ->
                     scope.launch {
                         if (c.promoteQueueEntry(index, song)) {
-                            showQueueNotice(context.getString(R.string.song_added_to_queue))
+                            showQueueNotice(uiResources.getString(R.string.song_added_to_queue))
                         }
                     }
                 }
@@ -2703,7 +2705,7 @@ private fun AurelisApp(
                     scope.launch {
                         val token = java.util.UUID.randomUUID().toString()
                         if (c.removeQueueEntriesWithUndo(identities, token)) {
-                            showQueueNotice(context.getString(R.string.queue_cleared))
+                            showQueueNotice(uiResources.getString(R.string.queue_cleared))
                             queueUndoToken = token
                         }
                     }
@@ -2715,7 +2717,7 @@ private fun AurelisApp(
                     offlinePlaylistBatch = local
                     creatingOfflinePlaylist = false
                 } else {
-                    showQueueNotice(context.getString(R.string.failed))
+                    showQueueNotice(uiResources.getString(R.string.failed))
                 }
             },
             queueUndoAvailable = queueUndoToken != null,
@@ -2725,7 +2727,7 @@ private fun AurelisApp(
                     controller?.let { c ->
                         scope.launch {
                             if (c.undoQueueEdit(token)) {
-                                showQueueNotice(context.getString(R.string.queue_undo_action))
+                                showQueueNotice(uiResources.getString(R.string.queue_undo_action))
                             }
                             queueUndoToken = null
                         }
@@ -2771,7 +2773,7 @@ private fun AurelisApp(
                     viewModel.openDetail(
                         id,
                         name,
-                        context.getString(R.string.artist),
+                        uiResources.getString(R.string.artist),
                         null,
                         BrowseType.ARTIST,
                     )
@@ -2782,14 +2784,14 @@ private fun AurelisApp(
                             viewModel.openDetail(
                                 found,
                                 name,
-                                context.getString(R.string.artist),
+                                uiResources.getString(R.string.artist),
                                 null,
                                 BrowseType.ARTIST,
                             )
                         } else {
                             Toast.makeText(
                                 context,
-                                context.getString(R.string.couldnt_find, name),
+                                uiResources.getString(R.string.couldnt_find, name),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
@@ -2862,7 +2864,7 @@ private fun AurelisApp(
                     scope.launch {
                         val token = java.util.UUID.randomUUID().toString()
                         if (c.clearQueueWithUndo(token)) {
-                            showQueueNotice(context.getString(R.string.queue_cleared))
+                            showQueueNotice(uiResources.getString(R.string.queue_cleared))
                             queueUndoToken = token
                         }
                     }
@@ -3108,7 +3110,7 @@ private fun AurelisApp(
                                     viewModel.openDetail(
                                         browseId = SPOTIFY_PAGE_PREFIX + playlist.id,
                                         title = playlist.name,
-                                        subtitle = playlist.owner ?: context.getString(R.string.spotify),
+                                        subtitle = playlist.owner ?: uiResources.getString(R.string.spotify),
                                         thumbnailUrl = playlist.imageUrl,
                                         type = BrowseType.PLAYLIST,
                                     )
@@ -3450,7 +3452,7 @@ private fun AurelisApp(
                                                 viewModel.reorderPlaylist(reordering, original, reordered) { saved ->
                                                     reorderSaving = false
                                                     showQueueNotice(
-                                                        context.getString(
+                                                        uiResources.getString(
                                                             if (saved) R.string.playlist_reordered else R.string.reorder_failed,
                                                         ),
                                                     )
@@ -3736,13 +3738,13 @@ private fun AurelisApp(
                                         index,
                                         if (searchSource == SearchSource.ADDONS) {
                                             QueueSource(
-                                                context.getString(R.string.search_source_addons),
+                                                uiResources.getString(R.string.search_source_addons),
                                                 PlaybackSourceType.BROWSE,
                                                 "addons:search",
                                             )
                                         } else {
                                             QueueSource(
-                                                context.getString(R.string.local_music),
+                                                uiResources.getString(R.string.local_music),
                                                 PlaybackSourceType.BROWSE,
                                                 "local:all",
                                             )
@@ -4455,14 +4457,14 @@ private fun AurelisApp(
                 ) {
                     QueueActionNoticeHost(
                     queueNotice,
-                    actionLabel = if (queueUndoToken != null) context.getString(R.string.queue_undo_action) else null,
+                    actionLabel = if (queueUndoToken != null) uiResources.getString(R.string.queue_undo_action) else null,
                     onAction = {
                         val token = queueUndoToken
                         if (token != null) {
                             controller?.let { c ->
                                 scope.launch {
                                     if (c.undoQueueEdit(token)) {
-                                        showQueueNotice(context.getString(R.string.queue_undo_action))
+                                        showQueueNotice(uiResources.getString(R.string.queue_undo_action))
                                     }
                                     queueUndoToken = null
                                 }
@@ -4514,14 +4516,14 @@ private fun AurelisApp(
                 ) {
                     QueueActionNoticeHost(
                     queueNotice,
-                    actionLabel = if (queueUndoToken != null) context.getString(R.string.queue_undo_action) else null,
+                    actionLabel = if (queueUndoToken != null) uiResources.getString(R.string.queue_undo_action) else null,
                     onAction = {
                         val token = queueUndoToken
                         if (token != null) {
                             controller?.let { c ->
                                 scope.launch {
                                     if (c.undoQueueEdit(token)) {
-                                        showQueueNotice(context.getString(R.string.queue_undo_action))
+                                        showQueueNotice(uiResources.getString(R.string.queue_undo_action))
                                     }
                                     queueUndoToken = null
                                 }
@@ -4669,7 +4671,7 @@ private fun AurelisApp(
                     // A party plays one cut for everyone in it — see
                     // [PlaybackService.smoothSwapCurrentTrackVersion].
                     if (partyState.inParty) {
-                        showQueueNotice(versionContext.getString(R.string.version_switch_in_party))
+                        showQueueNotice(uiResources.getString(R.string.version_switch_in_party))
                         return@toggle
                     }
                     if (switchingAudioVersion) return@toggle
@@ -4854,7 +4856,7 @@ private fun AurelisApp(
                     )
                 },
                 onOpenArtist = { id ->
-                    openPage(id, song.artist, context.getString(R.string.artist), BrowseType.ARTIST)
+                    openPage(id, song.artist, uiResources.getString(R.string.artist), BrowseType.ARTIST)
                 },
                 // The player backfills its own track; any other row is
                 // looked up as the menu opens — see `needsLinks` above.
@@ -4917,7 +4919,7 @@ private fun AurelisApp(
                             // outcome worth seeing rather than a silent one.
                             Toast.makeText(
                                 context,
-                                context.resources.getQuantityString(
+                                uiResources.getQuantityString(
                                     R.plurals.log_copied_line_count,
                                     text.lineSequence().count(),
                                     text.lineSequence().count(),
@@ -5227,13 +5229,13 @@ private fun AurelisApp(
                             // all there already, else that it didn't work.
                             showQueueNotice(
                                 when {
-                                    added > 1 -> context.resources.getQuantityString(
+                                    added > 1 -> uiResources.getQuantityString(
                                         R.plurals.added_to_playlists_notice, added, added,
                                     )
-                                    added == 1 -> context.getString(R.string.song_added_to_playlist)
+                                    added == 1 -> uiResources.getString(R.string.song_added_to_playlist)
                                     alreadyThere > 0 && failed == 0 ->
-                                        context.getString(R.string.song_already_in_playlist)
-                                    else -> context.getString(R.string.failed)
+                                        uiResources.getString(R.string.song_already_in_playlist)
+                                    else -> uiResources.getString(R.string.failed)
                                 },
                             )
                         }
@@ -5261,7 +5263,7 @@ private fun AurelisApp(
                     UserPlaylist(
                         playlistId = playlist.id,
                         title = playlist.title,
-                        subtitle = context.resources.getQuantityString(
+                        subtitle = uiResources.getQuantityString(
                             R.plurals.song_count_plural,
                             playlist.songs.size,
                             playlist.songs.size,
@@ -5285,12 +5287,12 @@ private fun AurelisApp(
                         val result = OfflinePlaylists.add(picked.mapTo(HashSet()) { it.playlistId }, songs)
                         showQueueNotice(
                             when {
-                                result.added > 1 -> context.resources.getQuantityString(
+                                result.added > 1 -> uiResources.getQuantityString(
                                     R.plurals.added_to_playlists_notice, result.added, result.added,
                                 )
-                                result.added == 1 -> context.getString(R.string.song_added_to_playlist)
-                                result.alreadyThere > 0 -> context.getString(R.string.song_already_in_playlist)
-                                else -> context.getString(R.string.failed)
+                                result.added == 1 -> uiResources.getString(R.string.song_added_to_playlist)
+                                result.alreadyThere > 0 -> uiResources.getString(R.string.song_already_in_playlist)
+                                else -> uiResources.getString(R.string.failed)
                             },
                         )
                     }
@@ -5298,7 +5300,7 @@ private fun AurelisApp(
                 onCreate = { title, _ ->
                     val songs = if (offlinePlaylistBatch.isNotEmpty()) offlinePlaylistBatch else listOfNotNull(target)
                     OfflinePlaylists.create(title, songs)
-                    if (songs.isNotEmpty()) showQueueNotice(context.getString(R.string.song_added_to_playlist))
+                    if (songs.isNotEmpty()) showQueueNotice(uiResources.getString(R.string.song_added_to_playlist))
                 },
             )
         }
@@ -5316,7 +5318,7 @@ private fun AurelisApp(
                         songs,
                     ) { browseId, pTitle, savedLocally ->
                         showQueueNotice(
-                            context.getString(
+                            uiResources.getString(
                                 if (savedLocally && signedIn) R.string.spotify_import_local_fallback
                                 else R.string.spotify_import_done,
                                 pTitle,
@@ -5475,7 +5477,7 @@ private fun AurelisApp(
                         if (!nowPinned && id !in pinnedPlaylists) {
                             Toast.makeText(
                                 context,
-                                context.getString(
+                                uiResources.getString(
                                     R.string.pinned_playlist_limit,
                                     AppSettings.MAX_PINNED_PLAYLISTS,
                                 ),
@@ -5519,7 +5521,7 @@ private fun AurelisApp(
                             if (reorderTarget != p) return@loadPlaylistEntries
                             reorderEntries = result.fold(
                                 onSuccess = { UiState.Success(it) },
-                                onFailure = { UiState.Error(context.getString(R.string.failed)) },
+                                onFailure = { UiState.Error(uiResources.getString(R.string.failed)) },
                             )
                         }
                     }
@@ -5904,10 +5906,10 @@ private fun AurelisApp(
                                     showLastfmLogin = false
                                 }
                                 .onFailure { e ->
-                                    lastfmError = e.message ?: context.getString(R.string.login_failed)
+                                    lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                                 }
                         } catch (e: Exception) {
-                            lastfmError = e.message ?: context.getString(R.string.login_failed)
+                            lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                         } finally {
                             lastfmLoading = false
                         }
@@ -5918,6 +5920,9 @@ private fun AurelisApp(
         }
 
         if (showWebDavEditor) {
+            val initialWebdavUrl by AppSettings.webdavUrl.collectAsStateWithLifecycle()
+            val initialWebdavUsername by AppSettings.webdavUsername.collectAsStateWithLifecycle()
+            val initialWebdavPassword by AppSettings.webdavPassword.collectAsStateWithLifecycle()
             BackHandler { showWebDavEditor = false }
             ServerEditorHost(
                 hazeState = hazeState,
@@ -5925,16 +5930,16 @@ private fun AurelisApp(
                 description = stringResource(R.string.webdav_description),
                 fields = listOf(
                     FieldConfig(
-                        initial = AppSettings.webdavUrl.value,
+                        initial = initialWebdavUrl,
                         placeholder = stringResource(R.string.webdav_server_url_hint),
                         keyboardType = KeyboardType.Uri,
                     ),
                     FieldConfig(
-                        initial = AppSettings.webdavUsername.value,
+                        initial = initialWebdavUsername,
                         placeholder = stringResource(R.string.username),
                     ),
                     FieldConfig(
-                        initial = AppSettings.webdavPassword.value,
+                        initial = initialWebdavPassword,
                         placeholder = stringResource(R.string.password),
                         keyboardType = KeyboardType.Password,
                         isPassword = true,
@@ -5960,6 +5965,11 @@ private fun AurelisApp(
         }
 
         if (showSmbEditor) {
+            val initialSmbHost by AppSettings.smbHost.collectAsStateWithLifecycle()
+            val initialSmbShare by AppSettings.smbShare.collectAsStateWithLifecycle()
+            val initialSmbBasePath by AppSettings.smbBasePath.collectAsStateWithLifecycle()
+            val initialSmbUsername by AppSettings.smbUsername.collectAsStateWithLifecycle()
+            val initialSmbPassword by AppSettings.smbPassword.collectAsStateWithLifecycle()
             BackHandler { showSmbEditor = false }
             ServerEditorHost(
                 hazeState = hazeState,
@@ -5967,24 +5977,24 @@ private fun AurelisApp(
                 description = stringResource(R.string.smb_description),
                 fields = listOf(
                     FieldConfig(
-                        initial = AppSettings.smbHost.value,
+                        initial = initialSmbHost,
                         placeholder = stringResource(R.string.smb_server_hint),
                         keyboardType = KeyboardType.Uri,
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbShare.value,
+                        initial = initialSmbShare,
                         placeholder = stringResource(R.string.smb_share_hint),
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbBasePath.value,
+                        initial = initialSmbBasePath,
                         placeholder = stringResource(R.string.smb_folder_hint),
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbUsername.value,
+                        initial = initialSmbUsername,
                         placeholder = stringResource(R.string.username),
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbPassword.value,
+                        initial = initialSmbPassword,
                         placeholder = stringResource(R.string.password),
                         keyboardType = KeyboardType.Password,
                         isPassword = true,

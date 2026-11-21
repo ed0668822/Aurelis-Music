@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.Toast
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -118,9 +119,10 @@ fun OnboardingScreen(
     var name by rememberSaveable { mutableStateOf(initialName) }
     val photoUri by LocalProfile.photoUri.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null && !LocalProfile.setPhoto(context, uri)) {
-            Toast.makeText(context, context.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiResources.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
         }
     }
     val focusManager = LocalFocusManager.current

@@ -6,6 +6,7 @@ import com.music.aurelis.data.settings.LocalProfile
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.Toast
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
@@ -96,11 +97,12 @@ fun AccountAndScrobblingScreen(
     val localName by LocalProfile.displayName.collectAsStateWithLifecycle()
     val localPhoto by LocalProfile.photoUri.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     var editingLocalName by remember { mutableStateOf(false) }
     var draftName by remember { mutableStateOf("") }
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null && !LocalProfile.setPhoto(context, uri)) {
-            Toast.makeText(context, context.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiResources.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
         }
     }
 

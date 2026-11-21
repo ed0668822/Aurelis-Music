@@ -128,6 +128,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -234,6 +235,7 @@ fun SettingsScreen(
     onOpenChoice: (SettingsChoiceKind) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
 
     val wifiQuality by AppSettings.audioQualityWifi.collectAsStateWithLifecycle()
     val cellularQuality by AppSettings.audioQualityCellular.collectAsStateWithLifecycle()
@@ -397,10 +399,10 @@ fun SettingsScreen(
         backupScope.launch {
             exportStatus = Backup.exportTo(context, target).fold(
                 onSuccess = { months ->
-                    context.getString(R.string.export_succeeded, context.countOfMonths(months))
+                    uiResources.getString(R.string.export_succeeded, context.countOfMonths(months))
                 },
                 onFailure = {
-                    context.getString(R.string.export_failed, it.message ?: context.getString(R.string.unknown_error))
+                    uiResources.getString(R.string.export_failed, it.message ?: uiResources.getString(R.string.unknown_error))
                 },
             )
         }
@@ -412,10 +414,10 @@ fun SettingsScreen(
         backupScope.launch {
             importStatus = Backup.importFrom(context, source).fold(
                 onSuccess = {
-                    context.getString(R.string.import_succeeded, context.countOfMonths(it.months), it.from)
+                    uiResources.getString(R.string.import_succeeded, context.countOfMonths(it.months), it.from)
                 },
                 onFailure = {
-                    context.getString(R.string.import_failed, it.message ?: context.getString(R.string.unknown_error))
+                    uiResources.getString(R.string.import_failed, it.message ?: uiResources.getString(R.string.unknown_error))
                 },
             )
         }
@@ -1664,7 +1666,7 @@ fun SettingsScreen(
                         val loader = SingletonImageLoader.get(context)
                         loader.memoryCache?.clear()
                         loader.diskCache?.clear()
-                        Toast.makeText(context, context.getString(R.string.image_cache_cleared), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, uiResources.getString(R.string.image_cache_cleared), Toast.LENGTH_SHORT).show()
                     },
                 )
             }
@@ -2008,7 +2010,7 @@ fun SettingsScreen(
                 TextButton(onClick = {
                     confirmClearSongCache = false
                     AudioCache.clear {
-                        Toast.makeText(context, context.getString(R.string.song_cache_cleared), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, uiResources.getString(R.string.song_cache_cleared), Toast.LENGTH_SHORT).show()
                     }
                 }) {
                     Text(stringResource(R.string.clear))
@@ -2185,10 +2187,10 @@ fun SettingsScreen(
                                         showLastfmLoginDialog = false
                                     }
                                     .onFailure { e ->
-                                        lastfmError = e.message ?: context.getString(R.string.login_failed)
+                                        lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                                     }
                             } catch (e: Exception) {
-                                lastfmError = e.message ?: context.getString(R.string.login_failed)
+                                lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                             } finally {
                                 lastfmLoading = false
                             }

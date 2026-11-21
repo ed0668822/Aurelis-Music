@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -408,6 +409,7 @@ private fun RemoteLibrarySection(
     onDisconnect: () -> Unit,
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val scope = rememberCoroutineScope()
     var testing by remember { mutableStateOf(false) }
     var testResult by remember { mutableStateOf<String?>(null) }
@@ -430,12 +432,12 @@ private fun RemoteLibrarySection(
                     scope.launch {
                         onTest().fold(
                             onSuccess = {
-                                testResult = context.getString(R.string.connected)
+                                testResult = uiResources.getString(R.string.connected)
                             },
                             onFailure = {
-                                testResult = context.getString(
+                                testResult = uiResources.getString(
                                     testFailedRes,
-                                    it.message ?: context.getString(R.string.failed),
+                                    it.message ?: uiResources.getString(R.string.failed),
                                 )
                             },
                         )
