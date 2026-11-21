@@ -450,14 +450,7 @@ fun LibraryGridPage(
     }
 }
 
-/**
- * Moves whichever of this shelf's cards are in [pinned] to the front, in the
- * order they were pinned, leaving everything else in its existing order behind
- * them.
- *
- * A no-op on any shelf that isn't Playlists: [pinned] only ever holds playlist
- * browse ids, so an album or artist shelf never has a card that matches.
- */
+/** Stable per-card keys, including repeated shelf entries. */
 internal fun shelfCardKeys(items: List<ShelfItem>): List<String> {
     val seen = HashMap<String, Int>()
     return items.map { item ->
@@ -468,7 +461,14 @@ internal fun shelfCardKeys(items: List<ShelfItem>): List<String> {
     }
 }
 
-
+/**
+ * Moves whichever of this shelf's cards are in [pinned] to the front, in the
+ * order they were pinned, leaving everything else in its existing order behind
+ * them.
+ *
+ * A no-op on any shelf that isn't Playlists: [pinned] only ever holds playlist
+ * browse ids, so an album or artist shelf never has a card that matches.
+ */
 private fun HomeShelf.pinnedFirst(pinned: List<String>): HomeShelf {
     if (pinned.isEmpty()) return this
     val byId = items.filter { it.browseId != null }.associateBy { it.browseId }
