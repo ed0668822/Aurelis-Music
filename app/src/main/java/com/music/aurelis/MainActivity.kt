@@ -59,6 +59,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -72,6 +73,8 @@ import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Upgrade
@@ -81,6 +84,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
@@ -334,11 +339,14 @@ import com.music.aurelis.ui.screens.ExploreScreen
 import com.music.aurelis.ui.screens.LocalFolder
 import com.music.aurelis.ui.screens.LocalFolderState
 import com.music.aurelis.ui.screens.LocalFolderTab
+import com.music.aurelis.ui.screens.rememberLocalFolderGroups
+import com.music.aurelis.ui.screens.localFolderItems
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.music.aurelis.ui.screens.localizedLabel
 import com.music.aurelis.data.LocalGroups
+import com.music.aurelis.data.sortedForLibrary
 import com.music.aurelis.data.OfflinePlaylists
 import com.music.aurelis.data.toGroup
 import com.music.aurelis.data.settings.LibraryViewType
@@ -3664,7 +3672,165 @@ private fun AurelisApp(
                                     )
                                 },
                             )
-                            else -> LibraryScreen(
+
+                            else -> {
+                                // A single scroll surface: offline playlists stay above
+                                // the existing Local Music tabs and MediaStore songs.
+                                var localReload by remember { mutableIntStateOf(0) }
+                                val canReadLocal = LocalMediaRepository.hasStoragePermission(context)
+                                val requestLocalPermission = rememberLauncherForActivityResult(
+                                    ActivityResultContracts.RequestPermission(),
+                                ) { granted -> if (granted) localReload++ }
+                                val deviceSongs by produceState<List<Song>?>(
+                                    initialValue = null,
+                                    canReadLocal,
+                                    localMusicFolderUri,
+                                    filterNonMusicAudio,
+                                    savedDownloads,
+                                    localReload,
+                                ) {
+                                    value = if (canReadLocal) withContext(Dispatchers.IO) {
+                                        LocalMediaRepository.getLocalMusic(context)
+                                    } else emptyList()
+                                }
+                                val folderState = remember { LocalFolderState() }
+                                val localSongs = remember(deviceSongs, localMusicSort) {
+                                    deviceSongs.orEmpty().sortedForLibrary(localMusicSort)
+                                }
+                                val folder = LocalFolder(
+                                    state = folderState,
+                                    sort = localMusicSort,
+                                    viewType = LibraryViewType.LIST,
+                                    onOpenGroup = viewModel::openLocalGroup,
+                                    onGroupLongPress = { group ->
+                                        openBrowseMenu(
+                                            BrowseTarget(
+                                                browseId = group.browseId,
+                                                title = group.title,
+                                                subtitle = group.subtitle,
+                                                thumbnailUrl = group.thumbnailUrl,
+                                                type = group.type,
+                                                songs = group.songs,
+                                                downloadId = group.downloadId,
+                                            ),
+                                        )
+                                    },
+                                    tabs = LocalFolderTab.DEVICE,
+                                    playlists = offlinePlaylistGroups,
+                                    onCreatePlaylist = { creatingOfflinePlaylist = true },
+                                )
+                                val grouped = rememberLocalFolderGroups(
+                                    "local:all", folder, folderState.tab, localSongs, "",
+                                )
+                                val localTitle = stringResource(R.string.local_music)
+                                val localBody: LazyListScope.() -> Unit = {
+                                    item(key = "library-local-heading") {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 30.dp, vertical = 18.dp),
+                                        ) {
+                                            Text(
+                                                text = localTitle,
+                                                style = MaterialTheme.typography.headlineMedium,
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.audio_files_on_device) +
+                                                    " · " + localSongs.size,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+                                            )
+                                            if (canReadLocal) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                ) {
+                                                    Button(
+                                                        onClick = {
+                                                            if (localSongs.isNotEmpty()) {
+                                                                playFrom(
+                                                                    localSongs, 0,
+                                                                    QueueSource(
+                                                                        localTitle,
+                                                                        PlaybackSourceType.BROWSE,
+                                                                        "local:all",
+                                                                    ),
+                                                                )
+                                                            }
+                                                        },
+                                                        enabled = localSongs.isNotEmpty(),
+                                                        modifier = Modifier.weight(1f),
+                                                    ) {
+                                                        Icon(Icons.Rounded.PlayArrow, contentDescription = null)
+                                                        Spacer(Modifier.width(6.dp))
+                                                        Text(stringResource(R.string.play))
+                                                    }
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            if (localSongs.isNotEmpty()) {
+                                                                QueueShuffle.enableForNextQueue()
+                                                                playFrom(
+                                                                    localSongs,
+                                                                    localSongs.indices.random(),
+                                                                    QueueSource(
+                                                                        localTitle,
+                                                                        PlaybackSourceType.BROWSE,
+                                                                        "local:all",
+                                                                    ),
+                                                                )
+                                                            }
+                                                        },
+                                                        enabled = localSongs.isNotEmpty(),
+                                                        modifier = Modifier.weight(1f),
+                                                    ) {
+                                                        Icon(Icons.Rounded.Shuffle, contentDescription = null)
+                                                        Spacer(Modifier.width(6.dp))
+                                                        Text(stringResource(R.string.shuffle))
+                                                    }
+                                                }
+                                            } else {
+                                                Button(onClick = {
+                                                    requestLocalPermission.launch(
+                                                        if (Build.VERSION.SDK_INT >= 33)
+                                                            Manifest.permission.READ_MEDIA_AUDIO
+                                                        else Manifest.permission.READ_EXTERNAL_STORAGE,
+                                                    )
+                                                }) {
+                                                    Text(stringResource(R.string.local_music))
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (canReadLocal) {
+                                        localFolderItems(
+                                            folder = folder,
+                                            state = folderState,
+                                            songs = localSongs,
+                                            groups = grouped,
+                                            query = "",
+                                            columns = 2,
+                                            palette = detailPalette,
+                                            currentSong = player.song,
+                                            isPlaying = player.isPlaying,
+                                            onSongClick = { songs, index ->
+                                                playFrom(
+                                                    songs,
+                                                    index,
+                                                    QueueSource(
+                                                        localTitle,
+                                                        PlaybackSourceType.BROWSE,
+                                                        "local:all",
+                                                    ),
+                                                )
+                                            },
+                                            onSongLongPress = { openSongMenu(it) },
+                                            onSongSwipe = onSongSwipe,
+                                        )
+                                    }
+                                }
+                                LibraryScreen(
+
                                 signedIn = signedIn,
                                 state = libraryState,
                                 listState = libraryListState,
@@ -3692,12 +3858,17 @@ private fun AurelisApp(
                                 onSignIn = { webSession = WebSessionMode.SIGN_IN },
                                 onRetry = viewModel::loadLibrary,
                                 refreshing = MainViewModel.Feed.LIBRARY in refreshing,
-                                onRefresh = { viewModel.refresh(MainViewModel.Feed.LIBRARY) },
+                                onRefresh = {
+                                    viewModel.refresh(MainViewModel.Feed.LIBRARY)
+                                    localReload++
+                                },
                                 pullState = libraryPull,
                                 contentPadding = listPadding,
                                 links = libraryLinks(),
                                 deviceItems = libraryDeviceItems(downloadedReleases) + localPlaylistItems,
+                                inlineLocalMusic = localBody,
                             )
+                            }
                         }
                     }
                     // A pushed page keeps its saved state — a scroll position,
