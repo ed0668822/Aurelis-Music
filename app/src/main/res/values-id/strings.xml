@@ -1498,4 +1498,5 @@
     <string name="show_total_duration_subtitle">Tampilkan panjang lagu alih-alih sisa waktu di sebelah bilah pemutaran.</string>
     <string name="hide_lyrics_preview">Sembunyikan pratinjau lirik</string>
     <string name="hide_lyrics_preview_subtitle">Sembunyikan baris lirik di atas bilah; lirik lengkap tetap tersedia.</string>
+    <string name="sleep_timer_fade_out">Perlahan kecilkan volume selama 30 detik terakhir</string>
 </resources>

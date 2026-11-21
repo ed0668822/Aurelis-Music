@@ -1522,4 +1522,5 @@
     <string name="show_total_duration_subtitle">Affiche la durée totale au lieu du temps restant près de la barre de lecture.</string>
     <string name="hide_lyrics_preview">Masquer l\'aperçu des paroles</string>
     <string name="hide_lyrics_preview_subtitle">Masque la ligne au-dessus de la barre; les paroles complètes restent accessibles.</string>
+    <string name="sleep_timer_fade_out">Baisser progressivement le volume pendant les 30 dernières secondes</string>
 </resources>

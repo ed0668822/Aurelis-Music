@@ -1499,4 +1499,5 @@
     <string name="show_total_duration_subtitle">シークバーの横に残り時間ではなく曲の総再生時間を表示します。</string>
     <string name="hide_lyrics_preview">歌詞のプレビューを非表示</string>
     <string name="hide_lyrics_preview_subtitle">シークバー上の歌詞を非表示にします。歌詞全文は引き続き利用できます。</string>
+    <string name="sleep_timer_fade_out">最後の30秒間で音量を徐々に下げる</string>
 </resources>

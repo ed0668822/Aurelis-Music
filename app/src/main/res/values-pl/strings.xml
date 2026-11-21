@@ -1561,4 +1561,5 @@
     <string name="show_total_duration_subtitle">Pokazuje pełną długość utworu zamiast pozostałego czasu obok paska.</string>
     <string name="hide_lyrics_preview">Ukryj podgląd tekstu</string>
     <string name="hide_lyrics_preview_subtitle">Ukrywa wers nad paskiem; pełny tekst pozostaje dostępny.</string>
+    <string name="sleep_timer_fade_out">Stopniowo wyciszaj przez ostatnie 30 sekund</string>
 </resources>

@@ -1460,4 +1460,5 @@
     <string name="show_total_duration_subtitle">Mostra la durata totale invece del tempo rimanente accanto alla barra.</string>
     <string name="hide_lyrics_preview">Nascondi anteprima del testo</string>
     <string name="hide_lyrics_preview_subtitle">Nasconde la riga sopra la barra; il testo completo resta disponibile.</string>
+    <string name="sleep_timer_fade_out">Diminuisci gradualmente il volume negli ultimi 30 secondi</string>
 </resources>

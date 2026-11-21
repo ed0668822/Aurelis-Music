@@ -1371,4 +1371,5 @@
     <string name="show_total_duration_subtitle">탐색 막대 옆에 남은 시간 대신 전체 곡 길이를 표시합니다.</string>
     <string name="hide_lyrics_preview">가사 미리보기 숨기기</string>
     <string name="hide_lyrics_preview_subtitle">탐색 막대 위의 가사 한 줄을 숨깁니다. 전체 가사는 계속 볼 수 있습니다.</string>
+    <string name="sleep_timer_fade_out">마지막 30초 동안 음량 서서히 줄이기</string>
 </resources>

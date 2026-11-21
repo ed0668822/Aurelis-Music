@@ -1521,4 +1521,5 @@
     <string name="show_total_duration_subtitle">Zeigt neben der Zeitleiste die Gesamtdauer statt der verbleibenden Zeit.</string>
     <string name="hide_lyrics_preview">Liedtextvorschau ausblenden</string>
     <string name="hide_lyrics_preview_subtitle">Blendet die Textzeile über der Zeitleiste aus. Der vollständige Liedtext bleibt verfügbar.</string>
+    <string name="sleep_timer_fade_out">In den letzten 30 Sekunden ausblenden</string>
 </resources>

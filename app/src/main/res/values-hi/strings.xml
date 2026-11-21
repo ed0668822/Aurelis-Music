@@ -1521,4 +1521,5 @@
     <string name="show_total_duration_subtitle">प्रगति पट्टी के पास बचे हुए समय के बजाय कुल अवधि दिखाएँ।</string>
     <string name="hide_lyrics_preview">गीत के बोल का पूर्वावलोकन छिपाएँ</string>
     <string name="hide_lyrics_preview_subtitle">प्रगति पट्टी के ऊपर की पंक्ति छिपाएँ; पूरे बोल फिर भी उपलब्ध रहेंगे।</string>
+    <string name="sleep_timer_fade_out">आख़िरी 30 सेकंड में आवाज़ धीरे-धीरे कम करें</string>
 </resources>

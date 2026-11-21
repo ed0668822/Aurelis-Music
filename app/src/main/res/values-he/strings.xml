@@ -1526,4 +1526,5 @@
     <string name="show_total_duration_subtitle">הצגת משך השיר המלא במקום הזמן שנותר ליד פס ההתקדמות.</string>
     <string name="hide_lyrics_preview">הסתרת תצוגת מילים מקדימה</string>
     <string name="hide_lyrics_preview_subtitle">הסתרת שורת המילים מעל פס ההתקדמות; המילים המלאות עדיין זמינות.</string>
+    <string name="sleep_timer_fade_out">הנמכת עוצמת השמע בהדרגה ב-30 השניות האחרונות</string>
 </resources>
