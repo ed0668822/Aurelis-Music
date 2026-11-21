@@ -3628,7 +3628,6 @@ private fun AurelisApp(
                                         options = listOf(
                                             stringResource(R.string.search_source_youtube),
                                             stringResource(R.string.library),
-                                            stringResource(R.string.search_source_addons),
                                         ),
                                         selectedIndex = searchSource.ordinal,
                                         onSelect = { index -> onSearchSourceChange(SearchSource.entries[index]) },
