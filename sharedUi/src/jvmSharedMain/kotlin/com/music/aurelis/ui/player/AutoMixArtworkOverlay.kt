@@ -22,6 +22,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.model.Song
+import com.music.aurelis.data.model.artworkAt
+import com.music.aurelis.data.model.PLAYER_ART_PX
+import com.music.aurelis.data.model.ROW_ART_PX
 
 /**
  * Both covers share the audio controller's actual progress, not an independent
@@ -53,8 +56,11 @@ fun AutoMixArtworkOverlay(
             incomingFallback = PlayerPlatform.host.resolveMixArtwork(mix.incomingTitle, mix.incomingArtist)
         }
     }
-    val outgoing = outgoingFallback ?: mix.outgoingArtworkUrl
-    val incoming = incomingFallback ?: mix.incomingArtworkUrl
+    // Match the existing 1200px hero-art / 160px row-art cache ladder.
+    // Avoid enlarging small thumbnails on the fullscreen player.
+    val requestedPx = if (mini) ROW_ART_PX else PLAYER_ART_PX
+    val outgoing = (outgoingFallback ?: mix.outgoingArtworkUrl).artworkAt(requestedPx)
+    val incoming = (incomingFallback ?: mix.incomingArtworkUrl).artworkAt(requestedPx)
     if (outgoing.isNullOrBlank() && incoming.isNullOrBlank()) return
 
     val progress = mix.progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f

@@ -17,6 +17,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Animatable
 import kotlinx.coroutines.launch
@@ -914,6 +918,7 @@ fun NowPlayingScreen(
 
     val syncedLyricsEnabled by PlayerSettings.syncedLyrics.collectAsStateWithLifecycle()
     val hideLyricsPreview by PlayerSettings.hideLyricsPreview.collectAsStateWithLifecycle()
+    val reduceCreditsMotion by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
     val lyricsOffsetMs by PlayerSettings.lyricsOffsetMs.collectAsStateWithLifecycle()
     // A lambda, not a value: read by the lyric strip and panel in scopes of
     // their own, so a tick recomposes them and not the player around them.
@@ -3727,20 +3732,28 @@ fun NowPlayingScreen(
                                 // ("… (Live)") dissolves into the new one instead of
                                 // snapping while the rest of the switch moves around
                                 // it.
-                                Crossfade(
-                                    targetState = song.title to song.artist,
+                                AnimatedContent(
+                                    targetState = song,
+                                    contentKey = { it.queueEntryId ?: it.videoId },
+                                    transitionSpec = {
+                                        if (reduceCreditsMotion) {
+                                            fadeIn(tween(0)) togetherWith fadeOut(tween(0))
+                                        } else {
+                                            (slideInHorizontally(tween(270)) { it / 4 } + fadeIn(tween(240))) togetherWith
+                                                (slideOutHorizontally(tween(230)) { -it / 4 } + fadeOut(tween(200)))
+                                        }
+                                    },
                                     // Round the fade and the marquee's edge masks, whose
                                     // layers would otherwise hide the backdrop from it. The
                                     // title is in it too and stays white: see [additiveChrome].
                                     modifier = Modifier.additiveChrome(LocalPlayerChrome.current),
-                                    animationSpec = tween(durationMillis = 300),
                                     label = "playerCredits",
-                                ) {
+                                ) { presentedSong ->
                                     val scrolling = scrolls()
                                     val artistColor = chromeWhite(0.55f)
                                     Column {
                                         MarqueeText(
-                                            text = song.title,
+                                            text = presentedSong.title,
                                             style = MaterialTheme.typography.titleLarge.copy(
                                                 fontSize = 20.sp,
                                             ),
@@ -3748,7 +3761,7 @@ fun NowPlayingScreen(
                                             enabled = scrolling,
                                             // Before the title, in the artist line's
                                             // colour.
-                                            leading = if (song.isExplicit == true) {
+                                            leading = if (presentedSong.isExplicit == true) {
                                                 { ExplicitBadge(color = artistColor) }
                                             } else {
                                                 null
@@ -3756,12 +3769,12 @@ fun NowPlayingScreen(
                                             onOverflowChange = { titleOverflowing = it },
                                             // Only the tracks YouTube hands us a browse id for
                                             // lead anywhere; the rest stay plain text.
-                                            modifier = Modifier.opensPage(song.albumId, onOpenAlbum),
+                                            modifier = Modifier.opensPage(presentedSong.albumId, onOpenAlbum),
                                         )
                                         ArtistCreditsMarquee(
-                                            text = song.artist,
-                                            credits = remember(song.artist, song.artists, song.artistId) {
-                                                artistCredits(song.artist, song.artists, song.artistId)
+                                            text = presentedSong.artist,
+                                            credits = remember(presentedSong.artist, presentedSong.artists, presentedSong.artistId) {
+                                                artistCredits(presentedSong.artist, presentedSong.artists, presentedSong.artistId)
                                             },
                                             style = MaterialTheme.typography.titleLarge.copy(
                                                 fontWeight = FontWeight.W500,

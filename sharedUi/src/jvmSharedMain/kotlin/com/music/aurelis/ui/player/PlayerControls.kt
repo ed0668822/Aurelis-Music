@@ -45,6 +45,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.draw.alpha
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,6 +78,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -513,6 +515,7 @@ internal fun TransportRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TransportGlyph(
+            skipDirection = -1,
             icon = Res.drawable.ic_player_previous,
             contentDescription = stringResource(Res.string.widget_previous),
             size = skipSize,
@@ -543,6 +546,7 @@ internal fun TransportRow(
             )
         }
         TransportGlyph(
+            skipDirection = 1,
             icon = Res.drawable.ic_player_next,
             contentDescription = stringResource(Res.string.widget_next),
             size = skipSize,
@@ -833,8 +837,14 @@ private fun TransportGlyph(
     haptic: Haptic = Haptic.Tap,
     /** Vertical squash of the glyph alone; its width and touch box are untouched. */
     heightScale: Float = 1f,
+    skipDirection: Int = 0,
 ) {
     val haptics = rememberHaptics()
+    val reduceMotion by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val scale = remember { Animatable(1f) }
+    val skipOffset = remember { Animatable(0f) }
+    val pixelDensity = LocalDensity.current.density
     // Faded rather than hidden: the row keeps its shape at the ends of a queue.
     val alpha by animateFloatAsState(
         targetValue = if (enabled) 1f else 0.3f,
@@ -849,18 +859,44 @@ private fun TransportGlyph(
                 enabled = enabled,
             ) {
                 haptics.play(haptic)
+                if (!reduceMotion) {
+                    scope.launch {
+                        scale.snapTo(0.85f)
+                        scale.animateTo(
+                            1f,
+                            spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium,
+                            ),
+                        )
+                    }
+                    if (skipDirection != 0) {
+                        scope.launch {
+                            skipOffset.snapTo(skipDirection * 7f)
+                            skipOffset.animateTo(0f, tween(durationMillis = 260))
+                        }
+                    }
+                }
                 onClick()
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = contentDescription,
-            tint = Color.White.copy(alpha = alpha),
-            modifier = Modifier
-                .size(size)
-                .then(if (heightScale != 1f) Modifier.graphicsLayer { scaleY = heightScale } else Modifier),
-        )
+        Crossfade(
+            targetState = icon,
+            animationSpec = tween(durationMillis = if (reduceMotion) 0 else 170),
+            label = "transportGlyph",
+        ) { displayed ->
+            Icon(
+                painter = painterResource(displayed),
+                contentDescription = contentDescription,
+                tint = Color.White.copy(alpha = alpha),
+                modifier = Modifier.size(size).graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value * heightScale
+                    translationX = skipOffset.value * pixelDensity
+                },
+            )
+        }
     }
 }
 
