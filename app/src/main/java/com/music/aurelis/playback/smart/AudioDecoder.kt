@@ -168,14 +168,14 @@ object AudioDecoder {
         startSeconds: Double,
         endSeconds: Double,
         abort: () -> Boolean = { false },
-        onChunk: (left: FloatArray, right: FloatArray, sampleRate: Int) -> Unit,
+        onChunk: (left: FloatArray, right: FloatArray, sampleRate: Int, channels: Int) -> Unit,
     ): Pair<Double, Double>? =
         decodeRaw(source, startSeconds, endSeconds, abort) { buffer, info, channels, rate ->
             if (channels !in 1..2 || rate <= 0) return@decodeRaw
             val left = ArrayList<FloatArray>(1)
             val right = ArrayList<FloatArray>(1)
             toStereo(buffer, info, channels, left, right)
-            if (left.isNotEmpty()) onChunk(left[0], right[0], rate)
+            if (left.isNotEmpty()) onChunk(left[0], right[0], rate, channels)
         }
 
     /** Concatenates the decoded chunks into one contiguous buffer. */
