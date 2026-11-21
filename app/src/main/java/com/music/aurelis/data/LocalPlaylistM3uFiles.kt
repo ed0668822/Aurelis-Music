@@ -31,7 +31,16 @@ internal object LocalPlaylistM3uFiles {
         val title = displayName(context, uri)
             .substringBeforeLast('.', "Imported playlist").ifBlank { "Imported playlist" }
             .take(120)
-        val entries = LocalPlaylistM3u.parse(bytes.toString(Charsets.UTF_8.name()))
+        // Plain .m3u can be Latin-1; .m3u8 is UTF-8. Prefer strict UTF-8
+        // and fall back only when the source contains malformed bytes.
+        val rawBytes = bytes.toByteArray()
+        val content = runCatching {
+            Charsets.UTF_8.newDecoder()
+                .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                .decode(java.nio.ByteBuffer.wrap(rawBytes)).toString()
+        }.getOrElse { String(rawBytes, Charsets.ISO_8859_1) }
+        val entries = LocalPlaylistM3u.parse(content)
         val songs = LocalMediaRepository.getLocalMusic(context)
         Preview(title, LocalPlaylistM3u.resolve(entries, songs))
     }

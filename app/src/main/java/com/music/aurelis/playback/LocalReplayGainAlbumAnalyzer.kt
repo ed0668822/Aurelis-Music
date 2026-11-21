@@ -49,7 +49,7 @@ internal object LocalReplayGainAlbumAnalyzer {
         for (song in album) {
             if (cancelled()) return@withContext null
             currentCoroutineContext().ensureActive()
-            val uri = song.localUri?.let(Uri::parse) ?: return@withContext null
+            val uri = song.localUri?.let { Uri.parse(it) } ?: return@withContext null
             if (!LocalAudioSource.isLocal(uri)) return@withContext null
             val data = LocalAudioSource.open(context.contentResolver, uri)?.use { source ->
                 val duration = AudioDecoder.containerDurationSeconds(source)

@@ -7491,7 +7491,9 @@ class PlaybackService : MediaLibraryService() {
         val id = mediaId?.takeIf { it.isNotBlank() }
         if (id != null && uri != null &&
             (uri.scheme == "file" || uri.scheme == "content") &&
-            ReplayGainMeasurements.get(id) == null
+            (ReplayGainMeasurements.get(id) == null ||
+                (AppSettings.replayGainMode.value == ReplayGainMode.ALBUM &&
+                    ReplayGainMeasurements.get(id)?.albumIntegratedLufs == null))
         ) {
             replayGainScanJob = scope.launch(Dispatchers.IO) {
                 val job = currentCoroutineContext()[Job]

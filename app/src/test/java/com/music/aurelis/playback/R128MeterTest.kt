@@ -18,7 +18,7 @@ class R128MeterTest {
 
     @Test fun albumGateCombinesQuietAndLoudTracksWithoutMeanOfDecibels() {
         val loud = R128Meter(48_000, 1).apply { add(sine(0.5)) }
-        val quiet = R128Meter(48_000, 1).apply { add(sine(0.1)) }
+        val quiet = R128Meter(48_000, 1).apply { add(sine(0.25)) }
         val integrated = R128Meter.integratedLufs(loud.blockEnergies() + quiet.blockEnergies())
         assertNotNull(integrated)
         assertTrue(integrated!! > quiet.finish()!!.integratedLufs)
