@@ -65,9 +65,9 @@ internal object LocalReplayGainAnalyzer {
                 startSeconds = 0.0,
                 endSeconds = duration + 1.0,
                 abort = { cancelled() || Thread.currentThread().isInterrupted },
-            ) { left, right, rate ->
-                if (meter == null && rate > 0) meter = R128Meter(rate, 2)
-                if (rate <= 0 || incompatible) return@streamRegionStereo
+            ) { left, right, rate, channels ->
+                if (meter == null && rate > 0 && channels in 1..2) meter = R128Meter(rate, channels)
+                if (rate <= 0 || channels !in 1..2 || incompatible) return@streamRegionStereo
                 if (meterRate != null && meterRate != rate) incompatible = true
                 if (!incompatible) {
                     if (meterRate == null) meterRate = rate
