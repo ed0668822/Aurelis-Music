@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Aurelis
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 package com.music.aurelis.data.settings
 
 import com.music.aurelis.data.webdav.update
@@ -277,6 +280,9 @@ object AppSettings {
 
     /** The CPU budget used by Beat This! and vocal analysis for Automix. */
     val automixPerformanceMode = MutableStateFlow(AutomixPerformanceMode.BALANCED)
+
+    /** Experimental Mornye-inspired options; the existing playback engine is unchanged in step 1. */
+    val autoMixOptions = MutableStateFlow(AutoMixOptions())
     val skipSilence = MutableStateFlow(false)
 
     /** Requested PCM representation at the Android AudioTrack boundary. */
@@ -980,6 +986,16 @@ object AppSettings {
                 prefs.getString(KEY_AUTOMIX_PERFORMANCE_MODE, null) ?: AutomixPerformanceMode.BALANCED.name,
             )
         }.getOrDefault(AutomixPerformanceMode.BALANCED)
+        autoMixOptions.value = AutoMixOptions(
+            durationSeconds = prefs.getInt(KEY_AUTOMIX_DURATION_SECONDS, 0),
+            effect = prefs.getString(KEY_AUTOMIX_EFFECT, AutoMixEffect.AUTO.name)
+                ?.let { saved -> AutoMixEffect.entries.firstOrNull { it.name == saved } }
+                ?: AutoMixEffect.AUTO,
+            speed = prefs.getFloat(KEY_AUTOMIX_SPEED, 1f),
+            pitchSemitones = prefs.getFloat(KEY_AUTOMIX_PITCH_SEMITONES, 0f),
+            echo = prefs.getBoolean(KEY_AUTOMIX_ECHO, false),
+            lowPass = prefs.getBoolean(KEY_AUTOMIX_LOW_PASS, false),
+        ).normalized()
         skipSilence.value = prefs.getBoolean(KEY_SKIP_SILENCE, false)
         outputPcmMode.value = runCatching {
             OutputPcmMode.valueOf(
@@ -1303,6 +1319,38 @@ object AppSettings {
         automixPerformanceMode.value = value
         prefs.edit().putString(KEY_AUTOMIX_PERFORMANCE_MODE, value.name).apply()
     }
+
+    /** Save all six AutoMix options atomically; later steps will connect them to the renderer. */
+    fun setAutoMixOptions(value: AutoMixOptions) {
+        val safe = value.normalized()
+        autoMixOptions.value = safe
+        prefs.edit()
+            .putInt(KEY_AUTOMIX_DURATION_SECONDS, safe.durationSeconds)
+            .putString(KEY_AUTOMIX_EFFECT, safe.effect.name)
+            .putFloat(KEY_AUTOMIX_SPEED, safe.speed)
+            .putFloat(KEY_AUTOMIX_PITCH_SEMITONES, safe.pitchSemitones)
+            .putBoolean(KEY_AUTOMIX_ECHO, safe.echo)
+            .putBoolean(KEY_AUTOMIX_LOW_PASS, safe.lowPass)
+            .apply()
+    }
+
+    fun setAutoMixDurationSeconds(value: Int) =
+        setAutoMixOptions(autoMixOptions.value.copy(durationSeconds = value))
+
+    fun setAutoMixEffect(value: AutoMixEffect) =
+        setAutoMixOptions(autoMixOptions.value.copy(effect = value))
+
+    fun setAutoMixSpeed(value: Float) =
+        setAutoMixOptions(autoMixOptions.value.copy(speed = value))
+
+    fun setAutoMixPitchSemitones(value: Float) =
+        setAutoMixOptions(autoMixOptions.value.copy(pitchSemitones = value))
+
+    fun setAutoMixEcho(value: Boolean) =
+        setAutoMixOptions(autoMixOptions.value.copy(echo = value))
+
+    fun setAutoMixLowPass(value: Boolean) =
+        setAutoMixOptions(autoMixOptions.value.copy(lowPass = value))
 
     fun setSkipSilence(value: Boolean) {
         skipSilence.value = value
@@ -2263,6 +2311,12 @@ object AppSettings {
     private const val KEY_CROSSFADE = "crossfade_seconds"
     private const val KEY_SMART_FADE = "smart_fade_enabled"
     private const val KEY_AUTOMIX_PERFORMANCE_MODE = "automix_performance_mode"
+    private const val KEY_AUTOMIX_DURATION_SECONDS = "automix_mornye_duration_seconds"
+    private const val KEY_AUTOMIX_EFFECT = "automix_mornye_effect"
+    private const val KEY_AUTOMIX_SPEED = "automix_mornye_speed"
+    private const val KEY_AUTOMIX_PITCH_SEMITONES = "automix_mornye_pitch_semitones"
+    private const val KEY_AUTOMIX_ECHO = "automix_mornye_echo"
+    private const val KEY_AUTOMIX_LOW_PASS = "automix_mornye_low_pass"
     private const val KEY_SKIP_SILENCE = "skip_silence"
     private const val KEY_OUTPUT_PCM_MODE = "output_pcm_mode"
     private const val KEY_PREFER_USB_DAC = "prefer_usb_dac"

@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Aurelis -->
+<!-- SPDX-License-Identifier: LGPL-3.0-or-later -->
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">Now playing</string>
@@ -1341,4 +1343,32 @@
     <string name="local_profile_edit_name">Edit local name</string>
     <string name="local_profile_remove_photo">Remove local photo</string>
     <string name="local_feature_paused">Temporarily unavailable</string>
+    <string name="automix_options_title">AutoMix · Experimental options</string>
+    <string name="automix_options_pending">Settings are saved; playback effects will be connected in later steps.</string>
+    <string name="automix_duration">AutoMix duration</string>
+    <string name="automix_duration_subtitle">Automatic or 3–60 seconds; the final mix is limited by track length.</string>
+    <string name="automix_duration_auto">Automatic</string>
+    <string name="automix_effect">Transition effect</string>
+    <string name="automix_effect_subtitle">Choose the effect for a future transition.</string>
+    <string name="automix_effect_footer">Experimental presets are stored now. Their audio processing will be added in the next steps.</string>
+    <string name="automix_effect_auto">Automatic</string>
+    <string name="automix_effect_crossfade">Crossfade</string>
+    <string name="automix_effect_muffled">Muffled</string>
+    <string name="automix_effect_echo">Echo</string>
+    <string name="automix_effect_pitch">Pitch</string>
+    <string name="automix_effect_custom">Custom</string>
+    <string name="automix_effect_auto_description">Keep the existing intelligent AutoMix behavior.</string>
+    <string name="automix_effect_crossfade_description">Use a standard equal-power crossfade.</string>
+    <string name="automix_effect_muffled_description">Add a muffled low-pass effect to the outgoing track.</string>
+    <string name="automix_effect_echo_description">Add delayed echoes to the outgoing track.</string>
+    <string name="automix_effect_pitch_description">Apply a chosen pitch adjustment.</string>
+    <string name="automix_effect_custom_description">Configure speed, pitch, echo and low-pass together.</string>
+    <string name="automix_speed">Transition speed</string>
+    <string name="automix_speed_subtitle">Custom transition speed: 0.80–1.20×.</string>
+    <string name="automix_pitch">Pitch adjustment</string>
+    <string name="automix_pitch_subtitle">Adjust the pitch by −6 to +6 semitones.</string>
+    <string name="automix_echo_toggle">Echo</string>
+    <string name="automix_echo_subtitle">Enable a delayed echo during custom transitions.</string>
+    <string name="automix_low_pass">Low-pass filter</string>
+    <string name="automix_low_pass_subtitle">Enable a muffled low-pass sound during custom transitions.</string>
 </resources>
