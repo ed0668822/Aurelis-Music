@@ -846,8 +846,7 @@ private fun TransportGlyph(
     val reduceMotion by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val scale = remember { Animatable(1f) }
-    val skipOffset = remember { Animatable(0f) }
-    val pixelDensity = LocalDensity.current.density
+    val skipPhase = remember { Animatable(1f) }
     // Faded rather than hidden: the row keeps its shape at the ends of a queue.
     val alpha by animateFloatAsState(
         targetValue = if (enabled) 1f else 0.3f,
@@ -875,8 +874,8 @@ private fun TransportGlyph(
                     }
                     if (skipDirection != 0) {
                         scope.launch {
-                            skipOffset.snapTo(skipDirection * 7f)
-                            skipOffset.animateTo(0f, tween(durationMillis = 260))
+                            skipPhase.snapTo(0f)
+                            skipPhase.animateTo(1f, tween(durationMillis = 600))
                         }
                     }
                 }
@@ -924,6 +923,35 @@ private fun TransportGlyph(
                     },
                 )
             }
+        } else if (skipDirection != 0 && !reduceMotion && skipPhase.value < 1f) {
+            // Two instances of the *same source drawable*, not a different glyph:
+            // the old arrow travels out while the new one travels in. Retaps
+            // retarget a single Animatable, so no unbounded effects accumulate.
+            val p = skipPhase.value.coerceIn(0f, 1f)
+            Box(Modifier.size(touchSize).clipToBounds(), contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = contentDescription,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        this.alpha = (1f - p).coerceIn(0f, 1f)
+                        scaleX = scale.value
+                        scaleY = scale.value * heightScale
+                        translationX = -skipDirection * this.size.width * p
+                    },
+                )
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        this.alpha = p
+                        scaleX = scale.value
+                        scaleY = scale.value * heightScale
+                        translationX = skipDirection * this.size.width * (1f - p)
+                    },
+                )
+            }
         } else {
             Crossfade(
                 targetState = icon,
@@ -937,7 +965,6 @@ private fun TransportGlyph(
                     modifier = Modifier.size(size).graphicsLayer {
                         scaleX = scale.value
                         scaleY = scale.value * heightScale
-                        translationX = skipOffset.value * pixelDensity
                     },
                 )
             }

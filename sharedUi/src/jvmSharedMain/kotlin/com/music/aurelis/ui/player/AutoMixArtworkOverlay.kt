@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -90,7 +93,15 @@ fun AutoMixArtworkOverlay(
     if (outgoing.isNullOrBlank() && incoming.isNullOrBlank()) return
 
     val progress = mix.progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
-    val eased = AutoMixArtworkTuning.revealProgress(progress)
+    // Smooth only between audio-controller samples, with a 40ms cap.
+    // This interpolation never advances ahead of the real audio controller.
+    // Restart per generation so one song's fade never leaks into the next.
+    val sampledProgress = remember(mix.generation) { Animatable(progress) }
+    LaunchedEffect(mix.generation, progress, reducedMotion) {
+        if (reducedMotion) sampledProgress.snapTo(progress)
+        else sampledProgress.animateTo(progress, tween(40, easing = LinearEasing))
+    }
+    val eased = AutoMixArtworkTuning.revealProgress(sampledProgress.value)
     Box(modifier) {
         if (!outgoing.isNullOrBlank()) {
             AsyncImage(
