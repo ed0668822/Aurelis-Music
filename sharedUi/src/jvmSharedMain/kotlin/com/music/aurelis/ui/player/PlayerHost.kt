@@ -77,6 +77,9 @@ interface PlayerHost {
     @Composable
     fun rememberRemoteArtworkUrl(song: Song?): String?
 
+    /** Optional public-cover fallback for an AutoMix deck whose art cannot be displayed. */
+    suspend fun resolveMixArtwork(title: String, artist: String): String? = null
+
     /** The system output level the player's volume bar drives, if it drives one. */
     val volume: SystemVolume
 
