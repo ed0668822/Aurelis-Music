@@ -61,20 +61,20 @@ fun AutoMixArtworkOverlay(
 
     var outgoingFallback by remember(mix.generation) { mutableStateOf<String?>(null) }
     var incomingFallback by remember(mix.generation) { mutableStateOf<String?>(null) }
-    var outgoingFailed by remember(mix.generation) { mutableStateOf<String?>(null) }
-    var incomingFailed by remember(mix.generation) { mutableStateOf<String?>(null) }
+    var outgoingFailed by remember(mix.generation) { mutableStateOf(emptySet<String>()) }
+    var incomingFailed by remember(mix.generation) { mutableStateOf(emptySet<String>()) }
 
     // A non-null URI is not evidence that it decodes. Search by verified
     // title/artist when Coil reports an error, once per actual image failure.
     LaunchedEffect(mix.generation, outgoingSource, outgoingFailed) {
-        if ((outgoingSource.isNullOrBlank() || outgoingFailed == outgoingSource) &&
+        if ((outgoingSource.isNullOrBlank() || (outgoingSource != null && outgoingSource in outgoingFailed)) &&
             outgoingFallback == null && mix.outgoingTitle.isNotBlank()
         ) {
             outgoingFallback = PlayerPlatform.host.resolveMixArtwork(mix.outgoingTitle, mix.outgoingArtist)
         }
     }
     LaunchedEffect(mix.generation, incomingSource, incomingFailed) {
-        if ((incomingSource.isNullOrBlank() || incomingFailed == incomingSource) &&
+        if ((incomingSource.isNullOrBlank() || (incomingSource != null && incomingSource in incomingFailed)) &&
             incomingFallback == null && mix.incomingTitle.isNotBlank()
         ) {
             incomingFallback = PlayerPlatform.host.resolveMixArtwork(mix.incomingTitle, mix.incomingArtist)
@@ -82,10 +82,12 @@ fun AutoMixArtworkOverlay(
     }
     // Respect the existing 1200px player / 160px row artwork cache ladder.
     val requestedPx = if (mini) ROW_ART_PX else PLAYER_ART_PX
-    val outgoingCandidate = (outgoingFallback ?: outgoingSource)
-        ?.takeUnless { it == outgoingFailed }
-    val incomingCandidate = (incomingFallback ?: incomingSource)
-        ?.takeUnless { it == incomingFailed }
+    val outgoingCandidate = listOfNotNull(
+        outgoingResolved, outgoingFallback, mix.outgoingArtworkUrl,
+    ).firstOrNull { it.isNotBlank() && it !in outgoingFailed }
+    val incomingCandidate = listOfNotNull(
+        incomingResolved, incomingFallback, mix.incomingArtworkUrl,
+    ).firstOrNull { it.isNotBlank() && it !in incomingFailed }
     val outgoing = outgoingCandidate.artworkAt(requestedPx)
     val incoming = incomingCandidate.artworkAt(requestedPx)
     if (outgoing.isNullOrBlank() && incoming.isNullOrBlank()) return
@@ -98,7 +100,9 @@ fun AutoMixArtworkOverlay(
                 model = outgoing,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                onError = { outgoingFailed = outgoingCandidate },
+                onError = {
+                    outgoingCandidate?.let { outgoingFailed = outgoingFailed + it }
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -128,7 +132,9 @@ fun AutoMixArtworkOverlay(
                 model = incoming,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                onError = { incomingFailed = incomingCandidate },
+                onError = {
+                    incomingCandidate?.let { incomingFailed = incomingFailed + it }
+                },
                 modifier = Modifier.fillMaxSize().then(transitionModifier),
             )
         }
