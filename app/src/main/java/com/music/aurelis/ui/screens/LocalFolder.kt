@@ -290,6 +290,10 @@ internal fun LazyListScope.localFolderItems(
         }
     }
 
+    if (state.tab == LocalFolderTab.PLAYLISTS && query.isBlank() && folder.onCreatePlaylist != null) {
+        item(key = "folder-m3u-actions") { PlaylistFileActions() }
+    }
+
     val grid = folder.viewType == LibraryViewType.GRID
     val empty = when (state.tab) {
         LocalFolderTab.SONGS -> songs.isEmpty()
