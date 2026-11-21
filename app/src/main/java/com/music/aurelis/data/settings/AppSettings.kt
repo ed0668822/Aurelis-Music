@@ -18,6 +18,7 @@ import com.music.aurelis.data.lyrics.LyricsSource
 import com.music.aurelis.data.sources.SourceKind
 import com.music.aurelis.playback.EqLayout
 import com.music.aurelis.playback.EqualizerPreset
+import com.music.aurelis.playback.ReplayGainMode
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
@@ -334,6 +335,9 @@ object AppSettings {
 
     /** Skip loudness normalization while the active output is the phone's own speaker. */
     val loudnessOffOnSpeaker = MutableStateFlow(true)
+
+    /** Track (default), or a whole verified local album scanned on demand. */
+    val replayGainMode = MutableStateFlow(ReplayGainMode.TRACK)
 
     /**
      * Whether a source offering a Dolby Atmos rendition is allowed to serve it.
@@ -1013,6 +1017,9 @@ object AppSettings {
         convertForLimitedDac.value = prefs.getBoolean(KEY_CONVERT_FOR_LIMITED_DAC, false)
         loudnessNormalization.value = prefs.getBoolean(KEY_LOUDNESS_NORMALIZATION, true)
         loudnessOffOnSpeaker.value = prefs.getBoolean(KEY_LOUDNESS_OFF_ON_SPEAKER, true)
+        replayGainMode.value = runCatching {
+            ReplayGainMode.valueOf(prefs.getString(KEY_REPLAYGAIN_MODE, ReplayGainMode.TRACK.name) ?: ReplayGainMode.TRACK.name)
+        }.getOrDefault(ReplayGainMode.TRACK)
         dolbyAtmos.value = prefs.getBoolean(KEY_DOLBY_ATMOS, true)
         directSourceStream.value = AurelisFeatures.ADVANCED_STREAMING_SETTINGS &&
             prefs.getBoolean(KEY_DIRECT_SOURCE_STREAM, false)
@@ -1877,6 +1884,11 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_CONVERT_FOR_LIMITED_DAC, value).apply()
     }
 
+    fun setReplayGainMode(mode: ReplayGainMode) {
+        replayGainMode.value = mode
+        prefs.edit().putString(KEY_REPLAYGAIN_MODE, mode.name).apply()
+    }
+
     fun setLoudnessOffOnSpeaker(value: Boolean) {
         loudnessOffOnSpeaker.value = value
         prefs.edit().putBoolean(KEY_LOUDNESS_OFF_ON_SPEAKER, value).apply()
@@ -2332,6 +2344,7 @@ object AppSettings {
     private const val KEY_CONVERT_FOR_LIMITED_DAC = "convert_for_limited_dac"
     private const val KEY_LOUDNESS_NORMALIZATION = "loudness_normalization"
     private const val KEY_LOUDNESS_OFF_ON_SPEAKER = "loudness_off_on_speaker"
+    private const val KEY_REPLAYGAIN_MODE = "replaygain_mode"
     private const val KEY_DOLBY_ATMOS = "dolby_atmos"
     private const val KEY_DIRECT_SOURCE_STREAM = "direct_source_stream"
     private const val KEY_SPATIAL_AUDIO = "spatial_audio"

@@ -66,20 +66,31 @@ internal class R128Meter(private val sampleRate: Int, private val channels: Int)
         }
     }
 
+    /** Raw K-weighted window energies for a true multi-track gated album analysis. */
+    fun blockEnergies(): List<Double> = energies.toList()
+
     fun finish(): ReplayGainMeasurement? {
-        if (framesTotal < sampleRate / 2 || energies.isEmpty()) return null
-        val absGate = 10.0.pow((-70.0 + 0.691) / 10.0)
-        val accepted = energies.filter { it >= absGate && it.isFinite() }
-        if (accepted.isEmpty()) return null
-        val relativeGate = accepted.average() / 10.0
-        val gated = accepted.filter { it >= relativeGate }
-        if (gated.isEmpty()) return null
-        val integrated = -0.691 + 10.0 * log10(gated.average())
-        if (!integrated.isFinite()) return null
+        if (framesTotal < sampleRate / 2) return null
+        val integrated = integratedLufs(energies) ?: return null
         return ReplayGainMeasurement(
             integratedLufs = integrated,
             truePeakLinear = truePeak.peak.takeIf { it.isFinite() && it > 0.0 },
         )
+    }
+
+    companion object {
+        /** EBU Tech 3341: absolute gate followed by a relative -10 LU gate. */
+        fun integratedLufs(blocks: List<Double>): Double? {
+            if (blocks.isEmpty()) return null
+            val absolute = 10.0.pow((-70.0 + 0.691) / 10.0)
+            val accepted = blocks.filter { it.isFinite() && it >= absolute }
+            if (accepted.isEmpty()) return null
+            val relative = accepted.average() / 10.0
+            val included = accepted.filter { it >= relative }
+            if (included.isEmpty()) return null
+            return (-0.691 + 10.0 * log10(included.average()))
+                .takeIf { it.isFinite() && it in -100.0..10.0 }
+        }
     }
 
     private class Biquad(private val c: Coeff) {

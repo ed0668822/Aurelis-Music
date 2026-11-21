@@ -184,6 +184,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -7348,6 +7349,11 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         scope.launch {
+            AppSettings.replayGainMode.drop(1).collect {
+                setupLoudness(player?.currentMediaItem?.mediaId)
+            }
+        }
+        scope.launch {
             // Same route the player's output caption reads, so "on speaker"
             // means the same thing here as there.
             combine(
@@ -7446,6 +7452,7 @@ class PlaybackService : MediaLibraryService() {
         ReplayGainMeasurements.get(mediaId)?.let { measurement ->
             return ReplayGainPolicy.gain(
                 measurement = measurement,
+                mode = AppSettings.replayGainMode.value,
                 bitPerfect = AppSettings.bitPerfectMode.value != BitPerfectMode.OFF,
             )
         }
@@ -7488,13 +7495,26 @@ class PlaybackService : MediaLibraryService() {
         ) {
             replayGainScanJob = scope.launch(Dispatchers.IO) {
                 val job = currentCoroutineContext()[Job]
-                val measurement = LocalReplayGainAnalyzer.analyze(this@PlaybackService, uri) {
-                    job?.isActive != true
-                } ?: return@launch
+                val stop = { job?.isActive != true }
+                if (AppSettings.replayGainMode.value == ReplayGainMode.ALBUM) {
+                    val album = LocalReplayGainAlbumAnalyzer.analyze(this@PlaybackService, id, uri, stop)
+                    if (album != null && job?.isActive == true) {
+                        album.forEach { (albumId, measurement) ->
+                            ReplayGainMeasurements.publish(albumId, measurement)
+                        }
+                        withContext(Dispatchers.Main) {
+                            if (player?.currentMediaItem?.mediaId == id) publishLoudnessFor(id)
+                        }
+                        return@launch
+                    }
+                }
+                val measurement = LocalReplayGainAnalyzer.analyze(this@PlaybackService, uri, stop)
+                    ?: return@launch
                 if (job?.isActive == true) {
                     ReplayGainMeasurements.publish(id, measurement)
-                    // DSP looks up gain on each block, so the level glides into
-                    // place without a player reset or a second normalization.
+                    withContext(Dispatchers.Main) {
+                        if (player?.currentMediaItem?.mediaId == id) publishLoudnessFor(id)
+                    }
                 }
             }
         }
@@ -7508,6 +7528,26 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun publishLoudnessFor(mediaId: String?) {
+        if (AppSettings.bitPerfectMode.value != BitPerfectMode.OFF ||
+            !AppSettings.loudnessNormalization.value ||
+            (AppSettings.loudnessOffOnSpeaker.value &&
+                AudioOutputStatus.current.value.routeKind == AudioRouting.Kind.PHONE)
+        ) {
+            AudioOutputStatus.publishLoudness(gainDb = null, lufs = null)
+            return
+        }
+        val measured = mediaId?.let(ReplayGainMeasurements::get)
+        if (measured != null) {
+            val album = AppSettings.replayGainMode.value == ReplayGainMode.ALBUM &&
+                measured.albumIntegratedLufs != null
+            val loudness = if (album) measured.albumIntegratedLufs!! else measured.integratedLufs
+            val gain = ReplayGainPolicy.gain(measured, AppSettings.replayGainMode.value)
+            AudioOutputStatus.publishLoudness(
+                gainDb = (20.0 * log10(gain.toDouble())).toFloat(),
+                lufs = loudness.toFloat(),
+            )
+            return
+        }
         val gainMb = loudnessGainMb(mediaId)
         val lufs = mediaId?.takeIf { it.isNotBlank() }?.let(StreamResolver::loudnessDbFor)
         if (gainMb == null || lufs == null) {

@@ -16,6 +16,15 @@ class R128MeterTest {
             (amplitude * sin(2.0 * PI * 1000.0 * index / rate)).toFloat()
         }
 
+    @Test fun albumGateCombinesQuietAndLoudTracksWithoutMeanOfDecibels() {
+        val loud = R128Meter(48_000, 1).apply { add(sine(0.5)) }
+        val quiet = R128Meter(48_000, 1).apply { add(sine(0.1)) }
+        val integrated = R128Meter.integratedLufs(loud.blockEnergies() + quiet.blockEnergies())
+        assertNotNull(integrated)
+        assertTrue(integrated!! > quiet.finish()!!.integratedLufs)
+        assertTrue(integrated < loud.finish()!!.integratedLufs)
+    }
+
     @Test fun shortAudioIsNotInventedAsValidMeasurement() {
         val meter = R128Meter(48_000, 1)
         meter.add(FloatArray(240))
