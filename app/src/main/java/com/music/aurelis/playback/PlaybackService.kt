@@ -7435,7 +7435,9 @@ class PlaybackService : MediaLibraryService() {
         // B04: choose one source of normalization, never stack two gains.
         // Measurements arrive from background analysis only; if unavailable,
         // retain the existing streaming loudness normalization unchanged.
-        if (!AppSettings.loudnessNormalization.value) return 1f
+        if (!AppSettings.loudnessNormalization.value ||
+            AppSettings.bitPerfectMode.value != BitPerfectMode.OFF
+        ) return 1f
         if (AppSettings.loudnessOffOnSpeaker.value &&
             AudioOutputStatus.current.value.routeKind == AudioRouting.Kind.PHONE
         ) return 1f
