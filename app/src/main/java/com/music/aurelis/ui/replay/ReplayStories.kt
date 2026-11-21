@@ -342,7 +342,12 @@ private fun Stage(
         )
 
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { index ->
-            StoryPage(page = pages[index], summary = summary, onShare = onShare)
+            ReplayYearMotion(
+                visible = index == current,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                StoryPage(page = pages[index], summary = summary, onShare = onShare)
+            }
         }
 
         StoryChrome(
