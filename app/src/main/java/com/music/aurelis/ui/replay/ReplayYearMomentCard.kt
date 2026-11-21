@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -68,7 +67,6 @@ internal fun ReplayYearMomentCard(
     visible: Boolean,
     onShare: () -> Unit,
 ) {
-    val context = LocalContext.current
     val annual = remember(summary) { summary.annualHighlights(LocalDate.now().year) }
     val personality = annual.personality?.let {
         when (it) {
@@ -94,14 +92,14 @@ internal fun ReplayYearMomentCard(
         ReplayYearMoment.OPENER -> "Replay " + annual.year
         ReplayYearMoment.MINUTES -> annual.minutes.toString()
         ReplayYearMoment.BUSIEST_DAY -> annual.busiestDay.orEmpty()
-        ReplayYearMoment.LISTENING_CLOCK -> personality?.let(context::getString).orEmpty()
+        ReplayYearMoment.LISTENING_CLOCK -> personality?.let { stringResource(it) }.orEmpty()
         ReplayYearMoment.GENRES -> summary.genres.take(3).joinToString("\n") { it.title }
         ReplayYearMoment.ARTIST_REVEAL -> annual.topArtist.orEmpty()
         ReplayYearMoment.TOP_ARTISTS -> summary.artists.take(3).joinToString("\n") { it.title }
         ReplayYearMoment.SONG_REVEAL -> annual.topSong.orEmpty()
         ReplayYearMoment.TOP_SONGS -> summary.songs.take(3).joinToString("\n") { it.song.title }
         ReplayYearMoment.ALBUMS -> summary.albums.take(3).joinToString("\n") { it.title }
-        ReplayYearMoment.SUMMARY -> context.getString(R.string.replay_annual_unique_songs, annual.uniqueSongs)
+        ReplayYearMoment.SUMMARY -> stringResource(R.string.replay_annual_unique_songs, annual.uniqueSongs)
     }
     val coverUrl = when (moment) {
         ReplayYearMoment.SONG_REVEAL, ReplayYearMoment.TOP_SONGS ->
