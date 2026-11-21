@@ -1,7 +1,10 @@
 package com.music.aurelis.data.discord
 
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import com.music.aurelis.BuildConfig
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.music.aurelis.data.model.Song
 
 /**
@@ -10,8 +13,23 @@ import com.music.aurelis.data.model.Song
  */
 class DiscordSocialPresence(private val context: Context) {
     companion object {
+        /** Discord needs an Activity for native Android RPC, not an account token. */
+        val engineReady = MutableStateFlow(false)
+
         val sdkBundled: Boolean by lazy {
-            runCatching { System.loadLibrary("aurelis_discord") }.isSuccess
+            BuildConfig.DISCORD_SDK_BUNDLED &&
+                runCatching { System.loadLibrary("aurelis_discord") }.isSuccess
+        }
+
+        /** Called from MainActivity.onCreate, before UI composition starts. */
+        fun registerEngineActivity(activity: Activity) {
+            if (!BuildConfig.DISCORD_SDK_BUNDLED) return
+            engineReady.value = runCatching {
+                val initializer = Class.forName("com.discord.socialsdk.DiscordSocialSdkInit")
+                initializer.getMethod("setEngineActivity", Activity::class.java)
+                    .invoke(null, activity)
+                true
+            }.getOrDefault(false)
         }
 
         fun isDiscordInstalled(context: Context): Boolean = try {
@@ -25,7 +43,7 @@ class DiscordSocialPresence(private val context: Context) {
 
     private var started = false
     fun connect(): Boolean {
-        if (!sdkBundled || !isDiscordInstalled(context)) return false
+        if (!sdkBundled || !engineReady.value || !isDiscordInstalled(context)) return false
         if (!started) {
             started = runCatching { nativeInitialize(DiscordApplication.ID) }.getOrDefault(false)
         }

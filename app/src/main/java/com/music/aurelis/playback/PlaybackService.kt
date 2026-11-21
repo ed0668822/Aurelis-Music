@@ -7597,7 +7597,12 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun observeDiscord() {
         scope.launch {
-            AppSettings.discordRpcEnabled.collectLatest { enabled ->
+            combine(
+                AppSettings.discordRpcEnabled,
+                DiscordSocialPresence.engineReady,
+            ) { enabled, ready -> enabled && ready }
+                .distinctUntilChanged()
+                .collectLatest { enabled ->
                 discordUpdateJob?.cancel()
                 discordRpc?.clear()
                 discordRpc = null

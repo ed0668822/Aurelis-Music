@@ -83,6 +83,7 @@ android {
         targetSdk = 36
         versionCode = rootProject.extra["aurelisVersionCode"] as Int
         versionName = rootProject.extra["aurelisVersionName"] as String
+        buildConfigField("boolean", "DISCORD_SDK_BUNDLED", discordSocialSdk.isFile.toString())
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {

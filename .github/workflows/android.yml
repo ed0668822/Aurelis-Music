@@ -35,6 +35,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Provision official Discord Social SDK (optional)
+        env:
+          DISCORD_SDK_AAR_URL: ${{ secrets.DISCORD_SDK_AAR_URL }}
+          DISCORD_SDK_AAR_SHA256: ${{ secrets.DISCORD_SDK_AAR_SHA256 }}
+        run: bash scripts/install-discord-sdk.sh
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -104,6 +110,12 @@ jobs:
       LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Provision official Discord Social SDK (optional)
+        env:
+          DISCORD_SDK_AAR_URL: ${{ secrets.DISCORD_SDK_AAR_URL }}
+          DISCORD_SDK_AAR_SHA256: ${{ secrets.DISCORD_SDK_AAR_SHA256 }}
+        run: bash scripts/install-discord-sdk.sh
 
       # Falla antes de compilar si falta la firma.
       - name: Check signing secrets

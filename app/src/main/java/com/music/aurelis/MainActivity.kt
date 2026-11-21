@@ -177,6 +177,7 @@ import com.music.aurelis.ui.components.SpotifyImportAlert
 import com.music.aurelis.ui.screens.WearOsScreen
 import com.music.aurelis.ui.screens.AccountAndScrobblingScreen
 import com.music.aurelis.ui.screens.DiscordScreen
+import com.music.aurelis.data.discord.DiscordSocialPresence
 import com.music.aurelis.ui.screens.EqualizerScreen
 import com.music.aurelis.ui.screens.HistoryScreen
 import com.music.aurelis.ui.screens.LibraryReplayEntry
@@ -399,6 +400,8 @@ internal fun shouldSkipAfterDislike(
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Required by the official SDK on Android. No-op if its AAR is absent.
+        DiscordSocialPresence.registerEngineActivity(this)
         enableEdgeToEdge()
         // Before the composition, so a cold launch from a widget's artwork has
         // the request already standing by the time AurelisApp first reads it.

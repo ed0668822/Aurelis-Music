@@ -88,3 +88,6 @@
 -dontwarn org.conscrypt.**
 -dontwarn com.android.org.conscrypt.**
 -dontwarn io.github.muntashirakon.adb.**
+
+# The official Discord Android SDK Activity initializer is invoked via reflection.
+-keep class com.discord.socialsdk.DiscordSocialSdkInit { *; }

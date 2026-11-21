@@ -44,6 +44,9 @@ keystore.properties
 AGENTS.md
 /output/
 
+# Licensed Discord SDK supplied privately by its authorized developer.
+/app/libs/discord_partner_sdk.aar
+
 # Built packages — release APKs/bundles are handed out, never committed
 *.apk
 *.aab
