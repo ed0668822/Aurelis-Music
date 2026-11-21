@@ -311,9 +311,9 @@ private const val ALIGNMENT_HEAD_TIMEOUT_MS = 20_000L
 private const val ALIGNMENT_MEASURE_TIMEOUT_MS = 30_000L
 
 private fun Song.canStartStation(): Boolean =
-    videoId.isNotBlank() &&
-        !videoId.startsWith("content://") &&
-        !videoId.startsWith("file://")
+    !localUri.isNullOrBlank() ||
+        (videoId.isNotBlank() && !videoId.startsWith("content://") &&
+            !videoId.startsWith("file://"))
 
 /**
  * Background playback via Media3. A [MediaLibraryService] gives us the media
@@ -2181,17 +2181,38 @@ class PlaybackService : MediaLibraryService() {
         stationActionJob?.cancel()
         stationActionJob = scope.launch {
             val radioSeed = seed.copy(radioName = seed.title)
-            val related = loadAutoplayTracks(
-                existing = listOf(radioSeed),
-                seedSong = radioSeed,
-                limit = INITIAL_STATION_TRACKS,
-            ).getOrElse {
-                TrackLog.w(
-                    "Aurelis Music",
-                    "Android Auto station failed: ${it.message}",
-                    about = seed.videoId,
+            val related = if (!radioSeed.localUri.isNullOrBlank()) {
+                // A genuine offline radio for local files: do not send local
+                // titles to YouTube or any matching endpoint.
+                val candidates = runCatching {
+                    (com.music.aurelis.data.LocalMediaRepository.getLocalMusic(this@PlaybackService) +
+                        com.music.aurelis.data.LocalMediaRepository.getDownloadedSongs(this@PlaybackService))
+                        .distinctBy { it.localUri }
+                }.getOrElse {
+                    TrackLog.w("Aurelis Music", "Local radio scan failed: ${it.message}", about = seed.videoId)
+                    return@launch
+                }
+                LocalAutoplayRanker.suggest(
+                    seed = radioSeed,
+                    candidates = candidates,
+                    existing = listOf(radioSeed),
+                    likedUris = emptySet(),
+                    playCounts = emptyMap(),
+                    limit = INITIAL_STATION_TRACKS,
                 )
-                return@launch
+            } else {
+                loadAutoplayTracks(
+                    existing = listOf(radioSeed),
+                    seedSong = radioSeed,
+                    limit = INITIAL_STATION_TRACKS,
+                ).getOrElse {
+                    TrackLog.w(
+                        "Aurelis Music",
+                        "Android Auto station failed: ${it.message}",
+                        about = seed.videoId,
+                    )
+                    return@launch
+                }
             }
             if (related.isEmpty()) return@launch
 
