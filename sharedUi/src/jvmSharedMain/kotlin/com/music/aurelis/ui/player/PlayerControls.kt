@@ -456,8 +456,8 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
  */
 internal fun readableAutomixStatus(raw: String): String {
     val spanish = Locale.getDefault().language == "es"
-    val time = Regex("""\\bin (\\d+) s\\b""").find(raw)?.groupValues?.get(1)
-    val duration = Regex("""\\b(\\d+) s(?=\\s*[·]|$)""").findAll(raw).lastOrNull()?.groupValues?.get(1)
+    val time = Regex("""\bin (\d+) s\b""").find(raw)?.groupValues?.get(1)
+    val duration = Regex("""\b(\d+) s(?=\s*[·]|$)""").findAll(raw).lastOrNull()?.groupValues?.get(1)
     val method = when {
         raw.contains("filter mix") -> if (spanish) "mezcla con filtro" else "filter mix"
         raw.contains("crossfading") -> if (spanish) "transición suave" else "crossfade"
