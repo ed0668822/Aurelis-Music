@@ -1,4 +1,3 @@
-// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback.dsd
 
 import java.nio.ByteBuffer
@@ -10,6 +9,14 @@ import kotlin.math.sin
 
 enum class DsdContainer { DSF, DFF }
 
+/**
+ * One DSD stream as its container describes it, and the PCM it decodes to.
+ *
+ * Every rate decimates to the same 176.4 kHz: high enough that the low-pass
+ * can sit well above the audible band, low enough for any AudioTrack. DSF
+ * stores each channel in its own 4096-byte block and interleaves the blocks;
+ * DFF interleaves byte by byte — [position] is what hides the difference.
+ */
 data class DsdFormat(
     val container: DsdContainer,
     val bitRate: Int,
@@ -38,6 +45,10 @@ data class DsdFormat(
     fun seekFrame(timeUs: Long): Long = if (timeUs > 0 && timeUs >= durationUs) pcmFrames
         else (timeUs.coerceAtLeast(0) * pcmRate / 1_000_000L).coerceAtMost(pcmFrames)
 
+    /**
+     * The first byte to feed the filter so that [frame] comes out right: half
+     * the filter's length before it, since the taps reach that far back.
+     */
     fun prerollByte(frame: Long): Long {
         require(frame in 0..pcmFrames)
         val first = ((frame * decimation - filterTaps / 2).coerceAtLeast(0) / 8).coerceAtMost(bytesPerChannel)
@@ -51,8 +62,12 @@ data class DsdFormat(
     }
 
     companion object {
+        /** What every DSD rate is decimated to. */
         const val PCM_RATE = 176_400
+
+        /** Filter length for [bitRate]: 512 taps at DSD64, scaling with the rate. */
         fun tapsFor(bitRate: Int): Int = 512 * (bitRate / 2_822_400)
+
         val supportedBitRates: List<Int> = listOf(2_822_400, 5_644_800, 11_289_600, 22_579_200, 45_158_400)
         fun supportsBitRate(rate: Int): Boolean = rate in supportedBitRates
     }
@@ -124,8 +139,16 @@ object DsdHeaders {
     }
 }
 
+/**
+ * The decimation low-pass: a Blackman-windowed sinc with its corner at 48 kHz,
+ * normalised to unity gain. Everything above it is DSD's noise-shaped hiss,
+ * which climbs steeply past the audible band and would otherwise alias down
+ * into it at 176.4 kHz.
+ */
 object DsdFilter {
+    /** Where the low-pass sits; the pipeline dialog reports it. */
     const val CUTOFF_HZ = 48_000
+
     private val kernels = ConcurrentHashMap<Int, DoubleArray>()
 
     fun coefficients(format: DsdFormat): DoubleArray = kernels.computeIfAbsent(format.bitRate) { bitRate ->

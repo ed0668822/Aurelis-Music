@@ -1,4 +1,12 @@
-// Aurelis © 2026. GPL-3.0-or-later
+/*
+ * Vendored from Kyant0/backdrop v2.0.0 (io.github.kyant0:backdrop)
+ * https://github.com/Kyant0/backdrop — Copyright 2025 Kyant0, Apache License 2.0
+ *
+ * Vendored so the library ships as source with this app (binary AARs compiled
+ * against older Compose broke at runtime) and to add a backdrop resolution
+ * scale for cheaper effect rendering. KMP expect/actual declarations were
+ * merged into this single Android source set. Package renamed accordingly.
+ */
 package com.music.aurelis.ui.components.backdrop.backdrops
 
 import androidx.compose.ui.Modifier
@@ -55,9 +63,22 @@ private class LayerBackdropNode(
 ) : DrawModifierNode, GlobalPositionAwareModifierNode, Modifier.Node() {
 
     override fun ContentDrawScope.draw() {
-        // Record once and composite, rather than draw-then-record.
-        // Recording first and then blitting the finished layer to the screen
-        // produces the same pixels off one pass.
+        // Vendored change: record once and composite, rather than upstream's
+        // draw-then-record.
+        //
+        // Upstream draws the content to the screen and then draws all of it a
+        // second time into the layer, which puts the entire app through the draw
+        // pass twice on every frame the glass is switched on — and this node
+        // wraps the whole page, so "the entire app" is what that is. Recording
+        // first and then blitting the finished layer to the screen produces the
+        // same pixels off one pass.
+        //
+        // The layer is the node's own size, so this does clip anything a child
+        // paints outside its bounds. Nothing here does — the pages are lists
+        // inside a full-screen container — but a child that grew a shadow past
+        // the edge would lose it, which upstream would not.
+        // A degenerate size would record an empty layer, and unlike upstream there
+        // is no direct draw left to fall back on — the page would simply vanish.
         if (size.width < 1f || size.height < 1f) {
             drawContent()
             return

@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The 4×2 widget, and the shape either widget takes at
+  MediaWidget.WIDE_LAYOUT_MIN_DP or wider. Same full-bleed cover and same baked
+  blur as widget_media_compact; the extra width goes to the track, because three
+  glyphs spread across four cells reads as an empty bar.
+
+  See widget_media_compact for why the band's height has to match the blurred
+  region, and why nothing in it is clickable except the buttons themselves.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -35,11 +44,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:fontFamily="@font/sf_pro_display_semibold"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:textColor="#FFFFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/widget_artist"
@@ -47,6 +56,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
+                android:fontFamily="@font/sf_pro_display_regular"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:textColor="#B3FFFFFF"
@@ -60,7 +70,7 @@
             android:background="@drawable/widget_transport_button"
             android:contentDescription="@string/widget_previous"
             android:padding="10dp"
-            android:src="@drawable/ic_skip_previous" />
+            android:src="@drawable/ic_widget_previous" />
 
         <ImageView
             android:id="@+id/widget_toggle"
@@ -69,7 +79,7 @@
             android:background="@drawable/widget_transport_button"
             android:contentDescription="@string/widget_play"
             android:padding="10dp"
-            android:src="@drawable/ic_play_arrow" />
+            android:src="@drawable/ic_widget_play" />
 
         <ImageView
             android:id="@+id/widget_next"
@@ -78,6 +88,6 @@
             android:background="@drawable/widget_transport_button"
             android:contentDescription="@string/widget_next"
             android:padding="10dp"
-            android:src="@drawable/ic_skip_next" />
+            android:src="@drawable/ic_widget_next" />
     </LinearLayout>
 </FrameLayout>

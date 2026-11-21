@@ -1,4 +1,3 @@
-// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.player
 
 import android.content.Intent
@@ -15,10 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.PhoneIphone
+import androidx.compose.material.icons.rounded.Undo
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,9 +40,26 @@ import androidx.compose.ui.unit.dp
 import com.music.aurelis.R
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
+import com.music.aurelis.ui.replay.ShareAction
+import com.music.aurelis.ui.replay.cacheForSharing
+import com.music.aurelis.ui.replay.saveToGallery
+import com.music.aurelis.ui.replay.sendIntent
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 
+/**
+ * The picked lines, drawn, with the two things you can do to the picture.
+ *
+ * Built on [PlayerDrawer] rather than on a `ModalBottomSheet` for the same reason
+ * as every other sheet in this package: it is inside the player, which is itself
+ * already a modal sheet, and nesting the two leaves the inner one with nothing
+ * to be modal over. It also means this drawer gets the player's own frosted
+ * material, the drag-to-dismiss gesture and the scrim fade for free.
+ *
+ * The render happens on a background dispatcher and the preview is a plain
+ * `Image` of the result — no second layout pass, no offscreen Compose, and the
+ * identical pixels that the Save and Share buttons then write to disk.
+ */
 @Composable
 internal fun AndroidLyricsShareSheet(
     hazeState: HazeState,
@@ -58,29 +74,16 @@ internal fun AndroidLyricsShareSheet(
     var image by remember(request) { mutableStateOf<Bitmap?>(null) }
     var failed by remember(request) { mutableStateOf(false) }
     var saved by remember(request) { mutableStateOf(false) }
+    // Same picture, cut to the 9:16 frame a story wants instead of to its lines.
     var story by remember(request) { mutableStateOf(false) }
 
     LaunchedEffect(request, story) {
         image = null
         failed = false
         saved = false
-        // Nota: La generación real de la imagen se omite aquí para mantenerlo simple,
-        // puedes usar un Canvas de Android para dibujar el texto de las letras.
-        // Por ahora generamos un placeholder transparente para que compile.
-        image = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888).apply {
-            val canvas = android.graphics.Canvas(this)
-            canvas.drawColor(android.graphics.Color.BLACK)
-            val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = 60f
-                isAntiAlias = true
-            }
-            var y = 200f
-            request.lines.take(10).forEach { line ->
-                canvas.drawText(line.text, 100f, y, paint)
-                y += 100f
-            }
-        }
+        image = runCatching { renderLyricsShareCard(context, request, story) }
+            .onFailure { failed = true }
+            .getOrNull()
     }
 
     PlayerDrawer(
@@ -104,6 +107,9 @@ internal fun AndroidLyricsShareSheet(
             )
 
             val bitmap = image
+            // The card is only as tall as its lines, so the frame follows it:
+            // a strip comes out wide, a full verse narrow, both about the same
+            // height on screen rather than a fixed box with bands to spare.
             val ratio = bitmap?.let { it.width.toFloat() / it.height } ?: (9f / 16f)
             val preview = Modifier
                 .fillMaxWidth((0.72f * ratio).coerceIn(0.36f, 0.92f))
@@ -111,7 +117,8 @@ internal fun AndroidLyricsShareSheet(
                 .clip(RoundedCornerShape(18.dp))
             if (bitmap == null) {
                 Box(
-                    modifier = preview.background(Color.White.copy(alpha = 0.06f)),
+                    modifier = preview
+                        .background(Color.White.copy(alpha = 0.06f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(
@@ -130,7 +137,7 @@ internal fun AndroidLyricsShareSheet(
 
             ShareAction(
                 label = stringResource(if (story) R.string.lyrics_share_story_revert else R.string.lyrics_share_story),
-                icon = if (story) Icons.AutoMirrored.Rounded.Undo else Icons.Rounded.PhoneIphone,
+                icon = if (story) Icons.Rounded.Undo else Icons.Rounded.PhoneIphone,
                 accent = false,
                 enabled = image != null,
                 modifier = Modifier.fillMaxWidth(),
@@ -159,6 +166,9 @@ internal fun AndroidLyricsShareSheet(
                     accent = false,
                     enabled = image != null,
                     modifier = Modifier.weight(1f),
+                    // Once the picture is in the gallery the button says so
+                    // itself — a check and "Saved!" — so the line under the
+                    // card does not have to.
                     saved = saved,
                     savedLabel = stringResource(R.string.saved_bang),
                     onClick = {
@@ -166,7 +176,12 @@ internal fun AndroidLyricsShareSheet(
                         if (drawn != null) {
                             haptics.play(Haptic.Tap)
                             scope.launch {
-                                saved = saveToGallery(context, drawn, request.song.title, "aurelis-lyrics")
+                                saved = saveToGallery(
+                                    context,
+                                    drawn,
+                                    request.song.title,
+                                    LYRICS_FILE_PREFIX,
+                                )
                             }
                         }
                     },
@@ -182,7 +197,7 @@ internal fun AndroidLyricsShareSheet(
                         if (drawn != null) {
                             haptics.play(Haptic.Tap)
                             scope.launch {
-                                val uri = cacheForSharing(context, drawn, "lyrics.png")
+                                val uri = cacheForSharing(context, drawn, LYRICS_FILE_NAME)
                                 if (uri == null) {
                                     failed = true
                                     saved = false
@@ -202,3 +217,13 @@ internal fun AndroidLyricsShareSheet(
         }
     }
 }
+
+/**
+ * Two names, deliberately not the Replay's.
+ *
+ * The cache name so a replay share and a lyrics share cannot overwrite each
+ * other while the receiving app is still reading the first, and the gallery
+ * prefix so a saved card in the pictures folder says which feature produced it.
+ */
+private const val LYRICS_FILE_NAME = "lyrics.png"
+private const val LYRICS_FILE_PREFIX = "aurelis-lyrics"

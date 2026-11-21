@@ -1,5 +1,12 @@
-// Aurelis © 2026. GPL-3.0-or-later.
-
+/*
+ * Vendored from Kyant0/backdrop v2.0.0 (io.github.kyant0:backdrop)
+ * https://github.com/Kyant0/backdrop — Copyright 2025 Kyant0, Apache License 2.0
+ *
+ * Vendored so the library ships as source with this app (binary AARs compiled
+ * against older Compose broke at runtime) and to add a backdrop resolution
+ * scale for cheaper effect rendering. KMP expect/actual declarations were
+ * merged into this single Android source set. Package renamed accordingly.
+ */
 package com.music.aurelis.ui.components.backdrop
 
 import androidx.compose.runtime.getValue
@@ -95,7 +102,11 @@ fun Modifier.drawBackdrop(
     onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit = DefaultOnDrawBackdrop,
     onDrawSurface: (DrawScope.() -> Unit)? = null,
     onDrawFront: (DrawScope.() -> Unit)? = null,
-    
+    // Vendored addition: records the backdrop into a layer at this fraction of the
+    // surface resolution and draws it scaled back up, so the RenderEffect chain
+    // processes far fewer pixels. Pixel-sized effect parameters (blur radius, lens
+    // refraction) must be pre-multiplied by the same factor by the caller; the blur
+    // hides the upscaling. 1f keeps the original full resolution behavior.
     backdropScale: Float = 1f
 ): Modifier {
     val shapeProvider = ShapeProvider(shape)
@@ -283,7 +294,8 @@ private class DrawBackdropNode(
         if (padding != 0f) {
             canvas.translate(padding, padding)
         }
-        
+        // Vendored addition: draw the backdrop content downscaled so the recorded
+        // layer (and therefore the RenderEffect chain) covers fewer pixels.
         if (scale != 1f) {
             canvas.scale(scale, scale)
         }
@@ -327,11 +339,17 @@ private class DrawBackdropNode(
         }
     }
 
+    // Vendored change: the export below draws the layer this frame already
+    // recorded, rather than recording the backdrop a second time. Upstream
+    // re-runs the whole capture and effect chain for the export, which doubles
+    // the surface's cost on every frame it is exported.
     private val drawRecordedBackdrop: DrawScope.() -> Unit = {
         val layer = graphicsLayer
         if (layer != null) {
             val scale = backdropScale
             if (scale != 1f) {
+                // Vendored addition: stretch the low resolution layer back over the
+                // full surface; the blur in the effect chain masks the upscaling.
                 scale(1f / scale, pivot = Offset.Zero) {
                     drawLayer(layer)
                 }

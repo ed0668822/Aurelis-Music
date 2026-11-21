@@ -1,4 +1,3 @@
-// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback.dsd
 
 import android.net.Uri
@@ -24,6 +23,10 @@ import java.io.EOFException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+/**
+ * The stock extractors plus [DsdExtractor] ahead of them. Media3 has no DSD
+ * support of any kind, so without this a `.dsf` or `.dff` fails to sniff.
+ */
 @UnstableApi
 class DsdExtractorsFactory(private val delegate: ExtractorsFactory = DefaultExtractorsFactory()) : ExtractorsFactory {
     override fun createExtractors(): Array<Extractor> = arrayOf(DsdExtractor(), *delegate.createExtractors())
@@ -31,6 +34,14 @@ class DsdExtractorsFactory(private val delegate: ExtractorsFactory = DefaultExtr
         arrayOf(DsdExtractor(), *delegate.createExtractors(uri, responseHeaders))
 }
 
+/**
+ * DSF and DFF (plain or DST-compressed) as float PCM at 176.4 kHz.
+ *
+ * The decoding happens here rather than in a renderer: the track goes out as
+ * `audio/raw`, so the ordinary audio renderer and every sink and DSP stage
+ * after it treat a DSD file like any other hi-res PCM track. Nothing on the
+ * phone ever sees DSD itself.
+ */
 @UnstableApi
 class DsdExtractor : Extractor {
     private enum class State { HEADER, DFF_CHUNKS, DST_CHUNKS, DSF_METADATA, AUDIO }
@@ -90,6 +101,7 @@ class DsdExtractor : Extractor {
         val f = format ?: return
         val frame = f.seekFrame(timeUs)
         val requestedByte = f.prerollByte(frame)
+        // DST frames can only be decoded whole, so start at the one holding the preroll.
         val sourceByte = if (dstFrames.isNotEmpty()) requestedByte / DST_FRAME_BYTES * DST_FRAME_BYTES else requestedByte
         decoder?.reset(sourceByte, frame)
         if (dstFrames.isNotEmpty()) {
@@ -416,6 +428,7 @@ class DsdExtractor : Extractor {
 
     private companion object {
         const val MAX_METADATA_BYTES = 4 * 1024 * 1024
+        /** One DST frame: 1/75 s of DSD64 per channel, in bytes and in 1-bit samples. */
         const val DST_FRAME_BYTES = 4704
         const val DST_FRAME_SAMPLES = 37_632L
     }

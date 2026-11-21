@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Auto-backup rules for Android 11 and older; data_extraction_rules.xml
+   replaces these from Android 12.
+
+   The encrypted stores are excluded because their keysets are wrapped by an
+   Android Keystore key that never leaves the device: restored anywhere, they
+   can't be decrypted (see EncryptedPrefs). Their plain fallbacks are excluded
+   because they hold the same credentials in cleartext.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="aurelis_discord_oauth.xml" />
+    <exclude domain="sharedpref" path="aurelis_auth.xml" />
+    <exclude domain="sharedpref" path="aurelis_auth_plain.xml" />
+    <exclude domain="sharedpref" path="aurelis_sources.xml" />
+    <exclude domain="sharedpref" path="aurelis_sources_plain.xml" />
+    <!-- Tester code: a credential for this phone's owner (see AddonAuth). -->
+    <exclude domain="sharedpref" path="aurelis_tester.xml" />
+    <!-- Playback queues are local session state; do not resurrect them after reinstall. -->
+    <exclude domain="sharedpref" path="aurelis_last_played.xml" />
+    <exclude domain="sharedpref" path="aurelis_bounded_context.xml" />
+    <exclude domain="sharedpref" path="aurelis_party_queue_stash.xml" />
+</full-backup-content>

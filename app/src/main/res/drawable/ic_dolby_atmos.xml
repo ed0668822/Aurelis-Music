@@ -1,9 +1,9 @@
-<!-- Aurelis © 2026. GPL-3.0-or-later -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="17dp"
     android:height="12dp"
     android:viewportWidth="108.95"
     android:viewportHeight="76.599">
+    <!-- Official Dolby double-D mark, adapted from the Dolby Atmos SVG. -->
     <path
         android:fillColor="#FFFFFFFF"
         android:fillType="evenOdd"

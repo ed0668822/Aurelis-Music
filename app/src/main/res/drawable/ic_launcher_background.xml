@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Aurelis © 2026. GPL-3.0-or-later -->
 <!-- Aurelis © 2026. GPL-3.0-or-later. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
@@ -7,19 +6,36 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M0,0h108v108h-108z">
+    <!-- Full-bleed neutral graphite: the launcher applies the final mask. -->
+    <path android:pathData="M0,0 H108 V108 H0 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="12"
-                android:startY="10"
-                android:endX="96"
-                android:endY="98"
-                android:type="linear">
-                <item android:offset="0" android:color="#0F172A" />
-                <item android:offset="0.4" android:color="#1E1B4B" />
-                <item android:offset="0.8" android:color="#312E81" />
-                <item android:offset="1" android:color="#0B1120" />
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108">
+                <item android:offset="0" android:color="#FF303138" />
+                <item android:offset="0.48" android:color="#FF141417" />
+                <item android:offset="1" android:color="#FF060608" />
             </gradient>
         </aapt:attr>
     </path>
+    <!-- Subtle glass reflection; no distracting diamond or lines behind the note. -->
+    <path android:pathData="M0,0 H108 V23 C73,30 45,42 0,66 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="80"
+                android:endY="70">
+                <item android:offset="0" android:color="#1EFFFFFF" />
+                <item android:offset="1" android:color="#00FFFFFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#06FFFFFF"
+        android:pathData="M108,76 C77,97 46,102 21,108 L108,108 Z" />
 </vector>

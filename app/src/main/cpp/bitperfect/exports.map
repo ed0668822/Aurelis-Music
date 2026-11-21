@@ -1,0 +1,5 @@
+{
+    global:
+        Java_com_music_aurelis_playback_audio_bitperfect_*;
+    local: *;
+};

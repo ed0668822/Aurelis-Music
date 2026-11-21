@@ -1,4 +1,3 @@
-// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.ui.components.backdrop.backdrops
 
 import androidx.compose.runtime.Composable
@@ -12,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -29,7 +29,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * A backdrop that is a still of its source rather than the source live.
+ * Vendored addition: a backdrop that is a still of its source rather than the
+ * source live.
  *
  * [LayerBackdrop] keeps a recording that is the source by reference — every
  * animated thing inside it, a progress bar's tick or a drifting mesh, makes
@@ -86,12 +87,17 @@ class SnapshotBackdrop internal constructor() : Backdrop {
             }
             val (offset, panelScale) =
                 try {
+                    // Where the panel's origin, and a point a step along from it,
+                    // land in the source: their distance is the scale anything
+                    // above the panel has it at — a menu growing in on a spring.
                     val origin = source.localPositionOf(coordinates)
                     val step = source.localPositionOf(coordinates, Offset(SCALE_PROBE_PX, 0f))
                     origin to ((step.x - origin.x) / SCALE_PROBE_PX).takeIf { it > 0f }
                 } catch (_: Exception) {
                     (coordinates.positionInWindow() - source.positionInWindow()) to null
                 }
+            // Undone, so the still stays where it is on screen while the panel
+            // grows over it, rather than zooming in and out with the panel.
             if (panelScale != null && panelScale != 1f) scale(1f / panelScale, pivot = Offset.Zero)
             translate(-offset.x, -offset.y)
         }) {
@@ -112,9 +118,13 @@ fun rememberSnapshotBackdrop(): SnapshotBackdrop = remember { SnapshotBackdrop()
  * Makes this what [backdrop] takes its stills of. Draws as if it weren't here,
  * except on the one frame after [SnapshotBackdrop.capture], when it also
  * records itself small and turns that into the picture.
+ *
+ * [floor] goes under the picture, for a source that paints no background of its
+ * own. Left see-through, a panel blurs what is there and shows the sharp source
+ * straight through everywhere else.
  */
 @Composable
-fun Modifier.snapshotBackdropSource(backdrop: SnapshotBackdrop): Modifier {
+fun Modifier.snapshotBackdropSource(backdrop: SnapshotBackdrop, floor: Color = Color.Transparent): Modifier {
     val graphicsContext = LocalGraphicsContext.current
     val scope = rememberCoroutineScope()
     return this
@@ -129,11 +139,13 @@ fun Modifier.snapshotBackdropSource(backdrop: SnapshotBackdrop): Modifier {
             val width = (size.width * SNAPSHOT_SCALE).roundToInt().coerceAtLeast(1)
             val height = (size.height * SNAPSHOT_SCALE).roundToInt().coerceAtLeast(1)
             layer.record(size = IntSize(width, height)) {
+                drawRect(floor)
                 scale(SNAPSHOT_SCALE, pivot = Offset.Zero) { this@drawWithContent.drawContent() }
             }
             val generation = backdrop.generation
             scope.launch {
                 try {
+                    // Only if nothing asked again, or let go, in the meantime.
                     val still = layer.toImageBitmap()
                     if (backdrop.handled == request && backdrop.generation == generation) backdrop.image = still
                 } finally {
@@ -143,5 +155,12 @@ fun Modifier.snapshotBackdropSource(backdrop: SnapshotBackdrop): Modifier {
         }
 }
 
+/**
+ * The still's resolution against its source's. A quarter: the panels sampling
+ * it draw their backdrop at a quarter before blurring it anyway, so more would
+ * be detail thrown away.
+ */
 private const val SNAPSHOT_SCALE = 0.25f
+
+/** How far along the panel the scale is read over, in its own pixels. */
 private const val SCALE_PROBE_PX = 1000f

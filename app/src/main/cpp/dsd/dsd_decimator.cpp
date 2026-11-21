@@ -1,3 +1,16 @@
+// DSD -> PCM decimation for DsdBlockDecoder.
+//
+// A 1-bit DSD stream is turned into 176.4 kHz float PCM by one long FIR
+// low-pass (the taps come from Kotlin, DsdFilter) evaluated once per
+// `decimation` input bits. The input arrives as whole bytes, so each tap group
+// covers eight bits, and the sum over those eight is precomputed per nibble:
+// two 16-entry lookups per group instead of eight multiply-adds.
+//
+// History is a ring of `groups` bytes per channel. Each slot carries how many
+// of its eight bits are real (the high byte) so the very first and very last
+// bytes of a track, which are partly padding, contribute only their valid
+// bits; the fast nibble path runs only once every slot is full.
+
 #include <jni.h>
 #include <algorithm>
 #include <cstdint>
@@ -96,6 +109,8 @@ Java_com_music_aurelis_playback_dsd_DsdBlockDecoder_decode(JNIEnv* env, jobject,
     const int count = size / d->channels;
     if (d->frame >= total) return 0;
     if ((bytes && (d->source + count) > (d->samples + 7) / 8) || (!bytes && d->source * 8 < d->samples)) return -1;
+    // No more input: flush the filter's tail with padding until the last
+    // output frame the track's length calls for has been produced.
     const int64_t endSource = bytes ? d->source + count : (total * d->decimation + d->groups * 4 + 7) / 8;
     const int64_t lastFrame = (endSource * 8 - d->groups * 4) / d->decimation;
     const int64_t needed = std::max<int64_t>(0, std::min(total, lastFrame + 1) - d->frame);

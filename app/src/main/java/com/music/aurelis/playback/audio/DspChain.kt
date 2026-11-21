@@ -1,15 +1,36 @@
-// Aurelis © 2026. GPL-3.0-or-later
 package com.music.aurelis.playback.audio
 
 import android.util.Log
-import androidx.media3.common.util.UnstableApi
 import com.music.aurelis.BuildConfig
 import com.music.aurelis.playback.EqualizerProcessor
 import com.music.aurelis.playback.LoudnessProcessor
 import com.music.aurelis.playback.SpatialAudioProcessor
 import com.music.aurelis.playback.TransitionFilterProcessor
 
-@UnstableApi
+/**
+ * Composite DSP chain executing Aurelis's custom audio processors in their canonical sequence:
+ *
+ * AudioBlock(Float32) -> SpatialAudioProcessor -> EqualizerProcessor
+ *   -> TransitionFilterProcessor -> LoudnessProcessor -> AudioBlock(Float32)
+ *
+ * Operates purely on in-place Float32 audio blocks without intermediate fixed-point quantization,
+ * preserving full dynamic range and headroom.
+ *
+ * Loudness normalization is the last stage, and per sink on purpose: each
+ * player levels the track *it* is playing, so the two sides of a crossfade are
+ * each levelled for their own song — see [LoudnessProcessor]. Last because its
+ * limiter has to see the signal every other stage has finished shaping.
+ * That limiter is also the equaliser's: [EqualizerProcessor] only takes back
+ * half of a boost, and while it is shaping the signal the limiter stays on.
+ *
+ * ## Staying out of the way
+ *
+ * Every stage here self-bypasses when its own setting is off, returning before
+ * it reads a single sample rather than multiplying through by unity. With all
+ * three idle the block leaves this class byte-identical to how it arrived,
+ * which is what lets [PcmBoundary]'s power-of-two scaling round-trip 16- and
+ * 24-bit integers unchanged — see `PrecisionAudioSink.publishOutputExactness`.
+ */
 class DspChain(
     val spatial: SpatialAudioProcessor = SpatialAudioProcessor(),
     val equalizer: EqualizerProcessor = EqualizerProcessor(),
@@ -20,14 +41,15 @@ class DspChain(
     private var currentSampleRate: Int = 0
     private var processCounter: Long = 0L
 
-    override fun configure(sampleRate: Int, channels: Int) {
+    override fun configure(sampleRate: Int, channelCount: Int) {
         this.currentSampleRate = sampleRate
-        spatial.configure(sampleRate, channels)
-        equalizer.configure(sampleRate, channels)
-        transition.configure(sampleRate, channels)
-        loudness.configure(sampleRate, channels)
+        spatial.configure(sampleRate, channelCount)
+        equalizer.configure(sampleRate, channelCount)
+        transition.configure(sampleRate, channelCount)
+        loudness.configure(sampleRate, channelCount)
     }
 
+    /** A new track has begun gaplessly on this sink; see [LoudnessProcessor.onStreamBoundary]. */
     fun onStreamBoundary() {
         loudness.onStreamBoundary()
     }
@@ -58,6 +80,8 @@ class DspChain(
         spatial.process(block)
         equalizer.process(block)
         transition.process(block)
+        // The equaliser leaves its overs in place for the stages after it to
+        // see; the loudness stage's limiter is what catches whatever survives.
         loudness.holdLimiter = equalizer.isShaping
         loudness.process(block)
     }
@@ -79,6 +103,6 @@ class DspChain(
     }
 
     companion object {
-        private const val TAG = "AurelisDspChain"
+        private const val TAG = "DspChain"
     }
 }

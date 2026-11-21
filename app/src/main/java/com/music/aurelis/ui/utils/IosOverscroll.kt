@@ -1,12 +1,14 @@
-@file:OptIn(ExperimentalFoundationApi::class)
-
+/*
+ * Adapted from Convx's IosOverscroll.kt (GPL-3.0):
+ * https://github.com/cosmictaserdev-creator/Convx
+ */
 package com.music.aurelis.ui.utils
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
+import androidx.compose.foundation.OverscrollFactory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.mutableFloatStateOf
@@ -15,10 +17,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Velocity
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
@@ -30,6 +41,9 @@ private const val highVelocityThreshold = 5_000f
 private const val normalBounceStiffness = 247f
 private const val fastBounceStiffness = 130f
 
+/**
+ * Converts raw pull distance to UIKit's self-limiting rubber-band curve.
+ */
 private fun rubberBand(rawDistance: Float, containerPx: Float): Float {
     val dimension = containerPx.takeIf { it > 0f } ?: fallbackContainerPx
     val distance = abs(rawDistance)
@@ -38,41 +52,44 @@ private fun rubberBand(rawDistance: Float, containerPx: Float): Float {
     return banded * sign(rawDistance)
 }
 
-private class IosOverscrollEffect(
-    private val scope: CoroutineScope
-) : OverscrollEffect {
+/**
+ * An iOS-style overscroll effect for Compose scroll containers.
+ *
+ * It replaces Android's stretch/glow with a UIScrollView-like rubber band during a
+ * drag, then critically damps the content back to its resting position on release.
+ */
+private class IosOverscrollEffect : OverscrollEffect {
     private val rawPullX = mutableFloatStateOf(0f)
     private val rawPullY = mutableFloatStateOf(0f)
     private var containerWidthPx = 0f
     private var containerHeightPx = 0f
 
+    // The release bounce runs outside the scrollable's scroll mutex, so a new drag
+    // doesn't cancel it on its own. Tracked here so a touch can catch the content.
+    private var settleJobs: List<Job> = emptyList()
+
     override val isInProgress: Boolean
         get() = rawPullX.floatValue != 0f || rawPullY.floatValue != 0f
-
-    // ✅ CORREGIDO: OverscrollEffect ahora requiere 'effectModifier' en lugar de 'node' o 'OverscrollFactory'
-    override val effectModifier: Modifier = Modifier.layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints)
-        containerWidthPx = (if (constraints.hasBoundedWidth) constraints.maxWidth else placeable.width).toFloat()
-        containerHeightPx = (if (constraints.hasBoundedHeight) constraints.maxHeight else placeable.height).toFloat()
-        layout(placeable.width, placeable.height) {
-            placeable.placeWithLayer(0, 0) {
-                translationX = rubberBand(rawPullX.floatValue, containerWidthPx)
-                translationY = rubberBand(rawPullY.floatValue, containerHeightPx)
-            }
-        }
-    }
 
     override fun applyToScroll(
         delta: Offset,
         source: NestedScrollSource,
         performScroll: (Offset) -> Offset,
     ): Offset {
+        // A finger landing mid-bounce takes over from wherever the content is, like
+        // UIScrollView; otherwise the spring keeps overwriting the drag each frame.
+        if (source == NestedScrollSource.UserInput) stopSettling()
+
+        // When pulling back from an existing stretch, settle the stretch before
+        // allowing the list itself to scroll. This keeps the motion continuous.
         val paidX = payDown(rawPullX, delta.x)
         val paidY = payDown(rawPullY, delta.y)
         val remaining = Offset(delta.x - paidX, delta.y - paidY)
         val consumed = performScroll(remaining)
         val leftover = remaining - consumed
 
+        // Absorb only touch deltas. Fling leftovers must be returned so Compose
+        // cancels its decay and gives their velocity to applyToFling below.
         var stretchedX = 0f
         var stretchedY = 0f
         if (source == NestedScrollSource.UserInput) {
@@ -94,12 +111,24 @@ private class IosOverscrollEffect(
     ) {
         val consumed = performFling(velocity)
         val leftover = velocity - consumed
+        stopSettling()
         if (!isInProgress && leftover == Velocity.Zero) return
 
         coroutineScope {
-            launch { settle(rawPullX, leftover.x) }
-            launch { settle(rawPullY, leftover.y) }
+            val jobs = listOf(
+                launch { settle(rawPullX, leftover.x) },
+                launch { settle(rawPullY, leftover.y) },
+            )
+            settleJobs = jobs
+            jobs.forEach { it.join() }
+            if (settleJobs === jobs) settleJobs = emptyList()
         }
+    }
+
+    private fun stopSettling() {
+        if (settleJobs.isEmpty()) return
+        settleJobs.forEach { it.cancel() }
+        settleJobs = emptyList()
     }
 
     private fun payDown(pull: MutableFloatState, delta: Float): Float {
@@ -114,6 +143,7 @@ private class IosOverscrollEffect(
     private suspend fun settle(pull: MutableFloatState, leftoverVelocity: Float) {
         if (pull.floatValue == 0f && leftoverVelocity == 0f) return
         val velocity = leftoverVelocity.coerceIn(-maxBounceVelocity, maxBounceVelocity)
+        val job = currentCoroutineContext()[Job]
         animate(
             initialValue = pull.floatValue,
             targetValue = 0f,
@@ -126,14 +156,61 @@ private class IosOverscrollEffect(
                     normalBounceStiffness
                 },
             ),
-        ) { value, _ -> pull.floatValue = value }
+        ) { value, _ ->
+            // A frame already in flight when a drag cancels us must not stomp the drag.
+            if (job?.isActive != false) pull.floatValue = value
+        }
+    }
+
+    override val node: DelegatableNode = IosOverscrollNode(
+        offsetX = { rubberBand(rawPullX.floatValue, containerWidthPx) },
+        offsetY = { rubberBand(rawPullY.floatValue, containerHeightPx) },
+        onMeasured = { width, height ->
+            containerWidthPx = width
+            containerHeightPx = height
+        },
+    )
+}
+
+private class IosOverscrollNode(
+    private val offsetX: () -> Float,
+    private val offsetY: () -> Float,
+    private val onMeasured: (Float, Float) -> Unit,
+) : Modifier.Node(), LayoutModifierNode {
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        onMeasured(
+            (if (constraints.hasBoundedWidth) constraints.maxWidth else placeable.width).toFloat(),
+            (if (constraints.hasBoundedHeight) constraints.maxHeight else placeable.height).toFloat(),
+        )
+        return layout(placeable.width, placeable.height) {
+            placeable.placeWithLayer(0, 0) {
+                translationX = offsetX()
+                translationY = offsetY()
+            }
+        }
     }
 }
 
+private class IosOverscrollFactory(
+    private val density: Density,
+    private val scope: CoroutineScope,
+) : OverscrollFactory {
+    override fun createOverscrollEffect(): OverscrollEffect = IosOverscrollEffect()
+
+    override fun equals(other: Any?): Boolean =
+        other is IosOverscrollFactory && other.density == density && other.scope === scope
+
+    override fun hashCode(): Int = 31 * density.hashCode() + scope.hashCode()
+}
+
+/** Provides iOS-style rubber-band overscroll to every descendant scroll container. */
 @Composable
-fun rememberIosOverscrollEffect(): OverscrollEffect {
+fun rememberIosOverscrollFactory(): OverscrollFactory {
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
-    return remember(scope) {
-        IosOverscrollEffect(scope)
-    }
+    return remember(density, scope) { IosOverscrollFactory(density, scope) }
 }
