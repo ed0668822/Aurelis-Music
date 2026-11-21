@@ -3231,11 +3231,6 @@ private fun AurelisApp(
                                     song
                                 }
                             }
-                            // Keep playback in the visible order when a sort has reordered a page.
-                            fun inVisiblePageOrder(shown: List<String>, page: List<String>): Boolean {
-                                val remaining = page.iterator()
-                                return shown.all { key -> remaining.asSequence().any { it == key } }
-                            }
                             // The visible list can be one render behind the page
                             // while fill-in is completing. For a local release
                             // handoff, cancel that fill and use the newest complete
@@ -3260,7 +3255,7 @@ private fun AurelisApp(
                                 val useBounded =
                                     (page.type == BrowseType.ALBUM || page.type == BrowseType.PLAYLIST) &&
                                         selected?.contextEntryKey()?.let(pageSongKeys::contains) == true &&
-                                        inVisiblePageOrder(songs.map { it.contextEntryKey() }, pageKeys) &&
+                                        inPageOrder(songs.map { it.contextEntryKey() }, pageKeys) &&
                                         !CastController.state.value.casting
                                 val latestPage = if (useBounded) {
                                     viewModel.takePlaybackContext(page.browseId)
