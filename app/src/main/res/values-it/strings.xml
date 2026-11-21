@@ -1452,4 +1452,13 @@
     <string name="discord_oauth_browser_error">Impossibile aprire il browser per autorizzare Discord.</string>
     <string name="discord_oauth_failed">L\'autorizzazione Discord è stata annullata, è scaduta o non è valida. Riprova.</string>
     <string name="discord_oauth_config_error">Impossibile completare l\'autorizzazione. Attiva Public Client e registra l\'URI di reindirizzamento esatto nel portale Discord.</string>
+    <string name="automix_artwork_transition">Copertine animate AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">Sfuma tra le due copertine durante AutoMix senza modificare l\'audio.</string>
+    <string name="automix_mini_artwork_transition">Anima la copertina del MiniPlayer</string>
+    <string name="automix_mini_artwork_transition_subtitle">Mostra la stessa transizione nel lettore compatto.</string>
+    <string name="show_total_duration">Mostra la durata totale</string>
+    <string name="show_total_duration_subtitle">Mostra la durata totale invece del tempo rimanente accanto alla barra.</string>
+    <string name="hide_lyrics_preview">Nascondi anteprima del testo</string>
+    <string name="hide_lyrics_preview_subtitle">Nasconde la riga sopra la barra; il testo completo resta disponibile.</string>
+    <string name="sleep_timer_fade_out">Diminuisci gradualmente il volume negli ultimi 30 secondi</string>
 </resources>

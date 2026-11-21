@@ -102,4 +102,34 @@ class LoudnessProcessorTest {
         proc.process(settled)
         assertEquals(0.4f, peak(settled, fromFrame = 3000), 0.01f)
     }
+    @Test
+    fun sleepFadeAttenuatesWithoutChangingTrackNormalization() {
+        val proc = processor(mapOf("a" to 0.8f)).apply { track("a", null) }
+        proc.process(sine(0.5f))
+        proc.setSleepFade(0.5f)
+        repeat(8) { proc.process(sine(0.5f)) }
+        val faded = sine(0.5f)
+        proc.process(faded)
+        assertEquals(0.2f, peak(faded), 0.008f)
+        // Normalization gain remains 0.8; the timer owns only its own envelope.
+        proc.setSleepFade(1f)
+        repeat(8) { proc.process(sine(0.5f)) }
+        val restored = sine(0.5f)
+        proc.process(restored)
+        assertEquals(0.4f, peak(restored), 0.008f)
+    }
+
+    @Test
+    fun sleepFadeNeverRaisesLevelOrCreatesNonFiniteGain() {
+        val proc = processor(emptyMap()).apply { track("a", null) }
+        proc.setSleepFade(-10f)
+        proc.process(sine(0.5f))
+        assertEquals(0f, peak(sine(0.5f).also(proc::process)), 0.01f)
+        proc.setSleepFade(Float.NaN)
+        repeat(8) { proc.process(sine(0.5f)) }
+        val restored = sine(0.5f)
+        proc.process(restored)
+        assertEquals(0.5f, peak(restored), 0.01f)
+    }
+
 }

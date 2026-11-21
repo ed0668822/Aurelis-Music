@@ -68,6 +68,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val hideSongStatus get() = AppSettings.hideSongStatus
         override val showQueueHistory get() = AppSettings.showQueueHistory
         override val hideVolumeBar get() = AppSettings.hideVolumeBar
+        override val showTotalDuration get() = AppSettings.showTotalDuration
         override val hideStatusBar get() = AppSettings.hideStatusBarInPlayer
         override val lastPlayerScreen get() = AppSettings.lastPlayerScreen
         override val playerTheme get() = AppSettings.playerTheme
@@ -90,10 +91,14 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val smartMixBlend get() = AppSettings.smartMixBlend
         override val smartMixView get() = AppSettings.smartMixView
         override val smartMixProgress get() = AppSettings.smartMixProgress
+        override val autoMixArtworkEnabled get() = AppSettings.autoMixArtworkEnabled
+        override val autoMixMiniArtworkEnabled get() = AppSettings.autoMixMiniArtworkEnabled
+        override val autoMixArtworkState get() = AppSettings.autoMixArtworkState
         override val smartMixPreview get() = AppSettings.smartMixPreview
         override val smartTransitionWindow get() = AppSettings.smartTransitionWindow
         override val spotifyCanvasAutoHide get() = AppSettings.spotifyCanvasAutoHide
         override val syncedLyrics get() = AppSettings.syncedLyrics
+        override val hideLyricsPreview get() = AppSettings.hideLyricsPreview
         override val translationLanguage get() = AppSettings.translationLanguage
         override val versionAlignmentInProgress get() = AppSettings.versionAlignmentInProgress
 
@@ -128,6 +133,20 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     @Composable
     override fun rememberRemoteArtworkUrl(song: Song?): String? =
         com.music.aurelis.ui.components.rememberRemoteArtworkUrl(song)
+
+    // Called only after the current artwork is absent or cannot be decoded.
+    // DiscordArtwork uses a bounded, cached iTunes lookup and validates title
+    // and artist, rather than returning an unrelated album illustration.
+    override suspend fun resolveMixArtwork(title: String, artist: String): String? {
+        if (title.isBlank() || artist.isBlank()) return null
+        val baseTitle = title
+            .replace(Regex("""\s*[\[(](?:feat\.?|ft\.?|featuring)\s+[^)\]]+[)\]]""", RegexOption.IGNORE_CASE), "")
+            .trim()
+        val primaryArtist = artist.substringBefore(',').substringBefore(" & ").trim()
+        return com.music.aurelis.data.discord.DiscordArtwork.resolve(
+            Song(videoId = "automix-artwork", title = baseTitle, artist = primaryArtist, thumbnailUrl = null),
+        )
+    }
 
     // Lazy, all three: the player is not the first thing the process does, and
     // none of these objects should be woken for a launch that never opens it.

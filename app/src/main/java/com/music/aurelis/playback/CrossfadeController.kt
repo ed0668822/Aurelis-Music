@@ -3,6 +3,8 @@
 
 package com.music.aurelis.playback
 
+import com.music.aurelis.data.settings.AutoMixArtworkState
+
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.C
@@ -1193,48 +1195,26 @@ class CrossfadeController(
             return
         }
 
-        // Gated on *both* tracks being measured, not on the plan alone. Until
-        // then the planner is still sizing the overlap from a fallback that
-        // moves as evidence lands, and a marker that slides along the bar while
-        // you watch it is worse than none. Cleared during the transition itself
-        // by [driveLap], because from that moment these fractions describe a
-        // track the session player has already left.
+        // Publish the next planned AutoMix cut as soon as the planner has a
+        // usable window. It already computes a conservative crossfade while
+        // background beat/vocal analysis runs. Withholding the marker until
+        // both analyses complete AND the next deck is ready made the seek
+        // bar appear blank for most of the song.
         //
-        // Asymmetric on purpose, because the two sides are read for different
-        // things and a head-only result covers one of them completely.
-        //
-        // Where the window *sits* comes almost entirely from the outgoing track:
-        // its content end, its outro, its mix-out anchors. A provisional result
-        // has none of those — [analyzeHead] drops them deliberately rather than
-        // answering confidently about a track it has only seen the opening of —
-        // so the plan falls back to a plain end-of-track window, and the marker
-        // would sit there and then jump backwards when the whole-track pass
-        // lands. That is the sliding marker this guard exists for, so the
-        // outgoing side still has to be finished.
-        //
-        // The incoming side is the opposite case. All the planner asks of it is
-        // tempo, confidence and where it is safe to cue in — which are exactly
-        // the fields a head pass measures, and it measures them over the same
-        // opening window the whole-track pass would. Refining will sharpen those
-        // numbers but not move them, so holding the marker back for it hid a
-        // window that was already correct. Since the incoming track is now
-        // routinely analysed from its opening long before it plays, that was
-        // most of the time the marker was missing.
+        // A provisional window may be refined when stronger evidence arrives;
+        // this mirrors the time the engine currently plans to begin mixing.
+        // Only a blocked or nonexistent transition is hidden.
         val markable = !plan.blocked &&
             plan.markerVisible &&
             duration > 0L &&
-            analysisState.current == TrackAnalysisState.ANALYSED &&
-            analysisState.next in MEASURED_ENOUGH_TO_ENTER_ON &&
-            // Last, because it is the only one that can read the cache.
-            nextStreamReady(nextItem)
+            plan.transitionEnd > plan.transitionStart
         val markerVerdict = when {
-            markable -> "shown"
+            markable && (analysisState.current != TrackAnalysisState.ANALYSED ||
+                analysisState.next !in MEASURED_ENOUGH_TO_ENTER_ON) -> "shown: provisional plan"
+            markable -> "shown: analysed plan"
             plan.blocked -> "hidden: plan blocked (${plan.reason})"
             !plan.markerVisible -> "hidden: plan has no marker (${plan.reason})"
-            duration <= 0L -> "hidden: no duration"
-            analysisState.current != TrackAnalysisState.ANALYSED -> "hidden: current is ${analysisState.current}"
-            analysisState.next !in MEASURED_ENOUGH_TO_ENTER_ON -> "hidden: next is ${analysisState.next}"
-            else -> "hidden: next stream not ready"
+            else -> "hidden: no valid transition window"
         }
         if (markerVerdict != lastMarkerVerdict) {
             lastMarkerVerdict = markerVerdict
@@ -1752,7 +1732,10 @@ class CrossfadeController(
         // it for a frame otherwise.
         publishBlend(out, into, force = true)
         AppSettings.smartMixInProgress.value = isRealMix()
-        if (isRealMix()) publishMixView(out, into)
+        if (isRealMix()) {
+            publishMixView(out, into)
+            openArtworkTransition(out, into)
+        }
         // The bar fills to the end through the first half of the blend, which
         // would run straight over the marker for the transition now under way.
         AppSettings.smartTransitionWindow.value = null
@@ -1911,6 +1894,7 @@ class CrossfadeController(
         }
         publishBlend(out, player)
         if (AppSettings.smartMixView.value != null) AppSettings.smartMixProgress.value = progress
+        updateArtworkTransition(progress)
         rideFilters(incomingAt, outgoingAt)
 
         // Finish when the fade runs its course or its setting is switched off.
@@ -2286,6 +2270,31 @@ class CrossfadeController(
      * where the overlap sits on each timeline, its beats and the faders it
      * will ride, with whichever waveforms have already been decoded.
      */
+    /** Publish cosmetic state from the audio clock; never touch either decoder. */
+    private fun openArtworkTransition(out: ExoPlayer, into: ExoPlayer) {
+        val outgoingItem = out.currentMediaItem ?: return
+        val incomingItem = into.currentMediaItem ?: return
+        AppSettings.autoMixArtworkState.value = AutoMixArtworkState(
+            generation = SystemClock.elapsedRealtimeNanos(),
+            outgoingMediaId = outgoingItem.mediaId,
+            incomingMediaId = incomingItem.mediaId,
+            outgoingTitle = outgoingItem.mediaMetadata.title?.toString().orEmpty(),
+            outgoingArtist = outgoingItem.mediaMetadata.artist?.toString().orEmpty(),
+            incomingTitle = incomingItem.mediaMetadata.title?.toString().orEmpty(),
+            incomingArtist = incomingItem.mediaMetadata.artist?.toString().orEmpty(),
+            outgoingArtworkUrl = outgoingItem.mediaMetadata.artworkUri?.toString(),
+            incomingArtworkUrl = incomingItem.mediaMetadata.artworkUri?.toString(),
+        )
+    }
+
+    private fun updateArtworkTransition(progress: Float) {
+        val old = AppSettings.autoMixArtworkState.value ?: return
+        val safe = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: return
+        if (kotlin.math.abs(safe - old.progress) >= 0.003f || safe == 1f) {
+            AppSettings.autoMixArtworkState.value = old.copy(progress = safe)
+        }
+    }
+
     private fun publishMixView(out: ExoPlayer, into: ExoPlayer) {
         val plan = planInFlight ?: return
         val outItem = out.currentMediaItem ?: return
@@ -2342,6 +2351,7 @@ class CrossfadeController(
     }
 
     private fun clearMixView() {
+        AppSettings.autoMixArtworkState.value = null
         mixViewJob?.cancel()
         mixViewJob = null
         mixWavePair = null
@@ -2709,6 +2719,7 @@ class CrossfadeController(
             phase = Phase.LOOP_RUNNING
             AppSettings.smartTransitionWindow.value = null
             AppSettings.smartMixInProgress.value = true
+            incoming?.let { openArtworkTransition(out, it) }
             scope.launch(Dispatchers.Default) {
                 session.outPort.spliceLag()?.let { (lag, score) ->
                     Log.d(
@@ -2749,6 +2760,7 @@ class CrossfadeController(
             handOff(out, into)
         }
         publishLoopBeat(session, m, now)
+        updateArtworkTransition(AutoMixArtworkState.loopProgress(m, session.clock.handoffAt, session.clock.elementAt))
         announceLoopPosition()
         if (m >= session.clock.elementAt + LOOP_END_MARGIN_SECONDS) finishLoop()
     }

@@ -5,6 +5,35 @@ supports native Android Rich Presence via unauthenticated RPC. Discord must
 be installed and signed in on the Android device. There is **no user token,
 bot token, or API key** to input in Aurelis Music.
 
+## Private binary release used by GitHub Actions
+
+Aurelis Music stays public. Store the official binary **only if its license permits
+this storage and your access permissions** in a separate **private** repository
+`ed0668822/Aurelis-Discord-SDK`, as a Release asset:
+
+- Tag: `v1.11.24259`
+- Asset: `discord_partner_sdk.aar` (the Android `lib/release/` artifact inside Discord's ZIP)
+- Expected SHA-256: `ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99`
+
+Do not put the AAR into this public repository or publish the SDK ZIP.
+In GitHub's fine-grained personal access tokens page, generate a short-lived
+token restricted to **only** `Aurelis-Discord-SDK`, with repository
+**Contents: Read-only** permission. Save it as a repository Actions secret
+named `DISCORD_SDK_READ_TOKEN` in the **public** `Aurelis-Music` repository.
+Never add the token to git, files, logs, or an Actions variable.
+
+The debug and signed release workflows independently run
+`gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs`,
+verify the pinned SHA-256 and validate the AAR using
+`scripts/install-discord-sdk.sh`. The SDK must exist before Gradle
+configuration. If the secret is absent, builds continue without Discord
+Social SDK, and their Discord UI remains preview-only. If the secret is
+present but download, integrity or validation fails, builds stop.
+
+Rotating or expiring the token requires replacing the secret. Changing the
+AAR version requires changing the Release tag and pinned checksum in both
+workflow jobs.
+
 ## Official SDK acquisition
 
 The Android binary **cannot be generated from the Application ID**. Log in to

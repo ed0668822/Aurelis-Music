@@ -1545,4 +1545,13 @@
     <string name="discord_oauth_browser_error">Не удалось открыть браузер для авторизации Discord.</string>
     <string name="discord_oauth_failed">Авторизация Discord отменена, истекла или недействительна. Повторите попытку.</string>
     <string name="discord_oauth_config_error">Не удалось завершить авторизацию. Включите публичный клиент и укажите точный URI перенаправления в портале разработчика Discord.</string>
+    <string name="automix_artwork_transition">Анимация обложек AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">Плавно сменяет две обложки во время AutoMix без изменения звука.</string>
+    <string name="automix_mini_artwork_transition">Анимация обложки миниплеера</string>
+    <string name="automix_mini_artwork_transition_subtitle">Показывает тот же переход в компактном плеере.</string>
+    <string name="show_total_duration">Показать полную длительность</string>
+    <string name="show_total_duration_subtitle">Показывает полную длительность вместо оставшегося времени у полосы воспроизведения.</string>
+    <string name="hide_lyrics_preview">Скрыть предпросмотр текста</string>
+    <string name="hide_lyrics_preview_subtitle">Скрывает строку над полосой; полный текст песни остаётся доступен.</string>
+    <string name="sleep_timer_fade_out">Плавно снижать громкость в последние 30 секунд</string>
 </resources>

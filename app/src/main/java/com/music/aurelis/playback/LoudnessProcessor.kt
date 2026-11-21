@@ -76,6 +76,18 @@ class LoudnessProcessor {
     private var trimTarget = 1f
 
     /**
+     * Per-sample sleep fade, shared by both independent DSP chains.
+     * Never writes ExoPlayer.volume: CrossfadeController owns that for
+     * the two-deck handoff, and overwriting it breaks an active mix.
+     */
+    @Volatile private var sleepFadeTarget = 1f
+    private var currentSleepFade = 1f
+
+    fun setSleepFade(value: Float) {
+        sleepFadeTarget = if (value.isFinite()) value.coerceIn(0f, 1f) else 1f
+    }
+
+    /**
      * Keeps the limiter running even with no gain of this stage's own to
      * apply. Set by [com.music.aurelis.playback.audio.DspChain] before every
      * block, on the audio thread, from whether the equaliser is shaping it.
@@ -140,9 +152,11 @@ class LoudnessProcessor {
 
         val targetGain = targetGain()
         val targetTrim = trimTarget
+        val targetSleep = sleepFadeTarget
         if (snap) {
             currentGain = targetGain
             currentTrim = targetTrim
+            currentSleepFade = sleepFadeTarget
             snap = false
         }
         // Parked: nothing to scale and nothing that could clip. Returning before
@@ -155,10 +169,12 @@ class LoudnessProcessor {
         // would never be bit-exact again after the EQ or normalization was
         // switched off.
         if (!holdLimiter && targetGain == 1f && targetTrim >= 1f &&
+            targetSleep >= 1f && currentSleepFade >= 1f - SETTLED &&
             abs(currentGain - 1f) < SETTLED && currentTrim >= 1f - SETTLED && reduction >= PARK_REDUCTION
         ) {
             currentGain = 1f
             currentTrim = 1f
+            currentSleepFade = 1f
             reduction = 1f
             return
         }
@@ -166,12 +182,14 @@ class LoudnessProcessor {
         val samples = block.samples
         var gain = currentGain
         var trim = currentTrim
+        var sleep = currentSleepFade
         var gr = reduction
         var index = 0
         for (frame in 0 until frames) {
             gain += (targetGain - gain) * glideCoef
             trim += (targetTrim - trim) * glideCoef
-            val scale = gain * trim
+            sleep += (targetSleep - sleep) * glideCoef
+            val scale = gain * trim * sleep
             var peak = 0f
             for (channel in 0 until channels) {
                 val magnitude = abs(samples[index + channel])
@@ -188,6 +206,7 @@ class LoudnessProcessor {
         }
         currentGain = gain
         currentTrim = trim
+        currentSleepFade = sleep
         reduction = gr
     }
 

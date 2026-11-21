@@ -1491,4 +1491,13 @@
     <string name="discord_oauth_browser_error">Discordの認証用ブラウザーを開けませんでした。</string>
     <string name="discord_oauth_failed">Discordの認証が取り消されたか、期限切れまたは無効です。再試行してください。</string>
     <string name="discord_oauth_config_error">認証を完了できません。Discord開発者ポータルでPublic Clientを有効にし、正確なリダイレクトURIを登録してください。</string>
+    <string name="automix_artwork_transition">AutoMixのアートワーク切り替え</string>
+    <string name="automix_artwork_transition_subtitle">音声を変更せずにAutoMix中の2枚のジャケットを滑らかに切り替えます。</string>
+    <string name="automix_mini_artwork_transition">ミニプレーヤーのジャケットもアニメーション</string>
+    <string name="automix_mini_artwork_transition_subtitle">小型プレーヤーにも同じ切り替えを表示します。</string>
+    <string name="show_total_duration">曲の総再生時間を表示</string>
+    <string name="show_total_duration_subtitle">シークバーの横に残り時間ではなく曲の総再生時間を表示します。</string>
+    <string name="hide_lyrics_preview">歌詞のプレビューを非表示</string>
+    <string name="hide_lyrics_preview_subtitle">シークバー上の歌詞を非表示にします。歌詞全文は引き続き利用できます。</string>
+    <string name="sleep_timer_fade_out">最後の30秒間で音量を徐々に下げる</string>
 </resources>

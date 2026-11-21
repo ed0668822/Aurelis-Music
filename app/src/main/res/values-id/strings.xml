@@ -1490,4 +1490,13 @@
     <string name="discord_oauth_browser_error">Tidak dapat membuka browser untuk otorisasi Discord.</string>
     <string name="discord_oauth_failed">Otorisasi Discord dibatalkan, kedaluwarsa, atau tidak valid. Coba lagi.</string>
     <string name="discord_oauth_config_error">Tidak dapat menyelesaikan otorisasi. Aktifkan Public Client dan daftarkan URI pengalihan yang tepat di Portal Pengembang Discord.</string>
+    <string name="automix_artwork_transition">Sampul AutoMix animasi</string>
+    <string name="automix_artwork_transition_subtitle">Padukan kedua sampul selama AutoMix tanpa mengubah audio.</string>
+    <string name="automix_mini_artwork_transition">Animasikan sampul MiniPlayer</string>
+    <string name="automix_mini_artwork_transition_subtitle">Tampilkan transisi sampul yang sama di pemutar mini.</string>
+    <string name="show_total_duration">Tampilkan durasi total lagu</string>
+    <string name="show_total_duration_subtitle">Tampilkan panjang lagu alih-alih sisa waktu di sebelah bilah pemutaran.</string>
+    <string name="hide_lyrics_preview">Sembunyikan pratinjau lirik</string>
+    <string name="hide_lyrics_preview_subtitle">Sembunyikan baris lirik di atas bilah; lirik lengkap tetap tersedia.</string>
+    <string name="sleep_timer_fade_out">Perlahan kecilkan volume selama 30 detik terakhir</string>
 </resources>

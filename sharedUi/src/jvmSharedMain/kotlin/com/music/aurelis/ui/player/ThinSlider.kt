@@ -36,6 +36,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -98,7 +99,7 @@ fun ThinSlider(
     activeColor: Color = Color.White.copy(alpha = 0.92f),
     inactiveColor: Color = Color.White.copy(alpha = 0.26f),
     /** Halfway between the two track colours: visible against unplayed, invisible under played. */
-    markerColor: Color = Color.White.copy(alpha = 0.5f),
+    markerColor: Color = Color.White.copy(alpha = 0.7f),
 ) {
     var dragging by remember { mutableStateOf(false) }
     val height by animateDpAsState(
@@ -224,6 +225,14 @@ fun ThinSlider(
                         ),
                         size = size,
                         cornerRadius = radius,
+                    )
+                    // A thin solid cue indicates the exact planned cut point;
+                    // the feathered span shows how long both tracks overlap.
+                    drawLine(
+                        color = markerColor.copy(alpha = windowAlpha),
+                        start = Offset(from, 0f),
+                        end = Offset(from, size.height),
+                        strokeWidth = 2.dp.toPx(),
                     )
                 }
             }

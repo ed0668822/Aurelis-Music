@@ -1514,4 +1514,13 @@
     <string name="discord_oauth_browser_error">Impossible d\'ouvrir le navigateur pour autoriser Discord.</string>
     <string name="discord_oauth_failed">L\'autorisation Discord a été annulée, a expiré ou est invalide. Réessayez.</string>
     <string name="discord_oauth_config_error">Impossible de terminer l\'autorisation. Activez le client public et enregistrez l\'URI de retour exacte dans le portail Discord.</string>
+    <string name="automix_artwork_transition">Pochettes animées AutoMix</string>
+    <string name="automix_artwork_transition_subtitle">Fait apparaître les deux pochettes pendant AutoMix sans modifier le son.</string>
+    <string name="automix_mini_artwork_transition">Animer la pochette du minilecteur</string>
+    <string name="automix_mini_artwork_transition_subtitle">Affiche la même transition dans le lecteur compact.</string>
+    <string name="show_total_duration">Afficher la durée totale</string>
+    <string name="show_total_duration_subtitle">Affiche la durée totale au lieu du temps restant près de la barre de lecture.</string>
+    <string name="hide_lyrics_preview">Masquer l\'aperçu des paroles</string>
+    <string name="hide_lyrics_preview_subtitle">Masque la ligne au-dessus de la barre; les paroles complètes restent accessibles.</string>
+    <string name="sleep_timer_fade_out">Baisser progressivement le volume pendant les 30 dernières secondes</string>
 </resources>

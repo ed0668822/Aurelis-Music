@@ -240,6 +240,8 @@ fun SettingsScreen(
     val smartFade by AppSettings.smartFadeEnabled.collectAsStateWithLifecycle()
     val automixPerformance by AppSettings.automixPerformanceMode.collectAsStateWithLifecycle()
     val autoMixOptions by AppSettings.autoMixOptions.collectAsStateWithLifecycle()
+    val autoMixArtworkEnabled by AppSettings.autoMixArtworkEnabled.collectAsStateWithLifecycle()
+    val autoMixMiniArtworkEnabled by AppSettings.autoMixMiniArtworkEnabled.collectAsStateWithLifecycle()
     val skipSilence by AppSettings.skipSilence.collectAsStateWithLifecycle()
     val dolbyAtmos by AppSettings.dolbyAtmos.collectAsStateWithLifecycle()
     val directSourceStream by AppSettings.directSourceStream.collectAsStateWithLifecycle()
@@ -264,6 +266,8 @@ fun SettingsScreen(
     val signatureApiUrl by AppSettings.signatureApiUrl.collectAsStateWithLifecycle()
     val fullBleedArtwork by AppSettings.fullBleedArtwork.collectAsStateWithLifecycle()
     val fullBleedDetailArtwork by AppSettings.fullBleedDetailArtwork.collectAsStateWithLifecycle()
+    val showTotalDuration by AppSettings.showTotalDuration.collectAsStateWithLifecycle()
+    val hideLyricsPreview by AppSettings.hideLyricsPreview.collectAsStateWithLifecycle()
     val playerTheme by AppSettings.playerTheme.collectAsStateWithLifecycle()
     val syncedLyrics by AppSettings.syncedLyrics.collectAsStateWithLifecycle()
     val lyricsSources by AppSettings.lyricsSources.collectAsStateWithLifecycle()
@@ -857,6 +861,26 @@ fun SettingsScreen(
             // Experimental effects and duration presets are handled by the
             // two-deck engine. Bit-perfect output keeps its direct-path bypass.
             if (smartFade) {
+                val artworkTitle = stringResource(R.string.automix_artwork_transition)
+                row(artworkTitle, "automix", "cover", "animation", "artwork") {
+                    SettingsSubRow(
+                        title = artworkTitle,
+                        subtitle = stringResource(R.string.automix_artwork_transition_subtitle),
+                        checked = autoMixArtworkEnabled,
+                        onCheckedChange = AppSettings::setAutoMixArtworkEnabled,
+                    )
+                }
+                if (autoMixArtworkEnabled) {
+                    val miniArtworkTitle = stringResource(R.string.automix_mini_artwork_transition)
+                    row(miniArtworkTitle, "automix", "mini player", "cover") {
+                        SettingsSubRow(
+                            title = miniArtworkTitle,
+                            subtitle = stringResource(R.string.automix_mini_artwork_transition_subtitle),
+                            checked = autoMixMiniArtworkEnabled,
+                            onCheckedChange = AppSettings::setAutoMixMiniArtworkEnabled,
+                        )
+                    }
+                }
                 val durationTitle = stringResource(R.string.automix_duration)
                 row(durationTitle, "automix", "seconds", "length") {
                     BypassedByBitPerfect(bitPerfectReady) {
@@ -1277,6 +1301,21 @@ fun SettingsScreen(
                     onClick = { AppSettings.setFullBleedDetailArtwork(!fullBleedDetailArtwork) },
                 )
             }
+            val showTotalDurationTitle = stringResource(R.string.show_total_duration)
+            row(showTotalDurationTitle, "player", "clock", "duration", "remaining time") {
+                SettingsRow(
+                    icon = SfIcons.Clock,
+                    title = showTotalDurationTitle,
+                    subtitle = stringResource(R.string.show_total_duration_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = showTotalDuration,
+                            onCheckedChange = AppSettings::setShowTotalDuration,
+                        )
+                    },
+                    onClick = { AppSettings.setShowTotalDuration(!showTotalDuration) },
+                )
+            }
             val playerThemeTitle = stringResource(R.string.player_theme)
             row(playerThemeTitle, "background", "player", "mesh", "gradient", "legacy", "simple", "blur") {
                 SettingsRow(
@@ -1398,6 +1437,21 @@ fun SettingsScreen(
                         )
                     },
                     onClick = { AppSettings.setSyncedLyrics(!syncedLyrics) },
+                )
+            }
+            val hideLyricsPreviewTitle = stringResource(R.string.hide_lyrics_preview)
+            row(hideLyricsPreviewTitle, "lyrics", "player", "preview", "hide") {
+                SettingsRow(
+                    icon = SfIcons.VisibilityOff,
+                    title = hideLyricsPreviewTitle,
+                    subtitle = stringResource(R.string.hide_lyrics_preview_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = hideLyricsPreview,
+                            onCheckedChange = AppSettings::setHideLyricsPreview,
+                        )
+                    },
+                    onClick = { AppSettings.setHideLyricsPreview(!hideLyricsPreview) },
                 )
             }
             // Nothing to choose between while the feature is off, and the

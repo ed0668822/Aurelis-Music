@@ -45,6 +45,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.draw.alpha
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,6 +78,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -216,6 +218,7 @@ internal fun PlayerScrubber(
     centerLabel: @Composable BoxScope.() -> Unit = {},
 ) {
     val shown = shown()
+    val showTotalDuration by PlayerSettings.showTotalDuration.collectAsStateWithLifecycle()
     // Held as a State and read only inside the bar's draw: the blend republishes
     // every fade tick, and collecting it by value here would recompose the
     // scrubber and its labels thirty times a second for a change only the
@@ -253,7 +256,11 @@ internal fun PlayerScrubber(
                     color = timeColor,
                 )
                 Text(
-                    text = "-" + formatTime(durationMs - (shown * durationMs).toLong()),
+                    text = if (showTotalDuration && durationMs > 0L) {
+                        formatTime(durationMs)
+                    } else {
+                        "-" + formatTime((durationMs - (shown * durationMs).toLong()).coerceAtLeast(0L))
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = timeColor,
                 )
@@ -428,7 +435,7 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
                         stringResource(Res.string.automix_not_supported_video)
                     // The detailed line once the controller has one: each song's
                     // grid, then the planned mix — the loops and what cleared them.
-                    automixDetail != null -> automixDetail!!
+                    automixDetail != null -> readableAutomixStatus(automixDetail!!)
                     else -> stringResource(
                         Res.string.automix_analysis_status,
                         smartAnalysis.current.localizedLabel(),
@@ -448,6 +455,30 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+/**
+ * The mixer publishes machine-readable reasons for diagnostics. Translate these
+ * before they reach the artwork overlay; detailed raw codes remain in logs.
+ */
+internal fun readableAutomixStatus(raw: String): String {
+    val spanish = Locale.getDefault().language == "es"
+    val time = Regex("""\bin (\d+) s\b""").find(raw)?.groupValues?.get(1)
+    val duration = Regex("""\b(\d+) s(?=\s*[·]|$)""").findAll(raw).lastOrNull()?.groupValues?.get(1)
+    val method = when {
+        raw.contains("filter mix") -> if (spanish) "mezcla con filtro" else "filter mix"
+        raw.contains("crossfading") -> if (spanish) "transición suave" else "crossfade"
+        raw.contains("mixing") -> if (spanish) "mezcla inteligente" else "smart mix"
+        else -> return raw.substringBefore(" · automix:").substringBefore(" · no loop:")
+    }
+    val timing = if (time != null) {
+        if (spanish) "en ${time} s" else "in ${time} s"
+    } else if (spanish) "ahora" else "now"
+    val fallback = if (raw.contains("analysisUnavailable")) {
+        if (spanish) "ritmo no analizado" else "beat analysis unavailable"
+    } else null
+    val length = duration?.let { " · ${it} s" }.orEmpty()
+    return "AutoMix · $method $timing$length" + (fallback?.let { " · $it" } ?: "")
 }
 
 /**
@@ -484,6 +515,7 @@ internal fun TransportRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TransportGlyph(
+            skipDirection = -1,
             icon = Res.drawable.ic_player_previous,
             contentDescription = stringResource(Res.string.widget_previous),
             size = skipSize,
@@ -514,6 +546,7 @@ internal fun TransportRow(
             )
         }
         TransportGlyph(
+            skipDirection = 1,
             icon = Res.drawable.ic_player_next,
             contentDescription = stringResource(Res.string.widget_next),
             size = skipSize,
@@ -804,8 +837,14 @@ private fun TransportGlyph(
     haptic: Haptic = Haptic.Tap,
     /** Vertical squash of the glyph alone; its width and touch box are untouched. */
     heightScale: Float = 1f,
+    skipDirection: Int = 0,
 ) {
     val haptics = rememberHaptics()
+    val reduceMotion by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val scale = remember { Animatable(1f) }
+    val skipOffset = remember { Animatable(0f) }
+    val pixelDensity = LocalDensity.current.density
     // Faded rather than hidden: the row keeps its shape at the ends of a queue.
     val alpha by animateFloatAsState(
         targetValue = if (enabled) 1f else 0.3f,
@@ -820,18 +859,44 @@ private fun TransportGlyph(
                 enabled = enabled,
             ) {
                 haptics.play(haptic)
+                if (!reduceMotion) {
+                    scope.launch {
+                        scale.snapTo(0.85f)
+                        scale.animateTo(
+                            1f,
+                            spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium,
+                            ),
+                        )
+                    }
+                    if (skipDirection != 0) {
+                        scope.launch {
+                            skipOffset.snapTo(skipDirection * 7f)
+                            skipOffset.animateTo(0f, tween(durationMillis = 260))
+                        }
+                    }
+                }
                 onClick()
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = contentDescription,
-            tint = Color.White.copy(alpha = alpha),
-            modifier = Modifier
-                .size(size)
-                .then(if (heightScale != 1f) Modifier.graphicsLayer { scaleY = heightScale } else Modifier),
-        )
+        Crossfade(
+            targetState = icon,
+            animationSpec = tween(durationMillis = if (reduceMotion) 0 else 170),
+            label = "transportGlyph",
+        ) { displayed ->
+            Icon(
+                painter = painterResource(displayed),
+                contentDescription = contentDescription,
+                tint = Color.White.copy(alpha = alpha),
+                modifier = Modifier.size(size).graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value * heightScale
+                    translationX = skipOffset.value * pixelDensity
+                },
+            )
+        }
     }
 }
 

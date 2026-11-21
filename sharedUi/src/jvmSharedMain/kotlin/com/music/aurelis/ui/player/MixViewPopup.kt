@@ -306,6 +306,21 @@ private fun SkeletonBlock(sweep: State<Float>, modifier: Modifier, shape: Shape 
 private fun DeckHeader(deck: MixDeck, sweep: State<Float>, modifier: Modifier = Modifier) {
     // Only the placeholder has no title: a real track always knows its own name.
     val unknown = deck.title.isEmpty() && deck.analysing
+    var requestFallback by remember(deck.title, deck.artist, deck.artworkUrl) {
+        mutableStateOf(deck.artworkUrl.isNullOrBlank())
+    }
+    var remoteCover by remember(deck.title, deck.artist, deck.artworkUrl) {
+        mutableStateOf<String?>(null)
+    }
+    var failedCover by remember(deck.title, deck.artist, deck.artworkUrl) {
+        mutableStateOf<String?>(null)
+    }
+    LaunchedEffect(deck.title, deck.artist, requestFallback) {
+        if (requestFallback && !unknown) {
+            remoteCover = PlayerPlatform.host.resolveMixArtwork(deck.title, deck.artist)
+        }
+    }
+    val artwork = (remoteCover ?: deck.artworkUrl)?.takeUnless { it == failedCover }
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -313,15 +328,27 @@ private fun DeckHeader(deck: MixDeck, sweep: State<Float>, modifier: Modifier = 
         if (unknown) {
             SkeletonBlock(sweep, Modifier.size(46.dp), RoundedCornerShape(6.dp))
         } else {
-            AsyncImage(
-                model = deck.artworkUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+            Box(
                 modifier = Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color.White.copy(alpha = 0.08f)),
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("♫", color = SecondaryText, fontSize = 21.sp)
+                if (!artwork.isNullOrBlank()) {
+                    AsyncImage(
+                        model = artwork,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        onError = {
+                            failedCover = artwork
+                            if (remoteCover == null) requestFallback = true
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {

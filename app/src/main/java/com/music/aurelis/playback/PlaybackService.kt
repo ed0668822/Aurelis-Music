@@ -6744,19 +6744,47 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
-     * Pause when the sleep timer runs out.
+     * Timed sleep fade, applied after EQ and normalization by the per-player
+     * LoudnessProcessors. Both independent decks receive the same envelope,
+     * including during the middle of an AutoMix crossfade or a version swap.
      *
-     * `collectLatest` is what makes re-setting the timer work: the pending wait
-     * is cancelled and restarted on the new deadline instead of both firing.
+     * Never touches ExoPlayer.volume or the device/receiver volume; these are
+     * owned by the transition scheduler and the listener, respectively.
+     * External outputs and bit-perfect bypass the fade and still stop on time.
+     * Cancelling or changing the deadline restores the envelope in finally.
      */
     private fun watchSleepTimer() {
         scope.launch {
             SleepTimer.deadline.collectLatest { deadline ->
+                loudnessA.setSleepFade(1f)
+                loudnessB.setSleepFade(1f)
                 if (deadline == null) return@collectLatest
-                val remaining = deadline - SystemClock.elapsedRealtime()
-                if (remaining > 0) delay(remaining)
-                player?.pause()
-                SleepTimer.cancel()
+                try {
+                    val beforeFade = (deadline - SystemClock.elapsedRealtime() -
+                        SleepTimer.FADE_OUT_DURATION_MS).coerceAtLeast(0L)
+                    if (beforeFade > 0) delay(beforeFade)
+                    while (isActive) {
+                        val remaining = deadline - SystemClock.elapsedRealtime()
+                        if (remaining <= 0L) break
+                        val canFade = AppSettings.sleepTimerFadeOut.value &&
+                            !BitPerfectOutput.status.value.active &&
+                            !CastController.state.value.casting &&
+                            !WearBridge.watchOutput.value.active
+                        val envelope = SleepTimer.calculateFadeVolume(
+                            remainingMs = remaining,
+                            fadeOutEnabled = canFade,
+                        )
+                        loudnessA.setSleepFade(envelope)
+                        loudnessB.setSleepFade(envelope)
+                        delay(minOf(100L, remaining))
+                    }
+                    player?.pause()
+                    SleepTimer.cancel()
+                } finally {
+                    // Keep EQ, loudness, ReplayGain and user volume as they were.
+                    loudnessA.setSleepFade(1f)
+                    loudnessB.setSleepFade(1f)
+                }
             }
         }
     }

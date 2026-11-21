@@ -1363,4 +1363,13 @@
     <string name="discord_oauth_browser_error">Discord 인증용 브라우저를 열 수 없습니다.</string>
     <string name="discord_oauth_failed">Discord 인증이 취소되었거나 만료되었거나 유효하지 않습니다. 다시 시도하세요.</string>
     <string name="discord_oauth_config_error">인증을 완료할 수 없습니다. Discord 개발자 포털에서 Public Client를 켜고 정확한 리디렉션 URI를 등록하세요.</string>
+    <string name="automix_artwork_transition">AutoMix 앨범 아트 전환</string>
+    <string name="automix_artwork_transition_subtitle">오디오를 변경하지 않고 AutoMix 중 두 앨범 아트를 부드럽게 전환합니다.</string>
+    <string name="automix_mini_artwork_transition">미니 플레이어 아트 애니메이션</string>
+    <string name="automix_mini_artwork_transition_subtitle">작은 플레이어에서도 동일한 전환을 표시합니다.</string>
+    <string name="show_total_duration">전체 곡 길이 표시</string>
+    <string name="show_total_duration_subtitle">탐색 막대 옆에 남은 시간 대신 전체 곡 길이를 표시합니다.</string>
+    <string name="hide_lyrics_preview">가사 미리보기 숨기기</string>
+    <string name="hide_lyrics_preview_subtitle">탐색 막대 위의 가사 한 줄을 숨깁니다. 전체 가사는 계속 볼 수 있습니다.</string>
+    <string name="sleep_timer_fade_out">마지막 30초 동안 음량 서서히 줄이기</string>
 </resources>

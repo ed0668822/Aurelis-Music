@@ -561,9 +561,10 @@ private fun AurelisApp(
     // rather than inside the bar because the page's scroll is what drives it,
     // and the page is a sibling of the bar rather than a child.
     val navBarScroll = rememberFloatingTabBarScrollConnection()
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    // Explore loads the first time it's shown, not at launch beside Home.
+    // Reopen on the same main section, including its saved Local Music category.
+    var selectedTab by rememberSaveable { mutableIntStateOf(AppSettings.lastMainTab.value) }
     LaunchedEffect(selectedTab) {
+        AppSettings.setLastMainTab(selectedTab)
         if (selectedTab == TAB_EXPLORE) viewModel.onExploreShown()
     }
     /**
@@ -3248,11 +3249,13 @@ private fun AurelisApp(
                                     page.browseId,
                                 )
                                 val selected = songs.getOrNull(index)
-                                val pageSongKeys =
-                                    (page.songs as? UiState.Success)?.data.orEmpty().mapTo(HashSet()) { it.contextEntryKey() }
+                                val pageKeys =
+                                    (page.songs as? UiState.Success)?.data.orEmpty().map { it.contextEntryKey() }
+                                val pageSongKeys = pageKeys.toHashSet()
                                 val useBounded =
                                     (page.type == BrowseType.ALBUM || page.type == BrowseType.PLAYLIST) &&
                                         selected?.contextEntryKey()?.let(pageSongKeys::contains) == true &&
+                                        inPageOrder(songs.map { it.contextEntryKey() }, pageKeys) &&
                                         !CastController.state.value.casting
                                 val latestPage = if (useBounded) {
                                     viewModel.takePlaybackContext(page.browseId)
@@ -3693,7 +3696,12 @@ private fun AurelisApp(
                                         LocalMediaRepository.getLocalMusic(context)
                                     } else emptyList()
                                 }
+                                val savedLocalTab by AppSettings.localMusicTab.collectAsStateWithLifecycle()
                                 val folderState = remember { LocalFolderState() }
+                                LaunchedEffect(savedLocalTab) {
+                                    folderState.tab = LocalFolderTab.entries.firstOrNull { it.name == savedLocalTab }
+                                        ?: LocalFolderTab.SONGS
+                                }
                                 val localSongs = remember(deviceSongs, localMusicSort) {
                                     deviceSongs.orEmpty().sortedForLibrary(localMusicSort)
                                 }
@@ -3725,6 +3733,7 @@ private fun AurelisApp(
                                     tabs = LocalFolderTab.DEVICE,
                                     playlists = offlinePlaylistGroups,
                                     onCreatePlaylist = { creatingOfflinePlaylist = true },
+                                    onTabSelected = { AppSettings.setLocalMusicTab(it.name) },
                                 )
                                 val grouped = rememberLocalFolderGroups(
                                     "local:all", folder, folderState.tab, localSongs, "",
@@ -3797,15 +3806,19 @@ private fun AurelisApp(
                                                     }
                                                 }
                                                 Spacer(Modifier.height(12.dp))
-                                                TextButton(
+                                                OutlinedButton(
                                                     onClick = { showDuplicateReview = true },
                                                     enabled = localSongs.isNotEmpty(),
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                                                 ) {
+                                                    Icon(Icons.Rounded.Check, contentDescription = null)
+                                                    Spacer(Modifier.width(10.dp))
                                                     Text(
                                                         if (Locale.getDefault().language == "es")
-                                                            "Revisar duplicados"
+                                                            "Buscar canciones duplicadas"
                                                         else
-                                                            "Review duplicates",
+                                                            "Find duplicate songs",
                                                     )
                                                 }
                                             } else {
@@ -4776,25 +4789,6 @@ private fun AurelisApp(
                 // due to look at it again — [QualityUpgrade.refuseUpgrades]
                 // takes a broken track off the automatic path for the rest
                 // of the session, and `askByHand` is what clears that.
-                onUpgradeQuality = if (fromPlayer &&
-                    (
-                        song.videoId in pinnedToOriginal ||
-                            playingYouTubesOwn(song.videoId, controller)
-                        ) &&
-                    // A track playing off a file the listener saved is not
-                    // playing a stream anything could upgrade — the pin on
-                    // it is only waiting for the day it is streamed again.
-                    song.localUri == null &&
-                    controller?.currentMediaItem?.mediaId == song.videoId
-                ) {
-                    {
-                        controller.upgradeQuality()
-                        songActions = null
-                    }
-                } else {
-                    null
-                },
-                upgradeQualityInProgress = fromPlayer && song.videoId in qualityUpgradesInFlight,
                 onToggleAudioVersion = onToggleVersion,
                 isAudioVersion = menuIsAudioVersion,
                 audioVersionMissing = song.videoId in missingVersions,

@@ -147,6 +147,8 @@ class LocalFolder(
     val playlists: List<LocalGroup> = emptyList(),
     /** Puts "New playlist" at the head of the Playlists tab. */
     val onCreatePlaylist: (() -> Unit)? = null,
+    /** Persist tab changes only for the expanded Local Music section. */
+    val onTabSelected: ((LocalFolderTab) -> Unit)? = null,
 )
 
 enum class LocalFolderTab {
@@ -274,7 +276,11 @@ internal fun LazyListScope.localFolderItems(
         SegmentedControl(
             options = tabs.map { it.label() },
             selectedIndex = tabs.indexOf(state.tab).coerceAtLeast(0),
-            onSelect = { state.tab = tabs[it] },
+            onSelect = { index ->
+                val selected = tabs[index]
+                state.tab = selected
+                folder.onTabSelected?.invoke(selected)
+            },
             modifier = Modifier.padding(start = PAGE_GUTTER, end = PAGE_GUTTER, bottom = 14.dp),
         )
     }

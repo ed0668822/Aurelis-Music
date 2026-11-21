@@ -5,6 +5,9 @@ import com.music.aurelis.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
@@ -63,6 +66,7 @@ import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
 import com.music.aurelis.playback.MusicOnlyPlayback
 import com.music.aurelis.ui.player.PlayerDock
+import com.music.aurelis.ui.player.AutoMixArtworkOverlay
 import com.music.aurelis.ui.player.AndroidMusicVideo
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.fillMaxSize
@@ -368,6 +372,9 @@ fun MiniPlayer(
 ) {
     val reduceDynamicBlur by AppSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
+    val reduceMotion by AppSettings.reduceAnimation.collectAsStateWithLifecycle()
+    val pressScope = rememberCoroutineScope()
+    val playPulse = remember { Animatable(1f) }
     // percent rather than a dp figure, so the corner stays exactly half the
     // height if the row's contents ever change it — which is what keeps a pill
     // a pill instead of a rounded rectangle. Same idiom as [FloatingBottomBar]
@@ -437,6 +444,13 @@ fun MiniPlayer(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
+                if (!showsPicture) {
+                    AutoMixArtworkOverlay(
+                        song = song,
+                        mini = true,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
                 // A music video keeps playing in the cover's place, cropped to
                 // it, as the web player's mini player does — the full player,
                 // when it is up, takes the picture over.
@@ -479,16 +493,37 @@ fun MiniPlayer(
                 IconButton(
                     onClick = {
                         haptics.play(if (isPlaying) Haptic.Pause else Haptic.Resume)
+                        if (!reduceMotion) {
+                            pressScope.launch {
+                                playPulse.snapTo(0.85f)
+                                playPulse.animateTo(
+                                    1f,
+                                    spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMedium,
+                                    ),
+                                )
+                            }
+                        }
                         onPlayPause()
                     },
                     modifier = Modifier.size(GLYPH_SLOT),
                 ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(GLYPH_SIZE),
-                    )
+                    Crossfade(
+                        targetState = isPlaying,
+                        animationSpec = tween(durationMillis = if (reduceMotion) 0 else 160),
+                        label = "miniTransport",
+                    ) { playing ->
+                        Icon(
+                            imageVector = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.size(GLYPH_SIZE).graphicsLayer {
+                                scaleX = playPulse.value
+                                scaleY = playPulse.value
+                            },
+                        )
+                    }
                 }
             }
             Spacer(Modifier.width(TRANSPORT_GAP))

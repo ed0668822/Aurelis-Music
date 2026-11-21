@@ -1470,4 +1470,13 @@
     <string name="discord_oauth_browser_error">Discord yetkilendirmesi için tarayıcı açılamadı.</string>
     <string name="discord_oauth_failed">Discord yetkilendirmesi iptal edildi, süresi doldu veya geçersiz. Yeniden deneyin.</string>
     <string name="discord_oauth_config_error">Yetkilendirme tamamlanamadı. Discord geliştirici portalında Public Client\'ı açın ve tam yönlendirme URI\'sini kaydedin.</string>
+    <string name="automix_artwork_transition">Animasyonlu AutoMix kapakları</string>
+    <string name="automix_artwork_transition_subtitle">AutoMix sırasında sesi değiştirmeden iki kapak arasında yumuşak geçiş yapar.</string>
+    <string name="automix_mini_artwork_transition">MiniPlayer kapağını canlandır</string>
+    <string name="automix_mini_artwork_transition_subtitle">Aynı kapak geçişini küçük oynatıcıda da gösterir.</string>
+    <string name="show_total_duration">Toplam şarkı süresini göster</string>
+    <string name="show_total_duration_subtitle">İlerleme çubuğunda kalan süre yerine şarkının toplam süresini gösterir.</string>
+    <string name="hide_lyrics_preview">Şarkı sözü önizlemesini gizle</string>
+    <string name="hide_lyrics_preview_subtitle">Çubuğun üstündeki satırı gizler; tam şarkı sözleri erişilebilir kalır.</string>
+    <string name="sleep_timer_fade_out">Son 30 saniyede sesi yavaşça kıs</string>
 </resources>

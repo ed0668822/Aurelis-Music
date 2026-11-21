@@ -35,12 +35,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Provision official Discord Social SDK (optional)
+      - name: Retrieve official Discord Android SDK from private release (optional)
         env:
-          DISCORD_SDK_ZIP_URL: ${{ secrets.DISCORD_SDK_ZIP_URL }}
-          DISCORD_SDK_ZIP_SHA256: ${{ secrets.DISCORD_SDK_ZIP_SHA256 }}
-          DISCORD_SDK_AAR_URL: ${{ secrets.DISCORD_SDK_AAR_URL }}
-          DISCORD_SDK_AAR_SHA256: ${{ secrets.DISCORD_SDK_AAR_SHA256 }}
+          GH_TOKEN: ${{ secrets.DISCORD_SDK_READ_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::notice title=Discord SDK::Private SDK token not configured; building without live Discord presence."
+          else
+            mkdir -p app/libs
+            gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs
+            printf '%s  %s\n' 'ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99' 'app/libs/discord_partner_sdk.aar' | sha256sum --check --status
+            echo "Official Discord SDK AAR: SHA-256 verified."
+          fi
+
+      - name: Validate official Discord SDK AAR (optional)
         run: bash scripts/install-discord-sdk.sh
 
       - name: Set up JDK 17
@@ -113,12 +121,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Provision official Discord Social SDK (optional)
+      - name: Retrieve official Discord Android SDK from private release (optional)
         env:
-          DISCORD_SDK_ZIP_URL: ${{ secrets.DISCORD_SDK_ZIP_URL }}
-          DISCORD_SDK_ZIP_SHA256: ${{ secrets.DISCORD_SDK_ZIP_SHA256 }}
-          DISCORD_SDK_AAR_URL: ${{ secrets.DISCORD_SDK_AAR_URL }}
-          DISCORD_SDK_AAR_SHA256: ${{ secrets.DISCORD_SDK_AAR_SHA256 }}
+          GH_TOKEN: ${{ secrets.DISCORD_SDK_READ_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::notice title=Discord SDK::Private SDK token not configured; building without live Discord presence."
+          else
+            mkdir -p app/libs
+            gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs
+            printf '%s  %s\n' 'ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99' 'app/libs/discord_partner_sdk.aar' | sha256sum --check --status
+            echo "Official Discord SDK AAR: SHA-256 verified."
+          fi
+
+      - name: Validate official Discord SDK AAR (optional)
         run: bash scripts/install-discord-sdk.sh
 
       # Falla antes de compilar si falta la firma.

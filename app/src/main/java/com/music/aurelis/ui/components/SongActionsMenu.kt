@@ -67,6 +67,7 @@ import com.music.aurelis.data.webdav.WebDavUploads
 import com.music.aurelis.download.DownloadState
 import com.music.aurelis.download.Downloads
 import com.music.aurelis.playback.SleepTimer
+import com.music.aurelis.data.settings.AppSettings
 import com.music.aurelis.ui.components.thumbnailBorder
 import com.music.aurelis.ui.theme.ArtworkPalette
 import kotlinx.coroutines.delay
@@ -141,15 +142,6 @@ fun SongActionsMenu(
      * [com.music.aurelis.playback.hasYouTubeOriginal].
      */
     onRollbackToOriginal: (() -> Unit)? = null,
-    /**
-     * The way back from a revert: available only for a player item the listener
-     * has pinned to YouTube's own upload, where nothing will go looking for a
-     * better copy again until they ask.
-     * See [com.music.aurelis.playback.OriginalVersion].
-     */
-    onUpgradeQuality: (() -> Unit)? = null,
-    /** Keeps the upgrade row visible but untappable while its lookup is running. */
-    upgradeQualityInProgress: Boolean = false,
     /**
      * Switches the playing track between its video and audio-only cuts. Null
      * hides the row — offered for the playing track only. See
@@ -237,29 +229,16 @@ fun SongActionsMenu(
             }
         }
 
-        // Leads the list whenever it's available: which recording is playing
-        // is the one question that has to be answered before any of the rows
-        // below mean anything — there is no point rating, queueing or
-        // downloading the wrong version of a song.
-        //
-        // The two are never both present — one is offered for a track playing
-        // a substituted copy, the other for a track held on YouTube's own —
-        // and between them they are the whole of the choice, which is why they
-        // sit in the same group.
-        if (onRollbackToOriginal != null || onUpgradeQuality != null || onToggleAudioVersion != null) {
+        // Keep the playback-source revert and the audio/video selector,
+        // but remove the manual quality-upgrade button from this menu.
+        // Automatic quality selection in PlaybackService remains unchanged.
+        if (onRollbackToOriginal != null || onToggleAudioVersion != null) {
             if (startsGroup()) IosMenuSeparator()
-            (onRollbackToOriginal ?: onUpgradeQuality)?.let {
+            onRollbackToOriginal?.let {
                 ActionRow(
-                    icon = if (onRollbackToOriginal != null) SfIcons.Revert else SfIcons.Upgrade,
-                    label = stringResource(
-                        if (onRollbackToOriginal != null) {
-                            R.string.revert_to_original
-                        } else {
-                            R.string.upgrade_quality
-                        },
-                    ),
+                    icon = SfIcons.Revert,
+                    label = stringResource(R.string.revert_to_original),
                     accent = palette.accent,
-                    enabled = onRollbackToOriginal != null || !upgradeQualityInProgress,
                     onClick = it,
                 )
             }
@@ -660,6 +639,14 @@ private fun SleepTimerPicker(palette: ArtworkPalette, onBack: () -> Unit) {
             selected = custom != null,
             accent = palette.accent,
         ) { pickingCustom = true }
+        HorizontalDivider(thickness = 0.5.dp, color = palette.divider)
+        val fadeOut by AppSettings.sleepTimerFadeOut.collectAsStateWithLifecycle()
+        IosMenuRow(
+            label = stringResource(R.string.sleep_timer_fade_out),
+            icon = if (fadeOut) SfIcons.Check else null,
+            onClick = { AppSettings.setSleepTimerFadeOut(!fadeOut) },
+            iconTint = palette.accent,
+        )
         if (chosen != null || afterTrack) {
             ActionRow(SfIcons.Close, stringResource(R.string.turn_off_timer), accent = palette.accent) {
                 SleepTimer.cancel()
