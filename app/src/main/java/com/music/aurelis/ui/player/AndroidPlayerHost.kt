@@ -72,13 +72,25 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override val supportsAutoMixCanvas: Boolean get() = true
 
     private val visualArtworkPreferences: StateFlow<AutoMixArtworkPreferences> =
-        combine(AppSettings.autoMixArtworkEnabled, AppSettings.autoMixMiniArtworkEnabled) { art, mini ->
-            AutoMixArtworkPreferences(artTransition = art, miniPlayerTransition = mini)
+        combine(
+            AppSettings.autoMixArtworkEnabled,
+            AppSettings.autoMixMiniArtworkEnabled,
+            AppSettings.autoMixArtworkCutoff,
+            AppSettings.autoMixMiniArtworkCutoff,
+        ) { art, mini, artCutoff, miniCutoff ->
+            AutoMixArtworkPreferences(
+                artTransition = art,
+                miniPlayerTransition = mini,
+                skipArtworkThrough = artCutoff,
+                skipMiniThrough = miniCutoff,
+            )
         }.stateIn(
             scope, SharingStarted.Eagerly,
             AutoMixArtworkPreferences(
                 artTransition = AppSettings.autoMixArtworkEnabled.value,
                 miniPlayerTransition = AppSettings.autoMixMiniArtworkEnabled.value,
+                skipArtworkThrough = AppSettings.autoMixArtworkCutoff.value,
+                skipMiniThrough = AppSettings.autoMixMiniArtworkCutoff.value,
             ),
         )
 

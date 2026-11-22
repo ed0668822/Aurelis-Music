@@ -243,7 +243,6 @@ fun SettingsScreen(
     val crossfade by AppSettings.crossfadeSeconds.collectAsStateWithLifecycle()
     val smartFade by AppSettings.smartFadeEnabled.collectAsStateWithLifecycle()
     val automixPerformance by AppSettings.automixPerformanceMode.collectAsStateWithLifecycle()
-    val autoMixOptions by AppSettings.autoMixOptions.collectAsStateWithLifecycle()
     val autoMixArtworkEnabled by AppSettings.autoMixArtworkEnabled.collectAsStateWithLifecycle()
     val autoMixMiniArtworkEnabled by AppSettings.autoMixMiniArtworkEnabled.collectAsStateWithLifecycle()
     val skipSilence by AppSettings.skipSilence.collectAsStateWithLifecycle()
@@ -862,8 +861,10 @@ fun SettingsScreen(
                     )
                 }
             }
-            // Experimental effects and duration presets are handled by the
-            // two-deck engine. Bit-perfect output keeps its direct-path bypass.
+            // BitChord's original AutoMix artwork preferences. The mini
+            // transition is independent from the expanded player's cover.
+            // Legacy experimental effect values remain readable in settings
+            // storage but no longer appear as controls for the restored engine.
             if (smartFade) {
                 val artworkTitle = stringResource(R.string.automix_artwork_transition)
                 row(artworkTitle, "automix", "cover", "animation", "artwork") {
@@ -874,86 +875,14 @@ fun SettingsScreen(
                         onCheckedChange = AppSettings::setAutoMixArtworkEnabled,
                     )
                 }
-                if (autoMixArtworkEnabled) {
-                    val miniArtworkTitle = stringResource(R.string.automix_mini_artwork_transition)
-                    row(miniArtworkTitle, "automix", "mini player", "cover") {
-                        SettingsSubRow(
-                            title = miniArtworkTitle,
-                            subtitle = stringResource(R.string.automix_mini_artwork_transition_subtitle),
-                            checked = autoMixMiniArtworkEnabled,
-                            onCheckedChange = AppSettings::setAutoMixMiniArtworkEnabled,
-                        )
-                    }
-                }
-                val effectTitle = stringResource(R.string.automix_effect)
-                row(effectTitle, "automix", "muffled", "echo", "pitch", "custom") {
-                    BypassedByBitPerfect(bitPerfectReady) {
-                        SettingsRow(
-                            icon = SfIcons.Tune,
-                            title = effectTitle,
-                            subtitle = stringResource(R.string.automix_effect_subtitle),
-                            value = autoMixOptions.effect.localizedLabel(),
-                            onClick = { onOpenChoice(SettingsChoiceKind.AUTOMIX_EFFECT) },
-                        )
-                    }
-                }
-                if (autoMixOptions.effect == AutoMixEffect.CUSTOM) {
-                    val speedTitle = stringResource(R.string.automix_speed)
-                    row(speedTitle, "automix", "speed", "tempo") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SliderRow(
-                                icon = SfIcons.Waves,
-                                title = speedTitle,
-                                subtitle = stringResource(R.string.automix_speed_subtitle),
-                                value = "%.2f×".format(Locale.ROOT, autoMixOptions.speed),
-                                sliderValue = autoMixOptions.speed,
-                                onSliderValue = { AppSettings.setAutoMixSpeed((it * 100).roundToInt() / 100f) },
-                                valueRange = 0.8f..1.2f,
-                                steps = 39,
-                            )
-                        }
-                    }
-                }
-                if (autoMixOptions.effect == AutoMixEffect.CUSTOM || autoMixOptions.effect == AutoMixEffect.PITCH) {
-                    val pitchTitle = stringResource(R.string.automix_pitch)
-                    row(pitchTitle, "automix", "pitch", "semitones") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SliderRow(
-                                icon = SfIcons.Waves,
-                                title = pitchTitle,
-                                subtitle = stringResource(R.string.automix_pitch_subtitle),
-                                value = "%.1f st".format(Locale.ROOT, autoMixOptions.pitchSemitones),
-                                sliderValue = autoMixOptions.pitchSemitones,
-                                onSliderValue = { AppSettings.setAutoMixPitchSemitones((it * 2).roundToInt() / 2f) },
-                                valueRange = -6f..6f,
-                                steps = 23,
-                            )
-                        }
-                    }
-                }
-                if (autoMixOptions.effect == AutoMixEffect.CUSTOM) {
-                    val echoTitle = stringResource(R.string.automix_echo_toggle)
-                    row(echoTitle, "automix", "echo", "delay") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SettingsSubRow(
-                                title = echoTitle,
-                                subtitle = stringResource(R.string.automix_echo_subtitle),
-                                checked = autoMixOptions.echo,
-                                onCheckedChange = AppSettings::setAutoMixEcho,
-                            )
-                        }
-                    }
-                    val lowPassTitle = stringResource(R.string.automix_low_pass)
-                    row(lowPassTitle, "automix", "low pass", "muffled") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SettingsSubRow(
-                                title = lowPassTitle,
-                                subtitle = stringResource(R.string.automix_low_pass_subtitle),
-                                checked = autoMixOptions.lowPass,
-                                onCheckedChange = AppSettings::setAutoMixLowPass,
-                            )
-                        }
-                    }
+                val miniArtworkTitle = stringResource(R.string.automix_mini_artwork_transition)
+                row(miniArtworkTitle, "automix", "mini player", "cover") {
+                    SettingsSubRow(
+                        title = miniArtworkTitle,
+                        subtitle = stringResource(R.string.automix_mini_artwork_transition_subtitle),
+                        checked = autoMixMiniArtworkEnabled,
+                        onCheckedChange = AppSettings::setAutoMixMiniArtworkEnabled,
+                    )
                 }
             }
             val automixPerformanceTitle = stringResource(R.string.automix_performance)

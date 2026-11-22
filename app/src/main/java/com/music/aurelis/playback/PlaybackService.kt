@@ -105,6 +105,7 @@ import com.music.aurelis.data.listentogether.partyQueueIndexOf
 import com.music.aurelis.data.listentogether.partyUpcomingAfter
 import com.music.aurelis.R
 import com.music.aurelis.data.LocalMediaRepository
+import com.music.aurelis.data.canvas.CanvasRepository
 import com.music.aurelis.data.OfflinePlaylists
 import com.music.aurelis.data.innertube.InnertubeParser
 import com.music.aurelis.data.YtMusicRepository
@@ -156,6 +157,8 @@ import com.music.aurelis.data.sources.TrackMatcher
 import com.music.aurelis.playback.smart.AutomixAnalysisSource
 import com.music.aurelis.playback.smart.LocalAudioSource
 import com.music.aurelis.playback.smart.VersionAudioAligner
+import com.music.aurelis.ui.player.prefetchAutoMixArtwork
+import com.music.aurelis.ui.player.discardBlockedAutoMixAmbient
 import com.music.aurelis.widget.MediaWidget
 import com.music.aurelis.widget.MediaWidgetSnapshot
 import com.music.aurelis.wear.WearBridge
@@ -1944,6 +1947,58 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    private var autoMixArtworkJob: Job? = null
+    private var autoMixArtworkGeneration: Long? = null
+
+    /** Respect independent cover/mini preferences and the current pair's fence. */
+    private fun allowsAutoMixArtwork(generation: Long, mini: Boolean = false): Boolean =
+        AppSettings.smartFadeEnabled.value &&
+            (if (mini) AppSettings.autoMixMiniArtworkEnabled.value else AppSettings.autoMixArtworkEnabled.value) &&
+            generation > (if (mini) AppSettings.autoMixMiniArtworkCutoff.value else AppSettings.autoMixArtworkCutoff.value)
+
+    private fun allowsAnyAutoMixArtwork(generation: Long): Boolean =
+        allowsAutoMixArtwork(generation) || allowsAutoMixArtwork(generation, mini = true)
+
+    /**
+     * BitChord's arm-time prefetch, shared by DJ Blend and native Loop Mix.
+     * Prepare the original still art, ambient and optional Canvas while the
+     * incoming ExoPlayer is buffering, even with the expanded UI unmounted.
+     * This never creates another player or changes the selected audio source.
+     */
+    private fun prefetchAutoMixIncoming(item: MediaItem) {
+        autoMixArtworkJob?.cancel()
+        val generation = AutoMixVisualFeed.state.value?.takeIf {
+            it.phase == AutoMixVisualPhase.ARMED && allowsAnyAutoMixArtwork(it.generation)
+        }?.generation
+        autoMixArtworkGeneration = generation
+        if (generation == null) return
+        autoMixArtworkJob = scope.launch {
+            val song = item.toSong()
+            launch {
+                if (allowsAutoMixArtwork(generation) &&
+                    AppSettings.animatedCanvas.value &&
+                    (AppSettings.meteredConnection.value != true || AppSettings.canvasOverCellular.value)
+                ) {
+                    CanvasRepository.canvasFor(song)
+                }
+            }
+            try {
+                val imageUrl = song.thumbnailUrl?.takeIf { it.isNotBlank() } ?: return@launch
+                prefetchAutoMixArtwork(
+                    this@PlaybackService, imageUrl, generation,
+                    prepareCover = { allowsAutoMixArtwork(it) },
+                    prepareMiniCover = { allowsAutoMixArtwork(it, mini = true) },
+                ) { id ->
+                    AutoMixVisualFeed.pending(id)?.phase == AutoMixVisualPhase.ARMED
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("AurelisAutoMix", "Incoming artwork prefetch failed", e)
+            }
+        }
+    }
+
     private fun createCrossfadeController() = CrossfadeController(
             scope,
             active = { requireNotNull(player) },
@@ -1994,6 +2049,7 @@ class PlaybackService : MediaLibraryService() {
             // levelled on its own sink before it renders a frame, and the
             // outgoing track keeps its own gain for the rest of the blend.
             onArmIncoming = { item, nextId -> spareLoudness().track(item.mediaId, nextId) },
+            onArmAutoMixIncoming = ::prefetchAutoMixIncoming,
             // Both sinks, not a role: the trim is about what the pair sums to.
             onBlendHeadroom = { trim ->
                 loudnessA.setBlendTrim(trim)
@@ -7494,6 +7550,22 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun observeSettings() {
+        scope.launch {
+            combine(
+                AppSettings.smartFadeEnabled,
+                AppSettings.autoMixArtworkEnabled,
+                AppSettings.autoMixMiniArtworkEnabled,
+                AppSettings.autoMixArtworkCutoff,
+                AppSettings.autoMixMiniArtworkCutoff,
+            ) { _, _, _, _, _ -> Unit }.collect {
+                if (autoMixArtworkGeneration?.let { !allowsAnyAutoMixArtwork(it) } == true) {
+                    autoMixArtworkJob?.cancel()
+                    autoMixArtworkGeneration = null
+                }
+                discardBlockedAutoMixAmbient { allowsAutoMixArtwork(it) }
+                if (!AppSettings.smartFadeEnabled.value) crossfade?.cancelAutoMixVisual()
+            }
+        }
         scope.launch {
             AppSettings.skipSilence.collect { on ->
                 // Loop Mix is sample-locked: changing this setting during a deck

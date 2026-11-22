@@ -2692,6 +2692,7 @@ class CrossfadeController(
         outgoingItemIndex = out.currentMediaItemIndex
         armDeadline = SystemClock.elapsedRealtime() + LOOP_BUILD_TIMEOUT_MS
         armAutoMixVisual(out, into, nextIndex, (0 until out.mediaItemCount).map(out::getMediaItemAt))
+        onArmAutoMixIncoming(inItem)
         holdAtEnd(out)
         val sampleRate = outPort.sampleRate
         val inLevel = (loudnessGain(inItem.mediaId) / loudnessGain(outItem.mediaId))

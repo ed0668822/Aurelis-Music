@@ -19,6 +19,7 @@ import com.music.aurelis.data.sources.SourceKind
 import com.music.aurelis.playback.EqLayout
 import com.music.aurelis.playback.EqualizerPreset
 import com.music.aurelis.playback.ReplayGainMode
+import com.music.aurelis.playback.AutoMixVisualFeed
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
@@ -874,6 +875,11 @@ object AppSettings {
     /** Cosmetic animations, independent of the DSP and the output route. */
     val autoMixArtworkEnabled = MutableStateFlow(true)
     val autoMixMiniArtworkEnabled = MutableStateFlow(true)
+    // In-memory fences for a pair interrupted by toggling AutoMix or its art.
+    // Keep the saved on/off flags independent; the current generation cannot
+    // be revived by an immediate off/on round trip.
+    val autoMixArtworkCutoff = MutableStateFlow(0L)
+    val autoMixMiniArtworkCutoff = MutableStateFlow(0L)
     /** One visual timeline for both internal ExoPlayers, including native LoopMix. */
     val autoMixArtworkState = MutableStateFlow<AutoMixArtworkState?>(null)
 
@@ -1382,17 +1388,30 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_SLEEP_TIMER_FADE_OUT, value).apply()
     }
 
+    private fun artworkCutoff(previous: Long): Long =
+        maxOf(previous, AutoMixVisualFeed.state.value?.generation ?: 0L)
+
     fun setSmartFadeEnabled(value: Boolean) {
+        if (smartFadeEnabled.value != value) {
+            autoMixArtworkCutoff.value = artworkCutoff(autoMixArtworkCutoff.value)
+            autoMixMiniArtworkCutoff.value = artworkCutoff(autoMixMiniArtworkCutoff.value)
+        }
         smartFadeEnabled.value = value
         prefs.edit().putBoolean(KEY_SMART_FADE, value).apply()
     }
 
     fun setAutoMixArtworkEnabled(value: Boolean) {
+        if (autoMixArtworkEnabled.value != value) {
+            autoMixArtworkCutoff.value = artworkCutoff(autoMixArtworkCutoff.value)
+        }
         autoMixArtworkEnabled.value = value
         prefs.edit().putBoolean(KEY_AUTOMIX_ARTWORK_ENABLED, value).apply()
     }
 
     fun setAutoMixMiniArtworkEnabled(value: Boolean) {
+        if (autoMixMiniArtworkEnabled.value != value) {
+            autoMixMiniArtworkCutoff.value = artworkCutoff(autoMixMiniArtworkCutoff.value)
+        }
         autoMixMiniArtworkEnabled.value = value
         prefs.edit().putBoolean(KEY_AUTOMIX_MINI_ARTWORK_ENABLED, value).apply()
     }

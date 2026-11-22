@@ -3,6 +3,8 @@
 package com.music.aurelis.ui.player
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AutoMixRevealContinuityTest {
@@ -53,5 +55,28 @@ class AutoMixRevealContinuityTest {
     @Test fun aNewGenerationMayStartFromZero() {
         assertEquals(0f, nextAutoMixRevealTarget(0f, 0f), 0.0001f)
         assertEquals(0.15f, nextAutoMixRevealTarget(0f, 0.15f), 0.0001f)
+    }
+
+    @Test fun changingArtworkPreferencesFencesTheActiveMixButNotTheNext() {
+        val preferences = AutoMixArtworkPreferences(
+            artTransition = true,
+            miniPlayerTransition = true,
+            skipArtworkThrough = 4L,
+            skipMiniThrough = 6L,
+        )
+        assertFalse(preferences.allows(automix = true, generation = 4L))
+        assertTrue(preferences.allows(automix = true, generation = 5L))
+        assertFalse(preferences.allows(automix = true, generation = 6L, mini = true))
+        assertTrue(preferences.allows(automix = true, generation = 7L, mini = true))
+        assertFalse(preferences.allows(automix = false, generation = 7L))
+    }
+
+    @Test fun miniPlayerAnimationDoesNotDependOnExpandedArtworkPreference() {
+        val preferences = AutoMixArtworkPreferences(
+            artTransition = false,
+            miniPlayerTransition = true,
+        )
+        assertFalse(preferences.allows(automix = true, generation = 1L))
+        assertTrue(preferences.allows(automix = true, generation = 1L, mini = true))
     }
 }
