@@ -16,8 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.MusicNote
+import com.music.aurelis.ui.icons.AurelisIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -146,7 +145,7 @@ internal fun BestPartSeekPill(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Rounded.MusicNote,
+                imageVector = AurelisIcons.MusicNote,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(15.dp),

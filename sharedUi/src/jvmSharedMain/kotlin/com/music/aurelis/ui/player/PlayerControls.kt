@@ -1071,6 +1071,9 @@ private val PILL_PARTY_SIZE = 22.dp
 /** Cast and Tv run 92% of their box wide; at 23dp they read bigger than the rest. */
 private val PILL_OUTPUT_WIDE_SIZE = 21.dp
 
+/** The original AirPlay mark fills its box and is optically smaller. */
+private val PILL_OUTPUT_AIRPLAY_SIZE = 19.5.dp
+
 /** Watch is drawn the full height of its box. */
 private val PILL_OUTPUT_TALL_SIZE = 17.dp
 
@@ -1213,10 +1216,10 @@ private fun rememberOutputGlyph(): OutputGlyph {
         cast.connectedName != null -> OutputGlyph(Icons.Rounded.CastConnected, PILL_OUTPUT_WIDE_SIZE)
         watch.active -> OutputGlyph(Icons.Rounded.Watch, PILL_OUTPUT_TALL_SIZE)
         else -> when (active?.kind) {
-            // No active row is the phone too — the caption under the pill
-            // says "This phone" in the same case. Cast rather than a phone:
-            // on the phone itself the button's job is to send it elsewhere.
-            null, AudioOutputKind.PHONE -> OutputGlyph(Icons.Rounded.Cast, PILL_OUTPUT_WIDE_SIZE)
+            // The original BitChord AirPlay-style output glyph is used only
+            // when the phone itself is the active output. Device-specific
+            // icons remain unchanged for Bluetooth, USB, HDMI and Cast.
+            null, AudioOutputKind.PHONE -> OutputGlyph(AurelisIcons.AirPlay, PILL_OUTPUT_AIRPLAY_SIZE)
             AudioOutputKind.BLUETOOTH -> when (active.form) {
                 BluetoothForm.BUDS -> OutputGlyph(vectorResource(Res.drawable.ic_output_buds), PILL_OUTPUT_BUDS_SIZE)
                 BluetoothForm.SPEAKER -> OutputGlyph(vectorResource(Res.drawable.ic_output_speaker))
@@ -1952,6 +1955,15 @@ private fun LosslessOrStats(
             // confirmed. It is what makes the badge read as an achievement
             // rather than a label, which only one of these two is.
             animated = true,
+            modifier = modifier,
+        )
+        // BitChord's Dolby icon was removed from Aurelis's UI, although
+        // the original vector asset and the decoder's codec flag remain.
+        // Show it only when the current decoded stream reports that flag.
+        nerdStats?.isDolbyAtmos == true -> LosslessLabel(
+            text = "Dolby Atmos",
+            animated = true,
+            iconPainter = painterResource(Res.drawable.ic_dolby_atmos),
             modifier = modifier,
         )
         // Lossy, but the good end of lossy — a module's 320kbps tier, which
