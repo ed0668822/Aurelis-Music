@@ -93,6 +93,22 @@ class ArtworkMesh internal constructor(internal val image: ImageBitmap)
  * The last cover's blur is held until the new one is ready, so a skip never
  * drops the backdrop to its fallback grey in between.
  */
+/**
+ * Do not show the old album's backdrop when the selected track has no artwork.
+ * During a valid artwork change, retain the old blur only while the new one loads.
+ * The cache for the requested URL always has priority over the previous bitmap.
+ */
+internal fun <T> selectArtworkBlur(
+    requestedUrl: String?,
+    loadedUrl: String?,
+    loadedImage: T?,
+    cachedImage: T?,
+): T? = when {
+    requestedUrl == null -> null
+    requestedUrl == loadedUrl -> loadedImage
+    else -> cachedImage ?: loadedImage
+}
+
 @Composable
 fun rememberFullArtworkBlurImage(
     imageUrl: String?,
@@ -100,29 +116,48 @@ fun rememberFullArtworkBlurImage(
     prepare: Boolean = true,
 ): ImageBitmap? {
     val context = LocalPlatformContext.current
-    var image by remember { mutableStateOf(imageUrl?.let(fullBlurCache::get)) }
+    var loaded by remember {
+        mutableStateOf(imageUrl to imageUrl?.let(fullBlurCache::get))
+    }
 
     LaunchedEffect(imageUrl, artPx, prepare) {
-        imageUrl?.let(fullBlurCache::get)?.let {
-            image = it
+        if (imageUrl == null) {
+            // No selected artwork: never keep a previous album's picture.
+            loaded = null to null
             return@LaunchedEffect
         }
-        if (!prepare || imageUrl == null) return@LaunchedEffect
+        fullBlurCache[imageUrl]?.let {
+            loaded = imageUrl to it
+            return@LaunchedEffect
+        }
+        if (!prepare) return@LaunchedEffect
+
         val request = ImageRequest.Builder(context)
-            // Same URL as the player's 1200px sleeve, so this is a small decode
-            // from Coil's shared fetch/disk result rather than another download.
+            // Reuse Coil's artwork URL/disk cache, decoding only a small bitmap.
             .data(imageUrl.artworkAt(artPx))
             .size(FULL_BLUR_SOURCE_PX)
             .forPixelAccess()
             .build()
         val result = SingletonImageLoader.get(context).execute(request)
-        val bitmap = (result as? SuccessResult)?.image?.toImageBitmap() ?: return@LaunchedEffect
-        val blurred = withContext(Dispatchers.Default) { bitmap.boxBlurred(FULL_BLUR_PASSES) }
-        val ready = blurred
+        val bitmap = (result as? SuccessResult)?.image?.toImageBitmap()
+        if (bitmap == null) {
+            // The current cover failed: do not leave an unrelated cover visible.
+            loaded = imageUrl to null
+            return@LaunchedEffect
+        }
+        val ready = withContext(Dispatchers.Default) {
+            bitmap.boxBlurred(FULL_BLUR_PASSES)
+        }
         fullBlurCache[imageUrl] = ready
-        image = ready
+        loaded = imageUrl to ready
     }
-    return image
+
+    return selectArtworkBlur(
+        requestedUrl = imageUrl,
+        loadedUrl = loaded.first,
+        loadedImage = loaded.second,
+        cachedImage = imageUrl?.let(fullBlurCache::get),
+    )
 }
 
 /**

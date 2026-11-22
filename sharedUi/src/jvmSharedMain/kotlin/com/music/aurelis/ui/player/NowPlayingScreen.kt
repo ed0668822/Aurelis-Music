@@ -240,6 +240,8 @@ internal const val SEEK_SETTLE_TIMEOUT_MS = 4_000L
 private val THUMB_SIZE = 54.dp
 private val HEADER_HEIGHT = 60.dp
 private val ART_TITLE_GAP = 20.dp
+/** Keep full-bleed artwork's quality caption aligned with the lowered sleeve foot. */
+private val BANNER_FOOT_DROP = 26.dp
 /**
  * How long the sleeve takes to travel the whole way between the full player and
  * the queue's header.
@@ -3572,6 +3574,10 @@ fun NowPlayingScreen(
                                         .padding(horizontal = 10.dp, vertical = 8.dp)
                                         .graphicsLayer {
                                             alpha = (1f - p() * 2f) * spotifyChromeAlpha
+                                            // Full-bleed artwork continues below the square sleeve.
+                                            // Lower only its caption; keep the music controls in place.
+                                            translationY = BANNER_FOOT_DROP.toPx() *
+                                                if (spotifyCanvasPresentation) 1f - p() else bannerShown()
                                         },
                                 )
                             }
