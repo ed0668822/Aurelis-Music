@@ -515,6 +515,11 @@
     <string name="cast_device_connecting">Connecting…</string>
     <string name="cast_device_connected">Casting</string>
     <string name="cast_stop">Stop casting</string>
+    <string name="tv_dlna_section">DLNA / UPnP televisions</string>
+    <string name="tv_browser_section">Smart TV web browser</string>
+    <string name="tv_browser_start">Open Aurelis Music in your TV browser</string>
+    <string name="tv_browser_copied">TV address copied</string>
+    <string name="tv_disconnect_first">Disconnect the current TV output first</string>
     <string name="cast_track_unsupported">This track can\'t be cast</string>
     <string name="cast_connect_failed">Couldn\'t connect to the receiver</string>
     <string name="audio_pipeline_subtitle">Live signal path, decoder to output</string>

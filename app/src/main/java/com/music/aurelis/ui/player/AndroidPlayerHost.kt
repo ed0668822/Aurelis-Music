@@ -30,6 +30,8 @@ import com.music.aurelis.playback.AudioRouting
 import com.music.aurelis.playback.audio.bitperfect.BitPerfectOutput
 import com.music.aurelis.playback.audio.bitperfect.DacVolume
 import com.music.aurelis.playback.cast.CastController
+import com.music.aurelis.playback.cast.DlnaController
+import com.music.aurelis.playback.cast.WebTvController
 import com.music.aurelis.ui.components.backdrop.backdrops.SnapshotBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.rememberSnapshotBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.snapshotBackdropSource
@@ -192,11 +194,13 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override fun rememberAudioOutputs(): List<AudioOutputDevice> {
         val outputs = rememberAndroidAudioOutputs()
         val cast by CastController.state.collectAsStateWithLifecycle()
+        val dlna by DlnaController.connected.collectAsStateWithLifecycle()
+        val web by WebTvController.state.collectAsStateWithLifecycle()
         val watch by WearBridge.watchOutput.collectAsStateWithLifecycle()
         // While a receiver is the speaker no output of this phone is the one
         // playing, so none of them is lit; the Cast or watch row is.
-        return remember(outputs, cast.casting, watch.active) {
-            if (cast.casting || watch.active) {
+        return remember(outputs, cast.casting, dlna, web.active, watch.active) {
+            if (cast.casting || dlna != null || web.active || watch.active) {
                 outputs.map { it.copy(isActive = false) }
             } else {
                 outputs
@@ -211,6 +215,8 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         // Picking an output of this phone is picking this phone: the receiver
         // is let go of, and the music carries on here if it was playing.
         if (CastController.state.value.casting) CastController.disconnect(resumeHere = true)
+        if (DlnaController.connected.value != null) DlnaController.disconnect(resumeHere = true)
+        if (WebTvController.state.value.url != null) WebTvController.stop(resumeHere = true)
         AudioRouting.select(id)
         WearBridge.leaveWatchOutput()
     }
@@ -227,6 +233,8 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         // One speaker at a time: a receiver lets go first, quietly, and the
         // watch picks the queue up from where the phone's player is.
         if (CastController.state.value.casting) CastController.disconnect(resumeHere = false)
+        if (DlnaController.connected.value != null) DlnaController.disconnect(resumeHere = false)
+        if (WebTvController.state.value.url != null) WebTvController.stop(resumeHere = false)
         WearBridge.selectWatchOutput()
     }
 
@@ -274,9 +282,17 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
 
     override val castState: StateFlow<CastUi> by lazy {
         CastController.ensureStarted(app)
-        CastController.state
-            .map { CastUi(supported = it.supported, connectedName = it.connectedName, connecting = it.connecting) }
-            .stateIn(scope, SharingStarted.Eagerly, CastUi())
+        combine(
+            CastController.state,
+            DlnaController.connected,
+            WebTvController.state,
+        ) { cast, dlna, web ->
+            CastUi(
+                supported = true, // DLNA and Browser TV work without Google Play services.
+                connectedName = cast.connectedName ?: dlna ?: if (web.active) "Browser TV" else null,
+                connecting = cast.connecting || web.starting,
+            )
+        }.stateIn(scope, SharingStarted.Eagerly, CastUi(supported = true))
     }
 
     @Composable
@@ -373,6 +389,8 @@ private class CastAwareVolume(
     override fun set(level: Float) {
         when {
             CastController.state.value.casting -> CastController.setVolume(level)
+            DlnaController.connected.value != null -> DlnaController.setVolume(level)
+            WebTvController.state.value.active -> Unit // TV browser controls its own volume.
             WearBridge.watchOutput.value.active -> WearBridge.setWatchVolume(level)
             DacVolume.level.value != null -> DacVolume.set(level)
             else -> system.set(level)

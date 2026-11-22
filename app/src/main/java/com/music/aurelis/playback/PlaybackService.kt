@@ -87,6 +87,10 @@ import com.music.aurelis.playback.cast.CastSink
 import com.music.aurelis.playback.cast.RemoteSpeaker
 import com.music.aurelis.playback.cast.Speakers
 import com.music.aurelis.playback.cast.CastStream
+import com.music.aurelis.playback.cast.DlnaController
+import com.music.aurelis.playback.cast.DlnaPlayback
+import com.music.aurelis.playback.cast.WebTvController
+import com.music.aurelis.playback.cast.WebTvPlayback
 import com.music.aurelis.playback.cast.LocalCastMediaServer
 import com.music.aurelis.playback.audio.PrecisionAudioSink
 import com.music.aurelis.playback.dsd.DsdExtractorsFactory
@@ -774,6 +778,8 @@ class PlaybackService : MediaLibraryService() {
 
     /** Serves an authorized, seekable local track only while a Cast session needs it. */
     private val localCastMediaServer by lazy { LocalCastMediaServer(applicationContext) }
+    private val localDlnaMediaServer by lazy { LocalCastMediaServer(applicationContext) }
+    private val localWebMediaServer by lazy { LocalCastMediaServer(applicationContext) }
 
     /**
      * What plays on a Cast receiver, when the music is on one. The phone's
@@ -794,12 +800,29 @@ class PlaybackService : MediaLibraryService() {
      * keeps the queue paused, the watch plays it and owns the clock. See
      * [WearBridge.createSpeaker].
      */
+    private val dlnaPlayback = DlnaPlayback(
+        scope = scope,
+        localPlayer = { player },
+        resolve = ::resolveForDlna,
+        onReleased = { localDlnaMediaServer.stop() },
+    )
+
+    private val webTvPlayback = WebTvPlayback(
+        context = applicationContext,
+        scope = scope,
+        localPlayer = { player },
+        resolve = ::resolveForWeb,
+        onReleased = { localWebMediaServer.stop() },
+    )
+
     private val watchSpeaker by lazy {
         WearBridge.createSpeaker(this, scope, localPlayer = { player }, onChanged = { publishWidgetState() })
     }
 
     /** Every remote speaker, as the one the session player reports. */
-    private val speakers by lazy { Speakers(listOf(castPlayback, watchSpeaker)) }
+    private val speakers by lazy {
+        Speakers(listOf(castPlayback, dlnaPlayback, webTvPlayback, watchSpeaker))
+    }
 
     /**
      * Binds playback to a Listen Together party, when there is one.
@@ -1907,6 +1930,8 @@ class PlaybackService : MediaLibraryService() {
         // whose queue is already restored.
         CastController.ensureStarted(this)
         CastController.attach(castPlayback)
+        DlnaController.attach(this, scope, dlnaPlayback)
+        WebTvController.attach(webTvPlayback)
     }
 
     private fun newSessionPlayer(player: Player, crossfade: CrossfadeController) = SessionPlayer(
@@ -1923,10 +1948,20 @@ class PlaybackService : MediaLibraryService() {
      * a temporary, session-scoped LAN endpoint; remote media still takes its
      * existing resolver path and downloaded stream fallback.
      */
-    private suspend fun resolveForCast(item: MediaItem): CastStream? = withContext(Dispatchers.IO) {
+    private suspend fun resolveForCast(item: MediaItem): CastStream? =
+        resolveForTv(item, localCastMediaServer)
+
+    private suspend fun resolveForDlna(item: MediaItem): CastStream? =
+        resolveForTv(item, localDlnaMediaServer)
+
+    private suspend fun resolveForWeb(item: MediaItem): CastStream? =
+        resolveForTv(item, localWebMediaServer)
+
+    private suspend fun resolveForTv(item: MediaItem, mediaServer: LocalCastMediaServer): CastStream? =
+        withContext(Dispatchers.IO) {
         val uri = item.localConfiguration?.uri ?: return@withContext null
         if (uri.scheme == "content" || uri.scheme == "file") {
-            localCastMediaServer.streamFor(uri)?.let { return@withContext it }
+            mediaServer.streamFor(uri)?.let { return@withContext it }
         }
         val resolver = streamResolver ?: return@withContext null
         // Ungated: the receiver plays items this player is not on.
@@ -3064,7 +3099,9 @@ class PlaybackService : MediaLibraryService() {
         val exoPlayer = player ?: return
         val requestToken = args.getString(EXTRA_BOUNDED_CONTEXT_SONGS) ?: return
         val request = BoundedContextRequests.take(requestToken) ?: return
-        if (CastController.state.value.casting || castPlayback.active) {
+        if (CastController.state.value.casting || castPlayback.active ||
+            dlnaPlayback.active || webTvPlayback.active
+        ) {
             // MainActivity normally keeps Cast on the full-queue path. This
             // closes the race where a receiver connects after the tap but
             // before this session command is handled.
@@ -7680,6 +7717,11 @@ class PlaybackService : MediaLibraryService() {
                     serviceLyrics,
                     offset,
                 )
+                webTvPlayback.updateLyrics(
+                    player?.currentMediaItem?.mediaId,
+                    serviceLyrics,
+                    offset,
+                )
             }
         }
         scope.launch {
@@ -8139,6 +8181,8 @@ class PlaybackService : MediaLibraryService() {
             // would run out its few queued tracks and stop on its own anyway;
             // better to say so now than leave the TV on a casting screen.
             if (castPlayback.active) CastController.disconnect(resumeHere = false)
+            if (dlnaPlayback.active) dlnaPlayback.disconnect(resumeHere = false)
+            if (webTvPlayback.active) webTvPlayback.stop(resumeHere = false)
             // Both, or a swipe-away mid-crossfade leaves the outgoing track
             // playing on its own out of a service that is on its way out.
             eachPlayer { it.stop() }
@@ -8155,6 +8199,10 @@ class PlaybackService : MediaLibraryService() {
         // stop, and the next one picks the session up where it was.
         CastController.detach(castPlayback)
         castPlayback.release()
+        DlnaController.detach(dlnaPlayback)
+        dlnaPlayback.disconnect(resumeHere = false)
+        WebTvController.detach(webTvPlayback)
+        webTvPlayback.stop(resumeHere = false)
         closeAudioEffectSession()
         bluetoothTracker.stop()
         audioManager?.unregisterAudioDeviceCallback(outputDeviceCallback)
@@ -8249,12 +8297,14 @@ class PlaybackService : MediaLibraryService() {
         val currentSong = player?.currentMediaItem?.toSong() ?: run {
             serviceLyrics = null
             castPlayback.updateLyrics(null, null, AppSettings.lyricsOffsetMs.value)
+            webTvPlayback.updateLyrics(null, null, AppSettings.lyricsOffsetMs.value)
             stopLyricsTicker()
             return
         }
         // Clear stale TV text while the next track's lyrics are loading.
         serviceLyrics = null
         castPlayback.updateLyrics(mediaId, null, AppSettings.lyricsOffsetMs.value)
+        webTvPlayback.updateLyrics(mediaId, null, AppSettings.lyricsOffsetMs.value)
 
         if (!AppSettings.syncedLyrics.value) {
             stopLyricsTicker()
@@ -8287,6 +8337,7 @@ class PlaybackService : MediaLibraryService() {
                 if (player?.currentMediaItem?.mediaId != mediaId) return@withContext
                 serviceLyrics = lines
                 castPlayback.updateLyrics(mediaId, lines, AppSettings.lyricsOffsetMs.value)
+                webTvPlayback.updateLyrics(mediaId, lines, AppSettings.lyricsOffsetMs.value)
                 if (player?.isPlaying == true) {
                     updateLyricSubtitle()
                 }

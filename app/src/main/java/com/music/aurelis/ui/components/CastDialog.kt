@@ -13,6 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalContext
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.CastConnected
@@ -39,6 +44,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.aurelis.R
 import com.music.aurelis.playback.cast.CastController
+import com.music.aurelis.playback.cast.DlnaController
+import com.music.aurelis.playback.cast.WebTvController
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
 import dev.chrisbanes.haze.HazeState
@@ -59,17 +66,23 @@ fun CastDialog(
     modifier: Modifier = Modifier,
 ) {
     val cast by CastController.state.collectAsStateWithLifecycle()
+    val dlna by DlnaController.devices.collectAsStateWithLifecycle()
+    val dlnaConnected by DlnaController.connected.collectAsStateWithLifecycle()
+    val browser by WebTvController.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val haptics = rememberHaptics()
     // Set by tapping a receiver, so the popup closes itself when that receiver
     // connects — but not when somebody opens it while already casting.
     var picked by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) { DlnaController.scan() }
+
     DisposableEffect(cast.supported) {
         val stop = CastController.discover(active = true)
         onDispose(stop)
     }
-    LaunchedEffect(cast.connectedName, picked) {
-        if (picked && cast.connectedName != null) onDismiss()
+    LaunchedEffect(cast.connectedName, dlnaConnected, picked) {
+        if (picked && (cast.connectedName != null || dlnaConnected != null)) onDismiss()
     }
 
     AudioPopupCard(
@@ -82,7 +95,7 @@ fun CastDialog(
     ) {
         Column(Modifier.fillMaxWidth()) {
             PipelineRule(Modifier)
-            if (cast.devices.isEmpty()) {
+            if (cast.devices.isEmpty() && dlna.isEmpty()) {
                 SearchingRow()
             } else {
                 cast.devices.forEach { device ->
@@ -93,20 +106,82 @@ fun CastDialog(
                         onClick = {
                             if (!device.connected) {
                                 haptics.play(Haptic.Select)
-                                picked = true
-                                CastController.connect(device.id)
+                                if (dlnaConnected != null || browser.active) {
+                                    Toast.makeText(context, R.string.tv_disconnect_first, Toast.LENGTH_SHORT).show()
+                                } else {
+                                    picked = true
+                                    CastController.connect(device.id)
+                                }
                             }
                         },
                     )
                     PipelineRule(Modifier.padding(start = 56.dp))
                 }
             }
-            if (cast.casting) {
+            if (dlna.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.tv_dlna_section),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.65f),
+                )
+                dlna.forEach { renderer ->
+                    CastDeviceRow(
+                        name = "${renderer.name} · DLNA",
+                        connecting = false,
+                        connected = dlnaConnected == renderer.name,
+                        onClick = {
+                            if (cast.casting || browser.active) {
+                                Toast.makeText(context, R.string.tv_disconnect_first, Toast.LENGTH_SHORT).show()
+                            } else if (dlnaConnected != renderer.name) {
+                                haptics.play(Haptic.Select)
+                                picked = true
+                                DlnaController.connect(renderer)
+                            }
+                        },
+                    )
+                    PipelineRule(Modifier.padding(start = 56.dp))
+                }
+            }
+            Text(
+                text = stringResource(R.string.tv_browser_section),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.65f),
+            )
+            CastDeviceRow(
+                name = stringResource(R.string.tv_browser_start),
+                connecting = browser.starting,
+                connected = browser.url != null,
+                onClick = {
+                    if (browser.url == null) {
+                        WebTvController.start()
+                    }
+                },
+            )
+            if (browser.url != null) {
+                Text(
+                    text = browser.url.orEmpty(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Aurelis TV", browser.url))
+                            Toast.makeText(context, R.string.tv_browser_copied, Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.9f),
+                )
+            }
+            if (cast.casting || dlnaConnected != null || browser.url != null) {
                 CastActionRow(
                     label = stringResource(R.string.cast_stop),
                     onClick = {
                         haptics.play(Haptic.Select)
-                        CastController.disconnect(resumeHere = true)
+                        if (cast.casting) CastController.disconnect(resumeHere = true)
+                        if (dlnaConnected != null) DlnaController.disconnect(resumeHere = true)
+                        if (browser.url != null) WebTvController.stop(resumeHere = true)
                         onDismiss()
                     },
                 )
