@@ -37,4 +37,17 @@ package com.music.aurelis.playback.smart
      */
     fun storageKey(trackId: String, sourceCacheKey: String?): String =
         if (sourceCacheKey.isNullOrBlank()) trackId else "$trackId|source:$sourceCacheKey"
+
+    /**
+     * Loops require the exact cached recording being played, not just a
+     * same-titled match. For YouTube this is the canonical video-id entry;
+     * source rows use their source-specific cache keys instead.
+     */
+    fun hasVerifiedLoopAudio(
+        youtubeVideoId: String?,
+        playingCacheKey: String,
+        completeRenditionKeys: Collection<String>,
+    ): Boolean =
+        (youtubeVideoId == null || youtubeVideoId == playingCacheKey) &&
+            playingCacheKey in completeRenditionKeys
 }
