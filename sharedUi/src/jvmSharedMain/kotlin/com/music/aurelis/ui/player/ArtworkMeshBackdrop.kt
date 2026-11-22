@@ -202,7 +202,7 @@ suspend fun prefetchAutoMixArtwork(
     miniJob.join()
     if (!wantsCover()) return@coroutineScope
     val cover = loader.execute(
-        playerCoverRequest(context, imageUrl.artworkAt(ART_PX))
+        ImageRequest.Builder(context).data(imageUrl.artworkAt(ART_PX)).size(ART_PX)
             .scale(Scale.FILL)
             .precision(Precision.INEXACT)
             .build(),
