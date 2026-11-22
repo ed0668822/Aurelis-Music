@@ -807,13 +807,7 @@ class PlaybackService : MediaLibraryService() {
         onReleased = { localDlnaMediaServer.stop() },
     )
 
-    private val webTvPlayback = WebTvPlayback(
-        context = applicationContext,
-        scope = scope,
-        localPlayer = { player },
-        resolve = ::resolveForWeb,
-        onReleased = { localWebMediaServer.stop() },
-    )
+    private lateinit var webTvPlayback: WebTvPlayback
 
     private val watchSpeaker by lazy {
         WearBridge.createSpeaker(this, scope, localPlayer = { player }, onChanged = { publishWidgetState() })
@@ -1342,6 +1336,15 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Android attaches the base context after constructing the service.
+        webTvPlayback = WebTvPlayback(
+            context = applicationContext,
+            scope = scope,
+            localPlayer = { player },
+            resolve = ::resolveForWeb,
+            onReleased = { localWebMediaServer.stop() },
+        )
 
         if (com.music.aurelis.data.innertube.Innertube.cookie == null) {
             com.music.aurelis.data.innertube.Innertube.cookie = com.music.aurelis.auth.AuthStore(this).cookie
