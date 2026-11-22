@@ -7,6 +7,16 @@ import kotlin.test.assertTrue
 
 class AdvancedAutomixPlannerTest {
 
+    @Test
+    fun doubleTimeTempoIsNotAnIncompatibleBeatmatchByItself() {
+        // Example observed on-device: model grids at 98 and 200 BPM.
+        // Fold 200 to 100 BPM before deciding whether any speed change is safe.
+        assertTrue(stretchReachable(98.0, 200.0))
+        assertEquals(0.98, incomingRateBetween(98.0, 200.0), 0.0001)
+        // Musically incompatible keys or overlapping vocals may still require
+        // a filtered or ordinary crossfade; tempo alone should not reject it.
+    }
+
     /** A synthetic, fully analysed track on a steady grid. */
     private fun track(
         id: String,
