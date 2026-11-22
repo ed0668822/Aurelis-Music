@@ -89,8 +89,9 @@ jobs:
 
       # Compilar primero: aunque fallen los tests, el APK de prueba queda
       # disponible como artefacto independiente para diagnostico.
+      # Use the four vCPUs of the hosted Linux runner for APK builds.
       - name: Validate identity and build debug APK
-        run: ./gradlew :app:verifyAurelisBuildIdentity :app:assembleDevDebug --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
+        run: ./gradlew :app:verifyAurelisBuildIdentity :app:assembleDevDebug --build-cache --max-workers=4 -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
 
       - name: APK size report
         run: |
@@ -134,7 +135,7 @@ jobs:
           echo "Keystore OK"
 
       - name: Build signed prod release APK
-        run: ./gradlew :app:assembleProdRelease --profile --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
+        run: ./gradlew :app:assembleProdRelease --profile --build-cache --max-workers=4 -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
 
       # Falla si el APK quedó sin firmar o si apksigner no lo da por válido.
       - name: Verify signature
@@ -167,6 +168,15 @@ jobs:
       - name: Remove signing files
         if: always()
         run: rm -f aurelis-release.jks keystore.properties local.properties
+
+      - name: Upload release Gradle profile
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: aurelis-perfil-gradle-release
+          path: build/reports/profile/profile-*.html
+          if-no-files-found: ignore
 
   estabilidad:
     name: B13 | Lint y pruebas adicionales
