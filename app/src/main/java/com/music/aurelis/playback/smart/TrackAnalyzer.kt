@@ -238,12 +238,29 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * block. Returns an empty analysis for anything not yet finished, which
      * [assessTransitionTier] reads as no evidence rather than as a failure.
      */
-    private fun analysisKey(trackId: String, uri: Uri): String =
-        AutomixAnalysisSource.storageKey(
+    private fun analysisKey(trackId: String, uri: Uri): String {
+        if (LocalAudioSource.isLocal(uri)) return trackId
+        val playingKey = cache.cacheKeyOf(uri)
+        val youtubeId = uri.getQueryParameter("v")
+        // A YouTube item may actually play a source substitute (#alt, #hifi).
+        // That recording cannot reuse the grid persisted for YouTube Opus.
+        return AutomixAnalysisSource.storageKey(
             trackId,
-            if (uri.authority == "source" && uri.getQueryParameter("v") == null)
-                cache.cacheKeyOf(uri) else null,
+            playingKey.takeIf { uri.authority == "source" || (youtubeId != null && it != youtubeId) },
         )
+    }
+
+    /** Only the rendition actually played can authorize beat/loop timing. */
+    private fun playbackRenditions(uri: Uri): List<AudioCache.Rendition> {
+        val playingKey = cache.cacheKeyOf(uri)
+        return cache.renditionsOf(uri).filter { it.key == playingKey }
+    }
+
+    /** A canonical YouTube fetch is unsafe for a source substitution's cache key. */
+    private fun requestCanonicalHeadIfPlaying(uri: Uri) {
+        val youtubeId = uri.getQueryParameter("v") ?: return
+        if (cache.cacheKeyOf(uri) == youtubeId) cache.requestAnalysisHead(uri)
+    }
 
     /** A source's stereo and alternate-mix rows can share a media ID, but not a beat grid. */
     fun analysisFor(trackId: String, uri: Uri? = null): TrackAnalysis =
@@ -323,10 +340,8 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
             return
         }
 
-        // Only the canonical YouTube rendition of this recording will do, not
-        // the source substitute the player happens to be on: see
-        // [chooseRendition]. Waiting on the live URI is what made analysis
-        // arrive after the transition that needed it.
+        // Prefer the playing rendition; a substituted recording may start
+        // seconds earlier/later than YouTube's upload even at the same BPM.
         // Queued before the cache is even consulted, so a track measured in an
         // earlier session short-circuits the whole path rather than being
         // re-earned from audio the cache may since have evicted.
@@ -352,8 +367,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         val complete = if (local) {
             emptyList()
         } else {
-            cache.renditionsOf(analysisUri)
-                .filter { AutomixAnalysisSource.isCanonicalYouTubeRendition(analysisUri.getQueryParameter("v"), it.key) }
+            playbackRenditions(analysisUri)
                 .filter { it.isComplete && it.key !in badRenditions }
         }
         val usableComplete = local || complete.isNotEmpty()
@@ -388,7 +402,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
             // rest, and a queued track reaches its own transition carrying an
             // entry-only estimate: no content end, no mix-out anchor, no vocal
             // mask, which is most of what the outgoing half of a blend reads.
-            if (storageKey in provisional && !usableComplete) cache.requestAnalysisHead(analysisUri)
+            if (storageKey in provisional && !usableComplete) requestCanonicalHeadIfPlaying(analysisUri)
             return
         }
         // The strike count belongs to the attempt that was given up on, not to
@@ -407,7 +421,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
             // never fetches it at all — see [AudioCache.requestAnalysisHead],
             // which is a no-op after the first call and for anything that isn't
             // a YouTube-backed track.
-            cache.requestAnalysisHead(analysisUri)
+            requestCanonicalHeadIfPlaying(analysisUri)
             return
         }
         if (!running.add(storageKey)) return
@@ -545,8 +559,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // holding nothing — a track that reported six megabytes cached twenty
         // minutes earlier reported zero here, because the question was being
         // asked of the wrong copy of it.
-        val candidate = cache.renditionsOf(uri)
-            .filter { AutomixAnalysisSource.isCanonicalYouTubeRendition(uri.getQueryParameter("v"), it.key) }
+        val candidate = playbackRenditions(uri)
             .filter { it.cachedPrefix > 0L && it.key !in badRenditions }
             // The growth guard, applied as a filter rather than to the winner.
             // Applied afterwards it did not skip a copy, it ended the search: the
@@ -764,8 +777,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         uri: Uri,
         durationSeconds: Double,
     ): AudioCache.Rendition? {
-        val complete = cache.renditionsOf(uri)
-            .filter { AutomixAnalysisSource.isCanonicalYouTubeRendition(uri.getQueryParameter("v"), it.key) }
+        val complete = playbackRenditions(uri)
             .filter { it.isComplete && it.key !in badRenditions }
         if (complete.isEmpty()) return null
 
@@ -1450,9 +1462,9 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * is currently playing. A different YouTube master may have the same song
      * title, duration and even BPM, but its downbeat positions can differ.
      *
-     * Source-backed tracks are safe once their own complete cached rendition
-     * has been analysed. For YouTube IDs only the canonical rendition is
-     * trusted; a substituted #alt recording must not borrow its grid.
+     * Source-backed tracks and YouTube substitutions are safe only after
+     * their own complete cached rendition was analysed under its own key.
+     * An Opus grid cannot be borrowed by a #alt FLAC recording.
      */
     fun canLoopMix(trackId: String, uri: Uri): Boolean {
         if (results[analysisKey(trackId, uri)]?.isUsable != true ||
