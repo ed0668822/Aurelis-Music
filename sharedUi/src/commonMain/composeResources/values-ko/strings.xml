@@ -281,4 +281,13 @@
     <string name="best_part">하이라이트</string>
     <string name="mixes_yours">내 믹스</string>
     <string name="mixes_none">아직 믹스가 없습니다. 음악을 계속 들으면 YouTube Music에서 믹스를 만들어 줍니다.</string>
+
+    <!-- Localized resource additions -->
+    <string name="add_to_queue">대기열에 추가</string>
+    <string name="automix_overview_unavailable">예정된 AutoMix 전환이 없습니다</string>
+    <string name="queue_select">선택</string>
+    <string name="queue_done">완료</string>
+    <string name="queue_select_all">모두 선택</string>
+    <string name="queue_selected_count">%1$d개 선택됨</string>
+    <string name="queue_undo">실행 취소</string>
 </resources>
