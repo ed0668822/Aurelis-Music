@@ -163,8 +163,10 @@ fun AutoMixArtworkOverlay(
                 // Pre-decode while still on the outgoing song, but do not draw
                 // a duplicate atop its full-bleed cover. A missing decode
                 // never becomes an opaque placeholder after the handoff.
-                modifier = Modifier.fillMaxSize().graphicsLayer {
-                    alpha = if (onIncomingTrack && outgoingReady && incomingReady) 1f else 0f
+                modifier = Modifier.fillMaxSize().drawWithContent {
+                    // Drawing nothing while preloading is safer than an alpha-0
+                    // layer over a TextureView on devices with broken z-order.
+                    if (onIncomingTrack && outgoingReady && incomingReady) drawContent()
                 },
             )
         }
@@ -172,7 +174,9 @@ fun AutoMixArtworkOverlay(
             // The ordinary cover remains underneath until Coil has decoded
             // the incoming image; do not cut to a black loading rectangle.
             val transitionModifier = if (!incomingReady) {
-                Modifier.graphicsLayer { alpha = 0f }
+                // Coil still loads the picture, but must not submit an empty
+                // full-screen layer while the player is drawing its cover.
+                Modifier.drawWithContent { }
             } else if (reducedMotion) {
                 Modifier.graphicsLayer { alpha = eased }
             } else {
