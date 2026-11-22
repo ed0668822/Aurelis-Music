@@ -1400,9 +1400,8 @@ fun NowPlayingScreen(
         }
     }
     val fullBleedArt by PlayerSettings.fullBleedArtwork.collectAsStateWithLifecycle()
-    // MediaSession swaps the song halfway through a real AutoMix. Keep the
-    // artwork's full-bleed geometry stable for both halves of that handoff.
-    val autoMixArtwork by PlayerSettings.autoMixArtworkState.collectAsStateWithLifecycle()
+    // The old separate artwork state is no longer driven by the restored
+    // BitChord engine. The actual cover pair below owns visual continuity.
     // Full-bleed is a phone idiom. What the width has to rule out is a player
     // running a foot wider than the column of controls under it — edge to edge
     // meaning "a picture, and separately some controls" rather than "the
@@ -3114,7 +3113,7 @@ fun NowPlayingScreen(
                             if (heroHeight > 0.dp && playerBounds.width > 0) {
                                 autoMixBannerShare(
                                     heroT.value,
-                                    heroMode && autoMixArtwork?.contains(song.videoId) == true,
+                                    heroMode && autoMixFrames?.incoming != null,
                                 )
                             } else 0f
                         // How much of the banner is on screen: its share, given up as

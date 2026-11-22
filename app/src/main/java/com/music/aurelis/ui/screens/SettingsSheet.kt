@@ -172,7 +172,6 @@ import com.music.aurelis.data.settings.BitPerfectMode
 import com.music.aurelis.playback.AudioOutputStatus
 import com.music.aurelis.playback.audio.bitperfect.BitPerfectOutput
 import com.music.aurelis.data.settings.AutomixPerformanceMode
-import com.music.aurelis.data.settings.AutoMixEffect
 import com.music.aurelis.R
 import com.music.aurelis.data.sources.DeviceCodecs
 import com.music.aurelis.data.settings.AudioQuality
@@ -2188,30 +2187,6 @@ private fun AppFont.description(): String = stringResource(
 )
 
 @Composable
-private fun AutoMixEffect.localizedLabel(): String = stringResource(
-    when (this) {
-        AutoMixEffect.AUTO -> R.string.automix_effect_auto
-        AutoMixEffect.CROSSFADE -> R.string.automix_effect_crossfade
-        AutoMixEffect.MUFFLED -> R.string.automix_effect_muffled
-        AutoMixEffect.ECHO -> R.string.automix_effect_echo
-        AutoMixEffect.PITCH -> R.string.automix_effect_pitch
-        AutoMixEffect.CUSTOM -> R.string.automix_effect_custom
-    },
-)
-
-@Composable
-private fun AutoMixEffect.description(): String = stringResource(
-    when (this) {
-        AutoMixEffect.AUTO -> R.string.automix_effect_auto_description
-        AutoMixEffect.CROSSFADE -> R.string.automix_effect_crossfade_description
-        AutoMixEffect.MUFFLED -> R.string.automix_effect_muffled_description
-        AutoMixEffect.ECHO -> R.string.automix_effect_echo_description
-        AutoMixEffect.PITCH -> R.string.automix_effect_pitch_description
-        AutoMixEffect.CUSTOM -> R.string.automix_effect_custom_description
-    },
-)
-
-@Composable
 private fun AutomixPerformanceMode.localizedLabel(): String = stringResource(
     when (this) {
         AutomixPerformanceMode.EFFICIENT -> R.string.automix_mode_efficient
@@ -2960,7 +2935,6 @@ enum class SettingsChoiceKind(@param:StringRes val title: Int) {
     AUDIO_QUALITY_CELLULAR(R.string.on_mobile_data),
     DOWNLOAD_QUALITY(R.string.download_quality),
     AUTOMIX_PERFORMANCE(R.string.automix_performance),
-    AUTOMIX_EFFECT(R.string.automix_effect),
     BIT_PERFECT(R.string.bit_perfect_output),
     FONT(R.string.font),
 }
@@ -3041,20 +3015,6 @@ fun SettingsChoicePage(
                     footer = stringResource(R.string.download_quality_dialog_subtitle),
                 ) { quality ->
                     AppSettings.setDownloadQuality(quality)
-                    onChosen()
-                }
-            }
-
-            SettingsChoiceKind.AUTOMIX_EFFECT -> {
-                val options by AppSettings.autoMixOptions.collectAsStateWithLifecycle()
-                ChoiceGroup(
-                    options = AutoMixEffect.entries,
-                    selected = options.effect,
-                    label = { it.localizedLabel() },
-                    detail = { it.description() },
-                    footer = null,
-                ) { effect ->
-                    AppSettings.setAutoMixEffect(effect)
                     onChosen()
                 }
             }
