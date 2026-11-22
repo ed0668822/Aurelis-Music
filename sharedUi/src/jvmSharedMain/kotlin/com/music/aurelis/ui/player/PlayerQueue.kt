@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -287,6 +286,7 @@ internal fun InlineQueue(
     val drag = rememberQueueDrag(listState, tracks, onMove, onDragActiveChange)
     val latestTracks by rememberUpdatedState(tracks)
     val reduceAnimation by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
+    val swipeToPlayNext by com.music.aurelis.ui.AppUi.host.swipeToPlayNext.collectAsStateWithLifecycle()
     // Select by unique row key so duplicate song IDs remain independent.
     var selecting by remember { mutableStateOf(false) }
     var selectedKeys by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -302,7 +302,7 @@ internal fun InlineQueue(
     }
     val canCommitSwipe: (QueueTrack, QueueSwipeAction) -> Boolean = { original, action ->
         val live = resolveSwipeTrack(original)
-        val destination = tracks.user.lastOrNull()
+        val destination = if (swipeToPlayNext) tracks.user.firstOrNull() else tracks.user.lastOrNull()
         swipesEnabled && live != null &&
             (action == QueueSwipeAction.REMOVE || live.key != destination?.key)
     }
@@ -449,7 +449,6 @@ internal fun InlineQueue(
                             song = track.song,
                             isCurrent = false,
                             onClick = { onJumpTo(track.timelineIndex) },
-                            onRemove = { onRemove(track.timelineIndex) },
                             locked = controlsLocked,
                             modifier = queueMotion(),
                         )
@@ -467,7 +466,6 @@ internal fun InlineQueue(
                             song = nowPlaying.song,
                             isCurrent = true,
                             onClick = { onJumpTo(nowPlaying.timelineIndex) },
-                            onRemove = { onRemove(nowPlaying.timelineIndex) },
                             locked = controlsLocked,
                             modifier = queueMotion(),
                         )
@@ -513,7 +511,6 @@ internal fun InlineQueue(
                         song = held.song,
                         isCurrent = false,
                         onClick = {},
-                        onRemove = {},
                         draggable = true,
                         lifted = true,
                         modifier = Modifier.offset { IntOffset(0, drag.heldTop.roundToInt()) },
@@ -909,7 +906,6 @@ private fun InlineQueueRow(
     song: Song,
     isCurrent: Boolean,
     onClick: () -> Unit,
-    onRemove: () -> Unit,
     controlsVisible: Boolean = true,
     modifier: Modifier = Modifier,
     onLongPress: (() -> Unit)? = null,
