@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Kushagra Singh and BitChord contributors
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Tests adapted from BitChord v1.10: https://github.com/kushagrasinghx/BitChord/tree/v1.10
 
 package com.music.aurelis.ui.player

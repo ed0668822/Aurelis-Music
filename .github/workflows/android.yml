@@ -195,7 +195,7 @@ jobs:
             "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
           chmod +x gradlew
 
-      # Run all JVM tests, Android Lint and instrumentation compilation in one
+      # Run app, shared planner/LoopMix and sharedUi JVM tests, Android Lint and instrumentation compilation in one
       # Gradle invocation. --continue collects every failing task/report before
       # the final CI verdict rather than hiding later regressions.
       - name: B13 | JVM tests, Lint, instrumentation APK
@@ -204,6 +204,7 @@ jobs:
         run: |
           ./gradlew \
             :app:testDevDebugUnitTest \
+            :shared:jvmTest \
             :sharedUi:jvmTest \
             :app:testProdReleaseUnitTest \
             :app:lintDevDebug \
@@ -230,6 +231,8 @@ jobs:
             app/build/reports/tests/testProdReleaseUnitTest/
             sharedUi/build/test-results/jvmTest/
             sharedUi/build/reports/tests/jvmTest/
+            shared/build/test-results/jvmTest/
+            shared/build/reports/tests/jvmTest/
           if-no-files-found: ignore
 
       # Keep the full Lint report and complete instrumented-test compilation
