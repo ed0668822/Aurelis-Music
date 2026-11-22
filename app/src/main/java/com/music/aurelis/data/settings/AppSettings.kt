@@ -1025,7 +1025,8 @@ object AppSettings {
             )
         }.getOrDefault(AutomixPerformanceMode.BALANCED)
         autoMixOptions.value = AutoMixOptions(
-            durationSeconds = prefs.getInt(KEY_AUTOMIX_DURATION_SECONDS, 0),
+            // The planner always chooses duration; ignore manual values saved by older versions.
+            durationSeconds = 0,
             effect = prefs.getString(KEY_AUTOMIX_EFFECT, AutoMixEffect.AUTO.name)
                 ?.let { saved -> AutoMixEffect.entries.firstOrNull { it.name == saved } }
                 ?: AutoMixEffect.AUTO,
@@ -1034,6 +1035,10 @@ object AppSettings {
             echo = prefs.getBoolean(KEY_AUTOMIX_ECHO, false),
             lowPass = prefs.getBoolean(KEY_AUTOMIX_LOW_PASS, false),
         ).normalized()
+        // Remove any legacy manual duration, including one restored from a backup.
+        if (prefs.contains(KEY_AUTOMIX_DURATION_SECONDS)) {
+            prefs.edit().remove(KEY_AUTOMIX_DURATION_SECONDS).apply()
+        }
         skipSilence.value = prefs.getBoolean(KEY_SKIP_SILENCE, true)
         outputPcmMode.value = runCatching {
             OutputPcmMode.valueOf(
@@ -1397,12 +1402,12 @@ object AppSettings {
         prefs.edit().putString(KEY_AUTOMIX_PERFORMANCE_MODE, value.name).apply()
     }
 
-    /** Save all six AutoMix options atomically; later steps will connect them to the renderer. */
+    /** Persist effects only; transition duration is always automatic. */
     fun setAutoMixOptions(value: AutoMixOptions) {
-        val safe = value.normalized()
+        val safe = value.copy(durationSeconds = 0).normalized()
         autoMixOptions.value = safe
         prefs.edit()
-            .putInt(KEY_AUTOMIX_DURATION_SECONDS, safe.durationSeconds)
+            .remove(KEY_AUTOMIX_DURATION_SECONDS)
             .putString(KEY_AUTOMIX_EFFECT, safe.effect.name)
             .putFloat(KEY_AUTOMIX_SPEED, safe.speed)
             .putFloat(KEY_AUTOMIX_PITCH_SEMITONES, safe.pitchSemitones)
@@ -1410,9 +1415,6 @@ object AppSettings {
             .putBoolean(KEY_AUTOMIX_LOW_PASS, safe.lowPass)
             .apply()
     }
-
-    fun setAutoMixDurationSeconds(value: Int) =
-        setAutoMixOptions(autoMixOptions.value.copy(durationSeconds = value))
 
     fun setAutoMixEffect(value: AutoMixEffect) =
         setAutoMixOptions(autoMixOptions.value.copy(effect = value))

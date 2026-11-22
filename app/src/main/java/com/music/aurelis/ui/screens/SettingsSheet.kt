@@ -885,29 +885,6 @@ fun SettingsScreen(
                         )
                     }
                 }
-                val durationTitle = stringResource(R.string.automix_duration)
-                row(durationTitle, "automix", "seconds", "length") {
-                    BypassedByBitPerfect(bitPerfectReady) {
-                        SliderRow(
-                            icon = SfIcons.Waves,
-                            title = durationTitle,
-                            subtitle = stringResource(R.string.automix_duration_subtitle),
-                            value = if (autoMixOptions.durationSeconds == 0) {
-                                stringResource(R.string.automix_duration_auto)
-                            } else {
-                                "${autoMixOptions.durationSeconds}s"
-                            },
-                            // 0 = automatic; 1..58 maps continuously to 3..60 seconds.
-                            sliderValue = if (autoMixOptions.durationSeconds == 0) 0f else (autoMixOptions.durationSeconds - 2).toFloat(),
-                            onSliderValue = {
-                                val tick = it.roundToInt()
-                                AppSettings.setAutoMixDurationSeconds(if (tick == 0) 0 else tick + 2)
-                            },
-                            valueRange = 0f..58f,
-                            steps = 57,
-                        )
-                    }
-                }
                 val effectTitle = stringResource(R.string.automix_effect)
                 row(effectTitle, "automix", "muffled", "echo", "pitch", "custom") {
                     BypassedByBitPerfect(bitPerfectReady) {
