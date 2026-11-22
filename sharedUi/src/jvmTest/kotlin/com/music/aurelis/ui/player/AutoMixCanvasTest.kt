@@ -100,7 +100,7 @@ class AutoMixCanvasTest {
 
     @Test
     fun squareOutgoingCanvasStaysLiveAndIsPinned() {
-        val square = CanvasArtwork("outgoing.mp4", source = CanvasSource.APPLE)
+        val square = CanvasArtwork("outgoing.mp4", source = CanvasSource.OTHER)
         val owner = AutoMixCanvasPair()
         owner.displayed(outgoing, square, rendered = true)
         val tracks = requireNotNull(owner.start(visual, outgoing))
