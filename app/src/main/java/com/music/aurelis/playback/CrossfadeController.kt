@@ -868,6 +868,7 @@ class CrossfadeController(
     }
 
     fun release() {
+        restoreSkipSilence()
         clearAutoMixVisual()
         tickerJob?.cancel()
         tickerJob = null
@@ -2570,7 +2571,6 @@ class CrossfadeController(
     private fun loopRefusalFor(player: ExoPlayer, current: MediaItem, next: MediaItem, state: SmartAnalysis): String? = when {
         !LoopMixRenderer.available -> "no renderer"
         AppSettings.playbackSpeed.value != 1f -> "playback speed is not 1x"
-        player.skipSilenceEnabled -> "skip silence is on"
         SleepTimer.afterTrack.value -> "sleep timer"
         state.current != TrackAnalysisState.ANALYSED || state.next != TrackAnalysisState.ANALYSED -> "waiting on analysis"
         !loopAudioMatchesPlayback(current) || !loopAudioMatchesPlayback(next) ->
@@ -2681,6 +2681,9 @@ class CrossfadeController(
         val outPort = loopPortOf(out) ?: return
         val inPort = loopPortOf(into) ?: return
         endEase(clickless = false)
+        // Aurelis enables silence skipping by default. Suspend it only while the
+        // sample-locked BitChord loop renderer owns both decks.
+        suspendSkipSilence()
         phase = Phase.LOOP_ARMING
         smartFadeActive = true
         handedOff = false
@@ -3112,7 +3115,30 @@ class CrossfadeController(
 
     private fun leavingOnBail(): ExoPlayer? = if (handedOff) outgoing else incoming
 
+    // Compatibility with Aurelis's skip-silence preference, not a mix engine.
+    private var skipSilenceSuspended = false
+
+    private fun suspendSkipSilence() {
+        skipSilenceSuspended = true
+        for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = false
+    }
+
+    /** A settings toggle must not change the sample-locked loop's timebase. */
+    fun applySkipSilencePreference(on: Boolean) {
+        if (skipSilenceSuspended) return
+        for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = on
+    }
+
+    /** Reapply the latest listener preference when a loop ends or is aborted. */
+    private fun restoreSkipSilence() {
+        if (!skipSilenceSuspended) return
+        skipSilenceSuspended = false
+        val on = AppSettings.skipSilence.value
+        for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = on
+    }
+
     private fun finish() {
+        restoreSkipSilence()
         clearAutoMixVisual()
         val wasTransitioning = phase != Phase.IDLE
         if (phase != Phase.IDLE) {
