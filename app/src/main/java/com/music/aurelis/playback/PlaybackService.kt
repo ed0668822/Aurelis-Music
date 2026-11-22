@@ -2040,6 +2040,11 @@ class PlaybackService : MediaLibraryService() {
                     trackAnalyzer.loopRegion(item.mediaId, uri, durationMs / 1000.0, from, to, rate)
                 }
             },
+            loopAudioMatchesPlayback = { item ->
+                item.localConfiguration?.uri?.let { uri ->
+                    trackAnalyzer.canLoopMix(item.mediaId, uri)
+                } ?: false
+            },
             syncedLines = ::loopMixLyrics,
             loudnessGain = ::loudnessGainFor,
             onMixPositionJump = { wrapped -> (mediaSession?.player as? SessionPlayer)?.announceMixPosition(wrapped) },
@@ -7484,7 +7489,11 @@ class PlaybackService : MediaLibraryService() {
 
     private fun observeSettings() {
         scope.launch {
-            AppSettings.skipSilence.collect { on -> eachPlayer { it.skipSilenceEnabled = on } }
+            AppSettings.skipSilence.collect { on ->
+                // Loop Mix is sample-locked: changing this setting during a deck
+                // blend must not re-enable the silence skipper mid-transition.
+                crossfade?.applySkipSilencePreference(on) ?: eachPlayer { it.skipSilenceEnabled = on }
+            }
         }
         scope.launch {
             // The queue as it stands is re-judged at once, rather than at the
