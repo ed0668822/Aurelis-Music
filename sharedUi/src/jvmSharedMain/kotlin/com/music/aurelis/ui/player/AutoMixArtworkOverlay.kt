@@ -27,6 +27,16 @@ import com.music.aurelis.data.model.PLAYER_ART_PX
 import com.music.aurelis.data.model.ROW_ART_PX
 
 /**
+ * Never rewind a cover reveal when controller samples arrive out of order.
+ * Invalid samples cannot force the mask to become blank.
+ */
+internal fun nextAutoMixRevealTarget(previous: Float, incoming: Float): Float {
+    val last = previous.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
+    val observed = incoming.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: last
+    return maxOf(last, observed)
+}
+
+/**
  * Both covers share the audio controller's actual progress, not an independent
  * timer. A MediaSession handoff never swaps the visible cover out from under us.
  * This composable neither owns nor creates any media player or audio output.
@@ -98,10 +108,14 @@ fun AutoMixArtworkOverlay(
     // Restart per generation so one song's fade never leaks into the next.
     val sampledProgress = remember(mix.generation) { Animatable(progress) }
     LaunchedEffect(mix.generation, progress, reducedMotion) {
-        if (reducedMotion) sampledProgress.snapTo(progress)
-        else sampledProgress.animateTo(progress, tween(40, easing = LinearEasing))
+        val target = nextAutoMixRevealTarget(sampledProgress.targetValue, progress)
+        if (reducedMotion) sampledProgress.snapTo(target)
+        else sampledProgress.animateTo(target, tween(40, easing = LinearEasing))
     }
     val eased = AutoMixArtworkTuning.revealProgress(sampledProgress.value)
+    // Keep outgoing artwork (or the host's current cover) visible until Coil
+    // has actually decoded the next image. A URL alone is not a ready frame.
+    var incomingReady by remember(mix.generation, incoming) { mutableStateOf(false) }
     Box(modifier) {
         if (!outgoing.isNullOrBlank()) {
             AsyncImage(
@@ -117,7 +131,9 @@ fun AutoMixArtworkOverlay(
         if (!incoming.isNullOrBlank()) {
             // With no outgoing cover there is nothing to reveal *over*.
             // Show the incoming cover directly instead of fading in from black.
-            val transitionModifier = if (outgoing.isNullOrBlank()) {
+            val transitionModifier = if (!incomingReady) {
+                Modifier.graphicsLayer { alpha = 0f }
+            } else if (outgoing.isNullOrBlank()) {
                 Modifier
             } else if (reducedMotion) {
                 Modifier.graphicsLayer { alpha = eased }
@@ -135,7 +151,9 @@ fun AutoMixArtworkOverlay(
                 model = incoming,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onSuccess = { incomingReady = true },
                 onError = {
+                    incomingReady = false
                     incomingCandidate?.let { incomingFailed = incomingFailed + it }
                 },
                 modifier = Modifier.fillMaxSize().then(transitionModifier),

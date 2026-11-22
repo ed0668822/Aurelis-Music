@@ -30,6 +30,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
@@ -49,6 +50,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import androidx.compose.foundation.layout.Spacer
@@ -3743,7 +3745,8 @@ fun NowPlayingScreen(
                                 // Only the title's own overflow gates the artist's stagger
                                 // below — an artist line that's long on its own has no
                                 // reason to wait on a title that already fits.
-                                var titleOverflowing by remember { mutableStateOf(false) }
+                                // Each song owns its marquee overflow state; a previous
+                                // title must not delay the incoming artist's animation.
                                 // Only while these credits are the screen. Collapsed into
                                 // a header over the queue or the lyrics they are a label
                                 // on a list, and a label that crawls pulls the eye off
@@ -3782,16 +3785,27 @@ fun NowPlayingScreen(
                                                     it.queueEntryId == targetState.queueEntryId
                                             }
                                             val direction = songInfoSlideDirection(from, to, queue.size)
-                                            (slideInHorizontally(tween(280)) { direction * it / 4 } + fadeIn(tween(240))) togetherWith
-                                                (slideOutHorizontally(tween(245)) { -direction * it / 4 } + fadeOut(tween(220)))
+                                            // BitChord-sized travel: use the full text
+                                            // viewport instead of a quarter-width nudge.
+                                            // The gesture itself is still owned by MediaSession.
+                                            slideInHorizontally(tween(280, easing = LinearOutSlowInEasing)) {
+                                                direction * it
+                                            } togetherWith slideOutHorizontally(
+                                                tween(280, easing = LinearOutSlowInEasing),
+                                            ) { -direction * it }
                                         }
                                     },
                                     // Round the fade and the marquee's edge masks, whose
                                     // layers would otherwise hide the backdrop from it. The
                                     // title is in it too and stays white: see [additiveChrome].
-                                    modifier = Modifier.additiveChrome(LocalPlayerChrome.current),
+                                    modifier = Modifier
+                                        .clipToBounds()
+                                        .additiveChrome(LocalPlayerChrome.current),
                                     label = "playerCredits",
                                 ) { presentedSong ->
+                                    var titleOverflowing by remember(
+                                        presentedSong.videoId, presentedSong.queueEntryId,
+                                    ) { mutableStateOf(false) }
                                     val scrolling = scrolls()
                                     val artistColor = chromeWhite(0.55f)
                                     Column {
