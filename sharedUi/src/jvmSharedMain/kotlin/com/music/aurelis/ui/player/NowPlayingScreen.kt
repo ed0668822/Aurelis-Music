@@ -1690,21 +1690,6 @@ fun NowPlayingScreen(
             onListenTogether = onListenTogether,
             onOpenListenTogetherMembers = openListenTogetherMembers,
         )
-        // The public YouTube replay curve wins for online songs; local files
-        // only use repeated, timed lyrics. The seek uses this same Media3 player.
-        if (!sideways && !lyricsOpen && !queueOpen && !controlsLocked) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                BestPartSeekPill(
-                    lines = lyrics,
-                    videoId = song.videoId,
-                    isLocal = !song.localUri.isNullOrBlank(),
-                    durationMs = durationMs,
-                    position = position,
-                    mixing = mixing,
-                    onSeek = onSeek,
-                )
-            }
-        }
         // Keep the current output caption visible in every state.
         Spacer(Modifier.height(18.dp))
         Box(
@@ -2199,6 +2184,19 @@ fun NowPlayingScreen(
                                     // Faded with the player rather than flown with
                                     // the sleeve: the cover in the bar has none.
                                     .graphicsLayer { alpha = if (panelOpen) 0f else dockFade() },
+                                bestPart = {
+                                    if (!panelOpen && !controlsLocked) {
+                                        BestPartSeekPill(
+                                            lines = lyrics,
+                                            videoId = song.videoId,
+                                            isLocal = !song.localUri.isNullOrBlank(),
+                                            durationMs = durationMs,
+                                            position = position,
+                                            mixing = mixing,
+                                            onSeek = onSeek,
+                                        )
+                                    }
+                                },
                             )
                         }
                     },
@@ -3577,10 +3575,23 @@ fun NowPlayingScreen(
                                         .graphicsLayer {
                                             alpha = (1f - p() * 2f) * spotifyChromeAlpha
                                             // Full-bleed artwork continues below the square sleeve.
-                                            // Lower only its caption; keep the music controls in place.
+                                            // Lower the stats and Best Part together.
                                             translationY = BANNER_FOOT_DROP.toPx() *
                                                 if (spotifyCanvasPresentation) 1f - p() else bannerShown()
                                         },
+                                    bestPart = {
+                                        if (!lyricsOpen && !queueOpen && !controlsLocked && !videoMode) {
+                                            BestPartSeekPill(
+                                                lines = lyrics,
+                                                videoId = song.videoId,
+                                                isLocal = !song.localUri.isNullOrBlank(),
+                                                durationMs = durationMs,
+                                                position = position,
+                                                mixing = mixing,
+                                                onSeek = onSeek,
+                                            )
+                                        }
+                                    },
                                 )
                             }
                         }

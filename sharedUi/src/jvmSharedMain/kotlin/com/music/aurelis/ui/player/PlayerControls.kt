@@ -374,9 +374,25 @@ internal fun PlaybackQualityLabel(
  * it what Automix's analysis is doing. Nothing at all while the setting is off.
  */
 @Composable
-internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
+internal fun SleeveNerdStats(
+    song: Song,
+    modifier: Modifier = Modifier,
+    bestPart: @Composable () -> Unit = {},
+) {
     val showNerdStats by PlayerSettings.showNerdStats.collectAsStateWithLifecycle()
-    if (!showNerdStats) return
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier,
+    ) {
+        if (showNerdStats) NerdStatsLines(song)
+        // Best Part is independent of the diagnostics preference.
+        bestPart()
+    }
+}
+
+/** Stream diagnostics drawn above the optional Best Part pill. */
+@Composable
+private fun NerdStatsLines(song: Song) {
     val nerdStats by NerdStats.current.collectAsStateWithLifecycle()
     val smartFadeOn by PlayerSettings.smartFadeEnabled.collectAsStateWithLifecycle()
     val smartAnalysis by PlayerSettings.smartAnalysis.collectAsStateWithLifecycle()
@@ -403,10 +419,7 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
             blurRadius = 4f,
         ),
     )
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier,
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         nerdStats?.describe()?.let { stats ->
             Text(
                 text = stats,
@@ -806,6 +819,13 @@ internal fun CircleGlyph(
                         Color.White.copy(alpha = discAlpha)
                     },
                 ),
+        )
+        // Light-catching rim shared by the favourite and overflow discs.
+        // A static outline is inexpensive while artwork or AutoMix animates.
+        Box(
+            Modifier
+                .matchParentSize()
+                .border(0.75.dp, Color.White.copy(alpha = if (active) 0.34f else 0.23f), CircleShape),
         )
         Crossfade(
             targetState = icon,
@@ -1901,12 +1921,6 @@ private fun LosslessOrStats(
             // confirmed. It is what makes the badge read as an achievement
             // rather than a label, which only one of these two is.
             animated = true,
-            modifier = modifier,
-        )
-        nerdStats?.isDolbyAtmos == true -> LosslessLabel(
-            text = "Dolby Atmos",
-            animated = true,
-            iconPainter = painterResource(Res.drawable.ic_dolby_atmos),
             modifier = modifier,
         )
         // Lossy, but the good end of lossy — a module's 320kbps tier, which

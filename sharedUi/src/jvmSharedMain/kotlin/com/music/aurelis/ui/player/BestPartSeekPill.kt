@@ -2,7 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -10,19 +17,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.produceState
 import com.music.aurelis.data.innertube.MostReplayed
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.music.aurelis.data.lyrics.LyricLine
 import com.music.aurelis.playback.PlaybackPosition
@@ -55,6 +67,18 @@ fun bestPartChorusStart(lines: List<LyricLine>, durationMs: Long): Long? {
         }.minOrNull()
 }
 
+/**
+ * A known replay peak is offered only before it is heard and while the
+ * unified player can seek safely. Never fabricate a replay peak from audio data.
+ */
+internal fun shouldOfferBestPart(
+    targetMs: Long?,
+    positionMs: Long,
+    mixing: Boolean,
+    heard: Boolean,
+): Boolean = targetMs != null && targetMs > 0L && !mixing && !heard &&
+    positionMs < targetMs - 400L
+
 @Composable
 internal fun BestPartSeekPill(
     lines: List<LyricLine>?,
@@ -78,33 +102,49 @@ internal fun BestPartSeekPill(
     val chorus = remember(lines, durationMs) {
         bestPartChorusStart(lines.orEmpty(), durationMs)
     }
-    // A real YouTube heatmap takes priority. Lyrics are evidence of a chorus,
-    // never evidence of what YouTube viewers replay most.
-    val target = publicPeak ?: chorus ?: return
-    // A candidate only remains visible while ahead. A seek during AutoMix
-    // would interrupt the active mix, so the action is explicitly hidden.
-    if (mixing || position.positionMs >= target - 400L) return
-    Row(
-        modifier = Modifier
-            .padding(bottom = 4.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.18f))
-            .clickable { onSeek(target) }
-            .padding(horizontal = 13.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+    // YouTube's real most-replayed curve wins; synchronized lyrics can
+    // only provide a repeatable candidate, never an invented heatmap.
+    val target = publicPeak ?: chorus
+    var heard by remember(videoId) { mutableStateOf(false) }
+    val reached = target != null &&
+        position.positionMs in (target - 400L)..(target + 20_000L)
+    LaunchedEffect(reached) {
+        if (reached) heard = true
+    }
+    AnimatedVisibility(
+        visible = shouldOfferBestPart(target, position.positionMs, mixing, heard),
+        enter = expandVertically(tween(280)) + fadeIn(tween(280)),
+        exit = fadeOut(tween(220)) + shrinkVertically(tween(220)),
     ) {
-        Icon(
-            imageVector = Icons.Rounded.AutoAwesome,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(14.dp),
-        )
-        Text(
-            text = stringResource(Res.string.best_part),
-            color = Color.White,
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(start = 6.dp),
-        )
+        Row(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .clip(CircleShape)
+                // Translucent glass-like slab over light and dark covers.
+                .background(Color(0x660B0B0B))
+                .border(0.75.dp, Color.White.copy(alpha = 0.32f), CircleShape)
+                .clickable(role = Role.Button) {
+                    val seekTarget = target ?: return@clickable
+                    heard = true
+                    onSeek(seekTarget)
+                }
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.MusicNote,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(15.dp),
+            )
+            Text(
+                text = stringResource(Res.string.best_part),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
     }
 }
