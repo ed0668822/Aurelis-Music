@@ -1948,7 +1948,9 @@ class PlaybackService : MediaLibraryService() {
             active = { requireNotNull(player) },
             standby = { requireNotNull(spare) },
             onHandoff = ::adoptPlayer,
-            analysisFor = { item -> trackAnalyzer.analysisFor(item.mediaId) },
+            analysisFor = { item ->
+                trackAnalyzer.analysisFor(item.mediaId, item.localConfiguration?.uri)
+            },
             requestAnalysis = { item, durationMs ->
                 item.localConfiguration?.uri?.let { uri ->
                     trackAnalyzer.request(item.mediaId, uri, durationMs / 1000.0)
@@ -1993,7 +1995,9 @@ class PlaybackService : MediaLibraryService() {
                     transitionFilterB.parkExperimentalEcho()
                 }
             },
-            analysisRunningFor = { item -> trackAnalyzer.isAnalysing(item.mediaId) },
+            analysisRunningFor = { item ->
+                trackAnalyzer.isAnalysing(item.mediaId, item.localConfiguration?.uri)
+            },
             // The standby is still the spare when this runs — it only becomes
             // the session player at the handoff — so the incoming track is
             // levelled on its own sink before it renders a frame, and the
