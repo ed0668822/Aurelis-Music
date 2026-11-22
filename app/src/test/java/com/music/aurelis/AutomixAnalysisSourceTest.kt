@@ -36,6 +36,18 @@ class AutomixAnalysisSourceTest {
     }
 
     @Test
+    fun `a downloaded song never borrows its streaming Opus analysis or another file grid`() {
+        val youtube = AutomixAnalysisSource.storageKey("yt123", null)
+        val local = AutomixAnalysisSource.localStorageKey("yt123", "content://media/external/audio/media/42")
+        val anotherLocal = AutomixAnalysisSource.localStorageKey("yt123", "file:///music/other.mp3")
+        val alternateStream = AutomixAnalysisSource.storageKey("yt123", "yt123#alt")
+        assertFalse(local == youtube)
+        assertFalse(local == anotherLocal)
+        assertFalse(local == alternateStream)
+        assertTrue(local.contains("local:content://media/external/audio/media/42"))
+    }
+
+    @Test
     fun `YouTube analysis accepts only its canonical Opus cache key`() {
         assertTrue(AutomixAnalysisSource.isCanonicalYouTubeRendition("video", "video"))
         assertFalse(AutomixAnalysisSource.isCanonicalYouTubeRendition("video", "video#alt"))

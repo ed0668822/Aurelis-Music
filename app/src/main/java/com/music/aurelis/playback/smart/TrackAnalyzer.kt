@@ -253,7 +253,12 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * [assessTransitionTier] reads as no evidence rather than as a failure.
      */
     private fun analysisKey(trackId: String, uri: Uri): String {
-        if (LocalAudioSource.isLocal(uri)) return trackId
+        // A downloaded YouTube track can retain the same mediaId as its stream,
+        // but its file may be a different cut. Never borrow an Opus beat grid
+        // for this local recording or authorize Loop Mix from that old result.
+        if (LocalAudioSource.isLocal(uri)) {
+            return AutomixAnalysisSource.localStorageKey(trackId, uri.toString())
+        }
         val playingKey = cache.cacheKeyOf(uri)
         val youtubeId = uri.getQueryParameter("v")
         // A YouTube item may actually play a source substitute (#alt, #hifi).
