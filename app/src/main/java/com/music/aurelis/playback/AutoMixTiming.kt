@@ -4,6 +4,9 @@
 package com.music.aurelis.playback
 
 import com.music.aurelis.data.settings.AutoMixOptions
+import com.music.aurelis.playback.smart.MAX_BPM
+import com.music.aurelis.playback.smart.MIN_BEATMATCH_CONFIDENCE
+import com.music.aurelis.playback.smart.MIN_BPM
 import com.music.aurelis.playback.smart.TransitionPlan
 import com.music.aurelis.playback.smart.TransitionStyle
 import kotlin.math.min
@@ -68,8 +71,20 @@ internal fun adjustAutoMixTiming(
     val reliableTempo = outgoingBpm.isFinite() &&
         outgoingBpm in MIN_BPM..MAX_BPM &&
         beatConfidence.isFinite() && beatConfidence >= MIN_BEAT_CONFIDENCE
+    // In automatic length the planner has already sized a DJ overlap from how
+    // well this pair agrees (8 to 32 beats, longer for a calm join, shorter for
+    // a clash); keep it rather than replacing it with a fixed eight beats. Only
+    // the plain fades the planner did not size from the pair fall to the rule below.
+    val plannerGesture = original.transitionStyle == TransitionStyle.DJ_BLEND ||
+        original.transitionStyle == TransitionStyle.DJ_FILTER
+    val plannerFade = original.fadeSeconds.takeIf {
+        plannerGesture && it.isFinite() && it >= MIN_FADE_SECONDS
+    }
+    val keepPlannerFade = safe.durationSeconds == 0 && plannerFade != null
     val requested = if (safe.durationSeconds != 0) {
         safe.durationSeconds.toDouble()
+    } else if (plannerFade != null) {
+        plannerFade
     } else if (reliableTempo) {
         // Eight beats, but never so short that a 180 BPM track becomes a cut.
         (8.0 * 60.0 / outgoingBpm).coerceIn(MIN_FADE_SECONDS, MAX_AUTO_SECONDS)
@@ -110,7 +125,8 @@ internal fun adjustAutoMixTiming(
         shouldStart = playbackTime >= start,
         incomingCueTime = incomingCue,
         handoffDuration = actualFade,
-        transitionBeats = if (reliableTempo && safe.durationSeconds == 0) 8
+        transitionBeats = if (keepPlannerFade) original.transitionBeats
+            else if (reliableTempo && safe.durationSeconds == 0) 8
             else if (reliableTempo) (actualFade * outgoingBpm / 60.0).roundToInt()
             else original.transitionBeats,
         reason = if (playbackTime >= start) "automix-duration-ready" else "before-automix-duration",
@@ -122,6 +138,4 @@ private const val MIN_FADE_SECONDS = 3.0
 private const val MAX_FADE_SECONDS = 60.0
 private const val MAX_AUTO_SECONDS = 8.0
 private const val DEFAULT_AUTO_SECONDS = 5.0
-private const val MIN_BPM = 40.0
-private const val MAX_BPM = 220.0
-private const val MIN_BEAT_CONFIDENCE = 0.55
+private const val MIN_BEAT_CONFIDENCE = MIN_BEATMATCH_CONFIDENCE

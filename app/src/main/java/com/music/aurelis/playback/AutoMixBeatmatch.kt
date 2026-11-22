@@ -5,9 +5,17 @@ package com.music.aurelis.playback
 
 import com.music.aurelis.data.settings.AutoMixEffect
 import com.music.aurelis.data.settings.AutoMixOptions
+import com.music.aurelis.playback.smart.FILTER_SWEEP
+import com.music.aurelis.playback.smart.FilterTransitionVariant
+import com.music.aurelis.playback.smart.MAX_BPM
+import com.music.aurelis.playback.smart.MIN_BEATMATCH_CONFIDENCE
+import com.music.aurelis.playback.smart.MIN_BPM
 import com.music.aurelis.playback.smart.TrackAnalysis
 import com.music.aurelis.playback.smart.TransitionPlan
 import com.music.aurelis.playback.smart.TransitionStyle
+import com.music.aurelis.playback.smart.audibleStartOf
+import com.music.aurelis.playback.smart.incomingRateBetween
+import com.music.aurelis.playback.smart.stretchReachable
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -22,8 +30,30 @@ import kotlin.math.roundToInt
  * remains off until a device-level verification path is available.
  *
  * The existing Loop Mix check in CrossfadeController still takes precedence.
+ *
+ * Tempo limits, the stretch window and the beat-confidence floor are the
+ * planner's own ([MIN_BPM], [MAX_BPM], [stretchReachable],
+ * [MIN_BEATMATCH_CONFIDENCE]), so this stage never refuses a pair the planner
+ * already judged beat-matchable. The result then goes through
+ * [arbitrateAutoMix], which withdraws DJ gestures from pairs of music they do
+ * not suit.
  */
 internal fun alignAutoMixBeats(
+    original: TransitionPlan,
+    options: AutoMixOptions,
+    outgoing: TrackAnalysis,
+    incoming: TrackAnalysis,
+    outgoingLength: Double,
+    incomingLength: Double,
+    playbackTime: Double,
+): TransitionPlan = arbitrateAutoMix(
+    plan = alignBeats(original, options, outgoing, incoming, outgoingLength, incomingLength, playbackTime),
+    options = options,
+    outgoing = outgoing,
+    incoming = incoming,
+)
+
+private fun alignBeats(
     original: TransitionPlan,
     options: AutoMixOptions,
     outgoing: TrackAnalysis,
@@ -57,6 +87,7 @@ internal fun alignAutoMixBeats(
         noBeatmatch(
             plan = original,
             why = why,
+            incoming = incoming,
             startFromBeginning = startFromBeginning,
             assisted = assistedCandidate && why in ASSISTED_FALLBACK_REASONS,
         )
@@ -95,13 +126,13 @@ internal fun alignAutoMixBeats(
         return fallback("incompatibleTempo")
     }
 
-    val best = TEMPO_OCTAVES
-        .map { factor -> tail.bpm / (head.bpm * factor) }
-        .minByOrNull { abs(it - 1.0) }
-        ?: return fallback("analysisUnavailable")
-    if (!best.isFinite() || abs(best - 1.0) >= MAX_STRETCH_DIFFERENCE) {
+    // The planner's own stretch window (incoming slowed at most 10%, sped up
+    // at most 25%), with the incoming tempo folded into the outgoing octave.
+    if (!stretchReachable(tail.bpm, head.bpm)) {
         return fallback("incompatibleTempo")
     }
+    val best = (incomingRateBetween(tail.bpm, head.bpm) * 10000).roundToInt() / 10000.0
+    if (!best.isFinite()) return fallback("incompatibleTempo")
 
     // A late first musical beat often means an intro that should play
     // uninterrupted. Silence before the first beat is excluded by audibleStart.
@@ -199,27 +230,54 @@ private fun gridIsStable(beats: List<Double>, reference: Double, period: Double)
     return errors.maxOrNull()?.let { it <= GRID_SPREAD_SECONDS } == true
 }
 
+/**
+ * The beat alignment could not be verified, so no stretch and no phase claim.
+ *
+ * Only the listener's explicit presets force a plain fade. Otherwise the
+ * planner's gesture is kept as far as it does not lean on the unverified
+ * grid: a filter ride (which needs none) stays as planned, and a beat-matched
+ * blend becomes a filter ride rather than a flat crossfade, so a pair the
+ * planner worked out vocal handling for does not lose it here.
+ */
 private fun noBeatmatch(
     plan: TransitionPlan,
     why: String,
+    incoming: TrackAnalysis,
     startFromBeginning: Boolean = false,
     assisted: Boolean = false,
-): TransitionPlan = plan.copy(
-    incomingPlaybackRate = 1.0,
-    outgoingPlaybackRate = 1.0,
-    phaseLock = false,
-    transitionStyle = TransitionStyle.EQUAL_POWER,
-    bassSwap = false,
-    filterSweep = 0.0,
-    incomingCueTime = if (startFromBeginning) 0.0 else plan.incomingCueTime,
-    policyReasons = plan.policyReasons + "automix:$why" +
-        (if (assisted) listOf("automix:assisted") else emptyList()),
-)
+): TransitionPlan {
+    val keepsPlannerGesture = why !in FORCED_CROSSFADE_REASONS &&
+        (plan.transitionStyle == TransitionStyle.DJ_BLEND || plan.transitionStyle == TransitionStyle.DJ_FILTER)
+    val reasons = plan.policyReasons + "automix:$why" +
+        (if (assisted && !keepsPlannerGesture) listOf("automix:assisted") else emptyList())
+    val unstretched = plan.copy(
+        incomingPlaybackRate = 1.0,
+        outgoingPlaybackRate = 1.0,
+        phaseLock = false,
+        policyReasons = reasons,
+    )
+    if (!keepsPlannerGesture) {
+        return unstretched.copy(
+            transitionStyle = TransitionStyle.EQUAL_POWER,
+            bassSwap = false,
+            filterSweep = 0.0,
+            incomingCueTime = if (startFromBeginning) 0.0 else plan.incomingCueTime,
+        )
+    }
+    if (plan.transitionStyle == TransitionStyle.DJ_FILTER) return unstretched
+    val cue = audibleStartOf(incoming)
+    return unstretched.copy(
+        transitionStyle = TransitionStyle.DJ_FILTER,
+        filterSweep = FILTER_SWEEP,
+        filterVariant = FilterTransitionVariant.SWEEP,
+        incomingCueTime = cue,
+        incomingHandoffTime = cue,
+    )
+}
 
-private val VALID_BPM = 60.0..180.0
-private val TEMPO_OCTAVES = listOf(0.5, 1.0, 2.0)
-private const val TRUSTED_BEAT_CONFIDENCE = 0.55
-private const val MAX_STRETCH_DIFFERENCE = 0.08
+private val FORCED_CROSSFADE_REASONS = setOf("crossfadePreset", "effectTempo")
+private val VALID_BPM = MIN_BPM..MAX_BPM
+private const val TRUSTED_BEAT_CONFIDENCE = MIN_BEATMATCH_CONFIDENCE
 private const val BEAT_TIME_TOLERANCE = 0.02
 private const val EFFECT_BEAT_TIME_TOLERANCE = 0.05
 private const val ASSISTED_BEAT_CONFIDENCE = 0.25
