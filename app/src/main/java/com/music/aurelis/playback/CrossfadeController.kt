@@ -4,6 +4,7 @@
 package com.music.aurelis.playback
 
 import com.music.aurelis.data.settings.AutoMixArtworkState
+import com.music.aurelis.data.model.QueueEntryIdentity
 
 import android.os.SystemClock
 import android.util.Log
@@ -1546,6 +1547,7 @@ class CrossfadeController(
             }
         }
 
+        if (smart) armAutoMixVisual(out, nextIndex, items)
         phase = Phase.ARMING
         return true
     }
@@ -1747,6 +1749,7 @@ class CrossfadeController(
         // would run straight over the marker for the transition now under way.
         AppSettings.smartTransitionWindow.value = null
         phase = Phase.FADING
+        AutoMixVisualFeed.start(visualGeneration, 0.0)
     }
 
     /**
@@ -1757,7 +1760,12 @@ class CrossfadeController(
      * point it becomes the louder of the two. From here [outgoing] is the idle
      * player, still audible, being faded away.
      */
-    private fun handOff(out: ExoPlayer, into: ExoPlayer) {
+    private fun handOff(
+        out: ExoPlayer,
+        into: ExoPlayer,
+        visualSeconds: Double? = null,
+        visualEndSeconds: Double? = null,
+    ) {
         if (handedOff) return
         // AutoPlay may have appended to the queue since the standby was loaded
         // with a copy of it — during arming or the first half of the blend,
@@ -1772,6 +1780,9 @@ class CrossfadeController(
         listenTo(into)
         handedOff = true
         onHandoff(out, into)
+        if (visualSeconds != null && visualEndSeconds != null) {
+            AutoMixVisualFeed.swap(visualGeneration, visualSeconds, visualEndSeconds)
+        }
 
         // The outgoing player holds the whole queue too, and a standard
         // crossfade runs right up to its track's natural end — at which point
@@ -1896,9 +1907,13 @@ class CrossfadeController(
         // from under it: until the handoff its queue still runs on past the
         // track, and reaching the end would start the next item — the very
         // song fading in — a second time on the player that is leaving.
+        val visualEnd = wallSpan.toDouble() / 1000.0
+        val visualTime = progress.toDouble() * visualEnd
         if (!handedOff && (progress >= render.handoffAt || (outRemaining != null && outRemaining <= HANDOFF_GUARD_MS))) {
-            handOff(out, player)
+            handOff(out, player, visualTime, visualEnd)
         }
+        AutoMixVisualFeed.advance(visualGeneration, visualTime, visualEnd)
+        if (progress >= 1f) AutoMixVisualFeed.complete(visualGeneration)
         publishBlend(out, player)
         if (AppSettings.smartMixView.value != null) AppSettings.smartMixProgress.value = progress
         updateArtworkTransition(progress)
@@ -2278,6 +2293,32 @@ class CrossfadeController(
      * will ride, with whichever waveforms have already been decoded.
      */
     /** Publish cosmetic state from the audio clock; never touch either decoder. */
+    private var visualGeneration: Long? = null
+
+    /** The original BitChord visual timeline is shared by both audio engines. */
+    private fun armAutoMixVisual(out: ExoPlayer, nextIndex: Int, items: List<MediaItem>) {
+        fun trackAt(index: Int): AutoMixVisualTrack? {
+            val item = items.getOrNull(index) ?: return null
+            val key = item.queueEntryId
+            val ordinal = (0 until index).count {
+                items[it].mediaId == item.mediaId && items[it].queueEntryId == key
+            }
+            return AutoMixVisualTrack(
+                QueueEntryIdentity(item.mediaId, key, ordinal), index,
+                item.mediaMetadata.artworkUri?.toString(),
+            )
+        }
+        val from = trackAt(out.currentMediaItemIndex) ?: return
+        val to = trackAt(nextIndex) ?: return
+        AutoMixVisualFeed.cancel(visualGeneration)
+        visualGeneration = AutoMixVisualFeed.arm(from, to)
+    }
+
+    private fun clearAutoMixVisual() {
+        AutoMixVisualFeed.cancel(visualGeneration)
+        visualGeneration = null
+    }
+
     private fun openArtworkTransition(out: ExoPlayer, into: ExoPlayer) {
         val outgoingItem = out.currentMediaItem ?: return
         val incomingItem = into.currentMediaItem ?: return
@@ -2360,6 +2401,7 @@ class CrossfadeController(
     }
 
     private fun clearMixView() {
+        clearAutoMixVisual()
         AppSettings.autoMixArtworkState.value = null
         mixViewJob?.cancel()
         mixViewJob = null
@@ -2700,6 +2742,7 @@ class CrossfadeController(
         inPort.armIncoming(LoopMixPort.InArm((session.handoverTrack * 1_000_000).roundToLong()))
         into.prepare()
         session.attach(outPort, inPort)
+        armAutoMixVisual(out, nextIndex, items)
         loopSession = session
         loopIncomingStarted = false
         lastLoopPositionMs = -1L
@@ -2763,8 +2806,14 @@ class CrossfadeController(
         ) {
             startLoopAlignment(session)
         }
+        val visualEnd = session.clock.releaseAt
+        if (m >= 0.0) AutoMixVisualFeed.start(visualGeneration, m.coerceAtMost(visualEnd))
         if (!handedOff && m >= session.clock.handoffAt) {
-            handOff(out, into)
+            handOff(out, into, m, visualEnd)
+        }
+        if (m >= 0.0) {
+            AutoMixVisualFeed.advance(visualGeneration, m.coerceAtMost(visualEnd), visualEnd)
+            if (m >= visualEnd) AutoMixVisualFeed.complete(visualGeneration)
         }
         publishLoopBeat(session, m, now)
         updateArtworkTransition(AutoMixArtworkState.loopProgress(m, session.clock.handoffAt, session.clock.elementAt))

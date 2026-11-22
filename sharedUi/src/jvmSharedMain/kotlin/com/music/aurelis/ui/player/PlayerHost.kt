@@ -2,6 +2,7 @@ package com.music.aurelis.ui.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.music.aurelis.data.canvas.CanvasArtwork
@@ -16,6 +17,7 @@ import com.music.aurelis.data.settings.SmartAnalysis
 import com.music.aurelis.data.settings.MixBlend
 import com.music.aurelis.data.settings.MixTransitionView
 import com.music.aurelis.data.settings.AutoMixArtworkState
+import com.music.aurelis.playback.AutoMixVisualState
 import com.music.aurelis.data.settings.TransitionWindow
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +35,18 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface PlayerHost {
     val settings: PlayerSettingsSource
+
+    /** BitChord v1.10 audio-clock visual feed, shared by both AutoMix engines. */
+    val autoMixVisualState: StateFlow<AutoMixVisualState?>? get() = null
+    fun onAutoMixScrubIntent() = Unit
+    @Composable
+    fun autoMixIncomingReveal(
+        eased: () -> Float,
+        reducedMotion: () -> Boolean,
+        generation: Long,
+        blur: Boolean,
+    ): Modifier = Modifier.graphicsLayer { alpha = eased() }
+    val supportsAutoMixCanvas: Boolean get() = false
 
     /** A Canvas already settled for [song], without a lookup. */
     fun cachedCanvas(song: Song): CanvasArtwork?
@@ -259,6 +273,8 @@ interface PlayerSettingsSource {
     /** A temporary cap over both ceilings, null when none applies — the watch's, on the phone. */
     val streamCeilingOverride: StateFlow<AudioQuality?>
     val preferUsbDac: StateFlow<Boolean>
+    val disableSpotifyCanvas: StateFlow<Boolean> get() = DefaultDisableSpotifyCanvas
+    val autoMixArtwork: StateFlow<AutoMixArtworkPreferences> get() = DefaultAutoMixArtwork
     val prioritizeSpotifyCanvas: StateFlow<Boolean>
     val reduceAnimation: StateFlow<Boolean>
     val reduceDynamicBlur: StateFlow<Boolean>
@@ -300,6 +316,9 @@ interface PlayerSettingsSource {
     /** Whether the mix popup is up, so the host lays out [smartMixPreview] for it. */
     fun setMixViewOpen(open: Boolean)
 }
+
+private val DefaultDisableSpotifyCanvas = MutableStateFlow(false)
+private val DefaultAutoMixArtwork = MutableStateFlow(AutoMixArtworkPreferences())
 
 /** The player's name for the installed host's settings, read where AppSettings used to be. */
 internal val PlayerSettings: PlayerSettingsSource
@@ -405,6 +424,20 @@ class CanvasVideoSpec(
     val captureStill: Boolean,
     val onStillCaptured: (ImageBitmap?, Long) -> Unit,
     val onResumed: () -> Unit,
+    val organicReveal: CanvasOrganicReveal? = null,
+)
+
+/** Audio-clock artwork reveal, independent of the platform video renderer. */
+class CanvasOrganicReveal(
+    val generation: Long,
+    val progress: () -> Float,
+    val allowSpatialMask: Boolean,
+    val outgoingStill: CanvasStillRevealTarget? = null,
+)
+class CanvasStillRevealTarget(
+    val bounds: IntSize,
+    val bottomFade: Float,
+    val presentationAlpha: () -> Float,
 )
 
 /**

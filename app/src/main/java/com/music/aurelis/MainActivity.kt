@@ -4571,6 +4571,8 @@ private fun AurelisApp(
                     player.song?.let { song ->
                         MiniPlayer(
                             song = song,
+                            queue = player.queue,
+                            queueIndex = player.queueIndex,
                             isPlaying = player.isPlaying,
                             isLoading = playPauseBusy,
                             hazeState = hazeState,

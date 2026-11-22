@@ -23,6 +23,7 @@ import coil3.PlatformContext
 import coil3.compose.LocalPlatformContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImagePainter
+import coil3.memory.MemoryCache
 import coil3.request.ImageRequest
 import com.music.aurelis.data.canvas.CanvasArtwork
 import com.music.aurelis.data.model.Song
@@ -122,6 +123,17 @@ internal class PlayerArtwork(val url: String?, private val context: PlatformCont
     /** Latched on an error, and only upwards — cleared by the retry itself. */
     internal var failed by mutableStateOf(false)
 
+    private var decodedCover: DecodedAutoMixCover? = null
+    private var decodedDuringMix: Long? = null
+    private var displayedCover: MemoryCache.Key? = null
+
+    fun decodedCoverBefore(generation: Long): DecodedAutoMixCover? =
+        decodedCover?.takeIf { decodedDuringMix != generation }
+
+    fun noteDisplayedCover(cover: DecodedAutoMixCover) {
+        displayedCover = cover.cacheKey
+    }
+
     /**
      * The one request for this cover, built once.
      *
@@ -158,7 +170,13 @@ internal class PlayerArtwork(val url: String?, private val context: PlatformCont
         // it is [failed]'s own effect, and clearing it from a Loading state here
         // would cancel that effect's wait every time the painter passed back
         // through Loading.
-        if (state is AsyncImagePainter.State.Success) failed = false
+        if (state is AsyncImagePainter.State.Success) {
+            failed = false
+            decodedCover = state.result.decodedAutoMixCover()
+            decodedDuringMix = PlayerPlatform.host.autoMixVisualState?.value
+                ?.takeIf { it.mixActive }?.generation
+            displayedCover = state.result.memoryCacheKey
+        }
         if (state is AsyncImagePainter.State.Error) failed = true
     }
 

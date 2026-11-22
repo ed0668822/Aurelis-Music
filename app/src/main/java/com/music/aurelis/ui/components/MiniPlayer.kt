@@ -66,7 +66,8 @@ import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.rememberHaptics
 import com.music.aurelis.playback.MusicOnlyPlayback
 import com.music.aurelis.ui.player.PlayerDock
-import com.music.aurelis.ui.player.AutoMixArtworkOverlay
+import com.music.aurelis.ui.player.PrepareAutoMixArtwork
+import com.music.aurelis.ui.player.rememberMiniAutoMixArtwork
 import com.music.aurelis.ui.player.AndroidMusicVideo
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.fillMaxSize
@@ -368,9 +369,13 @@ fun MiniPlayer(
     dock: PlayerDock? = null,
     /** Dragging the bar up into the player. */
     pull: MiniPlayerPull? = null,
+    queue: List<Song> = emptyList(),
+    queueIndex: Int = -1,
     modifier: Modifier = Modifier,
 ) {
     val reduceDynamicBlur by AppSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val originalMiniArtwork = rememberMiniAutoMixArtwork(song, queue, queueIndex)
+    PrepareAutoMixArtwork(mini = true)
     val haptics = rememberHaptics()
     val reduceMotion by AppSettings.reduceAnimation.collectAsStateWithLifecycle()
     val pressScope = rememberCoroutineScope()
@@ -438,18 +443,16 @@ fun MiniPlayer(
                     .thumbnailBorder(RoundedCornerShape(ART_CORNER))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
-                AsyncImage(
-                    model = rememberRemoteArtworkUrl(song)?.artworkAt(ROW_ART_PX),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                if (!showsPicture) {
-                    AutoMixArtworkOverlay(
-                        song = song,
-                        mini = true,
+                val artUrl = rememberRemoteArtworkUrl(song)?.artworkAt(ROW_ART_PX)
+                if (showsPicture) {
+                    AsyncImage(
+                        model = artUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
+                } else {
+                    originalMiniArtwork(artUrl, Modifier.fillMaxSize())
                 }
                 // A music video keeps playing in the cover's place, cropped to
                 // it, as the web player's mini player does — the full player,

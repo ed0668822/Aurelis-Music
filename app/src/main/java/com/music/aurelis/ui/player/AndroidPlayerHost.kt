@@ -24,6 +24,7 @@ import com.music.aurelis.data.model.Song
 import com.music.aurelis.data.settings.AppSettings
 import com.music.aurelis.data.settings.LastPlayerScreen
 import com.music.aurelis.playback.MusicOnlyPlayback
+import com.music.aurelis.playback.AutoMixVisualFeed
 import com.music.aurelis.playback.AudioOutputStatus
 import com.music.aurelis.playback.AudioRouting
 import com.music.aurelis.playback.audio.bitperfect.BitPerfectOutput
@@ -58,6 +59,28 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     private val app = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val main = Handler(Looper.getMainLooper())
+
+    override val autoMixVisualState get() = AutoMixVisualFeed.state
+    override fun onAutoMixScrubIntent() = AutoMixVisualFeed.cancel()
+    @Composable
+    override fun autoMixIncomingReveal(
+        eased: () -> Float,
+        reducedMotion: () -> Boolean,
+        generation: Long,
+        blur: Boolean,
+    ): Modifier = androidAutoMixIncomingReveal(eased, reducedMotion, generation, blur)
+    override val supportsAutoMixCanvas: Boolean get() = true
+
+    private val visualArtworkPreferences: StateFlow<AutoMixArtworkPreferences> =
+        combine(AppSettings.autoMixArtworkEnabled, AppSettings.autoMixMiniArtworkEnabled) { art, mini ->
+            AutoMixArtworkPreferences(artTransition = art, miniPlayerTransition = mini)
+        }.stateIn(
+            scope, SharingStarted.Eagerly,
+            AutoMixArtworkPreferences(
+                artTransition = AppSettings.autoMixArtworkEnabled.value,
+                miniPlayerTransition = AppSettings.autoMixMiniArtworkEnabled.value,
+            ),
+        )
 
     override val settings: PlayerSettingsSource = object : PlayerSettingsSource {
         override val animatedCanvas get() = AppSettings.animatedCanvas
@@ -94,6 +117,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val autoMixArtworkEnabled get() = AppSettings.autoMixArtworkEnabled
         override val autoMixMiniArtworkEnabled get() = AppSettings.autoMixMiniArtworkEnabled
         override val autoMixArtworkState get() = AppSettings.autoMixArtworkState
+        override val autoMixArtwork get() = visualArtworkPreferences
         override val smartMixPreview get() = AppSettings.smartMixPreview
         override val smartTransitionWindow get() = AppSettings.smartTransitionWindow
         override val spotifyCanvasAutoHide get() = AppSettings.spotifyCanvasAutoHide

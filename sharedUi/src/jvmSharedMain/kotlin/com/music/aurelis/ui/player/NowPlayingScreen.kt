@@ -1439,6 +1439,13 @@ fun NowPlayingScreen(
     // never fires again. Keyed on the cover there is nothing to reset: the
     // bitmap really is still loaded, so the state stays true.
     val art = rememberPlayerArtwork(remoteArt)
+    val artworkGate = autoMixArtworkGate()
+    val coverEntry = remember(song.videoId, song.queueEntryId, queue, queueIndex) {
+        coverOccurrence(song, queue, queueIndex)
+    }
+    val autoMixCover = rememberAutoMixCover(coverEntry, art, artworkGate)
+    val autoMixFrames = autoMixCover.framesFor(coverEntry, artworkGate)
+    PrepareAutoMixArtwork()
     // Sticky, unlike [PlayerArtwork.loaded]: the banner is the shape of the player rather
     // than a property of the track in it. Waiting on each new cover would
     // collapse the banner into a card and blow it back out on every skip —
@@ -3423,7 +3430,12 @@ fun NowPlayingScreen(
                                     )
                                 }
                             }
-                            AsyncImage(
+                            AutoMixCover(
+                                frames = autoMixFrames,
+                                modifier = Modifier.fillMaxSize(),
+                                blur = true,
+                            ) { artworkModifier ->
+                                AsyncImage(
                                 // Decode at the sleeve's *expanded* size, always.
                                 // Coil otherwise sizes the decode to however large
                                 // this is when the request goes out — and changing
@@ -3458,7 +3470,7 @@ fun NowPlayingScreen(
                                 // or otherwise; the request stays mounted so
                                 // loading still finishes in the background and
                                 // [PlayerArtwork.loaded] still flips the moment it does.
-                                modifier = Modifier
+                                modifier = artworkModifier
                                     .fillMaxSize()
                                     .drawWithContent {
                                         val frame = still()
@@ -3475,6 +3487,7 @@ fun NowPlayingScreen(
                                         }
                                     },
                             )
+                            }
 
                             // Where the clip plays when it can't have the banner:
                             // inside the same clip as the still art, taking the
@@ -3517,14 +3530,6 @@ fun NowPlayingScreen(
                                 }
                             }
                         }
-
-                        // The visual handoff stays above static and live-Canvas layers
-                        // while MediaSession swaps the two internal ExoPlayers.
-                        AutoMixArtworkOverlay(
-                            song = song,
-                            mini = false,
-                            modifier = Modifier.fillMaxSize(),
-                        )
 
                         // The card's slot: where the sleeve sits as a card, whether or
                         // not it is being drawn as one. Holds the stats line and takes
