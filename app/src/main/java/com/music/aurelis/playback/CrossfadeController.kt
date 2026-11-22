@@ -716,8 +716,16 @@ class CrossfadeController(
                 // harmless and shouldn't cost the listener the blend.
                 Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> bail()
                 Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> bail()
-                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> ranOutBeforeHandoff()
+                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> {
+                    cancelAutoMixVisual()
+                    ranOutBeforeHandoff()
+                }
+                Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> cancelAutoMixVisual()
             }
+        }
+
+        override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+            listeningTo?.let(::checkAutoMixVisualTimeline)
         }
 
         override fun onPlayerError(error: PlaybackException) = bail()
@@ -856,6 +864,7 @@ class CrossfadeController(
      * player this class has finished with.
      */
     fun onSkipRequested() {
+        cancelAutoMixVisual()
         if (phase != Phase.IDLE) bail()
     }
 
@@ -1547,7 +1556,7 @@ class CrossfadeController(
             }
         }
 
-        if (smart) armAutoMixVisual(out, nextIndex, items)
+        if (smart) armAutoMixVisual(out, into, nextIndex, items)
         phase = Phase.ARMING
         return true
     }
@@ -1779,9 +1788,24 @@ class CrossfadeController(
         // firing on a player this class is about to demote.
         listenTo(into)
         handedOff = true
+        AutoMixVisualFeed.pending(visualGeneration)?.let { visual ->
+            val expected = visualQueue.getOrNull(visual.incoming.armedIndex)
+            if (expected == null || into.currentMediaItemIndex != visual.incoming.armedIndex ||
+                !sameVisualQueueItem(expected, into.currentMediaItem)
+            ) {
+                cancelAutoMixVisual()
+            } else {
+                visualQueue = (0 until into.mediaItemCount).map(into::getMediaItemAt)
+                visualCurrentIndex = into.currentMediaItemIndex
+            }
+        }
         onHandoff(out, into)
-        if (visualSeconds != null && visualEndSeconds != null) {
-            AutoMixVisualFeed.swap(visualGeneration, visualSeconds, visualEndSeconds)
+        if (visualGeneration != null) {
+            val span = ((fadeMs.toDouble() * if (render.advanced) mediaRatio else fadeMs.toDouble())
+                / 1000.0).coerceAtLeast(0.001)
+            val seconds = visualSeconds ?: ((into.currentPosition - incomingCueTimeMs)
+                .coerceAtLeast(0L) / 1000.0).coerceIn(0.0, span)
+            AutoMixVisualFeed.swap(visualGeneration, seconds, visualEndSeconds ?: span)
         }
 
         // The outgoing player holds the whole queue too, and a standard
@@ -2294,9 +2318,40 @@ class CrossfadeController(
      */
     /** Publish cosmetic state from the audio clock; never touch either decoder. */
     private var visualGeneration: Long? = null
+    private var visualQueue: List<MediaItem> = emptyList()
+    private var visualCurrentIndex = C.INDEX_UNSET
+    private val visualDeckErrors = object : Player.Listener {
+        override fun onPlayerError(error: PlaybackException) = cancelAutoMixVisual()
+    }
+
+    /** Cancels an outdated reveal without interrupting the two audio engines. */
+    fun cancelAutoMixVisual() = AutoMixVisualFeed.cancel(visualGeneration)
+
+    private fun sameVisualQueueItem(expected: MediaItem, actual: MediaItem?): Boolean =
+        actual != null && expected == actual && expected.queueEntryId == actual.queueEntryId &&
+            expected.queueTier == actual.queueTier
+
+    /** Accept only appends and post-handoff trims; reject replacement/reordering. */
+    fun checkAutoMixVisualTimeline(player: ExoPlayer) {
+        val visual = AutoMixVisualFeed.pending(visualGeneration) ?: return
+        val index = player.currentMediaItemIndex
+        val trim = visualCurrentIndex - index
+        val retained = visualQueue.size - trim
+        if (index !in 0 until player.mediaItemCount || trim < 0 ||
+            (!handedOff && trim != 0) || retained > player.mediaItemCount ||
+            (0 until retained).any {
+                !sameVisualQueueItem(visualQueue[it + trim], player.getMediaItemAt(it))
+            } || (!handedOff && player.nextMediaItemIndex != visual.incoming.armedIndex)
+        ) {
+            cancelAutoMixVisual()
+        } else {
+            visualQueue = (0 until player.mediaItemCount).map(player::getMediaItemAt)
+            visualCurrentIndex = index
+        }
+    }
 
     /** The original BitChord visual timeline is shared by both audio engines. */
-    private fun armAutoMixVisual(out: ExoPlayer, nextIndex: Int, items: List<MediaItem>) {
+    private fun armAutoMixVisual(out: ExoPlayer, into: ExoPlayer, nextIndex: Int, items: List<MediaItem>) {
         fun trackAt(index: Int): AutoMixVisualTrack? {
             val item = items.getOrNull(index) ?: return null
             val key = item.queueEntryId
@@ -2310,13 +2365,22 @@ class CrossfadeController(
         }
         val from = trackAt(out.currentMediaItemIndex) ?: return
         val to = trackAt(nextIndex) ?: return
-        AutoMixVisualFeed.cancel(visualGeneration)
+        clearAutoMixVisual()
+        visualQueue = items
+        visualCurrentIndex = from.armedIndex
         visualGeneration = AutoMixVisualFeed.arm(from, to)
+        out.addListener(visualDeckErrors)
+        into.addListener(visualDeckErrors)
     }
 
     private fun clearAutoMixVisual() {
-        AutoMixVisualFeed.cancel(visualGeneration)
+        if (visualGeneration == null) return
+        cancelAutoMixVisual()
+        outgoing?.removeListener(visualDeckErrors)
+        incoming?.removeListener(visualDeckErrors)
         visualGeneration = null
+        visualQueue = emptyList()
+        visualCurrentIndex = C.INDEX_UNSET
     }
 
     private fun openArtworkTransition(out: ExoPlayer, into: ExoPlayer) {
@@ -2742,7 +2806,7 @@ class CrossfadeController(
         inPort.armIncoming(LoopMixPort.InArm((session.handoverTrack * 1_000_000).roundToLong()))
         into.prepare()
         session.attach(outPort, inPort)
-        armAutoMixVisual(out, nextIndex, items)
+        armAutoMixVisual(out, into, nextIndex, items)
         loopSession = session
         loopIncomingStarted = false
         lastLoopPositionMs = -1L
