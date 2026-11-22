@@ -185,6 +185,13 @@ enum class SongSort {
  * same flows and applies changes to the live ExoPlayer instance immediately —
  * no restart, no rebinding.
  */
+/**
+ * Upgrade-safe main navigation index. Older builds saved Radio as index 4;
+ * after removing that tab, Home is the only valid fallback.
+ * Keep the remaining indices unchanged to preserve Library/Search selections.
+ */
+internal fun normalizeMainTabIndex(index: Int): Int = if (index in 0..3) index else 0
+
 object AppSettings {
 
     private lateinit var prefs: SharedPreferences
@@ -1158,7 +1165,12 @@ object AppSettings {
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, false)
-        lastMainTab.value = prefs.getInt(KEY_LAST_MAIN_TAB, 0).coerceIn(0, 4)
+        val savedMainTab = prefs.getInt(KEY_LAST_MAIN_TAB, 0)
+        lastMainTab.value = normalizeMainTabIndex(savedMainTab)
+        if (savedMainTab != lastMainTab.value) {
+            // Persist the migration so future launches no longer restore Radio.
+            prefs.edit().putInt(KEY_LAST_MAIN_TAB, lastMainTab.value).apply()
+        }
         localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
             ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }
             ?: "SONGS"
@@ -2100,7 +2112,7 @@ object AppSettings {
     }
 
     fun setLastMainTab(tab: Int) {
-        if (tab !in 0..4 || lastMainTab.value == tab) return
+        if (tab !in 0..3 || lastMainTab.value == tab) return
         lastMainTab.value = tab
         prefs.edit().putInt(KEY_LAST_MAIN_TAB, tab).apply()
     }
