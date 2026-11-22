@@ -804,6 +804,7 @@ class CrossfadeController(
     }
 
     fun release() {
+        restoreSkipSilence()
         tickerJob?.cancel()
         tickerJob = null
         loopBuildJob?.cancel()
@@ -2504,7 +2505,6 @@ class CrossfadeController(
     private fun loopRefusalFor(player: ExoPlayer, current: MediaItem, next: MediaItem, state: SmartAnalysis): String? = when {
         !LoopMixRenderer.available -> "no renderer"
         AppSettings.playbackSpeed.value != 1f -> "playback speed is not 1x"
-        player.skipSilenceEnabled -> "skip silence is on"
         SleepTimer.afterTrack.value -> "sleep timer"
         state.current != TrackAnalysisState.ANALYSED || state.next != TrackAnalysisState.ANALYSED -> "waiting on analysis"
         isSourceBacked(current) || isSourceBacked(next) -> "analysed off another recording"
@@ -2620,6 +2620,10 @@ class CrossfadeController(
         val outPort = loopPortOf(out) ?: return
         val inPort = loopPortOf(into) ?: return
         endEase(clickless = false)
+        // Skip silence is on by default and would reshape the very timeline the
+        // loop is sample-locked to, so it is suspended for the mix instead of
+        // ruling the mix out. Put back by [restoreSkipSilence] when it ends.
+        suspendSkipSilence()
         phase = Phase.LOOP_ARMING
         smartFadeActive = true
         handedOff = false
@@ -2981,8 +2985,17 @@ class CrossfadeController(
             val whenText = if (inSeconds > 0) "in ${ceil(inSeconds).toInt()} s" else "now"
             val bars = if (plan.beatSeconds > 0) (plan.fadeSeconds / (4 * plan.beatSeconds)).roundToInt() else 0
             val length = if (bars > 0) "$bars bars" else "${"%.1f".format(Locale.ROOT, plan.fadeSeconds)} s"
-            val why = (plan.policyReasons.lastOrNull { it.startsWith("automix:") }
-                ?: plan.policyReasons.firstOrNull())?.let { " · $it" }.orEmpty()
+            val reason = plan.policyReasons.lastOrNull { it.startsWith("automix:") }
+                ?: plan.policyReasons.firstOrNull()
+            // Without this the line says the analysis is unavailable and not whose,
+            // which is the first thing to know when it is.
+            val states = if (reason == "automix:analysisUnavailable") {
+                " (this: ${stateOf(item, analysisFor(item)).name.lowercase(Locale.ROOT)}" +
+                    ", next: ${stateOf(next, analysisFor(next)).name.lowercase(Locale.ROOT)})"
+            } else {
+                ""
+            }
+            val why = reason?.let { " · $it$states" }.orEmpty()
             val noLoop = loopRefusal?.let { " · no loop: $it" }.orEmpty()
             return when (plan.transitionStyle) {
                 TransitionStyle.EQUAL_POWER -> "Automix · crossfading $whenText · ${"%.0f".format(Locale.ROOT, plan.fadeSeconds)} s$why$noLoop"
@@ -3055,7 +3068,23 @@ class CrossfadeController(
 
     private fun leavingOnBail(): ExoPlayer? = if (handedOff) outgoing else incoming
 
+    private var skipSilenceSuspended = false
+
+    private fun suspendSkipSilence() {
+        skipSilenceSuspended = true
+        for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = false
+    }
+
+    /** Gives both players back the listener's skip-silence setting after a loop mix. */
+    private fun restoreSkipSilence() {
+        if (!skipSilenceSuspended) return
+        skipSilenceSuspended = false
+        val on = AppSettings.skipSilence.value
+        for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = on
+    }
+
     private fun finish() {
+        restoreSkipSilence()
         val wasTransitioning = phase != Phase.IDLE
         if (phase != Phase.IDLE) {
             Log.d(TAG, "finish from $phase")
