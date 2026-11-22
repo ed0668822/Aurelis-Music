@@ -1504,4 +1504,32 @@
     <string name="replay_year_watch">觀看年度動畫回顧</string>
     <string name="youtube_premium_audio">YouTube Premium 音訊</string>
     <string name="youtube_premium_audio_subtitle">如果已登入的帳戶支援，則要求更高音質的 Opus。實際音質取決於提供的音訊串流。</string>
+
+    <!-- Complete Traditional Chinese UI resources -->
+    <string name="discord_no_credentials">無需 API 金鑰、權杖或手動登入 Discord。分享功能可自行選擇啟用。</string>
+    <string name="discord_sdk_not_bundled">此版本未包含官方 Discord Social SDK，暫時無法即時分享。</string>
+    <string name="discord_app_not_installed">請安裝 Discord 並登入以啟用分享功能。</string>
+    <string name="discord_official_available">透過官方 Discord 整合分享歌曲和藝人。</string>
+    <string name="discord_preview_disclaimer">僅供本機預覽。加入官方 SDK 並啟用分享功能後，個人檔案才會顯示此內容。Discord 會使用 Aurelis Music 在開發者入口網站登記的圖示。</string>
+    <string name="discord_listening_aurelis">正在收聽 Aurelis Music</string>
+    <string name="discord_oauth_account_title">Discord 帳戶</string>
+    <string name="discord_oauth_account_note">使用 OAuth2 和 PKCE 連結 Discord 帳戶。這不會啟用 Rich Presence，後者仍需官方 Social SDK。</string>
+    <string name="discord_oauth_connect">連結 Discord</string>
+    <string name="discord_oauth_disconnect">中斷連結</string>
+    <string name="discord_oauth_connecting">正在連結 Discord…</string>
+    <string name="discord_oauth_storage_error">此裝置無法使用安全帳戶儲存功能。</string>
+    <string name="discord_oauth_browser_error">無法開啟瀏覽器以授權 Discord。</string>
+    <string name="discord_oauth_failed">Discord 授權已取消、過期或無效，請重試。</string>
+    <string name="discord_oauth_config_error">無法完成授權。請在 Discord 開發者入口網站啟用 Public Client，並登記完全相同的重新導向 URI。</string>
+    <string name="find_a_playlist">尋找播放清單</string>
+    <string name="no_playlists_match">找不到符合「%1$s」的播放清單</string>
+    <string name="queue_selected_count">已選取 %1$d 項</string>
+    <string name="queue_playlist_added">已加入 %1$d / %2$d 首歌曲</string>
+    <string name="queue_playlist_partial">%1$s（%2$d 首不相容、%3$d 首已存在、%4$d 首失敗）</string>
+    <string name="queue_undo_action">復原</string>
+    <string name="queue_removed_song">已移除 %1$s</string>
+    <string name="queue_cleared">已清空播放佇列</string>
+    <string name="queue_selection_remove">移除</string>
+    <string name="queue_add_to_playlist">加入播放清單</string>
+    <string name="queue_download">下載</string>
 </resources>
