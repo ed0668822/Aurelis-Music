@@ -132,10 +132,14 @@ internal class WebTvPlayback(
         duration = item?.mediaMetadata?.durationMs?.takeIf { it > 0 } ?: C.TIME_UNSET
         streamUrl = null
         mimeType = null
-        lyricMediaId = null
-        lyricLines = null
-        lyricRevision++
-        updateLyricsJson()
+        // Starting a browser session must not erase lyrics that the phone
+        // already resolved for this exact track before the TV page was opened.
+        if (lyricMediaId != expectedId) {
+            lyricMediaId = expectedId
+            lyricLines = null
+            lyricRevision++
+            updateLyricsJson()
+        }
         updateState()
         if (item == null) return
         mediaJob = scope.launch {
@@ -207,7 +211,9 @@ internal class WebTvPlayback(
         position = newPosition
         browserSeen = true
         if (action == "playing" && !active && streamUrl != null) {
-            if (CastController.state.value.casting || DlnaController.connected.value != null) return
+            if (CastController.state.value.casting || DlnaController.connected.value != null ||
+                com.music.aurelis.wear.WearBridge.watchOutput.value.active
+            ) return
             active = true
             localPlayer()?.pause()
             WebTvController.set(active = true)

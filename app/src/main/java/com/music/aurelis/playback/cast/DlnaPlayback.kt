@@ -149,7 +149,9 @@ internal class DlnaPlayback(
     override val deviceVolume: Int get() = volume
 
     fun connect(target: DlnaRenderer) {
-        if (CastController.state.value.casting || WebTvController.state.value.active) return
+        if (CastController.state.value.casting || WebTvController.state.value.active ||
+            com.music.aurelis.wear.WearBridge.watchOutput.value.active
+        ) return
         if (active || connectJob?.isActive == true) disconnect(false)
         val player = localPlayer() ?: return
         val selected = player.currentMediaItem ?: return
