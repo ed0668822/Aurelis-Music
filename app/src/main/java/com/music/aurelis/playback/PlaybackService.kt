@@ -154,6 +154,7 @@ import com.music.aurelis.data.sources.SourceStream
 import com.music.aurelis.data.sources.StreamFormat
 import com.music.aurelis.data.sources.TrackMatcher
 import com.music.aurelis.playback.smart.AutomixAnalysisSource
+import com.music.aurelis.playback.smart.LocalAudioSource
 import com.music.aurelis.playback.smart.VersionAudioAligner
 import com.music.aurelis.widget.MediaWidget
 import com.music.aurelis.widget.MediaWidgetSnapshot
@@ -6641,6 +6642,14 @@ class PlaybackService : MediaLibraryService() {
             // A video about to be converted plays under another id, so every
             // byte warmed for it now would be wasted.
             (nextIndex..end).map(player::getMediaItemAt)
+                // AudioCache read-ahead only understands streamed tracks. A local
+                // file is already complete and bypasses the cache; treating its
+                // mediaId as a YouTube id wastes data and cannot warm that file.
+                // Do not jump over a local item and prefetch a later stream
+                // before the local track has become current.
+                .takeWhile { item ->
+                    item.localConfiguration?.uri?.let { !LocalAudioSource.isLocal(it) } == true
+                }
                 .filterNot(MusicOnlyPlayback::wants)
                 .map { it.toSong() }
         } else {
@@ -6865,6 +6874,9 @@ class PlaybackService : MediaLibraryService() {
         if (nextIndex == C.INDEX_UNSET) return
         val next = exoPlayer.getMediaItemAt(nextIndex)
         if (MusicOnlyPlayback.wants(next)) return
+        // Direct Source Stream's prefetcher resolves YouTube/addon streams; a
+        // file:// or content:// item needs no network fetch or source pin.
+        if (next.localConfiguration?.uri?.let(LocalAudioSource::isLocal) == true) return
         val duration = exoPlayer.duration
         if (duration == C.TIME_UNSET || duration <= 0L) return
         val boundary = crossfade?.plannedTransitionFor(current.mediaId) ?: duration
