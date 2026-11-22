@@ -1451,9 +1451,10 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         if (results[trackId]?.isUsable != true || trackId in provisional) return false
         if (LocalAudioSource.isLocal(uri)) return true
         val currentKey = cache.cacheKeyOf(uri)
-        val youtubeId = uri.getQueryParameter("v")
-        if (youtubeId != null && currentKey != youtubeId) return false
-        return cache.renditionsOf(uri).any { it.key == currentKey && it.isComplete }
+        val complete = cache.renditionsOf(uri).filter { it.isComplete }.map { it.key }
+        return AutomixAnalysisSource.hasVerifiedLoopAudio(
+            uri.getQueryParameter("v"), currentKey, complete,
+        )
     }
 
     fun loopRegion(
