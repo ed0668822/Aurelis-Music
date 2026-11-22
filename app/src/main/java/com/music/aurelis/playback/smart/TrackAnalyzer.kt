@@ -34,20 +34,10 @@ import android.os.Process
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.util.UnstableApi
-import com.music.aurelis.data.YtMusicRepository
 import com.music.aurelis.data.listentogether.ListenTogether
-import com.music.aurelis.data.model.SearchFilter
-import com.music.aurelis.data.model.SearchResult
 import com.music.aurelis.data.settings.AppSettings
 import com.music.aurelis.data.settings.AutomixPerformanceMode
-import com.music.aurelis.data.sources.SourceResolver
-import com.music.aurelis.data.sources.TrackMatcher
 import com.music.aurelis.playback.AudioCache
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -162,10 +152,6 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
 
     private val results = ConcurrentHashMap<String, TrackAnalysis>()
     private val running = ConcurrentHashMap.newKeySet<String>()
-    private val sourceAnalysisUris = ConcurrentHashMap<String, Uri>()
-    private val sourceResolutions = ConcurrentHashMap.newKeySet<String>()
-    private val sourceResolutionAttempted = ConcurrentHashMap.newKeySet<String>()
-    private val sourceResolutionScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** Tracks whose result came from [analyzeHead] and is waiting to be superseded. */
     private val provisional = ConcurrentHashMap.newKeySet<String>()
@@ -263,14 +249,14 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * against the seconds a real analysis takes — and against the alternative,
      * which is not having it at all.
      */
-    private fun restoreOnce(trackId: String) {
+    private fun restoreOnce(trackId: String, storageKey: String) {
         if (results.containsKey(trackId)) return
         // The set doubles as the once-guard: add() is true only for the first
         // caller, so a track with nothing stored is looked for once per session
         // rather than on every tick.
         if (!restoreAttempted.add(trackId)) return
         executor.execute {
-            val stored = store.load(trackId) ?: return@execute
+            val stored = store.load(storageKey) ?: return@execute
             Log.d(TAG, "Restored analysis for $trackId: bpm=${stored.bpm} conf=${stored.beatConfidence}")
             results.putIfAbsent(trackId, stored)
         }
@@ -313,18 +299,22 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      */
     fun request(trackId: String, uri: Uri, durationSeconds: Double) {
         if (trackId.isBlank()) return
-        // Before anything else this would spend: [analysisUriFor] alone can put
-        // a catalogue match on the network for a track the party will never
-        // mix. See [stopped].
         if (stopped) return
         if (trackId in running) return
-        // A track measured in an earlier session costs nothing to restore, so
-        // only the work below waits for the phone to cool.
+        // Never find a substitute recording by title. Source-backed tracks
+        // must be measured from the same URI (and cache entry) used to play them.
+        val analysisUri = uri
+        val storageKey = AutomixAnalysisSource.storageKey(
+            trackId,
+            if (uri.authority == "source" && uri.getQueryParameter("v") == null)
+                cache.cacheKeyOf(uri) else null,
+        )
+        // Loading a stored result does not cost a decode and is allowed even
+        // when the phone is too hot to start fresh inference.
         if (overheated) {
-            restoreOnce(trackId)
+            restoreOnce(trackId, storageKey)
             return
         }
-        val analysisUri = analysisUriFor(trackId, uri) ?: return
 
         // Only the canonical YouTube rendition of this recording will do, not
         // the source substitute the player happens to be on: see
@@ -333,7 +323,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // Queued before the cache is even consulted, so a track measured in an
         // earlier session short-circuits the whole path rather than being
         // re-earned from audio the cache may since have evicted.
-        restoreOnce(trackId)
+        restoreOnce(trackId, storageKey)
 
         // A track playing off the device is not a download in progress. Every
         // byte of it is already there, and none of those bytes are in the cache:
@@ -452,7 +442,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
                         // mix-out anchor, the energy curve — and storing one
                         // would freeze a deliberately partial answer in place of
                         // the complete one that supersedes it minutes later.
-                        store.save(trackId, whole)
+                        store.save(storageKey, whole)
                         restoreAttempted.add(trackId)
                     } else if (outcome.decodedShort &&
                         shortDecodes.merge(trackId, 1, Int::plus)!! >= MAX_SHORT_DECODE_ATTEMPTS
@@ -876,54 +866,14 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
     }
 
     /**
-     * Source-backed playback URIs (JioSaavn, module/lossless, etc.) carry the
-     * same title/artist/runtime matching hints as a YouTube item. Resolve that
-     * identity once, then keep playback on its original URI while analysis
-     * fills and reads the separately pinned YouTube Opus entry.
+     * A source-backed row is its own recording, not a search query.
+     *
+     * Reading a YouTube search match used to produce a beat grid belonging
+     * to another cut of the song (and the user's FLAC was never measured).
+     * The source's own cache holds the bytes playback heard; partial prefixes
+     * may give a provisional entry, and a complete copy gives both ends.
+     * Do not start a network search or silently substitute a different master.
      */
-    private fun analysisUriFor(trackId: String, playbackUri: Uri): Uri? {
-        if (playbackUri.getQueryParameter("v") != null || playbackUri.authority != "source") return playbackUri
-        // Never for a row picked from the Addons search: that would put a
-        // YouTube search and its Opus on the network under a track whose whole
-        // point is not being YouTube. Left unmeasured, as a party leaves every
-        // track — see [SourceResolver.MIX_PARAM].
-        if (SourceResolver.isPickedAddonRow(playbackUri)) return null
-        sourceAnalysisUris[trackId]?.let { return it }
-        if (trackId in sourceResolutionAttempted) return null
-        if (!sourceResolutions.add(trackId)) return null
-        val target = SourceResolver.targetIn(playbackUri)
-        sourceResolutionScope.launch {
-            try {
-                val match = findYouTubeMatch(target)
-                if (match != null) {
-                    sourceAnalysisUris[trackId] = Uri.parse(AutomixAnalysisSource.opusUri(match.videoId))
-                    Log.d(TAG, "Automix analysis for $trackId will use YouTube Opus ${match.videoId}")
-                } else {
-                    Log.d(TAG, "No YouTube match for Automix analysis of $trackId")
-                }
-            } catch (error: Throwable) {
-                Log.d(TAG, "YouTube match failed for Automix analysis of $trackId: ${error.message}")
-            } finally {
-                sourceResolutionAttempted.add(trackId)
-                sourceResolutions.remove(trackId)
-            }
-        }
-        return null
-    }
-
-    private suspend fun findYouTubeMatch(target: TrackMatcher.Target): com.music.aurelis.data.model.Song? {
-        if (target.title.isBlank()) return null
-        for (query in TrackMatcher.queries(target)) {
-            val candidates = YtMusicRepository.search(query, SearchFilter.SONGS)
-                .getOrNull()
-                ?.filterIsInstance<SearchResult.Track>()
-                ?.map { it.song }
-                .orEmpty()
-            TrackMatcher.best(candidates, target)?.let { return it }
-        }
-        return null
-    }
-
     /**
      * What a whole-track pass came back with.
      *
@@ -1488,6 +1438,24 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * land off the song it takes over from. Blocking — call it off the main
      * thread.
      */
+    /**
+     * Loop decks must contain the very recording that owns the beat grid and
+     * is currently playing. A different YouTube master may have the same song
+     * title, duration and even BPM, but its downbeat positions can differ.
+     *
+     * Source-backed tracks are safe once their own complete cached rendition
+     * has been analysed. For YouTube IDs only the canonical rendition is
+     * trusted; a substituted #alt recording must not borrow its grid.
+     */
+    fun canLoopMix(trackId: String, uri: Uri): Boolean {
+        if (results[trackId]?.isUsable != true || trackId in provisional) return false
+        if (LocalAudioSource.isLocal(uri)) return true
+        val currentKey = cache.cacheKeyOf(uri)
+        val youtubeId = uri.getQueryParameter("v")
+        if (youtubeId != null && currentKey != youtubeId) return false
+        return cache.renditionsOf(uri).any { it.key == currentKey && it.isComplete }
+    }
+
     fun loopRegion(
         trackId: String,
         uri: Uri,
@@ -1496,7 +1464,6 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         toSeconds: Double,
         sampleRate: Int,
     ): com.music.aurelis.playback.loopmix.LoopRegion? {
-        if (uri.getQueryParameter("v") == null && uri.authority == "source") return null
         val began = SystemClock.elapsedRealtime()
         val copy = runCatching { copyToRead(trackId, uri, durationSeconds) }.getOrNull() ?: return null
         val (stereo, start) = copy.open()?.use { source ->
@@ -1535,15 +1502,9 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         toSeconds: Double,
         bins: Int,
     ): MixWaveform.Bands? {
-        // Not [analysisUriFor]: that starts a catalogue search, and this only
-        // wants whatever analysis already settled on.
-        val analysisUri = if (uri.getQueryParameter("v") != null || uri.authority != "source") {
-            uri
-        } else {
-            sourceAnalysisUris[trackId] ?: return null
-        }
+        // Read exactly the playback recording, never an unrelated YouTube search match.
         val began = SystemClock.elapsedRealtime()
-        val copy = runCatching { copyToRead(trackId, analysisUri, durationSeconds) }.getOrNull() ?: return null
+        val copy = runCatching { copyToRead(trackId, uri, durationSeconds) }.getOrNull() ?: return null
         val chosen = SystemClock.elapsedRealtime()
         val bands = copy.open()?.use { source ->
             MixWaveform.build(source, fromSeconds, toSeconds, bins) { stopped }
@@ -1559,10 +1520,6 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
 
     fun release() {
         executor.shutdownNow()
-        sourceResolutionScope.cancel()
-        sourceAnalysisUris.clear()
-        sourceResolutions.clear()
-        sourceResolutionAttempted.clear()
         headAttempts.clear()
         headSkipLogged.clear()
         provisional.clear()
