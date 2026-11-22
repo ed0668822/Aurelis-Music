@@ -9,6 +9,19 @@ import org.junit.Test
 
 class AutomixAnalysisSourceTest {
     @Test
+    fun `Loop Mix rejects YouTube substitute even if it is cached`() {
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("youtube-id", "youtube-id", listOf("youtube-id")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("youtube-id", "youtube-id#alt", listOf("youtube-id", "youtube-id#alt")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("youtube-id", "youtube-id", emptyList()))
+    }
+
+    @Test
+    fun `Loop Mix accepts a complete recording from the selected external source`() {
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio(null, "addon|track#stereo", listOf("addon|track#stereo")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio(null, "addon|track#stereo", listOf("other-addon|track")))
+    }
+
+    @Test
     fun `source recording results never reuse a YouTube match's analysis`() {
         val sourceKey = "addon-1|track-42#stereo"
         val scoped = AutomixAnalysisSource.storageKey("source-track-42", sourceKey)
