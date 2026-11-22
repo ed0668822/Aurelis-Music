@@ -235,6 +235,11 @@ class CrossfadeController(
     private val loopPortOf: (ExoPlayer) -> LoopMixPort? = { null },
     /** Stereo audio of a track for a loop mix deck: (item, duration ms, from s, to s, rate). Blocking. */
     private val loopRegion: (MediaItem, Long, Double, Double, Int) -> LoopRegion? = { _, _, _, _, _ -> null },
+    /** True only if the deck audio and stored analysis come from the playing recording. */
+    private val loopAudioMatchesPlayback: (MediaItem) -> Boolean = { item ->
+        val uri = item.localConfiguration?.uri
+        uri != null && uri.authority != "source"
+    },
     /** A track's synced lyrics, for vouching a loop instrumental; null when it has none. */
     private val syncedLines: suspend (MediaItem, Long) -> List<LyricLine>? = { _, _ -> null },
     /** The loudness-normalisation gain a track plays at, so the incoming deck is levelled like its player. */
@@ -2507,16 +2512,11 @@ class CrossfadeController(
         AppSettings.playbackSpeed.value != 1f -> "playback speed is not 1x"
         SleepTimer.afterTrack.value -> "sleep timer"
         state.current != TrackAnalysisState.ANALYSED || state.next != TrackAnalysisState.ANALYSED -> "waiting on analysis"
-        isSourceBacked(current) || isSourceBacked(next) -> "analysed off another recording"
+        !loopAudioMatchesPlayback(current) || !loopAudioMatchesPlayback(next) ->
+            "no verified matching recording"
         loopPortOf(player)?.supportsLoopMix != true -> "this output can't take it"
         loopPortOf(standby()) == null -> "no standby sink"
         else -> null
-    }
-
-    /** A track whose analysis reads a matched YouTube recording rather than what plays. */
-    private fun isSourceBacked(item: MediaItem): Boolean {
-        val uri = item.localConfiguration?.uri ?: return true
-        return uri.getQueryParameter("v") == null && uri.authority == "source"
     }
 
     /**
@@ -3073,6 +3073,16 @@ class CrossfadeController(
     private fun suspendSkipSilence() {
         skipSilenceSuspended = true
         for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = false
+    }
+
+    /**
+     * A settings change must not re-enable silence skipping halfway through a
+     * sample-locked loop. Keep its saved preference in AppSettings and apply
+     * the latest value after the mix ends.
+     */
+    fun applySkipSilencePreference(on: Boolean) {
+        if (skipSilenceSuspended) return
+        for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = on
     }
 
     /** Gives both players back the listener's skip-silence setting after a loop mix. */
