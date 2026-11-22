@@ -281,6 +281,7 @@ interface PlayerSettingsSource {
     /** Turns [LocalPlayerChrome] off: glyphs and text over the artwork in plain white. */
     val disableBlendEffects: StateFlow<Boolean>
     val showNerdStats: StateFlow<Boolean>
+    val showBestPart: StateFlow<Boolean> get() = DefaultShowBestPart
     /** Whether the output / Listen Together pill sits under the transport. */
     val showListenTogetherButton: StateFlow<Boolean>
     val smartAnalysis: StateFlow<SmartAnalysis>
@@ -319,6 +320,7 @@ interface PlayerSettingsSource {
 
 private val DefaultDisableSpotifyCanvas = MutableStateFlow(false)
 private val DefaultAutoMixArtwork = MutableStateFlow(AutoMixArtworkPreferences())
+private val DefaultShowBestPart = MutableStateFlow(true)
 
 /** The player's name for the installed host's settings, read where AppSettings used to be. */
 internal val PlayerSettings: PlayerSettingsSource
@@ -424,6 +426,7 @@ class CanvasVideoSpec(
     val captureStill: Boolean,
     val onStillCaptured: (ImageBitmap?, Long) -> Unit,
     val onResumed: () -> Unit,
+    val nowPlaying: Boolean = false,
     val organicReveal: CanvasOrganicReveal? = null,
 )
 
@@ -481,6 +484,8 @@ fun CanvasArtworkPlayer(
     onStillCaptured: (ImageBitmap?, Long) -> Unit = { _, _ -> },
     /** The clip has moved on from the frame it was last captured or started at. */
     onResumed: () -> Unit = {},
+    nowPlaying: Boolean = false,
+    organicReveal: CanvasOrganicReveal? = null,
 ) {
     PlayerPlatform.host.CanvasVideo(
         CanvasVideoSpec(
@@ -505,6 +510,8 @@ fun CanvasArtworkPlayer(
             captureStill = captureStill,
             onStillCaptured = onStillCaptured,
             onResumed = onResumed,
+            nowPlaying = nowPlaying,
+            organicReveal = organicReveal,
         ),
         modifier,
     )
