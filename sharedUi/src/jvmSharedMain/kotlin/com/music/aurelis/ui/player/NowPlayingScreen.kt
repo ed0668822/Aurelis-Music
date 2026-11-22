@@ -1680,6 +1680,7 @@ fun NowPlayingScreen(
         // into a rattle, and the beat that matters is the one that says where
         // the playhead landed.
         haptics.play(Haptic.Select)
+        PlayerPlatform.host.onAutoMixScrubIntent()
         scrub.release(onSeekFraction)
     }
     val onVolumeChange: (Float) -> Unit = volume::drag

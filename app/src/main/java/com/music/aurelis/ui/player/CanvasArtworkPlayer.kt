@@ -73,6 +73,25 @@ import java.util.Locale
 private const val TAG = "CanvasArtworkPlayer"
 
 /**
+ * One decoder factory for the original BitChord v1.10 Canvas lease manager.
+ * Reuses Aurelis's existing Canvas disk cache and muted video-only settings.
+ */
+internal fun newCanvasDecoder(context: Context): ExoPlayer =
+    ExoPlayer.Builder(context)
+        .setMediaSourceFactory(
+            DefaultMediaSourceFactory(CanvasCache.dataSourceFactory(OkHttpDataSource.Factory(Http.client))),
+        )
+        .build()
+        .apply {
+            volume = 0f
+            repeatMode = Player.REPEAT_MODE_ONE
+            trackSelectionParameters = trackSelectionParameters.buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
+                .apply { CanvasPlaybackLimits.maxFrameRate?.let(::setMaxVideoFrameRate) }
+                .build()
+        }
+
+/**
  * How long a clip gets to paint itself onto a surface it was just handed back
  * before the still art is brought in behind it instead. Long enough to cover a
  * decoder being re-created from cold, short enough that a clip which is never
