@@ -67,9 +67,9 @@ interface CastSink {
  *
  * A receiver cannot ask the service to resolve a `aurelis://` address, so the
  * stream URL is resolved here, on the phone, and the receiver is handed the
- * finished URL. It cannot send the headers a resolver may have wanted either,
- * and it cannot reach a file on this phone at all; those tracks are refused
- * with a message rather than loaded and left silent.
+ * finished URL. Authorized, seekable local tracks can instead be streamed
+ * through a temporary LAN HTTP server. Sources needing custom headers may
+ * still be unsupported on the receiver.
  *
  * The receiver's queue holds the playing track and a few after it, so that it
  * moves on by itself with no gap and with the phone asleep. Everything runs on
@@ -80,6 +80,7 @@ class CastPlayback(
     private val localPlayer: () -> ExoPlayer?,
     private val resolve: suspend (MediaItem) -> CastStream?,
     private val say: (Int) -> Unit,
+    private val onReleased: () -> Unit = {},
 ) : RemoteSpeaker {
     override var sink: CastSink? = null
 
@@ -286,6 +287,7 @@ class CastPlayback(
         wantsPlay = false
         finished = false
         lastItemId = MediaQueueItem.INVALID_ITEM_ID
+        onReleased()
     }
 
     // ---- the phone's player moved -------------------------------------------

@@ -86,6 +86,7 @@ import com.music.aurelis.playback.cast.CastSink
 import com.music.aurelis.playback.cast.RemoteSpeaker
 import com.music.aurelis.playback.cast.Speakers
 import com.music.aurelis.playback.cast.CastStream
+import com.music.aurelis.playback.cast.LocalCastMediaServer
 import com.music.aurelis.playback.audio.PrecisionAudioSink
 import com.music.aurelis.playback.dsd.DsdExtractorsFactory
 import com.music.aurelis.playback.audio.DirectAudioProbe
@@ -770,6 +771,9 @@ class PlaybackService : MediaLibraryService() {
      */
     private var streamResolver: ResolvingDataSource.Resolver? = null
 
+    /** Serves an authorized, seekable local track only while a Cast session needs it. */
+    private val localCastMediaServer by lazy { LocalCastMediaServer(applicationContext) }
+
     /**
      * What plays on a Cast receiver, when the music is on one. The phone's
      * player keeps the queue and is held paused; this is what the session
@@ -780,6 +784,7 @@ class PlaybackService : MediaLibraryService() {
         localPlayer = { player },
         resolve = ::resolveForCast,
         say = { message -> Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show() },
+        onReleased = { localCastMediaServer.stop() },
     )
 
     /**
@@ -1912,13 +1917,15 @@ class PlaybackService : MediaLibraryService() {
     ) { lastPublishedSubtitle }
 
     /**
-     * The stream a Cast receiver can open for [item], or null when there is none
-     * it can: a file on this phone, or a source that needs headers the
-     * receiver cannot send. Runs the same resolver the player's own data source
-     * does, so the receiver is handed the URL the phone would have played.
+     * Produces an URL the TV can reach. Seekable local audio is served through
+     * a temporary, session-scoped LAN endpoint; remote media still takes its
+     * existing resolver path and downloaded stream fallback.
      */
     private suspend fun resolveForCast(item: MediaItem): CastStream? = withContext(Dispatchers.IO) {
         val uri = item.localConfiguration?.uri ?: return@withContext null
+        if (uri.scheme == "content" || uri.scheme == "file") {
+            localCastMediaServer.streamFor(uri)?.let { return@withContext it }
+        }
         val resolver = streamResolver ?: return@withContext null
         // Ungated: the receiver plays items this player is not on.
         val resolved = DirectSourceGate.ungated { resolver.resolveDataSpec(DataSpec(uri)) }.uri
