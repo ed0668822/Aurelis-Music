@@ -34,17 +34,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -58,6 +53,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.snapshotFlow
@@ -66,6 +62,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -91,7 +88,6 @@ import com.music.aurelis.data.model.QueueTier
 import com.music.aurelis.data.model.QueueEntryIdentity
 import com.music.aurelis.data.model.Song
 import com.music.aurelis.playback.autoplaySectionStart
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -167,6 +163,14 @@ internal data class QueueTrack(
     val uniqueEntryId: String? = null,
     val uniqueSongReference: Boolean = false,
 )
+
+/** Require the original unique occurrence before an asynchronous swipe edits the live queue. */
+internal fun QueueTrack.sameEntryAs(other: QueueTrack): Boolean =
+    if (uniqueEntryId != null && other.uniqueEntryId != null) {
+        uniqueEntryId == other.uniqueEntryId && song.videoId == other.song.videoId
+    } else {
+        uniqueSongReference && other.uniqueSongReference && song === other.song
+    }
 
 /** The groups a queue row can be dragged within; a drag never leaves its own. */
 internal enum class QueueSection { USER, CONTEXT, AUTOPLAY }
@@ -281,11 +285,37 @@ internal fun InlineQueue(
     val showHistory by PlayerSettings.showQueueHistory.collectAsStateWithLifecycle()
     val tracks = remember(queue, currentIndex, showHistory) { splitQueue(queue, currentIndex, showHistory) }
     val drag = rememberQueueDrag(listState, tracks, onMove, onDragActiveChange)
+    val latestTracks by rememberUpdatedState(tracks)
+    val reduceAnimation by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
     // Select by unique row key so duplicate song IDs remain independent.
     var selecting by remember { mutableStateOf(false) }
     var selectedKeys by remember { mutableStateOf<Set<String>>(emptySet()) }
     val selectableRows = tracks.user + tracks.context + tracks.autoplay
     val selectedRows = selectableRows.filter { it.key in selectedKeys }
+    val swipesEnabled = !controlsLocked && !selecting && drag.held == null
+    fun resolveSwipeTrack(original: QueueTrack): QueueTrack? {
+        val live = latestTracks.history.firstOrNull { it.key == original.key }
+            ?: latestTracks.user.firstOrNull { it.key == original.key }
+            ?: latestTracks.context.firstOrNull { it.key == original.key }
+            ?: latestTracks.autoplay.firstOrNull { it.key == original.key }
+        return live?.takeIf { it.sameEntryAs(original) }
+    }
+    val canCommitSwipe: (QueueTrack, QueueSwipeAction) -> Boolean = { original, action ->
+        val live = resolveSwipeTrack(original)
+        val destination = tracks.user.lastOrNull()
+        swipesEnabled && live != null &&
+            (action == QueueSwipeAction.REMOVE || live.key != destination?.key)
+    }
+    val commitSwipe: suspend (QueueTrack, QueueSwipeAction) -> Boolean = { original, action ->
+        val live = resolveSwipeTrack(original)
+        if (live != null && canCommitSwipe(original, action)) {
+            when (action) {
+                QueueSwipeAction.REMOVE -> onRemove(live.timelineIndex)
+                QueueSwipeAction.QUEUE -> onPromote(live.timelineIndex, live.song)
+            }
+            true
+        } else false
+    }
     LaunchedEffect(selectableRows.map { it.key }) {
         selectedKeys = selectedKeys.intersect(selectableRows.mapTo(HashSet()) { it.key })
     }
@@ -452,7 +482,7 @@ internal fun InlineQueue(
                             QueueClearButton(MaterialTheme.typography.labelLarge, controlsLocked, onClear)
                         }
                     }
-                    queueSection(tracks.user, QueueSection.USER, drag, controlsLocked, onJumpTo, onRemove, selecting, selectedKeys, toggleSelected, onPromote)
+                    queueSection(tracks.user, QueueSection.USER, drag, controlsLocked, onJumpTo, selecting, selectedKeys, toggleSelected, swipesEnabled, reduceAnimation, canCommitSwipe, commitSwipe)
                 }
                 if (tracks.context.isNotEmpty()) {
                     item(key = "header-context") {
@@ -465,13 +495,13 @@ internal fun InlineQueue(
                             modifier = Modifier.padding(top = 16.dp, bottom = 6.dp).then(queueMotion()),
                         )
                     }
-                    queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, onRemove, selecting, selectedKeys, toggleSelected, onPromote)
+                    queueSection(tracks.context, QueueSection.CONTEXT, drag, controlsLocked, onJumpTo, selecting, selectedKeys, toggleSelected, swipesEnabled, reduceAnimation, canCommitSwipe, commitSwipe)
                 }
                 if (autoplayEnabled || tracks.autoplay.isNotEmpty()) {
                     item(key = "autoplay-heading") {
                         AutoplayHeading(hasTracks = tracks.autoplay.isNotEmpty(), modifier = queueMotion())
                     }
-                    queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, onRemove, selecting, selectedKeys, toggleSelected, onPromote)
+                    queueSection(tracks.autoplay, QueueSection.AUTOPLAY, drag, controlsLocked, onJumpTo, selecting, selectedKeys, toggleSelected, swipesEnabled, reduceAnimation, canCommitSwipe, commitSwipe)
                 }
             }
             // The held row, drawn over the list where the finger is. Positioned
@@ -506,85 +536,80 @@ private fun LazyListScope.queueSection(
     drag: QueueDrag,
     locked: Boolean,
     onJumpTo: (Int) -> Unit,
-    onRemove: (Int) -> Unit,
     selecting: Boolean,
     selectedKeys: Set<String>,
     onToggleSelected: (QueueTrack) -> Unit,
-    onPromote: (Int, Song) -> Unit,
+    swipesEnabled: Boolean,
+    reduceAnimation: Boolean,
+    canCommitSwipe: (QueueTrack, QueueSwipeAction) -> Boolean,
+    commitSwipe: suspend (QueueTrack, QueueSwipeAction) -> Boolean,
 ) {
     items(rows, key = { it.key }) { track ->
         val held = drag.held?.key == track.key
         if (held) {
-            // Scrolled far enough to be disposed, the row takes its gesture
-            // with it and neither drag-end callback runs — end the drag here.
+            // When a held row leaves the viewport, release the reorder gesture.
             DisposableEffect(Unit) { onDispose { drag.end(track.key) } }
         }
         QueueSwipeableTrack(
             track = track,
-            swipeEnabled = !locked && !selecting && !held,
-            onRemove = { onRemove(track.timelineIndex) },
-            onPromote = { onPromote(track.timelineIndex, track.song) },
+            swipeEnabled = swipesEnabled && !held,
+            reduceAnimation = reduceAnimation,
+            canCommitSwipe = canCommitSwipe,
+            commitSwipe = commitSwipe,
             modifier = if (held) Modifier.alpha(0f) else queueMotion(),
-        ) {
+        ) { interactive ->
+            val currentInteractive by rememberUpdatedState(interactive)
+            var handleDragging by remember(track.key) { mutableStateOf(false) }
             InlineQueueRow(
                 song = track.song,
                 isCurrent = false,
-                onClick = { if (selecting) onToggleSelected(track) else onJumpTo(track.timelineIndex) },
-                onLongPress = { onToggleSelected(track) },
-                onRemove = { onRemove(track.timelineIndex) },
+                onClick = { if (interactive) {
+                    if (selecting) onToggleSelected(track) else onJumpTo(track.timelineIndex)
+                } },
+                onLongPress = { if (interactive) onToggleSelected(track) },
                 locked = locked,
+                controlsVisible = interactive,
                 selecting = selecting,
                 selected = track.key in selectedKeys,
                 draggable = !locked && !selecting,
-                onDragStart = { drag.start(track.key, section) },
-                onDrag = drag::drag,
-                onDragEnd = { drag.end(track.key) },
+                onDragStart = {
+                    handleDragging = currentInteractive
+                    if (handleDragging) drag.start(track.key, section)
+                },
+                onDrag = { if (handleDragging) drag.drag(it) },
+                onDragEnd = {
+                    if (handleDragging) drag.end(track.key)
+                    handleDragging = false
+                },
             )
         }
     }
 }
 
-/** Gestures do not dismiss rows locally: a native Media3 session edit must acknowledge each one. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** BitChord's gesture component keeps action backgrounds invisible at rest. */
 @Composable
 private fun QueueSwipeableTrack(
     track: QueueTrack,
     swipeEnabled: Boolean,
-    onRemove: () -> Unit,
-    onPromote: () -> Unit,
+    reduceAnimation: Boolean,
+    canCommitSwipe: (QueueTrack, QueueSwipeAction) -> Boolean,
+    commitSwipe: suspend (QueueTrack, QueueSwipeAction) -> Boolean,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable (Boolean) -> Unit,
 ) {
     if (!swipeEnabled) {
-        Box(modifier) { content() }
+        Box(modifier) { content(true) }
         return
     }
-    val state = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.EndToStart -> onRemove()
-                SwipeToDismissBoxValue.StartToEnd -> onPromote()
-                else -> Unit
-            }
-            false
-        },
-        positionalThreshold = { it * 0.45f },
-    )
-    SwipeToDismissBox(
-        state = state,
+    QueueSwipeRow(
+        track = track,
+        enabled = swipeEnabled,
+        reduceAnimation = reduceAnimation,
+        canCommit = canCommitSwipe,
+        onCommit = commitSwipe,
         modifier = modifier,
-        backgroundContent = {
-            Row(
-                modifier = Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.08f))
-                    .padding(horizontal = 18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, contentDescription = null, tint = Color.White)
-                Spacer(Modifier.weight(1f))
-                Icon(Icons.Rounded.Delete, contentDescription = null, tint = Color.White)
-            }
-        },
-    ) { content() }
+        content = content,
+    )
 }
 
 @Composable
@@ -885,6 +910,7 @@ private fun InlineQueueRow(
     isCurrent: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit,
+    controlsVisible: Boolean = true,
     modifier: Modifier = Modifier,
     onLongPress: (() -> Unit)? = null,
     selecting: Boolean = false,
@@ -906,36 +932,12 @@ private fun InlineQueueRow(
             .background(if (lifted) Color.White.copy(alpha = 0.06f) else Color.Transparent)
             // Disabled rather than ignored: a tap that ripples and then does
             // nothing reads as the app having missed it.
-            .combinedClickable(enabled = !locked, onClick = onClick, onLongClick = onLongPress)
+            .combinedClickable(enabled = !locked && controlsVisible, onClick = onClick, onLongClick = onLongPress)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (selecting) {
             Checkbox(checked = selected, onCheckedChange = { onClick() }, enabled = !locked)
-        }
-        if (draggable) {
-            Icon(
-                Icons.Rounded.DragHandle,
-                contentDescription = stringResource(Res.string.drag_to_reorder),
-                tint = Color.White.copy(alpha = 0.4f),
-                modifier = Modifier
-                    .size(20.dp)
-                    // The glyph sits well inset in its own box; this pulls it
-                    // back to the row's edge.
-                    .offset(x = (-4).dp)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { onDragStart() },
-                            onDragEnd = { onDragEnd() },
-                            onDragCancel = { onDragEnd() },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                onDrag(amount.y)
-                            },
-                        )
-                    },
-            )
-            Spacer(Modifier.width(4.dp))
         }
         AsyncImage(
             model = rememberRemoteArtworkUrl(song),
@@ -971,21 +973,32 @@ private fun InlineQueueRow(
             )
             Spacer(Modifier.width(10.dp))
         }
-        if (!locked && !selecting) {
-            Box(
+        if (draggable) {
+            Icon(
+                Icons.Rounded.DragHandle,
+                contentDescription = stringResource(Res.string.drag_to_reorder),
+                tint = Color.White.copy(alpha = 0.4f),
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onRemove),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Rounded.Close,
-                    contentDescription = stringResource(Res.string.remove_from_queue),
-                    tint = Color.White.copy(alpha = 0.55f),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
+                    .size(20.dp)
+                    .alpha(if (controlsVisible) 1f else 0f)
+                    .then(if (controlsVisible) Modifier else Modifier.clearAndSetSemantics {})
+                    // The glyph sits well inset in its own box; this pulls it
+                    // back to the row's edge.
+                    .offset(x = 4.dp)
+                    .pointerInput(controlsVisible) {
+                        if (!controlsVisible) return@pointerInput
+                        detectDragGestures(
+                            onDragStart = { onDragStart() },
+                            onDragEnd = { onDragEnd() },
+                            onDragCancel = { onDragEnd() },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                onDrag(amount.y)
+                            },
+                        )
+                    },
+            )
+            Spacer(Modifier.width(4.dp))
         }
     }
 }
