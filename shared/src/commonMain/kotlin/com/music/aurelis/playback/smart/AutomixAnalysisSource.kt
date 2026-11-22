@@ -39,15 +39,13 @@ package com.music.aurelis.playback.smart
         if (sourceCacheKey.isNullOrBlank()) trackId else "$trackId|source:$sourceCacheKey"
 
     /**
-     * Loops require the exact cached recording being played, not just a
-     * same-titled match. For YouTube this is the canonical video-id entry;
-     * source rows use their source-specific cache keys instead.
+     * A loop deck is safe when the playback rendition is complete and the
+     * caller obtained its analysis under the *same* rendition-scoped key.
+     * A substituted FLAC (#alt) may be analysed and mixed, but never with
+     * an old canonical Opus result.
      */
     fun hasVerifiedLoopAudio(
-        youtubeVideoId: String?,
         playingCacheKey: String,
         completeRenditionKeys: Collection<String>,
-    ): Boolean =
-        (youtubeVideoId == null || youtubeVideoId == playingCacheKey) &&
-            playingCacheKey in completeRenditionKeys
+    ): Boolean = playingCacheKey in completeRenditionKeys
 }
