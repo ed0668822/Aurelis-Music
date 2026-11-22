@@ -1010,220 +1010,220 @@
     <string name="use_this_channel">このチャンネルを使用</string>
 
 
-    <string name="lyrics_offset">Lyrics offset</string>
+    <string name="lyrics_offset">歌詞の表示タイミング</string>
 
 
 
 
 
-    <string name="auto_quick_picks">Quick picks</string>
+    <string name="auto_quick_picks">クイックおすすめ</string>
 
-    <string name="auto_recents">Recent</string>
+    <string name="auto_recents">最近再生した曲</string>
 
-    <string name="auto_liked">Liked songs</string>
+    <string name="auto_liked">高く評価した曲</string>
 
-    <string name="auto_login_title">Sign in to YouTube on your phone</string>
+    <string name="auto_login_title">スマートフォンでYouTubeにログインしてください</string>
 
-    <string name="auto_login_subtitle">Open Aurelis on your phone to sign in</string>
+    <string name="auto_login_subtitle">スマートフォンでAurelisを開いてログインしてください</string>
 
-    <string name="auto_empty_recents_title">No recent songs</string>
+    <string name="auto_empty_recents_title">最近再生した曲はありません</string>
 
-    <string name="auto_empty_recents_subtitle">Songs you play will appear here</string>
+    <string name="auto_empty_recents_subtitle">再生した曲がここに表示されます</string>
 
-    <string name="auto_empty_quick_picks_title">No suggestions</string>
+    <string name="auto_empty_quick_picks_title">おすすめはありません</string>
 
-    <string name="auto_empty_quick_picks_subtitle">Check your connection and try again</string>
+    <string name="auto_empty_quick_picks_subtitle">接続を確認してもう一度お試しください</string>
 
-    <string name="auto_empty_playlists_title">No playlists available</string>
+    <string name="auto_empty_playlists_title">利用できるプレイリストがありません</string>
 
-    <string name="auto_empty_playlists_subtitle">Check your connection and try again</string>
+    <string name="auto_empty_playlists_subtitle">接続を確認してもう一度お試しください</string>
 
-    <string name="auto_empty_liked_title">No liked songs</string>
+    <string name="auto_empty_liked_title">高く評価した曲はありません</string>
 
-    <string name="auto_empty_liked_subtitle">Tap the heart on a song to save it here</string>
+    <string name="auto_empty_liked_subtitle">曲のハートをタップするとここに保存されます</string>
 
-    <string name="auto_empty_offline_title">No offline songs</string>
+    <string name="auto_empty_offline_title">オフラインの曲はありません</string>
 
-    <string name="auto_empty_offline_subtitle">Download songs on your phone to listen here</string>
+    <string name="auto_empty_offline_subtitle">スマートフォンで曲をダウンロードするとここで聴けます</string>
 
-    <string name="auto_unavailable_title">Content unavailable</string>
+    <string name="auto_unavailable_title">コンテンツを利用できません</string>
 
-    <string name="auto_unavailable_subtitle">Reopen the folder and try again</string>
+    <string name="auto_unavailable_subtitle">フォルダーを開き直して再試行してください</string>
 
-    <string name="settings_search_hint">Search settings</string>
+    <string name="settings_search_hint">設定を検索</string>
 
-    <string name="settings_search_empty">No settings match “%1$s”</string>
+    <string name="settings_search_empty">“%1$s”に一致する設定はありません</string>
 
 
-    <string name="content_preferences">Content Preferences</string>
-    <string name="hide_recents">Hide Recents</string>
-    <string name="hide_home_videos">Hide videos from Home</string>
-    <string name="hide_home_videos_subtitle">Shelves of only videos go too. Search, artists and playlists still show them</string>
-    <string name="hide_top_picks">Hide Top Picks for You</string>
-    <string name="hide_home_moods">Hide Find Your Mood</string>
-    <string name="square_video_thumbnails">Square video thumbnails</string>
-    <string name="square_video_thumbnails_subtitle">Show music videos as squares everywhere, including the player</string>
-    <string name="prefer_music_only">Prefer music-only version</string>
-    <string name="prefer_music_only_subtitle">Music videos play as their audio version, and the next track in the queue is converted ahead of time so Automix and crossfade work</string>
+    <string name="content_preferences">コンテンツの設定</string>
+    <string name="hide_recents">最近の履歴を非表示</string>
+    <string name="hide_home_videos">ホームの動画を非表示</string>
+    <string name="hide_home_videos_subtitle">動画のみのセクションも非表示になります。検索、アーティスト、プレイリストには引き続き表示されます。</string>
+    <string name="hide_top_picks">あなたへのおすすめを非表示</string>
+    <string name="hide_home_moods">気分に合う音楽のセクションを非表示</string>
+    <string name="square_video_thumbnails">動画のサムネイルを正方形にする</string>
+    <string name="square_video_thumbnails_subtitle">プレーヤーを含むすべての画面でミュージックビデオを正方形で表示</string>
+    <string name="prefer_music_only">音声のみのバージョンを優先</string>
+    <string name="prefer_music_only_subtitle">ミュージックビデオを音声版で再生し、キューの次の曲を事前に切り替えることでAutoMixとクロスフェードを利用できます。</string>
     <string name="smart_version_alignment">スマート音声同期</string>
     <string name="smart_version_alignment_subtitle">波形を解析して、対応する再生位置を正確に合わせます</string>
 
     <string name="equalizer_footer">Shapes the sound inside Aurelis， before it reaches the system.</string>
 
-    <string name="equalizer_dynamic">Dynamic</string>
+    <string name="equalizer_dynamic">ダイナミック</string>
 
-    <string name="equalizer_manual">Manual</string>
+    <string name="equalizer_manual">手動</string>
 
-    <string name="equalizer_tone">Tone</string>
+    <string name="equalizer_tone">音色</string>
 
-    <string name="equalizer_tilt">Tilt</string>
+    <string name="equalizer_tilt">傾き</string>
 
-    <string name="equalizer_contour">Contour</string>
+    <string name="equalizer_contour">輪郭</string>
 
-    <string name="equalizer_broad">Broad</string>
+    <string name="equalizer_broad">広帯域</string>
 
-    <string name="equalizer_focused">Focused</string>
+    <string name="equalizer_focused">精密</string>
 
     <string name="equalizer_broad_footer">Drag left for a warmer sound and right for a brighter one； down scoops the middle， up brings it forward. Broad moves wide stretches of the spectrum at once.</string>
 
     <string name="equalizer_focused_footer">Drag left for a warmer sound and right for a brighter one； down scoops the middle， up brings it forward. Focused works on narrower stretches， so it changes less around what it moves.</string>
 
-    <string name="equalizer_preset">Preset</string>
+    <string name="equalizer_preset">プリセット</string>
 
-    <string name="equalizer_bands">Bands</string>
+    <string name="equalizer_bands">周波数帯域</string>
 
-    <string name="equalizer_bands_footer">Moving a band leaves the preset behind and the curve becomes your own.</string>
+    <string name="equalizer_bands_footer">帯域を動かすとプリセットから離れ、独自のカーブになります。</string>
 
-    <string name="equalizer_reset">Reset all bands</string>
+    <string name="equalizer_reset">すべての帯域をリセット</string>
 
-    <string name="equalizer_balance">Balance</string>
+    <string name="equalizer_balance">左右バランス</string>
 
     <string name="equalizer_balance_left">L</string>
 
     <string name="equalizer_balance_right">R</string>
 
-    <string name="equalizer_balance_footer">Shifts the sound towards one ear by quietening the other.</string>
+    <string name="equalizer_balance_footer">片方の音量を下げて、もう片方の耳に音を寄せます。</string>
     <string name="equalizer_bitstream_title">現在は動作していません</string>
     <string name="equalizer_bitstream_subtitle">この曲はデコードされずに出力へ送られます</string>
     <string name="equalizer_bitstream_footer">イコライザーはデコード済みの音声に作用します。この曲はデバイス側でデコードするビットストリームとしてそのまま渡されるため、ここには処理できるサンプルがありません。</string>
 
-    <string name="system_equalizer">System equalizer</string>
+    <string name="system_equalizer">システムイコライザー</string>
 
-    <string name="system_equalizer_subtitle">Your device\'s own panel</string>
+    <string name="system_equalizer_subtitle">端末に備わっている音声設定画面</string>
 
     <string name="system_equalizer_footer">Runs after Aurelis\'s， on the whole audio session. Using both applies both.</string>
 
-    <string name="eq_preset_flat">Flat</string>
+    <string name="eq_preset_flat">フラット</string>
 
-    <string name="eq_preset_acoustic">Acoustic</string>
+    <string name="eq_preset_acoustic">アコースティック</string>
 
-    <string name="eq_preset_bass_boost">Bass boost</string>
+    <string name="eq_preset_bass_boost">低音を強調</string>
 
-    <string name="eq_preset_bass_cut">Bass cut</string>
+    <string name="eq_preset_bass_cut">低音を抑制</string>
 
-    <string name="eq_preset_vocal">Vocal</string>
+    <string name="eq_preset_vocal">ボーカル</string>
 
-    <string name="eq_preset_treble_boost">Treble boost</string>
+    <string name="eq_preset_treble_boost">高音を強調</string>
 
-    <string name="eq_preset_treble_cut">Treble cut</string>
+    <string name="eq_preset_treble_cut">高音を抑制</string>
 
-    <string name="eq_preset_loudness">Loudness</string>
+    <string name="eq_preset_loudness">ラウドネス</string>
 
-    <string name="eq_preset_spoken_word">Spoken word</string>
+    <string name="eq_preset_spoken_word">話し声</string>
 
-    <string name="eq_preset_electronic">Electronic</string>
+    <string name="eq_preset_electronic">エレクトロニック</string>
 
-    <string name="eq_preset_rock">Rock</string>
+    <string name="eq_preset_rock">ロック</string>
 
-    <string name="eq_preset_hip_hop">Hip-hop</string>
+    <string name="eq_preset_hip_hop">ヒップホップ</string>
 
-    <string name="eq_preset_jazz">Jazz</string>
+    <string name="eq_preset_jazz">ジャズ</string>
 
-    <string name="eq_preset_classical">Classical</string>
+    <string name="eq_preset_classical">クラシック</string>
 
-    <string name="eq_preset_small_speakers">Small speakers</string>
+    <string name="eq_preset_small_speakers">小型スピーカー</string>
 
-    <string name="eq_preset_late_night">Late night</string>
+    <string name="eq_preset_late_night">深夜</string>
 
-    <string name="eq_preset_custom">Custom</string>
+    <string name="eq_preset_custom">カスタム</string>
 
-    <string name="translation_language">Translation language</string>
+    <string name="translation_language">翻訳先の言語</string>
 
-    <string name="translation_language_description">The language the translate button turns lyrics into.</string>
+    <string name="translation_language_description">翻訳ボタンで歌詞を翻訳する先の言語です。</string>
 
-    <string name="translation_language_app_default">App language</string>
+    <string name="translation_language_app_default">アプリの言語</string>
 
-    <string name="translation_language_subtitle">Follows the app language</string>
+    <string name="translation_language_subtitle">アプリの言語に従います</string>
 
-    <string name="search_languages">Search languages</string>
+    <string name="search_languages">言語を検索</string>
 
-    <string name="no_languages_match">No languages match</string>
+    <string name="no_languages_match">一致する言語がありません</string>
 
 
 
-    <string name="audio_pipeline">Audio Pipeline</string>
+    <string name="audio_pipeline">オーディオ処理経路</string>
     <string name="cast_dialog_title">Cast</string>
-    <string name="cast_dialog_subtitle">Play on a Chromecast or Google Cast speaker</string>
-    <string name="cast_searching">Looking for devices…</string>
-    <string name="cast_searching_hint">Your phone and the receiver need to be on the same Wi-Fi network.</string>
-    <string name="cast_device_connecting">Connecting…</string>
-    <string name="cast_device_connected">Casting</string>
-    <string name="cast_stop">Stop casting</string>
-    <string name="cast_track_unsupported">This track can\'t be cast</string>
-    <string name="cast_connect_failed">Couldn\'t connect to the receiver</string>
+    <string name="cast_dialog_subtitle">ChromecastまたはGoogle Castスピーカーで再生</string>
+    <string name="cast_searching">デバイスを検索中…</string>
+    <string name="cast_searching_hint">スマートフォンと受信機を同じWi-Fiネットワークに接続してください。</string>
+    <string name="cast_device_connecting">接続中…</string>
+    <string name="cast_device_connected">キャスト中</string>
+    <string name="cast_stop">キャストを停止</string>
+    <string name="cast_track_unsupported">この曲はキャストできません</string>
+    <string name="cast_connect_failed">受信機に接続できませんでした</string>
     <string name="audio_pipeline_subtitle">デコーダーから出力までのリアルタイム信号経路</string>
 
-    <string name="pipeline_track_info">Track Info</string>
+    <string name="pipeline_track_info">曲の情報</string>
 
-    <string name="pipeline_decoder">Decoder</string>
+    <string name="pipeline_decoder">デコーダー</string>
 
-    <string name="pipeline_resampler">Resampler</string>
+    <string name="pipeline_resampler">リサンプラー</string>
 
     <string name="pipeline_dsp">DSP</string>
 
-    <string name="pipeline_output_device">Output Device</string>
+    <string name="pipeline_output_device">出力デバイス</string>
 
-    <string name="pipeline_source">Source</string>
+    <string name="pipeline_source">ソース</string>
 
-    <string name="pipeline_format">Format</string>
+    <string name="pipeline_format">形式</string>
 
-    <string name="pipeline_bit_depth">Bit Depth</string>
+    <string name="pipeline_bit_depth">ビット深度</string>
 
-    <string name="pipeline_sample_rate">Sample Rate</string>
+    <string name="pipeline_sample_rate">サンプリングレート</string>
 
-    <string name="pipeline_bitrate">Bitrate</string>
+    <string name="pipeline_bitrate">ビットレート</string>
 
-    <string name="pipeline_channels">Channels</string>
+    <string name="pipeline_channels">チャンネル</string>
 
-    <string name="pipeline_decoder_name">Decoder Name</string>
+    <string name="pipeline_decoder_name">デコーダー名</string>
 
-    <string name="pipeline_io_rate">I/O Rate</string>
+    <string name="pipeline_io_rate">入出力レート</string>
 
-    <string name="pipeline_type">Type</string>
+    <string name="pipeline_type">種類</string>
 
-    <string name="pipeline_cutoff">Cutoff</string>
+    <string name="pipeline_cutoff">カットオフ周波数</string>
 
-    <string name="pipeline_quality">Quality</string>
+    <string name="pipeline_quality">品質</string>
 
-    <string name="pipeline_pcm_format">PCM Format</string>
+    <string name="pipeline_pcm_format">PCM形式</string>
 
-    <string name="pipeline_eq_preset">EQ Preset</string>
+    <string name="pipeline_eq_preset">EQプリセット</string>
 
-    <string name="pipeline_stereo_expand">Stereo Expand</string>
+    <string name="pipeline_stereo_expand">ステレオ拡張</string>
 
-    <string name="pipeline_buffers">Buffers</string>
+    <string name="pipeline_buffers">バッファー</string>
 
-    <string name="pipeline_output_api">Output API</string>
+    <string name="pipeline_output_api">出力API</string>
 
-    <string name="pipeline_device_name">Device Name</string>
+    <string name="pipeline_device_name">デバイス名</string>
 
 
 
-    <string name="shared_link">Shared link</string>
+    <string name="shared_link">共有リンク</string>
 
-    <string name="song_will_play_next">Song will play next</string>
+    <string name="song_will_play_next">この曲を次に再生します</string>
 
-    <string name="song_added_to_queue">Song added to queue</string>
+    <string name="song_added_to_queue">曲をキューに追加しました</string>
     <string name="song_added_to_playlist">プレイリストに追加しました</string>
     <string name="song_already_in_playlist">すでにプレイリストにあります</string>
     <plurals name="add_to_playlists_count">
@@ -1234,9 +1234,9 @@
     </plurals>
     <string name="party_queue_full">キューがいっぱいです（パーティーの上限は%d曲）</string>
 
-    <string name="paxsenix_api_key">PaxSenix API key</string>
+    <string name="paxsenix_api_key">PaxSenix APIキー</string>
 
-    <string name="paxsenix_api_key_configured">PaxSenix API key — configured</string>
+    <string name="paxsenix_api_key_configured">PaxSenix APIキー — 設定済み</string>
 
     <string name="paxsenix_api_key_missing">PaxSenix API key — optional， not configured</string>
 
@@ -1377,9 +1377,9 @@
     <string name="song_info_unavailable">情報なし</string>
     <string name="song_info_error">一部の情報を読み込めませんでした。</string>
     <string name="song_info_retry">再試行</string>
-    <string name="no_audio_version">No audio version found for this video</string>
-    <string name="no_video_version">No video version found for this song</string>
-    <string name="version_switch_in_party">Everyone in Listen Together hears the same version</string>
+    <string name="no_audio_version">この動画の音声版が見つかりません</string>
+    <string name="no_video_version">この曲の動画版が見つかりません</string>
+    <string name="version_switch_in_party">共同リスニング中の全員に同じバージョンが再生されます</string>
     <string name="opened_file">開いたファイル</string>
     <string name="folders">フォルダ</string>
     <string name="folder">フォルダ</string>
