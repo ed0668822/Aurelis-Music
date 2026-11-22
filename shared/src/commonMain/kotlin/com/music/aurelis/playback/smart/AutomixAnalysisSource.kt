@@ -26,4 +26,15 @@ package com.music.aurelis.playback.smart
     fun opusUri(videoId: String): String = "aurelis://watch?v=$videoId&$OPUS_QUERY_PARAMETER=1"
 
     fun requestsYouTubeOpus(marker: String?): Boolean = marker == "1"
+
+    /**
+     * Source-backed media IDs were previously analysed from a YouTube title
+     * match. Those saved grids have different sample timelines and must never
+     * be restored as if measured from the source's own bytes.
+     *
+     * The cache key identifies the exact source and track, independent of
+     * changing title/artist query hints. YouTube keeps its existing store key.
+     */
+    fun storageKey(trackId: String, sourceCacheKey: String?): String =
+        if (sourceCacheKey.isNullOrBlank()) trackId else "$trackId|source:$sourceCacheKey"
 }
