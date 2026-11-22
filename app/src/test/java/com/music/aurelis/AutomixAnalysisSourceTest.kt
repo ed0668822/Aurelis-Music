@@ -9,16 +9,20 @@ import org.junit.Test
 
 class AutomixAnalysisSourceTest {
     @Test
-    fun `Loop Mix rejects YouTube substitute even if it is cached`() {
-        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("youtube-id", "youtube-id", listOf("youtube-id")))
-        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("youtube-id", "youtube-id#alt", listOf("youtube-id", "youtube-id#alt")))
-        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("youtube-id", "youtube-id", emptyList()))
+    fun `Loop Mix allows an analysed substituted FLAC but never borrows the Opus key`() {
+        val youtubeAnalysis = AutomixAnalysisSource.storageKey("yt", null)
+        val substituteAnalysis = AutomixAnalysisSource.storageKey("yt", "yt#alt")
+        assertFalse(youtubeAnalysis == substituteAnalysis)
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("yt", listOf("yt")))
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("yt#alt", listOf("yt#alt")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("yt#alt", listOf("yt")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("yt", emptyList()))
     }
 
     @Test
     fun `Loop Mix accepts a complete recording from the selected external source`() {
-        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio(null, "addon|track#stereo", listOf("addon|track#stereo")))
-        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio(null, "addon|track#stereo", listOf("other-addon|track")))
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("addon|track#stereo", listOf("addon|track#stereo")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("addon|track#stereo", listOf("other-addon|track")))
     }
 
     @Test
