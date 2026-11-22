@@ -107,6 +107,24 @@ class ArtworkMesh internal constructor(internal val image: ImageBitmap)
  * Hold the last blur until the selected cover is ready. Clear it on failure
  * or when there is no selected cover, rather than retaining a stale bitmap.
  */
+/**
+ * Reuse a newly selected album's cached blur immediately; otherwise hold the
+ * preceding blur only while the next one is being decoded. A missing cover
+ * must never display the preceding song's artwork.
+ *
+ * This selection contract is also exercised by ArtworkBlurSelectionTest.
+ */
+internal fun <T> selectArtworkBlur(
+    requestedUrl: String?,
+    loadedUrl: String?,
+    loadedImage: T?,
+    cachedImage: T?,
+): T? = when {
+    requestedUrl == null -> null
+    requestedUrl == loadedUrl -> loadedImage
+    else -> cachedImage ?: loadedImage
+}
+
 @Composable
 fun rememberFullArtworkBlurImage(
     imageUrl: String?,
@@ -128,7 +146,9 @@ internal fun rememberFullArtworkBlurImage(
         } else null
         loaded = imageUrl to image
     }
-    return if (currentSelectionOnly && loaded.first != imageUrl) cachedFullArtworkBlur(imageUrl) else loaded.second
+    val cached = cachedFullArtworkBlur(imageUrl)
+    return if (currentSelectionOnly && loaded.first != imageUrl) cached
+    else selectArtworkBlur(imageUrl, loaded.first, loaded.second, cached)
 }
 
 private suspend fun loadFullArtworkBlur(context: PlatformContext, imageUrl: String, artPx: Int): ImageBitmap? {

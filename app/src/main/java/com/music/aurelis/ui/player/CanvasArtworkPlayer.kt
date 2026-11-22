@@ -134,7 +134,7 @@ private class Teardown {
  * flashing a black square over it. [CanvasArtwork.fallbackUrl] gets one try if
  * the first rendition won't decode.
  */
-@OptIn(UnstableApi::class)
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 internal fun AndroidCanvasArtworkPlayer(
     canvas: CanvasArtwork,
@@ -1098,6 +1098,7 @@ internal fun mimeTypeOf(url: String): String? {
 }
 
 /** Shared by the displayed clip and the AutoMix standby; silent and no audio focus. */
+@androidx.annotation.OptIn(UnstableApi::class)
 internal fun newCanvasDecoder(context: Context): ExoPlayer {
     val player = ExoPlayer.Builder(context)
         .setMediaSourceFactory(
