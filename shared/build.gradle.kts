@@ -65,5 +65,5 @@ kotlin {
 
 android {
     namespace = "com.music.aurelis.shared"
-    compileSdk = 36
+    compileSdk = 37
 }
