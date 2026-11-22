@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
  * the exact generation so late YouTube/local results cannot cross songs.
  */
 @Composable
-internal fun PrepareAutoMixArtwork(mini: Boolean = false) {
+fun PrepareAutoMixArtwork(mini: Boolean = false) {
     val feed = PlayerPlatform.host.autoMixVisualState ?: return
     val gate = autoMixArtworkGate(mini)
     val context = LocalPlatformContext.current
