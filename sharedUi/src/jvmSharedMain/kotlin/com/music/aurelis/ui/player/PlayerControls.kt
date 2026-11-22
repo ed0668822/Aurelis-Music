@@ -483,7 +483,7 @@ private fun NerdStatsLines(song: Song) {
  */
 internal fun automixDetailForDisplay(raw: String): String = raw
     .replace(
-        Regex("""automix:analysisUnavailable(?= \\([^)]*(?:analysing|waiting|refining)[^)]*\\))"""),
+        Regex("""automix:analysisUnavailable(?= \([^)]*(?:analysing|waiting|refining)[^)]*\))"""),
         "beat analysis in progress (safe crossfade)",
     )
     .replace("automix:incompatibleTempo", "different tempos (safe blend, no speed change)")
