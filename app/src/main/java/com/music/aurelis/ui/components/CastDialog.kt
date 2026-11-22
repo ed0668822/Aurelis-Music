@@ -2,8 +2,6 @@ package com.music.aurelis.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -111,7 +109,7 @@ fun CastDialog(
         onDismiss = onDismiss,
         modifier = modifier,
     ) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth()) {
             PipelineRule(Modifier)
             if (televisions.isEmpty()) {
                 SearchingRow()
