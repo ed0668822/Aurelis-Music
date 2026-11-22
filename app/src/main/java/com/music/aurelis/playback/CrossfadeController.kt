@@ -1801,7 +1801,7 @@ class CrossfadeController(
         }
         onHandoff(out, into)
         if (visualGeneration != null) {
-            val span = ((fadeMs.toDouble() * if (render.advanced) mediaRatio else fadeMs.toDouble())
+            val span = ((fadeMs.toDouble() * (if (render.advanced) mediaRatio else 1.0))
                 / 1000.0).coerceAtLeast(0.001)
             val seconds = visualSeconds ?: ((into.currentPosition - incomingCueTimeMs)
                 .coerceAtLeast(0L) / 1000.0).coerceIn(0.0, span)
