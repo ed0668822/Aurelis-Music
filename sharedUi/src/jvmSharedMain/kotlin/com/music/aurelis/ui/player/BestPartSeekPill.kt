@@ -36,6 +36,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import com.music.aurelis.ui.components.liveMenuFrost
+import com.music.aurelis.ui.components.MenuFrostDark
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.aurelis.data.lyrics.LyricLine
 import com.music.aurelis.playback.PlaybackPosition
 import com.music.aurelis.sharedui.resources.Res
@@ -88,6 +92,8 @@ internal fun BestPartSeekPill(
     position: PlaybackPosition,
     mixing: Boolean,
     onSeek: (Long) -> Unit,
+    hazeState: HazeState? = null,
+    overlayOpen: () -> Boolean = { false },
 ) {
     val publicPeak by produceState<Long?>(
         initialValue = if (isLocal) null else MostReplayed.knownPeak(videoId, durationMs),
@@ -105,6 +111,7 @@ internal fun BestPartSeekPill(
     // YouTube's real most-replayed curve wins; synchronized lyrics can
     // only provide a repeatable candidate, never an invented heatmap.
     val target = publicPeak ?: chorus
+    val reduceBlur by PlayerSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
     var heard by remember(videoId) { mutableStateOf(false) }
     val reached = target != null &&
         position.positionMs in (target - 400L)..(target + 20_000L)
@@ -120,9 +127,15 @@ internal fun BestPartSeekPill(
             modifier = Modifier
                 .padding(top = 8.dp)
                 .clip(CircleShape)
-                // Translucent glass-like slab over light and dark covers.
-                .background(Color(0x660B0B0B))
-                .border(0.75.dp, Color.White.copy(alpha = 0.32f), CircleShape)
+                // Same sampled frost and glass rim as the original player.
+                .then(
+                    if (reduceBlur || mixing || overlayOpen() || hazeState == null) {
+                        Modifier.background(MenuFrostDark.copy(alpha = 0.72f))
+                    } else {
+                        Modifier.liveMenuFrost(hazeState, MenuFrostDark)
+                    },
+                )
+                .glassRim(CircleShape)
                 .clickable(role = Role.Button) {
                     val seekTarget = target ?: return@clickable
                     heard = true

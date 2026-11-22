@@ -8,6 +8,12 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.ui.graphics.Shape
+import dev.chrisbanes.haze.HazeState
+import com.music.aurelis.ui.components.liveMenuFrost
+import com.music.aurelis.ui.components.MenuFrostDark
 import com.music.aurelis.data.model.ArtistCredit
 import com.music.aurelis.data.model.CreditSegment
 import com.music.aurelis.data.model.creditSegments
@@ -448,7 +454,7 @@ private fun NerdStatsLines(song: Song) {
                         stringResource(Res.string.automix_not_supported_video)
                     // The detailed line once the controller has one: each song's
                     // grid, then the planned mix — the loops and what cleared them.
-                    automixDetail != null -> readableAutomixStatus(automixDetail!!)
+                    automixDetail != null -> automixDetailForDisplay(automixDetail!!)
                     else -> stringResource(
                         Res.string.automix_analysis_status,
                         smartAnalysis.current.localizedLabel(),
@@ -471,28 +477,11 @@ private fun NerdStatsLines(song: Song) {
 }
 
 /**
- * The mixer publishes machine-readable reasons for diagnostics. Translate these
- * before they reach the artwork overlay; detailed raw codes remain in logs.
+ * BitChord 1.10 prints the entire native mixer diagnostic here; preserving
+ * its timing, beats, loop reasons and exact separators is intentional.
+ * Aurelis must not shorten or translate only part of the original message.
  */
-internal fun readableAutomixStatus(raw: String): String {
-    val spanish = Locale.getDefault().language == "es"
-    val time = Regex("""\bin (\d+) s\b""").find(raw)?.groupValues?.get(1)
-    val duration = Regex("""\b(\d+) s(?=\s*[·]|$)""").findAll(raw).lastOrNull()?.groupValues?.get(1)
-    val method = when {
-        raw.contains("filter mix") -> if (spanish) "mezcla con filtro" else "filter mix"
-        raw.contains("crossfading") -> if (spanish) "transición suave" else "crossfade"
-        raw.contains("mixing") -> if (spanish) "mezcla inteligente" else "smart mix"
-        else -> return raw.substringBefore(" · automix:").substringBefore(" · no loop:")
-    }
-    val timing = if (time != null) {
-        if (spanish) "en ${time} s" else "in ${time} s"
-    } else if (spanish) "ahora" else "now"
-    val fallback = if (raw.contains("analysisUnavailable")) {
-        if (spanish) "ritmo no analizado" else "beat analysis unavailable"
-    } else null
-    val length = duration?.let { " · ${it} s" }.orEmpty()
-    return "AutoMix · $method $timing$length" + (fallback?.let { " · $it" } ?: "")
-}
+internal fun automixDetailForDisplay(raw: String): String = raw
 
 /**
  * Previous, play/pause, next.
@@ -768,6 +757,8 @@ internal fun PlayerActionRow(
 
 /** How much more of the ink [CircleGlyph]'s disc takes than its plain white — 0.45 at rest, 0.85 lit. */
 private const val CIRCLE_DISC_DODGE_GAIN = 2.5f
+private const val CIRCLE_DISC_ALPHA = 0.18f
+private const val GLASS_FALLBACK_ALPHA = 0.72f
 
 /**
  * Translucent circular button used for the track menu and the like control.
@@ -788,7 +779,7 @@ internal fun CircleGlyph(
 ) {
     val haptics = rememberHaptics()
     val discAlpha by animateFloatAsState(
-        targetValue = if (active) 0.34f else 0.18f,
+        targetValue = if (active) 0.34f else CIRCLE_DISC_ALPHA,
         label = "glyphDisc",
     )
     val chrome = LocalPlayerChrome.current
@@ -812,21 +803,10 @@ internal fun CircleGlyph(
             Modifier
                 .matchParentSize()
                 .vibrantChrome(chrome)
-                .background(
-                    if (chrome) {
-                        VibrantChromeInk.copy(alpha = (discAlpha * CIRCLE_DISC_DODGE_GAIN).coerceAtMost(1f))
-                    } else {
-                        Color.White.copy(alpha = discAlpha)
-                    },
-                ),
+.background(discFill(chrome, discAlpha)),
         )
-        // Light-catching rim shared by the favourite and overflow discs.
-        // A static outline is inexpensive while artwork or AutoMix animates.
-        Box(
-            Modifier
-                .matchParentSize()
-                .border(0.75.dp, Color.White.copy(alpha = if (active) 0.34f else 0.23f), CircleShape),
-        )
+        // Original BitChord gradient rim; shares material with Best Part.
+        Box(Modifier.matchParentSize().glassRim(CircleShape))
         Crossfade(
             targetState = icon,
             animationSpec = tween(durationMillis = 180),
@@ -840,6 +820,57 @@ internal fun CircleGlyph(
             )
         }
     }
+}
+
+/** The same ink as the original BitChord favourite and overflow discs. */
+private fun discFill(chrome: Boolean, alpha: Float = CIRCLE_DISC_ALPHA): Color =
+    if (chrome) VibrantChromeInk.copy(alpha = (alpha * CIRCLE_DISC_DODGE_GAIN).coerceAtMost(1f))
+    else Color.White.copy(alpha = alpha)
+
+/** Thin, top-lit edge shared by the original player glass surfaces. */
+internal fun Modifier.glassRim(shape: Shape): Modifier = border(
+    width = 1.dp,
+    brush = Brush.verticalGradient(
+        0f to Color.White.copy(alpha = 0.42f),
+        1f to Color.White.copy(alpha = 0.14f),
+    ),
+    shape = shape,
+)
+
+/**
+ * One clipped frost source under the favourite and ⋯ discs.
+ * Fall back to a solid slab during active AutoMix or over other dialogs
+ * to avoid extra live GPU blurs during a track transition.
+ */
+@Composable
+internal fun GlassDiscPair(
+    hazeState: HazeState?,
+    overlayOpen: () -> Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val reduceBlur by PlayerSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val mixing by PlayerSettings.smartMixInProgress.collectAsStateWithLifecycle()
+    val flat = reduceBlur || mixing || overlayOpen() || hazeState == null
+    Box(modifier) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .clip(DiscPairShape)
+                .then(
+                    if (flat) Modifier.background(MenuFrostDark.copy(alpha = GLASS_FALLBACK_ALPHA))
+                    else Modifier.liveMenuFrost(hazeState!!, MenuFrostDark),
+                ),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, content = content)
+    }
+}
+
+/** One oval for a guest or two ovals when favourite is also available. */
+private val DiscPairShape = GenericShape { size, _ ->
+    val d = size.height
+    addOval(Rect(0f, 0f, d, d))
+    if (size.width >= d * 1.5f) addOval(Rect(size.width - d, 0f, size.width, d))
 }
 
 /**

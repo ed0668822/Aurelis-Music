@@ -2194,6 +2194,8 @@ fun NowPlayingScreen(
                                             position = position,
                                             mixing = mixing,
                                             onSeek = onSeek,
+                                            hazeState = playerHaze,
+                                            overlayOpen = { overlayOpen.value },
                                         )
                                     }
                                 },
@@ -3589,6 +3591,8 @@ fun NowPlayingScreen(
                                                 position = position,
                                                 mixing = mixing,
                                                 onSeek = onSeek,
+                                                hazeState = playerHaze,
+                                                overlayOpen = { overlayOpen.value },
                                             )
                                         }
                                     },
@@ -3866,10 +3870,14 @@ fun NowPlayingScreen(
                             // there's no account to record it against — except on a
                             // local file or a finished download, whose star is the
                             // device's own Liked playlist and needs no account.
-                            if (signedIn || song.localUri != null) {
-                                val liked = likeStatus == LikeStatus.LIKE
-                                CircleGlyph(
-                                    icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,
+                            GlassDiscPair(
+                                hazeState = playerHaze,
+                                overlayOpen = { overlayOpen.value },
+                            ) {
+                                if (signedIn || song.localUri != null) {
+                                    val liked = likeStatus == LikeStatus.LIKE
+                                    CircleGlyph(
+                                        icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,
                                     contentDescription = stringResource(
                                         if (liked) Res.string.remove_from_liked else Res.string.like,
                                     ),
@@ -3920,6 +3928,7 @@ fun NowPlayingScreen(
                                 },
                                 modifier = Modifier.menuAnchor(),
                             )
+                            }
                         }
 
                         // [lyricsOpen] asked first: a close has already hidden the
