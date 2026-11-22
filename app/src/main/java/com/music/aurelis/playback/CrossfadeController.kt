@@ -1180,6 +1180,7 @@ class CrossfadeController(
         }
 
         lastSmartPlan = plan
+        lastSmartPlanPair = currentItem.mediaId to nextItem.mediaId
         lastSmartPlanStartMs = (plan.transitionStart * 1000).roundToLong()
         publishMixPreview(currentItem, nextItem, duration, nextDuration, currentAnalysis, nextAnalysis, analysisState, plan, advanced)
 
@@ -2931,6 +2932,8 @@ class CrossfadeController(
     // ---- Stats for nerds ----------------------------------------------------
 
     private var lastSmartPlan: TransitionPlan? = null
+    /** Do not describe an old queue pair after a source switch or handoff. */
+    private var lastSmartPlanPair: Pair<String, String>? = null
     private var lastSmartPlanStartMs = 0L
 
     /**
@@ -2979,7 +2982,9 @@ class CrossfadeController(
             val inSeconds = (planned.out.loopStart - player.currentPosition / 1000.0).coerceAtLeast(0.0)
             return "Automix · loop mix in ${ceil(inSeconds).toInt()} s · ${describeLoop(planned)}"
         }
-        val plan = lastSmartPlan
+        val plan = lastSmartPlan.takeIf {
+            next != null && lastSmartPlanPair == (item.mediaId to next.mediaId)
+        }
         if (plan != null && !plan.blocked && next != null && AppSettings.smartTransitionWindow.value != null) {
             val inSeconds = ((lastSmartPlanStartMs - player.currentPosition) / 1000.0).coerceAtLeast(0.0)
             val whenText = if (inSeconds > 0) "in ${ceil(inSeconds).toInt()} s" else "now"
@@ -2996,7 +3001,9 @@ class CrossfadeController(
                 ""
             }
             val why = reason?.let { " · $it$states" }.orEmpty()
-            val noLoop = loopRefusal?.let { " · no loop: $it" }.orEmpty()
+            val noLoop = loopRefusal
+                ?.takeIf { lastLoopVerdict.startsWith("${item.mediaId}->${next.mediaId}:") }
+                ?.let { " · no loop: $it" }.orEmpty()
             return when (plan.transitionStyle) {
                 TransitionStyle.EQUAL_POWER -> "Automix · crossfading $whenText · ${"%.0f".format(Locale.ROOT, plan.fadeSeconds)} s$why$noLoop"
                 TransitionStyle.DJ_FILTER -> "Automix · filter mix $whenText · $length$why$noLoop"

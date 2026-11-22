@@ -477,11 +477,19 @@ private fun NerdStatsLines(song: Song) {
 }
 
 /**
- * BitChord 1.10 prints the entire native mixer diagnostic here; preserving
- * its timing, beats, loop reasons and exact separators is intentional.
- * Aurelis must not shorten or translate only part of the original message.
+ * AutoMix fallback reasons are internal diagnostics, not playback exceptions.
+ * Keep the mix countdown and length, but make a normal-speed fallback readable.
+ * The full beat/loop refusal remains in CrossfadeController's debug log.
  */
 internal fun automixDetailForDisplay(raw: String): String = raw
+    .replace("automix:incompatibleTempo", "different tempos (safe blend, no speed change)")
+    .replace("automix:analysisUnavailable", "beat analysis unavailable (safe blend)")
+    .replace("automix:unreliableBeats", "beat detection uncertain (safe blend)")
+    .replace("automix:alignmentUnverified", "beat alignment unverified (safe blend)")
+    .replace(
+        Regex(""" · no loop: (outgoing|incoming): [^·]*"""),
+        " · no suitable loop (using blend)",
+    )
 
 /**
  * Previous, play/pause, next.
