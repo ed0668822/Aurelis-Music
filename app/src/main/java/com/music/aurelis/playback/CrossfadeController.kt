@@ -2291,6 +2291,8 @@ class CrossfadeController(
             incomingArtist = incomingItem.mediaMetadata.artist?.toString().orEmpty(),
             outgoingArtworkUrl = outgoingItem.mediaMetadata.artworkUri?.toString(),
             incomingArtworkUrl = incomingItem.mediaMetadata.artworkUri?.toString(),
+            outgoingAlbum = outgoingItem.mediaMetadata.albumTitle?.toString().orEmpty(),
+            incomingAlbum = incomingItem.mediaMetadata.albumTitle?.toString().orEmpty(),
         )
     }
 

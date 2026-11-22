@@ -482,6 +482,10 @@ private fun NerdStatsLines(song: Song) {
  * The full beat/loop refusal remains in CrossfadeController's debug log.
  */
 internal fun automixDetailForDisplay(raw: String): String = raw
+    .replace(
+        Regex("""automix:analysisUnavailable(?= \\([^)]*(?:analysing|waiting|refining)[^)]*\\))"""),
+        "beat analysis in progress (safe crossfade)",
+    )
     .replace("automix:incompatibleTempo", "different tempos (safe blend, no speed change)")
     .replace("automix:analysisUnavailable", "beat analysis unavailable (safe blend)")
     .replace("automix:unreliableBeats", "beat detection uncertain (safe blend)")

@@ -18,6 +18,14 @@ class AutomixOriginalDisplayTest {
         assertFalse(displayed.contains("92 loops"))
     }
 
+    @Test fun pendingAnalysisIsNotReportedAsAFailedBeatEngine() {
+        val raw = "Automix · crossfading in 160 s · 6 s · automix:analysisUnavailable" +
+            " (this: analysed, next: analysing) · no loop: waiting on analysis"
+        val display = automixDetailForDisplay(raw)
+        assertTrue(display.contains("beat analysis in progress (safe crossfade)"))
+        assertFalse(display.contains("beat analysis unavailable"))
+    }
+
     @Test fun fallbackLabelsDoNotHideOtherMusicOrSourceDetails() {
         val raw = "Automix · mixing · 116 BPM · automix:unreliableBeats"
         assertEquals(

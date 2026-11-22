@@ -299,6 +299,10 @@ private const val HERO_FADE_FRACTION = 0.42f
 /** A modest floor while a subview replaces the hero with its blurred artwork backdrop. */
 private const val SUBVIEW_STATUS_SCRIM_MIN_ALPHA = 0.40f
 
+/** Hold full-bleed geometry through the audio handoff, never form a second card. */
+internal fun autoMixBannerShare(settledShare: Float, revealingFullBleed: Boolean): Float =
+    if (revealingFullBleed) 1f else settledShare
+
 /**
  * How often the legacy mesh re-reads the colours of a playing Canvas clip.
  *
@@ -1396,6 +1400,9 @@ fun NowPlayingScreen(
         }
     }
     val fullBleedArt by PlayerSettings.fullBleedArtwork.collectAsStateWithLifecycle()
+    // MediaSession swaps the song halfway through a real AutoMix. Keep the
+    // artwork's full-bleed geometry stable for both halves of that handoff.
+    val autoMixArtwork by PlayerSettings.autoMixArtworkState.collectAsStateWithLifecycle()
     // Full-bleed is a phone idiom. What the width has to rule out is a player
     // running a foot wider than the column of controls under it — edge to edge
     // meaning "a picture, and separately some controls" rather than "the
@@ -3096,7 +3103,12 @@ fun NowPlayingScreen(
                         // card. Zero until there is a banner to be, which is to say
                         // until [heroHeight] and the player's width have been measured.
                         fun bannerShare(): Float =
-                            if (heroHeight > 0.dp && playerBounds.width > 0) heroT.value else 0f
+                            if (heroHeight > 0.dp && playerBounds.width > 0) {
+                                autoMixBannerShare(
+                                    heroT.value,
+                                    heroMode && autoMixArtwork?.contains(song.videoId) == true,
+                                )
+                            } else 0f
                         // How much of the banner is on screen: its share, given up as
                         // the sleeve collapses — the same movement as the collapse
                         // rather than a fade chained after it.

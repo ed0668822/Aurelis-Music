@@ -37,6 +37,29 @@ internal fun nextAutoMixRevealTarget(previous: Float, incoming: Float): Float {
 }
 
 /**
+ * Don't paint a second full-size cover if both songs have the same artwork.
+ * Song-specific local artwork URIs can differ even when the album art is
+ * identical, so a known album + artist match also counts as the same cover.
+ * Missing covers keep the normal player image instead of a black rectangle.
+ */
+internal fun needsAutoMixArtworkReveal(
+    outgoingUrl: String?,
+    incomingUrl: String?,
+    outgoingAlbum: String,
+    incomingAlbum: String,
+    outgoingArtist: String,
+    incomingArtist: String,
+): Boolean {
+    if (outgoingUrl.isNullOrBlank() || incomingUrl.isNullOrBlank()) return false
+    if (outgoingUrl == incomingUrl) return false
+    val sameAlbum = outgoingAlbum.isNotBlank() && incomingAlbum.isNotBlank() &&
+        outgoingAlbum.trim().equals(incomingAlbum.trim(), ignoreCase = true)
+    val sameArtist = outgoingArtist.isNotBlank() && incomingArtist.isNotBlank() &&
+        outgoingArtist.trim().equals(incomingArtist.trim(), ignoreCase = true)
+    return !(sameAlbum && sameArtist)
+}
+
+/**
  * Both covers share the audio controller's actual progress, not an independent
  * timer. A MediaSession handoff never swaps the visible cover out from under us.
  * This composable neither owns nor creates any media player or audio output.
@@ -100,7 +123,11 @@ fun AutoMixArtworkOverlay(
     ).firstOrNull { it.isNotBlank() && it !in incomingFailed }
     val outgoing = outgoingCandidate.artworkAt(requestedPx)
     val incoming = incomingCandidate.artworkAt(requestedPx)
-    if (outgoing.isNullOrBlank() && incoming.isNullOrBlank()) return
+    if (!needsAutoMixArtworkReveal(
+            outgoing, incoming, mix.outgoingAlbum, mix.incomingAlbum,
+            mix.outgoingArtist, mix.incomingArtist,
+        )
+    ) return
 
     val progress = mix.progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     // Smooth only between audio-controller samples, with a 40ms cap.
@@ -116,25 +143,36 @@ fun AutoMixArtworkOverlay(
     // Keep outgoing artwork (or the host's current cover) visible until Coil
     // has actually decoded the next image. A URL alone is not a ready frame.
     var incomingReady by remember(mix.generation, incoming) { mutableStateOf(false) }
+    var outgoingReady by remember(mix.generation, outgoing) { mutableStateOf(false) }
+    // Before MediaSession switches tracks the ordinary sleeve already shows
+    // the outgoing cover. Repainting it here introduced a second rectangular
+    // cover above full-bleed artwork. Only pin it once the incoming track owns
+    // the normal sleeve, so the new image can be revealed without a hard cut.
+    val onIncomingTrack = song.videoId == mix.incomingMediaId
     Box(modifier) {
         if (!outgoing.isNullOrBlank()) {
             AsyncImage(
                 model = outgoing,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onSuccess = { outgoingReady = true },
                 onError = {
+                    outgoingReady = false
                     outgoingCandidate?.let { outgoingFailed = outgoingFailed + it }
                 },
-                modifier = Modifier.fillMaxSize(),
+                // Pre-decode while still on the outgoing song, but do not draw
+                // a duplicate atop its full-bleed cover. A missing decode
+                // never becomes an opaque placeholder after the handoff.
+                modifier = Modifier.fillMaxSize().graphicsLayer {
+                    alpha = if (onIncomingTrack && outgoingReady && incomingReady) 1f else 0f
+                },
             )
         }
         if (!incoming.isNullOrBlank()) {
-            // With no outgoing cover there is nothing to reveal *over*.
-            // Show the incoming cover directly instead of fading in from black.
+            // The ordinary cover remains underneath until Coil has decoded
+            // the incoming image; do not cut to a black loading rectangle.
             val transitionModifier = if (!incomingReady) {
                 Modifier.graphicsLayer { alpha = 0f }
-            } else if (outgoing.isNullOrBlank()) {
-                Modifier
             } else if (reducedMotion) {
                 Modifier.graphicsLayer { alpha = eased }
             } else {

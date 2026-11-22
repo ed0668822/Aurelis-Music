@@ -14,6 +14,9 @@ data class AutoMixArtworkState(
     val outgoingArtworkUrl: String?,
     val incomingArtworkUrl: String?,
     val progress: Float = 0f,
+    /** Album identity lets the UI avoid repainting the same cover for sibling tracks. */
+    val outgoingAlbum: String = "",
+    val incomingAlbum: String = "",
 ) {
     fun contains(mediaId: String): Boolean =
         mediaId == outgoingMediaId || mediaId == incomingMediaId
