@@ -290,7 +290,7 @@ object AppSettings {
 
     /** Current AutoMix handoff phase; never written to SharedPreferences. */
     val autoMixStage = MutableStateFlow(AutoMixStage.IDLE)
-    val skipSilence = MutableStateFlow(false)
+    val skipSilence = MutableStateFlow(true)
 
     /** Requested PCM representation at the Android AudioTrack boundary. */
     val outputPcmMode = MutableStateFlow(OutputPcmMode.PCM_16)
@@ -390,7 +390,7 @@ object AppSettings {
      */
     val youtubePremiumAudio = MutableStateFlow(false)
 
-    val spatialAudio = MutableStateFlow(false)
+    val spatialAudio = MutableStateFlow(true)
 
     /**
      * The app's own equaliser, master switch.
@@ -431,7 +431,7 @@ object AppSettings {
     val equalizerPreset = MutableStateFlow(EqualizerPreset.FLAT)
 
     val playbackSpeed = MutableStateFlow(1.0f)
-    val themeMode = MutableStateFlow(ThemeMode.DARK)
+    val themeMode = MutableStateFlow(ThemeMode.SYSTEM)
     val appFont = MutableStateFlow(AppFont.DEFAULT)
 
     /** Keep playing similar music once the queue runs out. */
@@ -521,22 +521,22 @@ object AppSettings {
     val disableBlendEffects = MutableStateFlow(false)
 
     /** Real backdrop-sampled glass (blur, lens refraction) on the floating nav bar, Android 12+ only. */
-    val liquidGlass = MutableStateFlow(false)
+    val liquidGlass = MutableStateFlow(true)
 
     /**
      * Frosts the glass instead of refracting it, for phones the lens shader is too
      * much for: the bar's rim, shadow, tint and motion all stay. A Liquid Glass
      * option, honoured only while [liquidGlass] is on.
      */
-    val glassPerformance = MutableStateFlow(false)
+    val glassPerformance = MutableStateFlow(true)
 
     /**
      * Blurs what scrolls under the status bar and the top controls, easing out
      * just below them, instead of fading it to the page colour. A Liquid Glass
-     * option, honoured only while [liquidGlass] is on. Off by default: it costs
-     * frames. Reduce dynamic blur overrides it.
+     * option, honoured only while [liquidGlass] is on. Enabled by default;
+     * it costs frames. Reduce dynamic blur overrides it.
      */
-    val progressiveBlur = MutableStateFlow(false)
+    val progressiveBlur = MutableStateFlow(true)
 
     /** Blurs unfocused lyric lines, keeping the active line sharp. */
     val lyricsBlur = MutableStateFlow(true)
@@ -612,16 +612,16 @@ object AppSettings {
      * The album and playlist page's answer to [fullBleedArtwork]: the sleeve
      * runs edge to edge off the top of the screen and dissolves into the page
      * colour, instead of sitting framed in the middle. Everything under it —
-     * the page colour, title, credit and buttons — stays as it is. Off by
-     * default, the framed sleeve being the page's own look.
+     * the page colour, title, credit and buttons — stays as it is. On by
+     * default; switching it off restores the framed sleeve.
      */
-    val fullBleedDetailArtwork = MutableStateFlow(false)
+    val fullBleedDetailArtwork = MutableStateFlow(true)
 
     /**
      * What the main player stands on below the artwork.
      *
-     * [PlayerTheme.DEFAULT] because that is the look people asked to have back,
-     * and because the alternatives each give something up: see
+     * [PlayerTheme.LEGACY] is the default for new installations.
+     * Other looks remain selectable; see
      * [ArtworkMesh][com.music.aurelis.ui.player.ArtworkMesh] for what
      * [PlayerTheme.LEGACY]'s quantiser does to a cover that is nine-tenths black
      * with a red stripe (a red screen), and
@@ -629,7 +629,7 @@ object AppSettings {
      * its cost (blobs that drift are a full-screen blur redrawn while they move,
      * where a mesh is drawn once per track and then composited).
      */
-    val playerTheme = MutableStateFlow(PlayerTheme.DEFAULT)
+    val playerTheme = MutableStateFlow(PlayerTheme.LEGACY)
 
     /** Restores the expanded player to the surface the listener left open. */
     val lastPlayerScreen = MutableStateFlow(LastPlayerScreen.MAIN)
@@ -702,7 +702,7 @@ object AppSettings {
     // ── Library ─────────────────────────────────────────────────────────────
 
     /** Hides short clips, recorder output and non-music formats from Local Music. */
-    val filterNonMusicAudio = MutableStateFlow(true)
+    val filterNonMusicAudio = MutableStateFlow(false)
 
     /** Last Local Music category, preserved across app restarts. */
     val lastMainTab = MutableStateFlow(0)
@@ -1027,7 +1027,7 @@ object AppSettings {
             echo = prefs.getBoolean(KEY_AUTOMIX_ECHO, false),
             lowPass = prefs.getBoolean(KEY_AUTOMIX_LOW_PASS, false),
         ).normalized()
-        skipSilence.value = prefs.getBoolean(KEY_SKIP_SILENCE, false)
+        skipSilence.value = prefs.getBoolean(KEY_SKIP_SILENCE, true)
         outputPcmMode.value = runCatching {
             OutputPcmMode.valueOf(
                 prefs.getString(KEY_OUTPUT_PCM_MODE, OutputPcmMode.PCM_16.name)
@@ -1049,7 +1049,7 @@ object AppSettings {
         directSourceStream.value = AurelisFeatures.ADVANCED_STREAMING_SETTINGS &&
             prefs.getBoolean(KEY_DIRECT_SOURCE_STREAM, false)
         youtubePremiumAudio.value = prefs.getBoolean(KEY_YOUTUBE_PREMIUM_AUDIO, false)
-        spatialAudio.value = prefs.getBoolean(KEY_SPATIAL_AUDIO, false)
+        spatialAudio.value = prefs.getBoolean(KEY_SPATIAL_AUDIO, true)
         equalizerEnabled.value = prefs.getBoolean(KEY_EQ_ENABLED, false)
         equalizerMode.value = runCatching {
             EqualizerMode.valueOf(prefs.getString(KEY_EQ_MODE, null) ?: EqualizerMode.DYNAMIC.name)
@@ -1062,8 +1062,8 @@ object AppSettings {
         equalizerPreset.value = EqualizerPreset.matching(equalizerBands.value)
         playbackSpeed.value = prefs.getFloat(KEY_SPEED, 1.0f)
         themeMode.value = runCatching {
-            ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "DARK")
-        }.getOrDefault(ThemeMode.DARK)
+            ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "SYSTEM")
+        }.getOrDefault(ThemeMode.SYSTEM)
         appFont.value = runCatching {
             AppFont.valueOf(prefs.getString(KEY_APP_FONT, null) ?: AppFont.DEFAULT.name)
         }.getOrDefault(AppFont.DEFAULT)
@@ -1097,9 +1097,9 @@ object AppSettings {
         smartVersionAlignment.value = prefs.getBoolean(KEY_SMART_VERSION_ALIGNMENT, true)
         reduceDynamicBlur.value = prefs.getBoolean(KEY_REDUCE_BLUR, false)
         disableBlendEffects.value = prefs.getBoolean(KEY_DISABLE_BLEND_EFFECTS, false)
-        liquidGlass.value = prefs.getBoolean(KEY_LIQUID_GLASS, false)
-        glassPerformance.value = prefs.getBoolean(KEY_GLASS_PERFORMANCE, false)
-        progressiveBlur.value = prefs.getBoolean(KEY_PROGRESSIVE_BLUR, false)
+        liquidGlass.value = prefs.getBoolean(KEY_LIQUID_GLASS, true)
+        glassPerformance.value = prefs.getBoolean(KEY_GLASS_PERFORMANCE, true)
+        progressiveBlur.value = prefs.getBoolean(KEY_PROGRESSIVE_BLUR, true)
         lyricsBlur.value = prefs.getBoolean(KEY_LYRICS_BLUR, true)
         lyricsOffsetMs.value = prefs.getInt(KEY_LYRICS_OFFSET_MS, 0)
             .coerceIn(MIN_LYRICS_OFFSET_MS, MAX_LYRICS_OFFSET_MS)
@@ -1115,12 +1115,16 @@ object AppSettings {
         signatureApiEnabled.value = prefs.getBoolean(KEY_SIGNATURE_API_ENABLED, false)
         signatureApiUrl.value = normalizeSignatureApiUrl(prefs.getString(KEY_SIGNATURE_API_URL, "").orEmpty())
         fullBleedArtwork.value = prefs.getBoolean(KEY_FULL_BLEED_ARTWORK, true)
-        fullBleedDetailArtwork.value = prefs.getBoolean(KEY_FULL_BLEED_DETAIL_ARTWORK, false)
+        fullBleedDetailArtwork.value = prefs.getBoolean(KEY_FULL_BLEED_DETAIL_ARTWORK, true)
         // The old legacy mesh switch answers until a theme has been picked.
         playerTheme.value = runCatching {
             PlayerTheme.valueOf(prefs.getString(KEY_PLAYER_THEME, null).orEmpty())
         }.getOrElse {
-            if (prefs.getBoolean(KEY_LEGACY_MESH_GRADIENT, false)) PlayerTheme.LEGACY else PlayerTheme.DEFAULT
+            if (prefs.contains(KEY_LEGACY_MESH_GRADIENT)) {
+                if (prefs.getBoolean(KEY_LEGACY_MESH_GRADIENT, false)) PlayerTheme.LEGACY else PlayerTheme.DEFAULT
+            } else {
+                PlayerTheme.LEGACY
+            }
         }
         lastPlayerScreen.value = runCatching {
             LastPlayerScreen.valueOf(
@@ -1153,7 +1157,7 @@ object AppSettings {
         listenBrainzPrimaryArtistOnly.value = prefs.getBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, false)
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
-        filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, true)
+        filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, false)
         lastMainTab.value = prefs.getInt(KEY_LAST_MAIN_TAB, 0).coerceIn(0, 4)
         localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
             ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }
