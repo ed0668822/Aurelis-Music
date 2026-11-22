@@ -1330,8 +1330,18 @@ class CrossfadeController(
         if (nextIndex == C.INDEX_UNSET) return
         val nextItem = player.getMediaItemAt(nextIndex)
         if (currentItem.isVideoOrigin || nextItem.isVideoOrigin) return
+        val nextDuration = nextItemDurationMs(nextIndex, nextItem)
         requestAnalysis(currentItem, duration)
-        requestAnalysis(nextItem, nextItemDurationMs(nextIndex, nextItem))
+        requestAnalysis(nextItem, nextDuration)
+        // The loop mix wants synced lyrics for both songs as well as their
+        // analysis, and used to ask for them only once the analysis had landed:
+        // a lookup of up to LOOP_MIX_LYRICS_TIMEOUT_MS then ran *behind* a
+        // decode that was itself seconds long, eating the lead the loop needs.
+        // Asked alongside the analysis instead, so the two engines' inputs are
+        // gathered in parallel. Only with a runtime in hand, because the answer
+        // is kept for the song and a zero runtime would be matched on as zero.
+        if (duration > 0L) askLyrics(currentItem, duration)
+        if (nextDuration > 0L) askLyrics(nextItem, nextDuration)
     }
 
     /**
@@ -1420,9 +1430,13 @@ class CrossfadeController(
      * anything worth failing a tick over.
      */
     private fun queuedDurationMs(item: MediaItem): Long {
-        val uri = item.localConfiguration?.uri ?: return 0L
-        val seconds = runCatching { uri.getQueryParameter("d") }.getOrNull()?.toLongOrNull() ?: return 0L
-        return if (seconds > 0) seconds * 1000L else 0L
+        val fromUri = item.localConfiguration?.uri?.let { uri ->
+            runCatching { uri.getQueryParameter("d") }.getOrNull()
+        }
+        // A file on the device carries no `d=`; the queue row's runtime still
+        // says how long it is, which is what keeps its first plan from being
+        // made against a zero-length incoming track.
+        return queuedDurationMillis(fromUri, item.queuedDurationText())
     }
 
     /** Aurelis doesn't carry album metadata on [MediaMetadata] yet, so [TransitionTrackInfo.album] stays blank. */

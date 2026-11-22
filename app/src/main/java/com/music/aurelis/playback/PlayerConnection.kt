@@ -633,6 +633,13 @@ private const val EXTRA_DURATION = "aurelis.durationText"
 private const val EXTRA_EXPLICIT = "aurelis.explicit"
 
 /**
+ * The runtime ("3:45") the queue row that built this item carried, or null when
+ * it carried none. A file on the device has no `d=` in its URI, so this is the
+ * only runtime Automix can know for it before the player has prepared it.
+ */
+fun MediaItem.queuedDurationText(): String? = mediaMetadata.extras?.getString(EXTRA_DURATION)
+
+/**
  * @see Song.sourceQuality — carried so an addon row rebuilt from the queue
  * (a restore, a reorder) keeps the `&mix=` its first item had; see
  * [SourceResolver.MIX_PARAM].

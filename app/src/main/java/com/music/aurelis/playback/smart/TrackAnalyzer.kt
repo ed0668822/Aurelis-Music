@@ -185,6 +185,20 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      */
     private val shortDecodes = ConcurrentHashMap<String, Int>()
 
+    /**
+     * Local files whose container would not state a runtime, asked about without
+     * one.
+     *
+     * A file on the device queued *behind* the playing track has no runtime the
+     * player knows yet, so the analyzer has to read it off the container — and a
+     * container that will not say used to write the track off for the session as
+     * a ready-but-empty result. The same file analyses perfectly once it is the
+     * playing one, because the player then supplies the runtime. So it is not a
+     * failure: nothing is recorded, and the next request that *does* carry a
+     * runtime goes through. Until one does, asking again is pointless.
+     */
+    private val unknownRuntime = ConcurrentHashMap.newKeySet<String>()
+
     /** Tracks already looked for on disk this session; see [restoreOnce]. */
     private val restoreAttempted = ConcurrentHashMap.newKeySet<String>()
 
@@ -355,6 +369,10 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // no-op for anything without a YouTube id — which is why a local file
         // was never queued for analysis at all. See [LocalAudioSource].
         val local = LocalAudioSource.isLocal(analysisUri)
+
+        // See [unknownRuntime]: no runtime from the caller and none from the
+        // container last time, so there is nothing new to try.
+        if (local && !(durationSeconds.isFinite() && durationSeconds > 0.0) && storageKey in unknownRuntime) return
 
         // Complete *and* not already written off. A copy that decoded to
         // nothing is not a copy worth routing to: counting it as "fully cached"
@@ -1029,8 +1047,18 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         }
         if (effectiveDuration <= 0) {
             Log.d(TAG, "Skipping $trackId: ${copy.key} has no readable duration")
+            if (copy.rendition == null) {
+                // A file on the device whose container won't state a runtime is
+                // not a broken file: see [unknownRuntime]. Left unrecorded, and
+                // forgotten as tried, so it is measured once a runtime arrives
+                // instead of being written off while it is still only queued.
+                unknownRuntime.add(analysisKey(trackId, uri))
+                triedRenditions.remove(copy.key)
+                return WholeTrack(null)
+            }
             return WholeTrack(empty(trackId, 0.0))
         }
+        unknownRuntime.remove(analysisKey(trackId, uri))
 
         // Pass 1 (Phase 1, DSP-only): the analyzer needs the whole track — the energy curve,
         // phrase structure and mix-out anchor all read the tail, not just a window of it — at its
@@ -1541,6 +1569,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
     fun release() {
         executor.shutdownNow()
         headAttempts.clear()
+        unknownRuntime.clear()
         headSkipLogged.clear()
         provisional.clear()
         restoreAttempted.clear()
