@@ -1,9 +1,9 @@
 name: Android
 
-# Compila en paralelo y entrega dos APK independientes lo antes posible:
-# - El firmado no espera las pruebas ni la compilacion debug.
-# - El APK de prueba se sube antes de lanzar las pruebas unitarias.
-# - Gradle usa cache de compilacion entre ejecuciones de esta rama.
+# Compila Debug y Release en un solo trabajo y entrega las APK por separado:
+# - Se reutilizan checkout, JDK, SDK opcional, runner y cache Gradle.
+# - La APK Debug se publica antes de validar la firma de Release.
+# - Las regresiones y Lint se ejecutan despues, en B13.
 #   - aurelis-prueba-debug      APK dev/debug de PRUEBA (clave de depuración)
 #   - aurelis-firmado-release   APK prod/release FIRMADO con tu clave
 #
@@ -14,24 +14,27 @@ on:
   push:
     branches: [Aurelis-Music-Redesign]
   workflow_dispatch:
-    inputs:
-      abis:
-        description: 'Arquitecturas separadas por coma: arm64-v8a, armeabi-v7a, x86_64'
-        default: 'arm64-v8a'
 
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  # Un APK por arquitectura. Con las tres + universal salen cuatro APKs y el
-  # peso se multiplica. arm64-v8a es el de casi todos los móviles actuales.
-  ABIS: ${{ inputs.abis || 'arm64-v8a' }}
+  # Una APK por variante, solo ARM64, sin APK universal.
+  ABIS: arm64-v8a
 
 jobs:
-  prueba:
-    name: Prueba (dev debug)
+  compilacion:
+    name: Compilación (Debug + Release)
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+      LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
+      LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
     steps:
       - uses: actions/checkout@v4
 
@@ -104,59 +107,6 @@ jobs:
           # Los APK ya están comprimidos; recomprimirlos retrasa su entrega.
           compression-level: 0
 
-      - name: Run unit regression tests
-        run: ./gradlew :app:testDevDebugUnitTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
-
-      - name: Upload unit test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: aurelis-informes-pruebas
-          path: |
-            app/build/test-results/testDevDebugUnitTest/
-            app/build/reports/tests/testDevDebugUnitTest/
-          if-no-files-found: ignore
-
-  firmado:
-    name: Firmado (prod release)
-    runs-on: ubuntu-latest
-    env:
-      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-      LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
-      LISTEN_TOGETHER_SERVER: ${{ secrets.LISTEN_TOGETHER_SERVER }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Retrieve official Discord Android SDK from private release (optional)
-        env:
-          GH_TOKEN: ${{ secrets.DISCORD_SDK_READ_TOKEN }}
-        run: |
-          if [[ -z "$GH_TOKEN" ]]; then
-            echo "::notice title=Discord SDK::Private SDK token not configured; compiling without optional Discord presence."
-          else
-            mkdir -p app/libs
-            # Do not leave a partial or unverified native library behind.
-            rm -f app/libs/discord_partner_sdk.aar
-            if gh release download v1.11.24259 --repo ed0668822/Aurelis-Discord-SDK --pattern discord_partner_sdk.aar --dir app/libs; then
-              if printf '%s  %s\n' 'ea4c080cc7c5ddeccab58f3bdf5682a3e18a7a84a815bb0f33609bfcafba3f99' 'app/libs/discord_partner_sdk.aar' | sha256sum --check --status; then
-                echo "Official Discord SDK AAR: SHA-256 verified."
-              else
-                rm -f app/libs/discord_partner_sdk.aar
-                echo "::warning title=Discord SDK::Downloaded AAR failed integrity validation; optional integration disabled for this build."
-              fi
-            else
-              rm -f app/libs/discord_partner_sdk.aar
-              echo "::warning title=Discord SDK::Private release could not be downloaded; optional integration disabled for this build."
-            fi
-          fi
-
-      - name: Validate official Discord SDK AAR (optional)
-        run: bash scripts/install-discord-sdk.sh
-
       # Falla antes de compilar si falta la firma.
       - name: Check signing secrets
         run: |
@@ -169,23 +119,9 @@ jobs:
             exit 1
           fi
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
 
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          # La rama activa no es la predeterminada; sin esto la caché era
-          # de solo lectura y cada build recompilaba más de lo necesario.
-          cache-read-only: false
-
-      - name: Write local.properties and signing files
+      - name: Write signing files
         run: |
-          printf 'LASTFM_API_KEY=%s\nLASTFM_SECRET=%s\nLISTEN_TOGETHER_SERVER=%s\n' \
-            "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
-
           echo "$KEYSTORE_BASE64" | base64 -d > aurelis-release.jks
           printf 'storeFile=aurelis-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
@@ -196,8 +132,6 @@ jobs:
           keytool -list -keystore aurelis-release.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null \
             || { echo "::error title=Firma inválida::El keystore, la contraseña o el alias no coinciden"; exit 1; }
           echo "Keystore OK"
-
-      - run: chmod +x gradlew
 
       - name: Build signed prod release APK
         run: ./gradlew :app:assembleProdRelease --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
@@ -236,7 +170,7 @@ jobs:
 
   estabilidad:
     name: B13 | Lint y pruebas adicionales
-    needs: [prueba]
+    needs: [compilacion]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -260,6 +194,9 @@ jobs:
           printf 'LASTFM_API_KEY=%s\nLASTFM_SECRET=%s\nLISTEN_TOGETHER_SERVER=%s\n' \
             "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
           chmod +x gradlew
+
+      - name: Dev debug unit regression tests
+        run: ./gradlew :app:testDevDebugUnitTest --build-cache -Paurelis.abis="$ABIS" -Paurelis.bundleWear=false -Paurelis.buildNumber="$GITHUB_RUN_NUMBER"
 
       - name: B20 | Validate lyrics sharing translations
         run: python3 scripts/verify_b20_locales.py
@@ -290,6 +227,8 @@ jobs:
           path: |
             app/build/reports/lint-results-*.html
             app/build/reports/lint-results-*.xml
+            app/build/test-results/testDevDebugUnitTest/
+            app/build/reports/tests/testDevDebugUnitTest/
             app/build/test-results/testProdReleaseUnitTest/
             app/build/reports/tests/testProdReleaseUnitTest/
             sharedUi/build/test-results/jvmTest/
