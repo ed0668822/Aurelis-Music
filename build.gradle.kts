@@ -5,13 +5,10 @@ buildscript {
     }
     dependencies {
         /*
-         * Use R8 9.1.31 (Kotlin 2.4 metadata needs >= 9.1.29). Some transitive
-         * libraries, including InnerTubeX, publish Kotlin 2.4 metadata even
-         * though the application uses Kotlin 2.3.20. AGP 8.13.2 bundles R8
-         * 8.13.19, which cannot parse that newer metadata.
-         *
-         * Retain a newer D8/R8 than the AGP bundle: old 8.10.x dex lowering
-         * generated invalid register usage in NowPlayingScreen (VerifyError).
+         * Keep the tested D8/R8 version during the AGP upgrade. InnerTubeX
+         * and other dependencies publish Kotlin 2.4 metadata, which requires
+         * R8 9.1.29 or newer. Older D8 8.10.x also produced a VerifyError in
+         * NowPlayingScreen.
          * Verify both Debug playback and signed Release after upgrades.
          */
         classpath("com.android.tools:r8:9.1.31")
@@ -60,8 +57,8 @@ extra["aurelisVersionName"] = "2.7.$aurelisBuildNumber"
 extra["aurelisBetaSuffix"] = ""
 
 plugins {
-    id("com.android.application") version "8.13.2" apply false
-    id("com.android.library") version "8.13.2" apply false
+    id("com.android.application") version "9.1.1" apply false
+    id("com.android.library") version "9.1.1" apply false
     id("org.jetbrains.kotlin.android") version "2.3.20" apply false
     id("org.jetbrains.kotlin.multiplatform") version "2.3.20" apply false
     id("org.jetbrains.kotlin.jvm") version "2.3.20" apply false
