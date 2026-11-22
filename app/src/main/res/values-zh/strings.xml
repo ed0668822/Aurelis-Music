@@ -1009,220 +1009,220 @@
     <string name="use_this_profile">使用此资料</string>
 
 
-    <string name="lyrics_offset">Lyrics offset</string>
+    <string name="lyrics_offset">歌词偏移</string>
 
 
 
 
 
-    <string name="auto_quick_picks">Quick picks</string>
+    <string name="auto_quick_picks">快速推荐</string>
 
-    <string name="auto_recents">Recent</string>
+    <string name="auto_recents">最近播放</string>
 
-    <string name="auto_liked">Liked songs</string>
+    <string name="auto_liked">喜欢的歌曲</string>
 
-    <string name="auto_login_title">Sign in to YouTube on your phone</string>
+    <string name="auto_login_title">请在手机上登录 YouTube</string>
 
-    <string name="auto_login_subtitle">Open Aurelis on your phone to sign in</string>
+    <string name="auto_login_subtitle">在手机上打开 Aurelis 以登录</string>
 
-    <string name="auto_empty_recents_title">No recent songs</string>
+    <string name="auto_empty_recents_title">暂无最近播放的歌曲</string>
 
-    <string name="auto_empty_recents_subtitle">Songs you play will appear here</string>
+    <string name="auto_empty_recents_subtitle">你播放的歌曲会显示在这里</string>
 
-    <string name="auto_empty_quick_picks_title">No suggestions</string>
+    <string name="auto_empty_quick_picks_title">暂无推荐</string>
 
-    <string name="auto_empty_quick_picks_subtitle">Check your connection and try again</string>
+    <string name="auto_empty_quick_picks_subtitle">请检查网络连接后重试</string>
 
-    <string name="auto_empty_playlists_title">No playlists available</string>
+    <string name="auto_empty_playlists_title">暂无可用播放列表</string>
 
-    <string name="auto_empty_playlists_subtitle">Check your connection and try again</string>
+    <string name="auto_empty_playlists_subtitle">请检查网络连接后重试</string>
 
-    <string name="auto_empty_liked_title">No liked songs</string>
+    <string name="auto_empty_liked_title">暂无喜欢的歌曲</string>
 
-    <string name="auto_empty_liked_subtitle">Tap the heart on a song to save it here</string>
+    <string name="auto_empty_liked_subtitle">点击歌曲旁的爱心，即可保存到这里</string>
 
-    <string name="auto_empty_offline_title">No offline songs</string>
+    <string name="auto_empty_offline_title">暂无离线歌曲</string>
 
-    <string name="auto_empty_offline_subtitle">Download songs on your phone to listen here</string>
+    <string name="auto_empty_offline_subtitle">在手机上下载歌曲，即可在这里收听</string>
 
-    <string name="auto_unavailable_title">Content unavailable</string>
+    <string name="auto_unavailable_title">内容不可用</string>
 
-    <string name="auto_unavailable_subtitle">Reopen the folder and try again</string>
+    <string name="auto_unavailable_subtitle">请重新打开文件夹并重试</string>
 
-    <string name="settings_search_hint">Search settings</string>
+    <string name="settings_search_hint">搜索设置</string>
 
-    <string name="settings_search_empty">No settings match “%1$s”</string>
+    <string name="settings_search_empty">没有与“%1$s”匹配的设置</string>
 
 
-    <string name="content_preferences">Content Preferences</string>
-    <string name="hide_recents">Hide Recents</string>
-    <string name="hide_home_videos">Hide videos from Home</string>
-    <string name="hide_home_videos_subtitle">Shelves of only videos go too. Search, artists and playlists still show them</string>
-    <string name="hide_top_picks">Hide Top Picks for You</string>
-    <string name="hide_home_moods">Hide Find Your Mood</string>
-    <string name="square_video_thumbnails">Square video thumbnails</string>
-    <string name="square_video_thumbnails_subtitle">Show music videos as squares everywhere, including the player</string>
-    <string name="prefer_music_only">Prefer music-only version</string>
-    <string name="prefer_music_only_subtitle">Music videos play as their audio version, and the next track in the queue is converted ahead of time so Automix and crossfade work</string>
+    <string name="content_preferences">内容偏好</string>
+    <string name="hide_recents">隐藏最近播放</string>
+    <string name="hide_home_videos">在首页隐藏视频</string>
+    <string name="hide_home_videos_subtitle">只包含视频的栏目也将隐藏，但视频仍会显示在搜索、艺人页面和播放列表中。</string>
+    <string name="hide_top_picks">隐藏为你精选</string>
+    <string name="hide_home_moods">隐藏心情音乐推荐</string>
+    <string name="square_video_thumbnails">方形视频缩略图</string>
+    <string name="square_video_thumbnails_subtitle">在所有位置（包括播放器）以方形显示音乐视频</string>
+    <string name="prefer_music_only">优先使用纯音频版本</string>
+    <string name="prefer_music_only_subtitle">音乐视频将以音频版本播放，并提前准备队列中的下一首歌曲，以便 AutoMix 和淡入淡出正常工作。</string>
     <string name="smart_version_alignment">智能音频对齐</string>
     <string name="smart_version_alignment_subtitle">分析音频波形，精确匹配对应的播放时刻</string>
 
     <string name="equalizer_footer">Shapes the sound inside Aurelis， before it reaches the system.</string>
 
-    <string name="equalizer_dynamic">Dynamic</string>
+    <string name="equalizer_dynamic">动态</string>
 
-    <string name="equalizer_manual">Manual</string>
+    <string name="equalizer_manual">手动</string>
 
-    <string name="equalizer_tone">Tone</string>
+    <string name="equalizer_tone">音色</string>
 
-    <string name="equalizer_tilt">Tilt</string>
+    <string name="equalizer_tilt">倾斜</string>
 
-    <string name="equalizer_contour">Contour</string>
+    <string name="equalizer_contour">轮廓</string>
 
-    <string name="equalizer_broad">Broad</string>
+    <string name="equalizer_broad">宽频</string>
 
-    <string name="equalizer_focused">Focused</string>
+    <string name="equalizer_focused">精细</string>
 
     <string name="equalizer_broad_footer">Drag left for a warmer sound and right for a brighter one； down scoops the middle， up brings it forward. Broad moves wide stretches of the spectrum at once.</string>
 
     <string name="equalizer_focused_footer">Drag left for a warmer sound and right for a brighter one； down scoops the middle， up brings it forward. Focused works on narrower stretches， so it changes less around what it moves.</string>
 
-    <string name="equalizer_preset">Preset</string>
+    <string name="equalizer_preset">预设</string>
 
-    <string name="equalizer_bands">Bands</string>
+    <string name="equalizer_bands">频段</string>
 
-    <string name="equalizer_bands_footer">Moving a band leaves the preset behind and the curve becomes your own.</string>
+    <string name="equalizer_bands_footer">移动频段后将退出预设并创建自己的均衡曲线。</string>
 
-    <string name="equalizer_reset">Reset all bands</string>
+    <string name="equalizer_reset">重置所有频段</string>
 
-    <string name="equalizer_balance">Balance</string>
+    <string name="equalizer_balance">平衡</string>
 
     <string name="equalizer_balance_left">L</string>
 
     <string name="equalizer_balance_right">R</string>
 
-    <string name="equalizer_balance_footer">Shifts the sound towards one ear by quietening the other.</string>
+    <string name="equalizer_balance_footer">降低一侧耳机的音量，将声音偏向另一侧。</string>
     <string name="equalizer_bitstream_title">当前未运行</string>
     <string name="equalizer_bitstream_subtitle">此曲目未经解码直接发送到输出</string>
     <string name="equalizer_bitstream_footer">均衡器作用于解码后的音频。此曲目以比特流形式直通，由你的设备解码，因此这里没有可供处理的采样。</string>
 
-    <string name="system_equalizer">System equalizer</string>
+    <string name="system_equalizer">系统均衡器</string>
 
-    <string name="system_equalizer_subtitle">Your device\'s own panel</string>
+    <string name="system_equalizer_subtitle">设备自带的音频控制面板</string>
 
     <string name="system_equalizer_footer">Runs after Aurelis\'s， on the whole audio session. Using both applies both.</string>
 
-    <string name="eq_preset_flat">Flat</string>
+    <string name="eq_preset_flat">平直</string>
 
-    <string name="eq_preset_acoustic">Acoustic</string>
+    <string name="eq_preset_acoustic">原声</string>
 
-    <string name="eq_preset_bass_boost">Bass boost</string>
+    <string name="eq_preset_bass_boost">增强低音</string>
 
-    <string name="eq_preset_bass_cut">Bass cut</string>
+    <string name="eq_preset_bass_cut">减弱低音</string>
 
-    <string name="eq_preset_vocal">Vocal</string>
+    <string name="eq_preset_vocal">人声</string>
 
-    <string name="eq_preset_treble_boost">Treble boost</string>
+    <string name="eq_preset_treble_boost">增强高音</string>
 
-    <string name="eq_preset_treble_cut">Treble cut</string>
+    <string name="eq_preset_treble_cut">减弱高音</string>
 
-    <string name="eq_preset_loudness">Loudness</string>
+    <string name="eq_preset_loudness">响度</string>
 
-    <string name="eq_preset_spoken_word">Spoken word</string>
+    <string name="eq_preset_spoken_word">讲话</string>
 
-    <string name="eq_preset_electronic">Electronic</string>
+    <string name="eq_preset_electronic">电子</string>
 
-    <string name="eq_preset_rock">Rock</string>
+    <string name="eq_preset_rock">摇滚</string>
 
-    <string name="eq_preset_hip_hop">Hip-hop</string>
+    <string name="eq_preset_hip_hop">嘻哈</string>
 
-    <string name="eq_preset_jazz">Jazz</string>
+    <string name="eq_preset_jazz">爵士</string>
 
-    <string name="eq_preset_classical">Classical</string>
+    <string name="eq_preset_classical">古典</string>
 
-    <string name="eq_preset_small_speakers">Small speakers</string>
+    <string name="eq_preset_small_speakers">小型扬声器</string>
 
-    <string name="eq_preset_late_night">Late night</string>
+    <string name="eq_preset_late_night">深夜</string>
 
-    <string name="eq_preset_custom">Custom</string>
+    <string name="eq_preset_custom">自定义</string>
 
-    <string name="translation_language">Translation language</string>
+    <string name="translation_language">翻译语言</string>
 
-    <string name="translation_language_description">The language the translate button turns lyrics into.</string>
+    <string name="translation_language_description">点击翻译按钮时歌词将转换成的语言。</string>
 
-    <string name="translation_language_app_default">App language</string>
+    <string name="translation_language_app_default">应用语言</string>
 
-    <string name="translation_language_subtitle">Follows the app language</string>
+    <string name="translation_language_subtitle">跟随应用语言</string>
 
-    <string name="search_languages">Search languages</string>
+    <string name="search_languages">搜索语言</string>
 
-    <string name="no_languages_match">No languages match</string>
+    <string name="no_languages_match">未找到匹配的语言</string>
 
 
 
-    <string name="audio_pipeline">Audio Pipeline</string>
+    <string name="audio_pipeline">音频处理链</string>
     <string name="cast_dialog_title">Cast</string>
-    <string name="cast_dialog_subtitle">Play on a Chromecast or Google Cast speaker</string>
-    <string name="cast_searching">Looking for devices…</string>
-    <string name="cast_searching_hint">Your phone and the receiver need to be on the same Wi-Fi network.</string>
-    <string name="cast_device_connecting">Connecting…</string>
-    <string name="cast_device_connected">Casting</string>
-    <string name="cast_stop">Stop casting</string>
-    <string name="cast_track_unsupported">This track can\'t be cast</string>
-    <string name="cast_connect_failed">Couldn\'t connect to the receiver</string>
+    <string name="cast_dialog_subtitle">通过 Chromecast 或 Google Cast 扬声器播放</string>
+    <string name="cast_searching">正在搜索设备…</string>
+    <string name="cast_searching_hint">手机和接收设备必须连接到同一 Wi-Fi 网络。</string>
+    <string name="cast_device_connecting">正在连接…</string>
+    <string name="cast_device_connected">正在投放</string>
+    <string name="cast_stop">停止投放</string>
+    <string name="cast_track_unsupported">此曲目无法投放</string>
+    <string name="cast_connect_failed">无法连接接收设备</string>
     <string name="audio_pipeline_subtitle">实时信号路径，从解码器到输出</string>
 
-    <string name="pipeline_track_info">Track Info</string>
+    <string name="pipeline_track_info">曲目信息</string>
 
-    <string name="pipeline_decoder">Decoder</string>
+    <string name="pipeline_decoder">解码器</string>
 
-    <string name="pipeline_resampler">Resampler</string>
+    <string name="pipeline_resampler">重采样器</string>
 
     <string name="pipeline_dsp">DSP</string>
 
-    <string name="pipeline_output_device">Output Device</string>
+    <string name="pipeline_output_device">输出设备</string>
 
-    <string name="pipeline_source">Source</string>
+    <string name="pipeline_source">来源</string>
 
-    <string name="pipeline_format">Format</string>
+    <string name="pipeline_format">格式</string>
 
-    <string name="pipeline_bit_depth">Bit Depth</string>
+    <string name="pipeline_bit_depth">位深度</string>
 
-    <string name="pipeline_sample_rate">Sample Rate</string>
+    <string name="pipeline_sample_rate">采样率</string>
 
-    <string name="pipeline_bitrate">Bitrate</string>
+    <string name="pipeline_bitrate">比特率</string>
 
-    <string name="pipeline_channels">Channels</string>
+    <string name="pipeline_channels">声道</string>
 
-    <string name="pipeline_decoder_name">Decoder Name</string>
+    <string name="pipeline_decoder_name">解码器名称</string>
 
-    <string name="pipeline_io_rate">I/O Rate</string>
+    <string name="pipeline_io_rate">输入/输出速率</string>
 
-    <string name="pipeline_type">Type</string>
+    <string name="pipeline_type">类型</string>
 
-    <string name="pipeline_cutoff">Cutoff</string>
+    <string name="pipeline_cutoff">截止频率</string>
 
-    <string name="pipeline_quality">Quality</string>
+    <string name="pipeline_quality">质量</string>
 
-    <string name="pipeline_pcm_format">PCM Format</string>
+    <string name="pipeline_pcm_format">PCM 格式</string>
 
-    <string name="pipeline_eq_preset">EQ Preset</string>
+    <string name="pipeline_eq_preset">均衡器预设</string>
 
-    <string name="pipeline_stereo_expand">Stereo Expand</string>
+    <string name="pipeline_stereo_expand">立体声扩展</string>
 
-    <string name="pipeline_buffers">Buffers</string>
+    <string name="pipeline_buffers">缓冲区</string>
 
-    <string name="pipeline_output_api">Output API</string>
+    <string name="pipeline_output_api">输出 API</string>
 
-    <string name="pipeline_device_name">Device Name</string>
+    <string name="pipeline_device_name">设备名称</string>
 
 
 
-    <string name="shared_link">Shared link</string>
+    <string name="shared_link">共享链接</string>
 
-    <string name="song_will_play_next">Song will play next</string>
+    <string name="song_will_play_next">下一首将播放此歌曲</string>
 
-    <string name="song_added_to_queue">Song added to queue</string>
+    <string name="song_added_to_queue">已将歌曲添加到队列</string>
     <string name="song_added_to_playlist">已添加到播放列表</string>
     <string name="song_already_in_playlist">已在播放列表中</string>
     <plurals name="add_to_playlists_count">
@@ -1233,9 +1233,9 @@
     </plurals>
     <string name="party_queue_full">队列已满（派对最多 %d 首歌曲）</string>
 
-    <string name="paxsenix_api_key">PaxSenix API key</string>
+    <string name="paxsenix_api_key">PaxSenix API 密钥</string>
 
-    <string name="paxsenix_api_key_configured">PaxSenix API key — configured</string>
+    <string name="paxsenix_api_key_configured">PaxSenix API 密钥 — 已配置</string>
 
     <string name="paxsenix_api_key_missing">PaxSenix API key — optional， not configured</string>
 
@@ -1376,9 +1376,9 @@
     <string name="song_info_unavailable">暂无信息</string>
     <string name="song_info_error">部分信息无法加载。</string>
     <string name="song_info_retry">重试</string>
-    <string name="no_audio_version">No audio version found for this video</string>
-    <string name="no_video_version">No video version found for this song</string>
-    <string name="version_switch_in_party">Everyone in Listen Together hears the same version</string>
+    <string name="no_audio_version">未找到此视频的音频版本</string>
+    <string name="no_video_version">未找到此歌曲的视频版本</string>
+    <string name="version_switch_in_party">一起听的所有参与者都将听到相同版本</string>
     <string name="opened_file">已打开的文件</string>
     <string name="folders">文件夹</string>
     <string name="folder">文件夹</string>
