@@ -1,8 +1,4 @@
 @file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-
-// SPDX-FileCopyrightText: 2026 Aurelis
-// SPDX-License-Identifier: LGPL-3.0-or-later
-
 package com.music.aurelis.playback
 
 import android.util.Log
@@ -115,20 +111,6 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
     private var echoLowCoefficient = 0f
     private var echoHighCoefficient = 0f
 
-    // Experimental AutoMix effect: two feed-forward delay taps, kept independent
-    // of the beat-synchronised feedback echo above so existing DJ mixes do not change.
-    @Volatile private var experimentalEchoEngaged = false
-    @Volatile private var experimentalEchoTargetWet = 0f
-    @Volatile private var experimentalEchoGeneration = 0
-    @Volatile private var pendingExperimentalEchoRing: FloatArray? = null
-
-    private var experimentalEchoRing = FloatArray(0)
-    private var experimentalEchoSeenGeneration = -1
-    private var experimentalEchoPosition = 0
-    private var experimentalEchoFrames = 0
-    private var experimentalEchoFrames180 = 0
-    private var experimentalEchoWet = 0f
-
     /**
      * Aims the filter. [lowPassHz] at or above [OPEN_HZ] and [highPassHz] at or
      * below [OFF_HZ] mean "not filtering", which is the state this returns to
@@ -181,27 +163,6 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
     }
 
     /**
-     * Enable a feed-forward 180/360 ms delay only for an experimental AutoMix
-     * transition. Memory is prepared on the controller thread, never in [process].
-     * [wet] is the smoothstep mix amount calculated using the sink's render lead.
-     */
-    fun setExperimentalEcho(wet: Float) {
-        if (!experimentalEchoEngaged) {
-            val frames = (echoFormatRate * EXPERIMENTAL_ECHO_LONG_SECONDS).toInt().coerceAtLeast(1)
-            val needed = frames * echoFormatChannels
-            if (needed > experimentalEchoRing.size) pendingExperimentalEchoRing = FloatArray(needed)
-            experimentalEchoGeneration++
-        }
-        experimentalEchoTargetWet = wet.coerceIn(0f, 1f)
-        experimentalEchoEngaged = true
-    }
-
-    fun parkExperimentalEcho() {
-        experimentalEchoEngaged = false
-        experimentalEchoTargetWet = 0f
-    }
-
-    /**
      * Configures the Float32 DSP engine for [sampleRate] and [channelCount].
      */
     fun configure(sampleRate: Int, channelCount: Int) {
@@ -224,7 +185,6 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
         echoFormatRate = sampleRate
         echoFormatChannels = channelCount
         echoSeenGeneration = echoGeneration - 1
-        experimentalEchoSeenGeneration = experimentalEchoGeneration - 1
     }
 
     /**
@@ -236,7 +196,6 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
         if (frameCount == 0 || channelCount < 1 || sampleRate <= 0) return
         filter(block, frameCount)
         if (echoEngaged) echo(block, frameCount)
-        if (experimentalEchoEngaged) renderExperimentalEcho(block, frameCount)
     }
 
     private fun filter(block: AudioBlock, frameCount: Int) {
@@ -299,14 +258,11 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
         currentHighPassHz = targetHighPassHz
         // Whatever the ring holds is from before the seek; start it clean.
         echoSeenGeneration = echoGeneration - 1
-        experimentalEchoSeenGeneration = experimentalEchoGeneration - 1
     }
 
     override fun onReset() {
         parkEcho()
-        parkExperimentalEcho()
         echoSeenGeneration = echoGeneration - 1
-        experimentalEchoSeenGeneration = experimentalEchoGeneration - 1
         targetLowPassHz = OPEN_HZ
         targetHighPassHz = OFF_HZ
         lowState = FloatArray(0)
@@ -441,61 +397,6 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
         echoDry = targetDry
     }
 
-    /**
-     * Feed-forward effect matching Mornye's 180/360 ms timings and relative
-     * gains, reimplemented for Aurelis's Float32 DSP chain. Each channel stays
-     * isolated and the input is cached before the wet branch is mixed.
-     * No allocations, FFTs, or decoder work occur in the sample loop.
-     */
-    private fun renderExperimentalEcho(block: AudioBlock, frameCount: Int) {
-        if (experimentalEchoSeenGeneration != experimentalEchoGeneration) {
-            experimentalEchoSeenGeneration = experimentalEchoGeneration
-            pendingExperimentalEchoRing?.let { experimentalEchoRing = it; pendingExperimentalEchoRing = null }
-            val channels = channelCount.coerceAtLeast(1)
-            experimentalEchoFrames = (sampleRate * EXPERIMENTAL_ECHO_LONG_SECONDS).toInt()
-                .coerceIn(0, experimentalEchoRing.size / channels)
-            experimentalEchoFrames180 = (sampleRate * EXPERIMENTAL_ECHO_SHORT_SECONDS).toInt()
-                .coerceIn(0, experimentalEchoFrames)
-            experimentalEchoRing.fill(0f, 0, experimentalEchoFrames * channels)
-            experimentalEchoPosition = 0
-            experimentalEchoWet = 0f
-        }
-        val frames360 = experimentalEchoFrames
-        if (frames360 <= 0) return
-        val frames180 = experimentalEchoFrames180
-        val channels = channelCount
-        val ring = experimentalEchoRing
-        val samples = block.samples
-        val targetWet = experimentalEchoTargetWet
-        val wetStep = (targetWet - experimentalEchoWet) / frameCount
-        var wet = experimentalEchoWet
-        var position = experimentalEchoPosition
-        for (frame in 0 until frameCount) {
-            wet += wetStep
-            val base = frame * channels
-            val endTap = position * channels
-            val shortTap = ((position + frames360 - frames180) % frames360) * channels
-            for (channel in 0 until channels) {
-                val index = base + channel
-                val input = samples[index]
-                val tap180 = ring[shortTap + channel]
-                val tap360 = ring[endTap + channel]
-                ring[endTap + channel] = input
-                // 0.6 dry + 0.75 echo with delayed tap weights 0.3 / 0.15.
-                val effected = (input * EXPERIMENTAL_ECHO_DRY +
-                    EXPERIMENTAL_ECHO_WET * (0.3f * tap180 + 0.15f * tap360))
-                    .coerceIn(-0.98f, 0.98f)
-                // Limit the wet branch, not the dry+wet result. Otherwise the
-                // first tiny nonzero wet amount hard-clips a full-scale source
-                // and introduces a click before the smoothstep has ramped in.
-                samples[index] = input * (1f - wet) + effected * wet
-            }
-            if (++position == frames360) position = 0
-        }
-        experimentalEchoPosition = position
-        experimentalEchoWet = targetWet
-    }
-
     /** A new echo, on the audio thread: adopt any ring waiting for it and clear what it will use. */
     private fun startEcho() {
         echoSeenGeneration = echoGeneration
@@ -626,11 +527,6 @@ class TransitionFilterProcessor : BaseAudioProcessor() {
         /** How loud the repeats come back against the dry signal they echo. */
         private const val ECHO_WET = 0.5f
 
-        private const val EXPERIMENTAL_ECHO_SHORT_SECONDS = 0.18f
-        private const val EXPERIMENTAL_ECHO_LONG_SECONDS = 0.36f
-        private const val EXPERIMENTAL_ECHO_DRY = 0.6f
-        private const val EXPERIMENTAL_ECHO_WET = 0.75f
-
         /** Corners of the loop's one-pole filters: each repeat loses air above and rumble below. */
         private const val ECHO_LOW_PASS_HZ = 3_500f
         private const val ECHO_HIGH_PASS_HZ = 250f
@@ -674,11 +570,6 @@ interface TransitionFilters {
 
     /** Drops any echo on either sink. Called whenever a transition ends, however it ended. */
     fun parkEchoes() = Unit
-
-    /** Independent two-tap experimental echo on the outgoing track only. */
-    fun incomingExperimentalEcho(wet: Float) = Unit
-    fun outgoingExperimentalEcho(wet: Float) = Unit
-    fun parkExperimentalEchoes() = Unit
 
     /** Parks both. Called whenever a transition ends, however it ended. */
     fun open() {

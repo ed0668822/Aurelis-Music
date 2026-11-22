@@ -1984,16 +1984,6 @@ class PlaybackService : MediaLibraryService() {
                     transitionFilterB.parkEcho()
                 }
 
-                override fun incomingExperimentalEcho(wet: Float) =
-                    activeFilter.setExperimentalEcho(wet)
-
-                override fun outgoingExperimentalEcho(wet: Float) =
-                    spareFilter.setExperimentalEcho(wet)
-
-                override fun parkExperimentalEchoes() {
-                    transitionFilterA.parkExperimentalEcho()
-                    transitionFilterB.parkExperimentalEcho()
-                }
             },
             analysisRunningFor = { item ->
                 trackAnalyzer.isAnalysing(item.mediaId, item.localConfiguration?.uri)
