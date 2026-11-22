@@ -236,6 +236,8 @@ data class CastUi(
     /** The receiver the music is on now, or null when it is on this device. */
     val connectedName: String? = null,
     val connecting: Boolean = false,
+    /** The browser receiver owns its volume; the phone must not show a fake slider. */
+    val webReceiverActive: Boolean = false,
 )
 
 /** Where the installed [PlayerHost] lives. */

@@ -291,6 +291,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
                 supported = true, // DLNA and Browser TV work without Google Play services.
                 connectedName = cast.connectedName ?: dlna ?: if (web.active) "Browser TV" else null,
                 connecting = cast.connecting || web.starting,
+                webReceiverActive = web.active,
             )
         }.stateIn(scope, SharingStarted.Eagerly, CastUi(supported = true))
     }
@@ -368,23 +369,34 @@ private class CastAwareVolume(
     private val system: SystemVolume,
     scope: CoroutineScope,
 ) : SystemVolume {
+    private val receiverVolumes = combine(
+        CastController.volume,
+        DlnaController.volume,
+    ) { castVolume, dlnaVolume -> castVolume to dlnaVolume }
+
+    private val networkRoutes = combine(
+        CastController.state,
+        DlnaController.connected,
+        WebTvController.state,
+    ) { cast, dlna, web -> Triple(cast.casting, dlna != null, web.active) }
+
     override val level: StateFlow<Float> = combine(
         system.level,
-        CastController.volume,
-        CastController.state.map { it.casting },
+        receiverVolumes,
+        networkRoutes,
         WearBridge.watchOutput,
         DacVolume.level,
-    ) { phone, receiver, casting, watch, dac ->
+    ) { phone, receiver, routes, watch, dac ->
         when {
-            casting -> receiver
+            routes.first -> receiver.first
+            routes.second -> receiver.second
             watch.active -> watch.volume
-            // Direct USB: the music stream no longer reaches the DAC, so its
-            // own hardware volume is the only one that means anything.
-            dac != null -> dac
+            // The web receiver controls its own volume; its slider is hidden
+            // by AudioOutputSheet when routes.third is active.
+            dac != null && !routes.third -> dac
             else -> phone
         }
-    }
-        .stateIn(scope, SharingStarted.Eagerly, system.level.value)
+    }.stateIn(scope, SharingStarted.Eagerly, system.level.value)
 
     override fun set(level: Float) {
         when {

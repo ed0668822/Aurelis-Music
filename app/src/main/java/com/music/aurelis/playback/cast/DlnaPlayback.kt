@@ -28,6 +28,19 @@ internal object DlnaController {
     val devices: StateFlow<List<DlnaRenderer>> = _devices
     private val _connected = MutableStateFlow<String?>(null)
     val connected: StateFlow<String?> = _connected
+    private val _connectedId = MutableStateFlow<String?>(null)
+    val connectedId: StateFlow<String?> = _connectedId
+
+    enum class Failure { UNSUPPORTED, CONNECTION_FAILED, CONNECTION_LOST }
+    private val _failure = MutableStateFlow<Failure?>(null)
+    val failure: StateFlow<Failure?> = _failure
+
+    private val _volume = MutableStateFlow(0.5f)
+    val volume: StateFlow<Float> = _volume
+
+    fun onFailure(error: Failure) { _failure.value = error }
+    fun clearFailure() { _failure.value = null }
+    fun onVolume(level: Float) { _volume.value = level.coerceIn(0f, 1f) }
     private var speaker: DlnaPlayback? = null
     private var scanJob: Job? = null
     private var app: Context? = null
@@ -46,6 +59,7 @@ internal object DlnaController {
         app = null
         scope = null
         _connected.value = null
+        _connectedId.value = null
         _devices.value = emptyList()
     }
 
@@ -59,13 +73,22 @@ internal object DlnaController {
         }
     }
 
-    fun connect(renderer: DlnaRenderer) { speaker?.connect(renderer) }
+    fun connect(renderer: DlnaRenderer) {
+        clearFailure()
+        speaker?.connect(renderer)
+    }
 
     fun setVolume(level: Float) { speaker?.setVolume(level) }
 
-    fun disconnect(resumeHere: Boolean) { speaker?.disconnect(resumeHere) }
+    fun disconnect(resumeHere: Boolean) {
+        if (resumeHere) clearFailure()
+        speaker?.disconnect(resumeHere)
+    }
 
-    fun onConnected(name: String?) { _connected.value = name }
+    fun onConnected(name: String?, id: String? = null) {
+        _connected.value = name
+        _connectedId.value = id
+    }
 
     private fun search(context: Context): List<DlnaRenderer> {
         val wifi = context.getSystemService(Context.WIFI_SERVICE) as? WifiManager
@@ -139,6 +162,7 @@ internal class DlnaPlayback(
     private var duration = C.TIME_UNSET
     private var mimeSink: String? = null
     private var stoppedReadings = 0
+    private var missedStatusChecks = 0
     private var volume = 50
 
     override val playWhenReady: Boolean get() = active && !paused
@@ -154,13 +178,19 @@ internal class DlnaPlayback(
         ) return
         if (active || connectJob?.isActive == true) disconnect(false)
         val player = localPlayer() ?: return
-        val selected = player.currentMediaItem ?: return
+        val selected = player.currentMediaItem ?: run {
+            DlnaController.onFailure(DlnaController.Failure.CONNECTION_FAILED)
+            return
+        }
         val wasPlaying = player.playWhenReady
         val startPosition = player.currentPosition.coerceAtLeast(0)
         val id = ++generation
         connectJob = scope.launch {
             try {
-                val media = resolve(selected) ?: return@launch
+                val media = resolve(selected) ?: run {
+                    DlnaController.onFailure(DlnaController.Failure.UNSUPPORTED)
+                    return@launch
+                }
                 val supports = withContext(Dispatchers.IO) {
                     val sink = target.connectionUrl?.let { url ->
                         target.connectionType?.let { type ->
@@ -173,14 +203,30 @@ internal class DlnaPlayback(
                     DlnaProtocol.supports(media.mimeType, sink) &&
                         sendUri(target, media, selected, startPosition, wasPlaying)
                 }
-                if (id != generation || !supports) return@launch
+                if (id != generation) return@launch
+                if (!supports) {
+                    DlnaController.onFailure(DlnaController.Failure.UNSUPPORTED)
+                    return@launch
+                }
+                // A system Cast / watch route may have started while the
+                // slow UPnP network setup was running. Stop the orphaned TV.
+                if (CastController.state.value.casting || WebTvController.state.value.active ||
+                    com.music.aurelis.wear.WearBridge.watchOutput.value.active
+                ) {
+                    withContext(Dispatchers.IO) {
+                        DlnaProtocol.call(target, "Stop", mapOf("InstanceID" to "0"))
+                    }
+                    return@launch
+                }
                 renderer = target
+                missedStatusChecks = 0
+                stoppedReadings = 0
                 position = startPosition
                 duration = selected.mediaMetadata.durationMs?.takeIf { it > 0 } ?: C.TIME_UNSET
                 paused = !wasPlaying
                 active = true
                 player.pause()
-                DlnaController.onConnected(target.name)
+                DlnaController.onConnected(target.name, target.id)
                 sink?.onRemoteRouteChanged()
                 sink?.onRemotePlaybackChanged()
                 startTicker()
@@ -188,6 +234,7 @@ internal class DlnaPlayback(
                 throw c
             } catch (e: Exception) {
                 Log.w("AurelisDlna", "Cannot connect DLNA renderer", e)
+                if (id == generation) DlnaController.onFailure(DlnaController.Failure.CONNECTION_FAILED)
             }
         }
     }
@@ -248,6 +295,7 @@ internal class DlnaPlayback(
         val url = target.renderingUrl ?: return
         val type = target.renderingType ?: return
         volume = (fraction.coerceIn(0f, 1f) * 100).toInt()
+        DlnaController.onVolume(volume / 100f)
         scope.launch(Dispatchers.IO) {
             runCatching {
                 DlnaProtocol.request(URL(url), "POST", DlnaProtocol.soap(type, "SetVolume", mapOf(
@@ -302,6 +350,16 @@ internal class DlnaPlayback(
                     sink?.onRemotePlaybackChanged()
                 }
                 val state = result.second?.let { DlnaProtocol.xmlValue(it, "CurrentTransportState") }
+                if (result.first == null && result.second == null) {
+                    missedStatusChecks++
+                    if (RemoteRecoveryPolicy.dlnaUnreachable(missedStatusChecks)) {
+                        DlnaController.onFailure(DlnaController.Failure.CONNECTION_LOST)
+                        disconnect(resumeHere = false)
+                        break
+                    }
+                } else {
+                    missedStatusChecks = 0
+                }
                 if (!paused && state == "STOPPED") {
                     stoppedReadings++
                     if (stoppedReadings >= 2) {

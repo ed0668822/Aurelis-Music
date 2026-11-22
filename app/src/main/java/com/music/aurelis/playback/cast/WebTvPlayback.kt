@@ -2,6 +2,7 @@ package com.music.aurelis.playback.cast
 
 import android.content.Context
 import android.util.Log
+import android.os.SystemClock
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -20,7 +21,13 @@ import org.json.JSONObject
 
 /** Published web pairing address, visible in the existing output picker. */
 internal object WebTvController {
-    data class State(val url: String? = null, val active: Boolean = false, val starting: Boolean = false)
+    enum class Failure { START_FAILED, CONNECTION_LOST }
+    data class State(
+        val url: String? = null,
+        val active: Boolean = false,
+        val starting: Boolean = false,
+        val failure: Failure? = null,
+    )
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state
     private var speaker: WebTvPlayback? = null
@@ -36,6 +43,8 @@ internal object WebTvController {
         starting: Boolean = false) {
         _state.value = State(url, active, starting)
     }
+
+    fun fail(reason: Failure) { _state.value = State(failure = reason) }
 }
 
 /**
@@ -68,6 +77,7 @@ internal class WebTvPlayback(
     private var duration = C.TIME_UNSET
     private var paused = true
     private var browserSeen = false
+    private var lastBrowserHeartbeatMs = 0L
     private var commandSeq = 0
     private var command = "none"
     private var commandPosition = 0L
@@ -95,8 +105,11 @@ internal class WebTvPlayback(
                 val ip = TvLan.address(context) ?: return@withContext null
                 val page = runCatching { context.assets.open("webtv/index.html").use { it.readBytes() } }
                     .getOrNull() ?: return@withContext null
-                val http = LocalTvWebServer(ip, page, { stateJson }, { lyricsJson },
-                    { event -> scope.launch { onBrowserEvent(event) } })
+                val http = LocalTvWebServer(
+                    ip, page, { stateJson }, { lyricsJson },
+                    { event -> scope.launch { onBrowserEvent(event) } },
+                    { scope.launch { onBrowserHeartbeat() } },
+                )
                 val url = http.start()
                 if (url == null) { http.close(); null } else http to url
             }
@@ -105,7 +118,7 @@ internal class WebTvPlayback(
                 return@launch
             }
             if (ready == null) {
-                WebTvController.set(url = null, starting = false)
+                WebTvController.fail(WebTvController.Failure.START_FAILED)
                 return@launch
             }
             server = ready.first
@@ -114,6 +127,13 @@ internal class WebTvPlayback(
             ticker?.cancel()
             ticker = scope.launch {
                 while (server != null) {
+                    if (RemoteRecoveryPolicy.browserUnreachable(
+                            active, SystemClock.elapsedRealtime(), lastBrowserHeartbeatMs,
+                        )) {
+                        stop(resumeHere = false)
+                        WebTvController.fail(WebTvController.Failure.CONNECTION_LOST)
+                        break
+                    }
                     updateState()
                     delay(500)
                 }
@@ -201,10 +221,15 @@ internal class WebTvPlayback(
             .toString()
     }
 
+    private fun onBrowserHeartbeat() {
+        if (server != null) lastBrowserHeartbeatMs = SystemClock.elapsedRealtime()
+    }
+
     private fun onBrowserEvent(message: String) {
         val json = runCatching { JSONObject(message) }.getOrNull() ?: return
         if (mediaId == null || json.optString("id") != mediaId) return
         if (server == null) return
+        onBrowserHeartbeat()
         val action = json.optString("action")
         val newPosition = json.optLong("positionMs", position).coerceAtLeast(0L)
         if (action !in setOf("playing", "paused", "progress", "ended")) return
@@ -215,6 +240,7 @@ internal class WebTvPlayback(
                 com.music.aurelis.wear.WearBridge.watchOutput.value.active
             ) return
             active = true
+            lastBrowserHeartbeatMs = SystemClock.elapsedRealtime()
             localPlayer()?.pause()
             WebTvController.set(active = true)
             sink?.onRemoteRouteChanged()

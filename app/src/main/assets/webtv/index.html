@@ -41,7 +41,7 @@ var title=document.getElementById('title'),artist=document.getElementById('artis
 var placeholder=document.getElementById('placeholder'),lyrics=document.getElementById('lyrics');
 var status=document.getElementById('status'),time=document.getElementById('time');
 var id='',currentUrl='',seq=-1,revision=-1,lines=[],offset=0,lineIndexCache=-99,wordNodes=[];
-var suppressPauseUntil=0;
+var suppressPauseUntil=0,networkFailures=0;
 var started=false;
 function fmt(s){s=isFinite(s)&&s>0?Math.floor(s):0;return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function send(action){if(!id)return;fetch('event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,action:action,positionMs:Math.floor((audio.currentTime||0)*1000)}),cache:'no-store'}).catch(function(){})}
@@ -91,7 +91,8 @@ function syncLyrics(nextId,nextRevision){
  }).catch(function(){lyrics.textContent='Lyrics unavailable'});
 }
 function state(){
- fetch('state',{cache:'no-store'}).then(function(r){return r.json()}).then(function(data){
+ fetch('state',{cache:'no-store'}).then(function(r){if(!r.ok)throw Error('unreachable');return r.json()}).then(function(data){
+   networkFailures=0;
    var next=String(data.id||''),url=String(data.url||'');
    if(next!==id||url!==currentUrl){
      var keepPlaying=started&&(data.playing||!audio.paused);
@@ -114,7 +115,14 @@ function state(){
    }
    status.textContent=url?(started?(audio.paused?'Paused':'Playing on TV'):'Press Play on TV'):'Waiting for a compatible track';
    play.textContent=audio.paused?'▶ Play on TV':'Ⅱ Pause';
- }).catch(function(){status.textContent='Connection to phone lost'});
+ }).catch(function(){
+   networkFailures++;
+   status.textContent='Connection to phone lost';
+   if(networkFailures>=3&&!audio.paused){
+     suppressPauseUntil=Date.now()+1500;
+     audio.pause();
+   }
+ });
 }
 play.addEventListener('click',function(){
  if(!currentUrl)return;

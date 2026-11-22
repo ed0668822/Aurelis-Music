@@ -48,6 +48,7 @@ internal class LocalTvWebServer(
     private val status: () -> String,
     private val lyrics: () -> String,
     private val onEvent: (String) -> Unit,
+    private val onStateRequest: () -> Unit = {},
 ) : Closeable {
     private val random = SecureRandom()
     private val token = ByteArray(24).also(random::nextBytes)
@@ -114,6 +115,7 @@ internal class LocalTvWebServer(
             if (method == "GET" && path.isEmpty()) {
                 respond(output, "200 OK", "text/html; charset=utf-8", page)
             } else if (method == "GET" && path == "state") {
+                onStateRequest()
                 respond(output, "200 OK", "application/json; charset=utf-8",
                     status().toByteArray(StandardCharsets.UTF_8))
             } else if (method == "GET" && path == "lyrics") {

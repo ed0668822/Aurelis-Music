@@ -9,6 +9,7 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.URL
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicInteger
 
 class LocalTvWebServerTest {
     private val loopback = InetAddress.getByName("127.0.0.1") as Inet4Address
@@ -41,6 +42,20 @@ class LocalTvWebServerTest {
             assertTrue(lyrics.inputStream.bufferedReader().readText().contains("lyrics"))
             val invalid = open(address.substringBeforeLast('/') + "/untrusted")
             assertEquals(404, invalid.responseCode)
+        }
+    }
+
+    @Test fun validStatePollIsRecordedAsBrowserHeartbeat() {
+        val heartbeats = AtomicInteger(0)
+        LocalTvWebServer(
+            loopback, "TV".toByteArray(), { "{}" }, { "{}" }, {},
+            { heartbeats.incrementAndGet() },
+        ).use { receiver ->
+            val address = requireNotNull(receiver.start())
+            assertEquals(200, open(address + "state").responseCode)
+            assertEquals(1, heartbeats.get())
+            assertEquals(404, open(address + "wrong").responseCode)
+            assertEquals(1, heartbeats.get())
         }
     }
 
