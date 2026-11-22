@@ -81,6 +81,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.guava.future
 import com.music.aurelis.playback.audio.DspChain
 import com.music.aurelis.playback.cast.CastController
+import com.music.aurelis.playback.cast.CastOptionsProvider
 import com.music.aurelis.playback.cast.CastPlayback
 import com.music.aurelis.playback.cast.CastSink
 import com.music.aurelis.playback.cast.RemoteSpeaker
@@ -785,6 +786,7 @@ class PlaybackService : MediaLibraryService() {
         resolve = ::resolveForCast,
         say = { message -> Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show() },
         onReleased = { localCastMediaServer.stop() },
+        customReceiverEnabled = { CastOptionsProvider.customReceiverId(this) != null },
     )
 
     /**
@@ -7672,6 +7674,15 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         scope.launch {
+            AppSettings.lyricsOffsetMs.drop(1).collect { offset ->
+                castPlayback.updateLyrics(
+                    player?.currentMediaItem?.mediaId,
+                    serviceLyrics,
+                    offset,
+                )
+            }
+        }
+        scope.launch {
             AppSettings.spatialAudio.collect { applySpatialAudioEnabled() }
         }
         scope.launch {
@@ -8233,21 +8244,25 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun loadLyricsForCurrentTrack() {
+        serviceLyricsJob?.cancel()
+        val mediaId = player?.currentMediaItem?.mediaId
         val currentSong = player?.currentMediaItem?.toSong() ?: run {
             serviceLyrics = null
+            castPlayback.updateLyrics(null, null, AppSettings.lyricsOffsetMs.value)
             stopLyricsTicker()
             return
         }
+        // Clear stale TV text while the next track's lyrics are loading.
+        serviceLyrics = null
+        castPlayback.updateLyrics(mediaId, null, AppSettings.lyricsOffsetMs.value)
 
         if (!AppSettings.syncedLyrics.value) {
-            serviceLyrics = null
             stopLyricsTicker()
             return
         }
 
         val trackDurationMs = (player?.duration ?: 0L).takeIf { it > 0 } ?: 0L
 
-        serviceLyricsJob?.cancel()
         serviceLyricsJob = scope.launch(Dispatchers.IO) {
             val localUri = currentSong.localUri
             var lines: List<LyricLine>? = null
@@ -8268,7 +8283,10 @@ class PlaybackService : MediaLibraryService() {
                 lines = found?.lines
             }
             withContext(Dispatchers.Main) {
+                // Lookups can finish after a skip; never send old lyrics to TV.
+                if (player?.currentMediaItem?.mediaId != mediaId) return@withContext
                 serviceLyrics = lines
+                castPlayback.updateLyrics(mediaId, lines, AppSettings.lyricsOffsetMs.value)
                 if (player?.isPlaying == true) {
                     updateLyricSubtitle()
                 }

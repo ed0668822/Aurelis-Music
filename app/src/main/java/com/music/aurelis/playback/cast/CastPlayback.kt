@@ -20,6 +20,7 @@ import com.google.android.gms.common.api.PendingResult
 import com.google.android.gms.common.api.Result
 import com.google.android.gms.common.images.WebImage
 import com.music.aurelis.R
+import com.music.aurelis.data.lyrics.LyricLine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -81,6 +82,7 @@ class CastPlayback(
     private val resolve: suspend (MediaItem) -> CastStream?,
     private val say: (Int) -> Unit,
     private val onReleased: () -> Unit = {},
+    private val customReceiverEnabled: () -> Boolean = { false },
 ) : RemoteSpeaker {
     override var sink: CastSink? = null
 
@@ -119,6 +121,14 @@ class CastPlayback(
     private var reconcileAgain = false
 
     private var lastItemId = MediaQueueItem.INVALID_ITEM_ID
+
+    // Lyrics never own a media player. They are delivered to the custom Web
+    // Receiver only once its CURRENT media id matches this service's track.
+    private var lyricsMediaId: String? = null
+    private var lyricsLines: List<LyricLine>? = null
+    private var lyricsOffsetMs = 0
+    private var lyricsRevision = 0
+    private var sentLyricsRevision = -1
 
     /** What the receiver was doing when its session started to end. */
     private var endPositionMs = 0L
@@ -185,6 +195,32 @@ class CastPlayback(
         requestedAt = SystemClock.elapsedRealtime()
         client.seek(MediaSeekOptions.Builder().setPosition(requestedPositionMs).build())
         sink?.onRemotePlaybackChanged()
+    }
+
+    /**
+     * Called with lyrics already fetched by PlaybackService. Null lines clears
+     * the previous track's timeline until an asynchronous lookup completes.
+     */
+    fun updateLyrics(mediaId: String?, lines: List<LyricLine>?, offsetMs: Int) {
+        lyricsMediaId = mediaId
+        lyricsLines = lines
+        lyricsOffsetMs = offsetMs
+        lyricsRevision++
+        sendLyricsIfReady()
+    }
+
+    private fun sendLyricsIfReady() {
+        val castSession = session ?: return
+        if (!active || !castSession.isConnected || !customReceiverEnabled()) return
+        val mediaId = lyricsMediaId ?: return
+        if (mediaId != remoteMediaId() || lyricsRevision == sentLyricsRevision) return
+        val packets = CastLyricsPackets.build(mediaId, lyricsLines, lyricsOffsetMs, lyricsRevision)
+        try {
+            packets.forEach { castSession.sendMessage(CastLyricsPackets.NAMESPACE, it) }
+            sentLyricsRevision = lyricsRevision
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not send lyrics to custom Cast receiver", e)
+        }
     }
 
     // ---- session lifecycle --------------------------------------------------
@@ -287,6 +323,7 @@ class CastPlayback(
         wantsPlay = false
         finished = false
         lastItemId = MediaQueueItem.INVALID_ITEM_ID
+        sentLyricsRevision = -1
         onReleased()
     }
 
@@ -377,6 +414,7 @@ class CastPlayback(
             }
             scheduleReconcile()
         }
+        sendLyricsIfReady()
         sink?.onRemotePlaybackChanged()
     }
 
@@ -464,6 +502,7 @@ class CastPlayback(
             }
             lastItemId = remote.mediaStatus?.currentItemId ?: lastItemId
             loading = false
+            sendLyricsIfReady()
             sink?.onRemotePlaybackChanged()
             scheduleReconcile()
         }

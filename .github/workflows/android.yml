@@ -195,6 +195,10 @@ jobs:
             "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
           chmod +x gradlew
 
+      # TV03: syntax-check the hosted Cast Web Receiver without deploying it.
+      - name: TV03 | Check Cast Web Receiver JavaScript
+        run: node --check receiver/receiver.js
+
       # Run app, shared planner/LoopMix and sharedUi JVM tests, Android Lint and instrumentation compilation in one
       # Gradle invocation. --continue collects every failing task/report before
       # the final CI verdict rather than hiding later regressions.
