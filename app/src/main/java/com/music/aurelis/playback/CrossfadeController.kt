@@ -58,6 +58,17 @@ import java.util.Locale
 internal class AutoMixStartProbe(private val positionMs: Long, private val startedAtMs: Long) {
     enum class Status { WAITING, ADVANCING, EXPIRED }
 
+    private val alignmentErrors = DoubleArray(3)
+    private var alignmentSamples = 0
+
+    /** The standby is already advancing but is still muted during these reads. */
+    fun aligned(errorMs: Double, toleranceMs: Double): Boolean? {
+        alignmentErrors[alignmentSamples++] = errorMs
+        if (alignmentSamples < alignmentErrors.size) return null
+        return alignmentErrors.all { it.isFinite() && abs(it) <= toleranceMs } &&
+            alignmentErrors.max() - alignmentErrors.min() <= toleranceMs
+    }
+
     fun status(positionMs: Long, playing: Boolean, nowMs: Long): Status = when {
         nowMs - startedAtMs >= 1_000L -> Status.EXPIRED
         playing && positionMs - this.positionMs >= 20L -> Status.ADVANCING
@@ -1810,17 +1821,36 @@ class CrossfadeController(
             return
         }
         val position = into.currentPosition
+        val verifyAlignment = render.style == TransitionStyle.DJ_BLEND
         if (probe == null) {
             if (ready) {
+                if (verifyAlignment) {
+                    // Skipping silence jumps the media clock away from the grid.
+                    suspendSkipSilence()
+                    outClock.reset()
+                    inClock.reset()
+                    positionMs(out)
+                    positionMs(into)
+                }
                 incomingStartProbe = AutoMixStartProbe(position, now)
                 into.playWhenReady = true
             }
             return
         }
+        val errorMs = if (verifyAlignment) {
+            val outgoingElapsed = positionMs(out) - (fadeEndMs - fadeMs)
+            positionMs(into) - (incomingCueTimeMs + outgoingElapsed * mediaRatio)
+        } else {
+            0.0
+        }
         when (probe.status(position, into.isPlaying, now)) {
             AutoMixStartProbe.Status.WAITING -> Unit
             AutoMixStartProbe.Status.EXPIRED -> abandonIncomingStart(out, into, "muted standby did not advance")
             AutoMixStartProbe.Status.ADVANCING -> {
+                if (verifyAlignment) {
+                    val aligned = probe.aligned(errorMs, START_ALIGNMENT_TOLERANCE_MS) ?: return
+                    if (!aligned) useUnstretchedFade(out, into)
+                }
                 // Start gains at zero on the confirmed timeline while keeping
                 // the original exit. Startup delay consumes part of the overlap.
                 incomingCueTimeMs = position
@@ -1829,6 +1859,21 @@ class CrossfadeController(
                 startFade()
             }
         }
+    }
+
+    /** Keeps both decks running, but drops beat-dependent processing before the standby is audible. */
+    private fun useUnstretchedFade(out: ExoPlayer, into: ExoPlayer) {
+        Log.d(TAG, "AutoMix could not verify startup alignment; using an unstretched crossfade")
+        val listenerSpeed = AppSettings.playbackSpeed.value
+        if (outgoingPlaybackRate != 1.0) out.setPlaybackSpeed(listenerSpeed)
+        if (incomingPlaybackRate != 1.0) into.setPlaybackSpeed(listenerSpeed)
+        outgoingPlaybackRate = 1.0
+        incomingPlaybackRate = 1.0
+        rampSteps = 0
+        render = Render()
+        filters.open()
+        filters.parkEchoes()
+        planInFlight = planInFlight?.copy(beatSeconds = 0.0)
     }
 
     /**
@@ -3205,7 +3250,7 @@ class CrossfadeController(
 
     private fun leavingOnBail(): ExoPlayer? = if (handedOff) outgoing else incoming
 
-    // Compatibility with Aurelis's skip-silence preference, not a mix engine.
+    // Beat-aligned transitions require a continuous media clock.
     private var skipSilenceSuspended = false
 
     private fun suspendSkipSilence() {
@@ -3213,13 +3258,13 @@ class CrossfadeController(
         for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = false
     }
 
-    /** A settings toggle must not change the sample-locked loop's timebase. */
+    /** A settings toggle must not interrupt a beat-aligned transition's timebase. */
     fun applySkipSilencePreference(on: Boolean) {
         if (skipSilenceSuspended) return
         for (player in listOf(active(), standby()).distinct()) player.skipSilenceEnabled = on
     }
 
-    /** Reapply the latest listener preference when a loop ends or is aborted. */
+    /** Reapply the latest listener preference when the transition settles. */
     private fun restoreSkipSilence() {
         if (!skipSilenceSuspended) return
         skipSilenceSuspended = false
@@ -4281,6 +4326,9 @@ class CrossfadeController(
          */
         const val ECHO_LEVEL = 0.5f
         const val ECHO_DECAY = 0.4f
+
+        /** Accounts for the precision of the two Media3 position clocks. */
+        const val START_ALIGNMENT_TOLERANCE_MS = 65.0
 
         /** Grace after the incoming track starts before its position is trusted for phase. */
         const val LOCK_START_MS = 300L
