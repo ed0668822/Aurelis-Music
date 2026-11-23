@@ -253,6 +253,7 @@ fun SettingsScreen(
     val dolbyAtmosSupported = DeviceCodecs.playsDolbyAtmos
     val spatialAudio by AppSettings.spatialAudio.collectAsStateWithLifecycle()
     val nerdStats by AppSettings.showNerdStats.collectAsStateWithLifecycle()
+    val showBestPart by AppSettings.showBestPart.collectAsStateWithLifecycle()
     val listenTogetherButton by AppSettings.showListenTogetherButton.collectAsStateWithLifecycle()
     val reduceAnimation by AppSettings.reduceAnimation.collectAsStateWithLifecycle()
     val reduceDynamicBlur by AppSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
@@ -795,11 +796,12 @@ fun SettingsScreen(
                     )
                 }
             }
-            row("ReplayGain album mode", "replaygain", "album", "volume", "lufs") {
+            val replayGainAlbumTitle = stringResource(R.string.replaygain_album_mode)
+            row(replayGainAlbumTitle, "replaygain", "album", "volume", "lufs") {
                 BypassedByBitPerfect(bitPerfectReady) {
                     SettingsSubRow(
-                        title = "Normalize a complete album",
-                        subtitle = "Scans only this album; otherwise uses each track's gain",
+                        title = replayGainAlbumTitle,
+                        subtitle = stringResource(R.string.replaygain_album_mode_subtitle),
                         checked = replayGainMode == ReplayGainMode.ALBUM,
                         onCheckedChange = { enabled ->
                             AppSettings.setReplayGainMode(
@@ -1777,6 +1779,21 @@ fun SettingsScreen(
                         )
                     },
                     onClick = { AppSettings.setSmartVersionAlignment(!smartVersionAlignment) },
+                )
+            }
+            val bestPartTitle = stringResource(R.string.best_part_button)
+            row(bestPartTitle, "best part", "chorus", "replay", "highlight") {
+                SettingsRow(
+                    icon = SfIcons.Notes,
+                    title = bestPartTitle,
+                    subtitle = stringResource(R.string.best_part_button_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = showBestPart,
+                            onCheckedChange = AppSettings::setShowBestPart,
+                        )
+                    },
+                    onClick = { AppSettings.setShowBestPart(!showBestPart) },
                 )
             }
             val showNerdStatsTitle = stringResource(R.string.show_nerd_stats)
