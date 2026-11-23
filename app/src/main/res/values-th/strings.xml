@@ -238,6 +238,11 @@
     <string name="synced_lyrics">เนื้อเพลงซิงค์</string>
     <string name="synced_lyrics_subtitle">ไฮไลต์คำร้องบนหน้าเครื่องเล่นตามจังหวะที่ร้อง</string>
     <string name="lyrics_sources">แหล่งเนื้อเพลง</string>
+    <string name="automix_storage_title">พื้นที่จัดเก็บ AutoMix</string>
+    <string name="automix_storage_loading">กำลังตรวจสอบผลการวิเคราะห์ที่บันทึกไว้…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">บันทึกผลการวิเคราะห์เพลงแล้ว %1$d เพลง</item>
+    </plurals>
     <string name="song_cache_limit">ขีดจำกัดแคชเพลง</string>
     <string name="clear_song_cache">ล้างแคชเพลง</string>
     <string name="clear_song_cache_subtitle">คืนพื้นที่ที่ใช้โดยเสียงที่ดาวน์โหลดไว้</string>

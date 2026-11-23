@@ -262,6 +262,12 @@
     <string name="synced_lyrics">Testi sincronizzati</string>
     <string name="synced_lyrics_subtitle">Evidenzia le parole sul player mentre vengono cantate</string>
     <string name="lyrics_sources">Sorgenti testi</string>
+    <string name="automix_storage_title">Archiviazione AutoMix</string>
+    <string name="automix_storage_loading">Verifica delle analisi salvate…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d analisi di un brano salvata</item>
+        <item quantity="other">%1$d analisi di brani salvate</item>
+    </plurals>
     <string name="song_cache_limit">Limite cache brani</string>
     <string name="clear_song_cache">Svuota cache brani</string>
     <string name="clear_song_cache_subtitle">Libera lo spazio usato dall\'audio scaricato</string>

@@ -229,6 +229,14 @@
     <string name="synced_lyrics">Синхронизированный текст</string>
     <string name="synced_lyrics_subtitle">Подсвечивает слова в плеере по мере исполнения</string>
     <string name="lyrics_sources">Источники текстов</string>
+    <string name="automix_storage_title">Хранилище AutoMix</string>
+    <string name="automix_storage_loading">Проверка сохранённых анализов…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">Сохранён анализ %1$d трека</item>
+        <item quantity="few">Сохранён анализ %1$d треков</item>
+        <item quantity="many">Сохранён анализ %1$d треков</item>
+        <item quantity="other">Сохранён анализ %1$d трека</item>
+    </plurals>
     <string name="song_cache_limit">Лимит кэша песен</string>
     <string name="clear_song_cache">Очистить кэш песен</string>
     <string name="clear_song_cache_subtitle">Освобождает место, занятое загруженным аудио</string>

@@ -255,6 +255,11 @@
     <string name="synced_lyrics">Lời bài hát đồng bộ</string>
     <string name="synced_lyrics_subtitle">Làm sáng các từ trên trình phát khi đang được hát</string>
     <string name="lyrics_sources">Nguồn lời bài hát</string>
+    <string name="automix_storage_title">Bộ nhớ AutoMix</string>
+    <string name="automix_storage_loading">Đang kiểm tra các bản phân tích đã lưu…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">Đã lưu %1$d bản phân tích bài hát</item>
+    </plurals>
     <string name="song_cache_limit">Giới hạn bộ nhớ đệm bài hát</string>
     <string name="clear_song_cache">Xóa bộ nhớ đệm bài hát</string>
     <string name="clear_song_cache_subtitle">Giải phóng dung lượng do âm thanh đã tải sử dụng</string>

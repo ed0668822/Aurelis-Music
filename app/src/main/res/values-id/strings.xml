@@ -214,6 +214,11 @@
     <string name="synced_lyrics">Lirik tersinkron</string>
     <string name="synced_lyrics_subtitle">Menyorot kata-kata di pemutar saat dinyanyikan</string>
     <string name="lyrics_sources">Sumber lirik</string>
+    <string name="automix_storage_title">Penyimpanan AutoMix</string>
+    <string name="automix_storage_loading">Memeriksa analisis yang tersimpan…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">%1$d analisis lagu tersimpan</item>
+    </plurals>
     <string name="song_cache_limit">Batas cache lagu</string>
     <string name="clear_song_cache">Bersihkan cache lagu</string>
     <string name="clear_song_cache_subtitle">Membebaskan ruang yang digunakan oleh audio yang diunduh</string>

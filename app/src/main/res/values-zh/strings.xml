@@ -214,6 +214,11 @@
     <string name="synced_lyrics">同步歌词</string>
     <string name="synced_lyrics_subtitle">随着演唱在播放器上高亮显示歌词</string>
     <string name="lyrics_sources">歌词来源</string>
+    <string name="automix_storage_title">AutoMix 存储</string>
+    <string name="automix_storage_loading">正在检查已保存的分析…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">已保存 %1$d 首歌曲的分析</item>
+    </plurals>
     <string name="song_cache_limit">歌曲缓存上限</string>
     <string name="clear_song_cache">清除歌曲缓存</string>
     <string name="clear_song_cache_subtitle">释放已下载音频占用的空间</string>

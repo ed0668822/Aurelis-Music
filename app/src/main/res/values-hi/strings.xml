@@ -219,6 +219,12 @@
     <string name="synced_lyrics">सिंक किए गए लिरिक्स</string>
     <string name="synced_lyrics_subtitle">गाए जाने के साथ प्लेयर पर शब्दों को हाइलाइट करता है</string>
     <string name="lyrics_sources">लिरिक्स के स्रोत</string>
+    <string name="automix_storage_title">AutoMix स्टोरेज</string>
+    <string name="automix_storage_loading">सेव किए गए विश्लेषण जाँचे जा रहे हैं…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d गाने का विश्लेषण सेव है</item>
+        <item quantity="other">%1$d गानों का विश्लेषण सेव है</item>
+    </plurals>
     <string name="song_cache_limit">गाना कैश सीमा</string>
     <string name="clear_song_cache">गाना कैश साफ़ करें</string>
     <string name="clear_song_cache_subtitle">डाउनलोड किए गए ऑडियो द्वारा इस्तेमाल की गई जगह खाली करता है</string>
