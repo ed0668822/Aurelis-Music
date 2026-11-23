@@ -79,7 +79,8 @@ internal fun shouldOfferBestPart(
     positionMs: Long,
     mixing: Boolean,
     heard: Boolean,
-): Boolean = targetMs != null && targetMs > 0L && !mixing && !heard &&
+    enabled: Boolean = true,
+): Boolean = enabled && targetMs != null && targetMs > 0L && !mixing && !heard &&
     positionMs < targetMs - 400L
 
 @Composable
@@ -93,7 +94,10 @@ internal fun BestPartSeekPill(
     onSeek: (Long) -> Unit,
     hazeState: HazeState? = null,
     overlayOpen: () -> Boolean = { false },
-) {
+ ) {
+    val enabled by PlayerSettings.showBestPart.collectAsStateWithLifecycle()
+    if (!enabled) return
+
     val publicPeak by produceState<Long?>(
         initialValue = if (isLocal) null else MostReplayed.knownPeak(videoId, durationMs),
         key1 = videoId,
@@ -118,7 +122,7 @@ internal fun BestPartSeekPill(
         if (reached) heard = true
     }
     AnimatedVisibility(
-        visible = shouldOfferBestPart(target, position.positionMs, mixing, heard),
+        visible = shouldOfferBestPart(target, position.positionMs, mixing, heard, enabled),
         enter = expandVertically(tween(280)) + fadeIn(tween(280)),
         exit = fadeOut(tween(220)) + shrinkVertically(tween(220)),
     ) {
