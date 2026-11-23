@@ -101,6 +101,7 @@ class VocalTracker(
     private val modelPath: () -> String,
     /** How many threads inference may use; the vocal-activity pass is the expensive one. */
     private val inferenceThreads: () -> Int,
+    private val allowSpinning: Boolean = true,
 ) {
 
     @Volatile private var session: OrtSession? = null
@@ -135,6 +136,7 @@ class VocalTracker(
     private fun open(path: String, threads: Int, level: OrtSession.SessionOptions.OptLevel): OrtSession {
         val options = OrtSession.SessionOptions().apply {
             setIntraOpNumThreads(threads)
+            if (!allowSpinning) addConfigEntry("session.intra_op.allow_spinning", "0")
             setOptimizationLevel(level)
             // Same reasoning as BeatTracker: the arena retains every block it allocates for
             // the life of the session, which a backgrounded music player cannot justify.

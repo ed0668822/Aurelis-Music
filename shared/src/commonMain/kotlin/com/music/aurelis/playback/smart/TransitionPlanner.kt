@@ -1548,8 +1548,21 @@ private fun planTransitionInner(
         }
 
     val policy = assessTransitionTier(analysis, nextAnalysis, advanced)
+    val nextLength = max(nextAnalysis.duration.orZero(), trackDurationSeconds(nextTrack))
+
+    fun crossfadeStart(end: Double, cue: Double): Double {
+        val preferred = max(0.0, end - standardFade)
+        if (!advanced) return preferred
+        val maximum = min(12.0, if (nextLength > 0) nextLength * 0.4 else 12.0)
+        return musicalOverlapStart(
+            analysis, nextAnalysis, preferred, end, max(0.0, end - maximum),
+            1.0, playbackTime, allowVocalImprovement = false,
+        ) { cue }
+    }
+
     if (policy.tier == TransitionTier.PLAIN_CROSSFADE) {
-        val transitionStart = max(0.0, mixAnchor - standardFade)
+        val incomingCueTime = incomingStartPoint(nextAnalysis)
+        val transitionStart = crossfadeStart(mixAnchor, incomingCueTime)
         val started = playbackTime >= transitionStart
         return TransitionPlan(
             shouldStart = started,
@@ -1558,13 +1571,11 @@ private fun planTransitionInner(
             transitionEnd = mixAnchor,
             fadeSeconds = mixAnchor - transitionStart,
             transitionStyle = TransitionStyle.EQUAL_POWER,
-            incomingCueTime = incomingStartPoint(nextAnalysis),
+            incomingCueTime = incomingCueTime,
             policyReasons = policy.reasons,
             reason = if (started) "smart-plain-crossfade" else "before-plain-crossfade-window",
         )
     }
-
-    val nextLength = max(nextAnalysis.duration.orZero(), trackDurationSeconds(nextTrack))
 
     // A pair no speed-up can match that also clashes in key or sings on both
     // sides has nothing a DJ gesture can fix: every one of them put two loud,
@@ -1572,8 +1583,8 @@ private fun planTransitionInner(
     // crossfade at the real end of the song, into the incoming intro, is what
     // sounds right for these.
     if (isUnmixablePair(analysis, nextAnalysis)) {
-        val transitionStart = max(0.0, finalMixAnchor - standardFade)
         val incomingCueTime = incomingStartPoint(nextAnalysis)
+        val transitionStart = crossfadeStart(finalMixAnchor, incomingCueTime)
         val started = playbackTime >= transitionStart
         return TransitionPlan(
             shouldStart = started,
@@ -1626,11 +1637,11 @@ private fun planTransitionInner(
         }
     }
 
-    phraseSwitch(analysis, nextAnalysis, length, nextLength, advanced)
+    val phrase = phraseSwitch(analysis, nextAnalysis, length, nextLength, advanced)
         ?.takeIf { playbackTime < it.transitionEnd }
         ?.let { plan ->
             val started = playbackTime >= plan.transitionStart
-            return capIncomingSkip(
+            capIncomingSkip(
                 plan.copy(
                     shouldStart = started,
                     policyReasons = policy.reasons,
@@ -1640,9 +1651,12 @@ private fun planTransitionInner(
                 nextLength,
             )
         }
+    if (phrase != null && (!advanced || phrase.shouldStart ||
+            audibleOverlapOpening(analysis, phrase.transitionStart, phrase.transitionEnd, 4 * phrase.beatSeconds) != false)
+    ) return phrase
 
     val traits = if (advanced) PairTraits(analysis, nextAnalysis) else null
-    val primary = mixPlan(analysis, nextAnalysis, mixAnchor, mixOutAnchor.type, nextLength, traits)
+    val primary = mixPlan(analysis, nextAnalysis, mixAnchor, mixOutAnchor.type, nextLength, traits, playbackTime)
     // An exit where the outgoing track is still singing over the incoming one
     // is worth trading for another the analysis ranked, if one halves the
     // collision. Only planned while it could still be taken: once the playhead
@@ -1654,13 +1668,22 @@ private fun planTransitionInner(
         rankedMixOuts.asSequence()
             .filter { abs(it.time - mixAnchor) > 1.0 && it.time <= length }
             .take(MAX_REROUTE_CANDIDATES)
-            .map { mixPlan(analysis, nextAnalysis, it.time, it.type, nextLength, traits) }
+            .map { mixPlan(analysis, nextAnalysis, it.time, it.type, nextLength, traits, playbackTime) }
             .filter { playbackTime < it.transitionStart }
             .minByOrNull { it.vocalOverlap }
             ?.takeIf { it.vocalOverlap <= primary.vocalOverlap * VOCAL_REROUTE_GAIN }
             ?: primary
     } else {
         primary
+    }
+    if (phrase != null) {
+        val discarded = audibleSecondsBetween(analysis, plan.transitionEnd, finalMixAnchor)
+            ?: max(0.0, finalMixAnchor - plan.transitionEnd)
+        val audible = audibleOverlapOpening(analysis, plan.transitionStart, plan.transitionEnd, 4 * phrase.beatSeconds)
+        if (plan.transitionStart < playbackTime || plan.transitionStart > phrase.transitionStart ||
+            audible != true || discarded > MAX_DISCARDED_MUSIC_SECONDS ||
+            plan.vocalOverlap > max(phrase.vocalOverlap, VOCAL_CLASH_TOLERANCE)
+        ) return phrase
     }
     val started = playbackTime >= plan.transitionStart
     return capIncomingSkip(
@@ -1675,6 +1698,70 @@ private fun planTransitionInner(
 }
 
 /**
+ * Looks back a few real downbeats while preserving the planned exit. A quiet
+ * first bar can be brought forward if the earlier entry is audible and fits
+ * the pair. With vocal measurements, a cleaner overlap can also win.
+ */
+private fun musicalOverlapStart(
+    outgoing: TrackAnalysis,
+    incoming: TrackAnalysis,
+    preferred: Double,
+    end: Double,
+    earliest: Double,
+    rate: Double,
+    playbackTime: Double,
+    allowVocalImprovement: Boolean = true,
+    cueFor: (Double) -> Double,
+): Double {
+    if (!outgoing.isUsable || !incoming.isUsable || outgoing.beatConfidence < MIN_DJ_CONFIDENCE) return preferred
+    val beat = outgoing.beatInterval.orZero().takeIf { it > 0 } ?: (60 / outgoing.bpm)
+    val bar = 4 * beat
+    if (!bar.isFinite() || bar <= 0 || preferred - earliest < 0.05 || playbackTime > preferred) return preferred
+
+    val preferredAudible = audibleOverlapOpening(outgoing, preferred, end, bar) ?: return preferred
+    val preferredVocals = simultaneousVocalFraction(outgoing, incoming, preferred, end, cueFor(preferred), rate)
+    val quietOpening = !preferredAudible
+    if (!quietOpening && (!allowVocalImprovement || (preferredVocals ?: 0.0) <= VOCAL_REROUTE_OVERLAP)) {
+        return preferred
+    }
+
+    val incomingStart = incomingStartPoint(incoming)
+    val unmeasuredVocalClash = preferredVocals == null &&
+        outgoing.vocalProbability >= VOCAL_CONFLICT_PROBABILITY &&
+        incoming.vocalProbability >= VOCAL_CONFLICT_PROBABILITY
+    if (unmeasuredVocalClash) return preferred
+
+    val downbeats = outgoing.tailBeats?.downbeats?.takeIf { it.any { beat -> beat in earliest..preferred } }
+        ?: outgoing.downbeats
+    for (candidate in downbeats.asReversed().asSequence()
+        .filter { it.isFinite() && it >= earliest && it >= playbackTime && it < preferred - 0.05 }
+        .take(MAX_REROUTE_CANDIDATES)
+    ) {
+        if (audibleOverlapOpening(outgoing, candidate, end, bar) != true) continue
+        val cue = cueFor(candidate)
+        if (cue < incomingStart - 0.05) continue
+        val incomingOpening = audibleOverlapOpening(incoming, cue, cue + (end - candidate) * rate, bar * rate)
+        if (incomingOpening == false) continue
+        val vocals = simultaneousVocalFraction(outgoing, incoming, candidate, end, cue, rate)
+        // Retain the closest viable bar. Starting earlier should not add a
+        // clash, and moving an already audible start requires a clear gain.
+        val improves = if (quietOpening) {
+            (vocals ?: 0.0) <= max(VOCAL_CLASH_TOLERANCE, preferredVocals ?: 0.0)
+        } else {
+            vocals != null && preferredVocals != null && vocals <= preferredVocals * VOCAL_REROUTE_GAIN
+        }
+        if (improves) return candidate
+    }
+    return preferred
+}
+
+private fun audibleOverlapOpening(analysis: TrackAnalysis, start: Double, end: Double, bar: Double): Boolean? {
+    val span = min(bar, end - start)
+    if (span <= 0.0) return null
+    return audibleSecondsBetween(analysis, start, start + span)?.let { it >= span * 0.5 }
+}
+
+/**
  * The adaptive overlap ending at [mixAnchor]: a beat-matched blend when the
  * tempi agree, a filter ride when they don't. Timing only; the caller
  * decides whether it has started.
@@ -1686,6 +1773,7 @@ private fun mixPlan(
     mixOutType: String,
     nextLength: Double,
     traits: PairTraits?,
+    playbackTime: Double,
 ): TransitionPlan {
     val currentBpm = analysis.bpm.orZero()
     val nextBpm = nextAnalysis.bpm.orZero()
@@ -1773,41 +1861,33 @@ private fun mixPlan(
         }
     val rawIncomingCueTime = incomingStartPoint(nextAnalysis)
 
-    val finalIncomingCueTime: Double
-    val transitionStart: Double
-
-    if (sameBeatBlend && beatSeconds > 0) {
+    val preferredOverlap = if (sameBeatBlend && beatSeconds > 0) {
         val introDropTime = incomingHandoffTime / max(0.8, incomingPlaybackRate)
-        val clamped = clamp(introDropTime, min(12.0, maximumOverlap), maximumOverlap)
-        val totalOverlap = if (traits != null) wholeBars(clamped, beatSeconds, maximumOverlap) else clamped
-        val targetStart = max(0.0, mixEnd - totalOverlap)
-        val earliestTransitionStart = max(0.0, mixEnd - maximumOverlap)
-        transitionStart = alignedTransitionStart(
-            analysis,
-            targetStart,
-            mixEnd - 0.05,
-            preferEarlier = true,
-            minimum = earliestTransitionStart,
-        )
-        finalIncomingCueTime =
-            max(0.0, incomingHandoffTime - (mixEnd - transitionStart) * incomingPlaybackRate)
+        clamp(introDropTime, min(12.0, maximumOverlap), maximumOverlap)
     } else {
-        val clamped = clamp(overlap, min(handoffSeconds, maximumOverlap), maximumOverlap)
-        val actualOverlap = if (traits != null) wholeBars(clamped, beatSeconds, maximumOverlap) else clamped
-        val targetStart = max(0.0, mixEnd - actualOverlap)
-        val earliestTransitionStart = max(0.0, mixEnd - maximumOverlap)
-        transitionStart = alignedTransitionStart(
-            analysis,
-            targetStart,
-            mixEnd - 0.05,
-            preferEarlier = false,
-            minimum = earliestTransitionStart,
-        )
-        // No shared grid to land the incoming arrangement on, so the overlap
-        // sits over the incoming intro instead: cueing an unmatched song at its
-        // drop put two full arrangements on top of each other.
-        finalIncomingCueTime = rawIncomingCueTime
+        clamp(overlap, min(handoffSeconds, maximumOverlap), maximumOverlap)
     }
+    val alignedLength = if (traits != null) wholeBars(preferredOverlap, beatSeconds, maximumOverlap) else preferredOverlap
+    val earliest = max(0.0, mixEnd - maximumOverlap)
+    val preferredStart = alignedTransitionStart(
+        analysis,
+        max(0.0, mixEnd - alignedLength),
+        mixEnd - 0.05,
+        preferEarlier = sameBeatBlend && beatSeconds > 0,
+        minimum = earliest,
+    )
+    fun cueFor(start: Double): Double = if (sameBeatBlend && beatSeconds > 0) {
+        max(0.0, incomingHandoffTime - (mixEnd - start) * incomingPlaybackRate)
+    } else {
+        // Incoming intro for different grids.
+        rawIncomingCueTime
+    }
+    val transitionStart = if (traits != null) {
+        musicalOverlapStart(analysis, nextAnalysis, preferredStart, mixEnd, earliest, incomingPlaybackRate, playbackTime, cueFor = ::cueFor)
+    } else {
+        preferredStart
+    }
+    val finalIncomingCueTime = cueFor(transitionStart)
 
     val alignedOverlap = mixEnd - transitionStart
     val hasBassContent = analysis.lowEnergyCurve.isNotEmpty() || nextAnalysis.lowEnergyCurve.isNotEmpty()

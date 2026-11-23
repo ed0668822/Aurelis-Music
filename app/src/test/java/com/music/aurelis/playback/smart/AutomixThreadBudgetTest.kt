@@ -24,4 +24,24 @@ class AutomixThreadBudgetTest {
         assertEquals(2, AutomixThreadBudget.choose(4, 12, false, true, false))
         assertEquals(2, AutomixThreadBudget.choose(2, 8, false, true, false))
     }
+
+    @Test fun efficientAndBalancedKeepOneAnalysisWhenBothTracksAreReady() {
+        assertEquals(listOf(1), AutomixThreadBudget.allocate(1, 2, true))
+        assertEquals(listOf(2), AutomixThreadBudget.allocate(2, 2, true))
+    }
+
+    @Test fun fullBudgetIsReservedForOneTrackWhenTheOtherCannotStart() {
+        assertEquals(emptyList<Int>(), AutomixThreadBudget.allocate(4, 0, true))
+        assertEquals(listOf(4), AutomixThreadBudget.allocate(4, 1, true))
+    }
+
+    @Test fun maximumSplitsOnlyWhenBothTracksAreReadyAndThereIsTime() {
+        assertEquals(listOf(2, 2), AutomixThreadBudget.allocate(4, 2, true))
+        assertEquals(listOf(4), AutomixThreadBudget.allocate(4, 2, false))
+    }
+
+    @Test fun thermalBudgetPreventsParallelAnalysisInMaximumMode() {
+        val warmBudget = AutomixThreadBudget.choose(4, 8, false, true, false)
+        assertEquals(listOf(2), AutomixThreadBudget.allocate(warmBudget, 2, true))
+    }
 }

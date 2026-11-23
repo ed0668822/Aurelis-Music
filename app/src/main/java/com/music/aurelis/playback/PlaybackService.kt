@@ -162,6 +162,7 @@ import com.music.aurelis.data.sources.StreamFormat
 import com.music.aurelis.data.sources.TrackMatcher
 import com.music.aurelis.playback.smart.AutomixAnalysisSource
 import com.music.aurelis.playback.smart.LocalAudioSource
+import com.music.aurelis.playback.smart.TrackAnalyzer
 import com.music.aurelis.playback.smart.VersionAudioAligner
 import com.music.aurelis.ui.player.prefetchAutoMixArtwork
 import com.music.aurelis.ui.player.discardBlockedAutoMixAmbient
@@ -670,7 +671,7 @@ class PlaybackService : MediaLibraryService() {
         if (activeFilter === transitionFilterA) loudnessB else loudnessA
 
     /** Automix's DSP analyzer — see [com.music.aurelis.playback.smart.TrackAnalyzer]. */
-    private val trackAnalyzer = com.music.aurelis.playback.smart.TrackAnalyzer(this, AudioCache)
+    private val trackAnalyzer = TrackAnalyzer(this, AudioCache)
 
     /** Shared with the crossfade's tail player, so both read the same disk cache. */
     private var mediaSourceFactory: DefaultMediaSourceFactory? = null
@@ -2054,10 +2055,12 @@ class PlaybackService : MediaLibraryService() {
             analysisFor = { item ->
                 trackAnalyzer.analysisFor(item.mediaId, item.localConfiguration?.uri)
             },
-            requestAnalysis = { item, durationMs ->
-                item.localConfiguration?.uri?.let { uri ->
-                    trackAnalyzer.request(item.mediaId, uri, durationMs / 1000.0)
-                }
+            requestAnalysis = { current, next, allowParallel ->
+                fun request(target: CrossfadeController.AnalysisTarget) =
+                    target.item.localConfiguration?.uri?.let { uri ->
+                        TrackAnalyzer.Request(target.item.mediaId, uri, target.durationMs / 1000.0, target.prioritizeHead)
+                    }
+                trackAnalyzer.requestPair(request(current), request(next), allowParallel)
             },
             // "Incoming" and "outgoing" here are session roles, not players:
             // the session player's sink and the spare's. The controller maps

@@ -25,4 +25,11 @@ object AutomixThreadBudget {
             else -> capped
         }
     }
+
+    /** Allocates a batch in priority order. The first ready track gets a solo budget when needed. */
+    fun allocate(threadBudget: Int, readyTracks: Int, allowParallel: Boolean): List<Int> = when {
+        readyTracks <= 0 -> emptyList()
+        allowParallel && threadBudget == 4 && readyTracks >= 2 -> listOf(2, 2)
+        else -> listOf(threadBudget)
+    }
 }

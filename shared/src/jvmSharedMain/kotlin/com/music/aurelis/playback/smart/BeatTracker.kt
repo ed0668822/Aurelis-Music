@@ -58,6 +58,7 @@ class BeatTracker(
     private val modelPath: () -> String,
     /** How many threads inference may use; the beat and downbeat pass is the expensive one. */
     private val inferenceThreads: () -> Int,
+    private val allowSpinning: Boolean = true,
 ) {
 
     /** A tracked grid on the analysed audio's own timeline, in seconds. */
@@ -106,6 +107,7 @@ class BeatTracker(
     private fun open(path: String, threads: Int, level: OrtSession.SessionOptions.OptLevel): OrtSession {
         val options = OrtSession.SessionOptions().apply {
             setIntraOpNumThreads(threads)
+            if (!allowSpinning) addConfigEntry("session.intra_op.allow_spinning", "0")
             setOptimizationLevel(level)
             // ORT's arena allocator keeps every block it has ever needed, which for this
             // graph is tens of megabytes of native heap retained for the life of the
