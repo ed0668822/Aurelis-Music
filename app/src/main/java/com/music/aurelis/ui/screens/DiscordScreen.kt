@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,15 +21,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MusicNote
 import coil3.compose.AsyncImage
 import com.music.aurelis.data.discord.DiscordOAuth
+import com.music.aurelis.data.LocalEmbeddedArtwork
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -60,6 +67,19 @@ fun DiscordScreen(
     val sdkBundled = remember { DiscordSocialPresence.sdkBundled }
     val discordInstalled = remember(context) { DiscordSocialPresence.isDiscordInstalled(context) }
     val supported = sdkBundled && discordInstalled
+    // Use the actual local embedded cover when the track has no remote thumbnail.
+    // This is a device-only preview; local artwork is never uploaded to Discord.
+    val previewCover by produceState<String?>(
+        initialValue = song?.thumbnailUrl,
+        key1 = song?.localUri,
+        key2 = song?.thumbnailUrl,
+    ) {
+        value = if (song?.localUri != null) {
+            LocalEmbeddedArtwork.resolve(context, song) ?: song.thumbnailUrl
+        } else {
+            song?.thumbnailUrl
+        }
+    }
 
     Column(
         modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState())
@@ -138,6 +158,7 @@ fun DiscordScreen(
             DiscordActivityPreview(
                 title = song?.title ?: stringResource(R.string.widget_preview_title),
                 artist = song?.artist ?: stringResource(R.string.widget_preview_artist),
+                artworkUrl = previewCover,
                 positionMs = positionMs,
                 durationMs = durationMs,
             )
@@ -150,54 +171,87 @@ fun DiscordScreen(
 private fun DiscordActivityPreview(
     title: String,
     artist: String,
+    artworkUrl: String?,
     positionMs: Long,
     durationMs: Long,
 ) {
+    val primaryText = if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) {
+        Color.White
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    val secondaryText = primaryText.copy(alpha = 0.72f)
+    val progress = if (durationMs > 0L) {
+        (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
+    } else 0f
+
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
         Text(
             text = stringResource(R.string.discord_listening_aurelis).uppercase(Locale.ROOT),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = secondaryText,
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             val shape = RoundedCornerShape(18.dp)
             Box(
                 modifier = Modifier.size(84.dp).clip(shape)
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                    .background(Color(0xFF323443)),
                 contentAlignment = Alignment.Center,
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
-                    contentDescription = stringResource(R.string.app_name),
-                    modifier = Modifier.size(76.dp),
-                    contentScale = ContentScale.Fit,
+                Icon(
+                    imageVector = Icons.Rounded.MusicNote,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.84f),
+                    modifier = Modifier.size(42.dp),
                 )
+                if (!artworkUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = artworkUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
             }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    color = primaryText,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = artist,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = secondaryText,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (durationMs > 0) {
+                if (durationMs > 0L) {
                     Text(
-                        text = "${clock(positionMs)} / ${clock(durationMs)}",
+                        text = "${clock(positionMs.coerceIn(0L, durationMs))} / ${clock(durationMs)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = secondaryText,
                     )
                 }
+            }
+        }
+        if (durationMs > 0L) {
+            Spacer(Modifier.height(14.dp))
+            Box(
+                modifier = Modifier.fillMaxWidth().height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(primaryText.copy(alpha = 0.16f)),
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(progress).fillMaxHeight()
+                        .background(Color(0xFF5865F2)),
+                )
             }
         }
     }
