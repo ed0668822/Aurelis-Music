@@ -179,7 +179,7 @@ class CrossfadeController(
      * recording from a differently-cut one before reusing an analysis across
      * them, and this class is the only place that already knows it.
      */
-    private val requestAnalysis: (AnalysisTarget, AnalysisTarget, Boolean) -> Unit = { _, _, _ -> },
+    private val requestAnalysis: (AnalysisTarget, AnalysisTarget?, Boolean) -> Unit = { _, _, _ -> },
     /**
      * The low-pass and high-pass riding each side of a transition. This is what
      * makes a plan's
@@ -980,6 +980,16 @@ class CrossfadeController(
         // simply froze on the previous pair, so a track that had not been
         // analysed kept showing the *departing* track's "analysed" until
         // ticking resumed.
+        if (phase == Phase.IDLE && AppSettings.smartFadeEnabled.value &&
+            !versionSwapActive() && !ListenTogether.state.value.inParty && !BitPerfectOutput.status.value.active
+        ) {
+            val player = active()
+            if (player.playWhenReady || AppSettings.mixViewOpen.value) {
+                val duration = player.duration.takeIf { it != C.TIME_UNSET && it > 0L }
+                    ?: player.currentMediaItem?.let(::queuedDurationMs) ?: 0L
+                requestAnalysisAround(player, duration)
+            }
+        }
         publishAnalysisState()
         publishAutomixDetail()
         expireMixPreview()
@@ -1127,7 +1137,6 @@ class CrossfadeController(
         // measurement is the same either way, so it may as well be made during
         // the loop rather than after it.
         if (player.repeatMode == Player.REPEAT_MODE_ONE) {
-            if (AppSettings.smartFadeEnabled.value) requestAnalysisAround(player, duration)
             // Stale otherwise: the marker would keep describing the transition
             // planned for this pair before the loop went on, at a point the
             // playhead now runs past on every lap without anything happening.
@@ -1199,10 +1208,6 @@ class CrossfadeController(
         }
         val nextDuration = nextItemDurationMs(nextIndex, nextItem)
 
-        // Even for the marker alone: a stored analysis is only loaded off disk
-        // by asking for it, and without that a paused track plans blind.
-        requestAnalysisAround(player, duration)
-
         failedSmartStart?.let { (failedOut, failedIn) ->
             if (sameVisualQueueItem(failedOut, currentItem) && sameVisualQueueItem(failedIn, nextItem)) {
                 if (!SleepTimer.afterTrack.value) {
@@ -1249,6 +1254,7 @@ class CrossfadeController(
             fadeSeconds = fallbackSeconds,
             mode = CrossfadeMode.SMART,
             advanced = advanced,
+            protectedEnd = playableEnd,
         )
         val plan = stabilizeAutoMixTiming(proposed, playableEnd, playbackTime, fallbackSeconds)
         // One line per distinct verdict rather than one per 250ms tick, so the
@@ -1429,20 +1435,19 @@ class CrossfadeController(
     private fun requestAnalysisAround(player: ExoPlayer, duration: Long) {
         val currentItem = player.currentMediaItem ?: return
         val nextIndex = player.nextMediaItemIndex
-        if (nextIndex == C.INDEX_UNSET) return
-        val nextItem = player.getMediaItemAt(nextIndex)
-        if (currentItem.isVideoOrigin || nextItem.isVideoOrigin) return
-        val nextDuration = nextItemDurationMs(nextIndex, nextItem)
+        if (currentItem.isVideoOrigin) return
+        val nextItem = if (nextIndex == C.INDEX_UNSET) null else player.getMediaItemAt(nextIndex).takeUnless { it.isVideoOrigin }
+        val nextDuration = nextItem?.let { nextItemDurationMs(nextIndex, it) } ?: 0L
         // Near a transition, prioritize a playable cue for the incoming track.
         // Earlier in the song, a full analysis also prepares its eventual exit.
         val outgoingAnalysis = analysisFor(currentItem)
         val hasOutgoingEnd = outgoingAnalysis.isUsable && outgoingAnalysis.contentEndTime > 0
         val endMs = if (hasOutgoingEnd) outgoingAnalysis.contentEndTime * 1000 else duration.toDouble()
-        val transitionNear = endMs - player.currentPosition <= INCOMING_HEAD_LEAD_MS
+        val transitionNear = endMs > 0 && endMs - player.currentPosition <= INCOMING_HEAD_LEAD_MS
         val repeatOne = player.repeatMode == Player.REPEAT_MODE_ONE
         requestAnalysis(
             AnalysisTarget(currentItem, duration),
-            AnalysisTarget(nextItem, nextDuration, prioritizeHead = !repeatOne && transitionNear),
+            nextItem?.let { AnalysisTarget(it, nextDuration, prioritizeHead = !repeatOne && transitionNear) },
             !repeatOne && !transitionNear && player.isPlaying,
         )
         // The loop mix wants synced lyrics for both songs as well as their
@@ -1453,7 +1458,7 @@ class CrossfadeController(
         // gathered in parallel. Only with a runtime in hand, because the answer
         // is kept for the song and a zero runtime would be matched on as zero.
         if (duration > 0L) askLyrics(currentItem, duration)
-        if (nextDuration > 0L) askLyrics(nextItem, nextDuration)
+        if (nextItem != null && nextDuration > 0L) askLyrics(nextItem, nextDuration)
     }
 
     /**
@@ -1815,7 +1820,9 @@ class CrossfadeController(
         if (rampSteps > 0) rampOutgoing(out)
 
         val remaining = fadeEndMs - out.currentPosition
-        if (fadeEndMs > 0L && remaining > fadeMs) return
+        val verifyAlignment = needsAdvance && render.style == TransitionStyle.DJ_BLEND
+        val mutedLead = if (verifyAlignment) (SMART_MUTED_LEAD_MS * out.playbackParameters.speed).roundToLong() else 0L
+        if (fadeEndMs > 0L && remaining > fadeMs + mutedLead) return
         if (!needsAdvance) {
             if (ready) startFade()
             return
@@ -1837,7 +1844,6 @@ class CrossfadeController(
             return
         }
         val position = into.currentPosition
-        val verifyAlignment = render.style == TransitionStyle.DJ_BLEND
         if (probe == null) {
             if (ready) {
                 if (verifyAlignment) {
@@ -1863,6 +1869,7 @@ class CrossfadeController(
             AutoMixStartProbe.Status.WAITING -> Unit
             AutoMixStartProbe.Status.EXPIRED -> abandonIncomingStart(out, into, "muted standby did not advance")
             AutoMixStartProbe.Status.ADVANCING -> {
+                if (remaining > fadeMs) return
                 if (verifyAlignment) {
                     val aligned = probe.aligned(errorMs, START_ALIGNMENT_TOLERANCE_MS) ?: return
                     if (!aligned) useUnstretchedFade(out, into)
@@ -4201,6 +4208,9 @@ class CrossfadeController(
 
         /** Minimum listening time left when a verified mix is about to start. */
         const val SMART_MIN_OVERLAP_MS = 1_500L
+
+        /** Gives the muted incoming decoder a head start before the first beat of the fade. */
+        const val SMART_MUTED_LEAD_MS = 120L
 
         /** Ramp used when a fade is interrupted. */
         const val BAIL_MS = 120L

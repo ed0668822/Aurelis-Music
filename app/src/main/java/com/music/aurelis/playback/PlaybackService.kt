@@ -2060,7 +2060,7 @@ class PlaybackService : MediaLibraryService() {
                     target.item.localConfiguration?.uri?.let { uri ->
                         TrackAnalyzer.Request(target.item.mediaId, uri, target.durationMs / 1000.0, target.prioritizeHead)
                     }
-                trackAnalyzer.requestPair(request(current), request(next), allowParallel)
+                trackAnalyzer.requestPair(request(current), next?.let(::request), allowParallel)
             },
             // "Incoming" and "outgoing" here are session roles, not players:
             // the session player's sink and the spare's. The controller maps

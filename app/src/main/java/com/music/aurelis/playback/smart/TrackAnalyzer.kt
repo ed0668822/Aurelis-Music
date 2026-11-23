@@ -462,7 +462,7 @@ class TrackAnalyzer internal constructor(
             // rest, and a queued track reaches its own transition carrying an
             // entry-only estimate: no content end, no mix-out anchor, no vocal
             // mask, which is most of what the outgoing half of a blend reads.
-            if (storageKey in provisional && !usableComplete) playbackKey?.let { cache.requestPlaybackAnalysisHead(analysisUri, it) }
+            if (storageKey in provisional && !usableComplete) playbackKey?.let { cache.requestPlaybackAnalysisAudio(analysisUri, it) }
             return null
         }
         // One head attempt per track: a partial container that will not parse
@@ -470,11 +470,8 @@ class TrackAnalyzer internal constructor(
         // 250ms would cost more than the analysis it is trying to bring
         // forward. This byte check only applies to an incomplete stream.
         val headRendition = if (usableComplete) null else headWorthTrying(trackId, requireNotNull(playbackKey), durationSeconds)
-        if (!usableComplete && headRendition == null) {
-            // Warm the same playback entry so the next tick can try its opening.
-            playbackKey?.let { cache.requestPlaybackAnalysisHead(analysisUri, it) }
-            return null
-        }
+        if (!usableComplete) playbackKey?.let { cache.requestPlaybackAnalysisAudio(analysisUri, it) }
+        if (!usableComplete && headRendition == null) return null
         if (!canStart) return null
 
         return PendingAnalysis(storageKey, playbackKey ?: storageKey) run@{ threads, parallel ->

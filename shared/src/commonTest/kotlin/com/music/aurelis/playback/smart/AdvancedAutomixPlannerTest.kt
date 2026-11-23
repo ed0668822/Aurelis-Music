@@ -42,6 +42,24 @@ class AdvancedAutomixPlannerTest {
         assertEquals(150.0, autoMixPlayableEnd(silence, 200.0))
     }
 
+    @Test
+    fun protectedOutroKeepsAMusicalExitInsteadOfFollowingAnEarlierAnchor() {
+        val outgoing = track("out", 100.0, "C", 0.0).copy(
+            mixOutCandidates = listOf(MixCandidate(189.0, 1.0, "arrangement"), MixCandidate(195.0, 0.1, "arrangement")),
+        )
+        val incoming = track("in", 130.0, "F#", 0.0)
+        val plan = planTransition(
+            analysis = outgoing,
+            nextAnalysis = incoming,
+            duration = 200.0,
+            currentTime = 160.0,
+            mode = CrossfadeMode.SMART,
+            advanced = true,
+            protectedEnd = 198.0,
+        )
+        assertTrue(autoMixTimingIsSafe(plan.transitionStart, plan.transitionEnd, 198.0))
+    }
+
     /** A synthetic, fully analysed track on a steady grid. */
     private fun track(
         id: String,

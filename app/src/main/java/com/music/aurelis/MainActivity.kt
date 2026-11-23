@@ -77,6 +77,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.History
@@ -359,6 +360,7 @@ import com.music.aurelis.ui.screens.sortedForDetail
 import com.music.aurelis.ui.screens.ExploreScreen
 import com.music.aurelis.ui.screens.LocalFolder
 import com.music.aurelis.ui.screens.DuplicateReviewSheet
+import com.music.aurelis.ui.screens.libraryGlass
 import com.music.aurelis.ui.screens.LocalFolderState
 import com.music.aurelis.ui.screens.LocalFolderTab
 import com.music.aurelis.ui.screens.rememberLocalFolderGroups
@@ -3879,7 +3881,9 @@ private fun AurelisApp(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 30.dp, vertical = 18.dp),
+                                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                                                .libraryGlass(animate = glassActive && !reduceDynamicBlur)
+                                                .padding(horizontal = 16.dp, vertical = 18.dp),
                                         ) {
                                             Text(
                                                 text = localTitle,
@@ -3947,7 +3951,7 @@ private fun AurelisApp(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                                                 ) {
-                                                    Icon(Icons.Rounded.Check, contentDescription = null)
+                                                    Icon(Icons.Rounded.ContentCopy, contentDescription = null)
                                                     Spacer(Modifier.width(10.dp))
                                                     Text(
                                                         if (Locale.getDefault().language == "es")

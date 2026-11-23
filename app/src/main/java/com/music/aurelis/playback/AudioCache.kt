@@ -1860,31 +1860,45 @@ object AudioCache {
         )
     }
 
-    private val playbackAnalysisHeads = ConcurrentHashMap.newKeySet<String>()
+    private val playbackAnalysisReads = ConcurrentHashMap.newKeySet<String>()
     private val playbackAnalysisRetryAt = ConcurrentHashMap<String, Long>()
+    private const val MAX_PLAYBACK_ANALYSIS_BYTES = 12L * 1024 * 1024
 
     /**
-     * Warm the selected YouTube playback URI through the same resolver and
-     * cache writer as playback, including original and substituted versions.
-     * The alignment-only Opus fetch uses its own route and is not used here.
+     * Give the analyzer the actual playback rendition early. Warm its opening
+     * first, then extend a bounded audio stream so the outro can be analyzed
+     * before ordinary playback/read-ahead gets there.
      */
-    internal fun requestPlaybackAnalysisHead(uri: Uri, key: String) {
+    @Synchronized
+    internal fun requestPlaybackAnalysisAudio(uri: Uri, key: String) {
         if (!::cache.isInitialized || upstreamFactory == null ||
             uri.scheme != "aurelis" || uri.getQueryParameter("v") == null ||
-            DirectSourceGate.isActive() || isOffline()
+            DirectSourceGate.isActive() || isOffline() || playbackAnalysisReads.isNotEmpty()
         ) return
         val rendition = playbackRendition(key)
-        if (rendition?.isComplete == true || (rendition?.cachedPrefix ?: 0L) >= PRELOAD_BYTES) return
+        if (rendition?.isComplete == true) return
+        val prefix = rendition?.cachedPrefix ?: 0L
+        val total = rendition?.contentLength ?: 0L
+        if (prefix >= PRELOAD_BYTES && total !in 1L..MAX_PLAYBACK_ANALYSIS_BYTES) return
         if (SystemClock.elapsedRealtime() < (playbackAnalysisRetryAt[key] ?: 0L)) return
-        if (!playbackAnalysisHeads.add(key)) return
+        if (!playbackAnalysisReads.add(key)) return
         scope.launch {
             try {
-                if (cacheKeyOf(uri) == key) {
-                    fetch(key, uri, 0L, PRELOAD_BYTES)
+                if (cacheKeyOf(uri) != key) return@launch
+                if (prefix < PRELOAD_BYTES) fetch(key, uri, prefix, PRELOAD_BYTES - prefix)
+                val opened = playbackRendition(key) ?: return@launch
+                if (opened.contentLength !in 1L..MAX_PLAYBACK_ANALYSIS_BYTES) return@launch
+                var position = opened.cachedPrefix
+                while (position < opened.contentLength) {
+                    if (cacheKeyOf(uri) != key || DirectSourceGate.isActive() || isOffline()) return@launch
+                    fetch(key, uri, position, minOf(CHUNK_BYTES, opened.contentLength - position))
+                    val advanced = playbackRendition(key)?.cachedPrefix ?: return@launch
+                    if (advanced <= position) return@launch
+                    position = advanced
                 }
             } finally {
-                playbackAnalysisRetryAt[key] = SystemClock.elapsedRealtime() + 30_000L
-                playbackAnalysisHeads.remove(key)
+                playbackAnalysisRetryAt[key] = SystemClock.elapsedRealtime() + 15_000L
+                playbackAnalysisReads.remove(key)
             }
         }
     }
