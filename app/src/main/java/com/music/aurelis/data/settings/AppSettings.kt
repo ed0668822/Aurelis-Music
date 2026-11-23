@@ -19,6 +19,7 @@ import com.music.aurelis.data.sources.SourceKind
 import com.music.aurelis.playback.EqLayout
 import com.music.aurelis.playback.EqualizerPreset
 import com.music.aurelis.playback.ReplayGainMode
+import com.music.aurelis.playback.AutoMixVisualFeed
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
@@ -185,6 +186,13 @@ enum class SongSort {
  * same flows and applies changes to the live ExoPlayer instance immediately —
  * no restart, no rebinding.
  */
+/**
+ * Upgrade-safe main navigation index. Older builds saved Radio as index 4;
+ * after removing that tab, Home is the only valid fallback.
+ * Keep the remaining indices unchanged to preserve Library/Search selections.
+ */
+internal fun normalizeMainTabIndex(index: Int): Int = if (index in 0..3) index else 0
+
 object AppSettings {
 
     private lateinit var prefs: SharedPreferences
@@ -272,21 +280,25 @@ object AppSettings {
      * from each track's tempo, energy and structure, replacing the fixed
      * [crossfadeSeconds] window rather than needing it set to anything first
      * — [crossfadeSeconds] only matters here as a fallback while a pair is
-     * still being analysed. Off by default: analysis costs a background
+     * still being analysed. On by default for new installs: analysis costs a background
      * decode per track.
      *
      * See [com.music.aurelis.playback.smart.TransitionPlanner].
      */
-    val smartFadeEnabled = MutableStateFlow(false)
+    val smartFadeEnabled = MutableStateFlow(true)
+
+    /** End of timed sleep sessions fades locally over the last 30 seconds. */
+    val sleepTimerFadeOut = MutableStateFlow(true)
 
     /** The CPU budget used by Beat This! and vocal analysis for Automix. */
     val automixPerformanceMode = MutableStateFlow(AutomixPerformanceMode.BALANCED)
+
     /** User-selected experimental AutoMix options, persisted separately from playback state. */
     val autoMixOptions = MutableStateFlow(AutoMixOptions())
 
     /** Current AutoMix handoff phase; never written to SharedPreferences. */
     val autoMixStage = MutableStateFlow(AutoMixStage.IDLE)
-    val skipSilence = MutableStateFlow(false)
+    val skipSilence = MutableStateFlow(true)
 
     /** Requested PCM representation at the Android AudioTrack boundary. */
     val outputPcmMode = MutableStateFlow(OutputPcmMode.PCM_16)
@@ -380,7 +392,13 @@ object AppSettings {
      * pipeline. Not true object-based spatial audio — YouTube only ever hands
      * us a stereo stream, so there's no Atmos-style source to render.
      */
-    val spatialAudio = MutableStateFlow(false)
+    /**
+     * Explicit preference, not a claim that the signed-in session has Premium.
+     * The displayed bitrate always comes from the actual resolved format.
+     */
+    val youtubePremiumAudio = MutableStateFlow(false)
+
+    val spatialAudio = MutableStateFlow(true)
 
     /**
      * The app's own equaliser, master switch.
@@ -421,7 +439,7 @@ object AppSettings {
     val equalizerPreset = MutableStateFlow(EqualizerPreset.FLAT)
 
     val playbackSpeed = MutableStateFlow(1.0f)
-    val themeMode = MutableStateFlow(ThemeMode.DARK)
+    val themeMode = MutableStateFlow(ThemeMode.SYSTEM)
     val appFont = MutableStateFlow(AppFont.DEFAULT)
 
     /** Keep playing similar music once the queue runs out. */
@@ -463,6 +481,8 @@ object AppSettings {
 
     /** Hides the volume slider on the main player, leaving the rest of the layout to reflow. */
     val hideVolumeBar = MutableStateFlow(false)
+    /** Show the full duration at the right side of the seek bar. */
+    val showTotalDuration = MutableStateFlow(false)
 
     /** Hides the device status bar (clock, battery, notifications) while the main player is open. */
     val hideStatusBarInPlayer = MutableStateFlow(false)
@@ -509,22 +529,22 @@ object AppSettings {
     val disableBlendEffects = MutableStateFlow(false)
 
     /** Real backdrop-sampled glass (blur, lens refraction) on the floating nav bar, Android 12+ only. */
-    val liquidGlass = MutableStateFlow(false)
+    val liquidGlass = MutableStateFlow(true)
 
     /**
      * Frosts the glass instead of refracting it, for phones the lens shader is too
      * much for: the bar's rim, shadow, tint and motion all stay. A Liquid Glass
      * option, honoured only while [liquidGlass] is on.
      */
-    val glassPerformance = MutableStateFlow(false)
+    val glassPerformance = MutableStateFlow(true)
 
     /**
      * Blurs what scrolls under the status bar and the top controls, easing out
      * just below them, instead of fading it to the page colour. A Liquid Glass
-     * option, honoured only while [liquidGlass] is on. Off by default: it costs
-     * frames. Reduce dynamic blur overrides it.
+     * option, honoured only while [liquidGlass] is on. Enabled by default;
+     * it costs frames. Reduce dynamic blur overrides it.
      */
-    val progressiveBlur = MutableStateFlow(false)
+    val progressiveBlur = MutableStateFlow(true)
 
     /** Blurs unfocused lyric lines, keeping the active line sharp. */
     val lyricsBlur = MutableStateFlow(true)
@@ -600,16 +620,16 @@ object AppSettings {
      * The album and playlist page's answer to [fullBleedArtwork]: the sleeve
      * runs edge to edge off the top of the screen and dissolves into the page
      * colour, instead of sitting framed in the middle. Everything under it —
-     * the page colour, title, credit and buttons — stays as it is. Off by
-     * default, the framed sleeve being the page's own look.
+     * the page colour, title, credit and buttons — stays as it is. On by
+     * default; switching it off restores the framed sleeve.
      */
-    val fullBleedDetailArtwork = MutableStateFlow(false)
+    val fullBleedDetailArtwork = MutableStateFlow(true)
 
     /**
      * What the main player stands on below the artwork.
      *
-     * [PlayerTheme.DEFAULT] because that is the look people asked to have back,
-     * and because the alternatives each give something up: see
+     * [PlayerTheme.LEGACY] is the default for new installations.
+     * Other looks remain selectable; see
      * [ArtworkMesh][com.music.aurelis.ui.player.ArtworkMesh] for what
      * [PlayerTheme.LEGACY]'s quantiser does to a cover that is nine-tenths black
      * with a red stripe (a red screen), and
@@ -617,7 +637,7 @@ object AppSettings {
      * its cost (blobs that drift are a full-screen blur redrawn while they move,
      * where a mesh is drawn once per track and then composited).
      */
-    val playerTheme = MutableStateFlow(PlayerTheme.DEFAULT)
+    val playerTheme = MutableStateFlow(PlayerTheme.LEGACY)
 
     /** Restores the expanded player to the surface the listener left open. */
     val lastPlayerScreen = MutableStateFlow(LastPlayerScreen.MAIN)
@@ -630,6 +650,8 @@ object AppSettings {
      * a switch, and [lyricsSources] narrows which of them get asked.
      */
     val syncedLyrics = MutableStateFlow(true)
+    /** Do not confuse the preview line with lyrics lookup or full-screen lyrics. */
+    val hideLyricsPreview = MutableStateFlow(false)
 
     /** The databases [syncedLyrics] may ask. Empty is the same as off. */
     val lyricsSources = MutableStateFlow(LyricsSource.offered.toSet())
@@ -688,8 +710,11 @@ object AppSettings {
     // ── Library ─────────────────────────────────────────────────────────────
 
     /** Hides short clips, recorder output and non-music formats from Local Music. */
-    val filterNonMusicAudio = MutableStateFlow(true)
+    val filterNonMusicAudio = MutableStateFlow(false)
 
+    /** Last Local Music category, preserved across app restarts. */
+    val lastMainTab = MutableStateFlow(0)
+    val localMusicTab = MutableStateFlow("SONGS")
     val localMusicSort = MutableStateFlow(LocalMusicSort.TITLE_ASC)
     val downloadedMusicSort = MutableStateFlow(LocalMusicSort.TITLE_ASC)
     val localMusicViewType = MutableStateFlow(LibraryViewType.LIST)
@@ -847,6 +872,16 @@ object AppSettings {
 
     /** How far through [smartMixView]'s blend playback is, 0..1. Read it in draw. */
     val smartMixProgress = MutableStateFlow(0f)
+    /** Cosmetic animations, independent of the DSP and the output route. */
+    val autoMixArtworkEnabled = MutableStateFlow(true)
+    val autoMixMiniArtworkEnabled = MutableStateFlow(true)
+    // In-memory fences for a pair interrupted by toggling AutoMix or its art.
+    // Keep the saved on/off flags independent; the current generation cannot
+    // be revived by an immediate off/on round trip.
+    val autoMixArtworkCutoff = MutableStateFlow(0L)
+    val autoMixMiniArtworkCutoff = MutableStateFlow(0L)
+    /** One visual timeline for both internal ExoPlayers, including native LoopMix. */
+    val autoMixArtworkState = MutableStateFlow<AutoMixArtworkState?>(null)
 
     /**
      * The *next* Automix transition laid out for the mix popup, as the plan
@@ -986,14 +1021,18 @@ object AppSettings {
         exportDownloads.value = prefs.getBoolean(KEY_EXPORT_DOWNLOADS, false)
         syncDownloadedPlaylists.value = prefs.getBoolean(KEY_SYNC_DOWNLOADED_PLAYLISTS, false)
         crossfadeSeconds.value = prefs.getInt(KEY_CROSSFADE, 0)
-        smartFadeEnabled.value = prefs.getBoolean(KEY_SMART_FADE, false)
+        smartFadeEnabled.value = prefs.getBoolean(KEY_SMART_FADE, true)
+        sleepTimerFadeOut.value = prefs.getBoolean(KEY_SLEEP_TIMER_FADE_OUT, true)
+        autoMixArtworkEnabled.value = prefs.getBoolean(KEY_AUTOMIX_ARTWORK_ENABLED, true)
+        autoMixMiniArtworkEnabled.value = prefs.getBoolean(KEY_AUTOMIX_MINI_ARTWORK_ENABLED, true)
         automixPerformanceMode.value = runCatching {
             AutomixPerformanceMode.valueOf(
                 prefs.getString(KEY_AUTOMIX_PERFORMANCE_MODE, null) ?: AutomixPerformanceMode.BALANCED.name,
             )
         }.getOrDefault(AutomixPerformanceMode.BALANCED)
         autoMixOptions.value = AutoMixOptions(
-            durationSeconds = prefs.getInt(KEY_AUTOMIX_DURATION_SECONDS, 0),
+            // The planner always chooses duration; ignore manual values saved by older versions.
+            durationSeconds = 0,
             effect = prefs.getString(KEY_AUTOMIX_EFFECT, AutoMixEffect.AUTO.name)
                 ?.let { saved -> AutoMixEffect.entries.firstOrNull { it.name == saved } }
                 ?: AutoMixEffect.AUTO,
@@ -1002,7 +1041,11 @@ object AppSettings {
             echo = prefs.getBoolean(KEY_AUTOMIX_ECHO, false),
             lowPass = prefs.getBoolean(KEY_AUTOMIX_LOW_PASS, false),
         ).normalized()
-        skipSilence.value = prefs.getBoolean(KEY_SKIP_SILENCE, false)
+        // Remove any legacy manual duration, including one restored from a backup.
+        if (prefs.contains(KEY_AUTOMIX_DURATION_SECONDS)) {
+            prefs.edit().remove(KEY_AUTOMIX_DURATION_SECONDS).apply()
+        }
+        skipSilence.value = prefs.getBoolean(KEY_SKIP_SILENCE, true)
         outputPcmMode.value = runCatching {
             OutputPcmMode.valueOf(
                 prefs.getString(KEY_OUTPUT_PCM_MODE, OutputPcmMode.PCM_16.name)
@@ -1023,7 +1066,8 @@ object AppSettings {
         dolbyAtmos.value = prefs.getBoolean(KEY_DOLBY_ATMOS, true)
         directSourceStream.value = AurelisFeatures.ADVANCED_STREAMING_SETTINGS &&
             prefs.getBoolean(KEY_DIRECT_SOURCE_STREAM, false)
-        spatialAudio.value = prefs.getBoolean(KEY_SPATIAL_AUDIO, false)
+        youtubePremiumAudio.value = prefs.getBoolean(KEY_YOUTUBE_PREMIUM_AUDIO, false)
+        spatialAudio.value = prefs.getBoolean(KEY_SPATIAL_AUDIO, true)
         equalizerEnabled.value = prefs.getBoolean(KEY_EQ_ENABLED, false)
         equalizerMode.value = runCatching {
             EqualizerMode.valueOf(prefs.getString(KEY_EQ_MODE, null) ?: EqualizerMode.DYNAMIC.name)
@@ -1036,8 +1080,8 @@ object AppSettings {
         equalizerPreset.value = EqualizerPreset.matching(equalizerBands.value)
         playbackSpeed.value = prefs.getFloat(KEY_SPEED, 1.0f)
         themeMode.value = runCatching {
-            ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "DARK")
-        }.getOrDefault(ThemeMode.DARK)
+            ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "SYSTEM")
+        }.getOrDefault(ThemeMode.SYSTEM)
         appFont.value = runCatching {
             AppFont.valueOf(prefs.getString(KEY_APP_FONT, null) ?: AppFont.DEFAULT.name)
         }.getOrDefault(AppFont.DEFAULT)
@@ -1055,6 +1099,7 @@ object AppSettings {
         )
         stopOnTaskRemoved.value = prefs.getBoolean(KEY_STOP_ON_TASK_REMOVED, true)
         hideVolumeBar.value = prefs.getBoolean(KEY_HIDE_VOLUME_BAR, false)
+        showTotalDuration.value = prefs.getBoolean(KEY_SHOW_TOTAL_DURATION, false)
         hideStatusBarInPlayer.value = prefs.getBoolean(KEY_HIDE_STATUS_BAR_IN_PLAYER, false)
         hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, false)
         showQueueHistory.value = prefs.getBoolean(KEY_SHOW_QUEUE_HISTORY, false)
@@ -1070,9 +1115,9 @@ object AppSettings {
         smartVersionAlignment.value = prefs.getBoolean(KEY_SMART_VERSION_ALIGNMENT, true)
         reduceDynamicBlur.value = prefs.getBoolean(KEY_REDUCE_BLUR, false)
         disableBlendEffects.value = prefs.getBoolean(KEY_DISABLE_BLEND_EFFECTS, false)
-        liquidGlass.value = prefs.getBoolean(KEY_LIQUID_GLASS, false)
-        glassPerformance.value = prefs.getBoolean(KEY_GLASS_PERFORMANCE, false)
-        progressiveBlur.value = prefs.getBoolean(KEY_PROGRESSIVE_BLUR, false)
+        liquidGlass.value = prefs.getBoolean(KEY_LIQUID_GLASS, true)
+        glassPerformance.value = prefs.getBoolean(KEY_GLASS_PERFORMANCE, true)
+        progressiveBlur.value = prefs.getBoolean(KEY_PROGRESSIVE_BLUR, true)
         lyricsBlur.value = prefs.getBoolean(KEY_LYRICS_BLUR, true)
         lyricsOffsetMs.value = prefs.getInt(KEY_LYRICS_OFFSET_MS, 0)
             .coerceIn(MIN_LYRICS_OFFSET_MS, MAX_LYRICS_OFFSET_MS)
@@ -1088,12 +1133,16 @@ object AppSettings {
         signatureApiEnabled.value = prefs.getBoolean(KEY_SIGNATURE_API_ENABLED, false)
         signatureApiUrl.value = normalizeSignatureApiUrl(prefs.getString(KEY_SIGNATURE_API_URL, "").orEmpty())
         fullBleedArtwork.value = prefs.getBoolean(KEY_FULL_BLEED_ARTWORK, true)
-        fullBleedDetailArtwork.value = prefs.getBoolean(KEY_FULL_BLEED_DETAIL_ARTWORK, false)
+        fullBleedDetailArtwork.value = prefs.getBoolean(KEY_FULL_BLEED_DETAIL_ARTWORK, true)
         // The old legacy mesh switch answers until a theme has been picked.
         playerTheme.value = runCatching {
             PlayerTheme.valueOf(prefs.getString(KEY_PLAYER_THEME, null).orEmpty())
         }.getOrElse {
-            if (prefs.getBoolean(KEY_LEGACY_MESH_GRADIENT, false)) PlayerTheme.LEGACY else PlayerTheme.DEFAULT
+            if (prefs.contains(KEY_LEGACY_MESH_GRADIENT)) {
+                if (prefs.getBoolean(KEY_LEGACY_MESH_GRADIENT, false)) PlayerTheme.LEGACY else PlayerTheme.DEFAULT
+            } else {
+                PlayerTheme.LEGACY
+            }
         }
         lastPlayerScreen.value = runCatching {
             LastPlayerScreen.valueOf(
@@ -1101,6 +1150,7 @@ object AppSettings {
             )
         }.getOrDefault(LastPlayerScreen.MAIN)
         syncedLyrics.value = prefs.getBoolean(KEY_SYNCED_LYRICS, true)
+        hideLyricsPreview.value = prefs.getBoolean(KEY_HIDE_LYRICS_PREVIEW, false)
         lyricsSources.value = readLyricsSources()
         lyricsSourceOrder.value = readLyricsSourceOrder()
         prioritizeSyllableSync.value = prefs.getBoolean(KEY_PRIORITIZE_SYLLABLE_SYNC, false)
@@ -1125,7 +1175,16 @@ object AppSettings {
         listenBrainzPrimaryArtistOnly.value = prefs.getBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, false)
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
-        filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, true)
+        filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, false)
+        val savedMainTab = prefs.getInt(KEY_LAST_MAIN_TAB, 0)
+        lastMainTab.value = normalizeMainTabIndex(savedMainTab)
+        if (savedMainTab != lastMainTab.value) {
+            // Persist the migration so future launches no longer restore Radio.
+            prefs.edit().putInt(KEY_LAST_MAIN_TAB, lastMainTab.value).apply()
+        }
+        localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
+            ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }
+            ?: "SONGS"
         localMusicSort.value = readLocalMusicSort(KEY_LOCAL_MUSIC_SORT)
         downloadedMusicSort.value = readLocalMusicSort(KEY_DOWNLOADED_MUSIC_SORT)
         localMusicViewType.value = readLibraryViewType(KEY_LOCAL_MUSIC_VIEW_TYPE)
@@ -1324,9 +1383,37 @@ object AppSettings {
         prefs.edit().putInt(KEY_CROSSFADE, value).apply()
     }
 
+    fun setSleepTimerFadeOut(value: Boolean) {
+        sleepTimerFadeOut.value = value
+        prefs.edit().putBoolean(KEY_SLEEP_TIMER_FADE_OUT, value).apply()
+    }
+
+    private fun artworkCutoff(previous: Long): Long =
+        maxOf(previous, AutoMixVisualFeed.state.value?.generation ?: 0L)
+
     fun setSmartFadeEnabled(value: Boolean) {
+        if (smartFadeEnabled.value != value) {
+            autoMixArtworkCutoff.value = artworkCutoff(autoMixArtworkCutoff.value)
+            autoMixMiniArtworkCutoff.value = artworkCutoff(autoMixMiniArtworkCutoff.value)
+        }
         smartFadeEnabled.value = value
         prefs.edit().putBoolean(KEY_SMART_FADE, value).apply()
+    }
+
+    fun setAutoMixArtworkEnabled(value: Boolean) {
+        if (autoMixArtworkEnabled.value != value) {
+            autoMixArtworkCutoff.value = artworkCutoff(autoMixArtworkCutoff.value)
+        }
+        autoMixArtworkEnabled.value = value
+        prefs.edit().putBoolean(KEY_AUTOMIX_ARTWORK_ENABLED, value).apply()
+    }
+
+    fun setAutoMixMiniArtworkEnabled(value: Boolean) {
+        if (autoMixMiniArtworkEnabled.value != value) {
+            autoMixMiniArtworkCutoff.value = artworkCutoff(autoMixMiniArtworkCutoff.value)
+        }
+        autoMixMiniArtworkEnabled.value = value
+        prefs.edit().putBoolean(KEY_AUTOMIX_MINI_ARTWORK_ENABLED, value).apply()
     }
 
     fun setAutomixPerformanceMode(value: AutomixPerformanceMode) {
@@ -1334,12 +1421,12 @@ object AppSettings {
         prefs.edit().putString(KEY_AUTOMIX_PERFORMANCE_MODE, value.name).apply()
     }
 
-    /** Save all six AutoMix options atomically; later steps will connect them to the renderer. */
+    /** Persist effects only; transition duration is always automatic. */
     fun setAutoMixOptions(value: AutoMixOptions) {
-        val safe = value.normalized()
+        val safe = value.copy(durationSeconds = 0).normalized()
         autoMixOptions.value = safe
         prefs.edit()
-            .putInt(KEY_AUTOMIX_DURATION_SECONDS, safe.durationSeconds)
+            .remove(KEY_AUTOMIX_DURATION_SECONDS)
             .putString(KEY_AUTOMIX_EFFECT, safe.effect.name)
             .putFloat(KEY_AUTOMIX_SPEED, safe.speed)
             .putFloat(KEY_AUTOMIX_PITCH_SEMITONES, safe.pitchSemitones)
@@ -1347,9 +1434,6 @@ object AppSettings {
             .putBoolean(KEY_AUTOMIX_LOW_PASS, safe.lowPass)
             .apply()
     }
-
-    fun setAutoMixDurationSeconds(value: Int) =
-        setAutoMixOptions(autoMixOptions.value.copy(durationSeconds = value))
 
     fun setAutoMixEffect(value: AutoMixEffect) =
         setAutoMixOptions(autoMixOptions.value.copy(effect = value))
@@ -1382,6 +1466,13 @@ object AppSettings {
         if (AurelisFeatures.ADVANCED_STREAMING_SETTINGS) {
             prefs.edit().putBoolean(KEY_DIRECT_SOURCE_STREAM, value).apply()
         }
+    }
+
+    fun setYoutubePremiumAudio(value: Boolean) {
+        if (youtubePremiumAudio.value == value) return
+        youtubePremiumAudio.value = value
+        prefs.edit().putBoolean(KEY_YOUTUBE_PREMIUM_AUDIO, value).apply()
+        com.music.aurelis.data.innertube.StreamResolver.forgetResolved()
     }
 
     fun setSpatialAudio(value: Boolean) {
@@ -1631,6 +1722,16 @@ object AppSettings {
     fun setTranslationLanguage(value: String) {
         translationLanguage.value = value
         prefs.edit().putString(KEY_TRANSLATION_LANGUAGE, value).apply()
+    }
+
+    fun setShowTotalDuration(value: Boolean) {
+        showTotalDuration.value = value
+        prefs.edit().putBoolean(KEY_SHOW_TOTAL_DURATION, value).apply()
+    }
+
+    fun setHideLyricsPreview(value: Boolean) {
+        hideLyricsPreview.value = value
+        prefs.edit().putBoolean(KEY_HIDE_LYRICS_PREVIEW, value).apply()
     }
 
     fun setSyncedLyrics(value: Boolean) {
@@ -2031,6 +2132,19 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_FILTER_NON_MUSIC_AUDIO, value).apply()
     }
 
+    fun setLastMainTab(tab: Int) {
+        if (tab !in 0..3 || lastMainTab.value == tab) return
+        lastMainTab.value = tab
+        prefs.edit().putInt(KEY_LAST_MAIN_TAB, tab).apply()
+    }
+
+    fun setLocalMusicTab(tab: String) {
+        if (tab !in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS")) return
+        if (localMusicTab.value == tab) return
+        localMusicTab.value = tab
+        prefs.edit().putString(KEY_LOCAL_MUSIC_TAB, tab).apply()
+    }
+
     fun setLocalMusicSort(value: LocalMusicSort) {
         localMusicSort.value = value
         prefs.edit().putString(KEY_LOCAL_MUSIC_SORT, value.name).apply()
@@ -2329,6 +2443,9 @@ object AppSettings {
     private const val KEY_SYNC_DOWNLOADED_PLAYLISTS = "sync_downloaded_playlists"
     private const val KEY_CROSSFADE = "crossfade_seconds"
     private const val KEY_SMART_FADE = "smart_fade_enabled"
+    private const val KEY_SLEEP_TIMER_FADE_OUT = "sleep_timer_fade_out"
+    private const val KEY_AUTOMIX_ARTWORK_ENABLED = "automix_artwork_enabled"
+    private const val KEY_AUTOMIX_MINI_ARTWORK_ENABLED = "automix_mini_artwork_enabled"
     private const val KEY_AUTOMIX_PERFORMANCE_MODE = "automix_performance_mode"
     private const val KEY_AUTOMIX_DURATION_SECONDS = "automix_mornye_duration_seconds"
     private const val KEY_AUTOMIX_EFFECT = "automix_mornye_effect"
@@ -2347,6 +2464,7 @@ object AppSettings {
     private const val KEY_REPLAYGAIN_MODE = "replaygain_mode"
     private const val KEY_DOLBY_ATMOS = "dolby_atmos"
     private const val KEY_DIRECT_SOURCE_STREAM = "direct_source_stream"
+    private const val KEY_YOUTUBE_PREMIUM_AUDIO = "youtube_premium_audio"
     private const val KEY_SPATIAL_AUDIO = "spatial_audio"
     private const val KEY_EQ_ENABLED = "equalizer_enabled"
     private const val KEY_EQ_MODE = "equalizer_mode"
@@ -2371,6 +2489,7 @@ object AppSettings {
     private const val KEY_PERFORMANCE_REFRESH_RATE = "performance_refresh_rate"
     private const val KEY_STOP_ON_TASK_REMOVED = "stop_on_task_removed"
     private const val KEY_HIDE_VOLUME_BAR = "hide_volume_bar"
+    private const val KEY_SHOW_TOTAL_DURATION = "show_total_duration"
     private const val KEY_HIDE_STATUS_BAR_IN_PLAYER = "hide_status_bar_in_player"
     private const val KEY_HIDE_SONG_STATUS = "hide_song_status"
     private const val KEY_SHOW_QUEUE_HISTORY = "show_queue_history"
@@ -2403,6 +2522,7 @@ object AppSettings {
     private const val KEY_LEGACY_MESH_GRADIENT = "legacy_mesh_gradient"
     private const val KEY_LAST_PLAYER_SCREEN = "last_player_screen"
     private const val KEY_SYNCED_LYRICS = "synced_lyrics"
+    private const val KEY_HIDE_LYRICS_PREVIEW = "hide_lyrics_preview"
     private const val KEY_LYRICS_SOURCES = "lyrics_sources"
     private const val KEY_LYRICS_SOURCES_SEEN = "lyrics_sources_seen"
     private const val KEY_LYRICS_SOURCE_ORDER = "lyrics_source_order"
@@ -2411,6 +2531,8 @@ object AppSettings {
     private const val KEY_REPLAY_GENRES = "replay_genres"
     private const val KEY_FILTER_NON_MUSIC_AUDIO = "filter_non_music_audio"
     private const val KEY_SHOW_CACHE_FOLDER = "show_cache_folder"
+    private const val KEY_LAST_MAIN_TAB = "last_main_tab"
+    private const val KEY_LOCAL_MUSIC_TAB = "local_music_tab"
     private const val KEY_LOCAL_MUSIC_SORT = "local_music_sort"
     private const val KEY_DOWNLOADED_MUSIC_SORT = "downloaded_music_sort"
     private const val KEY_LIBRARY_SORT = "library_sort"

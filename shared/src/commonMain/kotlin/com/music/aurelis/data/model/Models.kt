@@ -1,5 +1,7 @@
 package com.music.aurelis.data.model
 
+import kotlinx.serialization.Serializable
+
 /** Tier of an item in the playback queue. */
 enum class QueueTier {
     /** Explicitly queued by user ("Play Next", "Add to Queue", or preserved user queue). */
@@ -10,18 +12,27 @@ enum class QueueTier {
     AUTOPLAY,
 }
 
+/** Identifies one occurrence, not just a song, in a live queue snapshot. */
+data class QueueEntryIdentity(
+    val mediaId: String,
+    val queueEntryId: String?,
+    val occurrence: Int,
+)
+
 /**
  * One credited artist, as YouTube Music itself states them.
  *
  * @property browseId The artist's own channel, so their page is the one that
  * opens. Null for the rare run that names an artist without linking one.
  */
+@Serializable
 data class ArtistRef(
     val name: String,
     val browseId: String? = null,
 )
 
 /** A playable YouTube Music track. */
+@Serializable
 data class Song(
     val videoId: String,
     val title: String,
@@ -399,6 +410,7 @@ enum class SearchFilter(val label: String, val params: String?) {
 }
 
 /** A card in a home-feed carousel: either a track (videoId) or an album/playlist (browseId). */
+@Serializable
 data class ShelfItem(
     val title: String,
     val subtitle: String,
@@ -411,6 +423,9 @@ data class ShelfItem(
      */
     val isVideo: Boolean = false,
 )
+
+/** Displayed YouTube mix and its English name for stable classification. */
+data class KeyedMix(val item: ShelfItem, val englishTitle: String)
 
 /** How a shelf's items are laid out — the web player's `ShelfLayout`, by the same rules. */
 enum class ShelfLayout {
@@ -461,6 +476,7 @@ data class AccountChannel(
     val key: String get() = pageId ?: dataSyncId ?: name
 }
 
+@Serializable
 data class HomeShelf(
     val title: String,
     val items: List<ShelfItem>,
@@ -526,12 +542,14 @@ data class HomeFeed(
 )
 
 /** One server-defined group of the buttons shown on Explore. */
+@Serializable
 data class MoodGenreSection(
     val title: String,
     val items: List<MoodGenre>,
 )
 
 /** A mood or genre button and the exact browse request that it represents. */
+@Serializable
 data class MoodGenre(
     val title: String,
     val browseId: String,
@@ -547,6 +565,7 @@ data class MoodGenre(
  * Music playlist, the tracks explicitly added to the library, and a shelf per
  * saved collection (playlists, albums, artists, subscriptions, podcasts).
  */
+@Serializable
 data class LibraryPage(
     val likedSongs: List<Song>,
     val librarySongs: List<Song>,

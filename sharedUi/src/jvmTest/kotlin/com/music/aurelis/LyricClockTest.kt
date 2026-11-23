@@ -1,6 +1,10 @@
 package com.music.aurelis
 
 import com.music.aurelis.ui.player.LyricClock
+import com.music.aurelis.ui.player.LyricClockReading
+import com.music.aurelis.ui.player.LyricPlayhead
+import com.music.aurelis.playback.PlaybackPosition
+import androidx.compose.runtime.mutableStateOf
 import kotlin.math.abs
 import kotlin.random.Random
 import org.junit.Assert.assertEquals
@@ -245,4 +249,60 @@ class LyricClockTest {
         )
         assertTrue(abs(last - (15_000 - 1_500)) < 40)
     }
+    @Test fun stoppedTransportFreezesTheExistingHighlight() {
+        val clock = LyricClock(30_000)
+        val running = LyricClockReading(30_000, 1000.0, 0L, true)
+        clock.frame(1000.0, running)
+        val last = clock.frame(1120.0, running.copy(positionMs = 30_120, sampledAtMs = 1120.0))
+        val stopped = running.copy(positionMs = 30_100, sampledAtMs = 1200.0, isPlaying = false)
+        assertEquals(last, clock.frame(1200.0, stopped))
+        assertEquals(last, clock.observe(stopped.copy(positionMs = 30_050), 1300.0))
+        assertEquals(15_000L, clock.observe(stopped.copy(positionMs = 15_000, discontinuity = 1), 1400.0))
+    }
+
+    @Test fun resumeDoesNotRewindAVisuallyHeldLine() {
+        val clock = LyricClock(30_867)
+        clock.hold(30_867, 1000.0, discontinuity = 0L)
+        clock.restart()
+        assertEquals(30_867L, clock.frame(5000.0, LyricClockReading(30_746, 5000.0, 0L, true)))
+    }
+
+    @Test fun seekIdentityAndPlaybackArePublishedWithTheirSample() {
+        val position = PlaybackPosition()
+        val playhead = LyricPlayhead(position, mutableStateOf(0))
+        position.report(30_000, sampledAtNanos = 1_000_000_000L, isPlaying = false)
+        val first = playhead.reading(isPlaying = true)
+        assertTrue(!first.isPlaying)
+        position.seeks++
+        assertEquals(first.discontinuity, playhead.reading(isPlaying = true).discontinuity)
+        position.report(12_000, sampledAtNanos = 2_000_000_000L, isPlaying = true)
+        val landed = playhead.reading(isPlaying = false)
+        assertTrue(landed.isPlaying)
+        assertTrue(first.discontinuity != landed.discontinuity)
+        assertEquals(12_000L, landed.positionMs)
+    }
+
+    @Test fun stoppedOffsetAdjustmentStillMovesTheLyricClock() {
+        val position = PlaybackPosition()
+        val offset = mutableStateOf(0)
+        val playhead = LyricPlayhead(position, offset)
+        val clock = LyricClock(20_000)
+        position.report(20_000, sampledAtNanos = 1_000_000_000L, isPlaying = false)
+        clock.observe(playhead.reading(false), 1000.0)
+        offset.value = 700
+        assertEquals(19_300L, clock.observe(playhead.reading(false), 1500.0))
+    }
+
+    @Test fun newRunningReadingIsNotHandledAsStalePausedUi() {
+        val position = PlaybackPosition()
+        val playhead = LyricPlayhead(position, mutableStateOf(0))
+        val clock = LyricClock(10_000)
+        position.report(10_000, sampledAtNanos = 1_000_000_000L, isPlaying = false)
+        clock.observe(playhead.reading(false), 1000.0)
+        position.report(10_000, sampledAtNanos = 2_000_000_000L, isPlaying = true)
+        assertTrue(clock.observe(playhead.reading(false), 2000.0) == null)
+        clock.restart()
+        assertEquals(40_000L, clock.frame(32_000.0, playhead.reading(true)))
+    }
+
 }

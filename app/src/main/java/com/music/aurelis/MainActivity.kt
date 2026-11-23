@@ -1,3 +1,5 @@
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+
 package com.music.aurelis
 
 import android.Manifest
@@ -84,6 +86,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
@@ -99,10 +102,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -117,6 +122,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalDensity
@@ -159,6 +165,7 @@ import kotlinx.coroutines.withContext
 import com.music.aurelis.data.model.durationMillis
 import com.music.aurelis.data.scrobbling.LastFM
 import com.music.aurelis.data.settings.AppSettings
+import com.music.aurelis.data.settings.normalizeMainTabIndex
 import com.music.aurelis.data.settings.BitPerfectMode
 import com.music.aurelis.ui.AddonBlockedAlert
 import com.music.aurelis.data.settings.LibrarySort
@@ -184,6 +191,7 @@ import com.music.aurelis.ui.screens.HistoryScreen
 import com.music.aurelis.ui.screens.LibraryReplayEntry
 import com.music.aurelis.ui.screens.libraryDeviceItems
 import com.music.aurelis.ui.screens.SPOTIFY_BROWSE_ID
+import com.music.aurelis.ui.screens.LibraryLink
 import com.music.aurelis.ui.screens.libraryLinks
 import com.music.aurelis.ui.screens.CACHE_FOLDER_BROWSE_ID
 import com.music.aurelis.ui.screens.ListenTogetherScreen
@@ -203,6 +211,11 @@ import com.music.aurelis.playback.OriginalVersion
 import com.music.aurelis.playback.PlayerDeepLink
 import com.music.aurelis.playback.QueueBuilder
 import com.music.aurelis.playback.QueueCoordinator
+import com.music.aurelis.playback.promoteQueueEntry
+import com.music.aurelis.playback.undoQueueEdit
+import com.music.aurelis.playback.clearQueueWithUndo
+import com.music.aurelis.playback.removeQueueItemWithUndo
+import com.music.aurelis.playback.removeQueueEntriesWithUndo
 import com.music.aurelis.playback.QueueCoordinator.asQueueEntry
 import com.music.aurelis.playback.QueueShuffle
 import com.music.aurelis.playback.QueueSource
@@ -543,6 +556,7 @@ private fun AurelisApp(
     viewModel: MainViewModel = viewModel(),
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val clipboard = LocalClipboardManager.current
     val hazeState = remember { HazeState() }
     // Recording the backdrop layer costs a draw pass, so it only runs when a
@@ -557,13 +571,30 @@ private fun AurelisApp(
     val reduceDynamicBlur by AppSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
     val progressiveBlur by AppSettings.progressiveBlur.collectAsStateWithLifecycle()
     val glassSamplesBackdrop = glassActive && !reduceDynamicBlur
+    val online by viewModel.online.collectAsStateWithLifecycle()
+    val offlineBanner: (@Composable () -> Unit)? = if (online) null else {
+        { OfflineConnectionPill(hazeState, glassSamplesBackdrop) }
+    }
+
     // What folds [GlassNavBar] between its expanded and inline shapes. Held here
     // rather than inside the bar because the page's scroll is what drives it,
     // and the page is a sibling of the bar rather than a child.
     val navBarScroll = rememberFloatingTabBarScrollConnection()
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    // Explore loads the first time it's shown, not at launch beside Home.
+    // Radio was the fifth tab in previous releases. Restoring that saved
+    // index must never address a missing tab, even before the first frame.
+    // A custom saver sanitizes both persisted preferences and Android's
+    // saved-instance-state restoration after an upgrade.
+    val mainTabSaver = remember {
+        Saver<MutableIntState, Int>(
+            save = { normalizeMainTabIndex(it.intValue) },
+            restore = { mutableIntStateOf(normalizeMainTabIndex(it)) },
+        )
+    }
+    var selectedTab by rememberSaveable(saver = mainTabSaver) {
+        mutableIntStateOf(normalizeMainTabIndex(AppSettings.lastMainTab.value))
+    }
     LaunchedEffect(selectedTab) {
+        AppSettings.setLastMainTab(selectedTab)
         if (selectedTab == TAB_EXPLORE) viewModel.onExploreShown()
     }
     /**
@@ -754,7 +785,9 @@ private fun AurelisApp(
     // The same two, over the device's own playlists — for a track that is a
     // file on it, and for "New playlist" on Local Music's Playlists tab.
     var offlinePlaylistTarget by remember { mutableStateOf<Song?>(null) }
+    var offlinePlaylistBatch by remember { mutableStateOf<List<Song>>(emptyList()) }
     var creatingOfflinePlaylist by remember { mutableStateOf(false) }
+    var choosingPlaylistDestination by remember { mutableStateOf(false) }
     var showSpotifyImportDialog by remember { mutableStateOf(false) }
     // Which album or playlist the collection menu is open on, or null when it
     // is shut. One slot for every surface that can open it — the shelves on
@@ -1045,16 +1078,16 @@ private fun AurelisApp(
     val downloadedReleases = remember(savedCollections, savedDownloads) {
         Downloads.savedReleases()
     }
-    // Playlists imported without (or instead of) a YouTube Music account live
-    // in the app's own store, and sit on the same shelf as the downloaded ones.
+    // Local lists include files added on this device and existing imports.
     val localPlaylists by com.music.aurelis.data.spotify.LocalPlaylistStore.playlists.collectAsStateWithLifecycle()
-    val localPlaylistItems = localPlaylists.map { playlist ->
+    val localPlaylistItems = (offlinePlaylists.map { Triple(it.browseId, it.title, it.songs) } +
+        localPlaylists.map { Triple(it.browseId, it.title, it.songs) }).map { (id, title, songs) ->
         ShelfItem(
-            title = playlist.title,
-            subtitle = stringResource(R.string.local_playlist_subtitle, playlist.songs.size),
-            thumbnailUrl = playlist.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+            title = title,
+            subtitle = stringResource(R.string.local_playlist_subtitle, songs.size),
+            thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
             videoId = null,
-            browseId = playlist.browseId,
+            browseId = id,
         )
     }
     // What a browse id is recorded under in Downloads.collections, when it names
@@ -1125,8 +1158,16 @@ private fun AurelisApp(
     // bar can never disagree about whether this device may drive the music.
     val controlsLocked = partyState.controlsLocked
     var queueNotice by remember { mutableStateOf<QueueActionNotice?>(null) }
+    var queueUndoToken by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(queueUndoToken) {
+        if (queueUndoToken != null) {
+            delay(4_500)
+            queueUndoToken = null
+        }
+    }
     var queueNoticeId by remember { mutableIntStateOf(0) }
     val showQueueNotice: (String) -> Unit = { message ->
+        queueUndoToken = null
         queueNoticeId += 1
         queueNotice = QueueActionNotice(queueNoticeId, message)
     }
@@ -1271,6 +1312,7 @@ private fun AurelisApp(
         MainViewModel.Feed.HOME -> homePull
         MainViewModel.Feed.EXPLORE -> explorePull
         MainViewModel.Feed.LIBRARY -> libraryPull
+        MainViewModel.Feed.MIXES -> null // Retained only for exhaustive Feed handling.
         null -> null
     }
     val scrolled by remember(currentListState) {
@@ -1356,6 +1398,8 @@ private fun AurelisApp(
     val queueLabel = stringResource(R.string.queue)
     val sharedLinkLabel = stringResource(R.string.shared_link)
     val openedFileLabel = stringResource(R.string.opened_file)
+    // Four primary tabs only. YouTube radio remains accessible from track
+    // actions, but BitChord's separate Radio/Mixes screen is no longer a tab.
     val tabs = remember(homeLabel, exploreLabel, libraryLabel, searchLabel) {
         listOf(
             BottomTab(homeLabel, AurelisIcons.Home),
@@ -1375,7 +1419,7 @@ private fun AurelisApp(
             val summary = com.music.aurelis.data.webdav.WebDavUploads.upload(context, songs)
             if (summary.total > 0) {
                 showQueueNotice(
-                    context.getString(
+                    uiResources.getString(
                         R.string.webdav_upload_summary,
                         summary.uploaded,
                         summary.skipped,
@@ -1426,7 +1470,7 @@ private fun AurelisApp(
                 TrackLog.w("Player", "audio switch found no distinct official song", song.videoId)
                 // The switch is always offered now, so say when there was nothing to switch to.
                 if (song.videoId !in missingVersions) missingVersions += song.videoId
-                if (stillCurrent) showQueueNotice(versionContext.getString(R.string.no_audio_version))
+                if (stillCurrent) showQueueNotice(uiResources.getString(R.string.no_audio_version))
                 if (stillCurrent && resumeAfterResolution) c.play()
                 return
             }
@@ -1497,7 +1541,7 @@ private fun AurelisApp(
             if (video == null || video.videoId == song.videoId) {
                 TrackLog.w("Player", "video switch found no distinct video", song.videoId)
                 if (song.videoId !in missingVersions) missingVersions += song.videoId
-                if (stillCurrent) showQueueNotice(versionContext.getString(R.string.no_video_version))
+                if (stillCurrent) showQueueNotice(uiResources.getString(R.string.no_video_version))
                 if (stillCurrent && resumeAfterResolution) c.play()
                 return
             }
@@ -1686,6 +1730,8 @@ private fun AurelisApp(
                     playbackSourceType = PlaybackSourceType.SHARED_LINK,
                     playbackSourceId = song.videoId,
                 )
+                // Radio always uses YouTube Music. A local file is matched by
+                // title/artist to a real YouTube recording before requesting radio.
                 val related = loadAutoplayTracks(
                     existing = listOf(seed),
                     seedSong = seed,
@@ -1738,7 +1784,7 @@ private fun AurelisApp(
                 activeController.commitRadioQueue()
                 Toast.makeText(
                     context,
-                    context.getString(R.string.radio_started, song.title),
+                    uiResources.getString(R.string.radio_started, song.title),
                     Toast.LENGTH_SHORT,
                 ).show()
             }
@@ -1809,7 +1855,7 @@ private fun AurelisApp(
                 if (ListenTogether.state.value.inParty) {
                     val upcoming = (it.mediaItemCount - (it.currentMediaItemIndex + 1)).coerceAtLeast(0)
                     if (upcoming >= 25) {
-                        showQueueNotice(context.getString(R.string.party_queue_full, 25))
+                        showQueueNotice(uiResources.getString(R.string.party_queue_full, 25))
                         return@launch
                     }
                 }
@@ -1828,7 +1874,7 @@ private fun AurelisApp(
                     playbackSourceId = current?.playbackSourceId,
                 ).asQueueEntry(QueueTier.USER_QUEUE)
                 it.addMediaItem(at, queued.toMediaItem())
-                showQueueNotice(context.getString(R.string.song_added_to_queue))
+                showQueueNotice(uiResources.getString(R.string.song_added_to_queue))
             }
         }
     }
@@ -1839,7 +1885,7 @@ private fun AurelisApp(
                 if (ListenTogether.state.value.inParty) {
                     val upcoming = (it.mediaItemCount - (it.currentMediaItemIndex + 1)).coerceAtLeast(0)
                     if (upcoming >= 25) {
-                        showQueueNotice(context.getString(R.string.party_queue_full, 25))
+                        showQueueNotice(uiResources.getString(R.string.party_queue_full, 25))
                         return@launch
                     }
                 }
@@ -1858,7 +1904,7 @@ private fun AurelisApp(
                     playbackSourceId = current?.playbackSourceId,
                 ).asQueueEntry(QueueTier.USER_QUEUE)
                 it.addMediaItem(at, queued.toMediaItem())
-                showQueueNotice(context.getString(R.string.song_will_play_next))
+                showQueueNotice(uiResources.getString(R.string.song_will_play_next))
             }
         }
     }
@@ -1891,7 +1937,7 @@ private fun AurelisApp(
         artwork: String? = null,
     ) {
         if (browseId != null) {
-            val credit = subtitle ?: context.getString(
+            val credit = subtitle ?: uiResources.getString(
                 if (type == BrowseType.ARTIST) R.string.artist else R.string.album,
             )
             viewModel.openDetail(browseId, name, credit, artwork, type)
@@ -1911,7 +1957,7 @@ private fun AurelisApp(
             if (hit == null) {
                 Toast.makeText(
                     context,
-                    context.getString(R.string.couldnt_find, name),
+                    uiResources.getString(R.string.couldnt_find, name),
                     Toast.LENGTH_SHORT,
                 ).show()
             } else {
@@ -1955,7 +2001,7 @@ private fun AurelisApp(
                         val upcoming = (c.mediaItemCount - (c.currentMediaItemIndex + 1)).coerceAtLeast(0)
                         val slotsLeft = (25 - upcoming).coerceAtLeast(0)
                         if (slotsLeft <= 0) {
-                            showQueueNotice(context.getString(R.string.party_queue_full, 25))
+                            showQueueNotice(uiResources.getString(R.string.party_queue_full, 25))
                             return@launch
                         }
                         songs.take(slotsLeft)
@@ -1982,7 +2028,7 @@ private fun AurelisApp(
                             ).asQueueEntry(QueueTier.USER_QUEUE).toMediaItem()
                         },
                     )
-                    val message = context.resources.getQuantityString(
+                    val message = uiResources.getQuantityString(
                         if (next) R.plurals.songs_will_play_next else R.plurals.songs_added_to_queue,
                         toAdd.size,
                         toAdd.size,
@@ -2019,7 +2065,7 @@ private fun AurelisApp(
                 if (song == null) {
                     Toast.makeText(
                         context,
-                        context.getString(R.string.couldnt_open_link),
+                        uiResources.getString(R.string.couldnt_open_link),
                         Toast.LENGTH_SHORT,
                     ).show()
                 } else {
@@ -2175,12 +2221,12 @@ private fun AurelisApp(
         when {
             target.songs.isNotEmpty() -> stamp(target.songs)
             target.browseId == null ->
-                Toast.makeText(context, context.getString(R.string.no_tracks_here), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, uiResources.getString(R.string.no_tracks_here), Toast.LENGTH_SHORT).show()
             else -> viewModel.collectSongs(target.browseId, target.thumbnailUrl) { result ->
                 result.fold(
                     onSuccess = stamp,
                     onFailure = {
-                        val message = it.message ?: context.getString(R.string.couldnt_load_tracks)
+                        val message = it.message ?: uiResources.getString(R.string.couldnt_load_tracks)
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     },
                 )
@@ -2221,7 +2267,7 @@ private fun AurelisApp(
             // The one case where refusing is fatal: below API 29 there is no
             // other way to reach the Music folder.
             else -> Toast
-                .makeText(context, context.getString(R.string.storage_required_save), Toast.LENGTH_SHORT)
+                .makeText(context, uiResources.getString(R.string.storage_required_save), Toast.LENGTH_SHORT)
                 .show()
         }
     }
@@ -2233,7 +2279,7 @@ private fun AurelisApp(
             viewModel.reloadLocalDetail("local:downloads")
             viewModel.loadLibrarySongs()
         } else {
-            Toast.makeText(context, context.getString(R.string.storage_required_read), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, uiResources.getString(R.string.storage_required_read), Toast.LENGTH_SHORT).show()
         }
     }
     val mediaPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2384,14 +2430,14 @@ private fun AurelisApp(
             // long message. So this one is said whatever the count.
             blocked -> Toast.makeText(
                 context,
-                context.getString(R.string.wifi_only_download_refusal),
+                uiResources.getString(R.string.wifi_only_download_refusal),
                 Toast.LENGTH_LONG,
             ).show()
             requested.size > 1 -> {
                 val message = if (songs.isEmpty()) {
-                    context.getString(R.string.already_downloaded)
+                    uiResources.getString(R.string.already_downloaded)
                 } else {
-                    context.resources.getQuantityString(
+                    uiResources.getQuantityString(
                         R.plurals.downloading_song_count,
                         songs.size,
                         songs.size,
@@ -2479,6 +2525,23 @@ private fun AurelisApp(
     val replayOpen = route == AppRoute.Replay || replayStory != null || showReplayShare ||
         (selectedTab == TAB_LIBRARY && detail == null && route == null)
     val (replay, setReplayPeriod) = rememberReplayState(replayOpen)
+    var annualReplayData by remember { mutableStateOf<com.music.aurelis.data.stats.ReplayYearData?>(null) }
+    var annualReplayReady by remember { mutableStateOf(false) }
+    LaunchedEffect(replayStory, replay.period) {
+        annualReplayData = null
+        annualReplayReady = false
+        if (replayStory != null && replay.period == com.music.aurelis.data.stats.ReplayPeriod.THIS_YEAR) {
+            annualReplayData = try {
+                com.music.aurelis.data.stats.ListeningStats.year(java.time.LocalDate.now().year)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                android.util.Log.w("AurelisReplay", "Annual story uses standard Replay fallback", e)
+                null
+            }
+        }
+        annualReplayReady = true
+    }
     val replayCards = remember(replay.summary) {
         replay.summary?.takeUnless { it.isEmpty }?.cards(context).orEmpty()
     }
@@ -2657,9 +2720,64 @@ private fun AurelisApp(
                     c.play()
                 }
             },
-            onRemoveFromQueue = { controller?.removeMediaItem(it) },
+            onRemoveFromQueue = { index ->
+                controller?.let { c ->
+                    player.queue.getOrNull(index)?.let { expected ->
+                        scope.launch {
+                            val token = java.util.UUID.randomUUID().toString()
+                            if (c.removeQueueItemWithUndo(index, expected, token)) {
+                                showQueueNotice(uiResources.getString(R.string.queue_removed_song, expected.title))
+                                queueUndoToken = token
+                            }
+                        }
+                    }
+                }
+            },
             onMoveInQueue = { from, to -> controller?.moveMediaItem(from, to) },
             onQueueDragActiveChange = { active -> controller?.setQueueDragActive(active) },
+            onQueuePromote = { index, song ->
+                controller?.let { c ->
+                    scope.launch {
+                        if (c.promoteQueueEntry(index, song)) {
+                            showQueueNotice(uiResources.getString(R.string.song_added_to_queue))
+                        }
+                    }
+                }
+            },
+            onQueueRemoveSelected = { identities ->
+                controller?.let { c ->
+                    scope.launch {
+                        val token = java.util.UUID.randomUUID().toString()
+                        if (c.removeQueueEntriesWithUndo(identities, token)) {
+                            showQueueNotice(uiResources.getString(R.string.queue_cleared))
+                            queueUndoToken = token
+                        }
+                    }
+                }
+            },
+            onQueueAddSelectedToPlaylist = { selected ->
+                val local = selected.filter { it.localUri != null }.distinctBy { it.localUri }
+                if (local.isNotEmpty()) {
+                    offlinePlaylistBatch = local
+                    creatingOfflinePlaylist = false
+                } else {
+                    showQueueNotice(uiResources.getString(R.string.failed))
+                }
+            },
+            queueUndoAvailable = queueUndoToken != null,
+            onQueueUndo = {
+                val token = queueUndoToken
+                if (token != null) {
+                    controller?.let { c ->
+                        scope.launch {
+                            if (c.undoQueueEdit(token)) {
+                                showQueueNotice(uiResources.getString(R.string.queue_undo_action))
+                            }
+                            queueUndoToken = null
+                        }
+                    }
+                }
+            },
             // The enriched copy, not player.song — otherwise the menu
             // hides the album and artist rows even once their browse
             // ids have been resolved.
@@ -2699,7 +2817,7 @@ private fun AurelisApp(
                     viewModel.openDetail(
                         id,
                         name,
-                        context.getString(R.string.artist),
+                        uiResources.getString(R.string.artist),
                         null,
                         BrowseType.ARTIST,
                     )
@@ -2710,14 +2828,14 @@ private fun AurelisApp(
                             viewModel.openDetail(
                                 found,
                                 name,
-                                context.getString(R.string.artist),
+                                uiResources.getString(R.string.artist),
                                 null,
                                 BrowseType.ARTIST,
                             )
                         } else {
                             Toast.makeText(
                                 context,
-                                context.getString(R.string.couldnt_find, name),
+                                uiResources.getString(R.string.couldnt_find, name),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
@@ -2786,9 +2904,14 @@ private fun AurelisApp(
                 navigator.pushAll(AppRoute.Settings, AppRoute.ListenTogether)
             },
             onClearQueue = {
-                // Keep what's playing and context/autoplay; drop user-queued tracks.
                 controller?.let { c ->
-                    QueueCoordinator.clearUserQueue(c)
+                    scope.launch {
+                        val token = java.util.UUID.randomUUID().toString()
+                        if (c.clearQueueWithUndo(token)) {
+                            showQueueNotice(uiResources.getString(R.string.queue_cleared))
+                            queueUndoToken = token
+                        }
+                    }
                 }
             },
         )
@@ -2984,10 +3107,11 @@ private fun AurelisApp(
                                     // Only the Playlists shelf can grow one — see
                                     // [PlaylistShelf].
                                     onNewPlaylist = if (shelf.title == YtMusicRepository.PLAYLISTS_SHELF) {
-                                        { creatingPlaylist = true }
+                                        { choosingPlaylistDestination = true }
                                     } else {
                                         null
                                     },
+                                    newPlaylistSubtitle = stringResource(R.string.playlist_destination_subtitle),
                                     contentPadding = listPadding,
                                 )
                             }
@@ -3003,6 +3127,7 @@ private fun AurelisApp(
                                 holder = account?.name.orEmpty(),
                                 onPeriodChange = setReplayPeriod,
                                 onOpenStory = { replayStory = it },
+                                onOpenYearStory = { replayStory = com.music.aurelis.ui.replay.ReplayStoryPage.INTRO },
                                 // A track tapped on a chart is one the user already
                                 // knows they like, so it starts a station off itself
                                 // rather than queueing the chart it was on — the
@@ -3031,7 +3156,7 @@ private fun AurelisApp(
                                     viewModel.openDetail(
                                         browseId = SPOTIFY_PAGE_PREFIX + playlist.id,
                                         title = playlist.name,
-                                        subtitle = playlist.owner ?: context.getString(R.string.spotify),
+                                        subtitle = playlist.owner ?: uiResources.getString(R.string.spotify),
                                         thumbnailUrl = playlist.imageUrl,
                                         type = BrowseType.PLAYLIST,
                                     )
@@ -3248,11 +3373,13 @@ private fun AurelisApp(
                                     page.browseId,
                                 )
                                 val selected = songs.getOrNull(index)
-                                val pageSongKeys =
-                                    (page.songs as? UiState.Success)?.data.orEmpty().mapTo(HashSet()) { it.contextEntryKey() }
+                                val pageKeys =
+                                    (page.songs as? UiState.Success)?.data.orEmpty().map { it.contextEntryKey() }
+                                val pageSongKeys = pageKeys.toHashSet()
                                 val useBounded =
                                     (page.type == BrowseType.ALBUM || page.type == BrowseType.PLAYLIST) &&
                                         selected?.contextEntryKey()?.let(pageSongKeys::contains) == true &&
+                                        inPageOrder(songs.map { it.contextEntryKey() }, pageKeys) &&
                                         !CastController.state.value.casting
                                 val latestPage = if (useBounded) {
                                     viewModel.takePlaybackContext(page.browseId)
@@ -3371,7 +3498,7 @@ private fun AurelisApp(
                                                 viewModel.reorderPlaylist(reordering, original, reordered) { saved ->
                                                     reorderSaving = false
                                                     showQueueNotice(
-                                                        context.getString(
+                                                        uiResources.getString(
                                                             if (saved) R.string.playlist_reordered else R.string.reorder_failed,
                                                         ),
                                                     )
@@ -3387,6 +3514,7 @@ private fun AurelisApp(
                         } else when ((destination as? AppDestination.Tab)?.index ?: selectedTab) {
                             TAB_HOME -> HomeScreen(
                                 state = visibleHomeState,
+                                offlineBanner = offlineBanner,
                                 listState = homeListState,
                                 currentSong = player.song,
                                 isPlaying = player.isPlaying,
@@ -3477,10 +3605,12 @@ private fun AurelisApp(
                                         }
                                     },
                                     onRetry = { viewModel.openMoodGenre(category) },
+                                    offlineBanner = offlineBanner,
                                     contentPadding = listPadding,
                                 )
                             } ?: ExploreScreen(
                                 state = exploreState,
+                                offlineBanner = offlineBanner,
                                 listState = exploreListState,
                                 onCategoryClick = viewModel::openMoodGenre,
                                 onRetry = viewModel::loadExplore,
@@ -3657,13 +3787,13 @@ private fun AurelisApp(
                                         index,
                                         if (searchSource == SearchSource.ADDONS) {
                                             QueueSource(
-                                                context.getString(R.string.search_source_addons),
+                                                uiResources.getString(R.string.search_source_addons),
                                                 PlaybackSourceType.BROWSE,
                                                 "addons:search",
                                             )
                                         } else {
                                             QueueSource(
-                                                context.getString(R.string.local_music),
+                                                uiResources.getString(R.string.local_music),
                                                 PlaybackSourceType.BROWSE,
                                                 "local:all",
                                             )
@@ -3693,7 +3823,12 @@ private fun AurelisApp(
                                         LocalMediaRepository.getLocalMusic(context)
                                     } else emptyList()
                                 }
+                                val savedLocalTab by AppSettings.localMusicTab.collectAsStateWithLifecycle()
                                 val folderState = remember { LocalFolderState() }
+                                LaunchedEffect(savedLocalTab) {
+                                    folderState.tab = LocalFolderTab.entries.firstOrNull { it.name == savedLocalTab }
+                                        ?: LocalFolderTab.SONGS
+                                }
                                 val localSongs = remember(deviceSongs, localMusicSort) {
                                     deviceSongs.orEmpty().sortedForLibrary(localMusicSort)
                                 }
@@ -3725,6 +3860,7 @@ private fun AurelisApp(
                                     tabs = LocalFolderTab.DEVICE,
                                     playlists = offlinePlaylistGroups,
                                     onCreatePlaylist = { creatingOfflinePlaylist = true },
+                                    onTabSelected = { AppSettings.setLocalMusicTab(it.name) },
                                 )
                                 val grouped = rememberLocalFolderGroups(
                                     "local:all", folder, folderState.tab, localSongs, "",
@@ -3797,15 +3933,19 @@ private fun AurelisApp(
                                                     }
                                                 }
                                                 Spacer(Modifier.height(12.dp))
-                                                TextButton(
+                                                OutlinedButton(
                                                     onClick = { showDuplicateReview = true },
                                                     enabled = localSongs.isNotEmpty(),
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                                                 ) {
+                                                    Icon(Icons.Rounded.Check, contentDescription = null)
+                                                    Spacer(Modifier.width(10.dp))
                                                     Text(
                                                         if (Locale.getDefault().language == "es")
-                                                            "Revisar duplicados"
+                                                            "Buscar canciones duplicadas"
                                                         else
-                                                            "Review duplicates",
+                                                            "Find duplicate songs",
                                                     )
                                                 }
                                             } else {
@@ -3852,6 +3992,9 @@ private fun AurelisApp(
 
                                 signedIn = signedIn,
                                 state = libraryState,
+                                offline = !online,
+                                youtubePlaylistTitle = stringResource(R.string.youtube_playlists),
+                                newPlaylistSubtitle = stringResource(R.string.playlist_destination_subtitle),
                                 listState = libraryListState,
                                 onShelfItemClick = onLibraryItemClick,
                                 // Every shelf here has a menu behind it now — the account's
@@ -3859,7 +4002,7 @@ private fun AurelisApp(
                                 // album or a Liked Music card gets. Holding an artist still
                                 // does nothing; see [onBrowseLongPress].
                                 onShelfItemLongPress = onBrowseLongPress,
-                                onNewPlaylist = { creatingPlaylist = true },
+                                onNewPlaylist = { choosingPlaylistDestination = true },
                                 onImportSpotifyPlaylist = { showSpotifyImportDialog = true },
                                 onShowAll = { shelf -> navigator.push(AppRoute.LibraryShowAll(shelf)) },
                                 replay = {
@@ -3883,8 +4026,20 @@ private fun AurelisApp(
                                 },
                                 pullState = libraryPull,
                                 contentPadding = listPadding,
-                                links = libraryLinks(),
-                                deviceItems = libraryDeviceItems(downloadedReleases) + localPlaylistItems,
+                                links = listOfNotNull(
+                                    LibraryLink(
+                                        item = ShelfItem(
+                                            title = stringResource(R.string.youtube_liked_music),
+                                            subtitle = "",
+                                            thumbnailUrl = null,
+                                            videoId = null,
+                                            browseId = YtMusicRepository.LIKED_MUSIC,
+                                        ),
+                                        icon = AurelisIcons.Heart,
+                                    ).takeIf { signedIn },
+                                ) + libraryLinks(),
+                                deviceItems = libraryDeviceItems(downloadedReleases),
+                                localPlaylistShelf = HomeShelf(stringResource(R.string.device_playlists), localPlaylistItems),
                                 inlineLocalMusic = localBody,
                             )
                             }
@@ -4364,7 +4519,23 @@ private fun AurelisApp(
                         .fillMaxWidth()
                         .onSizeChanged { floatingBarsHeight.intValue = it.height },
                 ) {
-                    QueueActionNoticeHost(queueNotice)
+                    QueueActionNoticeHost(
+                    queueNotice,
+                    actionLabel = if (queueUndoToken != null) uiResources.getString(R.string.queue_undo_action) else null,
+                    onAction = {
+                        val token = queueUndoToken
+                        if (token != null) {
+                            controller?.let { c ->
+                                scope.launch {
+                                    if (c.undoQueueEdit(token)) {
+                                        showQueueNotice(uiResources.getString(R.string.queue_undo_action))
+                                    }
+                                    queueUndoToken = null
+                                }
+                            }
+                        }
+                    },
+                )
                     // Liquid glass replaces the two stacked bars with the single
                     // component they are stacked to imitate: the now playing
                     // controls dock into the tab bar rather than riding above it,
@@ -4407,10 +4578,28 @@ private fun AurelisApp(
                         .onSizeChanged { floatingBarsHeight.intValue = it.height },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    QueueActionNoticeHost(queueNotice)
+                    QueueActionNoticeHost(
+                    queueNotice,
+                    actionLabel = if (queueUndoToken != null) uiResources.getString(R.string.queue_undo_action) else null,
+                    onAction = {
+                        val token = queueUndoToken
+                        if (token != null) {
+                            controller?.let { c ->
+                                scope.launch {
+                                    if (c.undoQueueEdit(token)) {
+                                        showQueueNotice(uiResources.getString(R.string.queue_undo_action))
+                                    }
+                                    queueUndoToken = null
+                                }
+                            }
+                        }
+                    },
+                )
                     player.song?.let { song ->
                         MiniPlayer(
                             song = song,
+                            queue = player.queue,
+                            queueIndex = player.queueIndex,
                             isPlaying = player.isPlaying,
                             isLoading = playPauseBusy,
                             hazeState = hazeState,
@@ -4548,7 +4737,7 @@ private fun AurelisApp(
                     // A party plays one cut for everyone in it — see
                     // [PlaybackService.smoothSwapCurrentTrackVersion].
                     if (partyState.inParty) {
-                        showQueueNotice(versionContext.getString(R.string.version_switch_in_party))
+                        showQueueNotice(uiResources.getString(R.string.version_switch_in_party))
                         return@toggle
                     }
                     if (switchingAudioVersion) return@toggle
@@ -4733,7 +4922,7 @@ private fun AurelisApp(
                     )
                 },
                 onOpenArtist = { id ->
-                    openPage(id, song.artist, context.getString(R.string.artist), BrowseType.ARTIST)
+                    openPage(id, song.artist, uiResources.getString(R.string.artist), BrowseType.ARTIST)
                 },
                 // The player backfills its own track; any other row is
                 // looked up as the menu opens — see `needsLinks` above.
@@ -4776,25 +4965,6 @@ private fun AurelisApp(
                 // due to look at it again — [QualityUpgrade.refuseUpgrades]
                 // takes a broken track off the automatic path for the rest
                 // of the session, and `askByHand` is what clears that.
-                onUpgradeQuality = if (fromPlayer &&
-                    (
-                        song.videoId in pinnedToOriginal ||
-                            playingYouTubesOwn(song.videoId, controller)
-                        ) &&
-                    // A track playing off a file the listener saved is not
-                    // playing a stream anything could upgrade — the pin on
-                    // it is only waiting for the day it is streamed again.
-                    song.localUri == null &&
-                    controller?.currentMediaItem?.mediaId == song.videoId
-                ) {
-                    {
-                        controller.upgradeQuality()
-                        songActions = null
-                    }
-                } else {
-                    null
-                },
-                upgradeQualityInProgress = fromPlayer && song.videoId in qualityUpgradesInFlight,
                 onToggleAudioVersion = onToggleVersion,
                 isAudioVersion = menuIsAudioVersion,
                 audioVersionMissing = song.videoId in missingVersions,
@@ -4815,7 +4985,7 @@ private fun AurelisApp(
                             // outcome worth seeing rather than a silent one.
                             Toast.makeText(
                                 context,
-                                context.resources.getQuantityString(
+                                uiResources.getQuantityString(
                                     R.plurals.log_copied_line_count,
                                     text.lineSequence().count(),
                                     text.lineSequence().count(),
@@ -5013,8 +5183,13 @@ private fun AurelisApp(
         // instead of over it.
         replayStory?.let { start ->
             replay.summary?.takeUnless { it.isEmpty }?.let { summary ->
-                ReplayStories(
+                if (replay.period == com.music.aurelis.data.stats.ReplayPeriod.THIS_YEAR && !annualReplayReady) {
+                    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.CircularProgressIndicator()
+                    }
+                } else ReplayStories(
                     summary = summary,
+                    yearData = annualReplayData,
                     start = start,
                     onClose = { replayStory = null },
                     onShare = { card ->
@@ -5125,20 +5300,49 @@ private fun AurelisApp(
                             // all there already, else that it didn't work.
                             showQueueNotice(
                                 when {
-                                    added > 1 -> context.resources.getQuantityString(
+                                    added > 1 -> uiResources.getQuantityString(
                                         R.plurals.added_to_playlists_notice, added, added,
                                     )
-                                    added == 1 -> context.getString(R.string.song_added_to_playlist)
+                                    added == 1 -> uiResources.getString(R.string.song_added_to_playlist)
                                     alreadyThere > 0 && failed == 0 ->
-                                        context.getString(R.string.song_already_in_playlist)
-                                    else -> context.getString(R.string.failed)
+                                        uiResources.getString(R.string.song_already_in_playlist)
+                                    else -> uiResources.getString(R.string.failed)
                                 },
                             )
                         }
                     }
                 },
                 onCreate = { title, privacy ->
-                    viewModel.createPlaylist(title, privacy, target)
+                    viewModel.createPlaylist(title, privacy, target) { showQueueNotice(it) }
+                },
+            )
+        }
+
+        if (choosingPlaylistDestination) {
+            AlertDialog(
+                onDismissRequest = { choosingPlaylistDestination = false },
+                title = { Text(stringResource(R.string.new_playlist)) },
+                text = {
+                    Column {
+                        TextButton(onClick = {
+                            choosingPlaylistDestination = false
+                            creatingOfflinePlaylist = true
+                        }) { Text(stringResource(R.string.playlist_on_device)) }
+                        TextButton(enabled = online, onClick = {
+                            choosingPlaylistDestination = false
+                            if (signedIn) creatingPlaylist = true else webSession = WebSessionMode.SIGN_IN
+                        }) { Text(stringResource(R.string.playlist_on_youtube)) }
+                        if (!online) Text(
+                            stringResource(R.string.playlist_youtube_requires_connection),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { choosingPlaylistDestination = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
                 },
             )
         }
@@ -5147,10 +5351,11 @@ private fun AurelisApp(
         // The sheet above over the offline player's own playlists, for a track
         // that is a file on this device. Nothing here waits on a network, so
         // there is no loading state and the outcome is known on the tap.
-        if (offlinePlaylistTarget != null || creatingOfflinePlaylist) {
+        if (offlinePlaylistTarget != null || creatingOfflinePlaylist || offlinePlaylistBatch.isNotEmpty()) {
             val target = offlinePlaylistTarget
             val dismiss = {
                 offlinePlaylistTarget = null
+                offlinePlaylistBatch = emptyList()
                 creatingOfflinePlaylist = false
             }
             val choices = remember(offlinePlaylists) {
@@ -5158,7 +5363,7 @@ private fun AurelisApp(
                     UserPlaylist(
                         playlistId = playlist.id,
                         title = playlist.title,
-                        subtitle = context.resources.getQuantityString(
+                        subtitle = uiResources.getQuantityString(
                             R.plurals.song_count_plural,
                             playlist.songs.size,
                             playlist.songs.size,
@@ -5172,27 +5377,30 @@ private fun AurelisApp(
                 playlists = choices,
                 loading = false,
                 song = target,
-                startCreating = target == null,
+                songs = offlinePlaylistBatch,
+                startCreating = target == null && offlinePlaylistBatch.isEmpty(),
                 offline = true,
                 onDismiss = dismiss,
                 onAdd = { picked ->
-                    target?.let { song ->
-                        val result = OfflinePlaylists.add(picked.mapTo(HashSet()) { it.playlistId }, listOf(song))
+                    val songs = if (offlinePlaylistBatch.isNotEmpty()) offlinePlaylistBatch else listOfNotNull(target)
+                    if (songs.isNotEmpty()) {
+                        val result = OfflinePlaylists.add(picked.mapTo(HashSet()) { it.playlistId }, songs)
                         showQueueNotice(
                             when {
-                                result.added > 1 -> context.resources.getQuantityString(
+                                result.added > 1 -> uiResources.getQuantityString(
                                     R.plurals.added_to_playlists_notice, result.added, result.added,
                                 )
-                                result.added == 1 -> context.getString(R.string.song_added_to_playlist)
-                                result.alreadyThere > 0 -> context.getString(R.string.song_already_in_playlist)
-                                else -> context.getString(R.string.failed)
+                                result.added == 1 -> uiResources.getString(R.string.song_added_to_playlist)
+                                result.alreadyThere > 0 -> uiResources.getString(R.string.song_already_in_playlist)
+                                else -> uiResources.getString(R.string.failed)
                             },
                         )
                     }
                 },
                 onCreate = { title, _ ->
-                    OfflinePlaylists.create(title, listOfNotNull(target))
-                    if (target != null) showQueueNotice(context.getString(R.string.song_added_to_playlist))
+                    val songs = if (offlinePlaylistBatch.isNotEmpty()) offlinePlaylistBatch else listOfNotNull(target)
+                    OfflinePlaylists.create(title, songs)
+                    if (songs.isNotEmpty()) showQueueNotice(uiResources.getString(R.string.song_added_to_playlist))
                 },
             )
         }
@@ -5210,7 +5418,7 @@ private fun AurelisApp(
                         songs,
                     ) { browseId, pTitle, savedLocally ->
                         showQueueNotice(
-                            context.getString(
+                            uiResources.getString(
                                 if (savedLocally && signedIn) R.string.spotify_import_local_fallback
                                 else R.string.spotify_import_done,
                                 pTitle,
@@ -5369,7 +5577,7 @@ private fun AurelisApp(
                         if (!nowPinned && id !in pinnedPlaylists) {
                             Toast.makeText(
                                 context,
-                                context.getString(
+                                uiResources.getString(
                                     R.string.pinned_playlist_limit,
                                     AppSettings.MAX_PINNED_PLAYLISTS,
                                 ),
@@ -5413,7 +5621,7 @@ private fun AurelisApp(
                             if (reorderTarget != p) return@loadPlaylistEntries
                             reorderEntries = result.fold(
                                 onSuccess = { UiState.Success(it) },
-                                onFailure = { UiState.Error(context.getString(R.string.failed)) },
+                                onFailure = { UiState.Error(uiResources.getString(R.string.failed)) },
                             )
                         }
                     }
@@ -5798,10 +6006,10 @@ private fun AurelisApp(
                                     showLastfmLogin = false
                                 }
                                 .onFailure { e ->
-                                    lastfmError = e.message ?: context.getString(R.string.login_failed)
+                                    lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                                 }
                         } catch (e: Exception) {
-                            lastfmError = e.message ?: context.getString(R.string.login_failed)
+                            lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                         } finally {
                             lastfmLoading = false
                         }
@@ -5812,6 +6020,9 @@ private fun AurelisApp(
         }
 
         if (showWebDavEditor) {
+            val initialWebdavUrl by AppSettings.webdavUrl.collectAsStateWithLifecycle()
+            val initialWebdavUsername by AppSettings.webdavUsername.collectAsStateWithLifecycle()
+            val initialWebdavPassword by AppSettings.webdavPassword.collectAsStateWithLifecycle()
             BackHandler { showWebDavEditor = false }
             ServerEditorHost(
                 hazeState = hazeState,
@@ -5819,16 +6030,16 @@ private fun AurelisApp(
                 description = stringResource(R.string.webdav_description),
                 fields = listOf(
                     FieldConfig(
-                        initial = AppSettings.webdavUrl.value,
+                        initial = initialWebdavUrl,
                         placeholder = stringResource(R.string.webdav_server_url_hint),
                         keyboardType = KeyboardType.Uri,
                     ),
                     FieldConfig(
-                        initial = AppSettings.webdavUsername.value,
+                        initial = initialWebdavUsername,
                         placeholder = stringResource(R.string.username),
                     ),
                     FieldConfig(
-                        initial = AppSettings.webdavPassword.value,
+                        initial = initialWebdavPassword,
                         placeholder = stringResource(R.string.password),
                         keyboardType = KeyboardType.Password,
                         isPassword = true,
@@ -5854,6 +6065,11 @@ private fun AurelisApp(
         }
 
         if (showSmbEditor) {
+            val initialSmbHost by AppSettings.smbHost.collectAsStateWithLifecycle()
+            val initialSmbShare by AppSettings.smbShare.collectAsStateWithLifecycle()
+            val initialSmbBasePath by AppSettings.smbBasePath.collectAsStateWithLifecycle()
+            val initialSmbUsername by AppSettings.smbUsername.collectAsStateWithLifecycle()
+            val initialSmbPassword by AppSettings.smbPassword.collectAsStateWithLifecycle()
             BackHandler { showSmbEditor = false }
             ServerEditorHost(
                 hazeState = hazeState,
@@ -5861,24 +6077,24 @@ private fun AurelisApp(
                 description = stringResource(R.string.smb_description),
                 fields = listOf(
                     FieldConfig(
-                        initial = AppSettings.smbHost.value,
+                        initial = initialSmbHost,
                         placeholder = stringResource(R.string.smb_server_hint),
                         keyboardType = KeyboardType.Uri,
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbShare.value,
+                        initial = initialSmbShare,
                         placeholder = stringResource(R.string.smb_share_hint),
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbBasePath.value,
+                        initial = initialSmbBasePath,
                         placeholder = stringResource(R.string.smb_folder_hint),
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbUsername.value,
+                        initial = initialSmbUsername,
                         placeholder = stringResource(R.string.username),
                     ),
                     FieldConfig(
-                        initial = AppSettings.smbPassword.value,
+                        initial = initialSmbPassword,
                         placeholder = stringResource(R.string.password),
                         keyboardType = KeyboardType.Password,
                         isPassword = true,
@@ -6274,6 +6490,27 @@ private fun FrostedMenuPanel(
     }
 }
 
+@OptIn(ExperimentalHazeMaterialsApi::class)
+@Composable
+private fun OfflineConnectionPill(hazeState: HazeState, glass: Boolean) {
+    val surface = MaterialTheme.colorScheme.surface
+    Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {
+        Surface(
+            shape = CircleShape,
+            color = if (glass) Color.Transparent else surface,
+            modifier = Modifier.clip(CircleShape).then(
+                if (glass) Modifier.optimizedHazeEffect(hazeState, HazeMaterials.thin(surface)) else Modifier,
+            ),
+        ) {
+            Text(
+                text = stringResource(R.string.no_internet_connection),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+    }
+}
+
 /** One option on a frosted menu: its label, and a tick or [icon] at the end. */
 @Composable
 private fun FrostedMenuRow(
@@ -6426,3 +6663,4 @@ private const val TAB_HOME = 0
 private const val TAB_EXPLORE = 1
 private const val TAB_LIBRARY = 2
 private const val TAB_SEARCH = 3
+

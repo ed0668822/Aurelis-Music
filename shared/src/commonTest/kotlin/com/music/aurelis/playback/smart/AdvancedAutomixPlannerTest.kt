@@ -7,6 +7,16 @@ import kotlin.test.assertTrue
 
 class AdvancedAutomixPlannerTest {
 
+    @Test
+    fun doubleTimeTempoIsNotAnIncompatibleBeatmatchByItself() {
+        // Example observed on-device: model grids at 98 and 200 BPM.
+        // Fold 200 to 100 BPM before deciding whether any speed change is safe.
+        assertTrue(stretchReachable(98.0, 200.0))
+        assertEquals(0.98, incomingRateBetween(98.0, 200.0), 0.0001)
+        // Musically incompatible keys or overlapping vocals may still require
+        // a filtered or ordinary crossfade; tempo alone should not reject it.
+    }
+
     /** A synthetic, fully analysed track on a steady grid. */
     private fun track(
         id: String,
@@ -83,6 +93,56 @@ class AdvancedAutomixPlannerTest {
         assertEquals(0.0, plan.echoSeconds)
         assertTrue("unmixable-pair" in plan.policyReasons)
         assertEquals(TransitionStyle.EQUAL_POWER, plan(current, next, advanced = false).transitionStyle)
+    }
+
+    @Test
+    fun aQuietOpeningCanStartOnAnEarlierAudibleBarWithoutMovingTheExit() {
+        val current = track("a", 120.0, "C major", vocal = 0.1)
+        val next = track("b", 94.0, "F♯ major", vocal = 0.1)
+        val original = plan(current, next, advanced = true)
+        val quietOutro = current.copy(energyCurve = current.energyCurve.map {
+            if (it.time >= 191.0) it.copy(energy = 0.0) else it
+        })
+
+        val adjusted = plan(quietOutro, next, advanced = true)
+        assertEquals(TransitionStyle.EQUAL_POWER, adjusted.transitionStyle)
+        assertTrue(adjusted.transitionStart < original.transitionStart)
+        assertTrue(adjusted.transitionStart in current.downbeats)
+        assertEquals(original.transitionEnd, adjusted.transitionEnd, 1e-6)
+        assertEquals(original.incomingCueTime, adjusted.incomingCueTime, 1e-6)
+        assertEquals(1.0, adjusted.incomingPlaybackRate, 1e-6)
+        assertTrue(adjusted.fadeSeconds <= 12.0)
+    }
+
+    @Test
+    fun anEarlierBarIsRejectedWhenItIntroducesOverlappingVocals() {
+        val outgoing = track("a", 120.0, "C major", vocal = 0.1)
+        val incoming = track("b", 94.0, "F♯ major", vocal = 0.1)
+        val quietOutro = outgoing.copy(
+            energyCurve = outgoing.energyCurve.map { if (it.time >= 191.0) it.copy(energy = 0.0) else it },
+            vocalActivityMask = outgoing.energyCurve.map { if (it.time < 191.0) 1.0 else 0.0 },
+        )
+        val sungIntro = incoming.copy(vocalActivityMask = incoming.energyCurve.map { 1.0 })
+
+        val original = plan(outgoing, incoming, advanced = true)
+        val adjusted = plan(quietOutro, sungIntro, advanced = true)
+        assertEquals(original.transitionStart, adjusted.transitionStart, 1e-6)
+        assertEquals(original.transitionEnd, adjusted.transitionEnd, 1e-6)
+    }
+
+    @Test
+    fun seekingPastTheEarlierBarsKeepsTheOriginalStart() {
+        val outgoing = track("a", 120.0, "C major", vocal = 0.1)
+        val incoming = track("b", 94.0, "F♯ major", vocal = 0.1)
+        val quietOutro = outgoing.copy(energyCurve = outgoing.energyCurve.map {
+            if (it.time >= 191.0) it.copy(energy = 0.0) else it
+        })
+
+        val adjusted = planTransition(
+            analysis = quietOutro, nextAnalysis = incoming, currentTime = 191.5,
+            duration = outgoing.duration, mode = CrossfadeMode.SMART, advanced = true,
+        )
+        assertEquals(plan(outgoing, incoming, advanced = true).transitionStart, adjusted.transitionStart, 1e-6)
     }
 
     @Test

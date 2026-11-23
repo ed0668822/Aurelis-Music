@@ -77,7 +77,7 @@ object CastController {
         override fun onSessionStartFailed(session: CastSession, error: Int) {
             Log.w(TAG, "session start failed: $error")
             update { it.copy(connecting = false) }
-            playback?.onConnectFailed()
+            if (!SmartCastCoordinator.onCastStartFailed()) playback?.onConnectFailed()
         }
 
         override fun onSessionEnding(session: CastSession) {
@@ -200,6 +200,7 @@ object CastController {
      * [CastPlayback.onSessionEnded].
      */
     fun disconnect(resumeHere: Boolean) {
+        SmartCastCoordinator.cancel()
         playback?.resumeHereOnEnd = resumeHere
         castContext?.sessionManager?.endCurrentSession(true)
     }
@@ -215,6 +216,11 @@ object CastController {
     }
 
     private fun began(session: CastSession, resumed: Boolean) {
+        SmartCastCoordinator.onCastStarted()
+        // A system-level Cast selection can arrive outside Aurelis's output picker.
+        // Never keep a browser/DLNA renderer playing alongside a Cast session.
+        if (DlnaController.connected.value != null) DlnaController.disconnect(resumeHere = false)
+        if (WebTvController.state.value.url != null) WebTvController.stop(resumeHere = false)
         watch(session)
         update {
             it.copy(

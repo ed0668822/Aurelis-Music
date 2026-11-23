@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Aurelis Music TV</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+</head>
+<body>
+  <!-- CAF retains ownership of audio, Cast media commands, queue and remote controls. -->
+  <cast-media-player id="caf-player"></cast-media-player>
+  <main class="aurelis" aria-label="Aurelis Music TV">
+    <div class="ambient" id="ambient"></div>
+    <header class="brand"><span class="mark">♪</span><span>AURELIS <strong>MUSIC</strong></span></header>
+    <section class="view">
+      <div class="artwork-wrap">
+        <img id="artwork" class="artwork" alt="Album artwork">
+        <div id="art-placeholder" class="art-placeholder" aria-hidden="true">♫</div>
+      </div>
+      <div class="content">
+        <div class="now-playing">NOW PLAYING</div>
+        <h1 id="title">Ready to play</h1>
+        <p id="artist">Connect from Aurelis Music</p>
+        <div class="lyrics" id="lyrics" aria-live="off">
+          <p class="empty">The lyrics will appear here when available.</p>
+        </div>
+      </div>
+    </section>
+    <footer>
+      <span id="playback-status">Waiting for music</span>
+      <div class="progress"><div id="progress-fill"></div></div>
+      <span id="time">0:00 / 0:00</span>
+    </footer>
+  </main>
+  <script src="./receiver.js"></script>
+</body>
+</html>

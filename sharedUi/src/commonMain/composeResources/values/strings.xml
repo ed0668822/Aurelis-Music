@@ -112,6 +112,7 @@
     <string name="playing_radio">Playing %1$s Radio</string>
     <string name="queue">Queue</string>
     <string name="remove_from_liked">Remove from Liked Music</string>
+    <string name="add_to_queue">Add to queue</string>
     <string name="remove_from_queue">Remove from queue</string>
     <string name="repeat_all">Repeat all</string>
     <string name="repeat_off">Repeat off</string>
@@ -278,4 +279,12 @@
     <string name="mix_view_seconds">%1$d sec</string>
     <string name="mix_view_bpm">%1$d bpm</string>
     <string name="automix_overview_unavailable">No Automix transition coming up</string>
+    <string name="queue_select">Select</string>
+    <string name="queue_done">Done</string>
+    <string name="queue_select_all">Select all</string>
+    <string name="queue_selected_count">%1$d selected</string>
+    <string name="queue_undo">Undo</string>
+    <string name="best_part">Best Part</string>
+    <string name="mixes_none">No mixes yet. Keep listening and YouTube Music will make some for you.</string>
+    <string name="mixes_yours">Your Mixes</string>
 </resources>

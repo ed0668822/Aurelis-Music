@@ -79,16 +79,28 @@ fun autoplayQueueNeedsRefresh(
  * Finds the YouTube id that should seed AutoPlay for a song. Module tracks do not
  * carry YouTube ids, so they are matched on YouTube before the radio request.
  */
+private val YOUTUBE_RADIO_ID = Regex("^[A-Za-z0-9_-]{11}$")
+
+/**
+ * Downloaded audio with a genuine YouTube video ID needs no search, but
+ * MediaStore/local:// IDs and module keys must be matched to a YouTube song.
+ */
+fun radioNeedsYouTubeMatch(song: Song): Boolean =
+    SourceRegistry.parseTrackKey(song.videoId) != null ||
+        !YOUTUBE_RADIO_ID.matches(song.videoId)
+
 suspend fun youtubeSeedFor(song: Song): String? {
-    if (SourceRegistry.parseTrackKey(song.videoId) == null) return song.videoId
+    if (!radioNeedsYouTubeMatch(song)) return song.videoId
     val target = TrackMatcher.targetOf(song)
-    val query = TrackMatcher.queries(target).firstOrNull() ?: return null
-    return YtMusicRepository.search(query, SearchFilter.SONGS)
-        .getOrNull()
-        ?.filterIsInstance<SearchResult.Track>()
-        ?.map { it.song }
-        ?.let { TrackMatcher.best(it, target) }
-        ?.videoId
+    for (query in TrackMatcher.queries(target)) {
+        val candidates = YtMusicRepository.search(query, SearchFilter.SONGS)
+            .getOrNull()
+            ?.filterIsInstance<SearchResult.Track>()
+            ?.map { it.song }
+            ?: continue
+        TrackMatcher.best(candidates, target)?.let { return it.videoId }
+    }
+    return null // No reliable match: never pass a content:// URI to YouTube Radio.
 }
 
 /**

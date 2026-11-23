@@ -10,6 +10,7 @@
 package com.music.aurelis.playback.audio.bitperfect
 
 import android.media.AudioDeviceInfo
+import android.os.Build
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -208,9 +209,12 @@ internal class BitPerfectRoutingSink(
     override fun setOutputStreamOffsetUs(outputStreamOffsetUs: Long) =
         both { it.setOutputStreamOffsetUs(outputStreamOffsetUs) }
     override fun setVolume(volume: Float) = both { it.setVolume(volume) }
-    override fun setOffloadMode(offloadMode: Int) = normal.setOffloadMode(offloadMode)
-    override fun setOffloadDelayPadding(delayInFrames: Int, paddingInFrames: Int) =
-        normal.setOffloadDelayPadding(delayInFrames, paddingInFrames)
+    override fun setOffloadMode(offloadMode: Int) {
+        if (Build.VERSION.SDK_INT >= 29) normal.setOffloadMode(offloadMode)
+    }
+    override fun setOffloadDelayPadding(delayInFrames: Int, paddingInFrames: Int) {
+        if (Build.VERSION.SDK_INT >= 29) normal.setOffloadDelayPadding(delayInFrames, paddingInFrames)
+    }
     override fun setAudioOutputProvider(audioOutputProvider: AudioOutputProvider) =
         normal.setAudioOutputProvider(audioOutputProvider)
     override fun enableTunnelingV21() = normal.enableTunnelingV21()

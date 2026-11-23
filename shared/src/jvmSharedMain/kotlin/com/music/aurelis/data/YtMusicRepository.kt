@@ -577,21 +577,25 @@ object YtMusicRepository {
             // background, so a liked track past the first page still reads as
             // liked without holding this page open behind the whole list —
             // see [syncLikedMusic] and MainViewModel's fetchLibrary.
-            val liked = async { browseSongs(LIKED_MUSIC).getOrNull() }
+            val liked = async { browseSongs(LIKED_MUSIC).getOrThrow() }
             val added = async { runCatching { songsPaged(LIBRARY_SONGS) }.getOrDefault(emptyList()) }
             val shelves = LIBRARY_FEEDS
                 .map { (title, browseId) ->
                     async {
-                        HomeShelf(title, runCatching { libraryItemsPaged(browseId) }.getOrDefault(emptyList()))
+                        val items = if (browseId == LIBRARY_PLAYLISTS) {
+                            libraryItemsPaged(browseId)
+                        } else {
+                            runCatching { libraryItemsPaged(browseId) }.getOrDefault(emptyList())
+                        }
+                        HomeShelf(title, items)
                     }
                 }
                 .awaitAll()
                 .filter { it.items.isNotEmpty() }
 
             val likedPage = liked.await()
-            val likedSongs = likedPage?.songs.orEmpty()
+            val likedSongs = likedPage.songs
             val likedIds = likedSongs.mapTo(HashSet()) { it.videoId }
-            LikeState.seedLiked(likedIds)
             LibraryPage(
                 likedSongs = likedSongs,
                 // Thumbs-up'd tracks are also in the library feed; only what
@@ -599,7 +603,7 @@ object YtMusicRepository {
                 // second section.
                 librarySongs = added.await().filterNot { it.videoId in likedIds },
                 shelves = shelves,
-                likedContinuation = likedPage?.continuation,
+                likedContinuation = likedPage.continuation,
             )
         }
     }
@@ -919,7 +923,11 @@ object YtMusicRepository {
      * so collecting the full bounded set before publishing is preferable to a
      * shelf that looks complete and silently is not.
      */
-    private suspend fun itemsPaged(browseId: String, params: String? = null): List<ShelfItem> {
+    private suspend fun itemsPaged(
+        browseId: String,
+        params: String? = null,
+        requireSuccessfulPages: Boolean = false,
+    ): List<ShelfItem> {
         val out = LinkedHashMap<String, ShelfItem>()
         var response = Innertube.browse(browseId, params)
         var page = 1
@@ -931,12 +939,14 @@ object YtMusicRepository {
             }
             val token = parsed.continuation ?: break
             if (page++ >= MAX_PAGES) break
-            response = runCatching { Innertube.browseContinuation(token) }.getOrNull() ?: break
+            response = if (requireSuccessfulPages) Innertube.browseContinuation(token)
+                else runCatching { Innertube.browseContinuation(token) }.getOrNull() ?: break
         }
         return out.values.toList()
     }
 
-    private suspend fun libraryItemsPaged(browseId: String): List<ShelfItem> = itemsPaged(browseId, null)
+    private suspend fun libraryItemsPaged(browseId: String): List<ShelfItem> =
+        itemsPaged(browseId, requireSuccessfulPages = browseId == LIBRARY_PLAYLISTS)
 
     const val MAX_PAGES = 10
 
@@ -1203,6 +1213,37 @@ object YtMusicRepository {
         if (Innertube.cookie == null) return@call emptyList()
         InnertubeParser.parseTwoRowItemsDeep(Innertube.browse("FEmusic_mixed_for_you"))
     }
+
+    /** User-facing mixes are localized; grouping uses their stable English titles. */
+    suspend fun mixedForYouKeyed(): Result<List<com.music.aurelis.data.model.KeyedMix>> =
+        call("mixedForYouKeyed") {
+            if (Innertube.cookie == null) return@call emptyList()
+            coroutineScope {
+                val shown = async {
+                    InnertubeParser.parseTwoRowItemsDeep(Innertube.browse("FEmusic_mixed_for_you"))
+                }
+                val english = if (Innertube.currentLanguage.startsWith("en")) null else async {
+                    try {
+                        InnertubeParser.parseTwoRowItemsDeep(
+                            Innertube.browse("FEmusic_mixed_for_you", language = "en"),
+                        )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Radio mix title fallback: ${e.message}")
+                        null
+                    }
+                }
+                val items = shown.await()
+                val names = english?.await().orEmpty()
+                    .associate { (it.browseId ?: it.title) to it.title }
+                items.map {
+                    com.music.aurelis.data.model.KeyedMix(
+                        it, names[it.browseId ?: it.title] ?: it.title,
+                    )
+                }
+            }
+        }
 
     /**
      * Listening history for a caller that can live with it being a minute or

@@ -242,8 +242,7 @@ class BluetoothAudioTracker(private val context: Context) {
             }
 
             val deviceName = try {
-                @SuppressLint("MissingPermission")
-                activeDevice.name ?: activeDevice.alias ?: "Bluetooth Device"
+                readBluetoothDeviceName(activeDevice) ?: "Bluetooth Device"
             } catch (_: Throwable) {
                 "Bluetooth Device"
             }
@@ -277,6 +276,10 @@ class BluetoothAudioTracker(private val context: Context) {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun readBluetoothDeviceName(device: BluetoothDevice?): String? =
+        device?.name ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) device?.alias else null
+
     private fun parseCodecStatusIntent(intent: Intent) {
         val deviceName = if (hasBluetoothConnectPermission()) {
             val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -286,8 +289,7 @@ class BluetoothAudioTracker(private val context: Context) {
                 intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
             }
             try {
-                @SuppressLint("MissingPermission")
-                device?.name ?: device?.alias ?: _telemetry.value.deviceName ?: "Bluetooth Device"
+                readBluetoothDeviceName(device) ?: _telemetry.value.deviceName ?: "Bluetooth Device"
             } catch (_: Throwable) {
                 _telemetry.value.deviceName ?: "Bluetooth Device"
             }

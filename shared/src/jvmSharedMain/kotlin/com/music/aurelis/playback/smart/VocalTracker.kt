@@ -101,6 +101,7 @@ class VocalTracker(
     private val modelPath: () -> String,
     /** How many threads inference may use; the vocal-activity pass is the expensive one. */
     private val inferenceThreads: () -> Int,
+    private val allowSpinning: Boolean = true,
 ) {
 
     @Volatile private var session: OrtSession? = null
@@ -115,16 +116,14 @@ class VocalTracker(
             runCatching { session?.close() }
             session = null
             return runCatching {
-                val file = File(modelPath())
-                val options = OrtSession.SessionOptions().apply {
-                    setIntraOpNumThreads(threads)
-                    setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
-                    // Same reasoning as BeatTracker: the arena retains every block it allocates for
-                    // the life of the session, which a backgrounded music player cannot justify.
-                    setCPUArenaAllocator(false)
-                    setMemoryPatternOptimization(false)
-                }
-                OrtEnvironment.getEnvironment().createSession(file.absolutePath, options)
+                val path = File(modelPath()).absolutePath
+                // Same fallback as BeatTracker, for the same Android runtime.
+                runCatching { open(path, threads, OrtSession.SessionOptions.OptLevel.ALL_OPT) }
+                    .recoverCatching {
+                        AnalysisLog.warn("Vocal model failed at ALL_OPT; retrying at BASIC_OPT", it)
+                        open(path, threads, OrtSession.SessionOptions.OptLevel.BASIC_OPT)
+                    }
+                    .getOrThrow()
                     .also {
                         session = it
                         sessionThreads = threads
@@ -132,6 +131,19 @@ class VocalTracker(
             }.onFailure { AnalysisLog.warn("Vocal model unavailable; no mask will be produced", it) }
                 .getOrNull()
         }
+    }
+
+    private fun open(path: String, threads: Int, level: OrtSession.SessionOptions.OptLevel): OrtSession {
+        val options = OrtSession.SessionOptions().apply {
+            setIntraOpNumThreads(threads)
+            if (!allowSpinning) addConfigEntry("session.intra_op.allow_spinning", "0")
+            setOptimizationLevel(level)
+            // Same reasoning as BeatTracker: the arena retains every block it allocates for
+            // the life of the session, which a backgrounded music player cannot justify.
+            setCPUArenaAllocator(false)
+            setMemoryPatternOptimization(false)
+        }
+        return OrtEnvironment.getEnvironment().createSession(path, options)
     }
 
     /**

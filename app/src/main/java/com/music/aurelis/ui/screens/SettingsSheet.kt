@@ -1,3 +1,5 @@
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+
 // SPDX-FileCopyrightText: 2026 Aurelis
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
@@ -126,6 +128,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -169,7 +172,6 @@ import com.music.aurelis.data.settings.BitPerfectMode
 import com.music.aurelis.playback.AudioOutputStatus
 import com.music.aurelis.playback.audio.bitperfect.BitPerfectOutput
 import com.music.aurelis.data.settings.AutomixPerformanceMode
-import com.music.aurelis.data.settings.AutoMixEffect
 import com.music.aurelis.R
 import com.music.aurelis.data.sources.DeviceCodecs
 import com.music.aurelis.data.settings.AudioQuality
@@ -232,6 +234,7 @@ fun SettingsScreen(
     onOpenChoice: (SettingsChoiceKind) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
 
     val wifiQuality by AppSettings.audioQualityWifi.collectAsStateWithLifecycle()
     val cellularQuality by AppSettings.audioQualityCellular.collectAsStateWithLifecycle()
@@ -239,7 +242,8 @@ fun SettingsScreen(
     val crossfade by AppSettings.crossfadeSeconds.collectAsStateWithLifecycle()
     val smartFade by AppSettings.smartFadeEnabled.collectAsStateWithLifecycle()
     val automixPerformance by AppSettings.automixPerformanceMode.collectAsStateWithLifecycle()
-    val autoMixOptions by AppSettings.autoMixOptions.collectAsStateWithLifecycle()
+    val autoMixArtworkEnabled by AppSettings.autoMixArtworkEnabled.collectAsStateWithLifecycle()
+    val autoMixMiniArtworkEnabled by AppSettings.autoMixMiniArtworkEnabled.collectAsStateWithLifecycle()
     val skipSilence by AppSettings.skipSilence.collectAsStateWithLifecycle()
     val dolbyAtmos by AppSettings.dolbyAtmos.collectAsStateWithLifecycle()
     val directSourceStream by AppSettings.directSourceStream.collectAsStateWithLifecycle()
@@ -264,6 +268,8 @@ fun SettingsScreen(
     val signatureApiUrl by AppSettings.signatureApiUrl.collectAsStateWithLifecycle()
     val fullBleedArtwork by AppSettings.fullBleedArtwork.collectAsStateWithLifecycle()
     val fullBleedDetailArtwork by AppSettings.fullBleedDetailArtwork.collectAsStateWithLifecycle()
+    val showTotalDuration by AppSettings.showTotalDuration.collectAsStateWithLifecycle()
+    val hideLyricsPreview by AppSettings.hideLyricsPreview.collectAsStateWithLifecycle()
     val playerTheme by AppSettings.playerTheme.collectAsStateWithLifecycle()
     val syncedLyrics by AppSettings.syncedLyrics.collectAsStateWithLifecycle()
     val lyricsSources by AppSettings.lyricsSources.collectAsStateWithLifecycle()
@@ -391,10 +397,10 @@ fun SettingsScreen(
         backupScope.launch {
             exportStatus = Backup.exportTo(context, target).fold(
                 onSuccess = { months ->
-                    context.getString(R.string.export_succeeded, context.countOfMonths(months))
+                    uiResources.getString(R.string.export_succeeded, context.countOfMonths(months))
                 },
                 onFailure = {
-                    context.getString(R.string.export_failed, it.message ?: context.getString(R.string.unknown_error))
+                    uiResources.getString(R.string.export_failed, it.message ?: uiResources.getString(R.string.unknown_error))
                 },
             )
         }
@@ -406,10 +412,10 @@ fun SettingsScreen(
         backupScope.launch {
             importStatus = Backup.importFrom(context, source).fold(
                 onSuccess = {
-                    context.getString(R.string.import_succeeded, context.countOfMonths(it.months), it.from)
+                    uiResources.getString(R.string.import_succeeded, context.countOfMonths(it.months), it.from)
                 },
                 onFailure = {
-                    context.getString(R.string.import_failed, it.message ?: context.getString(R.string.unknown_error))
+                    uiResources.getString(R.string.import_failed, it.message ?: uiResources.getString(R.string.unknown_error))
                 },
             )
         }
@@ -854,101 +860,28 @@ fun SettingsScreen(
                     )
                 }
             }
-            // Experimental effects and duration presets are handled by the
-            // two-deck engine. Bit-perfect output keeps its direct-path bypass.
+            // BitChord's original AutoMix artwork preferences. The mini
+            // transition is independent from the expanded player's cover.
+            // Legacy experimental effect values remain readable in settings
+            // storage but no longer appear as controls for the restored engine.
             if (smartFade) {
-                val durationTitle = stringResource(R.string.automix_duration)
-                row(durationTitle, "automix", "seconds", "length") {
-                    BypassedByBitPerfect(bitPerfectReady) {
-                        SliderRow(
-                            icon = SfIcons.Waves,
-                            title = durationTitle,
-                            subtitle = stringResource(R.string.automix_duration_subtitle),
-                            value = if (autoMixOptions.durationSeconds == 0) {
-                                stringResource(R.string.automix_duration_auto)
-                            } else {
-                                "${autoMixOptions.durationSeconds}s"
-                            },
-                            // 0 = automatic; 1..58 maps continuously to 3..60 seconds.
-                            sliderValue = if (autoMixOptions.durationSeconds == 0) 0f else (autoMixOptions.durationSeconds - 2).toFloat(),
-                            onSliderValue = {
-                                val tick = it.roundToInt()
-                                AppSettings.setAutoMixDurationSeconds(if (tick == 0) 0 else tick + 2)
-                            },
-                            valueRange = 0f..58f,
-                            steps = 57,
-                        )
-                    }
+                val artworkTitle = stringResource(R.string.automix_artwork_transition)
+                row(artworkTitle, "automix", "cover", "animation", "artwork") {
+                    SettingsSubRow(
+                        title = artworkTitle,
+                        subtitle = stringResource(R.string.automix_artwork_transition_subtitle),
+                        checked = autoMixArtworkEnabled,
+                        onCheckedChange = AppSettings::setAutoMixArtworkEnabled,
+                    )
                 }
-                val effectTitle = stringResource(R.string.automix_effect)
-                row(effectTitle, "automix", "muffled", "echo", "pitch", "custom") {
-                    BypassedByBitPerfect(bitPerfectReady) {
-                        SettingsRow(
-                            icon = SfIcons.Tune,
-                            title = effectTitle,
-                            subtitle = stringResource(R.string.automix_effect_subtitle),
-                            value = autoMixOptions.effect.localizedLabel(),
-                            onClick = { onOpenChoice(SettingsChoiceKind.AUTOMIX_EFFECT) },
-                        )
-                    }
-                }
-                if (autoMixOptions.effect == AutoMixEffect.CUSTOM) {
-                    val speedTitle = stringResource(R.string.automix_speed)
-                    row(speedTitle, "automix", "speed", "tempo") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SliderRow(
-                                icon = SfIcons.Waves,
-                                title = speedTitle,
-                                subtitle = stringResource(R.string.automix_speed_subtitle),
-                                value = "%.2f×".format(Locale.ROOT, autoMixOptions.speed),
-                                sliderValue = autoMixOptions.speed,
-                                onSliderValue = { AppSettings.setAutoMixSpeed((it * 100).roundToInt() / 100f) },
-                                valueRange = 0.8f..1.2f,
-                                steps = 39,
-                            )
-                        }
-                    }
-                }
-                if (autoMixOptions.effect == AutoMixEffect.CUSTOM || autoMixOptions.effect == AutoMixEffect.PITCH) {
-                    val pitchTitle = stringResource(R.string.automix_pitch)
-                    row(pitchTitle, "automix", "pitch", "semitones") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SliderRow(
-                                icon = SfIcons.Waves,
-                                title = pitchTitle,
-                                subtitle = stringResource(R.string.automix_pitch_subtitle),
-                                value = "%.1f st".format(Locale.ROOT, autoMixOptions.pitchSemitones),
-                                sliderValue = autoMixOptions.pitchSemitones,
-                                onSliderValue = { AppSettings.setAutoMixPitchSemitones((it * 2).roundToInt() / 2f) },
-                                valueRange = -6f..6f,
-                                steps = 23,
-                            )
-                        }
-                    }
-                }
-                if (autoMixOptions.effect == AutoMixEffect.CUSTOM) {
-                    val echoTitle = stringResource(R.string.automix_echo_toggle)
-                    row(echoTitle, "automix", "echo", "delay") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SettingsSubRow(
-                                title = echoTitle,
-                                subtitle = stringResource(R.string.automix_echo_subtitle),
-                                checked = autoMixOptions.echo,
-                                onCheckedChange = AppSettings::setAutoMixEcho,
-                            )
-                        }
-                    }
-                    val lowPassTitle = stringResource(R.string.automix_low_pass)
-                    row(lowPassTitle, "automix", "low pass", "muffled") {
-                        BypassedByBitPerfect(bitPerfectReady) {
-                            SettingsSubRow(
-                                title = lowPassTitle,
-                                subtitle = stringResource(R.string.automix_low_pass_subtitle),
-                                checked = autoMixOptions.lowPass,
-                                onCheckedChange = AppSettings::setAutoMixLowPass,
-                            )
-                        }
-                    }
+                val miniArtworkTitle = stringResource(R.string.automix_mini_artwork_transition)
+                row(miniArtworkTitle, "automix", "mini player", "cover") {
+                    SettingsSubRow(
+                        title = miniArtworkTitle,
+                        subtitle = stringResource(R.string.automix_mini_artwork_transition_subtitle),
+                        checked = autoMixMiniArtworkEnabled,
+                        onCheckedChange = AppSettings::setAutoMixMiniArtworkEnabled,
+                    )
                 }
             }
             val automixPerformanceTitle = stringResource(R.string.automix_performance)
@@ -1277,6 +1210,21 @@ fun SettingsScreen(
                     onClick = { AppSettings.setFullBleedDetailArtwork(!fullBleedDetailArtwork) },
                 )
             }
+            val showTotalDurationTitle = stringResource(R.string.show_total_duration)
+            row(showTotalDurationTitle, "player", "clock", "duration", "remaining time") {
+                SettingsRow(
+                    icon = SfIcons.Clock,
+                    title = showTotalDurationTitle,
+                    subtitle = stringResource(R.string.show_total_duration_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = showTotalDuration,
+                            onCheckedChange = AppSettings::setShowTotalDuration,
+                        )
+                    },
+                    onClick = { AppSettings.setShowTotalDuration(!showTotalDuration) },
+                )
+            }
             val playerThemeTitle = stringResource(R.string.player_theme)
             row(playerThemeTitle, "background", "player", "mesh", "gradient", "legacy", "simple", "blur") {
                 SettingsRow(
@@ -1398,6 +1346,21 @@ fun SettingsScreen(
                         )
                     },
                     onClick = { AppSettings.setSyncedLyrics(!syncedLyrics) },
+                )
+            }
+            val hideLyricsPreviewTitle = stringResource(R.string.hide_lyrics_preview)
+            row(hideLyricsPreviewTitle, "lyrics", "player", "preview", "hide") {
+                SettingsRow(
+                    icon = SfIcons.VisibilityOff,
+                    title = hideLyricsPreviewTitle,
+                    subtitle = stringResource(R.string.hide_lyrics_preview_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = hideLyricsPreview,
+                            onCheckedChange = AppSettings::setHideLyricsPreview,
+                        )
+                    },
+                    onClick = { AppSettings.setHideLyricsPreview(!hideLyricsPreview) },
                 )
             }
             // Nothing to choose between while the feature is off, and the
@@ -1608,7 +1571,7 @@ fun SettingsScreen(
                         val loader = SingletonImageLoader.get(context)
                         loader.memoryCache?.clear()
                         loader.diskCache?.clear()
-                        Toast.makeText(context, context.getString(R.string.image_cache_cleared), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, uiResources.getString(R.string.image_cache_cleared), Toast.LENGTH_SHORT).show()
                     },
                 )
             }
@@ -1952,7 +1915,7 @@ fun SettingsScreen(
                 TextButton(onClick = {
                     confirmClearSongCache = false
                     AudioCache.clear {
-                        Toast.makeText(context, context.getString(R.string.song_cache_cleared), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, uiResources.getString(R.string.song_cache_cleared), Toast.LENGTH_SHORT).show()
                     }
                 }) {
                     Text(stringResource(R.string.clear))
@@ -2129,10 +2092,10 @@ fun SettingsScreen(
                                         showLastfmLoginDialog = false
                                     }
                                     .onFailure { e ->
-                                        lastfmError = e.message ?: context.getString(R.string.login_failed)
+                                        lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                                     }
                             } catch (e: Exception) {
-                                lastfmError = e.message ?: context.getString(R.string.login_failed)
+                                lastfmError = e.message ?: uiResources.getString(R.string.login_failed)
                             } finally {
                                 lastfmLoading = false
                             }
@@ -2220,30 +2183,6 @@ private fun AppFont.description(): String = stringResource(
     when (this) {
         AppFont.DEFAULT -> R.string.font_default_subtitle
         AppFont.LEGACY -> R.string.font_legacy_subtitle
-    },
-)
-
-@Composable
-private fun AutoMixEffect.localizedLabel(): String = stringResource(
-    when (this) {
-        AutoMixEffect.AUTO -> R.string.automix_effect_auto
-        AutoMixEffect.CROSSFADE -> R.string.automix_effect_crossfade
-        AutoMixEffect.MUFFLED -> R.string.automix_effect_muffled
-        AutoMixEffect.ECHO -> R.string.automix_effect_echo
-        AutoMixEffect.PITCH -> R.string.automix_effect_pitch
-        AutoMixEffect.CUSTOM -> R.string.automix_effect_custom
-    },
-)
-
-@Composable
-private fun AutoMixEffect.description(): String = stringResource(
-    when (this) {
-        AutoMixEffect.AUTO -> R.string.automix_effect_auto_description
-        AutoMixEffect.CROSSFADE -> R.string.automix_effect_crossfade_description
-        AutoMixEffect.MUFFLED -> R.string.automix_effect_muffled_description
-        AutoMixEffect.ECHO -> R.string.automix_effect_echo_description
-        AutoMixEffect.PITCH -> R.string.automix_effect_pitch_description
-        AutoMixEffect.CUSTOM -> R.string.automix_effect_custom_description
     },
 )
 
@@ -2996,7 +2935,6 @@ enum class SettingsChoiceKind(@param:StringRes val title: Int) {
     AUDIO_QUALITY_CELLULAR(R.string.on_mobile_data),
     DOWNLOAD_QUALITY(R.string.download_quality),
     AUTOMIX_PERFORMANCE(R.string.automix_performance),
-    AUTOMIX_EFFECT(R.string.automix_effect),
     BIT_PERFECT(R.string.bit_perfect_output),
     FONT(R.string.font),
 }
@@ -3077,20 +3015,6 @@ fun SettingsChoicePage(
                     footer = stringResource(R.string.download_quality_dialog_subtitle),
                 ) { quality ->
                     AppSettings.setDownloadQuality(quality)
-                    onChosen()
-                }
-            }
-
-            SettingsChoiceKind.AUTOMIX_EFFECT -> {
-                val options by AppSettings.autoMixOptions.collectAsStateWithLifecycle()
-                ChoiceGroup(
-                    options = AutoMixEffect.entries,
-                    selected = options.effect,
-                    label = { it.localizedLabel() },
-                    detail = { it.description() },
-                    footer = null,
-                ) { effect ->
-                    AppSettings.setAutoMixEffect(effect)
                     onChosen()
                 }
             }

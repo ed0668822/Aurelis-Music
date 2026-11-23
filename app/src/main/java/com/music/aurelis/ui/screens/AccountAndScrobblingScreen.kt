@@ -6,6 +6,7 @@ import com.music.aurelis.data.settings.LocalProfile
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.Toast
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
@@ -80,6 +81,7 @@ fun AccountAndScrobblingScreen(
     val lastfmEnabled by AppSettings.lastfmEnabled.collectAsStateWithLifecycle()
     val lastfmUsername by AppSettings.lastfmUsername.collectAsStateWithLifecycle()
     val lastfmSessionKey by AppSettings.lastfmSessionKey.collectAsStateWithLifecycle()
+    val youtubePremiumAudio by AppSettings.youtubePremiumAudio.collectAsStateWithLifecycle()
     val lastfmScrobbleEnabled by AppSettings.lastfmScrobbleEnabled.collectAsStateWithLifecycle()
     val lastfmNowPlayingEnabled by AppSettings.lastfmNowPlaying.collectAsStateWithLifecycle()
     val lastfmPrimaryArtistOnly by AppSettings.lastfmPrimaryArtistOnly.collectAsStateWithLifecycle()
@@ -96,11 +98,12 @@ fun AccountAndScrobblingScreen(
     val localName by LocalProfile.displayName.collectAsStateWithLifecycle()
     val localPhoto by LocalProfile.photoUri.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     var editingLocalName by remember { mutableStateOf(false) }
     var draftName by remember { mutableStateOf("") }
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null && !LocalProfile.setPhoto(context, uri)) {
-            Toast.makeText(context, context.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiResources.getString(R.string.local_profile_photo_error), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -230,6 +233,19 @@ fun AccountAndScrobblingScreen(
                     title = stringResource(R.string.listen_as),
                     subtitle = channelName ?: stringResource(R.string.default_youtube_profile),
                     onClick = onSwitchChannel,
+                )
+                FullWidthDivider()
+                SettingsRow(
+                    icon = SfIcons.GraphicEq,
+                    title = stringResource(R.string.youtube_premium_audio),
+                    subtitle = stringResource(R.string.youtube_premium_audio_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = youtubePremiumAudio,
+                            onCheckedChange = AppSettings::setYoutubePremiumAudio,
+                        )
+                    },
+                    onClick = { AppSettings.setYoutubePremiumAudio(!youtubePremiumAudio) },
                 )
                 FullWidthDivider()
                 DestructiveRow(label = stringResource(R.string.sign_out), onClick = onSignOut)

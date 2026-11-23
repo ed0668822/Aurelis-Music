@@ -25,6 +25,7 @@ data class SongInfo(
     val views: String? = null,
     val likes: String? = null,
     val comments: String? = null,
+    val credits: List<SongCredit> = emptyList(),
     val failed: Boolean = false,
 )
 
@@ -76,6 +77,9 @@ object SongInfoRepository {
                 SongInfoParser.parse(response.bodyAsText(), song.videoId)
             }
         }
+        // Credits are optional metadata: a failed browse request must never
+        // stop playback or make the rest of Song Info unavailable.
+        val credits = async { attempt { fetchCredits(song.videoId) }.getOrDefault(emptyList()) }
         var album = song.albumName
         var year: String? = null
         val release = attempt {
@@ -90,9 +94,27 @@ object SongInfoRepository {
                     ?.firstOrNull { it.matches(Regex("(?:19|20)[0-9]{2}")) }
             }
         }
-        (statistics.await().getOrNull() ?: SongInfo(failed = true)).copy(
-            album = album, releaseYear = year,
+        val watch = statistics.await().getOrNull()
+        val musicCredits = credits.await()
+        (watch ?: SongInfo(failed = true)).copy(
+            album = album,
+            releaseYear = year,
+            credits = musicCredits.ifEmpty { watch?.credits.orEmpty() },
         ).let { it.copy(failed = it.failed || release.isFailure) }
+    }
+
+    private suspend fun fetchCredits(videoId: String): List<SongCredit> {
+        val direct = attempt {
+            SongCreditsParser.parsePage(Innertube.browse("MPTC$videoId"))
+        }.getOrDefault(emptyList())
+        if (direct.isNotEmpty()) return direct
+
+        val response = Innertube.next(videoId)
+        val endpoint = SongCreditsParser.findEndpoint(response, videoId) ?: return emptyList()
+        val browseId = (endpoint["browseId"] as? JsonPrimitive)?.contentOrNull
+            ?.takeIf(String::isNotBlank) ?: return emptyList()
+        val params = (endpoint["params"] as? JsonPrimitive)?.contentOrNull
+        return SongCreditsParser.parsePage(Innertube.browse(browseId, params))
     }
 
     private suspend fun <T> attempt(block: suspend () -> T): Result<T> = try {
@@ -134,6 +156,7 @@ internal object SongInfoParser {
             views = details.str("viewCount")?.takeIf { it.toLongOrNull()?.let { n -> n >= 0 } == true },
             likes = (newLike ?: oldLike)?.withCount(),
             comments = comments,
+            credits = SongCreditsParser.parseWatchMetadata(data),
             failed = data == null,
         )
     }

@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -143,6 +144,7 @@ fun ListenTogetherScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
 
@@ -202,7 +204,7 @@ fun ListenTogetherScreen(
         state.code?.let { partyCode ->
             val message = inviteLinkFor(partyCode) +
                 System.lineSeparator() + System.lineSeparator() +
-                context.getString(R.string.listen_together_share_text, partyCode)
+                uiResources.getString(R.string.listen_together_share_text, partyCode)
             context.startActivity(
                 Intent.createChooser(
                     Intent(Intent.ACTION_SEND).apply {
@@ -461,7 +463,7 @@ fun ListenTogetherScreen(
                         clipboard.setText(AnnotatedString(state.code.orEmpty()))
                         Toast.makeText(
                             context,
-                            context.getString(R.string.copy_code),
+                            uiResources.getString(R.string.copy_code),
                             Toast.LENGTH_SHORT,
                         ).show()
                     },

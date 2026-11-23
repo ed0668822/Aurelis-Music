@@ -2,6 +2,7 @@ package com.music.aurelis.ui.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.music.aurelis.data.canvas.CanvasArtwork
@@ -15,6 +16,8 @@ import com.music.aurelis.data.settings.PlayerTheme
 import com.music.aurelis.data.settings.SmartAnalysis
 import com.music.aurelis.data.settings.MixBlend
 import com.music.aurelis.data.settings.MixTransitionView
+import com.music.aurelis.data.settings.AutoMixArtworkState
+import com.music.aurelis.playback.AutoMixVisualState
 import com.music.aurelis.data.settings.TransitionWindow
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +35,18 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface PlayerHost {
     val settings: PlayerSettingsSource
+
+    /** BitChord v1.10 audio-clock visual feed, shared by both AutoMix engines. */
+    val autoMixVisualState: StateFlow<AutoMixVisualState?>? get() = null
+    fun onAutoMixScrubIntent() = Unit
+    @Composable
+    fun autoMixIncomingReveal(
+        eased: () -> Float,
+        reducedMotion: () -> Boolean,
+        generation: Long,
+        blur: Boolean,
+    ): Modifier = Modifier.graphicsLayer { alpha = eased() }
+    val supportsAutoMixCanvas: Boolean get() = false
 
     /** A Canvas already settled for [song], without a lookup. */
     fun cachedCanvas(song: Song): CanvasArtwork?
@@ -76,6 +91,9 @@ interface PlayerHost {
      */
     @Composable
     fun rememberRemoteArtworkUrl(song: Song?): String?
+
+    /** Optional public-cover fallback for an AutoMix deck whose art cannot be displayed. */
+    suspend fun resolveMixArtwork(title: String, artist: String): String? = null
 
     /** The system output level the player's volume bar drives, if it drives one. */
     val volume: SystemVolume
@@ -218,6 +236,8 @@ data class CastUi(
     /** The receiver the music is on now, or null when it is on this device. */
     val connectedName: String? = null,
     val connecting: Boolean = false,
+    /** The browser receiver owns its volume; the phone must not show a fake slider. */
+    val webReceiverActive: Boolean = false,
 )
 
 /** Where the installed [PlayerHost] lives. */
@@ -243,6 +263,7 @@ interface PlayerSettingsSource {
     val hideSongStatus: StateFlow<Boolean>
     val showQueueHistory: StateFlow<Boolean>
     val hideVolumeBar: StateFlow<Boolean>
+    val showTotalDuration: StateFlow<Boolean>
     /** Hide the device status bar while the player is up. Always false where there is none. */
     val hideStatusBar: StateFlow<Boolean>
     val lastPlayerScreen: StateFlow<LastPlayerScreen>
@@ -254,12 +275,15 @@ interface PlayerSettingsSource {
     /** A temporary cap over both ceilings, null when none applies — the watch's, on the phone. */
     val streamCeilingOverride: StateFlow<AudioQuality?>
     val preferUsbDac: StateFlow<Boolean>
+    val disableSpotifyCanvas: StateFlow<Boolean> get() = DefaultDisableSpotifyCanvas
+    val autoMixArtwork: StateFlow<AutoMixArtworkPreferences> get() = DefaultAutoMixArtwork
     val prioritizeSpotifyCanvas: StateFlow<Boolean>
     val reduceAnimation: StateFlow<Boolean>
     val reduceDynamicBlur: StateFlow<Boolean>
     /** Turns [LocalPlayerChrome] off: glyphs and text over the artwork in plain white. */
     val disableBlendEffects: StateFlow<Boolean>
     val showNerdStats: StateFlow<Boolean>
+    val showBestPart: StateFlow<Boolean> get() = DefaultShowBestPart
     /** Whether the output / Listen Together pill sits under the transport. */
     val showListenTogetherButton: StateFlow<Boolean>
     val smartAnalysis: StateFlow<SmartAnalysis>
@@ -278,11 +302,15 @@ interface PlayerSettingsSource {
     val smartMixView: StateFlow<MixTransitionView?>
     /** Progress through [smartMixView]'s blend, 0..1. */
     val smartMixProgress: StateFlow<Float>
+    val autoMixArtworkEnabled: StateFlow<Boolean>
+    val autoMixMiniArtworkEnabled: StateFlow<Boolean>
+    val autoMixArtworkState: StateFlow<AutoMixArtworkState?>
     /** The next transition as planned, while the mix popup is open between blends; null otherwise. */
     val smartMixPreview: StateFlow<MixTransitionView?>
     val smartTransitionWindow: StateFlow<TransitionWindow?>
     val spotifyCanvasAutoHide: StateFlow<Boolean>
     val syncedLyrics: StateFlow<Boolean>
+    val hideLyricsPreview: StateFlow<Boolean>
     val translationLanguage: StateFlow<String>
     val versionAlignmentInProgress: StateFlow<Boolean>
 
@@ -291,6 +319,10 @@ interface PlayerSettingsSource {
     /** Whether the mix popup is up, so the host lays out [smartMixPreview] for it. */
     fun setMixViewOpen(open: Boolean)
 }
+
+private val DefaultDisableSpotifyCanvas = MutableStateFlow(false)
+private val DefaultAutoMixArtwork = MutableStateFlow(AutoMixArtworkPreferences())
+private val DefaultShowBestPart = MutableStateFlow(true)
 
 /** The player's name for the installed host's settings, read where AppSettings used to be. */
 internal val PlayerSettings: PlayerSettingsSource
@@ -396,6 +428,21 @@ class CanvasVideoSpec(
     val captureStill: Boolean,
     val onStillCaptured: (ImageBitmap?, Long) -> Unit,
     val onResumed: () -> Unit,
+    val nowPlaying: Boolean = false,
+    val organicReveal: CanvasOrganicReveal? = null,
+)
+
+/** Audio-clock artwork reveal, independent of the platform video renderer. */
+class CanvasOrganicReveal(
+    val generation: Long,
+    val progress: () -> Float,
+    val allowSpatialMask: Boolean,
+    val outgoingStill: CanvasStillRevealTarget? = null,
+)
+class CanvasStillRevealTarget(
+    val bounds: IntSize,
+    val bottomFade: Float,
+    val presentationAlpha: () -> Float,
 )
 
 /**
@@ -439,6 +486,8 @@ fun CanvasArtworkPlayer(
     onStillCaptured: (ImageBitmap?, Long) -> Unit = { _, _ -> },
     /** The clip has moved on from the frame it was last captured or started at. */
     onResumed: () -> Unit = {},
+    nowPlaying: Boolean = false,
+    organicReveal: CanvasOrganicReveal? = null,
 ) {
     PlayerPlatform.host.CanvasVideo(
         CanvasVideoSpec(
@@ -463,6 +512,8 @@ fun CanvasArtworkPlayer(
             captureStill = captureStill,
             onStillCaptured = onStillCaptured,
             onResumed = onResumed,
+            nowPlaying = nowPlaying,
+            organicReveal = organicReveal,
         ),
         modifier,
     )

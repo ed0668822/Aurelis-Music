@@ -1040,6 +1040,17 @@ object SourceResolver {
             }
             .toMutableList()
         var best: Pair<MusicSource, SourceStream>? = null
+        // Equal-latency sources may finish a few scheduler ticks apart. Allow a
+        // bounded near-tie window after the first valid response, but never
+        // wait for a genuinely slow source on the playback-critical path.
+        suspend fun consider(done: Deferred<Pair<MusicSource, SourceStream?>>) {
+            val (source, stream) = done.await()
+            if (stream == null || !accept(source, stream)) return
+            val held = best
+            val wins = held == null || isBetter(stream.format, held.second.format) ||
+                (!isBetter(held.second.format, stream.format) && rank.getValue(source) < rank.getValue(held.first))
+            if (wins) best = source to stream
+        }
         try {
             while (running.isNotEmpty()) {
                 val awaiting = suspend {
@@ -1058,21 +1069,25 @@ object SourceResolver {
                 // both answered quickly.
                 val ready = listOf(first) + running.filter { it !== first && it.isCompleted }
                 running -= ready.toSet()
-                for (done in ready) {
-                    val (source, stream) = done.await()
-                    if (stream == null) continue
-                    if (!accept(source, stream)) continue
-                    val held = best
-                    val wins = held == null || isBetter(stream.format, held.second.format) ||
-                        (!isBetter(held.second.format, stream.format) && rank.getValue(source) < rank.getValue(held.first))
-                    if (wins) best = source to stream
+                for (done in ready) consider(done)
+                // Playback needs a prompt first answer. Two sources with equal
+                // delays are not guaranteed to resume on the same scheduler
+                // turn, so collect near-simultaneous results before committing
+                // to the first quality. This adds at most 15ms and keeps the
+                // slow-source cancellation behavior unchanged.
+                if (best != null && !waitForAll) {
+                    if (running.isNotEmpty()) {
+                        withTimeoutOrNull(15L) {
+                            select<Deferred<Pair<MusicSource, SourceStream?>>> {
+                                running.forEach { candidate -> candidate.onAwait { candidate } }
+                            }
+                        }
+                        val nearby = running.filter { it.isCompleted }
+                        running -= nearby.toSet()
+                        for (done in nearby) consider(done)
+                    }
+                    break
                 }
-                // Playback needs the first usable answer so sound can start.
-                // An upgrade is different: it runs while audio is already
-                // playing, and its caller explicitly requested every source's
-                // patient result. Let every source finish so a fast lower tier
-                // cannot cancel a later, better rendition.
-                if (best != null && !waitForAll) break
             }
         } finally {
             running.forEach { it.cancel() }

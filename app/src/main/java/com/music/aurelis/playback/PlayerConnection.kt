@@ -1,3 +1,5 @@
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+
 package com.music.aurelis.playback
 
 import android.content.ComponentName
@@ -298,6 +300,76 @@ fun MediaController.setQueueDragActive(active: Boolean) {
     )
 }
 
+/** Live queue identities are occurrence-scoped, not just a MediaStore song ID. */
+private fun MediaController.queueEntryIdentity(index: Int, expectedSong: Song? = null): com.music.aurelis.data.model.QueueEntryIdentity? {
+    if (index !in 0 until mediaItemCount) return null
+    val entry = getMediaItemAt(index)
+    if (expectedSong != null && (expectedSong.videoId != entry.mediaId ||
+        expectedSong.queueEntryId != entry.queueEntryId
+    )) return null
+    var occurrence = 0
+    for (i in 0 until index) {
+        val other = getMediaItemAt(i)
+        if (other.mediaId == entry.mediaId && other.queueEntryId == entry.queueEntryId) occurrence++
+    }
+    return com.music.aurelis.data.model.QueueEntryIdentity(entry.mediaId, entry.queueEntryId, occurrence)
+}
+
+/** Atomic native Media3 queue removal; the service records a short-lived inverse. */
+suspend fun MediaController.removeQueueEntriesWithUndo(
+    entries: List<com.music.aurelis.data.model.QueueEntryIdentity>,
+    token: String,
+): Boolean {
+    if (entries.isEmpty() || token.isBlank()) return false
+    val data = Bundle().apply {
+        putString(EXTRA_QUEUE_EDIT_TOKEN, token)
+        putStringArrayList(EXTRA_QUEUE_EDIT_MEDIA, ArrayList(entries.map { it.mediaId }))
+        putStringArrayList(EXTRA_QUEUE_EDIT_ENTRIES, ArrayList(entries.map { it.queueEntryId.orEmpty() }))
+        putBooleanArray(EXTRA_QUEUE_EDIT_PRESENT, entries.map { it.queueEntryId != null }.toBooleanArray())
+        putIntArray(EXTRA_QUEUE_EDIT_OCCURRENCES, entries.map { it.occurrence }.toIntArray())
+    }
+    return runCatching {
+        sendCustomCommand(SessionCommand(ACTION_QUEUE_EDIT_REMOVE, Bundle.EMPTY), data)
+            .await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+}
+
+suspend fun MediaController.removeQueueItemWithUndo(index: Int, song: Song, token: String): Boolean {
+    val identity = queueEntryIdentity(index, song) ?: return false
+    return removeQueueEntriesWithUndo(listOf(identity), token)
+}
+
+suspend fun MediaController.clearQueueWithUndo(token: String): Boolean =
+    runCatching {
+        sendCustomCommand(
+            SessionCommand(ACTION_QUEUE_EDIT_CLEAR, Bundle.EMPTY),
+            bundleOf(EXTRA_QUEUE_EDIT_TOKEN to token),
+        ).await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+
+suspend fun MediaController.undoQueueEdit(token: String): Boolean =
+    runCatching {
+        sendCustomCommand(
+            SessionCommand(ACTION_QUEUE_EDIT_UNDO, Bundle.EMPTY),
+            bundleOf(EXTRA_QUEUE_EDIT_TOKEN to token),
+        ).await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+
+suspend fun MediaController.promoteQueueEntry(index: Int, song: Song): Boolean {
+    val entry = queueEntryIdentity(index, song) ?: return false
+    val data = Bundle().apply {
+        putInt(EXTRA_QUEUE_EDIT_INDEX, index)
+        putStringArrayList(EXTRA_QUEUE_EDIT_MEDIA, arrayListOf(entry.mediaId))
+        putStringArrayList(EXTRA_QUEUE_EDIT_ENTRIES, arrayListOf(entry.queueEntryId.orEmpty()))
+        putBooleanArray(EXTRA_QUEUE_EDIT_PRESENT, booleanArrayOf(entry.queueEntryId != null))
+        putIntArray(EXTRA_QUEUE_EDIT_OCCURRENCES, intArrayOf(entry.occurrence))
+    }
+    return runCatching {
+        sendCustomCommand(SessionCommand(ACTION_QUEUE_EDIT_PROMOTE, Bundle.EMPTY), data)
+            .await().resultCode == androidx.media3.session.SessionResult.RESULT_SUCCESS
+    }.getOrDefault(false)
+}
+
 /** Mirrors the controller into Compose state, polling position while playing. */
 @Composable
 fun rememberPlayerState(controller: MediaController?): PlayerState {
@@ -342,7 +414,7 @@ fun rememberPlayerState(controller: MediaController?): PlayerState {
             }
             // Synced here too, so seeking while paused or buffering still moves
             // the scrubber (the poll loop only runs on play).
-            position.report(player.currentPosition.coerceAtLeast(0L))
+            position.report(player.currentPosition.coerceAtLeast(0L), isPlaying = player.isPlaying)
             state = state.copy(
                 song = item?.toSong(),
                 isPlaying = player.isPlaying,
@@ -423,7 +495,7 @@ fun rememberPlayerState(controller: MediaController?): PlayerState {
     val foreground = rememberIsForeground()
     LaunchedEffect(controller, state.isPlaying, foreground) {
         while (controller != null && state.isPlaying && foreground) {
-            position.report(controller.currentPosition.coerceAtLeast(0L))
+            position.report(controller.currentPosition.coerceAtLeast(0L), isPlaying = controller.isPlaying)
             val duration = controller.duration.coerceAtLeast(0L)
             if (duration != state.durationMs) state = state.copy(durationMs = duration)
             delay(500)
@@ -561,6 +633,13 @@ private const val EXTRA_DURATION = "aurelis.durationText"
 private const val EXTRA_EXPLICIT = "aurelis.explicit"
 
 /**
+ * The runtime ("3:45") the queue row that built this item carried, or null when
+ * it carried none. A file on the device has no `d=` in its URI, so this is the
+ * only runtime Automix can know for it before the player has prepared it.
+ */
+fun MediaItem.queuedDurationText(): String? = mediaMetadata.extras?.getString(EXTRA_DURATION)
+
+/**
  * @see Song.sourceQuality — carried so an addon row rebuilt from the queue
  * (a restore, a reorder) keeps the `&mix=` its first item had; see
  * [SourceResolver.MIX_PARAM].
@@ -605,7 +684,7 @@ private val DIRECT_FILE_URI_EXTENSIONS = setOf(
     "dsf", "dff",
 )
 
-private fun resolvePlaybackUri(uriString: String, localPath: String?): String {
+internal fun resolvePlaybackUri(uriString: String, localPath: String?): String {
     if (localPath.isNullOrBlank() || !uriString.startsWith("content://")) return uriString
     val ext = localPath.substringAfterLast('.', "").lowercase(Locale.ROOT)
     if (ext !in DIRECT_FILE_URI_EXTENSIONS) return uriString

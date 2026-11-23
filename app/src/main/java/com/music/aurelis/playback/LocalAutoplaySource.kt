@@ -36,7 +36,7 @@ internal object LocalAutoplaySource {
         seed: Song,
         existing: List<Song>,
         limit: Int,
-        bpmFor: (String) -> Double?,
+        bpmFor: (Song) -> Double?,
     ): List<Song> = withContext(Dispatchers.IO) {
         if (limit <= 0 || seed.localUri.isNullOrBlank()) return@withContext emptyList()
         refreshIfStale(context.applicationContext, seed.artist)

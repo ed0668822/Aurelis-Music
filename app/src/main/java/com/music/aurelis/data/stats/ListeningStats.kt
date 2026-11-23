@@ -366,6 +366,31 @@ object ListeningStats {
         }
     }
 
+
+    /**
+     * Read one complete calendar year without relying on THIS_YEAR's moving
+     * boundary. The latest listening is flushed before reading; this does not
+     * evict the ordinary Replay summary cache or change any playback state.
+     *
+     * The local profile is authoritative: remote-device statistics are not
+     * merged here because Aurelis does not enable cloud Replay sync.
+     */
+    suspend fun year(year: Int): ReplayYearData = withContext(Dispatchers.IO) {
+        require(year in 1970..9999) { "Invalid replay year" }
+        flushAndAwait()
+        val stored = months().asSequence()
+            .filter { it.year == year }
+            .mapNotNull { read(it.toString()) }
+            .toList()
+        val merged = MergedBucket()
+        stored.forEach(merged::add)
+        val result = merged.toSummary(
+            ReplayPeriod.THIS_YEAR,
+            LocalDate.of(year, 12, 31),
+        ).copy(label = year.toString())
+        ReplayYearProjection.fromBuckets(year, result, stored)
+    }
+
     /** Every month with a file, oldest first. */
     fun months(): List<YearMonth> {
         if (!ready) return emptyList()

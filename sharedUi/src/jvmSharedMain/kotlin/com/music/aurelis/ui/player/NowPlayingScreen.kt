@@ -17,6 +17,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Animatable
 import kotlinx.coroutines.launch
@@ -26,6 +30,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
@@ -45,6 +50,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import androidx.compose.foundation.layout.Spacer
@@ -170,6 +176,7 @@ import com.music.aurelis.data.model.LikeStatus
 import com.music.aurelis.data.model.PlaybackSourceType
 import com.music.aurelis.data.model.PLAYER_ART_PX
 import com.music.aurelis.data.model.Song
+import com.music.aurelis.data.model.QueueEntryIdentity
 import com.music.aurelis.playback.BACK_RESTARTS_AFTER_MS
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeInputScale
@@ -235,6 +242,8 @@ internal const val SEEK_SETTLE_TIMEOUT_MS = 4_000L
 private val THUMB_SIZE = 54.dp
 private val HEADER_HEIGHT = 60.dp
 private val ART_TITLE_GAP = 20.dp
+/** Keep full-bleed artwork's quality caption aligned with the lowered sleeve foot. */
+private val BANNER_FOOT_DROP = 26.dp
 /**
  * How long the sleeve takes to travel the whole way between the full player and
  * the queue's header.
@@ -289,6 +298,10 @@ private const val HERO_FADE_FRACTION = 0.42f
 /** Kept transparent so the cover remains edge-to-edge, while aiding icon contrast. */
 /** A modest floor while a subview replaces the hero with its blurred artwork backdrop. */
 private const val SUBVIEW_STATUS_SCRIM_MIN_ALPHA = 0.40f
+
+/** Hold full-bleed geometry through the audio handoff, never form a second card. */
+internal fun autoMixBannerShare(settledShare: Float, revealingFullBleed: Boolean): Float =
+    if (revealingFullBleed) 1f else settledShare
 
 /**
  * How often the legacy mesh re-reads the colours of a playing Canvas clip.
@@ -820,6 +833,11 @@ fun NowPlayingScreen(
      */
     onQueueDragActiveChange: (Boolean) -> Unit = {},
     onClearQueue: () -> Unit,
+    onQueuePromote: (Int, Song) -> Unit = { _, _ -> },
+    onQueueRemoveSelected: (List<QueueEntryIdentity>) -> Unit = {},
+    onQueueAddSelectedToPlaylist: (List<Song>) -> Unit = {},
+    queueUndoAvailable: Boolean = false,
+    onQueueUndo: () -> Unit = {},
     onOpenMenu: () -> Unit,
     onOpenAlbum: (String) -> Unit,
     /**
@@ -913,6 +931,8 @@ fun NowPlayingScreen(
     val openListenTogetherMembers: () -> Unit = { showListenTogetherMembers = true }
 
     val syncedLyricsEnabled by PlayerSettings.syncedLyrics.collectAsStateWithLifecycle()
+    val hideLyricsPreview by PlayerSettings.hideLyricsPreview.collectAsStateWithLifecycle()
+    val reduceCreditsMotion by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
     val lyricsOffsetMs by PlayerSettings.lyricsOffsetMs.collectAsStateWithLifecycle()
     // A lambda, not a value: read by the lyric strip and panel in scopes of
     // their own, so a tick recomposes them and not the player around them.
@@ -1380,6 +1400,8 @@ fun NowPlayingScreen(
         }
     }
     val fullBleedArt by PlayerSettings.fullBleedArtwork.collectAsStateWithLifecycle()
+    // The old separate artwork state is no longer driven by the restored
+    // BitChord engine. The actual cover pair below owns visual continuity.
     // Full-bleed is a phone idiom. What the width has to rule out is a player
     // running a foot wider than the column of controls under it — edge to edge
     // meaning "a picture, and separately some controls" rather than "the
@@ -1416,6 +1438,13 @@ fun NowPlayingScreen(
     // never fires again. Keyed on the cover there is nothing to reset: the
     // bitmap really is still loaded, so the state stays true.
     val art = rememberPlayerArtwork(remoteArt)
+    val artworkGate = autoMixArtworkGate()
+    val coverEntry = remember(song.videoId, song.queueEntryId, queue, queueIndex) {
+        coverOccurrence(song, queue, queueIndex)
+    }
+    val autoMixCover = rememberAutoMixCover(coverEntry, art, artworkGate)
+    val autoMixFrames = autoMixCover.framesFor(coverEntry, artworkGate)
+    PrepareAutoMixArtwork()
     // Sticky, unlike [PlayerArtwork.loaded]: the banner is the shape of the player rather
     // than a property of the track in it. Waiting on each new cover would
     // collapse the banner into a card and blow it back out on every skip —
@@ -1650,6 +1679,7 @@ fun NowPlayingScreen(
         // into a rattle, and the beat that matters is the one that says where
         // the playhead landed.
         haptics.play(Haptic.Select)
+        PlayerPlatform.host.onAutoMixScrubIntent()
         scrub.release(onSeekFraction)
     }
     val onVolumeChange: (Float) -> Unit = volume::drag
@@ -2168,6 +2198,21 @@ fun NowPlayingScreen(
                                     // Faded with the player rather than flown with
                                     // the sleeve: the cover in the bar has none.
                                     .graphicsLayer { alpha = if (panelOpen) 0f else dockFade() },
+                                bestPart = {
+                                    if (!panelOpen && !controlsLocked) {
+                                        BestPartSeekPill(
+                                            lines = lyrics,
+                                            videoId = song.videoId,
+                                            isLocal = !song.localUri.isNullOrBlank(),
+                                            durationMs = durationMs,
+                                            position = position,
+                                            mixing = mixing,
+                                            onSeek = onSeek,
+                                            hazeState = playerHaze,
+                                            overlayOpen = { overlayOpen.value },
+                                        )
+                                    }
+                                },
                             )
                         }
                     },
@@ -2189,7 +2234,7 @@ fun NowPlayingScreen(
                                     onOpenArtist = onOpenArtist,
                                 )
                             },
-                            lyricStrip = if (syncedLyricsEnabled) {
+                            lyricStrip = if (syncedLyricsEnabled && !hideLyricsPreview) {
                                 {
                                     CurrentLyricStrip(
                                         lines = lyricsTranslation.displayedLyrics,
@@ -2332,6 +2377,11 @@ fun NowPlayingScreen(
                             onRemove = onRemoveFromQueue,
                             onMove = onMoveInQueue,
                             onClear = onClearQueue,
+                            onPromote = onQueuePromote,
+                            onRemoveSelected = onQueueRemoveSelected,
+                            onAddSelectedToPlaylist = onQueueAddSelectedToPlaylist,
+                            undoAvailable = queueUndoAvailable,
+                            onUndo = onQueueUndo,
                             onDragActiveChange = onQueueDragActiveChange,
                             modifier = Modifier.fillMaxSize(),
                         )
@@ -3060,7 +3110,12 @@ fun NowPlayingScreen(
                         // card. Zero until there is a banner to be, which is to say
                         // until [heroHeight] and the player's width have been measured.
                         fun bannerShare(): Float =
-                            if (heroHeight > 0.dp && playerBounds.width > 0) heroT.value else 0f
+                            if (heroHeight > 0.dp && playerBounds.width > 0) {
+                                autoMixBannerShare(
+                                    heroT.value,
+                                    heroMode && autoMixFrames?.incoming != null,
+                                )
+                            } else 0f
                         // How much of the banner is on screen: its share, given up as
                         // the sleeve collapses — the same movement as the collapse
                         // rather than a fade chained after it.
@@ -3375,7 +3430,12 @@ fun NowPlayingScreen(
                                     )
                                 }
                             }
-                            AsyncImage(
+                            AutoMixCover(
+                                frames = autoMixFrames,
+                                modifier = Modifier.fillMaxSize(),
+                                blur = true,
+                            ) { artworkModifier ->
+                                AsyncImage(
                                 // Decode at the sleeve's *expanded* size, always.
                                 // Coil otherwise sizes the decode to however large
                                 // this is when the request goes out — and changing
@@ -3410,7 +3470,7 @@ fun NowPlayingScreen(
                                 // or otherwise; the request stays mounted so
                                 // loading still finishes in the background and
                                 // [PlayerArtwork.loaded] still flips the moment it does.
-                                modifier = Modifier
+                                modifier = artworkModifier
                                     .fillMaxSize()
                                     .drawWithContent {
                                         val frame = still()
@@ -3427,6 +3487,7 @@ fun NowPlayingScreen(
                                         }
                                     },
                             )
+                            }
 
                             // Where the clip plays when it can't have the banner:
                             // inside the same clip as the still art, taking the
@@ -3532,7 +3593,26 @@ fun NowPlayingScreen(
                                         .padding(horizontal = 10.dp, vertical = 8.dp)
                                         .graphicsLayer {
                                             alpha = (1f - p() * 2f) * spotifyChromeAlpha
+                                            // Full-bleed artwork continues below the square sleeve.
+                                            // Lower the stats and Best Part together.
+                                            translationY = BANNER_FOOT_DROP.toPx() *
+                                                if (spotifyCanvasPresentation) 1f - p() else bannerShown()
                                         },
+                                    bestPart = {
+                                        if (!lyricsOpen && !queueOpen && !controlsLocked && !videoMode) {
+                                            BestPartSeekPill(
+                                                lines = lyrics,
+                                                videoId = song.videoId,
+                                                isLocal = !song.localUri.isNullOrBlank(),
+                                                durationMs = durationMs,
+                                                position = position,
+                                                mixing = mixing,
+                                                onSeek = onSeek,
+                                                hazeState = playerHaze,
+                                                overlayOpen = { overlayOpen.value },
+                                            )
+                                        }
+                                    },
                                 )
                             }
                         }
@@ -3697,7 +3777,8 @@ fun NowPlayingScreen(
                                 // Only the title's own overflow gates the artist's stagger
                                 // below — an artist line that's long on its own has no
                                 // reason to wait on a title that already fits.
-                                var titleOverflowing by remember { mutableStateOf(false) }
+                                // Each song owns its marquee overflow state; a previous
+                                // title must not delay the incoming artist's animation.
                                 // Only while these credits are the screen. Collapsed into
                                 // a header over the queue or the lyrics they are a label
                                 // on a list, and a label that crawls pulls the eye off
@@ -3718,20 +3799,50 @@ fun NowPlayingScreen(
                                 // ("… (Live)") dissolves into the new one instead of
                                 // snapping while the rest of the switch moves around
                                 // it.
-                                Crossfade(
-                                    targetState = song.title to song.artist,
+                                AnimatedContent(
+                                    targetState = song,
+                                    contentKey = { it.queueEntryId ?: it.videoId },
+                                    transitionSpec = {
+                                        if (reduceCreditsMotion) {
+                                            fadeIn(tween(0)) togetherWith fadeOut(tween(0))
+                                        } else {
+                                            // Animate in the same direction as the real queue handoff.
+                                            // Duplicate recordings are distinguished by queueEntryId.
+                                            val from = queue.indexOfFirst {
+                                                it.videoId == initialState.videoId &&
+                                                    it.queueEntryId == initialState.queueEntryId
+                                            }
+                                            val to = queue.indexOfFirst {
+                                                it.videoId == targetState.videoId &&
+                                                    it.queueEntryId == targetState.queueEntryId
+                                            }
+                                            val direction = songInfoSlideDirection(from, to, queue.size)
+                                            // BitChord-sized travel: use the full text
+                                            // viewport instead of a quarter-width nudge.
+                                            // The gesture itself is still owned by MediaSession.
+                                            slideInHorizontally(tween(280, easing = LinearOutSlowInEasing)) {
+                                                direction * it
+                                            } togetherWith slideOutHorizontally(
+                                                tween(280, easing = LinearOutSlowInEasing),
+                                            ) { -direction * it }
+                                        }
+                                    },
                                     // Round the fade and the marquee's edge masks, whose
                                     // layers would otherwise hide the backdrop from it. The
                                     // title is in it too and stays white: see [additiveChrome].
-                                    modifier = Modifier.additiveChrome(LocalPlayerChrome.current),
-                                    animationSpec = tween(durationMillis = 300),
+                                    modifier = Modifier
+                                        .clipToBounds()
+                                        .additiveChrome(LocalPlayerChrome.current),
                                     label = "playerCredits",
-                                ) {
+                                ) { presentedSong ->
+                                    var titleOverflowing by remember(
+                                        presentedSong.videoId, presentedSong.queueEntryId,
+                                    ) { mutableStateOf(false) }
                                     val scrolling = scrolls()
                                     val artistColor = chromeWhite(0.55f)
                                     Column {
                                         MarqueeText(
-                                            text = song.title,
+                                            text = presentedSong.title,
                                             style = MaterialTheme.typography.titleLarge.copy(
                                                 fontSize = 20.sp,
                                             ),
@@ -3739,7 +3850,7 @@ fun NowPlayingScreen(
                                             enabled = scrolling,
                                             // Before the title, in the artist line's
                                             // colour.
-                                            leading = if (song.isExplicit == true) {
+                                            leading = if (presentedSong.isExplicit == true) {
                                                 { ExplicitBadge(color = artistColor) }
                                             } else {
                                                 null
@@ -3747,12 +3858,12 @@ fun NowPlayingScreen(
                                             onOverflowChange = { titleOverflowing = it },
                                             // Only the tracks YouTube hands us a browse id for
                                             // lead anywhere; the rest stay plain text.
-                                            modifier = Modifier.opensPage(song.albumId, onOpenAlbum),
+                                            modifier = Modifier.opensPage(presentedSong.albumId, onOpenAlbum),
                                         )
                                         ArtistCreditsMarquee(
-                                            text = song.artist,
-                                            credits = remember(song.artist, song.artists, song.artistId) {
-                                                artistCredits(song.artist, song.artists, song.artistId)
+                                            text = presentedSong.artist,
+                                            credits = remember(presentedSong.artist, presentedSong.artists, presentedSong.artistId) {
+                                                artistCredits(presentedSong.artist, presentedSong.artists, presentedSong.artistId)
                                             },
                                             style = MaterialTheme.typography.titleLarge.copy(
                                                 fontWeight = FontWeight.W500,
@@ -3776,10 +3887,14 @@ fun NowPlayingScreen(
                             // there's no account to record it against — except on a
                             // local file or a finished download, whose star is the
                             // device's own Liked playlist and needs no account.
-                            if (signedIn || song.localUri != null) {
-                                val liked = likeStatus == LikeStatus.LIKE
-                                CircleGlyph(
-                                    icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,
+                            GlassDiscPair(
+                                hazeState = playerHaze,
+                                overlayOpen = { overlayOpen.value },
+                            ) {
+                                if (signedIn || song.localUri != null) {
+                                    val liked = likeStatus == LikeStatus.LIKE
+                                    CircleGlyph(
+                                        icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,
                                     contentDescription = stringResource(
                                         if (liked) Res.string.remove_from_liked else Res.string.like,
                                     ),
@@ -3830,6 +3945,7 @@ fun NowPlayingScreen(
                                 },
                                 modifier = Modifier.menuAnchor(),
                             )
+                            }
                         }
 
                         // [lyricsOpen] asked first: a close has already hidden the
@@ -3986,6 +4102,11 @@ fun NowPlayingScreen(
                                     onRemove = onRemoveFromQueue,
                                     onMove = onMoveInQueue,
                                     onClear = onClearQueue,
+                                    onPromote = onQueuePromote,
+                                    onRemoveSelected = onQueueRemoveSelected,
+                                    onAddSelectedToPlaylist = onQueueAddSelectedToPlaylist,
+                                    undoAvailable = queueUndoAvailable,
+                                    onUndo = onQueueUndo,
                                     onScrollingChange = { queueScrolling = it },
                                     onDragActiveChange = onQueueDragActiveChange,
                                     collapsePlayerOnScroll = true,
@@ -4059,7 +4180,7 @@ fun NowPlayingScreen(
                             .height(lyricSlotHeight),
                         contentAlignment = Alignment.CenterStart,
                     ) {
-                    if (!lyricsOpen && syncedLyricsEnabled) {
+                    if (!lyricsOpen && syncedLyricsEnabled && !hideLyricsPreview) {
                         CurrentLyricStrip(
                             lines = lyricsTranslation.displayedLyrics,
                             trackKey = song.videoId,
@@ -4075,7 +4196,7 @@ fun NowPlayingScreen(
                             onClick = openLyrics,
                         )
                     }
-                    if (!lyricsOpen && !syncedLyricsEnabled) {
+                    if (!lyricsOpen && (!syncedLyricsEnabled || hideLyricsPreview)) {
                         Text(
                             text = "\u00A0",
                             style = MaterialTheme.typography.titleMedium,

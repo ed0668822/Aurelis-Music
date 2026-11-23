@@ -8,6 +8,12 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.ui.graphics.Shape
+import dev.chrisbanes.haze.HazeState
+import com.music.aurelis.ui.components.liveMenuFrost
+import com.music.aurelis.ui.components.MenuFrostDark
 import com.music.aurelis.data.model.ArtistCredit
 import com.music.aurelis.data.model.CreditSegment
 import com.music.aurelis.data.model.creditSegments
@@ -45,6 +51,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.draw.alpha
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,6 +84,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -216,6 +224,7 @@ internal fun PlayerScrubber(
     centerLabel: @Composable BoxScope.() -> Unit = {},
 ) {
     val shown = shown()
+    val showTotalDuration by PlayerSettings.showTotalDuration.collectAsStateWithLifecycle()
     // Held as a State and read only inside the bar's draw: the blend republishes
     // every fade tick, and collecting it by value here would recompose the
     // scrubber and its labels thirty times a second for a change only the
@@ -253,7 +262,11 @@ internal fun PlayerScrubber(
                     color = timeColor,
                 )
                 Text(
-                    text = "-" + formatTime(durationMs - (shown * durationMs).toLong()),
+                    text = if (showTotalDuration && durationMs > 0L) {
+                        formatTime(durationMs)
+                    } else {
+                        "-" + formatTime((durationMs - (shown * durationMs).toLong()).coerceAtLeast(0L))
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = timeColor,
                 )
@@ -367,9 +380,25 @@ internal fun PlaybackQualityLabel(
  * it what Automix's analysis is doing. Nothing at all while the setting is off.
  */
 @Composable
-internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
+internal fun SleeveNerdStats(
+    song: Song,
+    modifier: Modifier = Modifier,
+    bestPart: @Composable () -> Unit = {},
+) {
     val showNerdStats by PlayerSettings.showNerdStats.collectAsStateWithLifecycle()
-    if (!showNerdStats) return
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier,
+    ) {
+        if (showNerdStats) NerdStatsLines(song)
+        // Best Part is independent of the diagnostics preference.
+        bestPart()
+    }
+}
+
+/** Stream diagnostics drawn above the optional Best Part pill. */
+@Composable
+private fun NerdStatsLines(song: Song) {
     val nerdStats by NerdStats.current.collectAsStateWithLifecycle()
     val smartFadeOn by PlayerSettings.smartFadeEnabled.collectAsStateWithLifecycle()
     val smartAnalysis by PlayerSettings.smartAnalysis.collectAsStateWithLifecycle()
@@ -396,10 +425,7 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
             blurRadius = 4f,
         ),
     )
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier,
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         nerdStats?.describe()?.let { stats ->
             Text(
                 text = stats,
@@ -428,7 +454,7 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
                         stringResource(Res.string.automix_not_supported_video)
                     // The detailed line once the controller has one: each song's
                     // grid, then the planned mix — the loops and what cleared them.
-                    automixDetail != null -> automixDetail!!
+                    automixDetail != null -> automixDetailForDisplay(automixDetail!!)
                     else -> stringResource(
                         Res.string.automix_analysis_status,
                         smartAnalysis.current.localizedLabel(),
@@ -449,6 +475,25 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/**
+ * AutoMix fallback reasons are internal diagnostics, not playback exceptions.
+ * Keep the mix countdown and length, but make a normal-speed fallback readable.
+ * The full beat/loop refusal remains in CrossfadeController's debug log.
+ */
+internal fun automixDetailForDisplay(raw: String): String = raw
+    .replace(
+        Regex("""automix:analysisUnavailable(?= \([^)]*(?:analysing|waiting|refining)[^)]*\))"""),
+        "beat analysis in progress (safe crossfade)",
+    )
+    .replace("automix:incompatibleTempo", "different tempos (safe blend, no speed change)")
+    .replace("automix:analysisUnavailable", "beat analysis unavailable (safe blend)")
+    .replace("automix:unreliableBeats", "beat detection uncertain (safe blend)")
+    .replace("automix:alignmentUnverified", "beat alignment unverified (safe blend)")
+    .replace(
+        Regex(""" · no loop: (outgoing|incoming): [^·]*"""),
+        " · no suitable loop (using blend)",
+    )
 
 /**
  * Previous, play/pause, next.
@@ -484,6 +529,7 @@ internal fun TransportRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TransportGlyph(
+            skipDirection = -1,
             icon = Res.drawable.ic_player_previous,
             contentDescription = stringResource(Res.string.widget_previous),
             size = skipSize,
@@ -511,9 +557,11 @@ internal fun TransportRow(
                 touchSize = playTouch,
                 onClick = onPlayPause,
                 haptic = if (isPlaying) Haptic.Pause else Haptic.Resume,
+                playbackActive = isPlaying,
             )
         }
         TransportGlyph(
+            skipDirection = 1,
             icon = Res.drawable.ic_player_next,
             contentDescription = stringResource(Res.string.widget_next),
             size = skipSize,
@@ -721,6 +769,8 @@ internal fun PlayerActionRow(
 
 /** How much more of the ink [CircleGlyph]'s disc takes than its plain white — 0.45 at rest, 0.85 lit. */
 private const val CIRCLE_DISC_DODGE_GAIN = 2.5f
+private const val CIRCLE_DISC_ALPHA = 0.18f
+private const val GLASS_FALLBACK_ALPHA = 0.72f
 
 /**
  * Translucent circular button used for the track menu and the like control.
@@ -741,7 +791,7 @@ internal fun CircleGlyph(
 ) {
     val haptics = rememberHaptics()
     val discAlpha by animateFloatAsState(
-        targetValue = if (active) 0.34f else 0.18f,
+        targetValue = if (active) 0.34f else CIRCLE_DISC_ALPHA,
         label = "glyphDisc",
     )
     val chrome = LocalPlayerChrome.current
@@ -765,14 +815,10 @@ internal fun CircleGlyph(
             Modifier
                 .matchParentSize()
                 .vibrantChrome(chrome)
-                .background(
-                    if (chrome) {
-                        VibrantChromeInk.copy(alpha = (discAlpha * CIRCLE_DISC_DODGE_GAIN).coerceAtMost(1f))
-                    } else {
-                        Color.White.copy(alpha = discAlpha)
-                    },
-                ),
+.background(discFill(chrome, discAlpha)),
         )
+        // Original BitChord gradient rim; shares material with Best Part.
+        Box(Modifier.matchParentSize().glassRim(CircleShape))
         Crossfade(
             targetState = icon,
             animationSpec = tween(durationMillis = 180),
@@ -786,6 +832,57 @@ internal fun CircleGlyph(
             )
         }
     }
+}
+
+/** The same ink as the original BitChord favourite and overflow discs. */
+private fun discFill(chrome: Boolean, alpha: Float = CIRCLE_DISC_ALPHA): Color =
+    if (chrome) VibrantChromeInk.copy(alpha = (alpha * CIRCLE_DISC_DODGE_GAIN).coerceAtMost(1f))
+    else Color.White.copy(alpha = alpha)
+
+/** Thin, top-lit edge shared by the original player glass surfaces. */
+internal fun Modifier.glassRim(shape: Shape): Modifier = border(
+    width = 1.dp,
+    brush = Brush.verticalGradient(
+        0f to Color.White.copy(alpha = 0.42f),
+        1f to Color.White.copy(alpha = 0.14f),
+    ),
+    shape = shape,
+)
+
+/**
+ * One clipped frost source under the favourite and ⋯ discs.
+ * Fall back to a solid slab during active AutoMix or over other dialogs
+ * to avoid extra live GPU blurs during a track transition.
+ */
+@Composable
+internal fun GlassDiscPair(
+    hazeState: HazeState?,
+    overlayOpen: () -> Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val reduceBlur by PlayerSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val mixing by PlayerSettings.smartMixInProgress.collectAsStateWithLifecycle()
+    val flat = reduceBlur || mixing || overlayOpen() || hazeState == null
+    Box(modifier) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .clip(DiscPairShape)
+                .then(
+                    if (flat) Modifier.background(MenuFrostDark.copy(alpha = GLASS_FALLBACK_ALPHA))
+                    else Modifier.liveMenuFrost(hazeState!!, MenuFrostDark),
+                ),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, content = content)
+    }
+}
+
+/** One oval for a guest or two ovals when favourite is also available. */
+private val DiscPairShape = GenericShape { size, _ ->
+    val d = size.height
+    addOval(Rect(0f, 0f, d, d))
+    if (size.width >= d * 1.5f) addOval(Rect(size.width - d, 0f, size.width, d))
 }
 
 /**
@@ -804,8 +901,15 @@ private fun TransportGlyph(
     haptic: Haptic = Haptic.Tap,
     /** Vertical squash of the glyph alone; its width and touch box are untouched. */
     heightScale: Float = 1f,
+    skipDirection: Int = 0,
+    /** Playback state is owned by MediaSession, not a local button toggle. */
+    playbackActive: Boolean? = null,
 ) {
     val haptics = rememberHaptics()
+    val reduceMotion by PlayerSettings.reduceAnimation.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val scale = remember { Animatable(1f) }
+    val skipPhase = remember { Animatable(1f) }
     // Faded rather than hidden: the row keeps its shape at the ends of a queue.
     val alpha by animateFloatAsState(
         targetValue = if (enabled) 1f else 0.3f,
@@ -820,18 +924,114 @@ private fun TransportGlyph(
                 enabled = enabled,
             ) {
                 haptics.play(haptic)
+                if (!reduceMotion) {
+                    scope.launch {
+                        scale.snapTo(0.85f)
+                        scale.animateTo(
+                            1f,
+                            spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium,
+                            ),
+                        )
+                    }
+                    if (skipDirection != 0) {
+                        scope.launch {
+                            skipPhase.snapTo(0f)
+                            skipPhase.animateTo(1f, tween(durationMillis = 600))
+                        }
+                    }
+                }
                 onClick()
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = contentDescription,
-            tint = Color.White.copy(alpha = alpha),
-            modifier = Modifier
-                .size(size)
-                .then(if (heightScale != 1f) Modifier.graphicsLayer { scaleY = heightScale } else Modifier),
-        )
+        if (playbackActive != null) {
+            // Apple Music-style compact handoff: two silhouettes scale through
+            // one spring driven by the actual player state, including remote
+            // changes. No optimistic UI flag on a tap or pending media command.
+            val phase by animateFloatAsState(
+                targetValue = if (playbackActive) 1f else 0f,
+                animationSpec = if (reduceMotion) tween(0) else spring(
+                    dampingRatio = 0.72f,
+                    stiffness = 280f,
+                ),
+                label = "aurelisPlayPausePhase",
+            )
+            val playWeight = (1f - phase).coerceIn(0f, 1f)
+            val pauseWeight = phase.coerceIn(0f, 1f)
+            if (playWeight > 0.001f) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_player_play),
+                    contentDescription = if (playWeight >= 0.5f) contentDescription else null,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        this.alpha = playWeight * playWeight * (3f - 2f * playWeight)
+                        val glyphScale = (0.56f + 0.44f * playWeight) * scale.value
+                        scaleX = glyphScale
+                        scaleY = glyphScale * heightScale
+                    },
+                )
+            }
+            if (pauseWeight > 0.001f) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_player_pause),
+                    contentDescription = if (pauseWeight > 0.5f) contentDescription else null,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        this.alpha = pauseWeight * pauseWeight * (3f - 2f * pauseWeight)
+                        val glyphScale = (0.56f + 0.44f * pauseWeight) * scale.value
+                        scaleX = glyphScale
+                        scaleY = glyphScale * heightScale
+                    },
+                )
+            }
+        } else if (skipDirection != 0 && !reduceMotion && skipPhase.value < 1f) {
+            // Two instances of the *same source drawable*, not a different glyph:
+            // the old arrow travels out while the new one travels in. Retaps
+            // retarget a single Animatable, so no unbounded effects accumulate.
+            val p = skipPhase.value.coerceIn(0f, 1f)
+            Box(Modifier.size(touchSize).clipToBounds(), contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = contentDescription,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        this.alpha = (1f - p).coerceIn(0f, 1f)
+                        scaleX = scale.value
+                        scaleY = scale.value * heightScale
+                        translationX = -skipDirection * this.size.width * p
+                    },
+                )
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        this.alpha = p
+                        scaleX = scale.value
+                        scaleY = scale.value * heightScale
+                        translationX = skipDirection * this.size.width * (1f - p)
+                    },
+                )
+            }
+        } else {
+            Crossfade(
+                targetState = icon,
+                animationSpec = tween(durationMillis = if (reduceMotion) 0 else 170),
+                label = "transportGlyph",
+            ) { displayed ->
+                Icon(
+                    painter = painterResource(displayed),
+                    contentDescription = contentDescription,
+                    tint = Color.White.copy(alpha = alpha),
+                    modifier = Modifier.size(size).graphicsLayer {
+                        scaleX = scale.value
+                        scaleY = scale.value * heightScale
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -882,6 +1082,9 @@ private val PILL_PARTY_SIZE = 22.dp
 
 /** Cast and Tv run 92% of their box wide; at 23dp they read bigger than the rest. */
 private val PILL_OUTPUT_WIDE_SIZE = 21.dp
+
+/** The original AirPlay mark fills its box and is optically smaller. */
+private val PILL_OUTPUT_AIRPLAY_SIZE = 19.5.dp
 
 /** Watch is drawn the full height of its box. */
 private val PILL_OUTPUT_TALL_SIZE = 17.dp
@@ -1025,10 +1228,10 @@ private fun rememberOutputGlyph(): OutputGlyph {
         cast.connectedName != null -> OutputGlyph(Icons.Rounded.CastConnected, PILL_OUTPUT_WIDE_SIZE)
         watch.active -> OutputGlyph(Icons.Rounded.Watch, PILL_OUTPUT_TALL_SIZE)
         else -> when (active?.kind) {
-            // No active row is the phone too — the caption under the pill
-            // says "This phone" in the same case. Cast rather than a phone:
-            // on the phone itself the button's job is to send it elsewhere.
-            null, AudioOutputKind.PHONE -> OutputGlyph(Icons.Rounded.Cast, PILL_OUTPUT_WIDE_SIZE)
+            // The original BitChord AirPlay-style output glyph is used only
+            // when the phone itself is the active output. Device-specific
+            // icons remain unchanged for Bluetooth, USB, HDMI and Cast.
+            null, AudioOutputKind.PHONE -> OutputGlyph(AurelisIcons.AirPlay, PILL_OUTPUT_AIRPLAY_SIZE)
             AudioOutputKind.BLUETOOTH -> when (active.form) {
                 BluetoothForm.BUDS -> OutputGlyph(vectorResource(Res.drawable.ic_output_buds), PILL_OUTPUT_BUDS_SIZE)
                 BluetoothForm.SPEAKER -> OutputGlyph(vectorResource(Res.drawable.ic_output_speaker))
@@ -1766,6 +1969,9 @@ private fun LosslessOrStats(
             animated = true,
             modifier = modifier,
         )
+        // BitChord's Dolby icon was removed from Aurelis's UI, although
+        // the original vector asset and the decoder's codec flag remain.
+        // Show it only when the current decoded stream reports that flag.
         nerdStats?.isDolbyAtmos == true -> LosslessLabel(
             text = "Dolby Atmos",
             animated = true,

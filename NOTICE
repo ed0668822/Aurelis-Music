@@ -9,3 +9,14 @@ source files are copied. Mornye's original copyright and LGPL-3.0-only
 license designation are acknowledged above.
 
 This notice does not replace any other third-party notices or license obligations.
+
+BitChord 1.10 — AutoMix source and regression tests
+Source: https://github.com/kushagrasinghx/BitChord/tree/v1.10
+License in the referenced repository: GNU GPL version 3.
+The AutoMix Canvas, cover and ambient regression test suites are adapted from
+BitChord v1.10 with original provenance retained in their source-file headers.
+
+The older experimental AutoMix effect controls have been retired from the
+Aurelis interface. Stored compatibility preferences remain, but no longer
+drive the restored BitChord mixing engine. This does not revoke the historical
+Mornye acknowledgement or any obligations for other third-party components.

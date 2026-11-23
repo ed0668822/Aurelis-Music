@@ -45,6 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
@@ -72,7 +73,9 @@ import com.music.aurelis.data.model.CARD_ART_PX
 import com.music.aurelis.data.model.HEADER_ART_PX
 import com.music.aurelis.data.model.ROW_ART_PX
 import com.music.aurelis.data.model.artworkAt
+import com.music.aurelis.data.stats.ReplayYearData
 import com.music.aurelis.data.stats.ReplaySummary
+import com.music.aurelis.data.stats.ReplayPeriod
 import com.music.aurelis.ui.player.MeshGradientBackground
 import com.music.aurelis.ui.player.MeshPalette
 import com.music.aurelis.ui.player.rememberArtworkColors
@@ -124,11 +127,17 @@ fun ReplayStories(
      * was two cards further on than the one on screen.
      */
     paused: Boolean = false,
+    yearData: ReplayYearData? = null,
 ) {
     // A category with nothing in it has no card: an empty page in the middle of
     // a story reads as the app having lost something.
-    val pages = remember(summary) {
-        ReplayStoryPage.ordered.filter { page ->
+    val yearStory = remember(yearData) { yearData?.takeUnless { it.isEmpty }?.let(::ReplayYearStoryModel) }
+    val annualMoments = remember(summary, yearStory) {
+        if (summary.period == ReplayPeriod.THIS_YEAR) yearStory?.moments ?: summary.yearMoments() else emptyList()
+    }
+    val pages = remember(summary, annualMoments) {
+        if (annualMoments.isNotEmpty()) annualMoments.map { it.storyPage() }
+        else ReplayStoryPage.ordered.filter { page ->
             when (page) {
                 ReplayStoryPage.ALBUMS -> summary.albums.isNotEmpty()
                 ReplayStoryPage.GENRES -> summary.genres.isNotEmpty()
@@ -137,7 +146,8 @@ fun ReplayStories(
         }
     }
     val pagerState = rememberPagerState(
-        initialPage = pages.indexOf(start).coerceAtLeast(0),
+        initialPage = (if (start == ReplayStoryPage.SUMMARY) pages.lastIndex
+            else pages.indexOf(start)).coerceAtLeast(0),
         pageCount = { pages.size },
     )
     val scope = rememberCoroutineScope()
@@ -208,10 +218,11 @@ fun ReplayStories(
 
 
     val page = pages.getOrElse(current) { ReplayStoryPage.INTRO }
-    val artwork = summary.storyArtwork(page)
+    val artwork = yearStory?.clips?.get(annualMoments.getOrNull(current))?.thumbnailUrl
+        ?: summary.storyArtwork(page)
     // Rotated per card, so the backdrop is visibly a different colour on every
     // one — see [storyHue].
-    val palette = rememberArtworkColors(artwork).rotated(storyHue(page))
+    val palette = rememberArtworkColors(artwork).rotated(storyHue(page) + current * 19f)
 
     // The system bars are kept outside the frame rather than padded for inside
     // it: the card is a fixed canvas and its own margins are part of the
@@ -229,6 +240,8 @@ fun ReplayStories(
         StoryFrame {
             Stage(
                 pages = pages,
+                annualMoments = annualMoments,
+                yearStory = yearStory,
                 pagerState = pagerState,
                 summary = summary,
                 current = current,
@@ -278,6 +291,8 @@ private fun StoryFrame(content: @Composable () -> Unit) {
 @Composable
 private fun Stage(
     pages: List<ReplayStoryPage>,
+    annualMoments: List<ReplayYearMoment>,
+    yearStory: ReplayYearStoryModel?,
     pagerState: PagerState,
     summary: ReplaySummary,
     current: Int,
@@ -341,7 +356,23 @@ private fun Stage(
         )
 
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { index ->
-            StoryPage(page = pages[index], summary = summary, onShare = onShare)
+            ReplayYearMotion(
+                visible = index == current,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                if (annualMoments.isNotEmpty()) {
+                    ReplayYearMomentCard(
+                        moment = annualMoments[index],
+                        summary = summary,
+                        visible = index == current,
+                        progressMs = if (index == current) progress.value * PAGE_MILLIS else 0f,
+                        yearStory = yearStory,
+                        onShare = { onShare(pages[index]) },
+                    )
+                } else {
+                    StoryPage(page = pages[index], summary = summary, onShare = onShare)
+                }
+            }
         }
 
         StoryChrome(
@@ -551,6 +582,7 @@ private fun ColumnScope.Intro(summary: ReplaySummary, headline: List<HeadlineRun
 @Composable
 private fun ColumnScope.Minutes(summary: ReplaySummary, headline: List<HeadlineRun>) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     Headline(headline)
     Spacer(Modifier.weight(1f))
     ArtworkCollage(summary)
@@ -562,9 +594,9 @@ private fun ColumnScope.Minutes(summary: ReplaySummary, headline: List<HeadlineR
         // only figure worth restating.
         text = buildString {
             if (summary.hours >= 1) {
-                append(context.getString(R.string.replay_hours_across, grouped(summary.hours)))
+                append(uiResources.getString(R.string.replay_hours_across, grouped(summary.hours)))
             } else {
-                append(context.getString(R.string.replay_across))
+                append(uiResources.getString(R.string.replay_across))
                 append(" ")
             }
             // Add a comma+space separator between the hours and the track count

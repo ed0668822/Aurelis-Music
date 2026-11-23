@@ -229,18 +229,24 @@ object InnerTubeXResolver {
         skipClients: Set<String> = emptySet(),
         requireM4a: Boolean = false,
         uploaded: Boolean = false,
+        premium: Boolean = false,
     ): Extracted? {
         innerTube.cookie = Innertube.cookie
         innerTube.visitorData = Innertube.ensureVisitorData()
         innerTube.locale = YouTubeLocale(gl = Innertube.currentRegion, hl = Innertube.currentLanguage)
+        // A signed-in entitlement is required for YouTube to offer it.
+        val premiumOpus = premium && !Innertube.cookie.isNullOrBlank() &&
+            !requireM4a && maxKbps >= PREMIUM_OPUS_KBPS
         val stream = extractor.extract(
             videoId = videoId,
             hints = ContentHints(isUploaded = true.takeIf { uploaded })
+                .withPremium(premiumOpus)
                 .withStreamCapabilities(allowHls = false, allowSabr = false, allowBoundedRange = true),
             excludedClients = excludedFor(videoId) + skipClients,
             audioQuality = when {
                 requireM4a -> AudioQuality.MP4
                 maxKbps <= LOW_KBPS -> AudioQuality.LOW
+                premiumOpus -> AudioQuality.HIGH
                 else -> AudioQuality.AUTO
             },
             clientPlaybackNonce = generateClientPlaybackNonce(),
@@ -400,6 +406,7 @@ object InnerTubeXResolver {
     private const val PLAYER_CONFIG_URL =
         "https://raw.githubusercontent.com/ZemerTeam/zemer-cipher/master/library/src/main/assets/player_configs.json"
     private const val LOW_KBPS = 64
+    private const val PREMIUM_OPUS_KBPS = 256
     private const val EXCLUDE_MS = 10 * 60 * 1000L
     private const val MAX_REMEMBERED = 64
     /** Off the cold-start path; the first tap on a track is rarely sooner. */

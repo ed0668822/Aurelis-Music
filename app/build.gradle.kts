@@ -237,6 +237,7 @@ android {
         }
     }
     buildFeatures {
+        resValues = true
         compose = true
         buildConfig = true
         prefab = discordSocialSdk.isFile
@@ -329,6 +330,9 @@ dependencies {
     // ---- Media playback: Media3 / ExoPlayer ----
     implementation("androidx.media3:media3-exoplayer:1.11.0")
     implementation("androidx.media3:media3-session:1.11.0")
+    // B21: local synchronized lyric video export; same Media3 version as playback.
+    implementation("androidx.media3:media3-transformer:1.11.0")
+    implementation("androidx.media3:media3-effect:1.11.0")
     implementation("androidx.media3:media3-common:1.11.0")
     implementation("androidx.media3:media3-datasource-okhttp:1.11.0")
     // Audio is progressive, but Apple serves its motion artwork as HLS — this
@@ -437,7 +441,14 @@ dependencies {
     // The full android artifact, not onnxruntime-mobile: mobile only loads .ort
     // files, which would put an offline conversion step between the model and
     // the app for a saving that does not matter in a self-distributed APK.
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.28.0")
+    // Optional locally verified ARM64-only reduced CPU runtime.
+    // Never make regular CI depend on a private/prebuilt AAR.
+    val slimAutomixRuntime = file("libs/onnxruntime-android-1.28.0-automix.aar")
+    if (slimAutomixRuntime.isFile) {
+        implementation(files(slimAutomixRuntime))
+    } else {
+        implementation("com.microsoft.onnxruntime:onnxruntime-android:1.28.0")
+    }
 
     // ---- Casting: Google Cast sender + the route discovery it sits on ----
     // The framework and the router only. media3-cast is left out on purpose:

@@ -2,13 +2,21 @@ package com.music.aurelis.ui.player
 
 import android.content.Intent
 import android.graphics.Bitmap
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +55,7 @@ import com.music.aurelis.ui.replay.saveToGallery
 import com.music.aurelis.ui.replay.sendIntent
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * The picked lines, drawn, with the two things you can do to the picture.
@@ -68,6 +78,7 @@ internal fun AndroidLyricsShareSheet(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val scope = rememberCoroutineScope()
     val haptics = rememberHaptics()
 
@@ -76,6 +87,21 @@ internal fun AndroidLyricsShareSheet(
     var saved by remember(request) { mutableStateOf(false) }
     // Same picture, cut to the 9:16 frame a story wants instead of to its lines.
     var story by remember(request) { mutableStateOf(false) }
+
+    // The selected lines must have real timestamps before video export is offered.
+    val timeline = remember(request) { lyricsShareTimeline(request.lines) }
+    var asVideo by remember(request) { mutableStateOf(false) }
+    var exporting by remember(request) { mutableStateOf(false) }
+    var exported by remember(request, story) { mutableStateOf<File?>(null) }
+    suspend fun videoFile(poster: Bitmap): File? {
+        exported?.takeIf { it.exists() && it.length() > 0L }?.let { return it }
+        exporting = true
+        return try {
+            exportLocalLyricsVideo(context, request, poster)?.also { exported = it }
+        } finally {
+            exporting = false
+        }
+    }
 
     LaunchedEffect(request, story) {
         image = null
@@ -106,6 +132,49 @@ internal fun AndroidLyricsShareSheet(
                 modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
             )
 
+            // The same choice as BitChord 1.10; fallback is always the existing
+            // still card for providers without synchronized lyric timestamps.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.lyrics_share_image),
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = if (!asVideo) 0.25f else 0.08f))
+                        .clickable { asVideo = false; saved = false }
+                        .padding(12.dp),
+                )
+                Text(
+                    text = stringResource(R.string.lyrics_share_video),
+                    color = Color.White.copy(alpha = if (timeline == null) 0.4f else 1f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = if (asVideo) 0.25f else 0.08f))
+                        .clickable(enabled = timeline != null) {
+                            // Switching to video selects the portrait story layout.
+                            // The image-only share retains its chosen aspect ratio.
+                            asVideo = true
+                            story = true
+                            saved = false
+                        }
+                        .padding(12.dp),
+                )
+            }
+            if (exporting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.5.dp,
+                    color = Color.White,
+                )
+            }
+
             val bitmap = image
             // The card is only as tall as its lines, so the frame follows it:
             // a strip comes out wide, a full verse narrow, both about the same
@@ -125,6 +194,19 @@ internal fun AndroidLyricsShareSheet(
                         modifier = Modifier.size(26.dp),
                         strokeWidth = 2.5.dp,
                         color = Color.White.copy(alpha = 0.75f),
+                    )
+                }
+            } else if (asVideo && timeline != null) {
+                Box(modifier = preview) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = stringResource(R.string.your_lyrics_card),
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    LyricsVideoPreview(
+                        timeline = timeline,
+                        lines = request.lines,
+                        modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
             } else {
@@ -164,7 +246,7 @@ internal fun AndroidLyricsShareSheet(
                     label = stringResource(R.string.save),
                     icon = Icons.Rounded.Download,
                     accent = false,
-                    enabled = image != null,
+                    enabled = image != null && !exporting,
                     modifier = Modifier.weight(1f),
                     // Once the picture is in the gallery the button says so
                     // itself — a check and "Saved!" — so the line under the
@@ -176,12 +258,15 @@ internal fun AndroidLyricsShareSheet(
                         if (drawn != null) {
                             haptics.play(Haptic.Tap)
                             scope.launch {
-                                saved = saveToGallery(
-                                    context,
-                                    drawn,
-                                    request.song.title,
-                                    LYRICS_FILE_PREFIX,
-                                )
+                                saved = runCatching {
+                                    if (asVideo) {
+                                        val file = videoFile(drawn)
+                                        file != null && saveLocalLyricsVideo(context, file, request.song.title)
+                                    } else {
+                                        saveToGallery(context, drawn, request.song.title, LYRICS_FILE_PREFIX)
+                                    }
+                                }.getOrDefault(false)
+                                if (!saved) failed = true
                             }
                         }
                     },
@@ -197,16 +282,19 @@ internal fun AndroidLyricsShareSheet(
                         if (drawn != null) {
                             haptics.play(Haptic.Tap)
                             scope.launch {
-                                val uri = cacheForSharing(context, drawn, LYRICS_FILE_NAME)
-                                if (uri == null) {
+                                val intent = runCatching {
+                                    if (asVideo) {
+                                        videoFile(drawn)?.let { shareLocalLyricsVideoIntent(context, it) }
+                                    } else {
+                                        cacheForSharing(context, drawn, LYRICS_FILE_NAME)?.let(::sendIntent)
+                                    }
+                                }.getOrNull()
+                                if (intent == null) {
                                     failed = true
                                     saved = false
                                 } else {
                                     context.startActivity(
-                                        Intent.createChooser(
-                                            sendIntent(uri),
-                                            context.getString(R.string.share_your_lyrics),
-                                        ),
+                                        Intent.createChooser(intent, uiResources.getString(R.string.share_your_lyrics)),
                                     )
                                 }
                             }
@@ -227,3 +315,55 @@ internal fun AndroidLyricsShareSheet(
  */
 private const val LYRICS_FILE_NAME = "lyrics.png"
 private const val LYRICS_FILE_PREFIX = "aurelis-lyrics"
+
+
+/**
+ * Lightweight animated timeline preview. The exported MP4 uses the exact same
+ * line windows, but rendering its encoder inside the modal would be expensive.
+ * This never launches playback or holds a second media decoder.
+ */
+@Composable
+private fun LyricsVideoPreview(
+    timeline: LyricsShareTimeline,
+    lines: List<LyricsShareLine>,
+    modifier: Modifier = Modifier,
+) {
+    val motion = rememberInfiniteTransition(label = "lyricsVideoPreview")
+    val progress by motion.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(timeline.durationMs.toInt().coerceAtLeast(1000), easing = LinearEasing),
+            RepeatMode.Restart,
+        ),
+        label = "lyricsVideoPreviewPosition",
+    )
+    val playheadUs = (timeline.durationMs * 1000.0 * progress).toLong()
+    val active = timeline.windows.firstOrNull { playheadUs >= it.fromUs && playheadUs < it.toUs }
+    val text = active?.let { lines.getOrNull(it.lineIndex)?.text }?.takeIf { it.isNotBlank() }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.60f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (text != null) {
+            Text(
+                text = text,
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Box(Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.2f))) {
+            Box(
+                Modifier.fillMaxWidth(progress.coerceIn(0.001f, 1f))
+                    .background(Color.White)
+                    .padding(vertical = 2.dp),
+            )
+        }
+    }
+}

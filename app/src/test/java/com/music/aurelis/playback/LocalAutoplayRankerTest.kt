@@ -48,7 +48,19 @@ class LocalAutoplayRankerTest {
         val bpm = mapOf(seed.videoId to 126.0, close.videoId to 125.0, far.videoId to 85.0)
         val result = LocalAutoplayRanker.suggest(
             seed, listOf(far, close), emptyList(), emptySet(), emptyMap(), 1,
-            bpmFor = { bpm[it] },
+            bpmFor = { bpm[it.videoId] },
+        )
+        assertEquals(close.localUri, result.first().localUri)
+    }
+
+    @Test fun sharedCatalogueIdCanRepresentDifferentLocalRecordings() {
+        val seed = track("seed", "A")
+        val close = track("close", "B").copy(videoId = "same-catalogue-id")
+        val far = track("far", "C").copy(videoId = close.videoId)
+        val bpm = mapOf(seed.localUri to 126.0, close.localUri to 125.0, far.localUri to 85.0)
+        val result = LocalAutoplayRanker.suggest(
+            seed, listOf(far, close), emptyList(), emptySet(), emptyMap(), 1,
+            bpmFor = { bpm[it.localUri] },
         )
         assertEquals(close.localUri, result.first().localUri)
     }

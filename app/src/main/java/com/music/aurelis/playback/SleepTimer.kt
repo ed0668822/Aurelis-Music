@@ -71,6 +71,24 @@ object SleepTimer {
         afterTrack.value = false
     }
 
+    /** A fixed 30-second finish for timed sessions; after-track still stops on the song boundary. */
+    const val FADE_OUT_DURATION_MS = 30_000L
+
+    /**
+     * Pure clock-based envelope, independent of volume keys, the two
+     * ExoPlayers, the current track, and normalization settings.
+     */
+    fun calculateFadeVolume(
+        remainingMs: Long,
+        fadeDurationMs: Long = FADE_OUT_DURATION_MS,
+        fadeOutEnabled: Boolean = true,
+    ): Float {
+        if (!fadeOutEnabled || fadeDurationMs <= 0L) return 1f
+        if (remainingMs <= 0L) return 0f
+        if (remainingMs >= fadeDurationMs) return 1f
+        return (remainingMs.toDouble() / fadeDurationMs.toDouble()).toFloat().coerceIn(0f, 1f)
+    }
+
     /** How long is left, or null when no timer is running. */
     fun remainingMs(): Long? =
         deadline.value?.let { (it - SystemClock.elapsedRealtime()).coerceAtLeast(0L) }

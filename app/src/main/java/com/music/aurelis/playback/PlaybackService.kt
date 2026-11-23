@@ -1,3 +1,5 @@
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+
 // SPDX-FileCopyrightText: 2026 Aurelis
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
@@ -79,11 +81,17 @@ import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.guava.future
 import com.music.aurelis.playback.audio.DspChain
 import com.music.aurelis.playback.cast.CastController
+import com.music.aurelis.playback.cast.CastOptionsProvider
 import com.music.aurelis.playback.cast.CastPlayback
 import com.music.aurelis.playback.cast.CastSink
 import com.music.aurelis.playback.cast.RemoteSpeaker
 import com.music.aurelis.playback.cast.Speakers
 import com.music.aurelis.playback.cast.CastStream
+import com.music.aurelis.playback.cast.DlnaController
+import com.music.aurelis.playback.cast.DlnaPlayback
+import com.music.aurelis.playback.cast.WebTvController
+import com.music.aurelis.playback.cast.WebTvPlayback
+import com.music.aurelis.playback.cast.LocalCastMediaServer
 import com.music.aurelis.playback.audio.PrecisionAudioSink
 import com.music.aurelis.playback.dsd.DsdExtractorsFactory
 import com.music.aurelis.playback.audio.DirectAudioProbe
@@ -103,6 +111,7 @@ import com.music.aurelis.data.listentogether.partyQueueIndexOf
 import com.music.aurelis.data.listentogether.partyUpcomingAfter
 import com.music.aurelis.R
 import com.music.aurelis.data.LocalMediaRepository
+import com.music.aurelis.data.canvas.CanvasRepository
 import com.music.aurelis.data.OfflinePlaylists
 import com.music.aurelis.data.innertube.InnertubeParser
 import com.music.aurelis.data.YtMusicRepository
@@ -152,7 +161,11 @@ import com.music.aurelis.data.sources.SourceStream
 import com.music.aurelis.data.sources.StreamFormat
 import com.music.aurelis.data.sources.TrackMatcher
 import com.music.aurelis.playback.smart.AutomixAnalysisSource
+import com.music.aurelis.playback.smart.LocalAudioSource
+import com.music.aurelis.playback.smart.TrackAnalyzer
 import com.music.aurelis.playback.smart.VersionAudioAligner
+import com.music.aurelis.ui.player.prefetchAutoMixArtwork
+import com.music.aurelis.ui.player.discardBlockedAutoMixAmbient
 import com.music.aurelis.widget.MediaWidget
 import com.music.aurelis.widget.MediaWidgetSnapshot
 import com.music.aurelis.wear.WearBridge
@@ -270,6 +283,18 @@ internal class ManualUpgradeThrottle(private val cooldownMs: Long) {
 const val ACTION_QUEUE_DRAG = "com.music.aurelis.action.QUEUE_DRAG"
 const val EXTRA_QUEUE_DRAG_ACTIVE = "aurelis.queueDrag.active"
 
+/** Queue edits run against native Media3 items, never controller-resolved copies. */
+const val ACTION_QUEUE_EDIT_REMOVE = "com.music.aurelis.action.QUEUE_EDIT_REMOVE"
+const val ACTION_QUEUE_EDIT_CLEAR = "com.music.aurelis.action.QUEUE_EDIT_CLEAR"
+const val ACTION_QUEUE_EDIT_UNDO = "com.music.aurelis.action.QUEUE_EDIT_UNDO"
+const val ACTION_QUEUE_EDIT_PROMOTE = "com.music.aurelis.action.QUEUE_EDIT_PROMOTE"
+const val EXTRA_QUEUE_EDIT_MEDIA = "aurelis.queueEdit.media"
+const val EXTRA_QUEUE_EDIT_ENTRIES = "aurelis.queueEdit.entries"
+const val EXTRA_QUEUE_EDIT_PRESENT = "aurelis.queueEdit.present"
+const val EXTRA_QUEUE_EDIT_OCCURRENCES = "aurelis.queueEdit.occurrences"
+const val EXTRA_QUEUE_EDIT_TOKEN = "aurelis.queueEdit.token"
+const val EXTRA_QUEUE_EDIT_INDEX = "aurelis.queueEdit.index"
+
 /** A full first page for an explicitly requested station. */
 private const val INITIAL_STATION_TRACKS = 24
 
@@ -297,9 +322,9 @@ private const val ALIGNMENT_HEAD_TIMEOUT_MS = 20_000L
 private const val ALIGNMENT_MEASURE_TIMEOUT_MS = 30_000L
 
 private fun Song.canStartStation(): Boolean =
-    videoId.isNotBlank() &&
-        !videoId.startsWith("content://") &&
-        !videoId.startsWith("file://")
+    !localUri.isNullOrBlank() ||
+        (videoId.isNotBlank() && !videoId.startsWith("content://") &&
+            !videoId.startsWith("file://"))
 
 /**
  * Background playback via Media3. A [MediaLibraryService] gives us the media
@@ -646,7 +671,7 @@ class PlaybackService : MediaLibraryService() {
         if (activeFilter === transitionFilterA) loudnessB else loudnessA
 
     /** Automix's DSP analyzer — see [com.music.aurelis.playback.smart.TrackAnalyzer]. */
-    private val trackAnalyzer = com.music.aurelis.playback.smart.TrackAnalyzer(this, AudioCache)
+    private val trackAnalyzer = TrackAnalyzer(this, AudioCache)
 
     /** Shared with the crossfade's tail player, so both read the same disk cache. */
     private var mediaSourceFactory: DefaultMediaSourceFactory? = null
@@ -752,6 +777,11 @@ class PlaybackService : MediaLibraryService() {
      */
     private var streamResolver: ResolvingDataSource.Resolver? = null
 
+    /** Serves an authorized, seekable local track only while a Cast session needs it. */
+    private val localCastMediaServer by lazy { LocalCastMediaServer(applicationContext) }
+    private val localDlnaMediaServer by lazy { LocalCastMediaServer(applicationContext) }
+    private val localWebMediaServer by lazy { LocalCastMediaServer(applicationContext) }
+
     /**
      * What plays on a Cast receiver, when the music is on one. The phone's
      * player keeps the queue and is held paused; this is what the session
@@ -762,6 +792,8 @@ class PlaybackService : MediaLibraryService() {
         localPlayer = { player },
         resolve = ::resolveForCast,
         say = { message -> Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show() },
+        onReleased = { localCastMediaServer.stop() },
+        customReceiverEnabled = { CastOptionsProvider.customReceiverId(this) != null },
     )
 
     /**
@@ -769,12 +801,23 @@ class PlaybackService : MediaLibraryService() {
      * keeps the queue paused, the watch plays it and owns the clock. See
      * [WearBridge.createSpeaker].
      */
+    private val dlnaPlayback = DlnaPlayback(
+        scope = scope,
+        localPlayer = { player },
+        resolve = ::resolveForDlna,
+        onReleased = { localDlnaMediaServer.stop() },
+    )
+
+    private lateinit var webTvPlayback: WebTvPlayback
+
     private val watchSpeaker by lazy {
         WearBridge.createSpeaker(this, scope, localPlayer = { player }, onChanged = { publishWidgetState() })
     }
 
     /** Every remote speaker, as the one the session player reports. */
-    private val speakers by lazy { Speakers(listOf(castPlayback, watchSpeaker)) }
+    private val speakers by lazy {
+        Speakers(listOf(castPlayback, dlnaPlayback, webTvPlayback, watchSpeaker))
+    }
 
     /**
      * Binds playback to a Listen Together party, when there is one.
@@ -798,6 +841,10 @@ class PlaybackService : MediaLibraryService() {
     private val upgradeQualityCommand = SessionCommand(ACTION_UPGRADE_QUALITY, Bundle.EMPTY)
     private val swapVersionCommand = SessionCommand(ACTION_SWAP_VERSION, Bundle.EMPTY)
     private val queueDragCommand = SessionCommand(ACTION_QUEUE_DRAG, Bundle.EMPTY)
+    private val queueEditRemoveCommand = SessionCommand(ACTION_QUEUE_EDIT_REMOVE, Bundle.EMPTY)
+    private val queueEditClearCommand = SessionCommand(ACTION_QUEUE_EDIT_CLEAR, Bundle.EMPTY)
+    private val queueEditUndoCommand = SessionCommand(ACTION_QUEUE_EDIT_UNDO, Bundle.EMPTY)
+    private val queueEditPromoteCommand = SessionCommand(ACTION_QUEUE_EDIT_PROMOTE, Bundle.EMPTY)
 
     private var favoriteActionJob: Job? = null
     private var stationActionJob: Job? = null
@@ -1290,6 +1337,15 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Android attaches the base context after constructing the service.
+        webTvPlayback = WebTvPlayback(
+            context = applicationContext,
+            scope = scope,
+            localPlayer = { player },
+            resolve = ::resolveForWeb,
+            onReleased = { localWebMediaServer.stop() },
+        )
 
         if (com.music.aurelis.data.innertube.Innertube.cookie == null) {
             com.music.aurelis.data.innertube.Innertube.cookie = com.music.aurelis.auth.AuthStore(this).cookie
@@ -1878,6 +1934,8 @@ class PlaybackService : MediaLibraryService() {
         // whose queue is already restored.
         CastController.ensureStarted(this)
         CastController.attach(castPlayback)
+        DlnaController.attach(this, scope, dlnaPlayback)
+        WebTvController.attach(webTvPlayback)
     }
 
     private fun newSessionPlayer(player: Player, crossfade: CrossfadeController) = SessionPlayer(
@@ -1890,13 +1948,25 @@ class PlaybackService : MediaLibraryService() {
     ) { lastPublishedSubtitle }
 
     /**
-     * The stream a Cast receiver can open for [item], or null when there is none
-     * it can: a file on this phone, or a source that needs headers the
-     * receiver cannot send. Runs the same resolver the player's own data source
-     * does, so the receiver is handed the URL the phone would have played.
+     * Produces an URL the TV can reach. Seekable local audio is served through
+     * a temporary, session-scoped LAN endpoint; remote media still takes its
+     * existing resolver path and downloaded stream fallback.
      */
-    private suspend fun resolveForCast(item: MediaItem): CastStream? = withContext(Dispatchers.IO) {
+    private suspend fun resolveForCast(item: MediaItem): CastStream? =
+        resolveForTv(item, localCastMediaServer)
+
+    private suspend fun resolveForDlna(item: MediaItem): CastStream? =
+        resolveForTv(item, localDlnaMediaServer)
+
+    private suspend fun resolveForWeb(item: MediaItem): CastStream? =
+        resolveForTv(item, localWebMediaServer)
+
+    private suspend fun resolveForTv(item: MediaItem, mediaServer: LocalCastMediaServer): CastStream? =
+        withContext(Dispatchers.IO) {
         val uri = item.localConfiguration?.uri ?: return@withContext null
+        if (uri.scheme == "content" || uri.scheme == "file") {
+            mediaServer.streamFor(uri)?.let { return@withContext it }
+        }
         val resolver = streamResolver ?: return@withContext null
         // Ungated: the receiver plays items this player is not on.
         val resolved = DirectSourceGate.ungated { resolver.resolveDataSpec(DataSpec(uri)) }.uri
@@ -1925,16 +1995,72 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    private var autoMixArtworkJob: Job? = null
+    private var autoMixArtworkGeneration: Long? = null
+
+    /** Respect independent cover/mini preferences and the current pair's fence. */
+    private fun allowsAutoMixArtwork(generation: Long, mini: Boolean = false): Boolean =
+        AppSettings.smartFadeEnabled.value &&
+            (if (mini) AppSettings.autoMixMiniArtworkEnabled.value else AppSettings.autoMixArtworkEnabled.value) &&
+            generation > (if (mini) AppSettings.autoMixMiniArtworkCutoff.value else AppSettings.autoMixArtworkCutoff.value)
+
+    private fun allowsAnyAutoMixArtwork(generation: Long): Boolean =
+        allowsAutoMixArtwork(generation) || allowsAutoMixArtwork(generation, mini = true)
+
+    /**
+     * BitChord's arm-time prefetch, shared by DJ Blend and native Loop Mix.
+     * Prepare the original still art, ambient and optional Canvas while the
+     * incoming ExoPlayer is buffering, even with the expanded UI unmounted.
+     * This never creates another player or changes the selected audio source.
+     */
+    private fun prefetchAutoMixIncoming(item: MediaItem) {
+        autoMixArtworkJob?.cancel()
+        val generation = AutoMixVisualFeed.state.value?.takeIf {
+            it.phase == AutoMixVisualPhase.ARMED && allowsAnyAutoMixArtwork(it.generation)
+        }?.generation
+        autoMixArtworkGeneration = generation
+        if (generation == null) return
+        autoMixArtworkJob = scope.launch {
+            val song = item.toSong()
+            launch {
+                if (allowsAutoMixArtwork(generation) &&
+                    AppSettings.animatedCanvas.value &&
+                    (AppSettings.meteredConnection.value != true || AppSettings.canvasOverCellular.value)
+                ) {
+                    CanvasRepository.canvasFor(song)
+                }
+            }
+            try {
+                val imageUrl = song.thumbnailUrl?.takeIf { it.isNotBlank() } ?: return@launch
+                prefetchAutoMixArtwork(
+                    this@PlaybackService, imageUrl, generation,
+                    prepareCover = { allowsAutoMixArtwork(it) },
+                    prepareMiniCover = { allowsAutoMixArtwork(it, mini = true) },
+                ) { id ->
+                    AutoMixVisualFeed.pending(id)?.phase == AutoMixVisualPhase.ARMED
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("AurelisAutoMix", "Incoming artwork prefetch failed", e)
+            }
+        }
+    }
+
     private fun createCrossfadeController() = CrossfadeController(
             scope,
             active = { requireNotNull(player) },
             standby = { requireNotNull(spare) },
             onHandoff = ::adoptPlayer,
-            analysisFor = { item -> trackAnalyzer.analysisFor(item.mediaId) },
-            requestAnalysis = { item, durationMs ->
-                item.localConfiguration?.uri?.let { uri ->
-                    trackAnalyzer.request(item.mediaId, uri, durationMs / 1000.0)
-                }
+            analysisFor = { item ->
+                trackAnalyzer.analysisFor(item.mediaId, item.localConfiguration?.uri)
+            },
+            requestAnalysis = { current, next, allowParallel ->
+                fun request(target: CrossfadeController.AnalysisTarget) =
+                    target.item.localConfiguration?.uri?.let { uri ->
+                        TrackAnalyzer.Request(target.item.mediaId, uri, target.durationMs / 1000.0, target.prioritizeHead)
+                    }
+                trackAnalyzer.requestPair(request(current), request(next), allowParallel)
             },
             // "Incoming" and "outgoing" here are session roles, not players:
             // the session player's sink and the spare's. The controller maps
@@ -1964,23 +2090,16 @@ class PlaybackService : MediaLibraryService() {
                     transitionFilterB.parkEcho()
                 }
 
-                override fun incomingExperimentalEcho(wet: Float) =
-                    activeFilter.setExperimentalEcho(wet)
-
-                override fun outgoingExperimentalEcho(wet: Float) =
-                    spareFilter.setExperimentalEcho(wet)
-
-                override fun parkExperimentalEchoes() {
-                    transitionFilterA.parkExperimentalEcho()
-                    transitionFilterB.parkExperimentalEcho()
-                }
             },
-            analysisRunningFor = { item -> trackAnalyzer.isAnalysing(item.mediaId) },
+            analysisRunningFor = { item ->
+                trackAnalyzer.isAnalysing(item.mediaId, item.localConfiguration?.uri)
+            },
             // The standby is still the spare when this runs — it only becomes
             // the session player at the handoff — so the incoming track is
             // levelled on its own sink before it renders a frame, and the
             // outgoing track keeps its own gain for the rest of the blend.
             onArmIncoming = { item, nextId -> spareLoudness().track(item.mediaId, nextId) },
+            onArmAutoMixIncoming = ::prefetchAutoMixIncoming,
             // Both sinks, not a role: the trim is about what the pair sums to.
             onBlendHeadroom = { trim ->
                 loudnessA.setBlendTrim(trim)
@@ -2022,6 +2141,11 @@ class PlaybackService : MediaLibraryService() {
                     trackAnalyzer.loopRegion(item.mediaId, uri, durationMs / 1000.0, from, to, rate)
                 }
             },
+            loopAudioMatchesPlayback = { item ->
+                item.localConfiguration?.uri?.let { uri ->
+                    trackAnalyzer.canLoopMix(item.mediaId, uri)
+                } ?: false
+            },
             syncedLines = ::loopMixLyrics,
             loudnessGain = ::loudnessGainFor,
             onMixPositionJump = { wrapped -> (mediaSession?.player as? SessionPlayer)?.announceMixPosition(wrapped) },
@@ -2037,16 +2161,17 @@ class PlaybackService : MediaLibraryService() {
         if (!AppSettings.syncedLyrics.value) return null
         val song = item.toSong()
         return kotlinx.coroutines.withTimeoutOrNull(LOOP_MIX_LYRICS_TIMEOUT_MS) {
-            song.localUri?.let { EmbeddedLyrics.forUri(this@PlaybackService, it) }
-                ?: LyricsRepository.lyrics(
-                    videoId = song.videoId,
-                    title = song.title,
-                    artist = song.artist,
-                    durationMs = durationMs,
-                    album = song.albumName,
-                    sources = AppSettings.lyricsSources.value,
-                    order = AppSettings.lyricsSourceOrder.value,
-                )?.lines
+            song.localUri?.let { EmbeddedLyrics.forUri(this@PlaybackService, it) }?.let { return@withTimeoutOrNull it }
+            if (AudioCache.isOffline()) return@withTimeoutOrNull null
+            LyricsRepository.lyrics(
+                videoId = song.videoId,
+                title = song.title,
+                artist = song.artist,
+                durationMs = durationMs,
+                album = song.albumName,
+                sources = AppSettings.lyricsSources.value,
+                order = AppSettings.lyricsSourceOrder.value,
+            )?.lines
         }
     }
 
@@ -2163,6 +2288,8 @@ class PlaybackService : MediaLibraryService() {
         stationActionJob?.cancel()
         stationActionJob = scope.launch {
             val radioSeed = seed.copy(radioName = seed.title)
+            // Android Auto and the phone use the same YouTube Music station,
+            // even when the current recording is a local device file.
             val related = loadAutoplayTracks(
                 existing = listOf(radioSeed),
                 seedSong = radioSeed,
@@ -2721,6 +2848,179 @@ class PlaybackService : MediaLibraryService() {
         refreshCustomLayouts()
     }
 
+    /** Only a future-only queue edit is undoable: keep the decoded current item intact. */
+    private data class QueueEditSnapshot(
+        val token: String,
+        val player: ExoPlayer,
+        val before: List<MediaItem>,
+        val after: List<MediaItem>,
+        val beforeWindow: QueueWindowSnapshot?,
+        val afterWindow: QueueWindowSnapshot?,
+        val currentIndex: Int,
+        val currentMediaId: String?,
+        val currentEntryId: String?,
+        val expiresAt: Long,
+    )
+
+    private var queueEditSnapshot: QueueEditSnapshot? = null
+
+    private fun queueEditAllowed(): Boolean =
+        !ListenTogether.state.value.inParty &&
+        !ListenTogether.state.value.controlsLocked &&
+        !speakers.active &&
+        crossfade?.isTransitioning() != true &&
+        versionSwapJob?.isActive != true
+
+    private fun nativeQueueItems(raw: ExoPlayer): List<MediaItem> =
+        (0 until raw.mediaItemCount).map(raw::getMediaItemAt)
+
+    /** Resolve duplicate entries against the service's authoritative timeline. */
+    private fun queueEditIndices(raw: ExoPlayer, args: Bundle): List<Int>? {
+        val media = args.getStringArrayList(EXTRA_QUEUE_EDIT_MEDIA) ?: return null
+        val entries = args.getStringArrayList(EXTRA_QUEUE_EDIT_ENTRIES) ?: return null
+        val present = args.getBooleanArray(EXTRA_QUEUE_EDIT_PRESENT) ?: return null
+        val occurrences = args.getIntArray(EXTRA_QUEUE_EDIT_OCCURRENCES) ?: return null
+        if (media.isEmpty() || media.size != entries.size || media.size != present.size ||
+            media.size != occurrences.size || occurrences.any { it < 0 }
+        ) return null
+        val indices = mutableListOf<Int>()
+        val candidates = HashMap<Pair<String, String?>, MutableList<Int>>()
+        for (i in 0 until raw.mediaItemCount) {
+            val item = raw.getMediaItemAt(i)
+            candidates.getOrPut(item.mediaId to item.queueEntryId) { mutableListOf() }.add(i)
+        }
+        media.indices.forEach { i ->
+            val entry = entries[i].takeIf { present[i] }
+            val index = candidates[media[i] to entry]?.getOrNull(occurrences[i]) ?: return null
+            if (index <= raw.currentMediaItemIndex) return null
+            indices += index
+        }
+        return indices.distinct().sorted().takeIf { it.isNotEmpty() }
+    }
+
+    private fun removeQueueOccurrences(args: Bundle, clear: Boolean): Boolean {
+        if (!queueEditAllowed()) return false
+        val raw = player ?: return false
+        val current = raw.currentMediaItemIndex
+        if (current < 0) return false
+        val indices = if (clear) {
+            (current + 1 until raw.mediaItemCount).filter {
+                raw.getMediaItemAt(it).queueTier == QueueTier.USER_QUEUE
+            }
+        } else queueEditIndices(raw, args) ?: return false
+        if (indices.isEmpty()) return false
+        val token = args.getString(EXTRA_QUEUE_EDIT_TOKEN)?.takeIf { it.isNotBlank() } ?: return false
+        val before = nativeQueueItems(raw)
+        val oldWindow = boundedContextWindow?.snapshot()
+        val staged = oldWindow?.let { QueueWindow.restore(it) }
+        for (index in indices) {
+            val item = before[index]
+            if (item.queueTier == QueueTier.CONTEXT && staged != null) {
+                val canonical = QueueShuffle.getCanonicalIndex(item) ?: return false
+                val cycle = item.contextCycleId ?: return false
+                if (!staged.exclude(QueueWindowEntry(canonical, cycle))) return false
+            }
+        }
+        queueEditSnapshot = null
+        if (staged != null) boundedContextWindow = staged
+        // Remove in descending order so repeated entries and positions never drift.
+        for (index in indices.asReversed()) raw.removeMediaItem(index)
+        val after = nativeQueueItems(raw)
+        if (after.size >= before.size) {
+            boundedContextWindow = oldWindow?.let { QueueWindow.restore(it) }
+            return false
+        }
+        queueEditSnapshot = QueueEditSnapshot(
+            token = token,
+            player = raw,
+            before = before,
+            after = after,
+            beforeWindow = oldWindow,
+            afterWindow = boundedContextWindow?.snapshot(),
+            currentIndex = current,
+            currentMediaId = raw.currentMediaItem?.mediaId,
+            currentEntryId = raw.currentMediaItem?.queueEntryId,
+            expiresAt = SystemClock.elapsedRealtime() + 4_500L,
+        )
+        saveQueueSnapshotImmediately(raw)
+        partySync?.onLocalIntent()
+        return true
+    }
+
+    private fun undoQueueOccurrences(args: Bundle): Boolean {
+        val edit = queueEditSnapshot ?: return false
+        if (!queueEditAllowed() || args.getString(EXTRA_QUEUE_EDIT_TOKEN) != edit.token ||
+            SystemClock.elapsedRealtime() >= edit.expiresAt
+        ) {
+            queueEditSnapshot = null
+            return false
+        }
+        val raw = player ?: return false
+        if (raw !== edit.player || raw.currentMediaItemIndex != edit.currentIndex ||
+            raw.currentMediaItem?.mediaId != edit.currentMediaId ||
+            raw.currentMediaItem?.queueEntryId != edit.currentEntryId ||
+            nativeQueueItems(raw) != edit.after ||
+            boundedContextWindow?.snapshot() != edit.afterWindow
+        ) {
+            queueEditSnapshot = null
+            return false
+        }
+        queueEditSnapshot = null
+        // Reinsert only deleted items; never replace the currently decoding media item.
+        boundedContextWindow = edit.beforeWindow?.let { QueueWindow.restore(it) }
+        var originalIndex = 0
+        while (originalIndex < edit.before.size) {
+            if (originalIndex < raw.mediaItemCount &&
+                raw.getMediaItemAt(originalIndex) == edit.before[originalIndex]
+            ) {
+                originalIndex++
+            } else {
+                val start = originalIndex
+                val next = raw.takeIf { originalIndex < it.mediaItemCount }
+                    ?.getMediaItemAt(originalIndex)
+                while (originalIndex < edit.before.size && edit.before[originalIndex] != next) {
+                    originalIndex++
+                }
+                raw.addMediaItems(start, edit.before.subList(start, originalIndex))
+            }
+        }
+        saveQueueSnapshotImmediately(raw)
+        partySync?.onLocalIntent()
+        return true
+    }
+
+    private fun promoteQueueOccurrence(args: Bundle): Boolean {
+        if (!queueEditAllowed()) return false
+        val raw = player ?: return false
+        val index = args.getInt(EXTRA_QUEUE_EDIT_INDEX, -1)
+        val item = (0 until raw.mediaItemCount)
+            .firstOrNull { it == index }?.let(raw::getMediaItemAt) ?: return false
+        if (queueEditIndices(raw, args)?.singleOrNull() != index) return false
+        if (item.queueTier == QueueTier.USER_QUEUE) return false
+        val originalWindow = boundedContextWindow?.snapshot()
+        val staged = originalWindow?.let { QueueWindow.restore(it) }
+        if (item.queueTier == QueueTier.CONTEXT && staged != null) {
+            val canonical = QueueShuffle.getCanonicalIndex(item) ?: return false
+            val cycle = item.contextCycleId ?: return false
+            if (!staged.exclude(QueueWindowEntry(canonical, cycle))) return false
+            boundedContextWindow = staged
+        }
+        val timeline = nativeQueueItems(raw).map { it.toSong() }
+        val insertion = QueueCoordinator.findUserQueueInsertionIndex(
+            timeline = timeline,
+            currentIndex = raw.currentMediaItemIndex,
+            isNext = AppSettings.swipeToPlayNext.value,
+        )
+        val target = if (index < insertion) insertion - 1 else insertion
+        val updated = QueueShuffle.withQueueMetadata(item, newTier = QueueTier.USER_QUEUE)
+        queueEditSnapshot = null
+        raw.replaceMediaItem(index, updated)
+        if (index != target) raw.moveMediaItem(index, target)
+        saveQueueSnapshotImmediately(raw)
+        partySync?.onLocalIntent()
+        return true
+    }
+
     private fun toggleShuffleFromSession() {
         val window = boundedContextWindow
         if (window != null && !ListenTogether.state.value.inParty) {
@@ -2806,7 +3106,9 @@ class PlaybackService : MediaLibraryService() {
         val exoPlayer = player ?: return
         val requestToken = args.getString(EXTRA_BOUNDED_CONTEXT_SONGS) ?: return
         val request = BoundedContextRequests.take(requestToken) ?: return
-        if (CastController.state.value.casting || castPlayback.active) {
+        if (CastController.state.value.casting || castPlayback.active ||
+            dlnaPlayback.active || webTvPlayback.active
+        ) {
             // MainActivity normally keeps Cast on the full-queue path. This
             // closes the race where a receiver connects after the tap but
             // before this session command is handled.
@@ -3210,8 +3512,11 @@ class PlaybackService : MediaLibraryService() {
                             seed = seedSong,
                             existing = existing,
                             limit = remaining,
-                            bpmFor = { id ->
-                                trackAnalyzer.analysisFor(id).bpm.takeIf { it in 45.0..230.0 }
+                            bpmFor = { song ->
+                                song.localUri?.let { localUri ->
+                                    val uri = Uri.parse(resolvePlaybackUri(localUri, song.localPath))
+                                    trackAnalyzer.analysisFor(song.videoId, uri).bpm.takeIf { it in 45.0..230.0 }
+                                }
                             },
                         ),
                     )
@@ -6449,6 +6754,14 @@ class PlaybackService : MediaLibraryService() {
             // A video about to be converted plays under another id, so every
             // byte warmed for it now would be wasted.
             (nextIndex..end).map(player::getMediaItemAt)
+                // AudioCache read-ahead only understands streamed tracks. A local
+                // file is already complete and bypasses the cache; treating its
+                // mediaId as a YouTube id wastes data and cannot warm that file.
+                // Do not jump over a local item and prefetch a later stream
+                // before the local track has become current.
+                .takeWhile { item ->
+                    item.localConfiguration?.uri?.let { !LocalAudioSource.isLocal(it) } == true
+                }
                 .filterNot(MusicOnlyPlayback::wants)
                 .map { it.toSong() }
         } else {
@@ -6673,6 +6986,9 @@ class PlaybackService : MediaLibraryService() {
         if (nextIndex == C.INDEX_UNSET) return
         val next = exoPlayer.getMediaItemAt(nextIndex)
         if (MusicOnlyPlayback.wants(next)) return
+        // Direct Source Stream's prefetcher resolves YouTube/addon streams; a
+        // file:// or content:// item needs no network fetch or source pin.
+        if (next.localConfiguration?.uri?.let(LocalAudioSource::isLocal) == true) return
         val duration = exoPlayer.duration
         if (duration == C.TIME_UNSET || duration <= 0L) return
         val boundary = crossfade?.plannedTransitionFor(current.mediaId) ?: duration
@@ -6744,19 +7060,47 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
-     * Pause when the sleep timer runs out.
+     * Timed sleep fade, applied after EQ and normalization by the per-player
+     * LoudnessProcessors. Both independent decks receive the same envelope,
+     * including during the middle of an AutoMix crossfade or a version swap.
      *
-     * `collectLatest` is what makes re-setting the timer work: the pending wait
-     * is cancelled and restarted on the new deadline instead of both firing.
+     * Never touches ExoPlayer.volume or the device/receiver volume; these are
+     * owned by the transition scheduler and the listener, respectively.
+     * External outputs and bit-perfect bypass the fade and still stop on time.
+     * Cancelling or changing the deadline restores the envelope in finally.
      */
     private fun watchSleepTimer() {
         scope.launch {
             SleepTimer.deadline.collectLatest { deadline ->
+                loudnessA.setSleepFade(1f)
+                loudnessB.setSleepFade(1f)
                 if (deadline == null) return@collectLatest
-                val remaining = deadline - SystemClock.elapsedRealtime()
-                if (remaining > 0) delay(remaining)
-                player?.pause()
-                SleepTimer.cancel()
+                try {
+                    val beforeFade = (deadline - SystemClock.elapsedRealtime() -
+                        SleepTimer.FADE_OUT_DURATION_MS).coerceAtLeast(0L)
+                    if (beforeFade > 0) delay(beforeFade)
+                    while (isActive) {
+                        val remaining = deadline - SystemClock.elapsedRealtime()
+                        if (remaining <= 0L) break
+                        val canFade = AppSettings.sleepTimerFadeOut.value &&
+                            !BitPerfectOutput.status.value.active &&
+                            !CastController.state.value.casting &&
+                            !WearBridge.watchOutput.value.active
+                        val envelope = SleepTimer.calculateFadeVolume(
+                            remainingMs = remaining,
+                            fadeOutEnabled = canFade,
+                        )
+                        loudnessA.setSleepFade(envelope)
+                        loudnessB.setSleepFade(envelope)
+                        delay(minOf(100L, remaining))
+                    }
+                    player?.pause()
+                    SleepTimer.cancel()
+                } finally {
+                    // Keep EQ, loudness, ReplayGain and user volume as they were.
+                    loudnessA.setSleepFade(1f)
+                    loudnessB.setSleepFade(1f)
+                }
             }
         }
     }
@@ -7263,7 +7607,27 @@ class PlaybackService : MediaLibraryService() {
 
     private fun observeSettings() {
         scope.launch {
-            AppSettings.skipSilence.collect { on -> eachPlayer { it.skipSilenceEnabled = on } }
+            combine(
+                AppSettings.smartFadeEnabled,
+                AppSettings.autoMixArtworkEnabled,
+                AppSettings.autoMixMiniArtworkEnabled,
+                AppSettings.autoMixArtworkCutoff,
+                AppSettings.autoMixMiniArtworkCutoff,
+            ) { _, _, _, _, _ -> Unit }.collect {
+                if (autoMixArtworkGeneration?.let { !allowsAnyAutoMixArtwork(it) } == true) {
+                    autoMixArtworkJob?.cancel()
+                    autoMixArtworkGeneration = null
+                }
+                discardBlockedAutoMixAmbient { allowsAutoMixArtwork(it) }
+                if (!AppSettings.smartFadeEnabled.value) crossfade?.cancelAutoMixVisual()
+            }
+        }
+        scope.launch {
+            AppSettings.skipSilence.collect { on ->
+                // Loop Mix is sample-locked: changing this setting during a deck
+                // blend must not re-enable the silence skipper mid-transition.
+                crossfade?.applySkipSilencePreference(on) ?: eachPlayer { it.skipSilenceEnabled = on }
+            }
         }
         scope.launch {
             // The queue as it stands is re-judged at once, rather than at the
@@ -7354,6 +7718,20 @@ class PlaybackService : MediaLibraryService() {
                 synced to sources
             }.distinctUntilChanged().collect {
                 loadLyricsForCurrentTrack()
+            }
+        }
+        scope.launch {
+            AppSettings.lyricsOffsetMs.drop(1).collect { offset ->
+                castPlayback.updateLyrics(
+                    player?.currentMediaItem?.mediaId,
+                    serviceLyrics,
+                    offset,
+                )
+                webTvPlayback.updateLyrics(
+                    player?.currentMediaItem?.mediaId,
+                    serviceLyrics,
+                    offset,
+                )
             }
         }
         scope.launch {
@@ -7813,6 +8191,8 @@ class PlaybackService : MediaLibraryService() {
             // would run out its few queued tracks and stop on its own anyway;
             // better to say so now than leave the TV on a casting screen.
             if (castPlayback.active) CastController.disconnect(resumeHere = false)
+            if (dlnaPlayback.active) dlnaPlayback.disconnect(resumeHere = false)
+            if (webTvPlayback.active) webTvPlayback.stop(resumeHere = false)
             // Both, or a swipe-away mid-crossfade leaves the outgoing track
             // playing on its own out of a service that is on its way out.
             eachPlayer { it.stop() }
@@ -7829,6 +8209,10 @@ class PlaybackService : MediaLibraryService() {
         // stop, and the next one picks the session up where it was.
         CastController.detach(castPlayback)
         castPlayback.release()
+        DlnaController.detach(dlnaPlayback)
+        dlnaPlayback.disconnect(resumeHere = false)
+        WebTvController.detach(webTvPlayback)
+        webTvPlayback.stop(resumeHere = false)
         closeAudioEffectSession()
         bluetoothTracker.stop()
         audioManager?.unregisterAudioDeviceCallback(outputDeviceCallback)
@@ -7918,21 +8302,27 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun loadLyricsForCurrentTrack() {
+        serviceLyricsJob?.cancel()
+        val mediaId = player?.currentMediaItem?.mediaId
         val currentSong = player?.currentMediaItem?.toSong() ?: run {
             serviceLyrics = null
+            castPlayback.updateLyrics(null, null, AppSettings.lyricsOffsetMs.value)
+            webTvPlayback.updateLyrics(null, null, AppSettings.lyricsOffsetMs.value)
             stopLyricsTicker()
             return
         }
+        // Clear stale TV text while the next track's lyrics are loading.
+        serviceLyrics = null
+        castPlayback.updateLyrics(mediaId, null, AppSettings.lyricsOffsetMs.value)
+        webTvPlayback.updateLyrics(mediaId, null, AppSettings.lyricsOffsetMs.value)
 
         if (!AppSettings.syncedLyrics.value) {
-            serviceLyrics = null
             stopLyricsTicker()
             return
         }
 
         val trackDurationMs = (player?.duration ?: 0L).takeIf { it > 0 } ?: 0L
 
-        serviceLyricsJob?.cancel()
         serviceLyricsJob = scope.launch(Dispatchers.IO) {
             val localUri = currentSong.localUri
             var lines: List<LyricLine>? = null
@@ -7953,7 +8343,11 @@ class PlaybackService : MediaLibraryService() {
                 lines = found?.lines
             }
             withContext(Dispatchers.Main) {
+                // Lookups can finish after a skip; never send old lyrics to TV.
+                if (player?.currentMediaItem?.mediaId != mediaId) return@withContext
                 serviceLyrics = lines
+                castPlayback.updateLyrics(mediaId, lines, AppSettings.lyricsOffsetMs.value)
+                webTvPlayback.updateLyrics(mediaId, lines, AppSettings.lyricsOffsetMs.value)
                 if (player?.isPlaying == true) {
                     updateLyricSubtitle()
                 }
@@ -8637,6 +9031,10 @@ class PlaybackService : MediaLibraryService() {
                 .add(upgradeQualityCommand)
                 .add(swapVersionCommand)
                 .add(queueDragCommand)
+                .add(queueEditRemoveCommand)
+                .add(queueEditClearCommand)
+                .add(queueEditUndoCommand)
+                .add(queueEditPromoteCommand)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailablePlayerCommands(MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS)
@@ -8685,6 +9083,18 @@ class PlaybackService : MediaLibraryService() {
                         smoothSwapCurrentTrackVersion(targetSong.toMediaItem())
                     }
                 }
+                ACTION_QUEUE_EDIT_REMOVE -> return Futures.immediateFuture(
+                    SessionResult(if (removeQueueOccurrences(args, false)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
+                ACTION_QUEUE_EDIT_CLEAR -> return Futures.immediateFuture(
+                    SessionResult(if (removeQueueOccurrences(args, true)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
+                ACTION_QUEUE_EDIT_UNDO -> return Futures.immediateFuture(
+                    SessionResult(if (undoQueueOccurrences(args)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
+                ACTION_QUEUE_EDIT_PROMOTE -> return Futures.immediateFuture(
+                    SessionResult(if (promoteQueueOccurrence(args)) SessionResult.RESULT_SUCCESS else SessionError.ERROR_NOT_SUPPORTED),
+                )
                 ACTION_QUEUE_DRAG -> {
                     if (args.getBoolean(EXTRA_QUEUE_DRAG_ACTIVE, false)) {
                         partySync?.beginQueueDrag()

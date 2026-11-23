@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +78,7 @@ fun SpotifyImportAlert(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val uiResources = LocalResources.current
     val scope = rememberCoroutineScope()
     var link by remember { mutableStateOf("") }
     var privacy by remember { mutableStateOf(PlaylistPrivacy.PRIVATE) }
@@ -90,7 +92,7 @@ fun SpotifyImportAlert(
     fun start() {
         val id = SpotifyImporter.extractPlaylistId(link)
         if (id == null) {
-            status = context.getString(R.string.spotify_import_invalid)
+            status = uiResources.getString(R.string.spotify_import_invalid)
             failed = true
             return
         }
@@ -101,20 +103,20 @@ fun SpotifyImportAlert(
         }
         working = true
         failed = false
-        status = context.getString(R.string.spotify_import_fetching)
+        status = uiResources.getString(R.string.spotify_import_fetching)
         scope.launch {
             try {
                 val (name, tracks) = SpotifyImporter.fetchPlaylistTracks(id)
                 val (songs, missed) = SpotifyImporter.resolveToSongs(tracks, effectiveLanguage) { done, total ->
-                    status = context.getString(R.string.spotify_import_matching, done, total)
+                    status = uiResources.getString(R.string.spotify_import_matching, done, total)
                 }
-                if (songs.isEmpty()) error(context.getString(R.string.spotify_import_none))
+                if (songs.isEmpty()) error(uiResources.getString(R.string.spotify_import_none))
                 onImported(name, privacy, songs)
                 if (missed.isEmpty()) onDismiss() else unmatched = missed
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                status = context.getString(R.string.spotify_import_failed, e.message.orEmpty())
+                status = uiResources.getString(R.string.spotify_import_failed, e.message.orEmpty())
                 failed = true
             }
             working = false

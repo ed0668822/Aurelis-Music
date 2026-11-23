@@ -97,6 +97,7 @@ fun ReplayScreen(
     holder: String,
     onPeriodChange: (ReplayPeriod) -> Unit,
     onOpenStory: (ReplayStoryPage) -> Unit,
+    onOpenYearStory: () -> Unit,
     onPlaySong: (Song) -> Unit,
     /**
      * Opens the artist's page. The browse id is null for most rows — an artist
@@ -191,6 +192,109 @@ fun ReplayScreen(
                             memberSince = state.memberSince,
                             onCardClick = onOpenStory,
                         )
+                    }
+                    // B09: an annual overview comes from the same local statistics as
+                    // the shareable story; no separate totals or online profile.
+                    if (state.period == ReplayPeriod.THIS_YEAR) {
+                        item("annual-highlights") {
+                            val year = java.time.LocalDate.now().year
+                            val annual = summary.annualHighlights(year)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = PAGE_GUTTER + 4.dp, vertical = 8.dp)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(textColor.copy(alpha = 0.075f))
+                                    .padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = state.period.localizedChip(context) + " · " + year,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textColor,
+                                )
+                                Text(
+                                    text = stringResource(R.string.minutes) + ": " + annual.minutes,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = textColor.copy(alpha = 0.8f),
+                                )
+                                annual.topSong?.let { top ->
+                                    Text(
+                                        text = stringResource(R.string.top_song) + ": " + top,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                annual.topArtist?.let { top ->
+                                    Text(
+                                        text = stringResource(R.string.top_artist) + ": " + top,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                annual.topAlbum?.let { album ->
+                                    Text(
+                                        text = stringResource(R.string.top_album) + ": " + album,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                annual.topGenre?.let { genre ->
+                                    Text(
+                                        text = stringResource(R.string.top_genre) + ": " + genre,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                    )
+                                }
+                                Text(
+                                    text = stringResource(R.string.replay_annual_unique_songs, annual.uniqueSongs),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = textColor.copy(alpha = 0.8f),
+                                )
+                                annual.personality?.let { personality ->
+                                    val personalityLabel = when (personality) {
+                                        AnnualListeningPersonality.NIGHT_OWL -> R.string.replay_personality_night
+                                        AnnualListeningPersonality.EARLY_BIRD -> R.string.replay_personality_early
+                                        AnnualListeningPersonality.GOLDEN_HOUR -> R.string.replay_personality_evening
+                                        AnnualListeningPersonality.DAYTIME -> R.string.replay_personality_day
+                                        AnnualListeningPersonality.ALL_DAY -> R.string.replay_personality_all
+                                    }
+                                    Text(
+                                        text = stringResource(R.string.replay_annual_personality) + ": " + stringResource(personalityLabel),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textColor,
+                                    )
+                                }
+                                Text(
+                                    text = stringResource(R.string.replay_year_watch),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textColor,
+                                    modifier = Modifier.padding(top = 10.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(textColor.copy(alpha = 0.10f))
+                                        .clickable(onClick = onOpenYearStory)
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                )
+                                annual.localHighlight?.let { highlight ->
+                                    Text(
+                                        text = stringResource(R.string.replay_annual_play_local),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = textColor,
+                                        modifier = Modifier
+                                            .padding(top = 4.dp)
+                                            .clickable { onPlaySong(highlight) },
+                                    )
+                                }
+                            }
+                        }
                     }
                     item("open") {
                         ReplayActionRow(AurelisIcons.Play, stringResource(R.string.play_your_replay), dark) {

@@ -68,6 +68,7 @@ fun ExploreScreen(
     modifier: Modifier = Modifier,
     /** The big "Explore" heading; the desktop's pages carry none. */
     showTitle: Boolean = true,
+    offlineBanner: (@Composable () -> Unit)? = null,
 ) {
     PullToRefresh(
         refreshing = refreshing,
@@ -99,9 +100,10 @@ fun ExploreScreen(
                         )
                     }
                 }
+                offlineBanner?.let { banner -> item(key = "offline-status") { banner() } }
                 when (state) {
-                    UiState.Loading -> item { ExploreSkeletonRows(columns) }
-                    is UiState.Error -> item {
+                    UiState.Loading -> if (offlineBanner == null) item { ExploreSkeletonRows(columns) }
+                    is UiState.Error -> if (offlineBanner == null) item {
                         MessageState(state.message, actionLabel = stringResource(Res.string.retry), onAction = onRetry)
                     }
                     is UiState.Success -> {
@@ -315,6 +317,7 @@ fun MoodGenrePlaylistsScreen(
     onRetry: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    offlineBanner: (@Composable () -> Unit)? = null,
 ) {
     LazyColumn(
         state = listState,
@@ -331,9 +334,10 @@ fun MoodGenrePlaylistsScreen(
                 modifier = Modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp),
             )
         }
+        offlineBanner?.let { banner -> item(key = "offline-status") { banner() } }
         when (state) {
-            UiState.Loading -> feedSkeleton()
-            is UiState.Error -> item {
+            UiState.Loading -> if (offlineBanner == null) feedSkeleton()
+            is UiState.Error -> if (offlineBanner == null) item {
                 MessageState(state.message, actionLabel = stringResource(Res.string.retry), onAction = onRetry)
             }
             is UiState.Success -> items(state.data, key = { it.title }) { shelf ->

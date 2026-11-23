@@ -10,6 +10,7 @@
 package com.music.aurelis.ui.components.backdrop
 
 import org.intellij.lang.annotations.Language
+import android.os.Build
 
 sealed interface RuntimeShaderCache {
 
@@ -21,7 +22,11 @@ internal class RuntimeShaderCacheImpl : RuntimeShaderCache {
     private val runtimeShaders = mutableMapOf<String, RuntimeShader>()
 
     override fun obtainRuntimeShader(key: String, string: String): RuntimeShader {
-        return runtimeShaders.getOrPut(key) { RuntimeShader(string) }
+        return if (Build.VERSION.SDK_INT >= 33) {
+            runtimeShaders.getOrPut(key) { RuntimeShader(string) }
+        } else {
+            throw UnsupportedOperationException("Runtime shaders require Android 13")
+        }
     }
 
     fun clear() {

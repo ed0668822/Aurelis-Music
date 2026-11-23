@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Set to the 8-character Cast Developer Console app ID AFTER publishing
+         the receiver/ files over HTTPS. Leave empty for Google Default Media Receiver. -->
+    <string name="cast_custom_receiver_id" translatable="false"></string>
+</resources>

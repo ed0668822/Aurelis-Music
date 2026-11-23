@@ -7,6 +7,7 @@
 # enum names in preferences, Media3 custom commands, library reflection — keeps
 # working without a rule of its own.
 -dontobfuscate
+-dontrepackage
 -keepattributes SourceFile,LineNumberTable,Signature,InnerClasses,EnclosingMethod,Exceptions,*Annotation*
 
 # ---- Logging ------------------------------------------------------------------

@@ -24,11 +24,14 @@ import com.music.aurelis.data.model.Song
 import com.music.aurelis.data.settings.AppSettings
 import com.music.aurelis.data.settings.LastPlayerScreen
 import com.music.aurelis.playback.MusicOnlyPlayback
+import com.music.aurelis.playback.AutoMixVisualFeed
 import com.music.aurelis.playback.AudioOutputStatus
 import com.music.aurelis.playback.AudioRouting
 import com.music.aurelis.playback.audio.bitperfect.BitPerfectOutput
 import com.music.aurelis.playback.audio.bitperfect.DacVolume
 import com.music.aurelis.playback.cast.CastController
+import com.music.aurelis.playback.cast.DlnaController
+import com.music.aurelis.playback.cast.WebTvController
 import com.music.aurelis.ui.components.backdrop.backdrops.SnapshotBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.rememberSnapshotBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.snapshotBackdropSource
@@ -59,6 +62,40 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val main = Handler(Looper.getMainLooper())
 
+    override val autoMixVisualState get() = AutoMixVisualFeed.state
+    override fun onAutoMixScrubIntent() = AutoMixVisualFeed.cancel()
+    @Composable
+    override fun autoMixIncomingReveal(
+        eased: () -> Float,
+        reducedMotion: () -> Boolean,
+        generation: Long,
+        blur: Boolean,
+    ): Modifier = androidAutoMixIncomingReveal(eased, reducedMotion, generation, blur)
+    override val supportsAutoMixCanvas: Boolean get() = true
+
+    private val visualArtworkPreferences: StateFlow<AutoMixArtworkPreferences> =
+        combine(
+            AppSettings.autoMixArtworkEnabled,
+            AppSettings.autoMixMiniArtworkEnabled,
+            AppSettings.autoMixArtworkCutoff,
+            AppSettings.autoMixMiniArtworkCutoff,
+        ) { art, mini, artCutoff, miniCutoff ->
+            AutoMixArtworkPreferences(
+                artTransition = art,
+                miniPlayerTransition = mini,
+                skipArtworkThrough = artCutoff,
+                skipMiniThrough = miniCutoff,
+            )
+        }.stateIn(
+            scope, SharingStarted.Eagerly,
+            AutoMixArtworkPreferences(
+                artTransition = AppSettings.autoMixArtworkEnabled.value,
+                miniPlayerTransition = AppSettings.autoMixMiniArtworkEnabled.value,
+                skipArtworkThrough = AppSettings.autoMixArtworkCutoff.value,
+                skipMiniThrough = AppSettings.autoMixMiniArtworkCutoff.value,
+            ),
+        )
+
     override val settings: PlayerSettingsSource = object : PlayerSettingsSource {
         override val animatedCanvas get() = AppSettings.animatedCanvas
         override val audioQualityCellular get() = AppSettings.audioQualityCellular
@@ -68,6 +105,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val hideSongStatus get() = AppSettings.hideSongStatus
         override val showQueueHistory get() = AppSettings.showQueueHistory
         override val hideVolumeBar get() = AppSettings.hideVolumeBar
+        override val showTotalDuration get() = AppSettings.showTotalDuration
         override val hideStatusBar get() = AppSettings.hideStatusBarInPlayer
         override val lastPlayerScreen get() = AppSettings.lastPlayerScreen
         override val playerTheme get() = AppSettings.playerTheme
@@ -90,10 +128,15 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val smartMixBlend get() = AppSettings.smartMixBlend
         override val smartMixView get() = AppSettings.smartMixView
         override val smartMixProgress get() = AppSettings.smartMixProgress
+        override val autoMixArtworkEnabled get() = AppSettings.autoMixArtworkEnabled
+        override val autoMixMiniArtworkEnabled get() = AppSettings.autoMixMiniArtworkEnabled
+        override val autoMixArtworkState get() = AppSettings.autoMixArtworkState
+        override val autoMixArtwork get() = visualArtworkPreferences
         override val smartMixPreview get() = AppSettings.smartMixPreview
         override val smartTransitionWindow get() = AppSettings.smartTransitionWindow
         override val spotifyCanvasAutoHide get() = AppSettings.spotifyCanvasAutoHide
         override val syncedLyrics get() = AppSettings.syncedLyrics
+        override val hideLyricsPreview get() = AppSettings.hideLyricsPreview
         override val translationLanguage get() = AppSettings.translationLanguage
         override val versionAlignmentInProgress get() = AppSettings.versionAlignmentInProgress
 
@@ -129,6 +172,20 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override fun rememberRemoteArtworkUrl(song: Song?): String? =
         com.music.aurelis.ui.components.rememberRemoteArtworkUrl(song)
 
+    // Called only after the current artwork is absent or cannot be decoded.
+    // DiscordArtwork uses a bounded, cached iTunes lookup and validates title
+    // and artist, rather than returning an unrelated album illustration.
+    override suspend fun resolveMixArtwork(title: String, artist: String): String? {
+        if (title.isBlank() || artist.isBlank()) return null
+        val baseTitle = title
+            .replace(Regex("""\s*[\[(](?:feat\.?|ft\.?|featuring)\s+[^)\]]+[)\]]""", RegexOption.IGNORE_CASE), "")
+            .trim()
+        val primaryArtist = artist.substringBefore(',').substringBefore(" & ").trim()
+        return com.music.aurelis.data.discord.DiscordArtwork.resolve(
+            Song(videoId = "automix-artwork", title = baseTitle, artist = primaryArtist, thumbnailUrl = null),
+        )
+    }
+
     // Lazy, all three: the player is not the first thing the process does, and
     // none of these objects should be woken for a launch that never opens it.
     override val volume: SystemVolume by lazy { CastAwareVolume(MusicStreamVolume(app), scope) }
@@ -137,10 +194,18 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override fun rememberAudioOutputs(): List<AudioOutputDevice> {
         val outputs = rememberAndroidAudioOutputs()
         val cast by CastController.state.collectAsStateWithLifecycle()
+        val dlna by DlnaController.connected.collectAsStateWithLifecycle()
+        val web by WebTvController.state.collectAsStateWithLifecycle()
         val watch by WearBridge.watchOutput.collectAsStateWithLifecycle()
         // While a receiver is the speaker no output of this phone is the one
         // playing, so none of them is lit; the Cast or watch row is.
-        return if (cast.casting || watch.active) outputs.map { it.copy(isActive = false) } else outputs
+        return remember(outputs, cast.casting, dlna, web.active, watch.active) {
+            if (cast.casting || dlna != null || web.active || watch.active) {
+                outputs.map { it.copy(isActive = false) }
+            } else {
+                outputs
+            }
+        }
     }
 
     @Composable
@@ -150,6 +215,8 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         // Picking an output of this phone is picking this phone: the receiver
         // is let go of, and the music carries on here if it was playing.
         if (CastController.state.value.casting) CastController.disconnect(resumeHere = true)
+        if (DlnaController.connected.value != null) DlnaController.disconnect(resumeHere = true)
+        if (WebTvController.state.value.url != null) WebTvController.stop(resumeHere = true)
         AudioRouting.select(id)
         WearBridge.leaveWatchOutput()
     }
@@ -166,6 +233,8 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         // One speaker at a time: a receiver lets go first, quietly, and the
         // watch picks the queue up from where the phone's player is.
         if (CastController.state.value.casting) CastController.disconnect(resumeHere = false)
+        if (DlnaController.connected.value != null) DlnaController.disconnect(resumeHere = false)
+        if (WebTvController.state.value.url != null) WebTvController.stop(resumeHere = false)
         WearBridge.selectWatchOutput()
     }
 
@@ -213,9 +282,18 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
 
     override val castState: StateFlow<CastUi> by lazy {
         CastController.ensureStarted(app)
-        CastController.state
-            .map { CastUi(supported = it.supported, connectedName = it.connectedName, connecting = it.connecting) }
-            .stateIn(scope, SharingStarted.Eagerly, CastUi())
+        combine(
+            CastController.state,
+            DlnaController.connected,
+            WebTvController.state,
+        ) { cast, dlna, web ->
+            CastUi(
+                supported = true, // DLNA and Browser TV work without Google Play services.
+                connectedName = cast.connectedName ?: dlna ?: if (web.active) "Browser TV" else null,
+                connecting = cast.connecting || web.starting,
+                webReceiverActive = web.active,
+            )
+        }.stateIn(scope, SharingStarted.Eagerly, CastUi(supported = true))
     }
 
     @Composable
@@ -291,27 +369,40 @@ private class CastAwareVolume(
     private val system: SystemVolume,
     scope: CoroutineScope,
 ) : SystemVolume {
+    private val receiverVolumes = combine(
+        CastController.volume,
+        DlnaController.volume,
+    ) { castVolume, dlnaVolume -> castVolume to dlnaVolume }
+
+    private val networkRoutes = combine(
+        CastController.state,
+        DlnaController.connected,
+        WebTvController.state,
+    ) { cast, dlna, web -> Triple(cast.casting, dlna != null, web.active) }
+
     override val level: StateFlow<Float> = combine(
         system.level,
-        CastController.volume,
-        CastController.state.map { it.casting },
+        receiverVolumes,
+        networkRoutes,
         WearBridge.watchOutput,
         DacVolume.level,
-    ) { phone, receiver, casting, watch, dac ->
+    ) { phone, receiver, routes, watch, dac ->
         when {
-            casting -> receiver
+            routes.first -> receiver.first
+            routes.second -> receiver.second
             watch.active -> watch.volume
-            // Direct USB: the music stream no longer reaches the DAC, so its
-            // own hardware volume is the only one that means anything.
-            dac != null -> dac
+            // The web receiver controls its own volume; its slider is hidden
+            // by AudioOutputSheet when routes.third is active.
+            dac != null && !routes.third -> dac
             else -> phone
         }
-    }
-        .stateIn(scope, SharingStarted.Eagerly, system.level.value)
+    }.stateIn(scope, SharingStarted.Eagerly, system.level.value)
 
     override fun set(level: Float) {
         when {
             CastController.state.value.casting -> CastController.setVolume(level)
+            DlnaController.connected.value != null -> DlnaController.setVolume(level)
+            WebTvController.state.value.active -> Unit // TV browser controls its own volume.
             WearBridge.watchOutput.value.active -> WearBridge.setWatchVolume(level)
             DacVolume.level.value != null -> DacVolume.set(level)
             else -> system.set(level)

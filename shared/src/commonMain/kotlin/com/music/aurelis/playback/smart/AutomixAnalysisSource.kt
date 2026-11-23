@@ -26,4 +26,34 @@ package com.music.aurelis.playback.smart
     fun opusUri(videoId: String): String = "aurelis://watch?v=$videoId&$OPUS_QUERY_PARAMETER=1"
 
     fun requestsYouTubeOpus(marker: String?): Boolean = marker == "1"
+
+    /**
+     * Source-backed media IDs were previously analysed from a YouTube title
+     * match. Those saved grids have different sample timelines and must never
+     * be restored as if measured from the source's own bytes.
+     *
+     * The cache key identifies the exact source and track, independent of
+     * changing title/artist query hints. YouTube keeps its existing store key.
+     */
+    fun storageKey(trackId: String, sourceCacheKey: String?): String =
+        if (sourceCacheKey.isNullOrBlank()) trackId else "$trackId|source:$sourceCacheKey"
+
+    /** Namespace exact playback cache entries away from legacy analysis-only entries. */
+    fun playbackStorageKey(trackId: String, cacheKey: String): String =
+        storageKey(trackId, "playback:$cacheKey")
+
+    /** A local recording must not borrow the original video's YouTube analysis. */
+    fun localStorageKey(trackId: String, localUri: String, revision: String? = null): String =
+        storageKey(trackId, "local:${localUri.length}:$localUri:${revision.orEmpty()}")
+
+    /**
+     * A loop deck is safe when the playback rendition is complete and the
+     * caller obtained its analysis under the *same* rendition-scoped key.
+     * A substituted FLAC (#alt) may be analysed and mixed, but never with
+     * an old canonical Opus result.
+     */
+    fun hasVerifiedLoopAudio(
+        playingCacheKey: String,
+        completeRenditionKeys: Collection<String>,
+    ): Boolean = playingCacheKey in completeRenditionKeys
 }

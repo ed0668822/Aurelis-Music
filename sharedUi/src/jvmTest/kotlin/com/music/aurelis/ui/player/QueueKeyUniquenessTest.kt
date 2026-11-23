@@ -36,4 +36,27 @@ class QueueKeyUniquenessTest {
         val all = listOfNotNull(tracks.nowPlaying) + tracks.history + tracks.user + tracks.context + tracks.autoplay
         assertTrue(all.map { it.key }.let { it.size == it.toSet().size })
     }
+
+    @Test
+    fun `duplicate entry identifiers are not treated as a unique occurrence`() {
+        val queue = listOf(
+            song("now", "np", QueueTier.CONTEXT),
+            song("same", "shared"),
+            song("same", "shared"),
+            song("other", "unique"),
+        )
+        val rows = splitQueue(queue, 0).autoplay
+        assertEquals(null, rows[0].uniqueEntryId)
+        assertEquals(null, rows[1].uniqueEntryId)
+        assertEquals("unique", rows[2].uniqueEntryId)
+        assertEquals(3, rows.map { it.key }.toSet().size)
+    }
+
+    @Test
+    fun `repeated references cannot masquerade as unique queue entries`() {
+        val reused = song("same", null)
+        val queue = listOf(song("now", "np", QueueTier.CONTEXT), reused, reused)
+        val rows = splitQueue(queue, 0).autoplay
+        assertTrue(rows.none { it.uniqueSongReference })
+    }
 }

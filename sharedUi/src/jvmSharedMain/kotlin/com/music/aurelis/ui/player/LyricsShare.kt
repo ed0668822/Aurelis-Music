@@ -59,6 +59,10 @@ data class LyricsShareLine(
     val text: String,
     val subText: String?,
     val isGap: Boolean = false,
+    /** Original synchronized line start, absent for plain lyrics or a gap. */
+    val startMs: Long? = null,
+    /** Original synchronized line end, absent when unknown. */
+    val endMs: Long? = null,
 )
 
 /**
@@ -257,6 +261,13 @@ internal fun rememberLyricsPicker(
                     LyricsShareLine(
                         text = line.text,
                         subText = sub?.takeIf { it.isNotBlank() && it != line.text },
+                        startMs = line.timeMs.takeIf { it >= 0L },
+                        // Plain LRC has start timestamps but often no line-end
+                        // field. The next actual line timestamp is an observed
+                        // boundary, not a guessed chorus or arbitrary duration.
+                        endMs = line.sungUntilMs?.takeIf { it > line.timeMs }
+                            ?: line.words.lastOrNull()?.endMs?.takeIf { it > line.timeMs }
+                            ?: source.drop(index + 1).firstOrNull { it.timeMs > line.timeMs }?.timeMs,
                     ),
                 )
             }

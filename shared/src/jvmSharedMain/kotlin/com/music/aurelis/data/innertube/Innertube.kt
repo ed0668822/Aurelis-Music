@@ -463,6 +463,10 @@ object Innertube {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 
+    /** Public watch-client identity used only for anonymous most-replayed lookup. */
+    private const val WEB_CLIENT_ID = "1"
+    private const val WEB_CLIENT_VERSION = "2.20260708.00.00"
+
     private val json = Json { ignoreUnknownKeys = true }
 
     private val client = HttpClient(OkHttp) {
@@ -526,8 +530,11 @@ object Innertube {
 
     // ---- Public API ---------------------------------------------------------
 
-    suspend fun browse(browseId: String, params: String? = null): JsonObject =
-        postMusic("browse") {
+    suspend fun browse(
+        browseId: String,
+        params: String? = null,
+        language: String? = null,
+    ): JsonObject = postMusic("browse", language = language) {
             put("browseId", browseId)
             params?.let { put("params", it) }
         }
@@ -604,6 +611,35 @@ object Innertube {
         put("videoId", videoId)
         put("playlistId", "RDAMVM$videoId")
         put("isAudioOnly", true)
+    }
+
+    /**
+     * youtube.com watch metadata may contain the public Most Replayed curve,
+     * unlike music.youtube.com's watch queue. Always anonymous: this query
+     * must not add synthetic plays to the listener's signed-in history.
+     */
+    suspend fun webNext(videoId: String): JsonObject = withRetry(attempts = 2) {
+        client.post("$YOUTUBE_ORIGIN/youtubei/v1/next") {
+            contentType(ContentType.Application.Json)
+            parameter("prettyPrint", "false")
+            header("User-Agent", WEB_USER_AGENT)
+            header("Origin", YOUTUBE_ORIGIN)
+            header("Referer", "$YOUTUBE_ORIGIN/")
+            header("X-YouTube-Client-Name", WEB_CLIENT_ID)
+            header("X-YouTube-Client-Version", WEB_CLIENT_VERSION)
+            header("Accept-Language", acceptLanguageHeader)
+            setBody(buildJsonObject {
+                putJsonObject("context") {
+                    putJsonObject("client") {
+                        put("clientName", "WEB")
+                        put("clientVersion", WEB_CLIENT_VERSION)
+                        put("hl", currentLanguage)
+                        put("gl", currentRegion)
+                    }
+                }
+                put("videoId", videoId)
+            })
+        }.body<JsonObject>()
     }
 
     /**
@@ -1117,8 +1153,11 @@ object Innertube {
         query: Map<String, String> = emptyMap(),
         /** The context's `gl`; null sends none. */
         region: String? = currentRegion,
+        /** Language override only for metadata normalization, without changing app locale. */
+        language: String? = null,
         bodyExtras: JsonObjectBuilder.() -> Unit,
     ): JsonObject {
+        val hl = language ?: currentLanguage
         // This is the common authenticated request path: Home, Library,
         // likes, playlists, account menus and all their continuations pass
         // through it. Waiting here makes restoration process-wide rather than
@@ -1130,8 +1169,8 @@ object Innertube {
             client.post("$MUSIC_BASE/$endpoint") {
                 contentType(ContentType.Application.Json)
                 parameter("prettyPrint", "false")
-                parameter("hl", currentLanguage)
-                header("Accept-Language", acceptLanguageHeader)
+                parameter("hl", hl)
+                header("Accept-Language", language ?: acceptLanguageHeader)
                 query.forEach { (key, value) -> parameter(key, value) }
                 header("X-Origin", MUSIC_ORIGIN)
                 header("Origin", MUSIC_ORIGIN)
@@ -1157,7 +1196,7 @@ object Innertube {
                             putJsonObject("client") {
                                 put("clientName", "WEB_REMIX")
                                 put("clientVersion", clientVersion)
-                                put("hl", currentLanguage)
+                                put("hl", hl)
                                 region?.let { put("gl", it) }
                                 visitorData?.let { put("visitorData", it) }
                             }

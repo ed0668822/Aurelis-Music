@@ -1860,6 +1860,35 @@ object AudioCache {
         )
     }
 
+    private val playbackAnalysisHeads = ConcurrentHashMap.newKeySet<String>()
+    private val playbackAnalysisRetryAt = ConcurrentHashMap<String, Long>()
+
+    /**
+     * Warm the selected YouTube playback URI through the same resolver and
+     * cache writer as playback, including original and substituted versions.
+     * The alignment-only Opus fetch uses its own route and is not used here.
+     */
+    internal fun requestPlaybackAnalysisHead(uri: Uri, key: String) {
+        if (!::cache.isInitialized || upstreamFactory == null ||
+            uri.scheme != "aurelis" || uri.getQueryParameter("v") == null ||
+            DirectSourceGate.isActive() || isOffline()
+        ) return
+        val rendition = playbackRendition(key)
+        if (rendition?.isComplete == true || (rendition?.cachedPrefix ?: 0L) >= PRELOAD_BYTES) return
+        if (SystemClock.elapsedRealtime() < (playbackAnalysisRetryAt[key] ?: 0L)) return
+        if (!playbackAnalysisHeads.add(key)) return
+        scope.launch {
+            try {
+                if (cacheKeyOf(uri) == key) {
+                    fetch(key, uri, 0L, PRELOAD_BYTES)
+                }
+            } finally {
+                playbackAnalysisRetryAt[key] = SystemClock.elapsedRealtime() + 30_000L
+                playbackAnalysisHeads.remove(key)
+            }
+        }
+    }
+
     fun requestAnalysisHead(uri: Uri) {
         // Each of these gates used to stop a head dead with nothing in the
         // log to show for it: an unwired cache or upstream looked from the
@@ -2169,6 +2198,9 @@ object AudioCache {
 
     /** The cache key [uri] itself resolves to right now — the rendition the player is using. */
     fun cacheKeyOf(uri: Uri): String = keyFactory.buildCacheKey(DataSpec(uri))
+
+    internal fun playbackRendition(key: String): Rendition? =
+        if (::cache.isInitialized) renditionFor(key) else null
 
     private fun renditionFor(key: String): Rendition? {
         val contentLength =

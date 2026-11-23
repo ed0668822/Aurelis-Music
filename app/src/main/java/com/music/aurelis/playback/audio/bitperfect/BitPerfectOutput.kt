@@ -11,6 +11,7 @@ package com.music.aurelis.playback.audio.bitperfect
 
 import android.content.Context
 import android.media.AudioManager
+import android.media.AudioDeviceInfo
 import android.os.Build
 import android.util.Log
 import com.music.aurelis.data.settings.AppSettings
@@ -203,8 +204,12 @@ internal object BitPerfectOutput {
             directReleasedAtMs = 0L
             return false
         }
+        // This route check must also work below Android 14: MixerTransport is
+        // marked API 34 for its exclusive mixer, but device enumeration is not.
         val usbOutput = context.getSystemService(AudioManager::class.java)
-            ?.let(MixerTransport::usbDevice) != null
+            ?.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            ?.any { it.type == AudioDeviceInfo.TYPE_USB_DEVICE ||
+                it.type == AudioDeviceInfo.TYPE_USB_HEADSET } == true
         if (usbOutput) directReleasedAtMs = 0L
         return !usbOutput
     }
@@ -335,7 +340,10 @@ internal object BitPerfectOutput {
         val mode = AppSettings.bitPerfectMode.value
         val deviceId = when (mode) {
             BitPerfectMode.USB_ANDROID ->
-                context.getSystemService(AudioManager::class.java)?.let(MixerTransport::usbDevice)?.id ?: NO_DEVICE
+                if (Build.VERSION.SDK_INT >= 34) {
+                    context.getSystemService(AudioManager::class.java)
+                        ?.let(MixerTransport::usbDevice)?.id ?: NO_DEVICE
+                } else NO_DEVICE
             BitPerfectMode.USB_DIRECT ->
                 UsbDirectDevices.manager(context)?.let(UsbDirectDevices::audioDevice)?.deviceId ?: NO_DEVICE
             else -> NO_DEVICE

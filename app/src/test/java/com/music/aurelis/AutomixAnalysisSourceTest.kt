@@ -9,6 +9,62 @@ import org.junit.Test
 
 class AutomixAnalysisSourceTest {
     @Test
+    fun `Loop Mix allows an analysed substituted FLAC but never borrows the Opus key`() {
+        val youtubeAnalysis = AutomixAnalysisSource.storageKey("yt", null)
+        val substituteAnalysis = AutomixAnalysisSource.storageKey("yt", "yt#alt")
+        assertFalse(youtubeAnalysis == substituteAnalysis)
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("yt", listOf("yt")))
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("yt#alt", listOf("yt#alt")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("yt#alt", listOf("yt")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("yt", emptyList()))
+    }
+
+    @Test
+    fun `Loop Mix accepts a complete recording from the selected external source`() {
+        assertTrue(AutomixAnalysisSource.hasVerifiedLoopAudio("addon|track#stereo", listOf("addon|track#stereo")))
+        assertFalse(AutomixAnalysisSource.hasVerifiedLoopAudio("addon|track#stereo", listOf("other-addon|track")))
+    }
+
+    @Test
+    fun `source recording results never reuse a YouTube match's analysis`() {
+        val sourceKey = "addon-1|track-42#stereo"
+        val scoped = AutomixAnalysisSource.storageKey("source-track-42", sourceKey)
+        assertTrue(scoped.contains(sourceKey))
+        assertFalse(scoped == AutomixAnalysisSource.storageKey("source-track-42", null))
+        assertFalse(scoped == AutomixAnalysisSource.storageKey("source-track-42", "other-addon|track-42"))
+        assertTrue(AutomixAnalysisSource.storageKey("yt123", null) == "yt123")
+    }
+
+    @Test
+    fun `a downloaded song never borrows its streaming Opus analysis or another file grid`() {
+        val youtube = AutomixAnalysisSource.storageKey("yt123", null)
+        val local = AutomixAnalysisSource.localStorageKey("yt123", "content://media/external/audio/media/42")
+        val anotherLocal = AutomixAnalysisSource.localStorageKey("yt123", "file:///music/other.mp3")
+        val alternateStream = AutomixAnalysisSource.storageKey("yt123", "yt123#alt")
+        assertFalse(local == youtube)
+        assertFalse(local == anotherLocal)
+        assertFalse(local == alternateStream)
+        assertTrue(local.contains("content://media/external/audio/media/42"))
+    }
+
+    @Test
+    fun `replacement at the same local URI cannot reuse its old analysis`() {
+        val uri = "content://media/external/audio/media/42"
+        val original = AutomixAnalysisSource.localStorageKey("track", uri, revision = "original")
+        val replacement = AutomixAnalysisSource.localStorageKey("track", uri, revision = "replacement")
+        assertFalse(original == replacement)
+        assertFalse(original == AutomixAnalysisSource.localStorageKey("track", uri))
+    }
+
+    @Test
+    fun `playback keys distinguish upgrades from the original and legacy analysis`() {
+        val original = AutomixAnalysisSource.playbackStorageKey("yt", "yt")
+        assertFalse(original == AutomixAnalysisSource.playbackStorageKey("yt", "yt#hifi"))
+        assertFalse(original == AutomixAnalysisSource.playbackStorageKey("yt", "yt#alt"))
+        assertFalse(original == AutomixAnalysisSource.storageKey("yt", null))
+    }
+
+    @Test
     fun `YouTube analysis accepts only its canonical Opus cache key`() {
         assertTrue(AutomixAnalysisSource.isCanonicalYouTubeRendition("video", "video"))
         assertFalse(AutomixAnalysisSource.isCanonicalYouTubeRendition("video", "video#alt"))
