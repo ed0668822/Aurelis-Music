@@ -13,6 +13,7 @@ import android.content.Intent
 import android.media.AudioFormat
 import android.media.audiofx.AudioEffect
 import android.net.Uri
+import android.text.format.Formatter
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
@@ -104,6 +105,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -133,6 +135,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
 import com.music.aurelis.AppIcon
@@ -181,8 +184,11 @@ import com.music.aurelis.data.settings.AppFont
 import com.music.aurelis.data.settings.PlayerTheme
 import com.music.aurelis.data.stats.Backup
 import com.music.aurelis.playback.AudioCache
+import com.music.aurelis.playback.smart.AnalysisStore
 import com.music.aurelis.ui.player.fullBleedArtworkAvailable
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import java.util.Locale
 
@@ -293,7 +299,6 @@ fun SettingsScreen(
     val playingFormat by NerdStats.current.collectAsStateWithLifecycle()
     val playingDolbyAtmos = playingFormat?.isDolbyAtmos == true
     val cacheLimitBytes by AppSettings.audioCacheLimitBytes.collectAsStateWithLifecycle()
-    val showCacheFolder by AppSettings.showCacheFolder.collectAsStateWithLifecycle()
     val downloadQuality by AppSettings.downloadQuality.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by AppSettings.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val exportDownloads by AppSettings.exportDownloads.collectAsStateWithLifecycle()
@@ -1520,19 +1525,29 @@ fun SettingsScreen(
         val unlimitedLabel = stringResource(R.string.song_cache_unlimited)
         val cacheLimitLabel = if (cacheUnlimited) unlimitedLabel else formatCacheSize(cacheLimitMb)
         if (shows(SettingsCategory.STORAGE)) SearchableSettingsGroup(search, header = stringResource(R.string.storage)) {
-            val showCacheFolderTitle = stringResource(R.string.show_cache_folder)
-            row(showCacheFolderTitle, "cache", "cached songs", "library", "folder") {
+            val automixStorageTitle = stringResource(R.string.automix_storage_title)
+            row(automixStorageTitle, "automix", "analysis", "storage", "space") {
+                val usage by produceState<AnalysisStore.StorageUsage?>(null, context) {
+                    value = withContext(Dispatchers.IO) { AnalysisStore { context.filesDir }.storageUsage() }
+                }
+                val saved = usage
                 SettingsRow(
-                    icon = SfIcons.Cached,
-                    title = showCacheFolderTitle,
-                    subtitle = stringResource(R.string.show_cache_folder_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = showCacheFolder,
-                            onCheckedChange = AppSettings::setShowCacheFolder,
-                        )
+                    icon = SfIcons.GraphicEq,
+                    title = automixStorageTitle,
+                    subtitle = if (saved == null) {
+                        stringResource(R.string.automix_storage_loading)
+                    } else {
+                        pluralStringResource(R.plurals.automix_storage_analyses, saved.analysisCount, saved.analysisCount)
                     },
-                    onClick = { AppSettings.setShowCacheFolder(!showCacheFolder) },
+                    trailing = {
+                        if (saved != null) {
+                            Text(
+                                text = Formatter.formatShortFileSize(context, saved.bytes),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                 )
             }
             val songCacheLimitTitle = stringResource(R.string.song_cache_limit)

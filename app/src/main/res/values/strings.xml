@@ -400,6 +400,12 @@
     <string name="synced_lyrics">Synced lyrics</string>
     <string name="synced_lyrics_subtitle">Lights up the words on the player as they’re sung</string>
     <string name="lyrics_sources">Lyrics sources</string>
+    <string name="automix_storage_title">AutoMix storage</string>
+    <string name="automix_storage_loading">Checking saved analyses…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d saved song analysis</item>
+        <item quantity="other">%1$d saved song analyses</item>
+    </plurals>
     <string name="song_cache_limit">Song cache limit</string>
     <string name="clear_song_cache">Clear song cache</string>
     <string name="clear_song_cache_subtitle">Frees space used by downloaded audio</string>
