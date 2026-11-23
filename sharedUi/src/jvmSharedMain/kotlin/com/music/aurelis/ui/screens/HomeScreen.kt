@@ -14,6 +14,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -960,6 +961,11 @@ internal fun ShelfCard(
     isCurrent: Boolean = false,
     isPlaying: Boolean = false,
 ) {
+    // Applies only to playlists stored on this device, leaving remote album,
+    // artist and recommendation cards unchanged.
+    val devicePlaylist = item.browseId?.let {
+        it.startsWith("local:offline:") || it.startsWith("local:playlist:")
+    } == true
     Column(
         modifier = modifier
             .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress)
@@ -1010,29 +1016,78 @@ internal fun ShelfCard(
                 icon = Icons.Rounded.Storage,
             )
             else -> {
+                val coverShape = RoundedCornerShape(if (devicePlaylist) 16.dp else 12.dp)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .thumbnailBorder(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .clip(coverShape)
+                        .then(
+                            if (devicePlaylist) {
+                                Modifier.background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                            },
+                        )
+                        .thumbnailBorder(coverShape)
+                        .then(
+                            if (devicePlaylist) {
+                                Modifier.border(0.75.dp, Color.White.copy(alpha = 0.20f), coverShape)
+                            } else Modifier
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // The local "Liked songs" playlist and failed/empty remote artwork
-                    // otherwise appear as featureless dark squares.
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                        modifier = Modifier.size(38.dp),
-                    )
+                    // Preserve actual song/album artwork; only empty device lists
+                    // receive the frosted symbol instead of a flat dark square.
+                    if (devicePlaylist && item.thumbnailUrl.isNullOrBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .size(74.dp)
+                                .background(Color.White.copy(alpha = 0.07f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.LibraryMusic,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.86f),
+                                modifier = Modifier.size(38.dp),
+                            )
+                        }
+                    } else if (!devicePlaylist) {
+                        Icon(
+                            imageVector = Icons.Rounded.LibraryMusic,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                            modifier = Modifier.size(38.dp),
+                        )
+                    }
                     AsyncImage(
                         model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
                         contentDescription = null,
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
+                    if (devicePlaylist) {
+                        // A fixed glint costs no backdrop capture or extra image.
+                        Box(
+                            modifier = Modifier.fillMaxSize().background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.08f),
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.08f),
+                                    ),
+                                ),
+                            ),
+                        )
+                    }
                     if (isCurrent && isPlaying) SearchPlayingBars(Modifier.align(Alignment.Center))
                 }
             }

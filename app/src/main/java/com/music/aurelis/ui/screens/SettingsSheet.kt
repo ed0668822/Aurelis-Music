@@ -612,6 +612,37 @@ fun SettingsScreen(
                         )
                     }
                 }
+                // Spatial processing is an audio-quality option, alongside Dolby.
+                // It remains controlled by the same preference and bypass rules.
+            val spatialAudioTitle = stringResource(R.string.spatial_audio)
+            row(spatialAudioTitle, "surround", "3d") {
+                BypassedByBitPerfect(bitPerfectReady) {
+                    SettingsRow(
+                        icon = SfIcons.SurroundSound,
+                        title = spatialAudioTitle,
+                        // Widening a JOC stream would fight the object-based mix
+                        // Dolby has already spatialized, so the service holds this
+                        // off for the duration of an Atmos track — see
+                        // `PlaybackService.applySpatialAudioEnabled`. Said on the
+                        // row because the switch stays where the listener left it,
+                        // and a switch reading "on" over an effect that is not
+                        // running is the same silent lie the equaliser screen used
+                        // to tell.
+                        subtitle = if (playingDolbyAtmos) {
+                            stringResource(R.string.spatial_audio_atmos_subtitle)
+                        } else {
+                            stringResource(R.string.spatial_audio_subtitle)
+                        },
+                        trailing = {
+                            IosSwitch(
+                                checked = spatialAudio,
+                                onCheckedChange = AppSettings::setSpatialAudio,
+                            )
+                        },
+                        onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
+                    )
+                }
+            }
             }
 
             // The categories, each a page of its own — until there is a query,
@@ -923,35 +954,6 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { AppSettings.setSkipSilence(!skipSilence) },
-                    )
-                }
-            }
-            val spatialAudioTitle = stringResource(R.string.spatial_audio)
-            row(spatialAudioTitle, "surround", "3d") {
-                BypassedByBitPerfect(bitPerfectReady) {
-                    SettingsRow(
-                        icon = SfIcons.SurroundSound,
-                        title = spatialAudioTitle,
-                        // Widening a JOC stream would fight the object-based mix
-                        // Dolby has already spatialized, so the service holds this
-                        // off for the duration of an Atmos track — see
-                        // `PlaybackService.applySpatialAudioEnabled`. Said on the
-                        // row because the switch stays where the listener left it,
-                        // and a switch reading "on" over an effect that is not
-                        // running is the same silent lie the equaliser screen used
-                        // to tell.
-                        subtitle = if (playingDolbyAtmos) {
-                            stringResource(R.string.spatial_audio_atmos_subtitle)
-                        } else {
-                            stringResource(R.string.spatial_audio_subtitle)
-                        },
-                        trailing = {
-                            IosSwitch(
-                                checked = spatialAudio,
-                                onCheckedChange = AppSettings::setSpatialAudio,
-                            )
-                        },
-                        onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
                     )
                 }
             }

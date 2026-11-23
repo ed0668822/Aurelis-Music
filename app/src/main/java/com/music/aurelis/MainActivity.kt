@@ -32,9 +32,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -65,6 +68,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.material.icons.Icons
@@ -72,6 +76,9 @@ import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -121,6 +128,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
@@ -5320,23 +5328,72 @@ private fun AurelisApp(
         }
 
         if (choosingPlaylistDestination) {
+            val dialogShape = RoundedCornerShape(30.dp)
+            val useGlass = glassActive && !reduceDynamicBlur
             AlertDialog(
                 onDismissRequest = { choosingPlaylistDestination = false },
-                title = { Text(stringResource(R.string.new_playlist)) },
-                text = {
-                    Column {
-                        TextButton(onClick = {
-                            choosingPlaylistDestination = false
-                            creatingOfflinePlaylist = true
-                        }) { Text(stringResource(R.string.playlist_on_device)) }
-                        TextButton(enabled = online, onClick = {
-                            choosingPlaylistDestination = false
-                            if (signedIn) creatingPlaylist = true else webSession = WebSessionMode.SIGN_IN
-                        }) { Text(stringResource(R.string.playlist_on_youtube)) }
-                        if (!online) Text(
-                            stringResource(R.string.playlist_youtube_requires_connection),
-                            style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .widthIn(max = 420.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surface.copy(alpha = if (useGlass) 0.82f else 1f),
+                        dialogShape,
+                    )
+                    // This does not sample a backdrop: safe even while a page is
+                    // recording itself for the bottom navigation's glass surface.
+                    .lightweightLiquidGlass(
+                        shape = dialogShape,
+                        fallbackColor = MaterialTheme.colorScheme.surface,
+                    ),
+                shape = dialogShape,
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp,
+                title = {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(stringResource(R.string.new_playlist))
+                        Text(
+                            stringResource(R.string.playlist_destination_subtitle),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.animateContentSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        PlaylistDestinationOption(
+                            icon = Icons.Rounded.LibraryMusic,
+                            title = stringResource(R.string.playlist_on_device),
+                            subtitle = stringResource(R.string.device_playlists),
+                            enabled = true,
+                            onClick = {
+                                choosingPlaylistDestination = false
+                                creatingOfflinePlaylist = true
+                            },
+                        )
+                        PlaylistDestinationOption(
+                            icon = Icons.Rounded.Cloud,
+                            title = stringResource(R.string.playlist_on_youtube),
+                            subtitle = stringResource(R.string.youtube_playlists),
+                            enabled = online,
+                            onClick = {
+                                choosingPlaylistDestination = false
+                                if (signedIn) creatingPlaylist = true else webSession = WebSessionMode.SIGN_IN
+                            },
+                        )
+                        AnimatedVisibility(
+                            visible = !online,
+                            enter = fadeIn(tween(180)),
+                            exit = fadeOut(tween(140)),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.playlist_youtube_requires_connection),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                            )
+                        }
                     }
                 },
                 confirmButton = {},
@@ -6537,6 +6594,68 @@ private fun OfflineConnectionPill(glassEnabled: Boolean, reduceDynamicBlur: Bool
                 color = labelColor,
             )
         }
+    }
+}
+
+/**
+ * An accessible destination choice with a subtle press animation. The entire row
+ * is tappable; unlike a decorative chip, a disabled cloud choice cannot submit.
+ */
+@Composable
+private fun PlaylistDestinationOption(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.97f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "playlist-destination-press",
+    )
+    val shape = RoundedCornerShape(18.dp)
+    val contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.40f)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(shape)
+            .background(contentColor.copy(alpha = if (enabled) 0.09f else 0.04f))
+            .clickable(
+                enabled = enabled,
+                interactionSource = interaction,
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .background(contentColor.copy(alpha = 0.10f), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = contentColor)
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = contentColor)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor.copy(alpha = 0.72f),
+            )
+        }
+        Icon(
+            imageVector = Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = contentColor.copy(alpha = 0.65f),
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
