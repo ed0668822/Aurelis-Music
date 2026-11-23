@@ -1526,4 +1526,11 @@
     <string name="replay_year_watch">Animasyonlu yıl hikâyeni izle</string>
     <string name="youtube_premium_audio">YouTube Premium ses</string>
     <string name="youtube_premium_audio_subtitle">Oturum açmış hesabınız destekliyorsa daha yüksek kaliteli Opus isteyin. Gerçek kalite sunulan akışa bağlıdır.</string>
+    <string name="youtube_playlists">YouTube Music oynatma listeleri</string>
+    <string name="device_playlists">Cihazdaki oynatma listeleri</string>
+    <string name="playlist_destination_subtitle">Nereye kaydedileceğini seçin</string>
+    <string name="playlist_on_device">Bu cihazda</string>
+    <string name="playlist_on_youtube">YouTube Music’te</string>
+    <string name="playlist_youtube_requires_connection">YouTube Music’te oynatma listesi oluşturmak için internete bağlanın.</string>
+    <string name="youtube_liked_music">YouTube Music’te beğenilen şarkılar</string>
 </resources>

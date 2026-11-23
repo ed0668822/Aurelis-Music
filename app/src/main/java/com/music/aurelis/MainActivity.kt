@@ -86,6 +86,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
@@ -190,6 +191,7 @@ import com.music.aurelis.ui.screens.HistoryScreen
 import com.music.aurelis.ui.screens.LibraryReplayEntry
 import com.music.aurelis.ui.screens.libraryDeviceItems
 import com.music.aurelis.ui.screens.SPOTIFY_BROWSE_ID
+import com.music.aurelis.ui.screens.LibraryLink
 import com.music.aurelis.ui.screens.libraryLinks
 import com.music.aurelis.ui.screens.CACHE_FOLDER_BROWSE_ID
 import com.music.aurelis.ui.screens.ListenTogetherScreen
@@ -569,6 +571,11 @@ private fun AurelisApp(
     val reduceDynamicBlur by AppSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
     val progressiveBlur by AppSettings.progressiveBlur.collectAsStateWithLifecycle()
     val glassSamplesBackdrop = glassActive && !reduceDynamicBlur
+    val online by viewModel.online.collectAsStateWithLifecycle()
+    val offlineBanner: (@Composable () -> Unit)? = if (online) null else {
+        { OfflineConnectionPill(hazeState, glassSamplesBackdrop) }
+    }
+
     // What folds [GlassNavBar] between its expanded and inline shapes. Held here
     // rather than inside the bar because the page's scroll is what drives it,
     // and the page is a sibling of the bar rather than a child.
@@ -780,6 +787,7 @@ private fun AurelisApp(
     var offlinePlaylistTarget by remember { mutableStateOf<Song?>(null) }
     var offlinePlaylistBatch by remember { mutableStateOf<List<Song>>(emptyList()) }
     var creatingOfflinePlaylist by remember { mutableStateOf(false) }
+    var choosingPlaylistDestination by remember { mutableStateOf(false) }
     var showSpotifyImportDialog by remember { mutableStateOf(false) }
     // Which album or playlist the collection menu is open on, or null when it
     // is shut. One slot for every surface that can open it — the shelves on
@@ -1070,16 +1078,16 @@ private fun AurelisApp(
     val downloadedReleases = remember(savedCollections, savedDownloads) {
         Downloads.savedReleases()
     }
-    // Playlists imported without (or instead of) a YouTube Music account live
-    // in the app's own store, and sit on the same shelf as the downloaded ones.
+    // Local lists include files added on this device and existing imports.
     val localPlaylists by com.music.aurelis.data.spotify.LocalPlaylistStore.playlists.collectAsStateWithLifecycle()
-    val localPlaylistItems = localPlaylists.map { playlist ->
+    val localPlaylistItems = (offlinePlaylists.map { Triple(it.browseId, it.title, it.songs) } +
+        localPlaylists.map { Triple(it.browseId, it.title, it.songs) }).map { (id, title, songs) ->
         ShelfItem(
-            title = playlist.title,
-            subtitle = stringResource(R.string.local_playlist_subtitle, playlist.songs.size),
-            thumbnailUrl = playlist.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+            title = title,
+            subtitle = stringResource(R.string.local_playlist_subtitle, songs.size),
+            thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
             videoId = null,
-            browseId = playlist.browseId,
+            browseId = id,
         )
     }
     // What a browse id is recorded under in Downloads.collections, when it names
@@ -3099,10 +3107,11 @@ private fun AurelisApp(
                                     // Only the Playlists shelf can grow one — see
                                     // [PlaylistShelf].
                                     onNewPlaylist = if (shelf.title == YtMusicRepository.PLAYLISTS_SHELF) {
-                                        { creatingPlaylist = true }
+                                        { choosingPlaylistDestination = true }
                                     } else {
                                         null
                                     },
+                                    newPlaylistSubtitle = stringResource(R.string.playlist_destination_subtitle),
                                     contentPadding = listPadding,
                                 )
                             }
@@ -3505,6 +3514,7 @@ private fun AurelisApp(
                         } else when ((destination as? AppDestination.Tab)?.index ?: selectedTab) {
                             TAB_HOME -> HomeScreen(
                                 state = visibleHomeState,
+                                offlineBanner = offlineBanner,
                                 listState = homeListState,
                                 currentSong = player.song,
                                 isPlaying = player.isPlaying,
@@ -3595,10 +3605,12 @@ private fun AurelisApp(
                                         }
                                     },
                                     onRetry = { viewModel.openMoodGenre(category) },
+                                    offlineBanner = offlineBanner,
                                     contentPadding = listPadding,
                                 )
                             } ?: ExploreScreen(
                                 state = exploreState,
+                                offlineBanner = offlineBanner,
                                 listState = exploreListState,
                                 onCategoryClick = viewModel::openMoodGenre,
                                 onRetry = viewModel::loadExplore,
@@ -3980,6 +3992,9 @@ private fun AurelisApp(
 
                                 signedIn = signedIn,
                                 state = libraryState,
+                                offline = !online,
+                                youtubePlaylistTitle = stringResource(R.string.youtube_playlists),
+                                newPlaylistSubtitle = stringResource(R.string.playlist_destination_subtitle),
                                 listState = libraryListState,
                                 onShelfItemClick = onLibraryItemClick,
                                 // Every shelf here has a menu behind it now — the account's
@@ -3987,7 +4002,7 @@ private fun AurelisApp(
                                 // album or a Liked Music card gets. Holding an artist still
                                 // does nothing; see [onBrowseLongPress].
                                 onShelfItemLongPress = onBrowseLongPress,
-                                onNewPlaylist = { creatingPlaylist = true },
+                                onNewPlaylist = { choosingPlaylistDestination = true },
                                 onImportSpotifyPlaylist = { showSpotifyImportDialog = true },
                                 onShowAll = { shelf -> navigator.push(AppRoute.LibraryShowAll(shelf)) },
                                 replay = {
@@ -4011,8 +4026,20 @@ private fun AurelisApp(
                                 },
                                 pullState = libraryPull,
                                 contentPadding = listPadding,
-                                links = libraryLinks(),
-                                deviceItems = libraryDeviceItems(downloadedReleases) + localPlaylistItems,
+                                links = listOfNotNull(
+                                    LibraryLink(
+                                        item = ShelfItem(
+                                            title = stringResource(R.string.youtube_liked_music),
+                                            subtitle = "",
+                                            thumbnailUrl = null,
+                                            videoId = null,
+                                            browseId = YtMusicRepository.LIKED_MUSIC,
+                                        ),
+                                        icon = AurelisIcons.Heart,
+                                    ).takeIf { signedIn },
+                                ) + libraryLinks(),
+                                deviceItems = libraryDeviceItems(downloadedReleases),
+                                localPlaylistShelf = HomeShelf(stringResource(R.string.device_playlists), localPlaylistItems),
                                 inlineLocalMusic = localBody,
                             )
                             }
@@ -5286,7 +5313,36 @@ private fun AurelisApp(
                     }
                 },
                 onCreate = { title, privacy ->
-                    viewModel.createPlaylist(title, privacy, target)
+                    viewModel.createPlaylist(title, privacy, target) { showQueueNotice(it) }
+                },
+            )
+        }
+
+        if (choosingPlaylistDestination) {
+            AlertDialog(
+                onDismissRequest = { choosingPlaylistDestination = false },
+                title = { Text(stringResource(R.string.new_playlist)) },
+                text = {
+                    Column {
+                        TextButton(onClick = {
+                            choosingPlaylistDestination = false
+                            creatingOfflinePlaylist = true
+                        }) { Text(stringResource(R.string.playlist_on_device)) }
+                        TextButton(enabled = online, onClick = {
+                            choosingPlaylistDestination = false
+                            if (signedIn) creatingPlaylist = true else webSession = WebSessionMode.SIGN_IN
+                        }) { Text(stringResource(R.string.playlist_on_youtube)) }
+                        if (!online) Text(
+                            stringResource(R.string.playlist_youtube_requires_connection),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { choosingPlaylistDestination = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
                 },
             )
         }
@@ -6430,6 +6486,27 @@ private fun FrostedMenuPanel(
                 .clickable(onClick = {}),
         ) {
             Column(Modifier.padding(vertical = 8.dp), content = content)
+        }
+    }
+}
+
+@OptIn(ExperimentalHazeMaterialsApi::class)
+@Composable
+private fun OfflineConnectionPill(hazeState: HazeState, glass: Boolean) {
+    val surface = MaterialTheme.colorScheme.surface
+    Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {
+        Surface(
+            shape = CircleShape,
+            color = if (glass) Color.Transparent else surface,
+            modifier = Modifier.clip(CircleShape).then(
+                if (glass) Modifier.optimizedHazeEffect(hazeState, HazeMaterials.thin(surface)) else Modifier,
+            ),
+        ) {
+            Text(
+                text = stringResource(R.string.no_internet_connection),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
     }
 }

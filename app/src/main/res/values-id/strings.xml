@@ -1546,4 +1546,11 @@
     <string name="replay_year_watch">Lihat kisah tahunan animasimu</string>
     <string name="youtube_premium_audio">Audio YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">Minta Opus berkualitas lebih tinggi jika akun yang masuk mendukungnya. Kualitas sebenarnya bergantung pada stream yang tersedia.</string>
+    <string name="youtube_playlists">Playlist YouTube Music</string>
+    <string name="device_playlists">Playlist di perangkat</string>
+    <string name="playlist_destination_subtitle">Pilih tempat menyimpan playlist</string>
+    <string name="playlist_on_device">Di perangkat ini</string>
+    <string name="playlist_on_youtube">Di YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Hubungkan ke internet untuk membuat playlist di YouTube Music.</string>
+    <string name="youtube_liked_music">Lagu yang disukai di YouTube Music</string>
 </resources>

@@ -1574,4 +1574,11 @@
     <string name="replay_year_watch">Veja sua retrospectiva anual animada</string>
     <string name="youtube_premium_audio">Áudio do YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">Solicitar Opus de maior qualidade se a conta conectada permitir. A qualidade real depende do áudio disponível.</string>
+    <string name="youtube_playlists">Playlists do YouTube Music</string>
+    <string name="device_playlists">Playlists no dispositivo</string>
+    <string name="playlist_destination_subtitle">Escolha onde salvar a playlist</string>
+    <string name="playlist_on_device">Neste dispositivo</string>
+    <string name="playlist_on_youtube">No YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Conecte-se à internet para criar uma playlist no YouTube Music.</string>
+    <string name="youtube_liked_music">Músicas curtidas no YouTube Music</string>
 </resources>

@@ -1601,4 +1601,11 @@
     <string name="replay_year_watch">Посмотреть анимированную историю года</string>
     <string name="youtube_premium_audio">Аудио YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">Запрашивать Opus повышенного качества, если он доступен вошедшему аккаунту. Фактическое качество зависит от потока.</string>
+    <string name="youtube_playlists">Плейлисты YouTube Music</string>
+    <string name="device_playlists">Плейлисты на устройстве</string>
+    <string name="playlist_destination_subtitle">Выберите, куда сохранить плейлист</string>
+    <string name="playlist_on_device">На этом устройстве</string>
+    <string name="playlist_on_youtube">В YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Подключитесь к интернету, чтобы создать плейлист в YouTube Music.</string>
+    <string name="youtube_liked_music">Понравившиеся треки в YouTube Music</string>
 </resources>

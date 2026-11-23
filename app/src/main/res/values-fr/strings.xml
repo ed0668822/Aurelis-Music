@@ -1570,4 +1570,11 @@
     <string name="replay_year_watch">Voir votre récapitulatif annuel animé</string>
     <string name="youtube_premium_audio">Audio YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">Demander un flux Opus de meilleure qualité si le compte connecté le permet. La qualité réelle dépend du flux disponible.</string>
+    <string name="youtube_playlists">Playlists YouTube Music</string>
+    <string name="device_playlists">Playlists sur cet appareil</string>
+    <string name="playlist_destination_subtitle">Choisir où enregistrer la playlist</string>
+    <string name="playlist_on_device">Sur cet appareil</string>
+    <string name="playlist_on_youtube">Sur YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Connectez-vous à Internet pour créer une playlist YouTube Music.</string>
+    <string name="youtube_liked_music">Titres que vous aimez sur YouTube Music</string>
 </resources>

@@ -1547,4 +1547,11 @@
     <string name="replay_year_watch">アニメーションで一年を振り返る</string>
     <string name="youtube_premium_audio">YouTube Premium 音声</string>
     <string name="youtube_premium_audio_subtitle">ログインしたアカウントが対応している場合、高音質の Opus を要求します。実際の音質は配信形式によって異なります。</string>
+    <string name="youtube_playlists">YouTube Music のプレイリスト</string>
+    <string name="device_playlists">デバイス内のプレイリスト</string>
+    <string name="playlist_destination_subtitle">保存先を選択</string>
+    <string name="playlist_on_device">このデバイス</string>
+    <string name="playlist_on_youtube">YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">YouTube Music でプレイリストを作成するには、インターネットに接続してください。</string>
+    <string name="youtube_liked_music">YouTube Music で高く評価した曲</string>
 </resources>

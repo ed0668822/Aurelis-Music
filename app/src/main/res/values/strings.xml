@@ -1441,4 +1441,11 @@
     <string name="radio">Radio</string>
     <string name="youtube_premium_audio">YouTube Premium audio</string>
     <string name="youtube_premium_audio_subtitle">Request high-quality Opus when your signed-in account supports it. Actual quality depends on the available stream.</string>
+    <string name="youtube_playlists">YouTube Music playlists</string>
+    <string name="device_playlists">On-device playlists</string>
+    <string name="playlist_destination_subtitle">Choose where to save it</string>
+    <string name="playlist_on_device">On this device</string>
+    <string name="playlist_on_youtube">On YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Connect to the internet to create a YouTube Music playlist.</string>
+    <string name="youtube_liked_music">Liked music on YouTube Music</string>
 </resources>

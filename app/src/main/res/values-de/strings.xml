@@ -1569,4 +1569,11 @@
     <string name="replay_year_watch">Deine animierte Jahresgeschichte ansehen</string>
     <string name="youtube_premium_audio">YouTube Premium-Audio</string>
     <string name="youtube_premium_audio_subtitle">Opus in höherer Qualität anfordern, wenn das angemeldete Konto dies unterstützt. Die tatsächliche Qualität hängt vom Stream ab.</string>
+    <string name="youtube_playlists">YouTube Music-Playlists</string>
+    <string name="device_playlists">Playlists auf dem Gerät</string>
+    <string name="playlist_destination_subtitle">Speicherort auswählen</string>
+    <string name="playlist_on_device">Auf diesem Gerät</string>
+    <string name="playlist_on_youtube">In YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Stelle eine Internetverbindung her, um eine Playlist in YouTube Music zu erstellen.</string>
+    <string name="youtube_liked_music">Songs mit „Gefällt mir“ in YouTube Music</string>
 </resources>

@@ -1546,4 +1546,11 @@
     <string name="replay_year_watch">觀看年度動畫回顧</string>
     <string name="youtube_premium_audio">YouTube Premium 音訊</string>
     <string name="youtube_premium_audio_subtitle">如果已登入的帳戶支援，則要求更高音質的 Opus。實際音質取決於提供的音訊串流。</string>
+    <string name="youtube_playlists">YouTube Music 播放清單</string>
+    <string name="device_playlists">裝置上的播放清單</string>
+    <string name="playlist_destination_subtitle">選擇儲存位置</string>
+    <string name="playlist_on_device">在這部裝置上</string>
+    <string name="playlist_on_youtube">在 YouTube Music 上</string>
+    <string name="playlist_youtube_requires_connection">請連上網際網路，以便在 YouTube Music 上建立播放清單。</string>
+    <string name="youtube_liked_music">在 YouTube Music 上按讚的歌曲</string>
 </resources>

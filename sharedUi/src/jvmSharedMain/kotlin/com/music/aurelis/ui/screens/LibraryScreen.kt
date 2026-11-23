@@ -120,6 +120,10 @@ fun LibraryScreen(
     inlineLocalMusic: (LazyListScope.() -> Unit)? = null,
     /** The big "Library" heading; the desktop's pages carry none. */
     showTitle: Boolean = true,
+    offline: Boolean = false,
+    youtubePlaylistTitle: String? = null,
+    newPlaylistSubtitle: String? = null,
+    localPlaylistShelf: HomeShelf? = null,
 ) {
     val pinnedPlaylists by AppUi.host.pinnedPlaylists.collectAsStateWithLifecycle()
     val onDevice = stringResource(Res.string.on_device)
@@ -159,75 +163,53 @@ fun LibraryScreen(
                     )
                 }
             }
-            if (!signedIn) {
-                item(key = "shelf:$PLAYLISTS") {
-                    val emptyPlaylists = HomeShelf(PLAYLISTS, emptyList())
-                    PlaylistShelf(
-                        shelf = emptyPlaylists,
+            val shelves = (state as? UiState.Success)?.data?.shelves.orEmpty()
+            val linkedIds = links.mapNotNullTo(HashSet()) { it.item.browseId }
+            val playlistShelf = shelves.firstOrNull { it.title == PLAYLISTS } ?: HomeShelf(PLAYLISTS, emptyList())
+            val playlists = playlistShelf.copy(items = playlistShelf.items.filterNot { it.browseId in linkedIds })
+                .pinnedFirst(pinnedPlaylists)
+            item(key = "shelf:$PLAYLISTS") {
+                PlaylistShelf(
+                    shelf = if (signedIn && youtubePlaylistTitle != null) playlists.copy(title = youtubePlaylistTitle) else playlists,
+                    onItemClick = onShelfItemClick,
+                    onItemLongPress = onShelfItemLongPress,
+                    onNewPlaylist = onNewPlaylist,
+                    newPlaylistSubtitle = newPlaylistSubtitle,
+                    onImportSpotifyPlaylist = onImportSpotifyPlaylist,
+                    onShowAll = { onShowAll(playlists) },
+                    pinnedPlaylists = pinnedPlaylists,
+                )
+            }
+            if (localPlaylistShelf != null && localPlaylistShelf.items.isNotEmpty()) {
+                item(key = "local-playlists") {
+                    LibraryGridShelf(
+                        shelf = localPlaylistShelf,
                         onItemClick = onShelfItemClick,
                         onItemLongPress = onShelfItemLongPress,
-                        onNewPlaylist = onNewPlaylist,
-                        onImportSpotifyPlaylist = onImportSpotifyPlaylist,
-                        onShowAll = { onShowAll(emptyPlaylists) },
+                        onShowAll = { onShowAll(localPlaylistShelf) },
                     )
                 }
-                // Local music is usable without Google sign-in.
-                inlineLocalMusic?.invoke(this)
-                return@LazyColumn
             }
-            when (state) {
-                is UiState.Loading -> librarySkeleton()
-                is UiState.Error -> item {
-                    MessageState(state.message, actionLabel = stringResource(Res.string.retry), onAction = onRetry)
-                }
-                is UiState.Success -> {
-                    // A fresh account has no Playlists shelf at all, and that
-                    // is exactly the account most in need of the button that
-                    // makes one — so the row is drawn either way, empty but
-                    // for the tile that creates the first playlist.
-                    val shelves = state.data.shelves
-                    if (shelves.none { it.title == PLAYLISTS }) {
-                        item(key = "shelf:$PLAYLISTS") {
-                            val emptyPlaylists = HomeShelf(PLAYLISTS, emptyList())
-                            PlaylistShelf(
-                                shelf = emptyPlaylists,
-                                onItemClick = onShelfItemClick,
-                                onItemLongPress = onShelfItemLongPress,
-                                onNewPlaylist = onNewPlaylist,
-                                onImportSpotifyPlaylist = onImportSpotifyPlaylist,
-                                onShowAll = { onShowAll(emptyPlaylists) },
-                            )
-                        }
+            if (signedIn && !offline) {
+                when (state) {
+                    is UiState.Loading -> librarySkeleton()
+                    is UiState.Error -> item {
+                        MessageState(state.message, actionLabel = stringResource(Res.string.retry), onAction = onRetry)
                     }
-                    // Keep Library focused on playlists and local device music.
-                    // Artists and Subscriptions are YouTube Music shelves, not the
-                    // on-device Artists tab. Hide them here without removing data
-                    // or changing the local music grouping and playback.
-                    shelves.filterNot { it.title in HIDDEN_LIBRARY_SHELVES }.forEach { shelf ->
-                        item(key = "shelf:${shelf.title}") {
-                            if (shelf.title == PLAYLISTS) {
-                                val pinnedFirst = shelf.pinnedFirst(pinnedPlaylists)
-                                PlaylistShelf(
-                                    shelf = pinnedFirst,
-                                    onItemClick = onShelfItemClick,
-                                    onItemLongPress = onShelfItemLongPress,
-                                    onNewPlaylist = onNewPlaylist,
-                                    onImportSpotifyPlaylist = onImportSpotifyPlaylist,
-                                    onShowAll = { onShowAll(pinnedFirst) },
-                                    pinnedPlaylists = pinnedPlaylists,
-                                )
-                            } else {
-                                LibraryGridShelf(
-                                    shelf = shelf,
-                                    onItemClick = onShelfItemClick,
-                                    onItemLongPress = onShelfItemLongPress,
-                                    onShowAll = { onShowAll(shelf) },
-                                )
-                            }
-                        }
-                    }
+                    is UiState.Success -> Unit
                 }
             }
+            if (signedIn) shelves.filterNot { it.title == PLAYLISTS || it.title in HIDDEN_LIBRARY_SHELVES }
+                .forEach { shelf ->
+                    item(key = "shelf:${shelf.title}") {
+                        LibraryGridShelf(
+                            shelf = shelf,
+                            onItemClick = onShelfItemClick,
+                            onItemLongPress = onShelfItemLongPress,
+                            onShowAll = { onShowAll(shelf) },
+                        )
+                    }
+                }
             inlineLocalMusic?.invoke(this)
         }
     }
@@ -312,6 +294,7 @@ private fun PlaylistShelf(
     onItemClick: (ShelfItem) -> Unit,
     onItemLongPress: (ShelfItem) -> Unit,
     onNewPlaylist: () -> Unit,
+    newPlaylistSubtitle: String? = null,
     onImportSpotifyPlaylist: (() -> Unit)? = null,
     onShowAll: () -> Unit,
     pinnedPlaylists: List<String> = emptyList(),
@@ -327,7 +310,7 @@ private fun PlaylistShelf(
                 NewShelfCard(
                     icon = AurelisIcons.Plus,
                     label = stringResource(Res.string.new_playlist),
-                    subtitle = stringResource(Res.string.saved_to_youtube_music),
+                    subtitle = newPlaylistSubtitle ?: stringResource(Res.string.saved_to_youtube_music),
                     onClick = onNewPlaylist,
                 )
                 if (onImportSpotifyPlaylist != null) {
@@ -406,6 +389,7 @@ fun LibraryGridPage(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     onNewPlaylist: (() -> Unit)? = null,
+    newPlaylistSubtitle: String? = null,
 ) {
     // Re-read live rather than trusting [shelf] to already be sorted: this page
     // is opened from a snapshot (see `AppRoute.LibraryShowAll`), and a
@@ -432,7 +416,7 @@ fun LibraryGridPage(
                     NewShelfCard(
                         icon = AurelisIcons.Plus,
                         label = stringResource(Res.string.new_playlist),
-                        subtitle = stringResource(Res.string.saved_to_youtube_music),
+                        subtitle = newPlaylistSubtitle ?: stringResource(Res.string.saved_to_youtube_music),
                         onClick = onNewPlaylist,
                         modifier = Modifier.fillMaxWidth(),
                     )

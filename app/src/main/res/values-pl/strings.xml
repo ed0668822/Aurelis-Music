@@ -1621,4 +1621,11 @@
     <string name="replay_year_watch">Obejrzyj animowaną historię roku</string>
     <string name="youtube_premium_audio">Dźwięk YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">Poproś o Opus lepszej jakości, jeśli zalogowane konto ma do niego dostęp. Rzeczywista jakość zależy od strumienia.</string>
+    <string name="youtube_playlists">Playlisty YouTube Music</string>
+    <string name="device_playlists">Playlisty na urządzeniu</string>
+    <string name="playlist_destination_subtitle">Wybierz miejsce zapisu</string>
+    <string name="playlist_on_device">Na tym urządzeniu</string>
+    <string name="playlist_on_youtube">W YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Połącz się z internetem, aby utworzyć playlistę w YouTube Music.</string>
+    <string name="youtube_liked_music">Polubione utwory w YouTube Music</string>
 </resources>

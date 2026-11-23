@@ -1596,4 +1596,11 @@
     <string name="replay_year_watch">צפייה בסיפור השנה המונפש שלך</string>
     <string name="youtube_premium_audio">אודיו YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">בקשת שמע Opus באיכות גבוהה יותר כשהחשבון המחובר תומך בכך. האיכות בפועל תלויה בזרם הזמין.</string>
+    <string name="youtube_playlists">פלייליסטים של YouTube Music</string>
+    <string name="device_playlists">פלייליסטים במכשיר</string>
+    <string name="playlist_destination_subtitle">איפה לשמור את הפלייליסט?</string>
+    <string name="playlist_on_device">במכשיר הזה</string>
+    <string name="playlist_on_youtube">ב-YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">כדי ליצור פלייליסט ב-YouTube Music, צריך להתחבר לאינטרנט.</string>
+    <string name="youtube_liked_music">שירים שאהבת ב-YouTube Music</string>
 </resources>

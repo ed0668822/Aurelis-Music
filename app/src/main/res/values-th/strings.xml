@@ -1552,4 +1552,11 @@
     <string name="replay_year_watch">ดูเรื่องราวประจำปีแบบเคลื่อนไหว</string>
     <string name="youtube_premium_audio">เสียง YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">ขอเสียง Opus คุณภาพสูงกว่าเมื่อบัญชีที่เข้าสู่ระบบรองรับ คุณภาพจริงขึ้นอยู่กับสตรีมที่มีให้</string>
+    <string name="youtube_playlists">เพลย์ลิสต์ YouTube Music</string>
+    <string name="device_playlists">เพลย์ลิสต์บนอุปกรณ์</string>
+    <string name="playlist_destination_subtitle">เลือกตำแหน่งที่จะบันทึก</string>
+    <string name="playlist_on_device">บนอุปกรณ์นี้</string>
+    <string name="playlist_on_youtube">ใน YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">เชื่อมต่ออินเทอร์เน็ตเพื่อสร้างเพลย์ลิสต์ใน YouTube Music</string>
+    <string name="youtube_liked_music">เพลงที่กดชอบใน YouTube Music</string>
 </resources>

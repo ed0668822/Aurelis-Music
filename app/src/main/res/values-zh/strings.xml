@@ -1546,4 +1546,11 @@
     <string name="replay_year_watch">查看年度动画回顾</string>
     <string name="youtube_premium_audio">YouTube Premium 音频</string>
     <string name="youtube_premium_audio_subtitle">如果已登录的账号支持，则请求更高质量的 Opus。实际音质取决于可用音频流。</string>
+    <string name="youtube_playlists">YouTube Music 播放列表</string>
+    <string name="device_playlists">设备上的播放列表</string>
+    <string name="playlist_destination_subtitle">选择保存位置</string>
+    <string name="playlist_on_device">在此设备上</string>
+    <string name="playlist_on_youtube">在 YouTube Music 上</string>
+    <string name="playlist_youtube_requires_connection">请连接互联网以在 YouTube Music 上创建播放列表。</string>
+    <string name="youtube_liked_music">在 YouTube Music 上点赞的音乐</string>
 </resources>

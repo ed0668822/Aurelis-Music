@@ -1486,4 +1486,11 @@
     <string name="replay_year_watch">Xem câu chuyện năm qua bằng hoạt ảnh</string>
     <string name="youtube_premium_audio">Âm thanh YouTube Premium</string>
     <string name="youtube_premium_audio_subtitle">Yêu cầu Opus chất lượng cao hơn nếu tài khoản đã đăng nhập hỗ trợ. Chất lượng thực tế tùy vào luồng âm thanh.</string>
+    <string name="youtube_playlists">Danh sách phát trên YouTube Music</string>
+    <string name="device_playlists">Danh sách phát trên thiết bị</string>
+    <string name="playlist_destination_subtitle">Chọn nơi lưu danh sách phát</string>
+    <string name="playlist_on_device">Trên thiết bị này</string>
+    <string name="playlist_on_youtube">Trên YouTube Music</string>
+    <string name="playlist_youtube_requires_connection">Kết nối Internet để tạo danh sách phát trên YouTube Music.</string>
+    <string name="youtube_liked_music">Bài hát đã thích trên YouTube Music</string>
 </resources>

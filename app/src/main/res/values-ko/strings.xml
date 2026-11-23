@@ -1419,4 +1419,11 @@
     <string name="replay_year_watch">움직이는 연간 스토리 보기</string>
     <string name="youtube_premium_audio">YouTube Premium 오디오</string>
     <string name="youtube_premium_audio_subtitle">로그인한 계정에서 지원하는 경우 더 높은 음질의 Opus를 요청합니다. 실제 음질은 제공되는 스트림에 따라 달라집니다.</string>
+    <string name="youtube_playlists">YouTube Music 재생목록</string>
+    <string name="device_playlists">기기에 저장된 재생목록</string>
+    <string name="playlist_destination_subtitle">저장 위치 선택</string>
+    <string name="playlist_on_device">이 기기에 저장</string>
+    <string name="playlist_on_youtube">YouTube Music에 저장</string>
+    <string name="playlist_youtube_requires_connection">YouTube Music에서 재생목록을 만들려면 인터넷에 연결하세요.</string>
+    <string name="youtube_liked_music">YouTube Music에서 좋아요 표시한 음악</string>
 </resources>

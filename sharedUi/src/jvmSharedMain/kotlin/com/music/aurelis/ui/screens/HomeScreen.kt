@@ -158,6 +158,7 @@ fun HomeScreen(
     onMoodsShowAll: () -> Unit = {},
     /** Whether the Top Picks and mood artwork may animate — see [LocalArtworkMotion]. */
     artworkMotion: Boolean = true,
+    offlineBanner: (@Composable () -> Unit)? = null,
 ) {
     // Top Picks' pictures and motion wait for the feed — see LocalArtworkImages.
     val feedReady = state !is UiState.Loading
@@ -192,7 +193,8 @@ fun HomeScreen(
             if (title != null) {
                 item { HomeTitle(title, festiveLogo = festiveLogo, onFestiveLogoClick = onFestiveLogoClick) }
             }
-            if (!signedIn && onSignIn != null) {
+            offlineBanner?.let { banner -> item(key = "offline-status") { banner() } }
+            if (!signedIn && onSignIn != null && offlineBanner == null) {
                 item {
                     // Read in this item, so a scroll starting or ending
                     // recomposes the banner alone.
@@ -213,17 +215,17 @@ fun HomeScreen(
                             onLongPress = onTopPickLongPress,
                         )
                     }
-                    topPicks == null && topPicksLoading -> topPicksSkeleton()
+                    topPicks == null && topPicksLoading && offlineBanner == null -> topPicksSkeleton()
                 }
             }
             when (state) {
-                is UiState.Loading -> {
+                is UiState.Loading -> if (offlineBanner == null) {
                     if (recentlyPlayedLoading) {
                         recentlyPlayedSkeleton()
                     }
                     feedSkeleton()
                 }
-                is UiState.Error -> item {
+                is UiState.Error -> if (offlineBanner == null) item {
                     MessageState(state.message, actionLabel = stringResource(Res.string.retry), onAction = onRetry)
                 }
                 is UiState.Success -> {
