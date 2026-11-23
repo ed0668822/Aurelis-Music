@@ -38,9 +38,13 @@ package com.music.aurelis.playback.smart
     fun storageKey(trackId: String, sourceCacheKey: String?): String =
         if (sourceCacheKey.isNullOrBlank()) trackId else "$trackId|source:$sourceCacheKey"
 
+    /** Namespace exact playback cache entries away from legacy analysis-only entries. */
+    fun playbackStorageKey(trackId: String, cacheKey: String): String =
+        storageKey(trackId, "playback:$cacheKey")
+
     /** A local recording must not borrow the original video's YouTube analysis. */
-    fun localStorageKey(trackId: String, localUri: String): String =
-        storageKey(trackId, "local:$localUri")
+    fun localStorageKey(trackId: String, localUri: String, revision: String? = null): String =
+        storageKey(trackId, "local:${localUri.length}:$localUri:${revision.orEmpty()}")
 
     /**
      * A loop deck is safe when the playback rendition is complete and the

@@ -2158,16 +2158,17 @@ class PlaybackService : MediaLibraryService() {
         if (!AppSettings.syncedLyrics.value) return null
         val song = item.toSong()
         return kotlinx.coroutines.withTimeoutOrNull(LOOP_MIX_LYRICS_TIMEOUT_MS) {
-            song.localUri?.let { EmbeddedLyrics.forUri(this@PlaybackService, it) }
-                ?: LyricsRepository.lyrics(
-                    videoId = song.videoId,
-                    title = song.title,
-                    artist = song.artist,
-                    durationMs = durationMs,
-                    album = song.albumName,
-                    sources = AppSettings.lyricsSources.value,
-                    order = AppSettings.lyricsSourceOrder.value,
-                )?.lines
+            song.localUri?.let { EmbeddedLyrics.forUri(this@PlaybackService, it) }?.let { return@withTimeoutOrNull it }
+            if (AudioCache.isOffline()) return@withTimeoutOrNull null
+            LyricsRepository.lyrics(
+                videoId = song.videoId,
+                title = song.title,
+                artist = song.artist,
+                durationMs = durationMs,
+                album = song.albumName,
+                sources = AppSettings.lyricsSources.value,
+                order = AppSettings.lyricsSourceOrder.value,
+            )?.lines
         }
     }
 
@@ -3508,8 +3509,11 @@ class PlaybackService : MediaLibraryService() {
                             seed = seedSong,
                             existing = existing,
                             limit = remaining,
-                            bpmFor = { id ->
-                                trackAnalyzer.analysisFor(id).bpm.takeIf { it in 45.0..230.0 }
+                            bpmFor = { song ->
+                                song.localUri?.let { localUri ->
+                                    val uri = Uri.parse(resolvePlaybackUri(localUri, song.localPath))
+                                    trackAnalyzer.analysisFor(song.videoId, uri).bpm.takeIf { it in 45.0..230.0 }
+                                }
                             },
                         ),
                     )

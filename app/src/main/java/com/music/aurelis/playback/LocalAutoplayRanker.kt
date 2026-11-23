@@ -5,7 +5,7 @@ package com.music.aurelis.playback
 
 import com.music.aurelis.data.model.Song
 import com.music.aurelis.data.model.QueueTier
-import com.music.aurelis.playback.QueueCoordinator.asQueueEntry
+import com.music.aurelis.playback.QueueTimeline.asQueueEntry
 import kotlin.math.abs
 import kotlin.math.ln
 
@@ -21,7 +21,7 @@ internal object LocalAutoplayRanker {
         likedUris: Set<String>,
         playCounts: Map<String, Int>,
         limit: Int,
-        bpmFor: (String) -> Double? = { null },
+        bpmFor: (Song) -> Double? = { null },
     ): List<Song> {
         if (limit <= 0 || seed.localUri.isNullOrBlank()) return emptyList()
         val excluded = existing.mapNotNullTo(HashSet()) { it.localUri }
@@ -37,13 +37,14 @@ internal object LocalAutoplayRanker {
         val artistsSelected = ArrayList<String>()
         val chosen = ArrayList<Song>(minOf(limit, pool.size))
         val used = HashSet<String>()
-        val seedBpm = bpmFor(seed.videoId)?.takeIf { it in 45.0..230.0 }
+        val seedBpm = bpmFor(seed)?.takeIf { it in 45.0..230.0 }
         val seedArtist = seed.artist.lowercase().trim()
+        val candidateBpms = pool.associateWith(bpmFor)
         repeat(minOf(limit, pool.size)) { index ->
             val best = pool.asSequence().filter { it.localUri !in used }.maxByOrNull { song ->
                 val artist = song.artist.lowercase().trim()
                 val count = playCounts[song.videoId].orZero()
-                val candidateBpm = bpmFor(song.videoId)?.takeIf { it in 45.0..230.0 }
+                val candidateBpm = candidateBpms[song]?.takeIf { it in 45.0..230.0 }
                 val bpmDistance = if (seedBpm != null && candidateBpm != null) {
                     minOf(
                         abs(seedBpm - candidateBpm),

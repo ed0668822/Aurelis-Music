@@ -684,7 +684,7 @@ private val DIRECT_FILE_URI_EXTENSIONS = setOf(
     "dsf", "dff",
 )
 
-private fun resolvePlaybackUri(uriString: String, localPath: String?): String {
+internal fun resolvePlaybackUri(uriString: String, localPath: String?): String {
     if (localPath.isNullOrBlank() || !uriString.startsWith("content://")) return uriString
     val ext = localPath.substringAfterLast('.', "").lowercase(Locale.ROOT)
     if (ext !in DIRECT_FILE_URI_EXTENSIONS) return uriString

@@ -44,7 +44,24 @@ class AutomixAnalysisSourceTest {
         assertFalse(local == youtube)
         assertFalse(local == anotherLocal)
         assertFalse(local == alternateStream)
-        assertTrue(local.contains("local:content://media/external/audio/media/42"))
+        assertTrue(local.contains("content://media/external/audio/media/42"))
+    }
+
+    @Test
+    fun `replacement at the same local URI cannot reuse its old analysis`() {
+        val uri = "content://media/external/audio/media/42"
+        val original = AutomixAnalysisSource.localStorageKey("track", uri, revision = "original")
+        val replacement = AutomixAnalysisSource.localStorageKey("track", uri, revision = "replacement")
+        assertFalse(original == replacement)
+        assertFalse(original == AutomixAnalysisSource.localStorageKey("track", uri))
+    }
+
+    @Test
+    fun `playback keys distinguish upgrades from the original and legacy analysis`() {
+        val original = AutomixAnalysisSource.playbackStorageKey("yt", "yt")
+        assertFalse(original == AutomixAnalysisSource.playbackStorageKey("yt", "yt#hifi"))
+        assertFalse(original == AutomixAnalysisSource.playbackStorageKey("yt", "yt#alt"))
+        assertFalse(original == AutomixAnalysisSource.storageKey("yt", null))
     }
 
     @Test

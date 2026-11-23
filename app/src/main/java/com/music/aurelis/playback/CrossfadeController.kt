@@ -1,5 +1,6 @@
 package com.music.aurelis.playback
 
+import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.C
@@ -2542,16 +2543,19 @@ class CrossfadeController(
     private var lastLoopAnnounceAt = 0L
     private var lastLoopBeat = -1
 
-    /** Synced-lyric spans per media id, once asked: [LyricSpans.spans] null when the song has none. */
+    private data class LyricRecording(val mediaId: String, val uri: Uri?)
+    private fun MediaItem.lyricRecording() = LyricRecording(mediaId, localConfiguration?.uri)
+
+    /** Synced-lyric spans for each recording. Null spans let the vocal model decide. */
     private class LyricSpans(val spans: List<LoopMix.Span>?)
 
-    private val lyricSpans = java.util.concurrent.ConcurrentHashMap<String, LyricSpans>()
-    private val lyricsAsked = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    private val lyricSpans = java.util.concurrent.ConcurrentHashMap<LyricRecording, LyricSpans>()
+    private val lyricsAsked = java.util.concurrent.ConcurrentHashMap.newKeySet<LyricRecording>()
 
     /** Asks for [item]'s synced lyrics once; a loop they vouch for needs no vocal mask. */
     private fun askLyrics(item: MediaItem, durationMs: Long) {
-        val id = item.mediaId
-        if (!lyricsAsked.add(id)) return
+        val recording = item.lyricRecording()
+        if (!lyricsAsked.add(recording)) return
         scope.launch(Dispatchers.IO) {
             val lines = runCatching { syncedLines(item, durationMs) }.getOrNull()
             // Only line-synced lyrics say where a voice is; plain text says nothing about time.
@@ -2563,7 +2567,7 @@ class CrossfadeController(
                     },
                 )
             }
-            lyricSpans[id] = LyricSpans(spans)
+            lyricSpans[recording] = LyricSpans(spans)
         }
     }
 
@@ -2601,8 +2605,8 @@ class CrossfadeController(
         }
         askLyrics(current, durationMs)
         askLyrics(next, nextDurationMs)
-        val outLyrics = lyricSpans[current.mediaId]
-        val inLyrics = lyricSpans[next.mediaId]
+        val outLyrics = lyricSpans[current.lyricRecording()]
+        val inLyrics = lyricSpans[next.lyricRecording()]
         if (outLyrics == null || inLyrics == null) {
             noteLoopVerdict(pair, null, "waiting on lyrics")
             return null

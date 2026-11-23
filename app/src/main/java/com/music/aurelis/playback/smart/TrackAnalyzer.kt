@@ -252,38 +252,40 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * block. Returns an empty analysis for anything not yet finished, which
      * [assessTransitionTier] reads as no evidence rather than as a failure.
      */
-    private fun analysisKey(trackId: String, uri: Uri): String {
-        // A downloaded YouTube track can retain the same mediaId as its stream,
-        // but its file may be a different cut. Never borrow an Opus beat grid
-        // for this local recording or authorize Loop Mix from that old result.
-        if (LocalAudioSource.isLocal(uri)) {
-            return AutomixAnalysisSource.localStorageKey(trackId, uri.toString())
+    private data class LocalRevision(val checkedAt: Long, val stamp: String?)
+    private val localRevisions = ConcurrentHashMap<Uri, LocalRevision>()
+    private val checkingLocalRevisions = ConcurrentHashMap.newKeySet<Uri>()
+
+    /** Poll on the analysis worker, keeping filesystem and provider I/O off playback ticks. */
+    private fun checkedLocalRevision(uri: Uri): LocalRevision? {
+        val previous = localRevisions[uri]
+        if (previous != null && SystemClock.elapsedRealtime() - previous.checkedAt < LOCAL_REVISION_TTL_MS) {
+            return previous
         }
-        val playingKey = cache.cacheKeyOf(uri)
-        val youtubeId = uri.getQueryParameter("v")
-        // A YouTube item may actually play a source substitute (#alt, #hifi).
-        // That recording cannot reuse the grid persisted for YouTube Opus.
-        return AutomixAnalysisSource.storageKey(
-            trackId,
-            playingKey.takeIf { uri.authority == "source" || (youtubeId != null && it != youtubeId) },
-        )
+        if (checkingLocalRevisions.add(uri)) {
+            executor.execute {
+                try {
+                    val stamp = LocalAudioSource.revision(resolver, uri)
+                    localRevisions[uri] = LocalRevision(SystemClock.elapsedRealtime(), stamp)
+                } finally {
+                    checkingLocalRevisions.remove(uri)
+                }
+            }
+        }
+        return null
     }
 
-    /** Only the rendition actually played can authorize beat/loop timing. */
-    private fun playbackRenditions(uri: Uri): List<AudioCache.Rendition> {
-        val playingKey = cache.cacheKeyOf(uri)
-        return cache.renditionsOf(uri).filter { it.key == playingKey }
-    }
-
-    /** A canonical YouTube fetch is unsafe for a source substitution's cache key. */
-    private fun requestCanonicalHeadIfPlaying(uri: Uri) {
-        val youtubeId = uri.getQueryParameter("v") ?: return
-        if (cache.cacheKeyOf(uri) == youtubeId) cache.requestAnalysisHead(uri)
+    private fun analysisKey(trackId: String, uri: Uri, playbackKey: String? = null): String {
+        if (LocalAudioSource.isLocal(uri)) {
+            return AutomixAnalysisSource.localStorageKey(trackId, uri.toString(), localRevisions[uri]?.stamp)
+        }
+        val key = playbackKey ?: cache.cacheKeyOf(uri)
+        return AutomixAnalysisSource.playbackStorageKey(trackId, key)
     }
 
     /** A source's stereo and alternate-mix rows can share a media ID, but not a beat grid. */
-    fun analysisFor(trackId: String, uri: Uri? = null): TrackAnalysis =
-        results[uri?.let { analysisKey(trackId, it) } ?: trackId] ?: TrackAnalysis(trackId = trackId)
+    fun analysisFor(trackId: String, uri: Uri?): TrackAnalysis =
+        uri?.let { results[analysisKey(trackId, it)] } ?: TrackAnalysis(trackId = trackId)
 
     /**
      * Looks [trackId] up on disk, once, off the playback thread.
@@ -319,8 +321,8 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * is the difference between something being wrong and something simply
      * taking the several seconds it takes.
      */
-    fun isAnalysing(trackId: String, uri: Uri? = null): Boolean =
-        (uri?.let { analysisKey(trackId, it) } ?: trackId) in running
+    fun isAnalysing(trackId: String, uri: Uri?): Boolean =
+        uri != null && analysisKey(trackId, uri) in running
 
     /**
      * Queues [trackId] (playing at [uri]) for analysis if it is not already
@@ -350,12 +352,15 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // Never find a substitute recording by title. Source-backed tracks
         // must be measured from the same URI (and cache entry) used to play them.
         val analysisUri = uri
-        val storageKey = analysisKey(trackId, uri)
+        val local = LocalAudioSource.isLocal(uri)
+        val revision = if (local) checkedLocalRevision(uri) ?: return else null
+        val playbackKey = if (local) null else cache.cacheKeyOf(uri)
+        val storageKey = analysisKey(trackId, uri, playbackKey)
         if (storageKey in running) return
         // Loading a stored result does not cost a decode and is allowed even
         // when the phone is too hot to start fresh inference.
         if (overheated) {
-            restoreOnce(trackId, storageKey)
+            if (!local || revision?.stamp != null) restoreOnce(trackId, storageKey)
             return
         }
 
@@ -364,7 +369,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // Queued before the cache is even consulted, so a track measured in an
         // earlier session short-circuits the whole path rather than being
         // re-earned from audio the cache may since have evicted.
-        restoreOnce(trackId, storageKey)
+        if (!local || revision?.stamp != null) restoreOnce(trackId, storageKey)
 
         // A track playing off the device is not a download in progress. Every
         // byte of it is already there, and none of those bytes are in the cache:
@@ -373,7 +378,6 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // is entirely on disk, and the head fetch that answer falls back to is a
         // no-op for anything without a YouTube id — which is why a local file
         // was never queued for analysis at all. See [LocalAudioSource].
-        val local = LocalAudioSource.isLocal(analysisUri)
 
         // See [unknownRuntime]: no runtime from the caller and none from the
         // container last time, so there is nothing new to try.
@@ -387,13 +391,9 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         //
         // Not asked of a local file, whose bytes the cache has never seen and
         // whose completeness is not a question: it is whole from the first tick.
-        val complete = if (local) {
-            emptyList()
-        } else {
-            playbackRenditions(analysisUri)
-                .filter { it.isComplete && it.key !in badRenditions }
-        }
-        val usableComplete = local || complete.isNotEmpty()
+        val complete = playbackKey?.let(cache::playbackRendition)
+            ?.takeIf { it.isComplete && it.key !in badRenditions }
+        val usableComplete = local || complete != null
 
         val recorded = results[storageKey]
         // Two things are worth superseding, and nothing else is. A provisional
@@ -403,13 +403,11 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // the same renditions that produced it would just spend the decode
         // again for the same answer.
         //
-        // A local file is its own single copy, keyed by URI — see [copyToRead] —
-        // so a failure there is read once and stays read, which is correct: no
-        // second copy of it is ever going to arrive.
+        // A failed local revision is retried only when the file changes.
         val untried = if (local) {
-            uri.toString() !in triedRenditions
+            storageKey !in triedRenditions
         } else {
-            complete.any { it.key !in triedRenditions }
+            complete != null && complete.key !in triedRenditions
         }
         val supersedable = when {
             recorded == null -> false
@@ -425,26 +423,22 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
             // rest, and a queued track reaches its own transition carrying an
             // entry-only estimate: no content end, no mix-out anchor, no vocal
             // mask, which is most of what the outgoing half of a blend reads.
-            if (storageKey in provisional && !usableComplete) requestCanonicalHeadIfPlaying(analysisUri)
+            if (storageKey in provisional && !usableComplete) playbackKey?.let { cache.requestPlaybackAnalysisHead(analysisUri, it) }
             return
         }
         // The strike count belongs to the attempt that was given up on, not to
         // the track for the rest of the session; a reopened track starts level.
-        if (recorded != null && !recorded.isUsable) shortDecodes.remove(trackId)
+        if (recorded != null && !recorded.isUsable) shortDecodes.remove(storageKey)
         // One head attempt per track: a partial container that will not parse
         // now is unlikely to parse ten ticks later, and retrying a decode every
         // 250ms would cost more than the analysis it is trying to bring
         // forward. Skipped entirely for a local file, which is `usableComplete`
         // from the first tick: the head pass exists to get ahead of a download,
         // and there is no download to get ahead of.
-        val headRendition = if (usableComplete) null else headWorthTrying(trackId, analysisUri, durationSeconds)
+        val headRendition = if (usableComplete) null else headWorthTrying(trackId, requireNotNull(playbackKey), durationSeconds)
         if (!usableComplete && headRendition == null) {
-            // Nothing on disk worth decoding, so ask for something. Every other
-            // writer either fetches this track's opening too late to matter or
-            // never fetches it at all — see [AudioCache.requestAnalysisHead],
-            // which is a no-op after the first call and for anything that isn't
-            // a YouTube-backed track.
-            requestCanonicalHeadIfPlaying(analysisUri)
+            // Warm the same playback entry so the next tick can try its opening.
+            playbackKey?.let { cache.requestPlaybackAnalysisHead(analysisUri, it) }
             return
         }
         if (!running.add(storageKey)) return
@@ -473,23 +467,29 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
                 // started while the track ahead of it was being measured. Every
                 // task behind that one turns into this return, which drains the
                 // backlog without needing to reach into the executor's queue.
-                if (stopped) return@execute
+                if (stopped || (playbackKey != null && cache.cacheKeyOf(uri) != playbackKey)) return@execute
                 if (usableComplete) {
-                    val outcome = analyze(trackId, analysisUri, durationSeconds)
+                    val outcome = analyze(trackId, analysisUri, durationSeconds, storageKey, playbackKey)
+                    if (local && LocalAudioSource.revision(resolver, uri) != revision?.stamp) {
+                        localRevisions.remove(uri)
+                        return@execute
+                    }
                     val whole = outcome.analysis
                     if (whole != null) {
                         results[storageKey] = whole
                         provisional.remove(storageKey)
-                        shortDecodes.remove(trackId)
+                        shortDecodes.remove(storageKey)
                         // Only the whole-track pass is persisted. A head result
                         // is missing everything past its window — the outro, the
                         // mix-out anchor, the energy curve — and storing one
                         // would freeze a deliberately partial answer in place of
                         // the complete one that supersedes it minutes later.
-                        store.save(storageKey, whole)
-                        restoreAttempted.add(storageKey)
+                        if (!local || revision?.stamp != null) {
+                            store.save(storageKey, whole)
+                            restoreAttempted.add(storageKey)
+                        }
                     } else if (outcome.decodedShort &&
-                        shortDecodes.merge(trackId, 1, Int::plus)!! >= MAX_SHORT_DECODE_ATTEMPTS
+                        shortDecodes.merge(storageKey, 1, Int::plus)!! >= MAX_SHORT_DECODE_ATTEMPTS
                     ) {
                         // Bounded, so a container that is genuinely truncated
                         // isn't re-decoded on every tick for the rest of the
@@ -573,31 +573,13 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      */
     private fun headWorthTrying(
         trackId: String,
-        uri: Uri,
+        playbackKey: String,
         durationSeconds: Double,
     ): AudioCache.Rendition? {
-        // Across every rendition of the recording, not just the one the player
-        // happens to be on. The same track can be part-downloaded under a
-        // sibling cache key, and the live URI's own copy is frequently the one
-        // holding nothing — a track that reported six megabytes cached twenty
-        // minutes earlier reported zero here, because the question was being
-        // asked of the wrong copy of it.
-        val candidate = playbackRenditions(uri)
-            .filter { it.cachedPrefix > 0L && it.key !in badRenditions }
-            // The growth guard, applied as a filter rather than to the winner.
-            // Applied afterwards it did not skip a copy, it ended the search: the
-            // single best candidate was chosen, refused for not having grown, and
-            // the second-best — frequently the one that would have worked — was
-            // never reached. A track therefore got exactly one head attempt ever,
-            // against whichever copy of it happened to rank highest at the time.
-            .filter { rendition ->
-                val previous = headAttempts[rendition.key] ?: return@filter true
-                rendition.cachedPrefix >= previous * HEAD_RETRY_GROWTH
-            }
-            // Most *audio*, not most bytes: renditions differ in bitrate, so the
-            // largest prefix is not necessarily the longest playable head.
-            .maxByOrNull { headSecondsOf(it, durationSeconds) }
+        val candidate = cache.playbackRendition(playbackKey)?.takeUnless { it.key in badRenditions }
             ?: return null
+        val previous = headAttempts[candidate.key]
+        if (previous != null && candidate.cachedPrefix < previous * HEAD_RETRY_GROWTH) return null
 
         val prefix = candidate.cachedPrefix
         val total = candidate.contentLength
@@ -638,28 +620,6 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
     }
 
     /**
-     * Roughly how many seconds of audio a rendition's cached prefix holds.
-     *
-     * The ranking this feeds used to be `cachedPrefix / contentLength`, which
-     * answers zero whenever the length is unknown — and the length is unknown
-     * for precisely the entry that matters most, the head
-     * [AudioCache.requestAnalysisHead] just fetched, because a bounded request
-     * gets a bounded answer. A megabyte of freshly downloaded opening therefore
-     * scored below a sibling holding eight unusable kilobytes, and the analyzer
-     * spent its one attempt on the wrong copy.
-     *
-     * [ASSUMED_BYTES_PER_SECOND] stands in where the length still isn't known.
-     * It only has to be the right order of magnitude: this decides which copy to
-     * read first, not whether the result is trusted.
-     */
-    private fun headSecondsOf(rendition: AudioCache.Rendition, durationSeconds: Double): Double =
-        if (rendition.contentLength > 0 && durationSeconds.isFinite() && durationSeconds > 0) {
-            rendition.cachedPrefix * durationSeconds / rendition.contentLength
-        } else {
-            rendition.cachedPrefix / ASSUMED_BYTES_PER_SECOND
-        }
-
-    /**
      * The opening window only: a beat grid, and nothing that would need the rest
      * of the file.
      *
@@ -690,34 +650,6 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         rendition: AudioCache.Rendition,
     ): TrackAnalysis? {
         fun openSource(): MediaDataSource? = cache.renditionDataSource(uri, rendition)
-
-        // Same guard the whole-track pass applies, for the same reason: a
-        // sibling rendition can be a different cut, and a beat grid borrowed
-        // across that would put every anchor seconds out. Skipped for the
-        // player's own copy, which is the track by definition. A header that
-        // will not parse yet is not held against the rendition — more bytes may
-        // well fix it — but a length that genuinely disagrees is.
-        val expected = durationSeconds.takeIf { it.isFinite() && it > 0 }
-        if (expected != null && rendition.key != cache.cacheKeyOf(uri)) {
-            val length = openSource()?.use(AudioDecoder::containerDurationSeconds)
-            if (length == null || length <= 0) {
-                // Logged rather than returned quietly. This is the likeliest way
-                // for a head pass to do nothing — a partial container the
-                // extractor will not read a duration out of — and while it was
-                // silent the whole path looked like it had never run.
-                Log.d(TAG, "Head rendition ${rendition.key} for $trackId has no readable duration yet")
-                return null
-            }
-            if (abs(length - expected) > RENDITION_DURATION_TOLERANCE) {
-                Log.d(
-                    TAG,
-                    "Head rendition ${rendition.key} rejected for $trackId: " +
-                        "${"%.1f".format(Locale.ROOT, length)}s against ${"%.1f".format(Locale.ROOT, expected)}s expected",
-                )
-                badRenditions.add(rendition.key)
-                return null
-            }
-        }
 
         val window = BeatTracker.WINDOW_SECONDS
         val head = region(::openSource, 0.0, window, features = null, deriveFeatures = true)
@@ -776,146 +708,26 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         )
     }
 
-    /**
-     * Picks which rendition of [uri]'s recording to analyse: the lightest one
-     * that is both complete and the same cut as the track being played.
-     *
-     * A recording can be on disk two or three times over — the Opus stream
-     * YouTube served, a substituted source's copy, a later quality upgrade — and
-     * they hold the same music, so an analysis of any of them describes all of
-     * them. Analysing the smallest is not merely cheaper: it is the one that
-     * finished downloading first, and a lossless upgrade can take most of a
-     * track's play time to arrive. Waiting for it is why analysis was landing
-     * seconds *after* the transition it was meant to inform.
-     *
-     * The duration check is what makes the sharing safe. A `#alt` rendition
-     * comes from an entirely different source and may be a different cut —
-     * a radio edit, a version with a longer intro — and a beat grid borrowed
-     * across that difference would put every downbeat and both mix anchors
-     * seconds out. Comparing container durations catches exactly that, and
-     * costs a header parse per candidate.
-     */
-    private fun chooseRendition(
-        trackId: String,
-        uri: Uri,
-        durationSeconds: Double,
-    ): AudioCache.Rendition? {
-        val complete = playbackRenditions(uri)
-            .filter { it.isComplete && it.key !in badRenditions }
-        if (complete.isEmpty()) return null
-
-        val expected = durationSeconds.takeIf { it.isFinite() && it > 0 }
-        // Without a length to check a sibling against, sharing would be a guess,
-        // so only the rendition actually being played can be trusted.
-        if (expected == null) {
-            val own = cache.cacheKeyOf(uri)
-            complete.firstOrNull { it.key == own }?.let { return it }
-            // Nothing to cross-check against — but one copy is not ambiguous
-            // either, and refusing it outright is a dead end rather than a
-            // safeguard. [cacheKeyOf] answers with whichever rendition the key
-            // factory resolves to *now*, which with substitution on is the `#alt`
-            // entry; the copy actually on disk is routinely the plain one, so
-            // this asked for a rendition that did not exist and returned null on
-            // every tick, silently, for as long as the track stayed queued.
-            //
-            // The risk the duration check exists to catch is borrowing a beat
-            // grid across two different cuts of a song. That needs two copies to
-            // choose wrongly between. With exactly one there is no choice being
-            // made, and the worst case degrades from "never analysed" to "a grid
-            // measured off the only audio we have".
-            return complete.singleOrNull()?.also {
-                Log.d(
-                    TAG,
-                    "Analysing $trackId from its only cached rendition ${it.key}; " +
-                        "no duration to check it against",
-                )
-            }
-        }
-
-        for (candidate in complete) {
-            val length = cache.renditionDataSource(uri, candidate)
-                .use(AudioDecoder::containerDurationSeconds)
-            if (length == null || length <= 0) {
-                // Every candidate here is complete, so no more bytes are coming
-                // to make the header readable: remembered for the reason below.
-                badRenditions.add(candidate.key)
-                continue
-            }
-            if (abs(length - expected) > RENDITION_DURATION_TOLERANCE) {
-                Log.d(
-                    TAG,
-                    "Rendition ${candidate.key} rejected for $trackId: " +
-                        "${"%.1f".format(Locale.ROOT, length)}s against ${"%.1f".format(Locale.ROOT, expected)}s expected",
-                )
-                // Remembered, as the head pass remembers its own rejections. A
-                // cut that is the wrong length now is the wrong length on the
-                // next tick too, and while it counted as complete [request]
-                // queued a pass on every one of them — reopening and parsing the
-                // same file four times a second for as long as the track played.
-                badRenditions.add(candidate.key)
-                continue
-            }
-            if (candidate.key != cache.cacheKeyOf(uri)) {
-                Log.d(
-                    TAG,
-                    "Analysing $trackId from lighter rendition ${candidate.key} " +
-                        "(${candidate.contentLength / 1024}kB)",
-                )
-            }
-            return candidate
-        }
-        return null
-    }
-
-    /**
-     * Where a whole-track pass reads its audio from, and the identity the retry
-     * bookkeeping keys off.
-     *
-     * Two kinds of copy exist and they are not interchangeable. A **cached
-     * rendition** is one of several copies of a streamed recording: chosen
-     * between by [chooseRendition], cross-checked for being the same cut, and —
-     * when it turns out undecodable — thrown off disk so a clean one can replace
-     * it. A **local file** is the track itself: exactly one of it, complete from
-     * the moment it exists, nothing to choose between, and not ours to delete.
-     *
-     * [rendition] is what tells the two apart. Null means the audio is a file on
-     * the device, which is why the blame-and-discard half of [structure] is
-     * conditional on it rather than on a flag.
-     */
     private class Copy(
         val key: String,
         val rendition: AudioCache.Rendition?,
+        val closeSource: () -> Unit = {},
         val open: () -> MediaDataSource?,
-    )
-
-    /**
-     * Which copy of [trackId]'s audio to read, or null when there isn't a usable
-     * one yet.
-     *
-     * A local URI short-circuits the entire rendition search: none of what that
-     * search decides between applies to a file the user already has, and asking
-     * the cache about one only ever produced the empty answer that kept Automix
-     * from analysing local tracks at all. The URI stands in as the cache key,
-     * which is what [request]'s `untried` check reads so a file that will not
-     * decode is not re-decoded on every tick for the rest of the session.
-     */
-    private fun copyToRead(trackId: String, uri: Uri, durationSeconds: Double): Copy? {
-        if (LocalAudioSource.isLocal(uri)) {
-            return Copy(key = uri.toString(), rendition = null) { LocalAudioSource.open(resolver, uri) }
-        }
-        val rendition = chooseRendition(trackId, uri, durationSeconds) ?: return null
-        return Copy(key = rendition.key, rendition = rendition) { cache.renditionDataSource(uri, rendition) }
+    ) : java.io.Closeable {
+        override fun close() = closeSource()
     }
 
-    /**
-     * A source-backed row is its own recording, not a search query.
-     *
-     * Reading a YouTube search match used to produce a beat grid belonging
-     * to another cut of the song (and the user's FLAC was never measured).
-     * The source's own cache holds the bytes playback heard; partial prefixes
-     * may give a provisional entry, and a complete copy gives both ends.
-     * Do not start a network search or silently substitute a different master.
-     */
+    private fun copyToRead(trackId: String, uri: Uri, playbackKey: String? = null): Copy? {
+        if (LocalAudioSource.isLocal(uri)) {
+            val recording = LocalAudioSource.Recording(context, uri) { stopped }
+            return Copy(analysisKey(trackId, uri), null, recording::close, recording::open)
+        }
+        val key = playbackKey ?: cache.cacheKeyOf(uri)
+        val rendition = cache.playbackRendition(key)?.takeIf { it.isComplete && key !in badRenditions }
+            ?: return null
+        return Copy(key, rendition) { cache.renditionDataSource(uri, rendition) }
+    }
+
     /**
      * What a whole-track pass came back with.
      *
@@ -952,6 +764,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         uri: Uri,
         copy: Copy,
         effectiveDuration: Double,
+        storageKey: String,
     ): Structural {
         val structRate = TrackFeatures.sampleRate
         val decoded = copy.open()?.use { AudioDecoder.decodeRegion(it, 0.0, effectiveDuration) { stopped } }
@@ -1015,7 +828,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
                     discarded.merge(rendition.key, 1, Int::plus)
                     badRenditions.remove(rendition.key)
                     triedRenditions.remove(rendition.key)
-                    shortDecodes.remove(trackId)
+                    shortDecodes.remove(storageKey)
                 }
             }
             return Structural(null, decodedShort = true)
@@ -1036,20 +849,30 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * produces a confident-looking analysis that is wrong by minutes rather than
      * merely absent, and the only one that counts as a strike.
      */
-    private fun analyze(trackId: String, uri: Uri, durationSeconds: Double): WholeTrack {
-        val copy = copyToRead(trackId, uri, durationSeconds) ?: return WholeTrack(null)
-        // Recorded before the outcome is known, because what this gates is
-        // whether a *written-off* track is worth reopening, and the answer is
-        // only ever "yes" for a copy that has not been read yet. Recording it on
-        // success alone would leave a failure looking permanently reopenable and
-        // re-decode the same file on every tick.
+    private fun analyze(
+        trackId: String,
+        uri: Uri,
+        durationSeconds: Double,
+        storageKey: String,
+        playbackKey: String?,
+    ): WholeTrack {
+        val copy = copyToRead(trackId, uri, playbackKey) ?: return WholeTrack(null)
+        return copy.use { source ->
+            analyzeCopy(trackId, uri, source, durationSeconds, storageKey)
+        }
+    }
+
+    private fun analyzeCopy(
+        trackId: String,
+        uri: Uri,
+        copy: Copy,
+        durationSeconds: Double,
+        storageKey: String,
+    ): WholeTrack {
         triedRenditions.add(copy.key)
         val openSource = copy.open
-
-        var effectiveDuration = durationSeconds
-        if (!effectiveDuration.isFinite() || effectiveDuration <= 0) {
-            effectiveDuration = openSource()?.use(AudioDecoder::containerDurationSeconds) ?: 0.0
-        }
+        val effectiveDuration = openSource()?.use(AudioDecoder::containerDurationSeconds)
+            ?: durationSeconds.takeIf { it.isFinite() && it > 0 } ?: 0.0
         if (effectiveDuration <= 0) {
             Log.d(TAG, "Skipping $trackId: ${copy.key} has no readable duration")
             if (copy.rendition == null) {
@@ -1057,13 +880,13 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
                 // not a broken file: see [unknownRuntime]. Left unrecorded, and
                 // forgotten as tried, so it is measured once a runtime arrives
                 // instead of being written off while it is still only queued.
-                unknownRuntime.add(analysisKey(trackId, uri))
+                unknownRuntime.add(storageKey)
                 triedRenditions.remove(copy.key)
                 return WholeTrack(null)
             }
             return WholeTrack(empty(trackId, 0.0))
         }
-        unknownRuntime.remove(analysisKey(trackId, uri))
+        unknownRuntime.remove(storageKey)
 
         // Pass 1 (Phase 1, DSP-only): the analyzer needs the whole track — the energy curve,
         // phrase structure and mix-out anchor all read the tail, not just a window of it — at its
@@ -1078,7 +901,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         // held while the models ran, in a process that was reaching a 256 MB heap limit and had
         // died on it. Returning is what releases them — a `val` cannot be nulled, and a narrower
         // scope alone does not make ART treat one as dead.
-        val structural = structure(trackId, uri, copy, effectiveDuration)
+        val structural = structure(trackId, uri, copy, effectiveDuration, storageKey)
         // A party started while Pass 1 was decoding. Dropped as "no result"
         // rather than as a failure — the track was never measured, so nothing
         // should be recorded against it and nothing should stop it being
@@ -1500,13 +1323,10 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
      * An Opus grid cannot be borrowed by a #alt FLAC recording.
      */
     fun canLoopMix(trackId: String, uri: Uri): Boolean {
-        if (results[analysisKey(trackId, uri)]?.isUsable != true ||
-            analysisKey(trackId, uri) in provisional
-        ) return false
-        if (LocalAudioSource.isLocal(uri)) return true
-        val currentKey = cache.cacheKeyOf(uri)
-        val complete = cache.renditionsOf(uri).filter { it.isComplete }.map { it.key }
-        return AutomixAnalysisSource.hasVerifiedLoopAudio(currentKey, complete)
+        val playbackKey = if (LocalAudioSource.isLocal(uri)) null else cache.cacheKeyOf(uri)
+        val storageKey = analysisKey(trackId, uri, playbackKey)
+        if (results[storageKey]?.isUsable != true || storageKey in provisional) return false
+        return playbackKey == null || cache.playbackRendition(playbackKey)?.isComplete == true
     }
 
     fun loopRegion(
@@ -1518,9 +1338,11 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         sampleRate: Int,
     ): com.music.aurelis.playback.loopmix.LoopRegion? {
         val began = SystemClock.elapsedRealtime()
-        val copy = runCatching { copyToRead(trackId, uri, durationSeconds) }.getOrNull() ?: return null
-        val (stereo, start) = copy.open()?.use { source ->
-            AudioDecoder.decodeRegionStereo(source, max(0.0, fromSeconds), toSeconds) { stopped }
+        val copy = runCatching { copyToRead(trackId, uri) }.getOrNull() ?: return null
+        val (stereo, start) = copy.use {
+            it.open()?.use { source ->
+                AudioDecoder.decodeRegionStereo(source, max(0.0, fromSeconds), toSeconds) { stopped }
+            }
         } ?: return null
         if (stereo.left.isEmpty()) return null
         val rate = sampleRate.toDouble()
@@ -1557,10 +1379,10 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
     ): MixWaveform.Bands? {
         // Read exactly the playback recording, never an unrelated YouTube search match.
         val began = SystemClock.elapsedRealtime()
-        val copy = runCatching { copyToRead(trackId, uri, durationSeconds) }.getOrNull() ?: return null
+        val copy = runCatching { copyToRead(trackId, uri) }.getOrNull() ?: return null
         val chosen = SystemClock.elapsedRealtime()
-        val bands = copy.open()?.use { source ->
-            MixWaveform.build(source, fromSeconds, toSeconds, bins) { stopped }
+        val bands = copy.use {
+            it.open()?.use { source -> MixWaveform.build(source, fromSeconds, toSeconds, bins) { stopped } }
         }
         Log.d(
             TAG,
@@ -1575,6 +1397,8 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
         executor.shutdownNow()
         headAttempts.clear()
         unknownRuntime.clear()
+        localRevisions.clear()
+        checkingLocalRevisions.clear()
         headSkipLogged.clear()
         provisional.clear()
         restoreAttempted.clear()
@@ -1639,20 +1463,7 @@ class TrackAnalyzer(private val context: Context, private val cache: AudioCache)
          */
         const val MAX_RENDITION_DISCARDS = 1
 
-        /**
-         * How far two renditions' container durations may differ and still count
-         * as the same cut. Generous enough for codec padding and the player's own
-         * rounding, tight enough that a different edit of the same song — where a
-         * borrowed beat grid would be useless — is rejected.
-         */
-        const val RENDITION_DURATION_TOLERANCE = 1.0
-
-        /**
-         * Stand-in bitrate for a rendition whose real length isn't recorded yet,
-         * used only to rank copies against each other in [headSecondsOf]. About
-         * 160kbps, the middle of what the streams in play here run at.
-         */
-        const val ASSUMED_BYTES_PER_SECOND = 20_000.0
+        const val LOCAL_REVISION_TTL_MS = 15_000L
 
         /**
          * The least decoded audio a head-only tempo estimate is allowed to rest
