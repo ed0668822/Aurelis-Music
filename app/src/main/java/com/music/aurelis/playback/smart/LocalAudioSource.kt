@@ -31,6 +31,18 @@ internal object LocalAudioSource {
         }
     }.getOrNull()
 
+    /** Opens a seekable file for callers that only need a single reader. */
+    fun open(resolver: ContentResolver, uri: Uri): MediaDataSource? {
+        val asset = runCatching { resolver.openAssetFileDescriptor(uri, "r") }.getOrNull() ?: return null
+        val length = asset.length
+        val seekable = length > 0 && runCatching {
+            Os.pread(asset.fileDescriptor, ByteArray(1), 0, 1, asset.startOffset) == 1
+        }.getOrDefault(false)
+        if (seekable) return Source(asset, asset.fileDescriptor, asset.startOffset, length)
+        runCatching { asset.close() }
+        return null
+    }
+
     /**
      * Owns a fallback copy for one analysis operation, reused across the
      * duration probe, structure scan and model windows. Regular files remain zero-copy.
@@ -49,15 +61,7 @@ internal object LocalAudioSource {
             if (triedCopy) return null
 
             val resolver = context.contentResolver
-            val asset = runCatching { resolver.openAssetFileDescriptor(uri, "r") }.getOrNull()
-            if (asset != null) {
-                val length = asset.length
-                val seekable = length > 0 && runCatching {
-                    Os.pread(asset.fileDescriptor, ByteArray(1), 0, 1, asset.startOffset) == 1
-                }.getOrDefault(false)
-                if (seekable) return Source(asset, asset.fileDescriptor, asset.startOffset, length)
-                runCatching { asset.close() }
-            }
+            LocalAudioSource.open(resolver, uri)?.let { return it }
 
             triedCopy = true
             if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
