@@ -19,6 +19,11 @@ class BestPartVisibilityTest {
         assertFalse(shouldOfferBestPart(45_000L, 44_700L, mixing = false, heard = false))
     }
 
+    @Test fun disabledSettingHidesKnownBestPart() {
+        assertFalse(shouldOfferBestPart(45_000L, 5_000L, mixing = false, heard = false, enabled = false))
+        assertTrue(shouldOfferBestPart(45_000L, 5_000L, mixing = false, heard = false, enabled = true))
+    }
+
     @Test fun allowsLateTargetAfterASeekBackwardWhenNotYetHeard() {
         assertTrue(shouldOfferBestPart(45_000L, 44_599L, mixing = false, heard = false))
     }
