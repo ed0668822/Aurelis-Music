@@ -1372,6 +1372,38 @@ private fun standardTransition(
     )
 }
 
+/** Keeps AutoMix near the end of the music, allowing a measured silent tail. */
+fun autoMixPlayableEnd(analysis: TrackAnalysis, duration: Double): Double {
+    val end = analysis.contentEndTime
+    if (!analysis.isUsable || end <= 0.0 || end >= duration || !end.isFinite()) return duration
+    if (duration - end <= 6.0) return end
+    if ((analysis.energyCurve.lastOrNull()?.time ?: 0.0) < duration - 2.0) return duration
+    return if ((audibleSecondsBetween(analysis, end, duration) ?: Double.POSITIVE_INFINITY) <= 2.0) {
+        end
+    } else {
+        duration
+    }
+}
+
+fun autoMixEarliestStart(playableEnd: Double): Double = (playableEnd - 22.0).coerceAtLeast(0.0)
+
+fun autoMixTimingIsSafe(start: Double, end: Double, playableEnd: Double): Boolean =
+    start.isFinite() && end.isFinite() &&
+        end - start >= 2.0 && end >= playableEnd - 6.0 && start >= autoMixEarliestStart(playableEnd)
+
+/** Keep the musical plan if it fits. Otherwise use the same end for preview and playback. */
+fun stabilizeAutoMixTiming(
+    plan: TransitionPlan,
+    playableEnd: Double,
+    playbackTime: Double,
+    fallbackSeconds: Double,
+): TransitionPlan {
+    if (plan.blocked || plan.transitionStyle == TransitionStyle.GAPLESS ||
+        autoMixTimingIsSafe(plan.transitionStart, plan.transitionEnd, playableEnd)
+    ) return plan
+    return standardTransition(playableEnd, playbackTime, fallbackSeconds.coerceIn(4.0, 8.0), 2.0, "smart-timing-fallback")
+}
+
 /** A stale analysis paired with the wrong track is worse than no analysis at all. */
 private fun analysisReadyForTrack(analysis: TrackAnalysis, track: TransitionTrackInfo?): Boolean {
     if (analysis.status.isBlank()) return true

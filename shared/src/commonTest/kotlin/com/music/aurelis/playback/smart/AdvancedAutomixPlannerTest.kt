@@ -17,6 +17,31 @@ class AdvancedAutomixPlannerTest {
         // a filtered or ordinary crossfade; tempo alone should not reject it.
     }
 
+    @Test
+    fun earlyOrTinyMixFallsBackToAUsefulEndOfTrackFade() {
+        val early = TransitionPlan(transitionStart = 156.0, transitionEnd = 168.0, fadeSeconds = 12.0)
+        val tiny = TransitionPlan(transitionStart = 199.5, transitionEnd = 200.0, fadeSeconds = 0.5)
+        for (plan in listOf(early, tiny)) {
+            val fallback = stabilizeAutoMixTiming(plan, playableEnd = 200.0, playbackTime = 180.0, fallbackSeconds = 6.0)
+            assertEquals(194.0, fallback.transitionStart)
+            assertEquals(200.0, fallback.transitionEnd)
+            assertEquals(TransitionStyle.EQUAL_POWER, fallback.transitionStyle)
+        }
+    }
+
+    @Test
+    fun playableEndRequiresEvidenceBeforeSkippingALongTail() {
+        val track = track("out", 100.0, "C", 0.0)
+        val staleEnd = track.copy(contentEndTime = 150.0)
+        assertEquals(200.0, autoMixPlayableEnd(staleEnd, 200.0))
+        val silence = staleEnd.copy(
+            energyCurve = track.energyCurve.map { point ->
+                if (point.time >= 150.0) point.copy(energy = 0.0) else point
+            },
+        )
+        assertEquals(150.0, autoMixPlayableEnd(silence, 200.0))
+    }
+
     /** A synthetic, fully analysed track on a steady grid. */
     private fun track(
         id: String,

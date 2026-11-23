@@ -1146,7 +1146,8 @@ fun NowPlayingScreen(
     val overlayOpen = remember {
         derivedStateOf {
             currentMenuOpen() || showAudioPipeline || showCast || showAudioOutput || showVideoQuality ||
-                showLyricsProviders || showListenTogetherMembers || lyricsShare != null || currentLyricsOffsetOpen
+                showLyricsProviders || showListenTogetherMembers || lyricsShare != null || currentLyricsOffsetOpen ||
+                MixViewRequest.open
         }
     }
     val lyricsShareEnabled = lyricsShareAvailable
@@ -1998,7 +1999,7 @@ fun NowPlayingScreen(
         frost = frost,
         live = spotifyCanvasPresentation,
         // Not the host's ⋯ menu: that takes its own still, of everything.
-        overlayOpen = { overlayOpen.value && !currentMenuOpen() },
+        overlayOpen = { MixViewRequest.open || (overlayOpen.value && !currentMenuOpen()) },
         overlays = playerOverlays,
     ) {
         if (landscape && videoMode) {

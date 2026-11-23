@@ -339,15 +339,19 @@ class TrackAnalyzer internal constructor(
         uri?.let { results[analysisKey(trackId, it)] } ?: TrackAnalysis(trackId = trackId)
 
     /** Wait for the saved result before requesting audio bytes or scheduling a decode. */
-    private fun restoreComplete(trackId: String, storageKey: String): Boolean {
+    private fun restoreComplete(trackId: String, storageKey: String, durationSeconds: Double): Boolean {
         if (results.containsKey(storageKey) || restoreLookups[storageKey] == true) return true
         if (restoreLookups.putIfAbsent(storageKey, false) == null) {
             restoreExecutor.execute {
                 try {
                     val stored = store.load(storageKey)
-                    if (stored?.isUsable == true) {
-                        Log.d(TAG, "Restored analysis for $trackId: bpm=${stored.bpm} conf=${stored.beatConfidence}")
-                        results.putIfAbsent(storageKey, stored.copy(trackId = trackId))
+                    if (stored != null) {
+                        if (stored.isConsistentWithPlayback(durationSeconds)) {
+                            Log.d(TAG, "Restored validated analysis for $trackId: bpm=${stored.bpm} conf=${stored.beatConfidence}")
+                            results.putIfAbsent(storageKey, stored.copy(trackId = trackId))
+                        } else {
+                            Log.d(TAG, "AutoMix will refresh inconsistent saved analysis for $trackId")
+                        }
                     }
                 } finally {
                     restoreLookups[storageKey] = true
@@ -408,7 +412,7 @@ class TrackAnalyzer internal constructor(
         val playbackKey = if (local) null else cache.cacheKeyOf(uri)
         val storageKey = analysisKey(trackId, uri, playbackKey)
         if (storageKey in running) return null
-        if ((!local || revision?.stamp != null) && !restoreComplete(trackId, storageKey)) return null
+        if ((!local || revision?.stamp != null) && !restoreComplete(trackId, storageKey, durationSeconds)) return null
 
         val recorded = results[storageKey]
         if (recorded?.isUsable == true && storageKey !in provisional) return null
@@ -1608,4 +1612,29 @@ internal fun agreesWithNearbyBeatGrid(
     }
     return phaseError(start) <= 0.04 && phaseError(end) <= 0.04 &&
         phaseError(beats.minBy { abs(it - middle) }) <= 0.04
+}
+
+/** Cheap enough for saved local and downloaded tracks, even before decoding starts. */
+internal fun TrackAnalysis.isConsistentWithPlayback(playbackDuration: Double): Boolean {
+    if (!isUsable || bpm !in MIN_BPM..MAX_BPM || beatConfidence !in 0.0..1.0 ||
+        !duration.isFinite() || duration <= 0.0
+    ) return false
+    if (playbackDuration.isFinite() && playbackDuration > 0.0 &&
+        abs(duration - playbackDuration) > maxOf(3.0, playbackDuration * 0.02)
+    ) return false
+
+    val timeline = 0.0..(duration + 0.25)
+    val audibleStart = audibleStartTime
+    if (contentEndTime !in timeline || firstBeat !in timeline ||
+        (audibleStart != null && audibleStart !in timeline)
+    ) return false
+
+    fun measured(times: List<Double>): Boolean =
+        times.indices.all { index -> times[index] in timeline && (index == 0 || times[index] >= times[index - 1]) }
+
+    if (!measured(downbeats)) return false
+    return listOfNotNull(headBeats, tailBeats).all { side ->
+        side.bpm in MIN_BPM..MAX_BPM && side.confidence in 0.0..1.0 &&
+            measured(side.beats) && measured(side.downbeats)
+    }
 }
