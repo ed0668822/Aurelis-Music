@@ -6494,19 +6494,36 @@ private fun FrostedMenuPanel(
 @Composable
 private fun OfflineConnectionPill(hazeState: HazeState, glass: Boolean) {
     val surface = MaterialTheme.colorScheme.surface
+    // Haze samples the page behind this pill, so inherited theme text colours
+    // can disappear over dynamic artwork. Keep contrast independently of glass.
+    val labelColor = if (glass) Color.White else MaterialTheme.colorScheme.onSurface
     Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {
         Surface(
             shape = CircleShape,
-            color = if (glass) Color.Transparent else surface,
+            color = if (glass) Color(0xCC23252C) else surface,
             modifier = Modifier.clip(CircleShape).then(
                 if (glass) Modifier.optimizedHazeEffect(hazeState, HazeMaterials.thin(surface)) else Modifier,
             ),
         ) {
-            Text(
-                text = stringResource(R.string.no_internet_connection),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+            Row(
+                modifier = Modifier
+                    .background(if (glass) Color(0xD923252C) else Color.Transparent, CircleShape)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.CloudOff,
+                    contentDescription = null,
+                    tint = labelColor,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = stringResource(R.string.no_internet_connection),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = labelColor,
+                )
+            }
         }
     }
 }
