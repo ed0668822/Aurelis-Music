@@ -262,6 +262,12 @@
     <string name="synced_lyrics">Testi sincronizzati</string>
     <string name="synced_lyrics_subtitle">Evidenzia le parole sul player mentre vengono cantate</string>
     <string name="lyrics_sources">Sorgenti testi</string>
+    <string name="automix_storage_title">Archiviazione AutoMix</string>
+    <string name="automix_storage_loading">Verifica delle analisi salvate…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d analisi di un brano salvata</item>
+        <item quantity="other">%1$d analisi di brani salvate</item>
+    </plurals>
     <string name="song_cache_limit">Limite cache brani</string>
     <string name="clear_song_cache">Svuota cache brani</string>
     <string name="clear_song_cache_subtitle">Libera lo spazio usato dall\'audio scaricato</string>
@@ -1515,4 +1521,8 @@
     <string name="playlist_on_youtube">Su YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Connettiti a Internet per creare una playlist su YouTube Music.</string>
     <string name="youtube_liked_music">Brani che ti piacciono su YouTube Music</string>
+    <string name="replaygain_album_mode">Normalizza un intero album</string>
+    <string name="replaygain_album_mode_subtitle">Analizza l’intero album quando possibile; altrimenti usa il guadagno di ogni brano</string>
+    <string name="best_part_button">Pulsante Parte migliore</string>
+    <string name="best_part_button_subtitle">Vai al punto più riascoltato o a un ritornello ripetuto, se disponibile</string>
 </resources>

@@ -733,6 +733,9 @@ private fun SlidingPlayerDeck(
     if (mounted) {
         Box(
             modifier = modifier
+                // Keep footer hit targets above the animated queue/lyrics
+                // panes when their transforms briefly extend over this deck.
+                .zIndex(1f)
                 .graphicsLayer {
                     this.alpha = alpha.value
                     // No buffer of its own to fade through: one would cut the
@@ -1146,7 +1149,8 @@ fun NowPlayingScreen(
     val overlayOpen = remember {
         derivedStateOf {
             currentMenuOpen() || showAudioPipeline || showCast || showAudioOutput || showVideoQuality ||
-                showLyricsProviders || showListenTogetherMembers || lyricsShare != null || currentLyricsOffsetOpen
+                showLyricsProviders || showListenTogetherMembers || lyricsShare != null || currentLyricsOffsetOpen ||
+                MixViewRequest.open
         }
     }
     val lyricsShareEnabled = lyricsShareAvailable
@@ -1998,7 +2002,7 @@ fun NowPlayingScreen(
         frost = frost,
         live = spotifyCanvasPresentation,
         // Not the host's ⋯ menu: that takes its own still, of everything.
-        overlayOpen = { overlayOpen.value && !currentMenuOpen() },
+        overlayOpen = { MixViewRequest.open || (overlayOpen.value && !currentMenuOpen()) },
         overlays = playerOverlays,
     ) {
         if (landscape && videoMode) {

@@ -221,6 +221,12 @@
     <string name="synced_lyrics">Letras sincronizadas</string>
     <string name="synced_lyrics_subtitle">Destaca as palavras no player conforme são cantadas</string>
     <string name="lyrics_sources">Fontes de letras</string>
+    <string name="automix_storage_title">Armazenamento do AutoMix</string>
+    <string name="automix_storage_loading">Verificando as análises salvas…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d análise de música salva</item>
+        <item quantity="other">%1$d análises de músicas salvas</item>
+    </plurals>
     <string name="song_cache_limit">Limite de cache de músicas</string>
     <string name="clear_song_cache">Limpar cache de músicas</string>
     <string name="clear_song_cache_subtitle">Libera espaço usado pelo áudio baixado</string>
@@ -1581,4 +1587,8 @@
     <string name="playlist_on_youtube">No YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Conecte-se à internet para criar uma playlist no YouTube Music.</string>
     <string name="youtube_liked_music">Músicas curtidas no YouTube Music</string>
+    <string name="replaygain_album_mode">Normalizar um álbum inteiro</string>
+    <string name="replaygain_album_mode_subtitle">Analisa o álbum inteiro quando disponível; caso contrário, usa o ganho de cada faixa</string>
+    <string name="best_part_button">Botão Melhor trecho</string>
+    <string name="best_part_button_subtitle">Pula para o trecho mais reproduzido ou para um refrão repetido, quando disponível</string>
 </resources>

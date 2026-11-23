@@ -32,9 +32,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -65,6 +68,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.material.icons.Icons
@@ -72,6 +76,10 @@ import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -121,6 +129,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
@@ -235,6 +244,7 @@ import com.music.aurelis.playback.contextEntryKey
 import com.music.aurelis.playback.toMediaItem
 import com.music.aurelis.playback.toSong
 import com.music.aurelis.playback.toDirectYouTubeMediaItem
+import com.music.aurelis.playback.cycleRepeat
 import com.music.aurelis.playback.toggleAutoplay
 import com.music.aurelis.playback.toggleShuffle
 import com.music.aurelis.playback.upgradeQuality
@@ -285,6 +295,7 @@ import com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.rememberSnapshotBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.snapshotBackdropSource
 import com.music.aurelis.ui.components.isGlassSupported
+import com.music.aurelis.ui.components.lightweightLiquidGlass
 import com.music.aurelis.data.sources.SourceConfig
 import com.music.aurelis.data.sources.SourceKind
 import com.music.aurelis.data.sources.SourceRegistry
@@ -350,13 +361,13 @@ import com.music.aurelis.ui.screens.sortedForDetail
 import com.music.aurelis.ui.screens.ExploreScreen
 import com.music.aurelis.ui.screens.LocalFolder
 import com.music.aurelis.ui.screens.DuplicateReviewSheet
+import com.music.aurelis.ui.screens.libraryGlass
 import com.music.aurelis.ui.screens.LocalFolderState
 import com.music.aurelis.ui.screens.LocalFolderTab
 import com.music.aurelis.ui.screens.rememberLocalFolderGroups
 import com.music.aurelis.ui.screens.localFolderItems
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.music.aurelis.ui.screens.localizedLabel
 import com.music.aurelis.data.LocalGroups
 import com.music.aurelis.data.sortedForLibrary
@@ -573,7 +584,7 @@ private fun AurelisApp(
     val glassSamplesBackdrop = glassActive && !reduceDynamicBlur
     val online by viewModel.online.collectAsStateWithLifecycle()
     val offlineBanner: (@Composable () -> Unit)? = if (online) null else {
-        { OfflineConnectionPill(hazeState, glassSamplesBackdrop) }
+        { OfflineConnectionPill(glassEnabled = glassActive, reduceDynamicBlur = reduceDynamicBlur) }
     }
 
     // What folds [GlassNavBar] between its expanded and inline shapes. Held here
@@ -2689,21 +2700,10 @@ private fun AurelisApp(
             // before its asynchronous reorder command has actually landed.
             onToggleShuffle = { controller?.toggleShuffle() },
             onCycleRepeat = {
-                controller?.let {
-                    val next = when (it.repeatMode) {
-                        Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-                        Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-                        else -> Player.REPEAT_MODE_OFF
-                    }
-                    // Persist the new repeat mode so it survives app restarts.
-                    AppSettings.setRepeatMode(next)
-                    // Nothing else to do here: PlaybackService watches the
-                    // repeat mode itself and takes AutoPlay's tracks out of
-                    // the queue for the duration of repeat-all — and, unlike
-                    // this screen, is still around to put them back when the
-                    // loop ends.
-                    it.repeatMode = next
-                }
+                // All three queue-mode controls now travel through the same
+                // service session. The active AutoMix deck owns the repeat
+                // state, not a potentially stale controller snapshot.
+                controller?.cycleRepeat()
             },
             onToggleAutoplay = {
                 // PlaybackService owns the setting and queue extension so
@@ -3871,7 +3871,9 @@ private fun AurelisApp(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 30.dp, vertical = 18.dp),
+                                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                                                .libraryGlass(animate = glassActive && !reduceDynamicBlur)
+                                                .padding(horizontal = 16.dp, vertical = 18.dp),
                                         ) {
                                             Text(
                                                 text = localTitle,
@@ -3939,7 +3941,7 @@ private fun AurelisApp(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                                                 ) {
-                                                    Icon(Icons.Rounded.Check, contentDescription = null)
+                                                    Icon(Icons.Rounded.ContentCopy, contentDescription = null)
                                                     Spacer(Modifier.width(10.dp))
                                                     Text(
                                                         if (Locale.getDefault().language == "es")
@@ -5319,23 +5321,72 @@ private fun AurelisApp(
         }
 
         if (choosingPlaylistDestination) {
+            val dialogShape = RoundedCornerShape(30.dp)
+            val useGlass = glassActive && !reduceDynamicBlur
             AlertDialog(
                 onDismissRequest = { choosingPlaylistDestination = false },
-                title = { Text(stringResource(R.string.new_playlist)) },
-                text = {
-                    Column {
-                        TextButton(onClick = {
-                            choosingPlaylistDestination = false
-                            creatingOfflinePlaylist = true
-                        }) { Text(stringResource(R.string.playlist_on_device)) }
-                        TextButton(enabled = online, onClick = {
-                            choosingPlaylistDestination = false
-                            if (signedIn) creatingPlaylist = true else webSession = WebSessionMode.SIGN_IN
-                        }) { Text(stringResource(R.string.playlist_on_youtube)) }
-                        if (!online) Text(
-                            stringResource(R.string.playlist_youtube_requires_connection),
-                            style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .widthIn(max = 420.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surface.copy(alpha = if (useGlass) 0.82f else 1f),
+                        dialogShape,
+                    )
+                    // This does not sample a backdrop: safe even while a page is
+                    // recording itself for the bottom navigation's glass surface.
+                    .lightweightLiquidGlass(
+                        shape = dialogShape,
+                        fallbackColor = MaterialTheme.colorScheme.surface,
+                    ),
+                shape = dialogShape,
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp,
+                title = {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(stringResource(R.string.new_playlist))
+                        Text(
+                            stringResource(R.string.playlist_destination_subtitle),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.animateContentSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        PlaylistDestinationOption(
+                            icon = Icons.Rounded.LibraryMusic,
+                            title = stringResource(R.string.playlist_on_device),
+                            subtitle = stringResource(R.string.device_playlists),
+                            enabled = true,
+                            onClick = {
+                                choosingPlaylistDestination = false
+                                creatingOfflinePlaylist = true
+                            },
+                        )
+                        PlaylistDestinationOption(
+                            icon = Icons.Rounded.Cloud,
+                            title = stringResource(R.string.playlist_on_youtube),
+                            subtitle = stringResource(R.string.youtube_playlists),
+                            enabled = online,
+                            onClick = {
+                                choosingPlaylistDestination = false
+                                if (signedIn) creatingPlaylist = true else webSession = WebSessionMode.SIGN_IN
+                            },
+                        )
+                        AnimatedVisibility(
+                            visible = !online,
+                            enter = fadeIn(tween(180)),
+                            exit = fadeOut(tween(140)),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.playlist_youtube_requires_connection),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                            )
+                        }
                     }
                 },
                 confirmButton = {},
@@ -6490,24 +6541,114 @@ private fun FrostedMenuPanel(
     }
 }
 
-@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
-private fun OfflineConnectionPill(hazeState: HazeState, glass: Boolean) {
-    val surface = MaterialTheme.colorScheme.surface
-    Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {
-        Surface(
-            shape = CircleShape,
-            color = if (glass) Color.Transparent else surface,
-            modifier = Modifier.clip(CircleShape).then(
-                if (glass) Modifier.optimizedHazeEffect(hazeState, HazeMaterials.thin(surface)) else Modifier,
-            ),
+private fun OfflineConnectionPill(glassEnabled: Boolean, reduceDynamicBlur: Boolean) {
+    val shape = CircleShape
+    val showLightweightGlass = glassEnabled && !reduceDynamicBlur
+    val labelColor = if (showLightweightGlass) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+    // This banner is drawn *inside* the page's layerBackdrop source.
+    // Modifier.liquidGlass would sample that same layer from within itself and
+    // may crash the renderer as soon as the network status turns offline.
+    // The lightweight material keeps the glass tint, rim and highlights but
+    // does not capture the backdrop, preventing a circular read on cold start
+    // and during connectivity changes.
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            modifier = Modifier
+                .then(
+                    if (showLightweightGlass) {
+                        Modifier
+                            .background(Color(0xD0161B25), shape)
+                            .lightweightLiquidGlass(
+                                shape = shape,
+                                fallbackColor = Color(0xFF20252E),
+                            )
+                    } else {
+                        Modifier.background(MaterialTheme.colorScheme.surfaceVariant, shape)
+                    },
+                )
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Icon(
+                imageVector = Icons.Rounded.CloudOff,
+                contentDescription = null,
+                tint = labelColor,
+                modifier = Modifier.size(18.dp),
+            )
             Text(
                 text = stringResource(R.string.no_internet_connection),
                 style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                color = labelColor,
             )
         }
+    }
+}
+
+/**
+ * An accessible destination choice with a subtle press animation. The entire row
+ * is tappable; unlike a decorative chip, a disabled cloud choice cannot submit.
+ */
+@Composable
+private fun PlaylistDestinationOption(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.97f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "playlist-destination-press",
+    )
+    val shape = RoundedCornerShape(18.dp)
+    val contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.40f)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(shape)
+            .background(contentColor.copy(alpha = if (enabled) 0.09f else 0.04f))
+            .clickable(
+                enabled = enabled,
+                interactionSource = interaction,
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .background(contentColor.copy(alpha = 0.10f), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = contentColor)
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = contentColor)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor.copy(alpha = 0.72f),
+            )
+        }
+        Icon(
+            imageVector = Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = contentColor.copy(alpha = 0.65f),
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 

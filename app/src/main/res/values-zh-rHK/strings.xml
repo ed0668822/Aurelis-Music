@@ -216,6 +216,11 @@
     <string name="synced_lyrics">同步歌詞</string>
     <string name="synced_lyrics_subtitle">隨著演唱在播放器上高亮顯示歌詞</string>
     <string name="lyrics_sources">歌詞來源</string>
+    <string name="automix_storage_title">AutoMix 儲存空間</string>
+    <string name="automix_storage_loading">正在檢查已儲存的分析…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">已儲存 %1$d 首歌曲的分析</item>
+    </plurals>
     <string name="song_cache_limit">歌曲快取上限</string>
     <string name="clear_song_cache">清除歌曲快取</string>
     <string name="clear_song_cache_subtitle">釋放已下載音訊佔用的空間</string>
@@ -1557,4 +1562,8 @@
     <string name="playlist_on_youtube">在 YouTube Music 上</string>
     <string name="playlist_youtube_requires_connection">請連上互聯網，以便在 YouTube Music 上建立播放清單。</string>
     <string name="youtube_liked_music">在 YouTube Music 上按讚的歌曲</string>
+    <string name="replaygain_album_mode">正規化整張專輯音量</string>
+    <string name="replaygain_album_mode_subtitle">可用時分析整張專輯，否則使用每首歌曲的增益</string>
+    <string name="best_part_button">精彩片段按鈕</string>
+    <string name="best_part_button_subtitle">跳至最多人重播的片段或重複副歌（如有）</string>
 </resources>

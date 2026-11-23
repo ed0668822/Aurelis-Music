@@ -224,6 +224,13 @@
     <string name="synced_lyrics">מילות שיר מסונכרנות</string>
     <string name="synced_lyrics_subtitle">מדגיש את המילים בנגן בזמן שהן מושרות</string>
     <string name="lyrics_sources">מקורות מילות שיר</string>
+    <string name="automix_storage_title">אחסון AutoMix</string>
+    <string name="automix_storage_loading">בודק את ניתוחי השירים השמורים…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d ניתוח שמור של שיר</item>
+        <item quantity="two">%1$d ניתוחים שמורים של שירים</item>
+        <item quantity="other">%1$d ניתוחים שמורים של שירים</item>
+    </plurals>
     <string name="song_cache_limit">מגבלת מטמון שירים</string>
     <string name="clear_song_cache">ניקוי מטמון שירים</string>
     <string name="clear_song_cache_subtitle">משחרר שטח שתפוס על ידי אודיו שהורד</string>
@@ -1603,4 +1610,8 @@
     <string name="playlist_on_youtube">ב-YouTube Music</string>
     <string name="playlist_youtube_requires_connection">כדי ליצור פלייליסט ב-YouTube Music, צריך להתחבר לאינטרנט.</string>
     <string name="youtube_liked_music">שירים שאהבת ב-YouTube Music</string>
+    <string name="replaygain_album_mode">נרמול עוצמת הקול של אלבום שלם</string>
+    <string name="replaygain_album_mode_subtitle">מנתח את האלבום כולו כאשר ניתן; אחרת משתמש בהגברה של כל רצועה</string>
+    <string name="best_part_button">כפתור הקטע המוצלח ביותר</string>
+    <string name="best_part_button_subtitle">מעבר לקטע המושמע שוב הכי הרבה או לפזמון חוזר, אם זמין</string>
 </resources>

@@ -364,6 +364,12 @@
     <string name="synced_lyrics">싱크 가사</string>
     <string name="synced_lyrics_subtitle">지금 불리는 가사를 밝게 표시합니다</string>
     <string name="lyrics_sources">가사 소스</string>
+    <string name="automix_storage_title">AutoMix 저장공간</string>
+    <string name="automix_storage_loading">저장된 분석을 확인하는 중…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">곡 분석 %1$d개 저장됨</item>
+        <item quantity="other">곡 분석 %1$d개 저장됨</item>
+    </plurals>
     <string name="song_cache_limit">음악 캐시 제한</string>
     <string name="clear_song_cache">음악 캐시 지우기</string>
     <string name="clear_song_cache_subtitle">다운로드한 오디오가 차지한 공간을 확보합니다</string>
@@ -1426,4 +1432,8 @@
     <string name="playlist_on_youtube">YouTube Music에 저장</string>
     <string name="playlist_youtube_requires_connection">YouTube Music에서 재생목록을 만들려면 인터넷에 연결하세요.</string>
     <string name="youtube_liked_music">YouTube Music에서 좋아요 표시한 음악</string>
+    <string name="replaygain_album_mode">앨범 전체 음량 정규화</string>
+    <string name="replaygain_album_mode_subtitle">가능한 경우 앨범 전체를 분석하고, 그렇지 않으면 각 트랙의 게인을 사용합니다</string>
+    <string name="best_part_button">하이라이트 버튼</string>
+    <string name="best_part_button_subtitle">확인된 최다 반복 재생 구간 또는 반복 후렴으로 이동합니다</string>
 </resources>

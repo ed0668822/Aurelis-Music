@@ -19,6 +19,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -99,17 +100,19 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlin.math.sin
 
 private val PopupShape = RoundedCornerShape(24.dp)
 private val ScrimColor = Color.Black.copy(alpha = 0.6f)
-private val PopupColor = Color(0xFF0D0D0D)
+private val PopupColor = Color(0xFF10151D)
+private val GlassTint = Color(0xFF131C29)
 private val PopupMaxWidth = 480.dp
 
 /** The decks' geometry: the whole well, each deck, and the gap between them. */
-private val DecksHeight = 288.dp
+private val DecksHeight = 306.dp
 private val DeckHeight = 110.dp
-private val DeckTop = 16.dp
+private val DeckTop = 26.dp
 private val DeckBottomInset = 34.dp
 
 /** The DJ deck palette: lows, mids, highs, the transition frame and the faders. */
@@ -124,8 +127,8 @@ private class WaveColors(val low: Color, val mid: Color, val high: Color)
 private val DefaultWaveColors = WaveColors(LowColor, MidColor, HighColor)
 private val FrameColor = Color(0xFF3A9BDC)
 private val FaderColor = Color(0xFFF2C230)
-private val PanelColor = Color(0xFF1E1E1E)
-private val ChipColor = Color(0xFF2A2A2A)
+private val PanelColor = Color(0xFF152A40)
+private val ChipColor = Color(0xFF293A4C)
 private val SecondaryText = Color.White.copy(alpha = 0.55f)
 
 /**
@@ -165,6 +168,15 @@ internal fun MixViewPopup(
     LaunchedEffect(visible) { shown = visible }
     val scrimAlpha by animateFloatAsState(if (shown) 1f else 0f, tween(200), label = "mixViewScrim")
     val reduceDynamicBlur by PlayerSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
+    val frost = LocalPlayerFrost.current
+    val surface = when {
+        reduceDynamicBlur -> Modifier.background(PopupColor)
+        frost != null -> with(frost) {
+            Modifier.frostPanel(PopupShape, GlassTint.copy(alpha = 0.64f))
+        }
+        else -> Modifier.optimizedHazeEffect(state = hazeState, style = HazeMaterials.regular(GlassTint))
+            .background(GlassTint.copy(alpha = 0.65f))
+    }
 
     Box(
         modifier = modifier
@@ -196,17 +208,16 @@ internal fun MixViewPopup(
                     .fillMaxWidth()
                     .padding(horizontal = 26.dp)
                     .clip(PopupShape)
-                    .then(
-                        if (reduceDynamicBlur) {
-                            Modifier.background(PopupColor)
-                        } else {
-                            Modifier
-                                .optimizedHazeEffect(
-                                    state = hazeState,
-                                    style = HazeMaterials.regular(PopupColor),
-                                )
-                                .background(PopupColor.copy(alpha = 0.94f))
-                        },
+                    .then(surface)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFE0EEFF).copy(alpha = 0.12f), Color.Transparent, Color.Black.copy(alpha = 0.2f)),
+                        ),
+                    )
+                    .border(
+                        1.dp,
+                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.08f))),
+                        PopupShape,
                     )
                     // Taps on the card are the card's, not the scrim's.
                     .clickable(
@@ -457,7 +468,9 @@ private fun MixDecks(view: MixTransitionView, progress: State<Float>, live: Bool
                 .width(panelWidth)
                 .height(DecksHeight - 20.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(PanelColor.copy(alpha = 0.85f)),
+                .background(
+                    Brush.verticalGradient(listOf(PanelColor.copy(alpha = 0.78f), PanelColor.copy(alpha = 0.32f))),
+                ),
         )
         Canvas(Modifier.fillMaxSize()) {
             val deckHeight = DeckHeight.toPx()
@@ -468,14 +481,37 @@ private fun MixDecks(view: MixTransitionView, progress: State<Float>, live: Bool
             // The playhead, through both decks at once: they are the same moment.
             // Gone once the blend is over rather than parked at its end.
             if (live) {
-                val x = size.width * (BoxStart + (BoxEnd - BoxStart) * progress.value.coerceIn(0f, 1f))
-                drawLine(
-                    color = Color.White.copy(alpha = 0.9f),
-                    start = Offset(x, topDeck - 6.dp.toPx()),
-                    end = Offset(x, bottomDeck + deckHeight + 6.dp.toPx()),
-                    strokeWidth = 1.5.dp.toPx(),
+                val fraction = progress.value.coerceIn(0f, 1f)
+                val x = size.width * (BoxStart + (BoxEnd - BoxStart) * fraction)
+                val top = topDeck - 5.dp.toPx()
+                val bottom = bottomDeck + deckHeight
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        listOf(FrameColor.copy(alpha = 0.22f), FrameColor.copy(alpha = 0.02f)),
+                        startX = size.width * BoxStart,
+                        endX = size.width * BoxEnd,
+                    ),
+                    topLeft = Offset(size.width * BoxStart, topDeck),
+                    size = Size((x - size.width * BoxStart).coerceAtLeast(0f), bottom - topDeck),
                 )
+                drawLine(FrameColor.copy(alpha = 0.23f), Offset(x, top), Offset(x, bottom), 7.dp.toPx())
+                drawLine(Color.White.copy(alpha = 0.94f), Offset(x, top), Offset(x, bottom), 1.5.dp.toPx())
+                listOf(topDeck to view.fadeOut, bottomDeck to view.fadeIn).forEach { (deckTop, curve) ->
+                    if (curve.isNotEmpty()) {
+                        val y = deckTop + deckHeight - deckHeight / 2f * sample(curve, fraction)
+                        drawCircle(FaderColor, radius = 4.dp.toPx(), center = Offset(x, y))
+                        drawCircle(Color.White, radius = 1.5.dp.toPx(), center = Offset(x, y))
+                    }
+                }
             }
+        }
+        if (!pending) {
+            MixTimeline(view.outStart, view.outEnd, Modifier.offset(x = panelStart).width(panelWidth))
+            MixTimeline(
+                view.inStart, view.inEnd,
+                Modifier.offset(x = panelStart, y = DecksHeight - DeckBottomInset - DeckHeight - 22.dp)
+                    .width(panelWidth),
+            )
         }
         Row(
             modifier = Modifier
@@ -492,18 +528,32 @@ private fun MixDecks(view: MixTransitionView, progress: State<Float>, live: Bool
                 SkeletonBlock(sweep, Modifier.width(44.dp).height(13.dp))
             } else {
                 val bars = (view.beats / 4f).roundToInt().coerceAtLeast(1)
+                val seconds = stringResource(Res.string.mix_view_seconds, (view.outEnd - view.outStart).roundToInt())
+                val beatLabel = when {
+                    view.beats <= 0 -> null
+                    bars == 1 -> stringResource(Res.string.mix_view_one_bar)
+                    else -> stringResource(Res.string.mix_view_bars, bars)
+                }
                 Text(
-                    text = when {
-                        view.beats <= 0 -> stringResource(Res.string.mix_view_seconds, (view.outEnd - view.outStart).roundToInt())
-                        bars == 1 -> stringResource(Res.string.mix_view_one_bar)
-                        else -> stringResource(Res.string.mix_view_bars, bars)
-                    },
+                    text = if (beatLabel == null) seconds else "$beatLabel · $seconds",
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun MixTimeline(start: Double, end: Double, modifier: Modifier = Modifier) {
+    if (!start.isFinite() || !end.isFinite() || end <= start) return
+    Row(
+        modifier = modifier.padding(horizontal = 3.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(formatDeckDuration((start * 1_000).roundToLong()), color = SecondaryText, fontSize = 10.sp)
+        Text(formatDeckDuration((end * 1_000).roundToLong()), color = SecondaryText, fontSize = 10.sp)
     }
 }
 
@@ -534,6 +584,9 @@ private fun DrawScope.drawDeck(
 
     // The beat grid, under everything.
     clipRect(boxLeft, top, boxRight, floor) {
+        for (y in listOf(centre, (centre + floor) / 2f)) {
+            drawLine(Color.White.copy(alpha = 0.12f), Offset(boxLeft, y), Offset(boxRight, y), 1.dp.toPx())
+        }
         view.beatMarks.forEachIndexed { index, mark ->
             val x = boxLeft + boxWidth * mark
             drawLine(
@@ -604,7 +657,7 @@ private fun DrawScope.drawDeck(
             lineTo(boxRight, top)
         }
     }
-    drawPath(edge, FrameColor, style = frame)
+    drawPath(edge, FrameColor.copy(alpha = 0.88f), style = frame)
 
     // The fader, along the frame.
     if (fader.isNotEmpty()) {
@@ -614,6 +667,7 @@ private fun DrawScope.drawDeck(
             val y = floor - (floor - centre) * level
             if (index == 0) line.moveTo(x, y) else line.lineTo(x, y)
         }
+        drawPath(line, FaderColor.copy(alpha = 0.19f), style = Stroke(width = 6.dp.toPx(), join = StrokeJoin.Round))
         drawPath(line, FaderColor, style = frame)
     }
 }

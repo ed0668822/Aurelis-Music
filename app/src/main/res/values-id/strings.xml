@@ -214,6 +214,11 @@
     <string name="synced_lyrics">Lirik tersinkron</string>
     <string name="synced_lyrics_subtitle">Menyorot kata-kata di pemutar saat dinyanyikan</string>
     <string name="lyrics_sources">Sumber lirik</string>
+    <string name="automix_storage_title">Penyimpanan AutoMix</string>
+    <string name="automix_storage_loading">Memeriksa analisis yang tersimpan…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">%1$d analisis lagu tersimpan</item>
+    </plurals>
     <string name="song_cache_limit">Batas cache lagu</string>
     <string name="clear_song_cache">Bersihkan cache lagu</string>
     <string name="clear_song_cache_subtitle">Membebaskan ruang yang digunakan oleh audio yang diunduh</string>
@@ -1553,4 +1558,8 @@
     <string name="playlist_on_youtube">Di YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Hubungkan ke internet untuk membuat playlist di YouTube Music.</string>
     <string name="youtube_liked_music">Lagu yang disukai di YouTube Music</string>
+    <string name="replaygain_album_mode">Normalisasi seluruh album</string>
+    <string name="replaygain_album_mode_subtitle">Menganalisis seluruh album jika tersedia; jika tidak, gunakan penguatan setiap lagu</string>
+    <string name="best_part_button">Tombol Bagian terbaik</string>
+    <string name="best_part_button_subtitle">Langsung ke bagian yang paling sering diputar ulang atau refrein berulang, jika tersedia</string>
 </resources>

@@ -1372,6 +1372,38 @@ private fun standardTransition(
     )
 }
 
+/** Keeps AutoMix near the end of the music, allowing a measured silent tail. */
+fun autoMixPlayableEnd(analysis: TrackAnalysis, duration: Double): Double {
+    val end = analysis.contentEndTime
+    if (!analysis.isUsable || end <= 0.0 || end >= duration || !end.isFinite()) return duration
+    if (duration - end <= 6.0) return end
+    if ((analysis.energyCurve.lastOrNull()?.time ?: 0.0) < duration - 2.0) return duration
+    return if ((audibleSecondsBetween(analysis, end, duration) ?: Double.POSITIVE_INFINITY) <= 2.0) {
+        end
+    } else {
+        duration
+    }
+}
+
+fun autoMixEarliestStart(playableEnd: Double): Double = (playableEnd - 30.0).coerceAtLeast(0.0)
+
+fun autoMixTimingIsSafe(start: Double, end: Double, playableEnd: Double): Boolean =
+    start.isFinite() && end.isFinite() &&
+        end - start >= 2.0 && end >= playableEnd - 8.0 && start >= autoMixEarliestStart(playableEnd)
+
+/** Keep the musical plan if it fits. Otherwise use the same end for preview and playback. */
+fun stabilizeAutoMixTiming(
+    plan: TransitionPlan,
+    playableEnd: Double,
+    playbackTime: Double,
+    fallbackSeconds: Double,
+): TransitionPlan {
+    if (plan.blocked || plan.transitionStyle == TransitionStyle.GAPLESS ||
+        autoMixTimingIsSafe(plan.transitionStart, plan.transitionEnd, playableEnd)
+    ) return plan
+    return standardTransition(playableEnd, playbackTime, fallbackSeconds.coerceIn(4.0, 8.0), 2.0, "smart-timing-fallback")
+}
+
 /** A stale analysis paired with the wrong track is worse than no analysis at all. */
 private fun analysisReadyForTrack(analysis: TrackAnalysis, track: TransitionTrackInfo?): Boolean {
     if (analysis.status.isBlank()) return true
@@ -1419,6 +1451,7 @@ fun planTransition(
     advanced: Boolean = false,
     phraseBars: Int = 0,
     mixWindow: Boolean = false,
+    protectedEnd: Double? = null,
 ): TransitionPlan {
     val plan = planTransitionInner(
         analysis = analysis,
@@ -1433,6 +1466,7 @@ fun planTransition(
         albumSequential = albumSequential,
         advanced = advanced,
         phraseBars = phraseBars,
+        protectedEnd = protectedEnd,
     )
     if (!mixWindow) return plan
     return clampToMixWindow(
@@ -1481,6 +1515,7 @@ private fun planTransitionInner(
     albumSequential: Boolean = false,
     advanced: Boolean = false,
     phraseBars: Int = 0,
+    protectedEnd: Double?,
 ): TransitionPlan {
     val length = max(duration.orZero(), trackDurationSeconds(currentTrack))
     val playbackTime = max(0.0, currentTime.orZero())
@@ -1496,14 +1531,19 @@ private fun planTransitionInner(
     }
 
     val analyzedContentEnd = analysis.contentEndTime.orZero().takeIf { it != 0.0 } ?: length
-    val finalMixAnchor = if (analyzedContentEnd > 0 && analyzedContentEnd <= length) {
+    val finalMixAnchor = protectedEnd ?: if (analyzedContentEnd > 0 && analyzedContentEnd <= length) {
         analyzedContentEnd
     } else {
         length
     }
     // Ranked once and kept: the best is the anchor (what [resolveMixOutAnchor]
     // answers), and the rest are where an advanced plan looks for a vocal-free exit.
-    val rankedMixOuts = rankMixOutCandidates(analysis, finalMixAnchor, length)
+    val rankedMixOuts = rankMixOutCandidates(analysis, finalMixAnchor, length).filter {
+        protectedEnd == null || it.time in (finalMixAnchor - 8.0)..finalMixAnchor
+    }
+    fun eligible(plan: TransitionPlan): Boolean =
+        protectedEnd == null || autoMixTimingIsSafe(plan.transitionStart, plan.transitionEnd, protectedEnd)
+
     val mixOutAnchor = rankedMixOuts.firstOrNull()
         ?.let { MixOutAnchor(it.time, it.type, it.discardedMusicSeconds) }
         ?: MixOutAnchor(finalMixAnchor, "content_end", 0.0)
@@ -1622,7 +1662,7 @@ private fun planTransitionInner(
             mixAnchor = mixAnchor,
             advanced = advanced,
         )?.let { plan ->
-            if (playbackTime < plan.transitionEnd) {
+            if (playbackTime < plan.transitionEnd && eligible(plan)) {
                 val started = playbackTime >= plan.transitionStart
                 return capIncomingSkip(
                     plan.copy(
@@ -1638,7 +1678,7 @@ private fun planTransitionInner(
     }
 
     val phrase = phraseSwitch(analysis, nextAnalysis, length, nextLength, advanced)
-        ?.takeIf { playbackTime < it.transitionEnd }
+        ?.takeIf { playbackTime < it.transitionEnd && eligible(it) }
         ?.let { plan ->
             val started = playbackTime >= plan.transitionStart
             capIncomingSkip(
@@ -1651,7 +1691,7 @@ private fun planTransitionInner(
                 nextLength,
             )
         }
-    if (phrase != null && (!advanced || phrase.shouldStart ||
+    if (protectedEnd == null && phrase != null && (!advanced || phrase.shouldStart ||
             audibleOverlapOpening(analysis, phrase.transitionStart, phrase.transitionEnd, 4 * phrase.beatSeconds) != false)
     ) return phrase
 
@@ -1662,21 +1702,25 @@ private fun planTransitionInner(
     // collision. Only planned while it could still be taken: once the playhead
     // is past a start, that plan has already been armed or lost.
     val plan = if (traits != null &&
-        primary.vocalOverlap > VOCAL_REROUTE_OVERLAP &&
+        (!eligible(primary) || primary.vocalOverlap > VOCAL_REROUTE_OVERLAP) &&
         playbackTime < primary.transitionStart
     ) {
         rankedMixOuts.asSequence()
             .filter { abs(it.time - mixAnchor) > 1.0 && it.time <= length }
             .take(MAX_REROUTE_CANDIDATES)
             .map { mixPlan(analysis, nextAnalysis, it.time, it.type, nextLength, traits, playbackTime) }
-            .filter { playbackTime < it.transitionStart }
+            .filter { playbackTime < it.transitionStart && eligible(it) }
             .minByOrNull { it.vocalOverlap }
-            ?.takeIf { it.vocalOverlap <= primary.vocalOverlap * VOCAL_REROUTE_GAIN }
+            ?.takeIf { !eligible(primary) || it.vocalOverlap <= primary.vocalOverlap * VOCAL_REROUTE_GAIN }
             ?: primary
     } else {
         primary
     }
-    if (phrase != null) {
+    if (protectedEnd != null && phrase != null &&
+        (!eligible(plan) || (playbackTime < minOf(plan.transitionStart, phrase.transitionStart) &&
+            phrase.vocalOverlap + 0.08 < plan.vocalOverlap))
+    ) return phrase
+    if (protectedEnd == null && phrase != null) {
         val discarded = audibleSecondsBetween(analysis, plan.transitionEnd, finalMixAnchor)
             ?: max(0.0, finalMixAnchor - plan.transitionEnd)
         val audible = audibleOverlapOpening(analysis, plan.transitionStart, plan.transitionEnd, 4 * phrase.beatSeconds)

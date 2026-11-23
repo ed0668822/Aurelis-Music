@@ -255,6 +255,11 @@
     <string name="synced_lyrics">Lời bài hát đồng bộ</string>
     <string name="synced_lyrics_subtitle">Làm sáng các từ trên trình phát khi đang được hát</string>
     <string name="lyrics_sources">Nguồn lời bài hát</string>
+    <string name="automix_storage_title">Bộ nhớ AutoMix</string>
+    <string name="automix_storage_loading">Đang kiểm tra các bản phân tích đã lưu…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">Đã lưu %1$d bản phân tích bài hát</item>
+    </plurals>
     <string name="song_cache_limit">Giới hạn bộ nhớ đệm bài hát</string>
     <string name="clear_song_cache">Xóa bộ nhớ đệm bài hát</string>
     <string name="clear_song_cache_subtitle">Giải phóng dung lượng do âm thanh đã tải sử dụng</string>
@@ -1493,4 +1498,8 @@
     <string name="playlist_on_youtube">Trên YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Kết nối Internet để tạo danh sách phát trên YouTube Music.</string>
     <string name="youtube_liked_music">Bài hát đã thích trên YouTube Music</string>
+    <string name="replaygain_album_mode">Chuẩn hóa âm lượng toàn bộ album</string>
+    <string name="replaygain_album_mode_subtitle">Phân tích toàn bộ album khi có thể; nếu không thì dùng mức tăng âm lượng của từng bài</string>
+    <string name="best_part_button">Nút Đoạn hay nhất</string>
+    <string name="best_part_button_subtitle">Chuyển đến đoạn được nghe lại nhiều nhất hoặc điệp khúc lặp lại nếu có</string>
 </resources>

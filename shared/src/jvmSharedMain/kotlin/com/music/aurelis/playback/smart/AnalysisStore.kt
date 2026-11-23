@@ -76,6 +76,14 @@ class AnalysisStore(
         encodeDefaults = true
     }
 
+    data class StorageUsage(val analysisCount: Int, val bytes: Long)
+
+    /** Counts committed analysis files without opening their contents. Call off the UI thread. */
+    fun storageUsage(): StorageUsage {
+        val entries = directory.listFiles { file -> file.isFile && file.extension == "json" }.orEmpty()
+        return StorageUsage(entries.size, entries.sumOf(File::length))
+    }
+
     /** Reads [trackId]'s stored analysis, or null when there isn't one. */
     fun load(trackId: String): TrackAnalysis? {
         if (trackId.isBlank()) return null

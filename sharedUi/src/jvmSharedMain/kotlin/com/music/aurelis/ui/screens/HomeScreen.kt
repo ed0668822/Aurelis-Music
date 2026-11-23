@@ -10,9 +10,14 @@ import org.jetbrains.compose.resources.DrawableResource
 import androidx.compose.foundation.Image
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import com.music.aurelis.ui.components.longPressMenuClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +55,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -851,15 +858,29 @@ internal fun NewShelfCard(
     /** A full-colour mark drawn in place of [icon], for a card that stands for a brand. */
     logo: DrawableResource? = null,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.96f else 1f,
+        animationSpec = tween(durationMillis = 160),
+        label = "playlist-card-press",
+    )
     Column(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .graphicsLayer { scaleX = pressScale; scaleY = pressScale }
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(
+                    Brush.verticalGradient(
+                        listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surface),
+                    ),
+                )
+                .thumbnailBorder(RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center,
         ) {
             if (logo != null) {
@@ -940,6 +961,11 @@ internal fun ShelfCard(
     isCurrent: Boolean = false,
     isPlaying: Boolean = false,
 ) {
+    // Applies only to playlists stored on this device, leaving remote album,
+    // artist and recommendation cards unchanged.
+    val devicePlaylist = item.browseId?.let {
+        it.startsWith("local:offline:") || it.startsWith("local:playlist:")
+    } == true
     Column(
         modifier = modifier
             .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress)
@@ -990,20 +1016,78 @@ internal fun ShelfCard(
                 icon = Icons.Rounded.Storage,
             )
             else -> {
+                val coverShape = RoundedCornerShape(if (devicePlaylist) 16.dp else 12.dp)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .thumbnailBorder(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .clip(coverShape)
+                        .then(
+                            if (devicePlaylist) {
+                                Modifier.background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                            },
+                        )
+                        .thumbnailBorder(coverShape)
+                        .then(
+                            if (devicePlaylist) {
+                                Modifier.border(0.75.dp, Color.White.copy(alpha = 0.20f), coverShape)
+                            } else Modifier
+                        ),
+                    contentAlignment = Alignment.Center,
                 ) {
+                    // Preserve actual song/album artwork; only empty device lists
+                    // receive the frosted symbol instead of a flat dark square.
+                    if (devicePlaylist && item.thumbnailUrl.isNullOrBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .size(74.dp)
+                                .background(Color.White.copy(alpha = 0.07f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.LibraryMusic,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.86f),
+                                modifier = Modifier.size(38.dp),
+                            )
+                        }
+                    } else if (!devicePlaylist) {
+                        Icon(
+                            imageVector = Icons.Rounded.LibraryMusic,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                            modifier = Modifier.size(38.dp),
+                        )
+                    }
                     AsyncImage(
                         model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
                         contentDescription = null,
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
+                    if (devicePlaylist) {
+                        // A fixed glint costs no backdrop capture or extra image.
+                        Box(
+                            modifier = Modifier.fillMaxSize().background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.08f),
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.08f),
+                                    ),
+                                ),
+                            ),
+                        )
+                    }
                     if (isCurrent && isPlaying) SearchPlayingBars(Modifier.align(Alignment.Center))
                 }
             }

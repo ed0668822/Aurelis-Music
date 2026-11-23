@@ -238,6 +238,11 @@
     <string name="synced_lyrics">เนื้อเพลงซิงค์</string>
     <string name="synced_lyrics_subtitle">ไฮไลต์คำร้องบนหน้าเครื่องเล่นตามจังหวะที่ร้อง</string>
     <string name="lyrics_sources">แหล่งเนื้อเพลง</string>
+    <string name="automix_storage_title">พื้นที่จัดเก็บ AutoMix</string>
+    <string name="automix_storage_loading">กำลังตรวจสอบผลการวิเคราะห์ที่บันทึกไว้…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">บันทึกผลการวิเคราะห์เพลงแล้ว %1$d เพลง</item>
+    </plurals>
     <string name="song_cache_limit">ขีดจำกัดแคชเพลง</string>
     <string name="clear_song_cache">ล้างแคชเพลง</string>
     <string name="clear_song_cache_subtitle">คืนพื้นที่ที่ใช้โดยเสียงที่ดาวน์โหลดไว้</string>
@@ -1559,4 +1564,8 @@
     <string name="playlist_on_youtube">ใน YouTube Music</string>
     <string name="playlist_youtube_requires_connection">เชื่อมต่ออินเทอร์เน็ตเพื่อสร้างเพลย์ลิสต์ใน YouTube Music</string>
     <string name="youtube_liked_music">เพลงที่กดชอบใน YouTube Music</string>
+    <string name="replaygain_album_mode">ปรับระดับเสียงทั้งอัลบั้ม</string>
+    <string name="replaygain_album_mode_subtitle">วิเคราะห์ทั้งอัลบั้มเมื่อทำได้ มิฉะนั้นจะใช้ค่าเกนของแต่ละเพลง</string>
+    <string name="best_part_button">ปุ่มท่อนที่ดีที่สุด</string>
+    <string name="best_part_button_subtitle">ข้ามไปยังช่วงที่มีการฟังซ้ำมากที่สุดหรือท่อนฮุกที่ซ้ำกันเมื่อมีข้อมูล</string>
 </resources>

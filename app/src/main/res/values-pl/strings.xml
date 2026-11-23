@@ -225,6 +225,14 @@
     <string name="synced_lyrics">Zsynchronizowany tekst</string>
     <string name="synced_lyrics_subtitle">Podświetla słowa na odtwarzaczu w miarę ich śpiewania</string>
     <string name="lyrics_sources">Źródła tekstów</string>
+    <string name="automix_storage_title">Pamięć AutoMix</string>
+    <string name="automix_storage_loading">Sprawdzanie zapisanych analiz…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d zapisana analiza utworu</item>
+        <item quantity="few">%1$d zapisane analizy utworów</item>
+        <item quantity="many">%1$d zapisanych analiz utworów</item>
+        <item quantity="other">%1$d zapisanej analizy utworu</item>
+    </plurals>
     <string name="song_cache_limit">Limit pamięci podręcznej utworów</string>
     <string name="clear_song_cache">Wyczyść pamięć podręczną utworów</string>
     <string name="clear_song_cache_subtitle">Zwalnia miejsce zajmowane przez pobrane pliki audio</string>
@@ -1628,4 +1636,8 @@
     <string name="playlist_on_youtube">W YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Połącz się z internetem, aby utworzyć playlistę w YouTube Music.</string>
     <string name="youtube_liked_music">Polubione utwory w YouTube Music</string>
+    <string name="replaygain_album_mode">Normalizuj cały album</string>
+    <string name="replaygain_album_mode_subtitle">Analizuje cały album, gdy to możliwe; w przeciwnym razie używa wzmocnienia każdej ścieżki</string>
+    <string name="best_part_button">Przycisk Najlepszy fragment</string>
+    <string name="best_part_button_subtitle">Przeskakuje do najczęściej odtwarzanego fragmentu lub powtarzającego się refrenu, jeśli jest dostępny</string>
 </resources>

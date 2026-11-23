@@ -77,7 +77,7 @@ class LocalAutomixAudioInstrumentedTest {
                 val uri = Uri.fromFile(audio)
                 val revision = checkNotNull(LocalAudioSource.revision(context.contentResolver, uri))
                 val key = AutomixAnalysisSource.localStorageKey(id, uri.toString(), revision)
-                store.save(key, TrackAnalysis(status = TrackAnalysis.STATUS_READY, bpm = bpm))
+                store.save(key, TrackAnalysis(status = TrackAnalysis.STATUS_READY, duration = 1.0, bpm = bpm))
                 uri
             }
             executor.submit {

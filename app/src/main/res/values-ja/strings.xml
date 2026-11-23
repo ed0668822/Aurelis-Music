@@ -214,6 +214,11 @@
     <string name="synced_lyrics">同期歌詞</string>
     <string name="synced_lyrics_subtitle">歌われている歌詞をプレイヤー上でハイライト表示します</string>
     <string name="lyrics_sources">歌詞のソース</string>
+    <string name="automix_storage_title">AutoMix ストレージ</string>
+    <string name="automix_storage_loading">保存済みの分析データを確認中…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="other">%1$d 曲分の分析データを保存済み</item>
+    </plurals>
     <string name="song_cache_limit">曲キャッシュの上限</string>
     <string name="clear_song_cache">曲のキャッシュを削除</string>
     <string name="clear_song_cache_subtitle">ダウンロードした音声が使用している容量を解放します</string>
@@ -1554,4 +1559,8 @@
     <string name="playlist_on_youtube">YouTube Music</string>
     <string name="playlist_youtube_requires_connection">YouTube Music でプレイリストを作成するには、インターネットに接続してください。</string>
     <string name="youtube_liked_music">YouTube Music で高く評価した曲</string>
+    <string name="replaygain_album_mode">アルバム全体を音量正規化</string>
+    <string name="replaygain_album_mode_subtitle">可能な場合はアルバム全体を解析し、それ以外は各曲のゲインを使用します</string>
+    <string name="best_part_button">ベストパートボタン</string>
+    <string name="best_part_button_subtitle">利用可能な場合、最も繰り返し再生された部分や繰り返しのサビにジャンプします</string>
 </resources>

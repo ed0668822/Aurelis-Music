@@ -219,6 +219,12 @@
     <string name="synced_lyrics">सिंक किए गए लिरिक्स</string>
     <string name="synced_lyrics_subtitle">गाए जाने के साथ प्लेयर पर शब्दों को हाइलाइट करता है</string>
     <string name="lyrics_sources">लिरिक्स के स्रोत</string>
+    <string name="automix_storage_title">AutoMix स्टोरेज</string>
+    <string name="automix_storage_loading">सेव किए गए विश्लेषण जाँचे जा रहे हैं…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d गाने का विश्लेषण सेव है</item>
+        <item quantity="other">%1$d गानों का विश्लेषण सेव है</item>
+    </plurals>
     <string name="song_cache_limit">गाना कैश सीमा</string>
     <string name="clear_song_cache">गाना कैश साफ़ करें</string>
     <string name="clear_song_cache_subtitle">डाउनलोड किए गए ऑडियो द्वारा इस्तेमाल की गई जगह खाली करता है</string>
@@ -1576,4 +1582,8 @@
     <string name="playlist_on_youtube">YouTube Music पर</string>
     <string name="playlist_youtube_requires_connection">YouTube Music पर प्लेलिस्ट बनाने के लिए इंटरनेट से कनेक्ट करें।</string>
     <string name="youtube_liked_music">YouTube Music पर पसंद किए गए गाने</string>
+    <string name="replaygain_album_mode">पूरे एल्बम का वॉल्यूम सामान्य करें</string>
+    <string name="replaygain_album_mode_subtitle">उपलब्ध होने पर पूरे एल्बम का विश्लेषण करता है; अन्यथा हर ट्रैक का गेन इस्तेमाल करता है</string>
+    <string name="best_part_button">सर्वश्रेष्ठ भाग बटन</string>
+    <string name="best_part_button_subtitle">उपलब्ध होने पर सबसे ज़्यादा दोहराए गए हिस्से या दोहराए गए मुखड़े पर जाएँ</string>
 </resources>

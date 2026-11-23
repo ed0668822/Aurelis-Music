@@ -232,6 +232,12 @@
     <string name="synced_lyrics">Letras sincronizadas</string>
     <string name="synced_lyrics_subtitle">Ilumina las palabras mientras se cantan</string>
     <string name="lyrics_sources">Fuentes de letras</string>
+    <string name="automix_storage_title">Almacenamiento de AutoMix</string>
+    <string name="automix_storage_loading">Consultando análisis guardados…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d análisis de canción guardado</item>
+        <item quantity="other">%1$d análisis de canciones guardados</item>
+    </plurals>
     <string name="song_cache_limit">Límite de caché de canciones</string>
     <string name="clear_song_cache">Borrar caché de canciones</string>
     <string name="clear_song_cache_subtitle">Libera espacio usado por el audio descargado</string>
@@ -861,8 +867,12 @@
 
     <string name="prefer_usb_dac">Preferir DAC USB</string>
     <string name="loudness_normalization">Normalización de volumen</string>
+    <string name="replaygain_album_mode">Normalizar un álbum completo</string>
+    <string name="replaygain_album_mode_subtitle">Analiza el álbum completo cuando está disponible; si no, utiliza la ganancia de cada pista</string>
+    <string name="best_part_button">Botón Mejor parte</string>
+    <string name="best_part_button_subtitle">Salta al momento más repetido o a un estribillo identificado, cuando esté disponible</string>
     <string name="loudness_normalization_subtitle">Iguala la sonoridad de todas las pistas</string>
-    <string name="loudness_off_on_speaker">Desactivar en el altavoz del telefono</string>
+    <string name="loudness_off_on_speaker">Desactivar en el altavoz del teléfono</string>
     <string name="loudness_target">Sonoridad objetivo</string>
     <string name="loudness_target_subtitle">Más bajo va mejor con auriculares; más alto, en el coche o el altavoz del teléfono</string>
     <string name="loudness_target_value">%1$s LUFS</string>

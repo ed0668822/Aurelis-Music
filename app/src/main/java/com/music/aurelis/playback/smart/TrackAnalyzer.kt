@@ -44,6 +44,7 @@ import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.round
 import java.util.Locale
 
 /**
@@ -338,15 +339,19 @@ class TrackAnalyzer internal constructor(
         uri?.let { results[analysisKey(trackId, it)] } ?: TrackAnalysis(trackId = trackId)
 
     /** Wait for the saved result before requesting audio bytes or scheduling a decode. */
-    private fun restoreComplete(trackId: String, storageKey: String): Boolean {
+    private fun restoreComplete(trackId: String, storageKey: String, durationSeconds: Double): Boolean {
         if (results.containsKey(storageKey) || restoreLookups[storageKey] == true) return true
         if (restoreLookups.putIfAbsent(storageKey, false) == null) {
             restoreExecutor.execute {
                 try {
                     val stored = store.load(storageKey)
-                    if (stored?.isUsable == true) {
-                        Log.d(TAG, "Restored analysis for $trackId: bpm=${stored.bpm} conf=${stored.beatConfidence}")
-                        results.putIfAbsent(storageKey, stored.copy(trackId = trackId))
+                    if (stored != null) {
+                        if (stored.isConsistentWithPlayback(durationSeconds)) {
+                            Log.d(TAG, "Restored validated analysis for $trackId: bpm=${stored.bpm} conf=${stored.beatConfidence}")
+                            results.putIfAbsent(storageKey, stored.copy(trackId = trackId))
+                        } else {
+                            Log.d(TAG, "AutoMix will refresh inconsistent saved analysis for $trackId")
+                        }
                     }
                 } finally {
                     restoreLookups[storageKey] = true
@@ -407,7 +412,7 @@ class TrackAnalyzer internal constructor(
         val playbackKey = if (local) null else cache.cacheKeyOf(uri)
         val storageKey = analysisKey(trackId, uri, playbackKey)
         if (storageKey in running) return null
-        if ((!local || revision?.stamp != null) && !restoreComplete(trackId, storageKey)) return null
+        if ((!local || revision?.stamp != null) && !restoreComplete(trackId, storageKey, durationSeconds)) return null
 
         val recorded = results[storageKey]
         if (recorded?.isUsable == true && storageKey !in provisional) return null
@@ -457,7 +462,7 @@ class TrackAnalyzer internal constructor(
             // rest, and a queued track reaches its own transition carrying an
             // entry-only estimate: no content end, no mix-out anchor, no vocal
             // mask, which is most of what the outgoing half of a blend reads.
-            if (storageKey in provisional && !usableComplete) playbackKey?.let { cache.requestPlaybackAnalysisHead(analysisUri, it) }
+            if (storageKey in provisional && !usableComplete) playbackKey?.let { cache.requestPlaybackAnalysisAudio(analysisUri, it) }
             return null
         }
         // One head attempt per track: a partial container that will not parse
@@ -465,11 +470,8 @@ class TrackAnalyzer internal constructor(
         // 250ms would cost more than the analysis it is trying to bring
         // forward. This byte check only applies to an incomplete stream.
         val headRendition = if (usableComplete) null else headWorthTrying(trackId, requireNotNull(playbackKey), durationSeconds)
-        if (!usableComplete && headRendition == null) {
-            // Warm the same playback entry so the next tick can try its opening.
-            playbackKey?.let { cache.requestPlaybackAnalysisHead(analysisUri, it) }
-            return null
-        }
+        if (!usableComplete) playbackKey?.let { cache.requestPlaybackAnalysisAudio(analysisUri, it) }
+        if (!usableComplete && headRendition == null) return null
         if (!canStart) return null
 
         return PendingAnalysis(storageKey, playbackKey ?: storageKey) run@{ threads, parallel ->
@@ -700,7 +702,21 @@ class TrackAnalyzer internal constructor(
             Log.d(TAG, "Head pass for $trackId decoded only ${"%.1f".format(Locale.ROOT, head.seconds)}s; too short")
             return null
         }
-        val grid = head.grid
+        val primary = head.grid
+        // A partial cache can supply the first window without supplying a
+        // shifted one. Leave the provisional result available in that case.
+        val grid = if (primary != null && primary.canBeConfirmed() &&
+            head.seconds >= window - 0.1 && durationSeconds >= window + BEAT_CONFIRMATION_SHIFT_SECONDS
+        ) {
+            val nearby = region(
+                openSource, BEAT_CONFIRMATION_SHIFT_SECONDS, window + BEAT_CONFIRMATION_SHIFT_SECONDS,
+                session, features = null,
+            )?.grid
+            primary.confirmedBy(nearby)
+        } else {
+            primary
+        }
+        if (session.isCancelled()) return null
         val entry = head.features
         if (grid == null && entry == null) {
             Log.d(TAG, "Head pass for $trackId produced nothing usable")
@@ -992,9 +1008,18 @@ class TrackAnalyzer internal constructor(
         }
         if (session.isCancelled()) return WholeTrack(null)
 
-        val beats = seamBeats(regions)
-        val headSide = beatSide(beats, 0.0, headEnd)
-        val tailSide = beatSide(beats, tailStart, effectiveDuration)
+        val measured = regions.mapNotNull { region -> region.grid?.let { region to it } }.sortedBy { it.first.start }
+        val confirmed = measured.mapIndexed { index, (region, grid) ->
+            val previous = measured.getOrNull(index - 1)?.takeIf { (other, _) ->
+                other.start + other.seconds > region.start
+            }?.second
+            val next = measured.getOrNull(index + 1)?.takeIf { (other, _) ->
+                region.start + region.seconds > other.start
+            }?.second
+            region to grid.confirmedBy(previous).confirmedBy(next)
+        }
+        val headSide = beatSide(confirmed, 0.0, headEnd)
+        val tailSide = beatSide(confirmed, tailStart, effectiveDuration)
         val headGrid = headSide?.toGrid()
         val tailGrid = tailSide?.toGrid()
 
@@ -1119,44 +1144,43 @@ class TrackAnalyzer internal constructor(
         return windows
     }
 
-    /** One beat list across the windows: at each overlap, the earlier window's beats before its midpoint, the later's after. */
-    private class Beats(val beats: List<Double>, val downbeats: List<Double>, val confidence: Double)
+    private fun BeatTracker.Grid.canBeConfirmed(): Boolean =
+        beatConfidence >= BEAT_CONFIRMATION_MIN_CONFIDENCE && beatConfidence < MIN_BEATMATCH_CONFIDENCE
 
-    private fun seamBeats(regions: List<Region>): Beats {
-        val graded = regions.filter { it.grid != null }.sortedBy { it.start }
-        if (graded.isEmpty()) return Beats(emptyList(), emptyList(), 0.0)
+    private fun BeatTracker.Grid.confirmedBy(other: BeatTracker.Grid?): BeatTracker.Grid {
+        if (!canBeConfirmed() || other == null || other.beatConfidence < MIN_BEATMATCH_CONFIDENCE) return this
+        if (!agreesWithNearbyBeatGrid(beats, bpm, other.beats, other.bpm)) return this
+        // Keep the measured beats and downbeats of this region. A matching
+        // pulse supports beat matching but cannot relocate a bar or cue.
+        return copy(beatConfidence = MIN_BEATMATCH_CONFIDENCE)
+    }
+
+    /** Keeps the beats on either side of each seam and scores each end independently. */
+    private fun beatSide(
+        measured: List<Pair<Region, BeatTracker.Grid>>,
+        from: Double,
+        to: Double,
+    ): BeatSide? {
         val beats = ArrayList<Double>()
         val downbeats = ArrayList<Double>()
         var weighted = 0.0
-        var count = 0
-        for ((index, region) in graded.withIndex()) {
-            val grid = region.grid!!
-            val previous = graded.getOrNull(index - 1)
-            val next = graded.getOrNull(index + 1)
-            val from = previous?.let { (it.start + it.seconds + region.start) / 2 }
+        for ((index, entry) in measured.withIndex()) {
+            val (region, grid) = entry
+            val previous = measured.getOrNull(index - 1)?.first
+            val next = measured.getOrNull(index + 1)?.first
+            val after = previous?.let { (it.start + it.seconds + region.start) / 2 }
                 ?.takeIf { it > region.start } ?: Double.NEGATIVE_INFINITY
-            val until = next?.let { (region.start + region.seconds + it.start) / 2 }
+            val before = next?.let { (region.start + region.seconds + it.start) / 2 }
                 ?.takeIf { it < region.start + region.seconds } ?: Double.POSITIVE_INFINITY
-            val kept = grid.beats.filter { it >= from && it < until }
+            val kept = grid.beats.filter { it >= after && it < before && it in from..to }
             beats += kept
-            downbeats += grid.downbeats.filter { it >= from && it < until }
+            downbeats += grid.downbeats.filter { it >= after && it < before && it in from..to }
             weighted += grid.beatConfidence * kept.size
-            count += kept.size
         }
-        return Beats(beats.sorted(), downbeats.sorted(), if (count > 0) weighted / count else 0.0)
-    }
-
-    /** The model's grid over [from]..[to], or null where it found too few beats there. */
-    private fun beatSide(all: Beats, from: Double, to: Double): BeatSide? {
-        val beats = all.beats.filter { it >= from && it <= to }
-        val bpm = BeatTracker.tempoFromBeats(beats)
+        val ordered = beats.sorted()
+        val bpm = BeatTracker.tempoFromBeats(ordered)
         if (bpm <= 0) return null
-        return BeatSide(
-            beats = beats,
-            downbeats = all.downbeats.filter { it >= from && it <= to },
-            bpm = bpm,
-            confidence = all.confidence,
-        )
+        return BeatSide(ordered, downbeats.sorted(), bpm, weighted / ordered.size)
     }
 
     private fun BeatSide.toGrid() = BeatTracker.Grid(
@@ -1548,5 +1572,66 @@ class TrackAnalyzer internal constructor(
          * whose first attempt covered only a few seconds.
          */
         const val HEAD_RETRY_GROWTH = 2
+    }
+}
+
+private const val BEAT_CONFIRMATION_MIN_CONFIDENCE = 0.25
+private const val BEAT_CONFIRMATION_SHIFT_SECONDS = 6.0
+
+/**
+ * Compares measured beats on the same recording timeline. A shared pulse
+ * must still agree at both ends of the primary window, after extrapolation.
+ * Based on Mornye's neighboring-window consensus, Copyright 2026 zarzet.
+ */
+internal fun agreesWithNearbyBeatGrid(
+    beats: List<Double>,
+    bpm: Double,
+    nearbyBeats: List<Double>,
+    nearbyBpm: Double,
+): Boolean {
+    if (bpm !in MIN_BPM..MAX_BPM || nearbyBpm !in MIN_BPM..MAX_BPM ||
+        abs(nearbyBpm / bpm - 1.0) > 0.02
+    ) return false
+    val start = beats.firstOrNull() ?: return false
+    val end = beats.last()
+    val nearbyStart = nearbyBeats.firstOrNull() ?: return false
+    val nearbyEnd = nearbyBeats.last()
+    val overlapStart = maxOf(start, nearbyStart)
+    val overlapEnd = minOf(end, nearbyEnd)
+    if (end - start < 6.0 || overlapEnd - overlapStart < 3.0) return false
+
+    val middle = (overlapStart + overlapEnd) / 2.0
+    val reference = nearbyBeats.minBy { abs(it - middle) }
+    val period = 60.0 / nearbyBpm
+    fun phaseError(position: Double): Double {
+        val elapsed = position - reference
+        return abs(elapsed - round(elapsed / period) * period)
+    }
+    return phaseError(start) <= 0.04 && phaseError(end) <= 0.04 &&
+        phaseError(beats.minBy { abs(it - middle) }) <= 0.04
+}
+
+/** Cheap enough for saved local and downloaded tracks, even before decoding starts. */
+internal fun TrackAnalysis.isConsistentWithPlayback(playbackDuration: Double): Boolean {
+    if (!isUsable || bpm !in MIN_BPM..MAX_BPM || beatConfidence !in 0.0..1.0 ||
+        !duration.isFinite() || duration <= 0.0
+    ) return false
+    if (playbackDuration.isFinite() && playbackDuration > 0.0 &&
+        abs(duration - playbackDuration) > maxOf(3.0, playbackDuration * 0.02)
+    ) return false
+
+    val timeline = 0.0..(duration + 0.25)
+    val audibleStart = audibleStartTime
+    if (contentEndTime !in timeline || firstBeat !in timeline ||
+        (audibleStart != null && audibleStart !in timeline)
+    ) return false
+
+    fun measured(times: List<Double>): Boolean =
+        times.indices.all { index -> times[index] in timeline && (index == 0 || times[index] >= times[index - 1]) }
+
+    if (!measured(downbeats)) return false
+    return listOfNotNull(headBeats, tailBeats).all { side ->
+        side.bpm in MIN_BPM..MAX_BPM && side.confidence in 0.0..1.0 &&
+            measured(side.beats) && measured(side.downbeats)
     }
 }

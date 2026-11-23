@@ -10,13 +10,25 @@ import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,10 +36,16 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,18 +56,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.music.aurelis.R
 import com.music.aurelis.data.DuplicateConfidence
 import com.music.aurelis.data.DuplicateGroup
 import com.music.aurelis.data.DuplicateTrack
 import com.music.aurelis.data.LocalDuplicateScanner
 import com.music.aurelis.data.model.Song
+import com.music.aurelis.ui.components.lightweightLiquidGlass
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /** The duplicate review is deliberately read-only unless Android grants a delete request. */
@@ -86,11 +110,14 @@ fun DuplicateReviewSheet(
     LaunchedEffect(generation, songs) {
         scanning = true
         error = null
-        runCatching { LocalDuplicateScanner.scan(context, songs) }
-            .onSuccess { groups = it }
-            .onFailure {
-                error = if (spanish) "No se pudo revisar la música local." else "Could not scan local music."
-            }
+        try {
+            groups = LocalDuplicateScanner.scan(context, songs)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            groups = emptyList()
+            error = if (spanish) "No se pudo revisar la música local." else "Could not scan local music."
+        }
         scanning = false
     }
 
@@ -162,63 +189,133 @@ fun DuplicateReviewSheet(
         )
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-            Text(
-                if (spanish) "Revisión de duplicados" else "Duplicate review",
-                style = MaterialTheme.typography.headlineSmall,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                if (spanish) "Las coincidencias aproximadas nunca se eliminan. " +
-                    "Solo puedes borrar copias con hash SHA-256 idéntico, con tu permiso."
-                else "Possible matches are never deleted. Only full SHA-256 verified copies " +
-                    "can be removed with your permission.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = { generation++ },
-                enabled = !busy && !scanning,
-            ) {
-                Text(if (spanish) "Volver a analizar" else "Scan again")
-            }
-            error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
-            }
-            if (scanning || busy) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    CircularProgressIndicator()
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item(key = "heading") {
+                Column(Modifier.fillMaxWidth().libraryGlass(animate = false).padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        DuplicateGlyph(found = false)
+                        Text(
+                            if (spanish) "Canciones duplicadas" else "Duplicate songs",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (spanish) "Solo se pueden eliminar copias idénticas verificadas, con tu permiso."
+                        else "Only verified identical files can be deleted, with your permission.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    FilledTonalButton(onClick = { generation++ }, enabled = !busy && !scanning) {
+                        Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (spanish) "Volver a analizar" else "Scan again")
+                    }
                 }
             }
-            if (!scanning && groups.isEmpty() && error == null) {
-                Text(
-                    if (spanish) "No se encontraron duplicados entre los archivos disponibles."
-                    else "No duplicates found among the available files.",
-                    modifier = Modifier.padding(vertical = 16.dp),
+            item(key = "status") {
+                val status = when {
+                    scanning || busy -> DuplicateReviewStatus.WORKING
+                    error != null -> DuplicateReviewStatus.FAILED
+                    groups.isEmpty() -> DuplicateReviewStatus.CLEAR
+                    else -> DuplicateReviewStatus.MATCHES
+                }
+                AnimatedContent(
+                    targetState = status,
+                    transitionSpec = { fadeIn(tween(230)) togetherWith fadeOut(tween(100)) },
+                    label = "duplicate review status",
+                ) { state ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        if (state == DuplicateReviewStatus.WORKING) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        } else {
+                            DuplicateGlyph(found = state == DuplicateReviewStatus.CLEAR)
+                        }
+                        Text(
+                            text = when (state) {
+                                DuplicateReviewStatus.WORKING -> if (spanish) "Revisando los archivos…" else "Checking your files…"
+                                DuplicateReviewStatus.FAILED -> error.orEmpty()
+                                DuplicateReviewStatus.CLEAR -> if (spanish) "No se encontraron duplicados." else "No duplicates found."
+                                DuplicateReviewStatus.MATCHES -> if (spanish) "Coincidencias para revisar" else "Matches to review"
+                            },
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (state == DuplicateReviewStatus.FAILED) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+            items(
+                if (scanning) emptyList() else groups,
+                key = { group -> group.confidence.name + ":" + group.keep.uri },
+            ) { group ->
+                DuplicateGroupRow(
+                    group = group,
+                    spanish = spanish,
+                    enabled = !busy && !scanning,
+                    onRequestDelete = { track -> confirmation = group.keep to track },
+                    modifier = Modifier.animateItem(),
                 )
             }
-            LazyColumn {
-                items(
-                    groups,
-                    key = { group -> group.confidence.name + ":" + group.keep.uri },
-                ) { group ->
-                    DuplicateGroupRow(
-                        group = group,
-                        spanish = spanish,
-                        enabled = !busy && !scanning,
-                        onRequestDelete = { track -> confirmation = group.keep to track },
-                    )
-                    HorizontalDivider()
-                }
-                item { Spacer(Modifier.height(30.dp)) }
-            }
+            item(key = "bottom") { Spacer(Modifier.height(20.dp)) }
         }
     }
+}
+
+private enum class DuplicateReviewStatus { WORKING, FAILED, CLEAR, MATCHES }
+
+@Composable
+private fun DuplicateGlyph(found: Boolean) {
+    Box(
+        Modifier.size(38.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            if (found) Icons.Rounded.Check else Icons.Rounded.ContentCopy,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+/** A quiet moving reflection rendered in the draw phase, with a static option for reduced effects. */
+@Composable
+internal fun Modifier.libraryGlass(animate: Boolean): Modifier {
+    val colors = MaterialTheme.colorScheme
+    val shine = if (animate) {
+        rememberInfiniteTransition(label = "local music glass").animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(4600), RepeatMode.Reverse),
+            label = "local music reflection",
+        )
+    } else null
+    return lightweightLiquidGlass(RoundedCornerShape(26.dp), colors.surfaceContainerHigh)
+        .drawBehind {
+            val phase = shine?.value ?: 0.35f
+            drawRect(
+                Brush.radialGradient(
+                    listOf(colors.primary.copy(alpha = 0.18f), Color.Transparent),
+                    center = Offset(size.width * (0.15f + phase * 0.65f), 0f),
+                    radius = size.width * 0.8f,
+                ),
+            )
+        }
 }
 
 @Composable
@@ -227,9 +324,10 @@ private fun DuplicateGroupRow(
     spanish: Boolean,
     enabled: Boolean,
     onRequestDelete: (DuplicateTrack) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val exact = group.confidence == DuplicateConfidence.EXACT_BYTES
-    Column(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+    Column(modifier.fillMaxWidth().libraryGlass(animate = false).padding(horizontal = 14.dp, vertical = 12.dp)) {
         Text(group.keep.title, style = MaterialTheme.typography.titleMedium, maxLines = 2)
         Text(group.keep.artist, style = MaterialTheme.typography.bodySmall)
         Text(

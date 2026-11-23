@@ -400,6 +400,12 @@
     <string name="synced_lyrics">Synced lyrics</string>
     <string name="synced_lyrics_subtitle">Lights up the words on the player as they’re sung</string>
     <string name="lyrics_sources">Lyrics sources</string>
+    <string name="automix_storage_title">AutoMix storage</string>
+    <string name="automix_storage_loading">Checking saved analyses…</string>
+    <plurals name="automix_storage_analyses">
+        <item quantity="one">%1$d saved song analysis</item>
+        <item quantity="other">%1$d saved song analyses</item>
+    </plurals>
     <string name="song_cache_limit">Song cache limit</string>
     <string name="clear_song_cache">Clear song cache</string>
     <string name="clear_song_cache_subtitle">Frees space used by downloaded audio</string>
@@ -1119,6 +1125,10 @@
     <string name="bit_perfect_status_unavailable">Not available for this track (%1$s)</string>
 
     <string name="loudness_normalization">Loudness normalization</string>
+    <string name="replaygain_album_mode">Normalize a complete album</string>
+    <string name="replaygain_album_mode_subtitle">Analyzes the whole album when available; otherwise uses each track\'s gain</string>
+    <string name="best_part_button">Best Part button</string>
+    <string name="best_part_button_subtitle">Jump to a known most-replayed moment or repeated chorus when available</string>
 
     <string name="loudness_normalization_subtitle">Levels every track to the same loudness</string>
     <string name="loudness_off_on_speaker">Disable on Phone Speaker</string>
