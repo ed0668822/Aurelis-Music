@@ -285,7 +285,7 @@ import com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.rememberSnapshotBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.snapshotBackdropSource
 import com.music.aurelis.ui.components.isGlassSupported
-import com.music.aurelis.ui.components.liquidGlass
+import com.music.aurelis.ui.components.lightweightLiquidGlass
 import com.music.aurelis.data.sources.SourceConfig
 import com.music.aurelis.data.sources.SourceKind
 import com.music.aurelis.data.sources.SourceRegistry
@@ -574,7 +574,7 @@ private fun AurelisApp(
     val glassSamplesBackdrop = glassActive && !reduceDynamicBlur
     val online by viewModel.online.collectAsStateWithLifecycle()
     val offlineBanner: (@Composable () -> Unit)? = if (online) null else {
-        { OfflineConnectionPill(glassActive) }
+        { OfflineConnectionPill(glassEnabled = glassActive, reduceDynamicBlur = reduceDynamicBlur) }
     }
 
     // What folds [GlassNavBar] between its expanded and inline shapes. Held here
@@ -6492,13 +6492,17 @@ private fun FrostedMenuPanel(
 }
 
 @Composable
-private fun OfflineConnectionPill(glassEnabled: Boolean) {
+private fun OfflineConnectionPill(glassEnabled: Boolean, reduceDynamicBlur: Boolean) {
     val shape = CircleShape
-    val labelColor = if (glassEnabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+    val showLightweightGlass = glassEnabled && !reduceDynamicBlur
+    val labelColor = if (showLightweightGlass) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
 
-    // Keep the status centered in the feed instead of anchored to the left gutter.
-    // This reuses the actual nav-bar Liquid Glass material, including its blur,
-    // refraction and highlight, only when the user has enabled it.
+    // This banner is drawn *inside* the page's layerBackdrop source.
+    // Modifier.liquidGlass would sample that same layer from within itself and
+    // may crash the renderer as soon as the network status turns offline.
+    // The lightweight material keeps the glass tint, rim and highlights but
+    // does not capture the backdrop, preventing a circular read on cold start
+    // and during connectivity changes.
     Box(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
@@ -6506,16 +6510,16 @@ private fun OfflineConnectionPill(glassEnabled: Boolean) {
         Row(
             modifier = Modifier
                 .then(
-                    if (glassEnabled) {
-                        Modifier.liquidGlass(shape = shape, surfaceTint = Color(0x881C2330))
+                    if (showLightweightGlass) {
+                        Modifier
+                            .background(Color(0xD0161B25), shape)
+                            .lightweightLiquidGlass(
+                                shape = shape,
+                                fallbackColor = Color(0xFF20252E),
+                            )
                     } else {
                         Modifier.background(MaterialTheme.colorScheme.surfaceVariant, shape)
                     },
-                )
-                // A subtle scrim keeps white lettering readable over bright album art.
-                .then(
-                    if (glassEnabled) Modifier.background(Color(0x440A0D16), shape)
-                    else Modifier,
                 )
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
