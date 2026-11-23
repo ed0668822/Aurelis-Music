@@ -285,6 +285,7 @@ import com.music.aurelis.ui.components.backdrop.backdrops.rememberLayerBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.rememberSnapshotBackdrop
 import com.music.aurelis.ui.components.backdrop.backdrops.snapshotBackdropSource
 import com.music.aurelis.ui.components.isGlassSupported
+import com.music.aurelis.ui.components.liquidGlass
 import com.music.aurelis.data.sources.SourceConfig
 import com.music.aurelis.data.sources.SourceKind
 import com.music.aurelis.data.sources.SourceRegistry
@@ -573,7 +574,7 @@ private fun AurelisApp(
     val glassSamplesBackdrop = glassActive && !reduceDynamicBlur
     val online by viewModel.online.collectAsStateWithLifecycle()
     val offlineBanner: (@Composable () -> Unit)? = if (online) null else {
-        { OfflineConnectionPill(hazeState, glassSamplesBackdrop) }
+        { OfflineConnectionPill(glassActive) }
     }
 
     // What folds [GlassNavBar] between its expanded and inline shapes. Held here
@@ -6490,40 +6491,47 @@ private fun FrostedMenuPanel(
     }
 }
 
-@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
-private fun OfflineConnectionPill(hazeState: HazeState, glass: Boolean) {
-    val surface = MaterialTheme.colorScheme.surface
-    // Haze samples the page behind this pill, so inherited theme text colours
-    // can disappear over dynamic artwork. Keep contrast independently of glass.
-    val labelColor = if (glass) Color.White else MaterialTheme.colorScheme.onSurface
-    Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {
-        Surface(
-            shape = CircleShape,
-            color = if (glass) Color(0xCC23252C) else surface,
-            modifier = Modifier.clip(CircleShape).then(
-                if (glass) Modifier.optimizedHazeEffect(hazeState, HazeMaterials.thin(surface)) else Modifier,
-            ),
+private fun OfflineConnectionPill(glassEnabled: Boolean) {
+    val shape = CircleShape
+    val labelColor = if (glassEnabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+    // Keep the status centered in the feed instead of anchored to the left gutter.
+    // This reuses the actual nav-bar Liquid Glass material, including its blur,
+    // refraction and highlight, only when the user has enabled it.
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            modifier = Modifier
+                .then(
+                    if (glassEnabled) {
+                        Modifier.liquidGlass(shape = shape, surfaceTint = Color(0x881C2330))
+                    } else {
+                        Modifier.background(MaterialTheme.colorScheme.surfaceVariant, shape)
+                    },
+                )
+                // A subtle scrim keeps white lettering readable over bright album art.
+                .then(
+                    if (glassEnabled) Modifier.background(Color(0x440A0D16), shape)
+                    else Modifier,
+                )
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .background(if (glass) Color(0xD923252C) else Color.Transparent, CircleShape)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.CloudOff,
-                    contentDescription = null,
-                    tint = labelColor,
-                    modifier = Modifier.size(16.dp),
-                )
-                Text(
-                    text = stringResource(R.string.no_internet_connection),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = labelColor,
-                )
-            }
+            Icon(
+                imageVector = Icons.Rounded.CloudOff,
+                contentDescription = null,
+                tint = labelColor,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(R.string.no_internet_connection),
+                style = MaterialTheme.typography.labelLarge,
+                color = labelColor,
+            )
         }
     }
 }
