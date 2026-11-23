@@ -1559,4 +1559,8 @@
     <string name="playlist_on_youtube">ใน YouTube Music</string>
     <string name="playlist_youtube_requires_connection">เชื่อมต่ออินเทอร์เน็ตเพื่อสร้างเพลย์ลิสต์ใน YouTube Music</string>
     <string name="youtube_liked_music">เพลงที่กดชอบใน YouTube Music</string>
+    <string name="replaygain_album_mode">ปรับระดับเสียงทั้งอัลบั้ม</string>
+    <string name="replaygain_album_mode_subtitle">วิเคราะห์ทั้งอัลบั้มเมื่อทำได้ มิฉะนั้นจะใช้ค่าเกนของแต่ละเพลง</string>
+    <string name="best_part_button">ปุ่มท่อนที่ดีที่สุด</string>
+    <string name="best_part_button_subtitle">ข้ามไปยังช่วงที่มีการฟังซ้ำมากที่สุดหรือท่อนฮุกที่ซ้ำกันเมื่อมีข้อมูล</string>
 </resources>

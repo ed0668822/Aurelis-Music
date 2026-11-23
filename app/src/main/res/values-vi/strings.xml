@@ -1493,4 +1493,8 @@
     <string name="playlist_on_youtube">Trên YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Kết nối Internet để tạo danh sách phát trên YouTube Music.</string>
     <string name="youtube_liked_music">Bài hát đã thích trên YouTube Music</string>
+    <string name="replaygain_album_mode">Chuẩn hóa âm lượng toàn bộ album</string>
+    <string name="replaygain_album_mode_subtitle">Phân tích toàn bộ album khi có thể; nếu không thì dùng mức tăng âm lượng của từng bài</string>
+    <string name="best_part_button">Nút Đoạn hay nhất</string>
+    <string name="best_part_button_subtitle">Chuyển đến đoạn được nghe lại nhiều nhất hoặc điệp khúc lặp lại nếu có</string>
 </resources>

@@ -1557,4 +1557,8 @@
     <string name="playlist_on_youtube">在 YouTube Music 上</string>
     <string name="playlist_youtube_requires_connection">請連上互聯網，以便在 YouTube Music 上建立播放清單。</string>
     <string name="youtube_liked_music">在 YouTube Music 上按讚的歌曲</string>
+    <string name="replaygain_album_mode">將整張專輯的音量標準化</string>
+    <string name="replaygain_album_mode_subtitle">可用時分析整張專輯，否則使用各首歌曲的增益</string>
+    <string name="best_part_button">精彩片段按鈕</string>
+    <string name="best_part_button_subtitle">跳至已識別的最常重播片段或重複副歌（如有）</string>
 </resources>

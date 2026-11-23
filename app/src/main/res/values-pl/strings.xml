@@ -1628,4 +1628,8 @@
     <string name="playlist_on_youtube">W YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Połącz się z internetem, aby utworzyć playlistę w YouTube Music.</string>
     <string name="youtube_liked_music">Polubione utwory w YouTube Music</string>
+    <string name="replaygain_album_mode">Normalizuj cały album</string>
+    <string name="replaygain_album_mode_subtitle">Analizuje cały album, gdy to możliwe; w przeciwnym razie używa wzmocnienia każdej ścieżki</string>
+    <string name="best_part_button">Przycisk Najlepszy fragment</string>
+    <string name="best_part_button_subtitle">Przeskakuje do najczęściej odtwarzanego fragmentu lub powtarzającego się refrenu, jeśli jest dostępny</string>
 </resources>

@@ -1576,4 +1576,8 @@
     <string name="playlist_on_youtube">In YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Stelle eine Internetverbindung her, um eine Playlist in YouTube Music zu erstellen.</string>
     <string name="youtube_liked_music">Songs mit „Gefällt mir“ in YouTube Music</string>
+    <string name="replaygain_album_mode">Ganzes Album normalisieren</string>
+    <string name="replaygain_album_mode_subtitle">Analysiert nach Möglichkeit das gesamte Album; andernfalls wird die Verstärkung pro Titel verwendet</string>
+    <string name="best_part_button">Schaltfläche Beste Stelle</string>
+    <string name="best_part_button_subtitle">Springt zur meistwiederholten Stelle oder zu einem erkannten Refrain, sofern verfügbar</string>
 </resources>

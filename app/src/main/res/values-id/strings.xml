@@ -1553,4 +1553,8 @@
     <string name="playlist_on_youtube">Di YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Hubungkan ke internet untuk membuat playlist di YouTube Music.</string>
     <string name="youtube_liked_music">Lagu yang disukai di YouTube Music</string>
+    <string name="replaygain_album_mode">Normalisasi seluruh album</string>
+    <string name="replaygain_album_mode_subtitle">Menganalisis seluruh album jika tersedia; jika tidak, gunakan penguatan setiap lagu</string>
+    <string name="best_part_button">Tombol Bagian terbaik</string>
+    <string name="best_part_button_subtitle">Langsung ke bagian yang paling sering diputar ulang atau refrein berulang, jika tersedia</string>
 </resources>

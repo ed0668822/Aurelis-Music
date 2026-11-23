@@ -1581,4 +1581,8 @@
     <string name="playlist_on_youtube">No YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Conecte-se à internet para criar uma playlist no YouTube Music.</string>
     <string name="youtube_liked_music">Músicas curtidas no YouTube Music</string>
+    <string name="replaygain_album_mode">Normalizar um álbum inteiro</string>
+    <string name="replaygain_album_mode_subtitle">Analisa o álbum inteiro quando disponível; caso contrário, usa o ganho de cada faixa</string>
+    <string name="best_part_button">Botão Melhor trecho</string>
+    <string name="best_part_button_subtitle">Pula para o trecho mais reproduzido ou para um refrão repetido, quando disponível</string>
 </resources>

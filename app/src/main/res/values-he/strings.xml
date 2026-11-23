@@ -1603,4 +1603,8 @@
     <string name="playlist_on_youtube">ב-YouTube Music</string>
     <string name="playlist_youtube_requires_connection">כדי ליצור פלייליסט ב-YouTube Music, צריך להתחבר לאינטרנט.</string>
     <string name="youtube_liked_music">שירים שאהבת ב-YouTube Music</string>
+    <string name="replaygain_album_mode">נרמול עוצמת הקול של אלבום שלם</string>
+    <string name="replaygain_album_mode_subtitle">מנתח את האלבום כולו כאשר ניתן; אחרת משתמש בהגברה של כל רצועה</string>
+    <string name="best_part_button">כפתור הקטע המוצלח ביותר</string>
+    <string name="best_part_button_subtitle">מעבר לקטע המושמע שוב הכי הרבה או לפזמון חוזר, אם זמין</string>
 </resources>

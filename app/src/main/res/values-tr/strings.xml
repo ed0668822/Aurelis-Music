@@ -1533,4 +1533,8 @@
     <string name="playlist_on_youtube">YouTube Music’te</string>
     <string name="playlist_youtube_requires_connection">YouTube Music’te oynatma listesi oluşturmak için internete bağlanın.</string>
     <string name="youtube_liked_music">YouTube Music’te beğenilen şarkılar</string>
+    <string name="replaygain_album_mode">Albümün tamamını normalleştir</string>
+    <string name="replaygain_album_mode_subtitle">Mümkün olduğunda tüm albümü analiz eder; aksi halde her parçanın kazancını kullanır</string>
+    <string name="best_part_button">En iyi bölüm düğmesi</string>
+    <string name="best_part_button_subtitle">Varsa en çok tekrar dinlenen bölüme veya yinelenen nakarata atlar</string>
 </resources>

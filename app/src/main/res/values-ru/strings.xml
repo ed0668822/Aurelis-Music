@@ -1608,4 +1608,8 @@
     <string name="playlist_on_youtube">В YouTube Music</string>
     <string name="playlist_youtube_requires_connection">Подключитесь к интернету, чтобы создать плейлист в YouTube Music.</string>
     <string name="youtube_liked_music">Понравившиеся треки в YouTube Music</string>
+    <string name="replaygain_album_mode">Нормализовать весь альбом</string>
+    <string name="replaygain_album_mode_subtitle">Анализирует весь альбом, если возможно; иначе использует усиление отдельных треков</string>
+    <string name="best_part_button">Кнопка «Лучший момент»</string>
+    <string name="best_part_button_subtitle">Переходит к самому часто переслушиваемому моменту или повторяющемуся припеву, если они найдены</string>
 </resources>
