@@ -733,6 +733,9 @@ private fun SlidingPlayerDeck(
     if (mounted) {
         Box(
             modifier = modifier
+                // Keep footer hit targets above the animated queue/lyrics
+                // panes when their transforms briefly extend over this deck.
+                .zIndex(1f)
                 .graphicsLayer {
                     this.alpha = alpha.value
                     // No buffer of its own to fade through: one would cut the

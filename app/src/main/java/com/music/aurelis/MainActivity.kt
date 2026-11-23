@@ -244,6 +244,7 @@ import com.music.aurelis.playback.contextEntryKey
 import com.music.aurelis.playback.toMediaItem
 import com.music.aurelis.playback.toSong
 import com.music.aurelis.playback.toDirectYouTubeMediaItem
+import com.music.aurelis.playback.cycleRepeat
 import com.music.aurelis.playback.toggleAutoplay
 import com.music.aurelis.playback.toggleShuffle
 import com.music.aurelis.playback.upgradeQuality
@@ -2699,21 +2700,10 @@ private fun AurelisApp(
             // before its asynchronous reorder command has actually landed.
             onToggleShuffle = { controller?.toggleShuffle() },
             onCycleRepeat = {
-                controller?.let {
-                    val next = when (it.repeatMode) {
-                        Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-                        Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-                        else -> Player.REPEAT_MODE_OFF
-                    }
-                    // Persist the new repeat mode so it survives app restarts.
-                    AppSettings.setRepeatMode(next)
-                    // Nothing else to do here: PlaybackService watches the
-                    // repeat mode itself and takes AutoPlay's tracks out of
-                    // the queue for the duration of repeat-all — and, unlike
-                    // this screen, is still around to put them back when the
-                    // loop ends.
-                    it.repeatMode = next
-                }
+                // All three queue-mode controls now travel through the same
+                // service session. The active AutoMix deck owns the repeat
+                // state, not a potentially stale controller snapshot.
+                controller?.cycleRepeat()
             },
             onToggleAutoplay = {
                 // PlaybackService owns the setting and queue extension so

@@ -238,6 +238,16 @@ const val ACTION_TOGGLE_FAVORITE = "com.music.aurelis.action.TOGGLE_FAVORITE"
 /** Session command used by the media notification's and the 4×1 widget's Shuffle button. */
 const val ACTION_TOGGLE_SHUFFLE = "com.music.aurelis.action.TOGGLE_SHUFFLE"
 
+/** Keep Repeat in the same service-owned transport as Shuffle and AutoPlay. */
+const val ACTION_CYCLE_REPEAT = "com.music.aurelis.action.CYCLE_REPEAT"
+
+/** Off -> all -> one -> off, shared by the service command and its regression test. */
+internal fun nextRepeatMode(current: Int): Int = when (current) {
+    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+    else -> Player.REPEAT_MODE_OFF
+}
+
 /** Session actions exposed to Android Auto for the track that is playing. */
 const val ACTION_START_STATION = "com.music.aurelis.action.START_STATION"
 const val ACTION_REVERT_TO_ORIGINAL = "com.music.aurelis.action.REVERT_TO_ORIGINAL"
@@ -833,6 +843,7 @@ class PlaybackService : MediaLibraryService() {
     private val favoriteCommand = SessionCommand(ACTION_TOGGLE_FAVORITE, Bundle.EMPTY)
     private val autoplayCommand = SessionCommand(ACTION_TOGGLE_AUTOPLAY, Bundle.EMPTY)
     private val shuffleCommand = SessionCommand(ACTION_TOGGLE_SHUFFLE, Bundle.EMPTY)
+    private val cycleRepeatCommand = SessionCommand(ACTION_CYCLE_REPEAT, Bundle.EMPTY)
     private val startStationCommand = SessionCommand(ACTION_START_STATION, Bundle.EMPTY)
     private val revertToOriginalCommand = SessionCommand(ACTION_REVERT_TO_ORIGINAL, Bundle.EMPTY)
     private val swapToVersionCommand = SessionCommand(ACTION_SWAP_TO_VERSION, Bundle.EMPTY)
@@ -3019,6 +3030,14 @@ class PlaybackService : MediaLibraryService() {
         saveQueueSnapshotImmediately(raw)
         partySync?.onLocalIntent()
         return true
+    }
+
+    /** Change repeat on the active player; the listener manages AutoPlay and remote outputs. */
+    private fun cycleRepeatFromSession() {
+        val active = player ?: return
+        val next = nextRepeatMode(active.repeatMode)
+        AppSettings.setRepeatMode(next)
+        active.repeatMode = next
     }
 
     private fun toggleShuffleFromSession() {
@@ -9023,6 +9042,7 @@ class PlaybackService : MediaLibraryService() {
                 .add(clearBoundedContextCommand)
                 .add(autoplayCommand)
                 .add(shuffleCommand)
+                .add(cycleRepeatCommand)
                 .add(startStationCommand)
                 .add(revertToOriginalCommand)
                 .add(swapToVersionCommand)
@@ -9064,6 +9084,7 @@ class PlaybackService : MediaLibraryService() {
                 ACTION_CLEAR_BOUNDED_CONTEXT -> clearBoundedContext()
                 ACTION_TOGGLE_AUTOPLAY -> toggleAutoplayFromNotification()
                 ACTION_TOGGLE_SHUFFLE -> toggleShuffleFromSession()
+                ACTION_CYCLE_REPEAT -> cycleRepeatFromSession()
                 ACTION_START_STATION -> startStationFromSession()
                 ACTION_REVERT_TO_ORIGINAL -> revertCurrentToOriginal()
                 ACTION_SWAP_TO_VERSION -> swapCurrentToVersion(args)

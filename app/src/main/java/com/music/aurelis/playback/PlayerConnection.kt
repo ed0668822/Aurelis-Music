@@ -116,6 +116,14 @@ fun MediaController.toggleShuffle() {
     )
 }
 
+/** Cycles repeat on the service-owned player, including during an AutoMix handoff. */
+fun MediaController.cycleRepeat() {
+    sendCustomCommand(
+        SessionCommand(ACTION_CYCLE_REPEAT, Bundle.EMPTY),
+        Bundle.EMPTY,
+    )
+}
+
 /** Starts an album/playlist through the service-owned bounded context window. */
 suspend fun MediaController.playBoundedContext(
     songs: List<Song>,
