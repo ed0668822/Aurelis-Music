@@ -1119,6 +1119,10 @@
     <string name="bit_perfect_status_unavailable">Not available for this track (%1$s)</string>
 
     <string name="loudness_normalization">Loudness normalization</string>
+    <string name="replaygain_album_mode">Normalize a complete album</string>
+    <string name="replaygain_album_mode_subtitle">Analyzes the whole album when available; otherwise uses each track\'s gain</string>
+    <string name="best_part_button">Best Part button</string>
+    <string name="best_part_button_subtitle">Jump to a known most-replayed moment or repeated chorus when available</string>
 
     <string name="loudness_normalization_subtitle">Levels every track to the same loudness</string>
     <string name="loudness_off_on_speaker">Disable on Phone Speaker</string>
