@@ -861,8 +861,12 @@
 
     <string name="prefer_usb_dac">Preferir DAC USB</string>
     <string name="loudness_normalization">Normalización de volumen</string>
+    <string name="replaygain_album_mode">Normalizar un álbum completo</string>
+    <string name="replaygain_album_mode_subtitle">Analiza el álbum completo cuando está disponible; si no, utiliza la ganancia de cada pista</string>
+    <string name="best_part_button">Botón Mejor parte</string>
+    <string name="best_part_button_subtitle">Salta al momento más repetido o a un estribillo identificado, cuando esté disponible</string>
     <string name="loudness_normalization_subtitle">Iguala la sonoridad de todas las pistas</string>
-    <string name="loudness_off_on_speaker">Desactivar en el altavoz del telefono</string>
+    <string name="loudness_off_on_speaker">Desactivar en el altavoz del teléfono</string>
     <string name="loudness_target">Sonoridad objetivo</string>
     <string name="loudness_target_subtitle">Más bajo va mejor con auriculares; más alto, en el coche o el altavoz del teléfono</string>
     <string name="loudness_target_value">%1$s LUFS</string>
