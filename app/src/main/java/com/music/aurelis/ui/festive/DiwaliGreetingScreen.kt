@@ -4,7 +4,6 @@ package com.music.aurelis.ui.festive
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -32,15 +31,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
-import android.graphics.BitmapFactory
-import androidx.compose.animation.core.tween
-import androidx.compose.runtime.produceState
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,14 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.aurelis.R
 
-/**
- * One-time Diwali greeting: the illustration full-bleed, with the wish set at
- * the foot of it in the welcome screen's own type — [displayLarge] heading,
- * [bodyLarge] subtitle, full-width capsule — all in white.
- *
- * The foot of the painting is the brightest part of it (the rangoli and its
- * diyas), so a deep scrim rises from the bottom for the white type to sit on.
- */
+/** One-time Diwali greeting using a local gradient instead of a bitmap. */
 @Composable
 fun DiwaliGreetingScreen(
     onDismiss: () -> Unit,
@@ -68,26 +51,6 @@ fun DiwaliGreetingScreen(
             // Swallows every touch so nothing reaches the app underneath.
             .pointerInput(Unit) { detectTapGestures { } },
     ) {
-        // Decoded off the main thread: a ~1600px JPEG decoded inline cost the
-        // opening fade its first frames, every time the logo reopens this.
-        val context = LocalContext.current
-        val art by produceState<ImageBitmap?>(null) {
-            value = withContext(Dispatchers.IO) {
-                BitmapFactory.decodeResource(context.resources, R.drawable.diwali_greeting)?.asImageBitmap()
-            }
-        }
-        val artAlpha by animateFloatAsState(if (art != null) 1f else 0f, tween(350), label = "diwaliArt")
-        art?.let {
-            Image(
-                bitmap = it,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { alpha = artAlpha },
-            )
-        }
         Box(
             Modifier
                 .fillMaxSize()

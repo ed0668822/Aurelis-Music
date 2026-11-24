@@ -135,11 +135,6 @@ jobs:
               Path(filename).write_text(icon_xml, encoding="utf-8")
               ET.parse(filename)
 
-          # The optional monochrome launcher should use the same music note.
-          mono_icon = "app/src/main/res/mipmap-anydpi/ic_monochrome.xml"
-          Path(mono_icon).write_text(icon_xml, encoding="utf-8")
-          ET.parse(mono_icon)
-
           old_mono = Path("app/src/main/res/drawable/ic_launcher_monochrome.xml").read_text()
           paths = re.findall(r'<path\b[\s\S]*?/>', old_mono)
           assert len(paths) == 3, "Unexpected number of paths in Aurelis icon"
