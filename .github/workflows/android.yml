@@ -12,7 +12,7 @@ name: Android
 # Opcionales: LASTFM_API_KEY, LASTFM_SECRET, LISTEN_TOGETHER_SERVER.
 on:
   push:
-    branches: [Aurelis-Music-Redesign]
+    branches: [main, Aurelis-Music-Redesign]
   workflow_dispatch:
 
 concurrency:
