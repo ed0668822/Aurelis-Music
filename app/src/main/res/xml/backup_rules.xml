@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
    Auto-backup rules for Android 11 and older; data_extraction_rules.xml
    replaces these from Android 12.

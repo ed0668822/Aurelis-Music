@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   A toggle button that is on — Shuffle in the pill widget. A soft disc behind the
   glyph, the way the player's own Shuffle shows it; a white glyph on arbitrary

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.lyrics
 
 import org.w3c.dom.Element

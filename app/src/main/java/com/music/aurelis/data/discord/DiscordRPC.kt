@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.discord
 
 import com.music.aurelis.data.model.Song

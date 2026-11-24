@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.settings
 
 /** CPU budget for Automix's background analysis, not its audible mix algorithm. */

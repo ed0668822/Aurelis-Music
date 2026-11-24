@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.lyrics
 
 /** Shorter instrumental breaks aren't worth interrupting the line for. */

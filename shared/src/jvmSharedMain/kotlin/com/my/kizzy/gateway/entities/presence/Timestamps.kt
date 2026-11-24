@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.my.kizzy.gateway.entities.presence
 
 import kotlinx.serialization.SerialName

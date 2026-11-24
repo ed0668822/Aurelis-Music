@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 // DSD -> PCM decimation for DsdBlockDecoder.
 //
 // A 1-bit DSD stream is turned into 176.4 kHz float PCM by one long FIR

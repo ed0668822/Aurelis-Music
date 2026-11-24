@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data
 
 import com.music.aurelis.data.DebugLog as Log

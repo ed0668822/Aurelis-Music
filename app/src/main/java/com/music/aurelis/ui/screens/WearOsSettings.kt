@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.ui.screens
 
 import com.music.aurelis.ui.icons.SfIcons

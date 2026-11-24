@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.playback.audio
 
 import org.junit.Assert.assertEquals

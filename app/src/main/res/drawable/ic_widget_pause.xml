@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   Pause. Two bars drawn as round-capped lines rather than as rounded rectangles:
   a line of stroke width w with a round cap *is* a bar w wide with fully rounded

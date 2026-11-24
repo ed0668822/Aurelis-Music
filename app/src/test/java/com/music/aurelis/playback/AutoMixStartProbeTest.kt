@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 aurelis
+
 package com.music.aurelis.playback
 
 import com.music.aurelis.playback.AutoMixStartProbe.Status

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.innertube
 
 import com.music.aurelis.auth.normalizeDataSyncId

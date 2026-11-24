@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 import java.util.Properties
 import java.security.MessageDigest
 import java.io.FileInputStream

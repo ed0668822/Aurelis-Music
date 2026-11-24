@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   The 4×2 entry in the widget picker: same widget, placed four cells wide by
   default and so laid out with the track alongside the transport. See

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.settings
 
 /** A001: keep optional integration code present, but not discoverable or active by default. */

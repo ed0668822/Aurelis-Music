@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   Picker artwork for the 2×2 widget, on hosts older than API 31 — from 31 the
   picker inflates previewLayout instead and this is never seen.

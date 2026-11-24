@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   The 2×2 entry in the widget picker. Sizes follow the launcher grid's own
   arithmetic — a span of n cells is 70n − 30 dp — so 2 cells is 110dp.

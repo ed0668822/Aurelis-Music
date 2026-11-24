@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.sources.module
 
 import kotlinx.serialization.builtins.ListSerializer

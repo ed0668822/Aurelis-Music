@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
    Backup and device-transfer rules for Android 12 and newer; see
    backup_rules.xml for why these files are excluded.

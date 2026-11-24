@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!-- Shuffle: AurelisIcons.Shuffle as a drawable, at the transport's stroke weight. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"

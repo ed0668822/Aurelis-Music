@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.ui.navigation
 
 import androidx.compose.runtime.Stable

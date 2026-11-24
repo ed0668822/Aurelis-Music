@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   Favorite, unset. The same star AurelisIcons.Star draws in the player, carried
   over as a drawable because a widget can't render an ImageVector. Stroked at

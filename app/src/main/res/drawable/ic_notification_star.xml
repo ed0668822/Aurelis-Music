@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   Favorite, unset, on the media notification. The same star AurelisIcons.Star
   draws in the player; Media3's own ICON_STAR is Material's sharp-tipped one.

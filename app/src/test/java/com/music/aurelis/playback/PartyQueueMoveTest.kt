@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.playback
 
 import com.music.aurelis.data.listentogether.PartyTrack

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.innertube.potoken
 
 import com.metrolist.innertubex.extraction.TokenProvider

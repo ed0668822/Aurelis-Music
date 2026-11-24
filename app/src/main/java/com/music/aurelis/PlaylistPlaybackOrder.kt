@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis
 
 /** True if every visible entry retains the order of its source page. */

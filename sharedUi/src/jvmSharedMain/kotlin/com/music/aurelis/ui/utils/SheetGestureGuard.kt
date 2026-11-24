@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.ui.utils
 
 import androidx.compose.foundation.gestures.awaitEachGesture

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   Press feedback for a transport button. Masked to an oval so the ripple reads as
   a circle around the glyph rather than as a square lighting up over the artwork

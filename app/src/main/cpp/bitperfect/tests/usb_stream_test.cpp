@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 // Host tests for usb_stream.h, ported from Mornye's Rust tests
 // (descriptors.rs PacketClock, framing.rs). Build with any C++17 compiler:
 //   g++ -std=c++17 -I.. usb_stream_test.cpp -o usb_stream_test && ./usb_stream_test

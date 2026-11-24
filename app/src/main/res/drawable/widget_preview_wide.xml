@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   Picker artwork for the 4×2 widget, on hosts older than API 31. See
   widget_preview_square for why the band is part of the background gradient.

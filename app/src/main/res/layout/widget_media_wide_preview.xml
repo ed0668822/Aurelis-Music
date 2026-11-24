@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   What the picker shows for the 4×2 widget on API 31+, where previewLayout is
   inflated live rather than an image being drawn.

@@ -1,1 +1,3 @@
+# SPDX-FileCopyrightText: © 2026 Aurelis
+
 native/ffmpeg/build.sh text eol=lf

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.playback.smart
 
 /** Where the analyser's warnings go, without it having to know the platform. */

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.data.innertube.potoken
 
 import kotlinx.serialization.json.Json

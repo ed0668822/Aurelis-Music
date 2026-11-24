@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.my.kizzy.rpc
 
 import java.util.concurrent.ConcurrentHashMap

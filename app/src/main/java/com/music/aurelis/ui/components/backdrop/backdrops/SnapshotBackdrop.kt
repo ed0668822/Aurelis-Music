@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.ui.components.backdrop.backdrops
 
 import androidx.compose.runtime.Composable

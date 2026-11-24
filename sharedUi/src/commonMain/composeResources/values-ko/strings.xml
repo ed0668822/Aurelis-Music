@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <resources>
     <string name="analysis_complete">분석됨</string>
     <string name="analysis_in_progress">분석 중…</string>

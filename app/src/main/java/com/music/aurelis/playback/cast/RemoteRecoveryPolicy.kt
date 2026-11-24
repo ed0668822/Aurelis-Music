@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.playback.cast
 
 /** TV08 recovery thresholds. Revoke stale remote sessions; never auto-play the phone. */

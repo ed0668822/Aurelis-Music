@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!-- Skip to next: a rounded play triangle with its stop bar. See ic_widget_play. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"

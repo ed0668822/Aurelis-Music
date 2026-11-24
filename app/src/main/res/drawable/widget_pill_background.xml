@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   The 4×1 widget's body: a dark translucent capsule over the wallpaper. A
   RemoteViews can't blur what is behind it, so it is tinted instead — dark

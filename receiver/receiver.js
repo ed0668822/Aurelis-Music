@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 /* Aurelis Music Custom Cast Web Receiver (TV03/TV04).
  * CAF controls media playback. This layer renders metadata and synced lyrics
  * against the actual receiver playback clock; the phone never streams a UI.

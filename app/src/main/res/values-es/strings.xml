@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <resources>
     <string name="app_name">Aurelis Music</string>
     <string name="playback_channel_name">Reproduciendo</string>

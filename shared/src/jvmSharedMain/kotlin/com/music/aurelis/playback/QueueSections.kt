@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.playback
 
 /** Past this point in a track, back restarts it instead of skipping to the previous one. */

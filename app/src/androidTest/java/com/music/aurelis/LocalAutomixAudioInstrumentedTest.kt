@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 aurelis
+
 package com.music.aurelis
 
 import android.content.ContextWrapper

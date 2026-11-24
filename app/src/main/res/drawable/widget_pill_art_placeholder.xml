@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   The pill widget's round cover when there is no picture yet: nothing played, a
   track with no artwork, or the picker preview. Same gradient as

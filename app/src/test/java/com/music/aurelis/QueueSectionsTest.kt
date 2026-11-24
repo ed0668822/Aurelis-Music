@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis
 
 import com.music.aurelis.playback.autoplaySectionStart

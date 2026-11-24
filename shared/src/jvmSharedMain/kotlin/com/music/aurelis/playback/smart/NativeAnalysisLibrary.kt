@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © 2026 Aurelis
+
 package com.music.aurelis.playback.smart
 
 /** Loads the analyser's native library, however the platform keeps it. */

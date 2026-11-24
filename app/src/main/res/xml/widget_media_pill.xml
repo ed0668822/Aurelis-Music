@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: © 2026 Aurelis -->
+
 <!--
   The 4×1 entry in the widget picker: a capsule with a round cover, the track,
   and Like / previous / play / next / Shuffle. Its own provider and layout, not
