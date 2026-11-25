@@ -4,6 +4,8 @@ package com.music.aurelis.ui.navigation
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableIntStateOf
+import com.music.aurelis.TAB_HOME
 import com.music.aurelis.data.model.HomeShelf
 import com.music.aurelis.ui.screens.SettingsCategory
 import com.music.aurelis.ui.screens.SettingsChoiceKind
@@ -84,6 +86,7 @@ class AppNavigator(
     private val popDetail: () -> Boolean,
     private val clearDetails: () -> Unit,
 ) {
+    val selectedTab = mutableIntStateOf(TAB_HOME)
     private val stack = mutableStateListOf<RouteEntry>()
 
     // Seeded from the clock rather than zero: page state is saved under these
@@ -136,6 +139,11 @@ class AppNavigator(
     fun clear() {
         stack.clear()
         clearDetails()
+    }
+
+    fun openHome() {
+        clear()
+        selectedTab.intValue = TAB_HOME
     }
 
     /** Clears everything, then opens [routes] from the bare tab. */

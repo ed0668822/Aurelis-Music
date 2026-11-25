@@ -45,6 +45,20 @@ class AppNavigatorTest {
     }
 
     @Test
+    fun launcherReturnsToHomeFromAnOpenAlbum() {
+        assertEquals(TAB_HOME, navigator.selectedTab.intValue)
+        navigator.selectedTab.intValue = TAB_LIBRARY
+        navigator.push(AppRoute.LibraryShowAll(HomeShelf("Albums", emptyList())))
+        releases += "album"
+
+        navigator.openHome()
+
+        assertEquals(TAB_HOME, navigator.selectedTab.intValue)
+        assertTrue(navigator.entries.isEmpty())
+        assertTrue(releases.isEmpty())
+    }
+
+    @Test
     fun backUnwindsAPlaylistOpenedFromSpotifyUnderSettings() {
         navigator.push(AppRoute.Settings)
         navigator.push(AppRoute.AccountScrobbling)

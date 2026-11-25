@@ -41,6 +41,9 @@
     <string name="download_addon_not_allowed">%1$s doesn\'t allow downloads, so your songs are being saved from your other sources instead.</string>
     <string name="download_addon_needs_lossless_output">%1$s only serves music while wired, USB or LDAC-class headphones are connected. Downloads skip it until one is, so your songs are being saved from your other sources instead.</string>
     <string name="audio_files_on_device">Audio files on device</string>
+    <string name="local_music_loading">Reading music on this device…</string>
+    <string name="local_music_find_duplicates">Find duplicate songs</string>
+    <string name="local_music_allow_access">Allow audio access</string>
     <string name="on_device">On Device</string>
     <string name="playlists">Playlists</string>
     <string name="new_playlist">New playlist</string>

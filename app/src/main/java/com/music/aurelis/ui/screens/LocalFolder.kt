@@ -183,8 +183,8 @@ enum class LocalFolderTab {
  * playlist appear to select unrelated albums.
  */
 @Stable
-class LocalFolderState {
-    var tab by mutableStateOf(LocalFolderTab.SONGS)
+class LocalFolderState(initialTab: LocalFolderTab = LocalFolderTab.SONGS) {
+    var tab by mutableStateOf(initialTab)
 
     var selectedIds by mutableStateOf<Set<String>>(emptySet())
         private set
@@ -355,7 +355,7 @@ internal fun LazyListScope.localFolderItems(
                 )
             }
         } else {
-            itemsIndexed(songs, key = { index, song -> "song-${song.videoId}-$index" }) { index, song ->
+            itemsIndexed(songs, key = ::localFolderSongRowKey) { index, song ->
                 SongRow(
                     song = song,
                     selected = song.videoId in state.selectedIds,
@@ -414,6 +414,8 @@ internal fun LazyListScope.localFolderItems(
         }
     }
 }
+
+internal fun localFolderSongRowKey(index: Int, song: Song): String = "song-${song.videoId}-$index"
 
 @Composable
 private fun LocalFolderTab.label(): String = stringResource(

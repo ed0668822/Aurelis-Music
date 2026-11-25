@@ -96,6 +96,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -112,19 +114,20 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
@@ -138,6 +141,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
@@ -172,11 +176,15 @@ import com.music.aurelis.data.model.UserPlaylist
 import com.music.aurelis.data.model.EntityType
 import com.music.aurelis.data.model.SearchHistoryEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.withContext
 import com.music.aurelis.data.model.durationMillis
 import com.music.aurelis.data.scrobbling.LastFM
 import com.music.aurelis.data.settings.AppSettings
-import com.music.aurelis.data.settings.normalizeMainTabIndex
 import com.music.aurelis.data.settings.BitPerfectMode
 import com.music.aurelis.ui.AddonBlockedAlert
 import com.music.aurelis.data.settings.LibrarySort
@@ -368,6 +376,7 @@ import com.music.aurelis.ui.screens.LocalFolderState
 import com.music.aurelis.ui.screens.LocalFolderTab
 import com.music.aurelis.ui.screens.rememberLocalFolderGroups
 import com.music.aurelis.ui.screens.localFolderItems
+import com.music.aurelis.ui.screens.localFolderSongRowKey
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.HorizontalDivider
 import com.music.aurelis.ui.screens.localizedLabel
@@ -426,6 +435,9 @@ internal fun shouldSkipAfterDislike(
 
 
 class MainActivity : AppCompatActivity() {
+    private val homeLaunchRequests = Channel<Unit>(Channel.CONFLATED)
+    private val homeLaunches = homeLaunchRequests.receiveAsFlow()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Required by the official SDK on Android. No-op if its AAR is absent.
@@ -495,6 +507,7 @@ class MainActivity : AppCompatActivity() {
                         windowWidth = maxWidth,
                         windowHeight = maxHeight,
                         appBackdrop = appBackdrop,
+                        homeLaunches = homeLaunches,
                     )
                 }
                 }
@@ -543,6 +556,9 @@ class MainActivity : AppCompatActivity() {
         // Replaces what getIntent() returns, so the extra this consumes is the
         // one that just arrived and not the one the task was started with.
         setIntent(intent)
+        if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
+            homeLaunchRequests.trySend(Unit)
+        }
         DiscordOAuth.handleRedirect(this, intent)
         PlayerDeepLink.consume(intent)
         JamInviteLink.consume(intent)
@@ -566,6 +582,7 @@ private fun AurelisApp(
      */
     windowHeight: Dp,
     appBackdrop: LayerBackdrop,
+    homeLaunches: Flow<Unit>,
     viewModel: MainViewModel = viewModel(),
 ) {
     val context = LocalContext.current
@@ -593,21 +610,9 @@ private fun AurelisApp(
     // rather than inside the bar because the page's scroll is what drives it,
     // and the page is a sibling of the bar rather than a child.
     val navBarScroll = rememberFloatingTabBarScrollConnection()
-    // Radio was the fifth tab in previous releases. Restoring that saved
-    // index must never address a missing tab, even before the first frame.
-    // A custom saver sanitizes both persisted preferences and Android's
-    // saved-instance-state restoration after an upgrade.
-    val mainTabSaver = remember {
-        Saver<MutableIntState, Int>(
-            save = { normalizeMainTabIndex(it.intValue) },
-            restore = { mutableIntStateOf(normalizeMainTabIndex(it)) },
-        )
-    }
-    var selectedTab by rememberSaveable(saver = mainTabSaver) {
-        mutableIntStateOf(normalizeMainTabIndex(AppSettings.lastMainTab.value))
-    }
+    val navigator = viewModel.navigator
+    var selectedTab by navigator.selectedTab
     LaunchedEffect(selectedTab) {
-        AppSettings.setLastMainTab(selectedTab)
         if (selectedTab == TAB_EXPLORE) viewModel.onExploreShown()
     }
     /**
@@ -879,7 +884,15 @@ private fun AurelisApp(
     // album / artist / playlist pages interleaved with them — see
     // [AppNavigator]. Whatever was opened last is what is on screen, and back
     // (the gesture or the bar's button alike) undoes exactly that.
-    val navigator = viewModel.navigator
+    LaunchedEffect(homeLaunches, navigator) {
+        homeLaunches.collect {
+            navigator.openHome()
+            viewModel.closeMoodGenre()
+            showNowPlaying = false
+            replayStory = null
+            searchFocusRequested = false
+        }
+    }
     val detailStack by viewModel.detailStack.collectAsStateWithLifecycle()
     val topEntry = navigator.visibleEntry(detailStack.size)
     // An artist's open shelf is drawn by the artist page itself, so it is not a
@@ -1288,6 +1301,13 @@ private fun AurelisApp(
     val exploreListState = rememberLazyListState()
     val moodGenreListState = rememberLazyListState()
     val libraryListState = rememberLazyListState()
+    val inlineLocalFolder = remember {
+        LocalFolderState(
+            LocalFolderTab.entries.firstOrNull { it.name == AppSettings.localMusicTab.value }
+                ?: LocalFolderTab.SONGS,
+        )
+    }
+    var localPositionRestored by remember { mutableStateOf(false) }
     val historyListState = rememberLazyListState()
     val libraryShowAllGridState = rememberLazyGridState()
     val moodsGridState = rememberLazyGridState()
@@ -1312,13 +1332,34 @@ private fun AurelisApp(
         selectedTab == TAB_LIBRARY -> MainViewModel.Feed.LIBRARY
         else -> null
     }
+    var canReadLocal by remember(context) {
+        mutableStateOf(LocalMediaRepository.hasStoragePermission(context))
+    }
+    LaunchedEffect(appForeground) {
+        if (appForeground) canReadLocal = LocalMediaRepository.hasStoragePermission(context)
+    }
+    var localReload by remember { mutableIntStateOf(0) }
+    val deviceSongs by produceState<List<Song>?>(
+        initialValue = null,
+        canReadLocal,
+        localMusicFolderUri,
+        filterNonMusicAudio,
+        savedDownloads,
+        localReload,
+    ) {
+        if (!canReadLocal) value = null
+        else if (localReload > 0) value = LocalMediaRepository.getLocalMusic(context)
+    }
     // The lead shelf is listening history, so opening Home after playing
     // something is exactly when it needs re-fetching.
     LaunchedEffect(currentFeed) {
         if (currentFeed == MainViewModel.Feed.HOME) viewModel.onHomeShown()
         // Likewise for Library: a playlist created or a song liked since it
         // was last fetched is a change to exactly this page.
-        if (currentFeed == MainViewModel.Feed.LIBRARY) viewModel.onLibraryShown()
+        if (currentFeed == MainViewModel.Feed.LIBRARY) {
+            localReload++
+            viewModel.onLibraryShown()
+        }
     }
 
     val currentPull = when (currentFeed) {
@@ -3081,7 +3122,7 @@ private fun AurelisApp(
                     val pageDetailListState = remember(key) {
                         detailListStates.getOrPut(key) { LazyListState() }
                     }
-                    val pageContent: @Composable () -> Unit = {
+                    val pageContent: @Composable () -> Unit = pageContent@{
                         if (pageRoute == AppRoute.History) {
                             HistoryScreen(
                                 state = historyState,
@@ -3807,30 +3848,11 @@ private fun AurelisApp(
                             else -> {
                                 // A single scroll surface: offline playlists stay above
                                 // the existing Local Music tabs and MediaStore songs.
-                                var localReload by remember { mutableIntStateOf(0) }
                                 var showDuplicateReview by remember { mutableStateOf(false) }
-                                val canReadLocal = LocalMediaRepository.hasStoragePermission(context)
                                 val requestLocalPermission = rememberLauncherForActivityResult(
                                     ActivityResultContracts.RequestPermission(),
-                                ) { granted -> if (granted) localReload++ }
-                                val deviceSongs by produceState<List<Song>?>(
-                                    initialValue = null,
-                                    canReadLocal,
-                                    localMusicFolderUri,
-                                    filterNonMusicAudio,
-                                    savedDownloads,
-                                    localReload,
-                                ) {
-                                    value = if (canReadLocal) withContext(Dispatchers.IO) {
-                                        LocalMediaRepository.getLocalMusic(context)
-                                    } else emptyList()
-                                }
-                                val savedLocalTab by AppSettings.localMusicTab.collectAsStateWithLifecycle()
-                                val folderState = remember { LocalFolderState() }
-                                LaunchedEffect(savedLocalTab) {
-                                    folderState.tab = LocalFolderTab.entries.firstOrNull { it.name == savedLocalTab }
-                                        ?: LocalFolderTab.SONGS
-                                }
+                                ) { granted -> canReadLocal = granted }
+                                val folderState = inlineLocalFolder
                                 val localSongs = remember(deviceSongs, localMusicSort) {
                                     deviceSongs.orEmpty().sortedForLibrary(localMusicSort)
                                 }
@@ -3867,7 +3889,65 @@ private fun AurelisApp(
                                 val grouped = rememberLocalFolderGroups(
                                     "local:all", folder, folderState.tab, localSongs, "",
                                 )
+                                val localTab = folderState.tab
+                                val localItemKeys = remember(localTab, localSongs, grouped) {
+                                    buildList {
+                                        add("library-local-heading")
+                                        add("folder-tabs")
+                                        if (localTab == LocalFolderTab.PLAYLISTS) {
+                                            add("folder-new-playlist")
+                                            add("folder-m3u-actions")
+                                        }
+                                        when {
+                                            localTab == LocalFolderTab.SONGS && localSongs.isNotEmpty() ->
+                                                localSongs.forEachIndexed { index, song ->
+                                                    add(localFolderSongRowKey(index, song))
+                                                }
+                                            grouped.isNotEmpty() -> grouped.forEach { add(it.browseId) }
+                                            else -> add("folder-empty")
+                                        }
+                                    }
+                                }
+                                val pendingPosition = remember(localTab) {
+                                    if (localPositionRestored) null else AppSettings.getLocalMusicPosition(localTab.name)
+                                }.takeUnless { localPositionRestored }
+                                val localReady = canReadLocal && deviceSongs != null
+                                val waitingForPosition = pendingPosition != null && canReadLocal && !localReady
+                                val libraryVisible = currentFeed == MainViewModel.Feed.LIBRARY
+                                LaunchedEffect(libraryVisible, localReady, localTab, localItemKeys) {
+                                    if (!libraryVisible || !localReady) return@LaunchedEffect
+                                    if (!localPositionRestored) {
+                                        if (pendingPosition != null) {
+                                            // Local Music is the tail of this list. Resolve its saved key
+                                            // after layout, independently of the shelves above it.
+                                            val itemCount = snapshotFlow { libraryListState.layoutInfo.totalItemsCount }
+                                                .first { it >= localItemKeys.size }
+                                            val index = localItemKeys.indexOf(pendingPosition.itemKey)
+                                            libraryListState.scrollToItem(
+                                                index = itemCount - localItemKeys.size + index.coerceAtLeast(0),
+                                                scrollOffset = if (index < 0) 0 else pendingPosition.offset,
+                                            )
+                                        }
+                                        localPositionRestored = true
+                                    }
+                                    val localKeys = localItemKeys.toHashSet()
+                                    snapshotFlow {
+                                        if (libraryListState.isScrollInProgress) null else {
+                                            val firstIndex = libraryListState.firstVisibleItemIndex
+                                            val itemKey = libraryListState.layoutInfo.visibleItemsInfo
+                                                .firstOrNull { it.index == firstIndex }?.key as? String
+                                            itemKey?.takeIf { it in localKeys }?.let {
+                                                AppSettings.LocalMusicPosition(it, libraryListState.firstVisibleItemScrollOffset)
+                                            }
+                                        }
+                                    }.filterNotNull().collect { position ->
+                                        AppSettings.setLocalMusicPosition(localTab.name, position)
+                                    }
+                                }
                                 val localTitle = stringResource(R.string.local_music)
+                                val localQueueSource = remember(localTitle) {
+                                    QueueSource(localTitle, PlaybackSourceType.BROWSE, "local:all")
+                                }
                                 val localBody: LazyListScope.() -> Unit = {
                                     item(key = "library-local-heading") {
                                         Column(
@@ -3879,32 +3959,31 @@ private fun AurelisApp(
                                         ) {
                                             Text(
                                                 text = localTitle,
-                                                style = MaterialTheme.typography.headlineMedium,
-                                                color = MaterialTheme.colorScheme.onBackground,
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.semantics { heading() },
                                             )
                                             Text(
-                                                text = stringResource(R.string.audio_files_on_device) +
-                                                    " · " + localSongs.size,
+                                                text = when {
+                                                    !canReadLocal -> stringResource(R.string.storage_required_read)
+                                                    deviceSongs == null -> stringResource(R.string.local_music_loading)
+                                                    else -> pluralStringResource(
+                                                        R.plurals.song_count_plural, localSongs.size, localSongs.size,
+                                                    )
+                                                },
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+                                                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
                                             )
-                                            if (canReadLocal) {
+                                            if (canReadLocal && deviceSongs == null) {
+                                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                            } else if (canReadLocal) {
                                                 Row(
                                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                                 ) {
                                                     Button(
                                                         onClick = {
-                                                            if (localSongs.isNotEmpty()) {
-                                                                playFrom(
-                                                                    localSongs, 0,
-                                                                    QueueSource(
-                                                                        localTitle,
-                                                                        PlaybackSourceType.BROWSE,
-                                                                        "local:all",
-                                                                    ),
-                                                                )
-                                                            }
+                                                            playFrom(localSongs, 0, localQueueSource)
                                                         },
                                                         enabled = localSongs.isNotEmpty(),
                                                         modifier = Modifier.weight(1f),
@@ -3915,18 +3994,8 @@ private fun AurelisApp(
                                                     }
                                                     OutlinedButton(
                                                         onClick = {
-                                                            if (localSongs.isNotEmpty()) {
-                                                                QueueShuffle.enableForNextQueue()
-                                                                playFrom(
-                                                                    localSongs,
-                                                                    localSongs.indices.random(),
-                                                                    QueueSource(
-                                                                        localTitle,
-                                                                        PlaybackSourceType.BROWSE,
-                                                                        "local:all",
-                                                                    ),
-                                                                )
-                                                            }
+                                                            QueueShuffle.enableForNextQueue()
+                                                            playFrom(localSongs, localSongs.indices.random(), localQueueSource)
                                                         },
                                                         enabled = localSongs.isNotEmpty(),
                                                         modifier = Modifier.weight(1f),
@@ -3936,21 +4005,20 @@ private fun AurelisApp(
                                                         Text(stringResource(R.string.shuffle))
                                                     }
                                                 }
-                                                Spacer(Modifier.height(12.dp))
-                                                OutlinedButton(
+                                                TextButton(
                                                     onClick = { showDuplicateReview = true },
                                                     enabled = localSongs.isNotEmpty(),
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                                    modifier = Modifier
+                                                        .padding(top = 4.dp)
+                                                        .align(Alignment.CenterHorizontally),
                                                 ) {
-                                                    Icon(Icons.Rounded.ContentCopy, contentDescription = null)
-                                                    Spacer(Modifier.width(10.dp))
-                                                    Text(
-                                                        if (Locale.getDefault().language == "es")
-                                                            "Buscar canciones duplicadas"
-                                                        else
-                                                            "Find duplicate songs",
+                                                    Icon(
+                                                        Icons.Rounded.ContentCopy,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp),
                                                     )
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(stringResource(R.string.local_music_find_duplicates))
                                                 }
                                             } else {
                                                 Button(onClick = {
@@ -3960,12 +4028,12 @@ private fun AurelisApp(
                                                         else Manifest.permission.READ_EXTERNAL_STORAGE,
                                                     )
                                                 }) {
-                                                    Text(stringResource(R.string.local_music))
+                                                    Text(stringResource(R.string.local_music_allow_access))
                                                 }
                                             }
                                         }
                                     }
-                                    if (canReadLocal) {
+                                    if (localReady) {
                                         localFolderItems(
                                             folder = folder,
                                             state = folderState,
@@ -3976,76 +4044,74 @@ private fun AurelisApp(
                                             palette = detailPalette,
                                             currentSong = player.song,
                                             isPlaying = player.isPlaying,
-                                            onSongClick = { songs, index ->
-                                                playFrom(
-                                                    songs,
-                                                    index,
-                                                    QueueSource(
-                                                        localTitle,
-                                                        PlaybackSourceType.BROWSE,
-                                                        "local:all",
-                                                    ),
-                                                )
-                                            },
+                                            onSongClick = { songs, index -> playFrom(songs, index, localQueueSource) },
                                             onSongLongPress = { openSongMenu(it) },
                                             onSongSwipe = onSongSwipe,
                                         )
                                     }
                                 }
+                                if (waitingForPosition) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize().padding(listPadding),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+                                    return@pageContent
+                                }
                                 LibraryScreen(
-
-                                signedIn = signedIn,
-                                state = libraryState,
-                                offline = !online,
-                                youtubePlaylistTitle = stringResource(R.string.youtube_playlists),
-                                newPlaylistSubtitle = stringResource(R.string.playlist_destination_subtitle),
-                                listState = libraryListState,
-                                onShelfItemClick = onLibraryItemClick,
-                                // Every shelf here has a menu behind it now — the account's
-                                // own playlists get rename and delete on top of what a saved
-                                // album or a Liked Music card gets. Holding an artist still
-                                // does nothing; see [onBrowseLongPress].
-                                onShelfItemLongPress = onBrowseLongPress,
-                                onNewPlaylist = { choosingPlaylistDestination = true },
-                                onImportSpotifyPlaylist = { showSpotifyImportDialog = true },
-                                onShowAll = { shelf -> navigator.push(AppRoute.LibraryShowAll(shelf)) },
-                                replay = {
-                                    LibraryReplayEntry(
-                                        cards = replayCards,
-                                        loading = replay.loading,
-                                        holder = account?.name.orEmpty(),
-                                        memberSince = replay.memberSince,
-                                        onOpenReplay = { page ->
-                                            replayLandingPage = page
-                                            navigator.push(AppRoute.Replay)
-                                        },
-                                    )
-                                },
-                                onSignIn = { webSession = WebSessionMode.SIGN_IN },
-                                onRetry = viewModel::loadLibrary,
-                                refreshing = MainViewModel.Feed.LIBRARY in refreshing,
-                                onRefresh = {
-                                    viewModel.refresh(MainViewModel.Feed.LIBRARY)
-                                    localReload++
-                                },
-                                pullState = libraryPull,
-                                contentPadding = listPadding,
-                                links = listOfNotNull(
-                                    LibraryLink(
-                                        item = ShelfItem(
-                                            title = stringResource(R.string.youtube_liked_music),
-                                            subtitle = "",
-                                            thumbnailUrl = null,
-                                            videoId = null,
-                                            browseId = YtMusicRepository.LIKED_MUSIC,
-                                        ),
-                                        icon = AurelisIcons.Heart,
-                                    ).takeIf { signedIn },
-                                ) + libraryLinks(),
-                                deviceItems = libraryDeviceItems(downloadedReleases),
-                                localPlaylistShelf = HomeShelf(stringResource(R.string.device_playlists), localPlaylistItems),
-                                inlineLocalMusic = localBody,
-                            )
+                                    signedIn = signedIn,
+                                    state = libraryState,
+                                    offline = !online,
+                                    youtubePlaylistTitle = stringResource(R.string.youtube_playlists),
+                                    newPlaylistSubtitle = stringResource(R.string.playlist_destination_subtitle),
+                                    listState = libraryListState,
+                                    onShelfItemClick = onLibraryItemClick,
+                                    // Every shelf here has a menu behind it now — the account's
+                                    // own playlists get rename and delete on top of what a saved
+                                    // album or a Liked Music card gets. Holding an artist still
+                                    // does nothing; see [onBrowseLongPress].
+                                    onShelfItemLongPress = onBrowseLongPress,
+                                    onNewPlaylist = { choosingPlaylistDestination = true },
+                                    onImportSpotifyPlaylist = { showSpotifyImportDialog = true },
+                                    onShowAll = { shelf -> navigator.push(AppRoute.LibraryShowAll(shelf)) },
+                                    replay = {
+                                        LibraryReplayEntry(
+                                            cards = replayCards,
+                                            loading = replay.loading,
+                                            holder = account?.name.orEmpty(),
+                                            memberSince = replay.memberSince,
+                                            onOpenReplay = { page ->
+                                                replayLandingPage = page
+                                                navigator.push(AppRoute.Replay)
+                                            },
+                                        )
+                                    },
+                                    onSignIn = { webSession = WebSessionMode.SIGN_IN },
+                                    onRetry = viewModel::loadLibrary,
+                                    refreshing = MainViewModel.Feed.LIBRARY in refreshing,
+                                    onRefresh = {
+                                        viewModel.refresh(MainViewModel.Feed.LIBRARY)
+                                        localReload++
+                                    },
+                                    pullState = libraryPull,
+                                    contentPadding = listPadding,
+                                    links = listOfNotNull(
+                                        LibraryLink(
+                                            item = ShelfItem(
+                                                title = stringResource(R.string.youtube_liked_music),
+                                                subtitle = "",
+                                                thumbnailUrl = null,
+                                                videoId = null,
+                                                browseId = YtMusicRepository.LIKED_MUSIC,
+                                            ),
+                                            icon = AurelisIcons.Heart,
+                                        ).takeIf { signedIn },
+                                    ) + libraryLinks(),
+                                    deviceItems = libraryDeviceItems(downloadedReleases),
+                                    localPlaylistShelf = HomeShelf(stringResource(R.string.device_playlists), localPlaylistItems),
+                                    inlineLocalMusic = localBody,
+                                )
                             }
                         }
                     }
@@ -6802,8 +6868,8 @@ private object PlayerSheetShape : Shape {
         Outline.Rectangle(Rect(0f, -size.height, size.width, size.height))
 }
 
-private const val TAB_HOME = 0
+internal const val TAB_HOME = 0
 private const val TAB_EXPLORE = 1
-private const val TAB_LIBRARY = 2
+internal const val TAB_LIBRARY = 2
 private const val TAB_SEARCH = 3
 

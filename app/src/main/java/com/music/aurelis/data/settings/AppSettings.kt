@@ -186,13 +186,6 @@ enum class SongSort {
  * same flows and applies changes to the live ExoPlayer instance immediately —
  * no restart, no rebinding.
  */
-/**
- * Upgrade-safe main navigation index. Older builds saved Radio as index 4;
- * after removing that tab, Home is the only valid fallback.
- * Keep the remaining indices unchanged to preserve Library/Search selections.
- */
-internal fun normalizeMainTabIndex(index: Int): Int = if (index in 0..3) index else 0
-
 object AppSettings {
 
     private lateinit var prefs: SharedPreferences
@@ -716,7 +709,6 @@ object AppSettings {
     val filterNonMusicAudio = MutableStateFlow(false)
 
     /** Last Local Music category, preserved across app restarts. */
-    val lastMainTab = MutableStateFlow(0)
     val localMusicTab = MutableStateFlow("SONGS")
     val localMusicSort = MutableStateFlow(LocalMusicSort.TITLE_ASC)
     val downloadedMusicSort = MutableStateFlow(LocalMusicSort.TITLE_ASC)
@@ -1180,12 +1172,6 @@ object AppSettings {
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, false)
-        val savedMainTab = prefs.getInt(KEY_LAST_MAIN_TAB, 0)
-        lastMainTab.value = normalizeMainTabIndex(savedMainTab)
-        if (savedMainTab != lastMainTab.value) {
-            // Persist the migration so future launches no longer restore Radio.
-            prefs.edit().putInt(KEY_LAST_MAIN_TAB, lastMainTab.value).apply()
-        }
         localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
             ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }
             ?: "SONGS"
@@ -2141,17 +2127,27 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_FILTER_NON_MUSIC_AUDIO, value).apply()
     }
 
-    fun setLastMainTab(tab: Int) {
-        if (tab !in 0..3 || lastMainTab.value == tab) return
-        lastMainTab.value = tab
-        prefs.edit().putInt(KEY_LAST_MAIN_TAB, tab).apply()
-    }
-
     fun setLocalMusicTab(tab: String) {
         if (tab !in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS")) return
         if (localMusicTab.value == tab) return
         localMusicTab.value = tab
         prefs.edit().putString(KEY_LOCAL_MUSIC_TAB, tab).apply()
+    }
+
+    data class LocalMusicPosition(val itemKey: String, val offset: Int)
+
+    fun getLocalMusicPosition(tab: String): LocalMusicPosition? {
+        val itemKey = prefs.getString("${KEY_LOCAL_MUSIC_POSITION}_${tab}_key", null) ?: return null
+        val offset = prefs.getInt("${KEY_LOCAL_MUSIC_POSITION}_${tab}_offset", 0)
+        return LocalMusicPosition(itemKey, offset.coerceAtLeast(0))
+    }
+
+    fun setLocalMusicPosition(tab: String, position: LocalMusicPosition) {
+        if (getLocalMusicPosition(tab) == position) return
+        prefs.edit()
+            .putString("${KEY_LOCAL_MUSIC_POSITION}_${tab}_key", position.itemKey)
+            .putInt("${KEY_LOCAL_MUSIC_POSITION}_${tab}_offset", position.offset)
+            .apply()
     }
 
     fun setLocalMusicSort(value: LocalMusicSort) {
@@ -2541,8 +2537,8 @@ object AppSettings {
     private const val KEY_REPLAY_GENRES = "replay_genres"
     private const val KEY_FILTER_NON_MUSIC_AUDIO = "filter_non_music_audio"
     private const val KEY_SHOW_CACHE_FOLDER = "show_cache_folder"
-    private const val KEY_LAST_MAIN_TAB = "last_main_tab"
     private const val KEY_LOCAL_MUSIC_TAB = "local_music_tab"
+    private const val KEY_LOCAL_MUSIC_POSITION = "local_music_position"
     private const val KEY_LOCAL_MUSIC_SORT = "local_music_sort"
     private const val KEY_DOWNLOADED_MUSIC_SORT = "downloaded_music_sort"
     private const val KEY_LIBRARY_SORT = "library_sort"
