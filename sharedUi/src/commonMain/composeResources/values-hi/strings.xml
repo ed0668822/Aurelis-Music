@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">इन लिरिक्स के लिए रोमन रूप उपलब्ध नहीं है</string>
     <string name="lyrics_romanized">रोमन उच्चारण</string>
     <string name="lyrics_saved_with_download">इस डाउनलोड के साथ लिरिक्स सेव किए गए</string>
-    <string name="lyrics_share_pick_limit">कार्ड भर चुका है</string>
+    <string name="lyrics_share_preview">प्रीव्यू</string>
     <string name="lyrics_translated_to">%1$s में अनुवादित</string>
     <string name="lyrics_translation_unavailable">अनुवाद अभी उपलब्ध नहीं है</string>
     <string name="medium_quality">मध्यम गुणवत्ता</string>

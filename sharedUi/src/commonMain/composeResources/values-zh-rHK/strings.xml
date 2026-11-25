@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">這些歌詞無法轉換為羅馬音</string>
     <string name="lyrics_romanized">羅馬音發音</string>
     <string name="lyrics_saved_with_download">歌詞已隨此次下載儲存</string>
-    <string name="lyrics_share_pick_limit">卡片已滿</string>
+    <string name="lyrics_share_preview">預覽</string>
     <string name="lyrics_translated_to">已翻譯為%1$s</string>
     <string name="lyrics_translation_unavailable">翻譯目前不可用</string>
     <string name="medium_quality">中等音質</string>

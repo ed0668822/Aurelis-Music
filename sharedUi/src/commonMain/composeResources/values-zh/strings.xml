@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">这些歌词无法转换为罗马音</string>
     <string name="lyrics_romanized">罗马音发音</string>
     <string name="lyrics_saved_with_download">歌词已随此次下载保存</string>
-    <string name="lyrics_share_pick_limit">卡片已满</string>
+    <string name="lyrics_share_preview">预览</string>
     <string name="lyrics_translated_to">已翻译为%1$s</string>
     <string name="lyrics_translation_unavailable">翻译目前不可用</string>
     <string name="medium_quality">中等音质</string>

@@ -1161,6 +1161,7 @@ fun NowPlayingScreen(
         lines = lyrics,
         subLines = lyricsTranslation.subLines,
         artworkUrl = remoteArt,
+        lyricsOffsetMs = lyricsOffsetMs,
         haptics = haptics,
         onCard = { lyricsShare = it },
     )
@@ -1241,7 +1242,7 @@ fun NowPlayingScreen(
     // Backing out of a pick drops the pick, not the panel: somebody who changed
     // their mind lands on the same verses they started from rather than having
     // to open the whole panel again.
-    PlayerBackHandler(enabled = lyricPicker.picking) { lyricPicker.cancel() }
+    PlayerBackHandler(enabled = lyricPicker.picking && lyricsShare == null) { lyricPicker.cancel() }
 
     // 0 = full sleeve, 1 = queue. Everything that moves reads off this.
     //
@@ -2316,10 +2317,9 @@ fun NowPlayingScreen(
                             picking = lyricPicker.picking,
                             pickBar = {
                                 LyricsPickBar(
-                                    shareEnabled = lyricPicker.picks.isNotEmpty() &&
-                                        !lyricPicker.overBudget,
+                                    previewEnabled = lyricPicker.picks.isNotEmpty(),
                                     onCancel = lyricPicker.cancel,
-                                    onShare = lyricPicker.share,
+                                    onPreview = lyricPicker.preview,
                                 )
                             },
                             romanizationToggle = {
@@ -4053,10 +4053,9 @@ fun NowPlayingScreen(
                             // would be over the reader's first pick anyway.
                             if (lyricPicker.picking) {
                                 LyricsPickBar(
-                                    shareEnabled = lyricPicker.picks.isNotEmpty() &&
-                                        !lyricPicker.overBudget,
+                                    previewEnabled = lyricPicker.picks.isNotEmpty(),
                                     onCancel = lyricPicker.cancel,
-                                    onShare = lyricPicker.share,
+                                    onPreview = lyricPicker.preview,
                                     modifier = Modifier.align(Alignment.BottomCenter),
                                 )
                             }

@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">Không thể chuyển lời bài hát này sang chữ Latinh</string>
     <string name="lyrics_romanized">Phiên âm Latinh</string>
     <string name="lyrics_saved_with_download">Lời bài hát được lưu kèm bản tải này</string>
-    <string name="lyrics_share_pick_limit">Thẻ đã đầy</string>
+    <string name="lyrics_share_preview">Xem trước</string>
     <string name="lyrics_translated_to">Đã dịch sang %1$s</string>
     <string name="lyrics_translation_unavailable">Hiện không thể dịch</string>
     <string name="medium_quality">Chất lượng trung bình</string>

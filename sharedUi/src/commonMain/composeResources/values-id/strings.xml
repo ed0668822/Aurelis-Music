@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">Romanisasi tidak tersedia untuk lirik ini</string>
     <string name="lyrics_romanized">Pelafalan romanisasi</string>
     <string name="lyrics_saved_with_download">Lirik disimpan bersama unduhan ini</string>
-    <string name="lyrics_share_pick_limit">Kartu sudah penuh</string>
+    <string name="lyrics_share_preview">Pratinjau</string>
     <string name="lyrics_translated_to">Diterjemahkan ke %1$s</string>
     <string name="lyrics_translation_unavailable">Terjemahan tidak tersedia saat ini</string>
     <string name="medium_quality">Kualitas sedang</string>

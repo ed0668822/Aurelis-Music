@@ -279,20 +279,16 @@ internal fun sendIntent(uri: Uri) = Intent(Intent.ACTION_SEND)
  * out a `file://` path: that has been illegal since API 24, and a content URI is
  * what lets the read grant travel with the intent and expire with it — the other
  * app gets this one picture and nothing else in the folder.
- *
- * Shared with the lyrics card, which writes under its own [fileName] so the two
- * hand-offs can't overwrite each other while the receiving app is still reading.
  */
-internal suspend fun cacheForSharing(
+private suspend fun cacheForSharing(
     context: Context,
     bitmap: Bitmap,
-    fileName: String = "replay.png",
 ): Uri? = withContext(Dispatchers.IO) {
     runCatching {
         val folder = File(context.cacheDir, SHARE_FOLDER).apply { mkdirs() }
         // One name, overwritten: the folder is a hand-off point, not an album,
         // and a file per share would accumulate megabytes nobody ever looks at.
-        val file = File(folder, fileName)
+        val file = File(folder, "replay.png")
         FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     }.getOrNull()
@@ -313,7 +309,9 @@ internal suspend fun saveToGallery(
     label: String,
     prefix: String = "aurelis-replay",
 ): Boolean = withContext(Dispatchers.IO) {
-    val name = "$prefix-${label.replace(' ', '-').lowercase(Locale.ROOT)}.png"
+    val safeLabel = label.replace(Regex("[/\\\\ ]+"), "-").take(100).lowercase(Locale.ROOT)
+    val name = "$prefix-$safeLabel.png"
+    val resolver = context.contentResolver
     runCatching {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, name)
@@ -323,15 +321,25 @@ internal suspend fun saveToGallery(
                     MediaStore.Images.Media.RELATIVE_PATH,
                     "${Environment.DIRECTORY_PICTURES}/Aurelis",
                 )
+                put(MediaStore.Images.Media.IS_PENDING, 1)
             }
         }
-        val uri = context.contentResolver
-            .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
             ?: error("no row")
-        context.contentResolver.openOutputStream(uri)?.use {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-        } ?: error("no stream")
-        true
+        try {
+            val written = resolver.openOutputStream(uri)?.use {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
+            check(written == true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val published = ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }
+                check(resolver.update(uri, published, null, null) == 1)
+            }
+            true
+        } catch (failure: Exception) {
+            resolver.delete(uri, null, null)
+            throw failure
+        }
     }.getOrDefault(false)
 }
 

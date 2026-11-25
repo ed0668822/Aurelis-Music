@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">ไม่สามารถแปลงเนื้อเพลงนี้เป็นอักษรโรมันได้</string>
     <string name="lyrics_romanized">คำอ่านแบบอักษรโรมัน</string>
     <string name="lyrics_saved_with_download">บันทึกเนื้อเพลงไว้พร้อมกับไฟล์ที่ดาวน์โหลดนี้</string>
-    <string name="lyrics_share_pick_limit">การ์ดเต็มแล้ว</string>
+    <string name="lyrics_share_preview">ตัวอย่าง</string>
     <string name="lyrics_translated_to">แปลเป็น %1$s แล้ว</string>
     <string name="lyrics_translation_unavailable">ใช้งานการแปลไม่ได้ในขณะนี้</string>
     <string name="medium_quality">คุณภาพปานกลาง</string>

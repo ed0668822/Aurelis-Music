@@ -2,17 +2,15 @@
 
 package com.music.aurelis.ui.player
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
-import android.graphics.Bitmap
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,15 +20,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.IosShare
-import androidx.compose.material.icons.rounded.PhoneIphone
-import androidx.compose.material.icons.rounded.Undo
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,35 +45,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.music.aurelis.R
-import com.music.aurelis.ui.haptics.Haptic
-import com.music.aurelis.ui.haptics.rememberHaptics
 import com.music.aurelis.ui.replay.ShareAction
-import com.music.aurelis.ui.replay.cacheForSharing
 import com.music.aurelis.ui.replay.saveToGallery
-import com.music.aurelis.ui.replay.sendIntent
 import dev.chrisbanes.haze.HazeState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.roundToInt
 
-/**
- * The picked lines, drawn, with the two things you can do to the picture.
- *
- * Built on [PlayerDrawer] rather than on a `ModalBottomSheet` for the same reason
- * as every other sheet in this package: it is inside the player, which is itself
- * already a modal sheet, and nesting the two leaves the inner one with nothing
- * to be modal over. It also means this drawer gets the player's own frosted
- * material, the drag-to-dismiss gesture and the scrim fade for free.
- *
- * The render happens on a background dispatcher and the preview is a plain
- * `Image` of the result — no second layout pass, no offscreen Compose, and the
- * identical pixels that the Save and Share buttons then write to disk.
- */
+private enum class LyricsExportAction { SAVE, SHARE }
+
+private data class LyricsExportFailure(val action: LyricsExportAction, val message: Int)
+
 @Composable
 internal fun AndroidLyricsShareSheet(
     hazeState: HazeState,
@@ -80,38 +72,103 @@ internal fun AndroidLyricsShareSheet(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val uiResources = LocalResources.current
     val scope = rememberCoroutineScope()
-    val haptics = rememberHaptics()
+    val clipboard = remember(context) { context.getSystemService(ClipboardManager::class.java) }
 
-    var image by remember(request) { mutableStateOf<Bitmap?>(null) }
-    var failed by remember(request) { mutableStateOf(false) }
-    var saved by remember(request) { mutableStateOf(false) }
-    // Same picture, cut to the 9:16 frame a story wants instead of to its lines.
-    var story by remember(request) { mutableStateOf(false) }
-
-    // The selected lines must have real timestamps before video export is offered.
     val timeline = remember(request) { lyricsShareTimeline(request.lines) }
+    val localAudioUri = remember(request) { localLyricsAudioUri(request) }
+    val hasSubText = request.lines.any { !it.subText.isNullOrBlank() }
     var asVideo by remember(request) { mutableStateOf(false) }
-    var exporting by remember(request) { mutableStateOf(false) }
-    var exported by remember(request, story) { mutableStateOf<File?>(null) }
-    suspend fun videoFile(poster: Bitmap): File? {
-        exported?.takeIf { it.exists() && it.length() > 0L }?.let { return it }
-        exporting = true
-        return try {
-            exportLocalLyricsVideo(context, request, poster)?.also { exported = it }
+    var format by remember(request) { mutableStateOf(LyricsImageFormat.CARD) }
+    var includeSubText by remember(request) { mutableStateOf(hasSubText) }
+    var includeAudio by remember(request) { mutableStateOf(localAudioUri != null) }
+    val renderFormat = if (asVideo) LyricsImageFormat.STORY else format
+    val audioUri = localAudioUri.takeIf { includeAudio }
+    var card by remember(request, renderFormat, includeSubText) { mutableStateOf<RenderedLyricsCard?>(null) }
+    var rendering by remember(request, renderFormat, includeSubText) { mutableStateOf(true) }
+    var renderError by remember(request, renderFormat, includeSubText) { mutableStateOf(false) }
+    var renderAttempt by remember(request, renderFormat, includeSubText) { mutableStateOf(0) }
+    var busy by remember(request) { mutableStateOf(false) }
+    var saved by remember(request, asVideo, renderFormat, includeSubText, audioUri) { mutableStateOf(false) }
+    var copied by remember(request, includeSubText) { mutableStateOf(false) }
+    var failure by remember(request, asVideo, renderFormat, includeSubText, audioUri) {
+        mutableStateOf<LyricsExportFailure?>(null)
+    }
+    var exportedVideo by remember(request, includeSubText, audioUri) { mutableStateOf<File?>(null) }
+
+    LaunchedEffect(request, renderFormat, includeSubText, renderAttempt) {
+        try {
+            card = renderLyricsShareCard(context, request, renderFormat, includeSubText)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            renderError = true
         } finally {
-            exporting = false
+            rendering = false
         }
     }
 
-    LaunchedEffect(request, story) {
-        image = null
-        failed = false
+    fun export(action: LyricsExportAction) {
+        val rendered = card ?: return
+        if (busy) return
+        busy = true
+        failure = null
         saved = false
-        image = runCatching { renderLyricsShareCard(context, request, story) }
-            .onFailure { failed = true }
-            .getOrNull()
+        scope.launch {
+            var errorMessage = if (action == LyricsExportAction.SAVE) {
+                R.string.lyrics_share_save_failed
+            } else {
+                R.string.lyrics_share_send_failed
+            }
+            try {
+                val video = if (asVideo && timeline != null) {
+                    val existing = exportedVideo?.takeIf { it.isFile && it.length() > 0L }
+                    existing ?: run {
+                        val newVideo = try {
+                            exportLocalLyricsVideo(context, rendered, timeline, audioUri)
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            null
+                        }
+                        if (newVideo == null) {
+                            errorMessage = if (audioUri != null) {
+                                R.string.lyrics_share_audio_failed
+                            } else {
+                                R.string.lyrics_share_video_failed
+                            }
+                            error("Video export failed")
+                        }
+                        newVideo.also { exportedVideo = it }
+                    }
+                } else {
+                    null
+                }
+                if (action == LyricsExportAction.SAVE) {
+                    val success = if (video != null) {
+                        saveLocalLyricsVideo(context, video, request.song.title)
+                    } else {
+                        saveToGallery(context, rendered.bitmap, request.song.title, "aurelis-lyrics")
+                    }
+                    check(success)
+                    saved = true
+                } else {
+                    val intent = if (video != null) {
+                        shareLocalLyricsVideoIntent(context, video)
+                    } else {
+                        cacheLyricsImage(context, rendered.bitmap)?.let { shareLyricsMediaIntent(it, "image/png") }
+                    }
+                    checkNotNull(intent)
+                    context.startActivity(Intent.createChooser(intent, context.getString(R.string.lyrics_share_title)))
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                failure = LyricsExportFailure(action, errorMessage)
+            } finally {
+                busy = false
+            }
+        }
     }
 
     PlayerDrawer(
@@ -124,248 +181,219 @@ internal fun AndroidLyricsShareSheet(
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                text = stringResource(R.string.lyrics_share_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.7f),
-                textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
-            )
-
-            // The same choice as BitChord 1.10; fallback is always the existing
-            // still card for providers without synchronized lyric timestamps.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.lyrics_share_image),
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = if (!asVideo) 0.25f else 0.08f))
-                        .clickable { asVideo = false; saved = false }
-                        .padding(12.dp),
-                )
-                Text(
-                    text = stringResource(R.string.lyrics_share_video),
-                    color = Color.White.copy(alpha = if (timeline == null) 0.4f else 1f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = if (asVideo) 0.25f else 0.08f))
-                        .clickable(enabled = timeline != null) {
-                            // Switching to video selects the portrait story layout.
-                            // The image-only share retains its chosen aspect ratio.
-                            asVideo = true
-                            story = true
-                            saved = false
-                        }
-                        .padding(12.dp),
-                )
-            }
-            if (exporting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.5.dp,
-                    color = Color.White,
-                )
-            }
-
-            val bitmap = image
-            // The card is only as tall as its lines, so the frame follows it:
-            // a strip comes out wide, a full verse narrow, both about the same
-            // height on screen rather than a fixed box with bands to spare.
-            val ratio = bitmap?.let { it.width.toFloat() / it.height } ?: (9f / 16f)
-            val preview = Modifier
-                .fillMaxWidth((0.72f * ratio).coerceIn(0.36f, 0.92f))
-                .aspectRatio(ratio)
-                .clip(RoundedCornerShape(18.dp))
-            if (bitmap == null) {
-                Box(
-                    modifier = preview
-                        .background(Color.White.copy(alpha = 0.06f)),
-                    contentAlignment = Alignment.Center,
+            Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LyricsShareOption(stringResource(R.string.lyrics_share_image), !asVideo, !busy, Modifier.weight(1f)) {
+                    asVideo = false
+                }
+                LyricsShareOption(
+                    stringResource(R.string.lyrics_share_video), asVideo, !busy && timeline != null, Modifier.weight(1f),
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(26.dp),
-                        strokeWidth = 2.5.dp,
-                        color = Color.White.copy(alpha = 0.75f),
-                    )
+                    asVideo = true
                 }
-            } else if (asVideo && timeline != null) {
-                Box(modifier = preview) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = stringResource(R.string.your_lyrics_card),
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    LyricsVideoPreview(
-                        timeline = timeline,
-                        lines = request.lines,
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
-                }
-            } else {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = stringResource(R.string.your_lyrics_card),
-                    modifier = preview,
-                )
+            }
+            if (timeline == null) {
+                Text(stringResource(R.string.lyrics_share_video_requires_timing), style = MaterialTheme.typography.bodySmall)
             }
 
-            ShareAction(
-                label = stringResource(if (story) R.string.lyrics_share_story_revert else R.string.lyrics_share_story),
-                icon = if (story) Icons.Rounded.Undo else Icons.Rounded.PhoneIphone,
-                accent = false,
-                enabled = image != null,
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    haptics.play(Haptic.Tap)
-                    story = !story
-                },
-            )
-
-            if (failed) {
-                Text(
-                    text = stringResource(R.string.couldnt_draw_picture),
-                    style = MaterialTheme.typography.bodyMedium,
+            val rendered = card
+            when {
+                rendering -> CircularProgressIndicator(Modifier.size(26.dp))
+                renderError -> {
+                    Text(stringResource(R.string.couldnt_draw_picture), color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = {
+                        rendering = true
+                        renderError = false
+                        renderAttempt++
+                    }) { Text(stringResource(R.string.retry)) }
+                }
+                rendered == null -> Text(
+                    stringResource(R.string.lyrics_share_format_full),
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
                 )
+                else -> LyricsCardPreview(rendered, timeline.takeIf { asVideo }, busy)
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
+            if (!asVideo) {
+                Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LyricsImageFormat.entries.forEach { choice ->
+                        val label = when (choice) {
+                            LyricsImageFormat.CARD -> R.string.lyrics_share_format_card
+                            LyricsImageFormat.SQUARE -> R.string.lyrics_share_format_square
+                            LyricsImageFormat.STORY -> R.string.lyrics_share_format_story
+                        }
+                        LyricsShareOption(stringResource(label), format == choice, !busy, Modifier.weight(1f)) {
+                            format = choice
+                        }
+                    }
+                }
+            } else {
+                if (localAudioUri != null) {
+                    LyricsShareSwitch(
+                        label = stringResource(if (includeAudio) R.string.lyrics_share_with_audio else R.string.lyrics_share_without_audio),
+                        checked = includeAudio,
+                        enabled = !busy,
+                    ) { includeAudio = it }
+                } else {
+                    Text(stringResource(R.string.lyrics_share_without_audio), style = MaterialTheme.typography.bodyMedium)
+                }
+                if (timeline != null && timeline.windows.size < request.lines.count { !it.isGap }) {
+                    Text(
+                        stringResource(R.string.lyrics_share_partial_timing),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            if (hasSubText) {
+                LyricsShareSwitch(
+                    label = stringResource(R.string.lyrics_share_include_subtext),
+                    checked = includeSubText,
+                    enabled = !busy,
+                ) { includeSubText = it }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TextButton(enabled = !busy, onClick = onDismiss) {
+                    Text(stringResource(R.string.lyrics_share_edit))
+                }
+                TextButton(enabled = !busy && clipboard != null, onClick = {
+                    if (clipboard == null) return@TextButton
+                    val text = lyricsShareText(request.song.title, request.song.artist, request.lines, includeSubText)
+                    clipboard.setPrimaryClip(ClipData.newPlainText(request.song.title, text))
+                    copied = true
+                }) {
+                    Text(stringResource(if (copied) R.string.lyrics_share_copied else R.string.lyrics_share_copy))
+                }
+            }
+
+            if (busy) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+                Text(stringResource(R.string.lyrics_share_preparing), style = MaterialTheme.typography.bodySmall)
+            }
+            failure?.let { failed ->
+                Text(
+                    stringResource(failed.message),
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                )
+                TextButton(onClick = { export(failed.action) }) { Text(stringResource(R.string.retry)) }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ShareAction(
                     label = stringResource(R.string.save),
                     icon = Icons.Rounded.Download,
                     accent = false,
-                    enabled = image != null && !exporting,
-                    modifier = Modifier.weight(1f),
-                    // Once the picture is in the gallery the button says so
-                    // itself — a check and "Saved!" — so the line under the
-                    // card does not have to.
+                    enabled = rendered != null && !busy,
                     saved = saved,
                     savedLabel = stringResource(R.string.saved_bang),
-                    onClick = {
-                        val drawn = image
-                        if (drawn != null) {
-                            haptics.play(Haptic.Tap)
-                            scope.launch {
-                                saved = runCatching {
-                                    if (asVideo) {
-                                        val file = videoFile(drawn)
-                                        file != null && saveLocalLyricsVideo(context, file, request.song.title)
-                                    } else {
-                                        saveToGallery(context, drawn, request.song.title, LYRICS_FILE_PREFIX)
-                                    }
-                                }.getOrDefault(false)
-                                if (!saved) failed = true
-                            }
-                        }
-                    },
+                    modifier = Modifier.weight(1f),
+                    onClick = { export(LyricsExportAction.SAVE) },
                 )
                 ShareAction(
                     label = stringResource(R.string.share),
                     icon = Icons.Rounded.IosShare,
                     accent = true,
-                    enabled = image != null,
+                    enabled = rendered != null && !busy,
                     modifier = Modifier.weight(1f),
-                    onClick = {
-                        val drawn = image
-                        if (drawn != null) {
-                            haptics.play(Haptic.Tap)
-                            scope.launch {
-                                val intent = runCatching {
-                                    if (asVideo) {
-                                        videoFile(drawn)?.let { shareLocalLyricsVideoIntent(context, it) }
-                                    } else {
-                                        cacheForSharing(context, drawn, LYRICS_FILE_NAME)?.let(::sendIntent)
-                                    }
-                                }.getOrNull()
-                                if (intent == null) {
-                                    failed = true
-                                    saved = false
-                                } else {
-                                    context.startActivity(
-                                        Intent.createChooser(intent, uiResources.getString(R.string.share_your_lyrics)),
-                                    )
-                                }
-                            }
-                        }
-                    },
+                    onClick = { export(LyricsExportAction.SHARE) },
                 )
             }
         }
     }
 }
 
-/**
- * Two names, deliberately not the Replay's.
- *
- * The cache name so a replay share and a lyrics share cannot overwrite each
- * other while the receiving app is still reading the first, and the gallery
- * prefix so a saved card in the pictures folder says which feature produced it.
- */
-private const val LYRICS_FILE_NAME = "lyrics.png"
-private const val LYRICS_FILE_PREFIX = "aurelis-lyrics"
-
-
-/**
- * Lightweight animated timeline preview. The exported MP4 uses the exact same
- * line windows, but rendering its encoder inside the modal would be expensive.
- * This never launches playback or holds a second media decoder.
- */
-@Composable
-private fun LyricsVideoPreview(
-    timeline: LyricsShareTimeline,
+internal fun lyricsShareText(
+    title: String,
+    artist: String,
     lines: List<LyricsShareLine>,
-    modifier: Modifier = Modifier,
-) {
-    val motion = rememberInfiniteTransition(label = "lyricsVideoPreview")
-    val progress by motion.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(timeline.durationMs.toInt().coerceAtLeast(1000), easing = LinearEasing),
-            RepeatMode.Restart,
-        ),
-        label = "lyricsVideoPreviewPosition",
-    )
-    val playheadUs = (timeline.durationMs * 1000.0 * progress).toLong()
-    val active = timeline.windows.firstOrNull { playheadUs >= it.fromUs && playheadUs < it.toUs }
-    val text = active?.let { lines.getOrNull(it.lineIndex)?.text }?.takeIf { it.isNotBlank() }
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.60f))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        if (text != null) {
-            Text(
-                text = text,
-                color = Color.White,
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 2,
-                textAlign = TextAlign.Center,
-            )
+    includeSubText: Boolean,
+): String = buildString {
+    append(lines.joinToString("\n") { line ->
+        when {
+            line.isGap -> "…"
+            includeSubText && !line.subText.isNullOrBlank() -> "${line.text}\n${line.subText}"
+            else -> line.text
         }
-        Box(Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.2f))) {
-            Box(
-                Modifier.fillMaxWidth(progress.coerceIn(0.001f, 1f))
-                    .background(Color.White)
-                    .padding(vertical = 2.dp),
-            )
+    })
+    val credit = listOf(title, artist).filter { it.isNotBlank() }.joinToString(" — ")
+    if (credit.isNotEmpty()) append("\n\n").append(credit)
+}
+
+@Composable
+private fun LyricsShareOption(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    Text(
+        text = label,
+        color = Color.White.copy(alpha = if (enabled) 1f else 0.45f),
+        textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.labelLarge,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = if (selected) 0.25f else 0.08f))
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 12.dp),
+    )
+}
+
+@Composable
+private fun LyricsShareSwitch(label: String, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().toggleable(
+            value = checked,
+            enabled = enabled,
+            role = Role.Switch,
+            onValueChange = onCheckedChange,
+        ),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Switch(checked, onCheckedChange = null, enabled = enabled)
+    }
+}
+
+@Composable
+private fun LyricsCardPreview(card: RenderedLyricsCard, timeline: LyricsShareTimeline?, busy: Boolean) {
+    val bitmap = remember(card) { card.bitmap.asImageBitmap() }
+    val ratio = bitmap.width.toFloat() / bitmap.height
+    val highlight = remember(card, timeline) { timeline?.let { LyricsVideoHighlight(card, it) } }
+    val progress = remember(card, timeline) { Animatable(0f) }
+    var playing by remember(card, timeline) { mutableStateOf(false) }
+
+    LaunchedEffect(timeline, playing, busy) {
+        if (timeline != null && playing && !busy) {
+            if (progress.value >= 1f) progress.snapTo(0f)
+            val remainingMs = (timeline.durationMs * (1f - progress.value)).roundToInt().coerceAtLeast(1)
+            progress.animateTo(1f, tween(remainingMs, easing = LinearEasing))
+            playing = false
+        }
+    }
+    Box(
+        Modifier
+            .fillMaxWidth((0.85f * ratio).coerceIn(0.40f, 0.98f))
+            .aspectRatio(ratio)
+            .clip(RoundedCornerShape(16.dp)),
+    ) {
+        Image(bitmap, stringResource(R.string.your_lyrics_card), Modifier.fillMaxSize())
+        if (highlight != null && timeline != null) {
+            Canvas(Modifier.matchParentSize()) {
+                val durationUs = timeline.durationMs * 1000L
+                val positionUs = (durationUs.toDouble() * progress.value).toLong().coerceAtMost(durationUs - 1)
+                highlight.draw(drawContext.canvas.nativeCanvas, size.width, size.height, positionUs)
+            }
+        }
+    }
+    if (timeline != null) {
+        TextButton(enabled = !busy, onClick = { playing = !playing }) {
+            Text(stringResource(if (playing) R.string.lyrics_share_pause_preview else R.string.lyrics_share_play_preview))
         }
     }
 }

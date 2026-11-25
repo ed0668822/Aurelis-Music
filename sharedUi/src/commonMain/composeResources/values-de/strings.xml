@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">Für diesen Songtext ist keine Romanisierung verfügbar</string>
     <string name="lyrics_romanized">Romanisierte Aussprache</string>
     <string name="lyrics_saved_with_download">Songtexte mit diesem Download gespeichert</string>
-    <string name="lyrics_share_pick_limit">Karte ist voll</string>
+    <string name="lyrics_share_preview">Vorschau</string>
     <string name="lyrics_translated_to">Ins %1$s übersetzt</string>
     <string name="lyrics_translation_unavailable">Die Übersetzung ist derzeit nicht verfügbar</string>
     <string name="medium_quality">Mittlere Qualität</string>
