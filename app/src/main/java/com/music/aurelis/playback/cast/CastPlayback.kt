@@ -77,14 +77,17 @@ interface CastSink {
  * The receiver's queue holds the playing track and a few after it, so that it
  * moves on by itself with no gap and with the phone asleep. Everything runs on
  * the main thread.
+ *
+ * The TV only plays audio: lyrics are never sent to the receiver.
  */
+@Suppress("UNUSED_PARAMETER")
 class CastPlayback(
     private val scope: CoroutineScope,
     private val localPlayer: () -> ExoPlayer?,
     private val resolve: suspend (MediaItem) -> CastStream?,
     private val say: (Int) -> Unit,
     private val onReleased: () -> Unit = {},
-    private val customReceiverEnabled: () -> Boolean = { false },
+    customReceiverEnabled: () -> Boolean = { false },
 ) : RemoteSpeaker {
     override var sink: CastSink? = null
 
@@ -101,7 +104,6 @@ class CastPlayback(
     /** Set by [CastController.disconnect]: the listener chose this phone, so keep playing on it. */
     var resumeHereOnEnd = false
 
-    private var session: CastSession? = null
     private var client: RemoteMediaClient? = null
 
     /** The listener wants sound; what [playWhenReady] reports. */
@@ -123,14 +125,6 @@ class CastPlayback(
     private var reconcileAgain = false
 
     private var lastItemId = MediaQueueItem.INVALID_ITEM_ID
-
-    // Lyrics never own a media player. They are delivered to the custom Web
-    // Receiver only once its CURRENT media id matches this service's track.
-    private var lyricsMediaId: String? = null
-    private var lyricsLines: List<LyricLine>? = null
-    private var lyricsOffsetMs = 0
-    private var lyricsRevision = 0
-    private var sentLyricsRevision = -1
 
     /** What the receiver was doing when its session started to end. */
     private var endPositionMs = 0L
@@ -200,30 +194,11 @@ class CastPlayback(
     }
 
     /**
-     * Called with lyrics already fetched by PlaybackService. Null lines clears
-     * the previous track's timeline until an asynchronous lookup completes.
+     * No-op: the TV only plays audio, so lyrics are never sent to the receiver.
+     * Kept so the service's existing calls still compile.
      */
-    fun updateLyrics(mediaId: String?, lines: List<LyricLine>?, offsetMs: Int) {
-        lyricsMediaId = mediaId
-        lyricsLines = lines
-        lyricsOffsetMs = offsetMs
-        lyricsRevision++
-        sendLyricsIfReady()
-    }
-
-    private fun sendLyricsIfReady() {
-        val castSession = session ?: return
-        if (!active || !castSession.isConnected || !customReceiverEnabled()) return
-        val mediaId = lyricsMediaId ?: return
-        if (mediaId != remoteMediaId() || lyricsRevision == sentLyricsRevision) return
-        val packets = CastLyricsPackets.build(mediaId, lyricsLines, lyricsOffsetMs, lyricsRevision)
-        try {
-            packets.forEach { castSession.sendMessage(CastLyricsPackets.NAMESPACE, it) }
-            sentLyricsRevision = lyricsRevision
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not send lyrics to custom Cast receiver", e)
-        }
-    }
+    @Suppress("UNUSED_PARAMETER")
+    fun updateLyrics(mediaId: String?, lines: List<LyricLine>?, offsetMs: Int) = Unit
 
     // ---- session lifecycle --------------------------------------------------
 
@@ -247,7 +222,6 @@ class CastPlayback(
         val remote = newSession.remoteMediaClient ?: return
         if (active && remote === client) return
         release()
-        session = newSession
         client = remote
         remote.registerCallback(callback)
         active = true
@@ -271,7 +245,9 @@ class CastPlayback(
                 wantsPlay = remote.mediaStatus?.playerState == MediaStatus.PLAYER_STATE_PLAYING
                 scheduleReconcile()
             } else {
-                load(player.currentMediaItem, position, play = wasPlaying)
+                // Choosing a TV is asking for sound there, even if the phone was
+                // paused: otherwise the receiver loads the track and sits paused.
+                load(player.currentMediaItem, position, play = wasPlaying || !resumed)
             }
         }
         sink?.onRemoteRouteChanged()
@@ -319,13 +295,11 @@ class CastPlayback(
         reconcileJob?.cancel()
         client?.unregisterCallback(callback)
         client = null
-        session = null
         active = false
         loading = false
         wantsPlay = false
         finished = false
         lastItemId = MediaQueueItem.INVALID_ITEM_ID
-        sentLyricsRevision = -1
         onReleased()
     }
 
@@ -416,7 +390,6 @@ class CastPlayback(
             }
             scheduleReconcile()
         }
-        sendLyricsIfReady()
         sink?.onRemotePlaybackChanged()
     }
 
@@ -504,7 +477,8 @@ class CastPlayback(
             }
             lastItemId = remote.mediaStatus?.currentItemId ?: lastItemId
             loading = false
-            sendLyricsIfReady()
+            // Some TVs load the track but leave it paused despite autoplay.
+            if (play && remote.mediaStatus?.playerState == MediaStatus.PLAYER_STATE_PAUSED) remote.play()
             sink?.onRemotePlaybackChanged()
             scheduleReconcile()
         }

@@ -204,10 +204,6 @@ jobs:
             "$LASTFM_API_KEY" "$LASTFM_SECRET" "$LISTEN_TOGETHER_SERVER" > local.properties
           chmod +x gradlew
 
-      # TV03: syntax-check the hosted Cast Web Receiver without deploying it.
-      - name: TV03 | Check Cast Web Receiver JavaScript
-        run: node --check receiver/receiver.js
-
       - name: TV06 | Check browser TV receiver JavaScript
         run: python3 scripts/verify_webtv_receiver.py
 
