@@ -702,7 +702,7 @@ object AppSettings {
      * quarter of the page exist; off, the genre chart simply isn't drawn.
      */
     val replayGenres = MutableStateFlow(true)
-    val shareLivePresence = MutableStateFlow(false)
+    val shareLivePresence = MutableStateFlow(true)
 
     // ── Library ─────────────────────────────────────────────────────────────
 
@@ -1172,7 +1172,7 @@ object AppSettings {
         listenBrainzPrimaryArtistOnly.value = prefs.getBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, false)
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
-        shareLivePresence.value = prefs.getBoolean(KEY_SHARE_LIVE_PRESENCE, false)
+        shareLivePresence.value = prefs.getBoolean(KEY_SHARE_LIVE_PRESENCE, true)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, false)
         localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
             ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }

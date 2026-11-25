@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { DurableObject } from "cloudflare:workers";
+import { dashboard } from "./dashboard.mjs";
 
 const PRESENCE_PATH = "/v1/presence";
 const STATS_PATH = "/v1/stats/live";
@@ -11,11 +12,24 @@ const MAX_CONNECTIONS = 4096;
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname !== PRESENCE_PATH && url.pathname !== STATS_PATH) {
+    if (url.pathname !== "/" && url.pathname !== PRESENCE_PATH && url.pathname !== STATS_PATH) {
       return new Response(null, { status: 404 });
     }
     if (request.method !== "GET") {
       return new Response(null, { status: 405, headers: { Allow: "GET" } });
+    }
+
+    if (url.pathname === "/") {
+      const nonce = crypto.randomUUID();
+      return new Response(dashboard(nonce), {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Content-Security-Policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'`,
+          "X-Content-Type-Options": "nosniff",
+          "Referrer-Policy": "no-referrer",
+          "Cache-Control": "no-store",
+        },
+      });
     }
 
     const presence = env.PRESENCE.getByName("aurelis-live");
