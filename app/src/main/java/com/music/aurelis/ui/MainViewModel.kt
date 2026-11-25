@@ -2970,7 +2970,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             if (localPlaylist != null) {
-                name = localPlaylist.title
+                name = if (localPlaylist.id == com.music.aurelis.data.spotify.LocalPlaylistStore.GUEST_LIKED_ID) {
+                    text(R.string.youtube_liked_music)
+                } else localPlaylist.title
                 credit = getApplication<Application>().getString(R.string.local_playlist_subtitle, localPlaylist.songs.size)
                 artwork = localPlaylist.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl
             }
@@ -3237,7 +3239,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         com.music.aurelis.data.spotify.LocalPlaylistStore.getPlaylist(browseId)?.let { playlist ->
-            return nonEmpty(playlist.songs) { text(R.string.spotify_import_empty_playlist) }
+            return nonEmpty(playlist.songs) {
+                text(if (playlist.id == com.music.aurelis.data.spotify.LocalPlaylistStore.GUEST_LIKED_ID) R.string.offline_liked_empty else R.string.spotify_import_empty_playlist)
+            }
         }
         remoteLibrary(browseId)?.let { return remoteSongsState(it) }
         LocalGroups.folderOf(browseId)?.let { folderId ->

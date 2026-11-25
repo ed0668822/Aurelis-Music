@@ -3889,15 +3889,12 @@ fun NowPlayingScreen(
                             Spacer(Modifier.width(10.dp))
                             // Beside the credits rather than down in the toggle row:
                             // liking is about *this song*, and the row below is about
-                            // how the queue plays. Guests get nothing to tap, since
-                            // there's no account to record it against — except on a
-                            // local file or a finished download, whose star is the
-                            // device's own Liked playlist and needs no account.
+                            // how the queue plays. Guests' likes are stored on the device.
                             GlassDiscPair(
                                 hazeState = playerHaze,
                                 overlayOpen = { overlayOpen.value },
                             ) {
-                                if (signedIn || song.localUri != null) {
+                                if (song.localUri != null || song.videoId.isNotBlank()) {
                                     val liked = likeStatus == LikeStatus.LIKE
                                     CircleGlyph(
                                         icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,

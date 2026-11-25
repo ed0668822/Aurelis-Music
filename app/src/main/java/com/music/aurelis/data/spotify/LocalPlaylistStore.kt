@@ -21,6 +21,8 @@ data class LocalPlaylist(
 object LocalPlaylistStore {
     private const val PREF_NAME = "aurelis_local_playlists"
     private const val KEY_PLAYLISTS = "playlists_json"
+    const val GUEST_LIKED_ID = "guest_liked"
+    const val GUEST_LIKED_BROWSE_ID = "local:playlist:guest_liked"
 
     private lateinit var prefs: SharedPreferences
 
@@ -65,6 +67,31 @@ object LocalPlaylistStore {
         }
     }
 
+    /** A device-only rating for catalogue tracks, independent of YouTube accounts. */
+    @Synchronized
+    fun toggleGuestLike(song: Song, title: String) {
+        if (song.localUri != null || song.videoId.isBlank()) return
+        val current = _playlists.value
+        val liked = current.firstOrNull { it.id == GUEST_LIKED_ID }?.songs.orEmpty()
+        val remaining = liked.filterNot { it.videoId == song.videoId }
+        val stored = Song(
+            videoId = song.videoId,
+            title = song.title,
+            artist = song.artist,
+            thumbnailUrl = song.thumbnailUrl,
+            durationText = song.durationText,
+            artistId = song.artistId,
+            albumId = song.albumId,
+            albumName = song.albumName,
+            isVideo = song.isVideo,
+        )
+        val updatedSongs = if (remaining.size != liked.size) remaining else listOf(stored) + remaining
+        val updated = listOf(LocalPlaylist(GUEST_LIKED_ID, title, updatedSongs)) +
+            current.filterNot { it.id == GUEST_LIKED_ID }
+        _playlists.value = updated
+        persist(updated)
+    }
+
     fun savePlaylist(title: String, songs: List<Song>): LocalPlaylist {
         val id = "sp_local_" + System.currentTimeMillis()
         val playlist = LocalPlaylist(id = id, title = title, songs = songs)
@@ -75,6 +102,7 @@ object LocalPlaylistStore {
     }
 
     fun deletePlaylist(id: String) {
+        if (id == GUEST_LIKED_ID || id == GUEST_LIKED_BROWSE_ID) return
         val updated = _playlists.value.filterNot { it.id == id || it.browseId == id || it.id == id.removePrefix("local:playlist:") }
         _playlists.value = updated
         persist(updated)
@@ -82,6 +110,7 @@ object LocalPlaylistStore {
 
     fun renamePlaylist(id: String, newTitle: String) {
         val cleanId = id.removePrefix("local:playlist:").removePrefix("VL")
+        if (cleanId == GUEST_LIKED_ID) return
         val updated = _playlists.value.map {
             if (it.id == cleanId || it.id == id || it.browseId == id) {
                 it.copy(title = newTitle)

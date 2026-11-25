@@ -466,10 +466,8 @@ internal fun LandscapeCredits(
             }
         }
         Spacer(Modifier.width(10.dp))
-        // Same gate as the portrait player's: no account to like against for a
-        // guest — but a local file or a finished download is liked on the
-        // device, which needs none.
-        if (signedIn || song.localUri != null) {
+        // Guests' likes are stored locally, just as in the portrait player.
+        if (song.localUri != null || song.videoId.isNotBlank()) {
             val liked = likeStatus == LikeStatus.LIKE
             CircleGlyph(
                 icon = if (liked) AurelisIcons.StarFilled else AurelisIcons.Star,

@@ -1059,6 +1059,10 @@ private fun AurelisApp(
     // it, and reset with the page so a filter never follows you to the next one.
     var detailSearching by rememberSaveable(topDetail?.browseId) { mutableStateOf(false) }
     val likeStatuses by viewModel.likeStatuses.collectAsStateWithLifecycle()
+    val localPlaylists by com.music.aurelis.data.spotify.LocalPlaylistStore.playlists.collectAsStateWithLifecycle()
+    val guestLikedPlaylist = localPlaylists.firstOrNull { it.id == com.music.aurelis.data.spotify.LocalPlaylistStore.GUEST_LIKED_ID }
+    val guestLikedIds = remember(guestLikedPlaylist) { guestLikedPlaylist?.songs.orEmpty().mapTo(HashSet()) { it.videoId } }
+    val guestLikedTitle = stringResource(R.string.youtube_liked_music)
     // A device file's heart is the device's Liked playlist, not a YouTube
     // rating: the file has no identity there to rate. One rule for every
     // surface that draws a heart — the player and the track menu alike.
@@ -1069,11 +1073,16 @@ private fun AurelisApp(
         val uri = song.localUri
         when {
             uri != null -> if (uri in offlineLiked) LikeStatus.LIKE else LikeStatus.INDIFFERENT
+            !signedIn -> if (song.videoId in guestLikedIds) LikeStatus.LIKE else LikeStatus.INDIFFERENT
             else -> likeStatuses[song.videoId] ?: LikeStatus.INDIFFERENT
         }
     }
     val toggleLikeOf: (Song) -> Unit = { song ->
-        if (song.localUri != null) OfflinePlaylists.toggleLike(song) else viewModel.toggleLike(song.videoId)
+        when {
+            song.localUri != null -> OfflinePlaylists.toggleLike(song)
+            viewModel.signedIn.value -> viewModel.toggleLike(song.videoId)
+            else -> com.music.aurelis.data.spotify.LocalPlaylistStore.toggleGuestLike(song, guestLikedTitle)
+        }
     }
     // Which tracks are being held on YouTube's own upload, so the player's menu
     // offers the way back out of a revert rather than the revert again.
@@ -1105,9 +1114,8 @@ private fun AurelisApp(
         Downloads.savedReleases()
     }
     // Local lists include files added on this device and existing imports.
-    val localPlaylists by com.music.aurelis.data.spotify.LocalPlaylistStore.playlists.collectAsStateWithLifecycle()
     val localPlaylistItems = (offlinePlaylists.map { Triple(it.browseId, it.title, it.songs) } +
-        localPlaylists.map { Triple(it.browseId, it.title, it.songs) }).map { (id, title, songs) ->
+        localPlaylists.filterNot { it.id == com.music.aurelis.data.spotify.LocalPlaylistStore.GUEST_LIKED_ID }.map { Triple(it.browseId, it.title, it.songs) }).map { (id, title, songs) ->
         ShelfItem(
             title = title,
             subtitle = stringResource(R.string.local_playlist_subtitle, songs.size),
@@ -1143,6 +1151,12 @@ private fun AurelisApp(
     // An offline playlist's page is the store's, and follows it: a track
     // removed from its menu, or a like from the player, leaves no stale row.
     // Apart from the effect above so a like never re-lists the Downloads folder.
+    LaunchedEffect(topDetail?.browseId, guestLikedPlaylist) {
+        val openPage = topDetail ?: return@LaunchedEffect
+        if (openPage.browseId == com.music.aurelis.data.spotify.LocalPlaylistStore.GUEST_LIKED_BROWSE_ID && openPage.songs !is UiState.Loading) {
+            viewModel.reloadLocalDetail(openPage.browseId)
+        }
+    }
     LaunchedEffect(topDetail?.browseId, offlinePlaylists) {
         val openPage = topDetail ?: return@LaunchedEffect
         if (openPage.songs !is UiState.Loading && OfflinePlaylists.isOfflinePlaylist(openPage.browseId)) {
@@ -4107,6 +4121,16 @@ private fun AurelisApp(
                                             ),
                                             icon = AurelisIcons.Heart,
                                         ).takeIf { signedIn },
+                                        LibraryLink(
+                                            item = ShelfItem(
+                                                title = guestLikedTitle,
+                                                subtitle = "",
+                                                thumbnailUrl = null,
+                                                videoId = null,
+                                                browseId = com.music.aurelis.data.spotify.LocalPlaylistStore.GUEST_LIKED_BROWSE_ID,
+                                            ),
+                                            icon = AurelisIcons.Heart,
+                                        ).takeIf { !signedIn && guestLikedPlaylist != null },
                                     ) + libraryLinks(),
                                     deviceItems = libraryDeviceItems(downloadedReleases),
                                     localPlaylistShelf = HomeShelf(stringResource(R.string.device_playlists), localPlaylistItems),

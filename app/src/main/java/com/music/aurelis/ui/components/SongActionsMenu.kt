@@ -199,7 +199,7 @@ fun SongActionsMenu(
         // group is empty doesn't end on a stray line.
         var drawnAny = false
         fun startsGroup(): Boolean = drawnAny.also { drawnAny = true }
-        val canRate = isOffline || signedIn
+        val canRate = isOffline || song.videoId.isNotBlank()
         val shareAction = onShare?.takeIf { !isOffline }
 
         // Leads with the actions it is opened for most, as tiles: the rating
