@@ -156,11 +156,21 @@ jobs:
             sha256sum "$APK"
           done
 
+      - name: Name signed APK for distribution
+        run: |
+          release_dir=app/build/outputs/apk/prod/release
+          metadata="$release_dir/output-metadata.json"
+          element=$(jq -ce '.elements | select(length == 1) | .[0]' "$metadata")
+          apk=$(jq -er '.outputFile' <<< "$element")
+          version=$(jq -er '.versionName' <<< "$element")
+          mkdir -p build/distribution/signed
+          cp -- "$release_dir/$apk" "build/distribution/signed/Aurelis Music V${version}.apk"
+
       - name: Upload signed APK
         uses: actions/upload-artifact@v6
         with:
           name: aurelis-firmado-release
-          path: app/build/outputs/apk/prod/release/*.apk
+          path: build/distribution/signed/*.apk
           if-no-files-found: error
           compression-level: 0
 

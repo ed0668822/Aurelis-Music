@@ -71,6 +71,7 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Tv
@@ -1980,20 +1981,27 @@ private fun LosslessOrStats(
             iconPainter = painterResource(Res.drawable.ic_dolby_atmos),
             modifier = modifier,
         )
-        // Lossy, but the good end of lossy — a module's 320kbps tier, which
-        // for a great many tracks is the best copy that exists anywhere the
-        // app can reach. See [NerdStats.Snapshot.isHiQuality].
-        nerdStats?.isHiQuality == true -> LosslessLabel(
-            text = stringResource(Res.string.high_quality),
-            animated = false,
-            iconPainter = rememberVectorPainter(Icons.Rounded.Headphones),
-            // A Material glyph's own size is 24dp; the badge's are drawn small.
-            iconSize = 13.dp,
-            modifier = modifier,
-        )
-        // Below that, no badge: "Medium Quality" and "Data Saver" are gone.
-        // The space under the bar is kept for what is worth announcing.
-        else -> {}
+        nerdStats != null -> {
+            val codec = NerdStats.codecLabel(nerdStats.mimeType)
+            val quality = when {
+                nerdStats.isHiQuality -> stringResource(Res.string.high_quality)
+                nerdStats.isMediumQuality -> stringResource(Res.string.medium_quality)
+                nerdStats.isLowQuality -> stringResource(Res.string.low_quality)
+                else -> null
+            }
+            val label = listOfNotNull(codec, quality).joinToString(" · ")
+            if (label.isNotEmpty()) {
+                LosslessLabel(
+                    text = label,
+                    animated = false,
+                    iconPainter = rememberVectorPainter(
+                        if (nerdStats.isHiQuality) Icons.Rounded.Headphones else Icons.Rounded.GraphicEq,
+                    ),
+                    iconSize = 13.dp,
+                    modifier = modifier,
+                )
+            }
+        }
     }
 }
 
@@ -2147,7 +2155,7 @@ private fun ShimmerText(
 @Composable
 private fun NerdStats.Snapshot.describe(): String? {
     val parts = buildList {
-        codecLabel(mimeType)?.let(::add)
+        NerdStats.codecLabel(mimeType)?.let(::add)
         bitDepth?.let { add(stringResource(Res.string.bit_depth, it)) }
         sampleRateHz?.let { add(NerdStats.megahertzLabel(it) ?: "%.1f kHz".format(Locale.ROOT, it / 1000f)) }
         bitrateKbps?.let { add("$it kbps") }
@@ -2162,18 +2170,6 @@ private fun NerdStats.Snapshot.describe(): String? {
         }
     }
     return parts.joinToString(" · ").takeIf { it.isNotEmpty() }
-}
-
-/** The codec under its usual name rather than its MIME type. */
-private fun codecLabel(mimeType: String?): String? = when {
-    mimeType == null -> null
-    mimeType.endsWith("opus") -> "Opus"
-    mimeType.endsWith("mp4a-latm") -> "AAC"
-    mimeType.endsWith("vorbis") -> "Vorbis"
-    mimeType.endsWith("mpeg") -> "MP3"
-    mimeType.endsWith("flac") -> "FLAC"
-    mimeType.endsWith("alac") -> "ALAC"
-    else -> mimeType.substringAfter('/').uppercase(Locale.ROOT)
 }
 
 /** Wording for the stats line; see [TrackAnalysisState]. */
