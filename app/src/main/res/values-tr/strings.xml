@@ -1546,4 +1546,6 @@
     <string name="replaygain_album_mode_subtitle">Mümkün olduğunda tüm albümü analiz eder; aksi halde her parçanın kazancını kullanır</string>
     <string name="best_part_button">En iyi bölüm düğmesi</string>
     <string name="best_part_button_subtitle">Varsa en çok tekrar dinlenen bölüme veya yinelenen nakarata atlar</string>
+    <string name="share_live_presence">Oturumumu canlı sayaca dahil et</string>
+    <string name="share_live_presence_subtitle">Uygulama ekranda görünürken Aurelis Music sunucusuna bağlanır. Hesap bilgileri, kurulum kimliği ve dinleme geçmişi gönderilmez.</string>
 </resources>

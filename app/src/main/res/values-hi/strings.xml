@@ -1589,4 +1589,6 @@
     <string name="replaygain_album_mode_subtitle">उपलब्ध होने पर पूरे एल्बम का विश्लेषण करता है; अन्यथा हर ट्रैक का गेन इस्तेमाल करता है</string>
     <string name="best_part_button">सर्वश्रेष्ठ भाग बटन</string>
     <string name="best_part_button_subtitle">उपलब्ध होने पर सबसे ज़्यादा दोहराए गए हिस्से या दोहराए गए मुखड़े पर जाएँ</string>
+    <string name="share_live_presence">मेरे सत्र को लाइव गिनती में शामिल करें</string>
+    <string name="share_live_presence_subtitle">ऐप स्क्रीन पर दिखने के दौरान Aurelis Music के सर्वर से जुड़ता है। आपके खाते की जानकारी, इंस्टॉलेशन आईडी और सुनने का इतिहास नहीं भेजा जाता।</string>
 </resources>

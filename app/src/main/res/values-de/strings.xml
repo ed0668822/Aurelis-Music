@@ -1589,4 +1589,6 @@
     <string name="replaygain_album_mode_subtitle">Analysiert nach Möglichkeit das gesamte Album; andernfalls wird die Verstärkung pro Titel verwendet</string>
     <string name="best_part_button">Schaltfläche Beste Stelle</string>
     <string name="best_part_button_subtitle">Springt zur meistwiederholten Stelle oder zu einem erkannten Refrain, sofern verfügbar</string>
+    <string name="share_live_presence">Meine Sitzung im Live-Zähler berücksichtigen</string>
+    <string name="share_live_presence_subtitle">Stellt eine Verbindung zum Server von Aurelis Music her, solange die App sichtbar ist. Konto, Installations-ID und Hörverlauf werden nicht übertragen.</string>
 </resources>

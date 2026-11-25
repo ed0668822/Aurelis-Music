@@ -1571,4 +1571,6 @@
     <string name="replaygain_album_mode_subtitle">วิเคราะห์ทั้งอัลบั้มเมื่อทำได้ มิฉะนั้นจะใช้ค่าเกนของแต่ละเพลง</string>
     <string name="best_part_button">ปุ่มท่อนที่ดีที่สุด</string>
     <string name="best_part_button_subtitle">ข้ามไปยังช่วงที่มีการฟังซ้ำมากที่สุดหรือท่อนฮุกที่ซ้ำกันเมื่อมีข้อมูล</string>
+    <string name="share_live_presence">รวมเซสชันของฉันในการนับแบบสด</string>
+    <string name="share_live_presence_subtitle">เชื่อมต่อกับเซิร์ฟเวอร์ Aurelis Music ขณะที่แอปแสดงอยู่บนหน้าจอ โดยไม่ส่งข้อมูลบัญชี รหัสการติดตั้ง หรือประวัติการฟัง</string>
 </resources>

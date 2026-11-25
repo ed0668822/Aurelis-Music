@@ -1567,4 +1567,6 @@
     <string name="replaygain_album_mode_subtitle">可用時分析整張專輯，否則使用每首歌曲的增益</string>
     <string name="best_part_button">精彩片段按鈕</string>
     <string name="best_part_button_subtitle">跳至最多人重播的片段或重複副歌（如有）</string>
+    <string name="share_live_presence">將我的工作階段納入即時統計</string>
+    <string name="share_live_presence_subtitle">應用程式顯示在畫面上時會連線至 Aurelis Music 伺服器。不會傳送帳號、安裝 ID 或聆聽記錄。</string>
 </resources>

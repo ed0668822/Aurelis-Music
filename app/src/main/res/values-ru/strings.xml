@@ -1623,4 +1623,6 @@
     <string name="replaygain_album_mode_subtitle">Анализирует весь альбом, если возможно; иначе использует усиление отдельных треков</string>
     <string name="best_part_button">Кнопка «Лучший момент»</string>
     <string name="best_part_button_subtitle">Переходит к самому часто переслушиваемому моменту или повторяющемуся припеву, если они найдены</string>
+    <string name="share_live_presence">Учитывать мою сессию в счётчике в реальном времени</string>
+    <string name="share_live_presence_subtitle">Подключается к серверу Aurelis Music, пока приложение отображается на экране. Данные аккаунта, идентификатор установки и история прослушивания не отправляются.</string>
 </resources>

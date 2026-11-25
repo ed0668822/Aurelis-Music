@@ -1528,4 +1528,6 @@
     <string name="replaygain_album_mode_subtitle">Analizza l’intero album quando possibile; altrimenti usa il guadagno di ogni brano</string>
     <string name="best_part_button">Pulsante Parte migliore</string>
     <string name="best_part_button_subtitle">Vai al punto più riascoltato o a un ritornello ripetuto, se disponibile</string>
+    <string name="share_live_presence">Includi la mia sessione nel conteggio in tempo reale</string>
+    <string name="share_live_presence_subtitle">Si collega al server di Aurelis Music quando l’app è visibile. L’account, l’ID di installazione e la cronologia di ascolto non vengono inviati.</string>
 </resources>

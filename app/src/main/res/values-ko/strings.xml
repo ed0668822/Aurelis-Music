@@ -1439,4 +1439,6 @@
     <string name="replaygain_album_mode_subtitle">가능한 경우 앨범 전체를 분석하고, 그렇지 않으면 각 트랙의 게인을 사용합니다</string>
     <string name="best_part_button">하이라이트 버튼</string>
     <string name="best_part_button_subtitle">확인된 최다 반복 재생 구간 또는 반복 후렴으로 이동합니다</string>
+    <string name="share_live_presence">내 세션을 실시간 집계에 포함</string>
+    <string name="share_live_presence_subtitle">앱이 화면에 표시되는 동안 Aurelis Music 서버에 연결합니다. 계정 정보, 설치 ID, 청취 기록은 전송되지 않습니다.</string>
 </resources>

@@ -1565,4 +1565,6 @@
     <string name="replaygain_album_mode_subtitle">Menganalisis seluruh album jika tersedia; jika tidak, gunakan penguatan setiap lagu</string>
     <string name="best_part_button">Tombol Bagian terbaik</string>
     <string name="best_part_button_subtitle">Langsung ke bagian yang paling sering diputar ulang atau refrein berulang, jika tersedia</string>
+    <string name="share_live_presence">Sertakan sesi saya dalam hitungan langsung</string>
+    <string name="share_live_presence_subtitle">Terhubung ke server Aurelis Music saat aplikasi terlihat di layar. Akun, ID instalasi, dan riwayat mendengarkan tidak dikirim.</string>
 </resources>

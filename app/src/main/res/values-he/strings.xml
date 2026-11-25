@@ -1617,4 +1617,6 @@
     <string name="replaygain_album_mode_subtitle">מנתח את האלבום כולו כאשר ניתן; אחרת משתמש בהגברה של כל רצועה</string>
     <string name="best_part_button">כפתור הקטע המוצלח ביותר</string>
     <string name="best_part_button_subtitle">מעבר לקטע המושמע שוב הכי הרבה או לפזמון חוזר, אם זמין</string>
+    <string name="share_live_presence">לכלול את ההפעלה שלי בספירה בזמן אמת</string>
+    <string name="share_live_presence_subtitle">מתחבר לשרת של Aurelis Music כשהאפליקציה גלויה. פרטי החשבון, מזהה ההתקנה והיסטוריית ההאזנה אינם נשלחים.</string>
 </resources>

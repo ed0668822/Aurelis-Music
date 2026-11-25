@@ -1590,4 +1590,6 @@
     <string name="replaygain_album_mode_subtitle">Analyse l’album entier si possible ; sinon, utilise le gain de chaque titre</string>
     <string name="best_part_button">Bouton Meilleur passage</string>
     <string name="best_part_button_subtitle">Accède au passage le plus réécouté ou à un refrain répété, si disponible</string>
+    <string name="share_live_presence">Inclure ma session dans le compteur en direct</string>
+    <string name="share_live_presence_subtitle">Se connecte au serveur d’Aurelis Music lorsque l’application est visible. Votre compte, votre identifiant d’installation et votre historique d’écoute ne sont pas envoyés.</string>
 </resources>

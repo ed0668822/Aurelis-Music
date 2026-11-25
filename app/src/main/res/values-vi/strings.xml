@@ -1505,4 +1505,6 @@
     <string name="replaygain_album_mode_subtitle">Phân tích toàn bộ album khi có thể; nếu không thì dùng mức tăng âm lượng của từng bài</string>
     <string name="best_part_button">Nút Đoạn hay nhất</string>
     <string name="best_part_button_subtitle">Chuyển đến đoạn được nghe lại nhiều nhất hoặc điệp khúc lặp lại nếu có</string>
+    <string name="share_live_presence">Tính phiên của tôi vào số đếm trực tiếp</string>
+    <string name="share_live_presence_subtitle">Kết nối với máy chủ Aurelis Music khi ứng dụng hiển thị trên màn hình. Thông tin tài khoản, mã cài đặt và lịch sử nghe không được gửi.</string>
 </resources>

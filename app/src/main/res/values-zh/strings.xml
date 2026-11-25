@@ -1565,4 +1565,6 @@
     <string name="replaygain_album_mode_subtitle">可用时分析整张专辑，否则使用每首歌曲的增益</string>
     <string name="best_part_button">精彩片段按钮</string>
     <string name="best_part_button_subtitle">跳转到已识别的最多重播片段或重复副歌（如有）</string>
+    <string name="share_live_presence">将我的会话计入实时统计</string>
+    <string name="share_live_presence_subtitle">应用显示在屏幕上时会连接 Aurelis Music 服务器。不会发送账号、安装 ID 或收听记录。</string>
 </resources>

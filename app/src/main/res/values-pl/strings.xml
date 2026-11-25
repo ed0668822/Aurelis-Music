@@ -1643,4 +1643,6 @@
     <string name="replaygain_album_mode_subtitle">Analizuje cały album, gdy to możliwe; w przeciwnym razie używa wzmocnienia każdej ścieżki</string>
     <string name="best_part_button">Przycisk Najlepszy fragment</string>
     <string name="best_part_button_subtitle">Przeskakuje do najczęściej odtwarzanego fragmentu lub powtarzającego się refrenu, jeśli jest dostępny</string>
+    <string name="share_live_presence">Uwzględnij moją sesję w liczniku na żywo</string>
+    <string name="share_live_presence_subtitle">Łączy się z serwerem Aurelis Music, gdy aplikacja jest widoczna. Dane konta, identyfikator instalacji i historia słuchania nie są wysyłane.</string>
 </resources>

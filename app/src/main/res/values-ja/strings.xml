@@ -1566,4 +1566,6 @@
     <string name="replaygain_album_mode_subtitle">可能な場合はアルバム全体を解析し、それ以外は各曲のゲインを使用します</string>
     <string name="best_part_button">ベストパートボタン</string>
     <string name="best_part_button_subtitle">利用可能な場合、最も繰り返し再生された部分や繰り返しのサビにジャンプします</string>
+    <string name="share_live_presence">自分のセッションをリアルタイム集計に含める</string>
+    <string name="share_live_presence_subtitle">アプリが画面に表示されている間、Aurelis Music のサーバーに接続します。アカウント情報、インストール ID、再生履歴は送信されません。</string>
 </resources>
