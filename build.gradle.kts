@@ -17,7 +17,7 @@ buildscript {
     }
 }
 /*
- * Shared phone / watch release version: v3.11.
+ * Shared phone / watch release version: v2.0.
  *
  * GitHub Actions sets -Paurelis.buildNumber to github.run_number, so every
  * workflow run generates a monotonically increasing Android versionCode.
@@ -25,7 +25,7 @@ buildscript {
  * Local builds default to 41, one higher than the previously published 40.
  *
  * Keep the literal "v" out of Android's versionName: the in-app updater
- * compares dot-separated numeric versions. Release tags can use "v3.11".
+ * compares dot-separated numeric versions. Release tags can use "v2.0".
  */
 val requestedBuildNumber = providers.gradleProperty("aurelis.buildNumber").orNull
 val aurelisBuildNumber = requestedBuildNumber?.toIntOrNull()
@@ -35,7 +35,7 @@ require(aurelisBuildNumber in 41..2_100_000_000) {
     "aurelis.buildNumber must be >= 41 and valid as Android versionCode"
 }
 extra["aurelisVersionCode"] = aurelisBuildNumber
-extra["aurelisVersionName"] = "3.11"
+extra["aurelisVersionName"] = "2.0"
 
 /*
  * Bump this by hand before cutting each sideloaded test build ("beta2",
