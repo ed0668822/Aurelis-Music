@@ -1161,8 +1161,6 @@ fun NowPlayingScreen(
         lines = lyrics,
         subLines = lyricsTranslation.subLines,
         artworkUrl = remoteArt,
-        lyricsOffsetMs = lyricsOffsetMs,
-        trackDurationMs = durationMs,
         haptics = haptics,
         onCard = { lyricsShare = it },
     )

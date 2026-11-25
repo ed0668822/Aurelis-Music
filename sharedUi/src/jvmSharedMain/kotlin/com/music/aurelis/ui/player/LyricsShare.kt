@@ -48,10 +48,6 @@ data class LyricsShareLine(
     val text: String,
     val subText: String?,
     val isGap: Boolean = false,
-    /** Adjusted synchronized line start, absent for plain lyrics or a gap. */
-    val startMs: Long? = null,
-    /** Adjusted synchronized line end, absent when unknown. */
-    val endMs: Long? = null,
 )
 
 /**
@@ -66,7 +62,6 @@ data class LyricsShareRequest(
     /** Resolved sleeve — remote URL or local file, whatever the player found. */
     val artworkUrl: String?,
     val lines: List<LyricsShareLine>,
-    val trackDurationMs: Long? = null,
 )
 
 /**
@@ -104,8 +99,6 @@ internal fun rememberLyricsPicker(
     /** The translation or romanization drawn under each line, if any. */
     subLines: List<LyricLine>?,
     artworkUrl: String?,
-    lyricsOffsetMs: Int,
-    trackDurationMs: Long,
     haptics: Haptics,
     /** Where the finished card goes; never called on a platform that has none. */
     onCard: (LyricsShareRequest) -> Unit,
@@ -149,24 +142,10 @@ internal fun rememberLyricsPicker(
                 }
                 val line = source.getOrNull(index) ?: return@forEachIndexed
                 val sub = subLines?.getOrNull(index)?.text
-                // Plain LRC often has no line end. Use the next observed start when no end exists.
-                val end = line.sungUntilMs?.takeIf { it > line.timeMs }
-                    ?: line.words.lastOrNull()?.endMs?.takeIf { it > line.timeMs }
-                    ?: ((index + 1) until source.size).firstNotNullOfOrNull { next ->
-                        source[next].timeMs.takeIf { it > line.timeMs }
-                    }
-                val adjustedStart = line.timeMs.takeIf { it >= 0L }?.let {
-                    adjustedLyricsSeekTarget(it, lyricsOffsetMs)
-                }
-                val adjustedEnd = end?.let { adjustedLyricsSeekTarget(it, lyricsOffsetMs) }
-                    ?: adjustedStart?.takeIf { index == source.lastIndex && trackDurationMs > it }
-                        ?.let { minOf(trackDurationMs, it + 5_000L) }
                 add(
                     LyricsShareLine(
                         text = line.text,
                         subText = sub?.takeIf { it.isNotBlank() && it != line.text },
-                        startMs = adjustedStart,
-                        endMs = adjustedEnd,
                     ),
                 )
             }
@@ -178,7 +157,6 @@ internal fun rememberLyricsPicker(
                 song = song,
                 artworkUrl = artworkUrl,
                 lines = picked,
-                trackDurationMs = trackDurationMs.takeIf { it > 0L },
             ))
         }
     }

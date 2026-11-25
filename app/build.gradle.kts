@@ -332,9 +332,6 @@ dependencies {
     // ---- Media playback: Media3 / ExoPlayer ----
     implementation("androidx.media3:media3-exoplayer:1.11.0")
     implementation("androidx.media3:media3-session:1.11.0")
-    // B21: local synchronized lyric video export; same Media3 version as playback.
-    implementation("androidx.media3:media3-transformer:1.11.0")
-    implementation("androidx.media3:media3-effect:1.11.0")
     implementation("androidx.media3:media3-common:1.11.0")
     implementation("androidx.media3:media3-datasource-okhttp:1.11.0")
     // Audio is progressive, but Apple serves its motion artwork as HLS — this

@@ -13,14 +13,9 @@ LOCALES = (
     "values-b+zh+Hant",
 )
 REQUIRED = (
-    "lyrics_share_title", "lyrics_share_image", "lyrics_share_video",
-    "lyrics_share_video_requires_timing", "lyrics_share_video_limit",
-    "lyrics_share_partial_timing", "lyrics_share_format_full",
-    "lyrics_share_format_card", "lyrics_share_format_square", "lyrics_share_format_story",
-    "lyrics_share_with_audio", "lyrics_share_without_audio", "lyrics_share_include_subtext",
-    "lyrics_share_edit", "lyrics_share_copy", "lyrics_share_copied", "lyrics_share_preparing",
-    "lyrics_share_play_preview", "lyrics_share_pause_preview", "lyrics_share_save_failed",
-    "lyrics_share_send_failed", "lyrics_share_audio_failed", "lyrics_share_video_failed",
+    "lyrics_share_title", "lyrics_share_format_full", "lyrics_share_format_card",
+    "lyrics_share_format_square", "lyrics_share_format_story", "lyrics_share_include_subtext",
+    "lyrics_share_edit", "lyrics_share_preparing", "lyrics_share_save_failed", "lyrics_share_send_failed",
 )
 PATTERN = re.compile(r'<string\s+name="([^"]+)"[^>]*>(.*?)</string>', re.S)
 
@@ -51,7 +46,7 @@ def main() -> int:
     if problems:
         print("\n".join(problems), file=sys.stderr)
         return 1
-    print(f"B20: localized video/image sharing in {len(LOCALES)} Android variants")
+    print(f"B20: localized lyrics image sharing in {len(LOCALES)} Android variants")
     return 0
 
 if __name__ == "__main__":

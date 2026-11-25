@@ -2,18 +2,24 @@
 
 package com.music.aurelis.ui.player
 
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.net.Uri
+import androidx.core.content.FileProvider
 import com.music.aurelis.ui.replay.Fonts
 import com.music.aurelis.ui.replay.drawArtwork
 import com.music.aurelis.ui.replay.drawBackdrop
 import com.music.aurelis.ui.replay.drawLogo
 import com.music.aurelis.ui.replay.ellipsised
 import com.music.aurelis.ui.replay.loadBitmap
+import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -259,3 +265,41 @@ private const val SUB_LEAD = 25f / 20f
 /** The sub-line against the words above it, and the white it is drawn in. */
 private const val SUB_RATIO = 20f / 34f
 private val SUB_COLOR = 0xD9FFFFFF.toInt()
+
+private const val LYRICS_CACHE_PREFIX = "aurelis-lyrics-"
+private val LEGACY_LYRICS_FILE = Regex("lyrics-(background-)?-?[0-9]+[.](mp4|png)")
+
+private fun lyricsShareCache(context: Context): File {
+    val folder = File(context.cacheDir, "shared").apply { mkdirs() }
+    val expiredBefore = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24)
+    folder.listFiles()?.forEach { file ->
+        val name = file.name
+        val isLyricsFile = name.startsWith(LYRICS_CACHE_PREFIX) || name == "lyrics.png" ||
+            LEGACY_LYRICS_FILE.matches(name)
+        if (isLyricsFile && file.isFile && file.lastModified() < expiredBefore) file.delete()
+    }
+    return folder
+}
+
+internal suspend fun cacheLyricsImage(context: Context, bitmap: Bitmap): Uri? =
+    withContext(Dispatchers.IO) {
+        val file = File.createTempFile(LYRICS_CACHE_PREFIX, ".png", lyricsShareCache(context))
+        var success = false
+        try {
+            if (!file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }) {
+                return@withContext null
+            }
+            FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
+                .also { success = true }
+        } finally {
+            if (!success) file.delete()
+        }
+    }
+
+internal fun shareLyricsImageIntent(uri: Uri): Intent =
+    Intent(Intent.ACTION_SEND).apply {
+        type = "image/png"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = ClipData.newRawUri(null, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
