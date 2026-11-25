@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">Bu sözler için Latin harflerine çevirme kullanılamıyor</string>
     <string name="lyrics_romanized">Latin harfleriyle okunuş</string>
     <string name="lyrics_saved_with_download">Sözler bu indirmeyle kaydedildi</string>
-    <string name="lyrics_share_pick_limit">Kart dolu</string>
+    <string name="lyrics_share_preview">Önizleme</string>
     <string name="lyrics_translated_to">%1$s diline çevrildi</string>
     <string name="lyrics_translation_unavailable">Çeviri şu anda kullanılamıyor</string>
     <string name="medium_quality">Orta kalite</string>

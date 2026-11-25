@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">Latynizacja jest niedostępna dla tego tekstu</string>
     <string name="lyrics_romanized">Wymowa w alfabecie łacińskim</string>
     <string name="lyrics_saved_with_download">Teksty zapisane wraz z tym pobieraniem</string>
-    <string name="lyrics_share_pick_limit">Karta jest pełna</string>
+    <string name="lyrics_share_preview">Podgląd</string>
     <string name="lyrics_translated_to">Przetłumaczono na %1$s</string>
     <string name="lyrics_translation_unavailable">Tłumaczenie jest teraz niedostępne</string>
     <string name="medium_quality">Średnia jakość</string>

@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">La romanización no está disponible para esta letra</string>
     <string name="lyrics_romanized">Pronunciación romanizada</string>
     <string name="lyrics_saved_with_download">Letra guardada con esta descarga</string>
-    <string name="lyrics_share_pick_limit">La tarjeta está llena</string>
+    <string name="lyrics_share_preview">Vista previa</string>
     <string name="lyrics_translated_to">Traducida al %1$s</string>
     <string name="lyrics_translation_unavailable">La traducción no está disponible ahora</string>
     <string name="medium_quality">Calidad media</string>

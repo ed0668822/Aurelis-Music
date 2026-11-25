@@ -12,7 +12,15 @@ LOCALES = (
     "values-vi", "values-zh", "values-zh-rHK", "values-zh-rTW",
     "values-b+zh+Hant",
 )
-REQUIRED = ("lyrics_share_video", "lyrics_share_image")
+REQUIRED = (
+    "lyrics_share_title", "lyrics_share_image", "lyrics_share_video",
+    "lyrics_share_video_requires_timing", "lyrics_share_partial_timing", "lyrics_share_format_full",
+    "lyrics_share_format_card", "lyrics_share_format_square", "lyrics_share_format_story",
+    "lyrics_share_with_audio", "lyrics_share_without_audio", "lyrics_share_include_subtext",
+    "lyrics_share_edit", "lyrics_share_copy", "lyrics_share_copied", "lyrics_share_preparing",
+    "lyrics_share_play_preview", "lyrics_share_pause_preview", "lyrics_share_save_failed",
+    "lyrics_share_send_failed", "lyrics_share_audio_failed", "lyrics_share_video_failed",
+)
 PATTERN = re.compile(r'<string\s+name="([^"]+)"[^>]*>(.*?)</string>', re.S)
 
 def main() -> int:
@@ -34,13 +42,11 @@ def main() -> int:
         if not path.exists():
             problems.append(f"compose {locale}: missing strings.xml")
             continue
-        found = [
-            m.group(2).strip()
-            for m in PATTERN.finditer(path.read_text(encoding="utf-8"))
-            if m.group(1) == "best_part"
-        ]
-        if len(found) != 1 or not found[0]:
-            problems.append(f"compose {locale}: expected one nonempty best_part")
+        matches = list(PATTERN.finditer(path.read_text(encoding="utf-8")))
+        for name in ("best_part", "lyrics_share_preview"):
+            found = [m.group(2).strip() for m in matches if m.group(1) == name]
+            if len(found) != 1 or not found[0]:
+                problems.append(f"compose {locale}: expected one nonempty {name}")
     if problems:
         print("\n".join(problems), file=sys.stderr)
         return 1

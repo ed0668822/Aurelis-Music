@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">תעתיק לטיני לא זמין למילים האלה</string>
     <string name="lyrics_romanized">הגייה בתעתיק לטיני</string>
     <string name="lyrics_saved_with_download">מילים נשמרו יחד עם ההורדה הזו</string>
-    <string name="lyrics_share_pick_limit">הכרטיס מלא</string>
+    <string name="lyrics_share_preview">תצוגה מקדימה</string>
     <string name="lyrics_translated_to">תורגם ל%1$s</string>
     <string name="lyrics_translation_unavailable">התרגום אינו זמין כרגע</string>
     <string name="medium_quality">איכות בינונית</string>

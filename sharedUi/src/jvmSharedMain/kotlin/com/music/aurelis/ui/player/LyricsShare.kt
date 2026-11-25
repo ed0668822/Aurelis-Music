@@ -21,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,32 +37,20 @@ import com.music.aurelis.data.lyrics.LyricLine
 import com.music.aurelis.data.model.Song
 import com.music.aurelis.sharedui.resources.Res
 import com.music.aurelis.sharedui.resources.cancel
-import com.music.aurelis.sharedui.resources.lyrics_share_pick_limit
-import com.music.aurelis.sharedui.resources.share
+import com.music.aurelis.sharedui.resources.lyrics_share_preview
 import com.music.aurelis.ui.haptics.Haptic
 import com.music.aurelis.ui.haptics.Haptics
 import com.music.aurelis.ui.haptics.rememberHaptics
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * One picked passage, as the string that goes on the card.
- *
- * Held as text rather than as [LyricLine] because the card has no idea what a
- * line's timing is: it is handed what the reader was looking at, translation and
- * all, and nothing else.
- *
- * @property subText The romanization or translation drawn small underneath, or
- * null when the panel was showing the original alone.
- * @property isGap A stand-in for the lines skipped between two picked ones,
- * drawn as a centred ellipsis rather than as words.
- */
+/** A selected verse, or a marker for omitted verses between two selected verses. */
 data class LyricsShareLine(
     val text: String,
     val subText: String?,
     val isGap: Boolean = false,
-    /** Original synchronized line start, absent for plain lyrics or a gap. */
+    /** Adjusted synchronized line start, absent for plain lyrics or a gap. */
     val startMs: Long? = null,
-    /** Original synchronized line end, absent when unknown. */
+    /** Adjusted synchronized line end, absent when unknown. */
     val endMs: Long? = null,
 )
 
@@ -82,31 +69,6 @@ data class LyricsShareRequest(
 )
 
 /**
- * How much text one card is allowed to hold: the picked words, in characters.
- *
- * About five short lines — the point where the size ladder still lands near its
- * top rung and the type stays big enough to read in a chat without pinching.
- * Past it the only ways to keep going would be to shrink the type or to grow
- * the card past the 9:16 it is meant to be, so the player stops the pick
- * instead: the line is not added, and the bar says why. Nothing already picked
- * is ever dropped.
- */
-const val SHARE_CARD_CHAR_BUDGET = 250
-
-/**
- * Whether a line of [text] can still join a card already holding [taken]
- * characters — the whole of the rule the player enforces at the pick.
- *
- * Only the words are counted. The translation or romanization drawn under each
- * line rides along and costs the card height, which the ladder pays for by
- * taking a rung or two; counting it here instead would make the same five lines
- * pickable or not depending on a toggle that has nothing to do with how long
- * the verse is.
- */
-fun fitsOnCard(taken: Int, text: String?): Boolean =
-    taken + (text?.length ?: 0) <= SHARE_CARD_CHAR_BUDGET
-
-/**
  * Whether lines can be put on a card at all here.
  *
  * Reading false on a platform is the whole of what keeps the pick mode off a
@@ -116,39 +78,23 @@ fun fitsOnCard(taken: Int, text: String?): Boolean =
 val lyricsShareAvailable: Boolean
     get() = PlayerPlatform.host.lyricsShareAvailable
 
-/**
- * The pick mode: which lines are chosen, and what can be done with them.
- *
- * One value rather than a scatter of state, because the panel, the bar and the
- * two layouts read them together and none of them can be right on its own — a
- * line is chosen, over budget, or the mode is off.
- */
+/** Selection and actions shared by the full and inline lyrics panels. */
 internal class LyricsPicker(
     /** Whether the reader is choosing lines to put on a share card. */
     val picking: Boolean,
     /** Which lines are chosen, as indices into the panel's own list. */
     val picks: Set<Int>,
-    /** Set when a tap would have pushed the selection past what one card holds. */
-    val overBudget: Boolean,
     /** Long-press on a line: start picking, or fold that line into the pick. */
     val pick: (Int) -> Unit,
     /** Tap while picking: add or drop that line. */
     val toggle: (Int) -> Unit,
     val cancel: () -> Unit,
-    /** Hands the chosen lines over as a card request. */
-    val share: () -> Unit,
+    /** Opens a preview while keeping the selected lines available for editing. */
+    val preview: () -> Unit,
     /** Header share button: enter picking with nothing preselected. */
     val beginPicking: () -> Unit,
 )
 
-/**
- * The pick mode's state machine: the lines, what may be added to them, and the
- * card the chosen ones make.
- *
- * Adding is subject to [SHARE_CARD_CHAR_BUDGET], counted across everything
- * already chosen: the card draws every line it is handed, so the pick is the
- * only place a limit can sit without dropping words afterwards.
- */
 @Composable
 internal fun rememberLyricsPicker(
     song: Song,
@@ -157,96 +103,38 @@ internal fun rememberLyricsPicker(
     /** The translation or romanization drawn under each line, if any. */
     subLines: List<LyricLine>?,
     artworkUrl: String?,
+    lyricsOffsetMs: Int,
     haptics: Haptics,
     /** Where the finished card goes; never called on a platform that has none. */
     onCard: (LyricsShareRequest) -> Unit,
 ): LyricsPicker {
-    // Said once, when a line is refused, and gone by the time the finger moves
-    // on — the way every other refusal in this player is worded.
-    val cardFullMessage = stringResource(Res.string.lyrics_share_pick_limit)
+    var picking by remember(song.videoId, lines) { mutableStateOf(false) }
+    var picks by remember(song.videoId, lines) { mutableStateOf<Set<Int>>(emptySet()) }
 
-    // Whether the reader is picking lines for a share card, and which ones.
-    // Kept as two values rather than as `Set<Int>?`: the mode opens with nothing
-    // chosen yet, and a null-means-off set cannot represent being in the mode and
-    // having not picked anything.
-    var picking by remember { mutableStateOf(false) }
-    var picks by remember { mutableStateOf<Set<Int>>(emptySet()) }
-    // Set when a tap would have pushed the selection past what one card can hold,
-    // and cleared by the next successful change. Nothing on screen reads it —
-    // the bar is two buttons and a row that will not light up is the whole of
-    // the answer — but the line that refused says so for itself, the way every
-    // other "that will not do" in this player does.
-    var overBudget by remember { mutableStateOf(false) }
-
-    // The picks index into [lines], and the panel outlives changes to it —
-    // another track or a re-fetched verse would otherwise leave a stale set
-    // pointing at lines that are no longer there.
-    LaunchedEffect(song.videoId, lines) {
-        picking = false
-        picks = emptySet()
-        overBudget = false
-    }
-
-    val usedChars: () -> Int = {
-        picks.sumOf { index -> lines.orEmpty().getOrNull(index)?.text?.length ?: 0 }
-    }
     val toggle: (Int) -> Unit = { index ->
-        val text = lines.orEmpty().getOrNull(index)?.text
-        when {
-            index in picks -> {
-                picks = picks - index
-                overBudget = false
-            }
-
-            fitsOnCard(usedChars(), text) -> {
-                picks = picks + index
-                overBudget = false
-            }
-
-            // A line that will not fit says so and nothing else lights up. The
-            // bar is not the place to say it: it is two buttons over somebody's
-            // words, and a line that stays dim is the answer.
-            else -> {
-                overBudget = true
-                PlayerPlatform.host.showMessage(cardFullMessage)
-            }
+        val line = lines?.getOrNull(index)
+        if (line != null && line.text.isNotBlank()) {
+            picks = if (index in picks) picks - index else picks + index
         }
     }
-    // The only way in, so it has to open the mode *and* — once the mode is open
-    // — behave exactly as a tap does. Otherwise the same press on the same line
-    // means one thing before and another after, which is a rule the reader has
-    // to learn for no reason.
-    val pick: (Int) -> Unit = { index ->
-        if (picking) {
-            toggle(index)
-        } else {
+    val beginPicking: () -> Unit = {
+        if (!picking) {
             haptics.play(Haptic.Select)
             picking = true
             picks = emptySet()
-            overBudget = false
-            // The first line goes through the same budget as the rest, so one
-            // very long one opens the mode with nothing chosen rather than
-            // opening it already too big to send.
+        }
+    }
+    val pick: (Int) -> Unit = { index ->
+        if (!lines?.getOrNull(index)?.text.isNullOrBlank()) {
+            beginPicking()
             toggle(index)
         }
     }
     val cancel: () -> Unit = {
         picking = false
         picks = emptySet()
-        overBudget = false
     }
-    // Header share button: the same mode a long-press opens, but with nothing
-    // preselected — the header names no line, so there is nothing to fold in.
-    // Kept separate from [pick] so a tap on it can never seek or toggle.
-    val beginPicking: () -> Unit = {
-        if (!picking) {
-            haptics.play(Haptic.Select)
-            picking = true
-            picks = emptySet()
-            overBudget = false
-        }
-    }
-    val share: () -> Unit = {
+    val preview: () -> Unit = {
         val source = lines.orEmpty()
         val chosen = picks.sorted()
         val picked = buildList {
@@ -259,17 +147,20 @@ internal fun rememberLyricsPicker(
                 }
                 val line = source.getOrNull(index) ?: return@forEachIndexed
                 val sub = subLines?.getOrNull(index)?.text
+                // Plain LRC often has no line end. Use the next observed start when no end exists.
+                val end = line.sungUntilMs?.takeIf { it > line.timeMs }
+                    ?: line.words.lastOrNull()?.endMs?.takeIf { it > line.timeMs }
+                    ?: ((index + 1) until source.size).firstNotNullOfOrNull { next ->
+                        source[next].timeMs.takeIf { it > line.timeMs }
+                    }
                 add(
                     LyricsShareLine(
                         text = line.text,
                         subText = sub?.takeIf { it.isNotBlank() && it != line.text },
-                        startMs = line.timeMs.takeIf { it >= 0L },
-                        // Plain LRC has start timestamps but often no line-end
-                        // field. The next actual line timestamp is an observed
-                        // boundary, not a guessed chorus or arbitrary duration.
-                        endMs = line.sungUntilMs?.takeIf { it > line.timeMs }
-                            ?: line.words.lastOrNull()?.endMs?.takeIf { it > line.timeMs }
-                            ?: source.drop(index + 1).firstOrNull { it.timeMs > line.timeMs }?.timeMs,
+                        startMs = line.timeMs.takeIf { it >= 0L }?.let {
+                            adjustedLyricsSeekTarget(it, lyricsOffsetMs)
+                        },
+                        endMs = end?.let { adjustedLyricsSeekTarget(it, lyricsOffsetMs) },
                     ),
                 )
             }
@@ -279,42 +170,24 @@ internal fun rememberLyricsPicker(
         if (picked.isNotEmpty()) {
             onCard(LyricsShareRequest(song = song, artworkUrl = artworkUrl, lines = picked))
         }
-        cancel()
     }
 
     return LyricsPicker(
         picking = picking,
         picks = picks,
-        overBudget = overBudget,
         pick = pick,
         toggle = toggle,
         cancel = cancel,
-        share = share,
+        preview = preview,
         beginPicking = beginPicking,
     )
 }
 
-/**
- * The floating bar while lines are being picked: Cancel, and Share.
- *
- * A pill over the words rather than a row in the controls, for the reason the
- * translate toggle floats too — the controls fade away on their own, and a mode
- * that can vanish while it is still on reads as the panel having started
- * ignoring taps. It sits centred, where neither the translate nor the romanize
- * corner was, which is why those two stand down for as long as this is up.
- *
- * Nothing else. No count of lines, no budget, no warning: the bar is an
- * instruction over somebody's words, and a line counter is a third thing to read
- * between the verse and the two buttons. What has been chosen is already said by
- * the rows themselves, which light up, and what is left of the budget is not the
- * reader's problem — a line that will not fit simply does not light up.
- */
 @Composable
 internal fun LyricsPickBar(
-    /** False until something is picked, and again once the pick is over budget. */
-    shareEnabled: Boolean,
+    previewEnabled: Boolean,
     onCancel: () -> Unit,
-    onShare: () -> Unit,
+    onPreview: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val haptics = rememberHaptics()
@@ -339,14 +212,14 @@ internal fun LyricsPickBar(
             },
         )
         PickAction(
-            label = stringResource(Res.string.share),
+            label = stringResource(Res.string.lyrics_share_preview),
             icon = Icons.Rounded.IosShare,
             accent = true,
-            enabled = shareEnabled,
+            enabled = previewEnabled,
             modifier = Modifier.weight(1f),
             onClick = {
                 haptics.play(Haptic.Select)
-                onShare()
+                onPreview()
             },
         )
     }

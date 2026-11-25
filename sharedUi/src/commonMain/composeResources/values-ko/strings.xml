@@ -94,7 +94,7 @@
     <string name="lyrics_romanization_unavailable">이 가사는 로마자 표기를 사용할 수 없습니다</string>
     <string name="lyrics_romanized">로마자 발음</string>
     <string name="lyrics_saved_with_download">이 다운로드와 함께 가사가 저장되었습니다</string>
-    <string name="lyrics_share_pick_limit">카드가 꽉 찼습니다</string>
+    <string name="lyrics_share_preview">미리보기</string>
     <string name="lyrics_translated_to">%1$s 번역 완료</string>
     <string name="lyrics_translation_unavailable">지금은 번역을 사용할 수 없습니다</string>
     <string name="medium_quality">중간 음질</string>

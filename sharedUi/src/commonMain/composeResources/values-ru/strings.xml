@@ -92,7 +92,7 @@
     <string name="lyrics_romanization_unavailable">Транслитерация недоступна для этого текста</string>
     <string name="lyrics_romanized">Произношение латиницей</string>
     <string name="lyrics_saved_with_download">Текст сохранён вместе с этой загрузкой</string>
-    <string name="lyrics_share_pick_limit">Карточка заполнена</string>
+    <string name="lyrics_share_preview">Предпросмотр</string>
     <string name="lyrics_translated_to">Переведено на %1$s</string>
     <string name="lyrics_translation_unavailable">Перевод сейчас недоступен</string>
     <string name="medium_quality">Среднее качество</string>
