@@ -1966,9 +1966,6 @@ private fun LosslessOrStats(
             // [NerdStats.Snapshot.isHiRes].
             text = stringResource(if (nerdStats.isHiRes) Res.string.hi_res_lossless else Res.string.lossless),
             iconPainter = painterResource(Res.drawable.ic_lossless),
-            // Shimmer is reserved for the thing that was asked for and
-            // confirmed. It is what makes the badge read as an achievement
-            // rather than a label, which only one of these two is.
             animated = true,
             modifier = modifier,
         )
@@ -1993,7 +1990,7 @@ private fun LosslessOrStats(
             if (label.isNotEmpty()) {
                 LosslessLabel(
                     text = label,
-                    animated = false,
+                    animated = true,
                     iconPainter = rememberVectorPainter(
                         if (nerdStats.isHiQuality) Icons.Rounded.Headphones else Icons.Rounded.GraphicEq,
                     ),

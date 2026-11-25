@@ -31,6 +31,9 @@
     <string name="downloaded_songs">เพลงที่ดาวน์โหลดไว้</string>
     <string name="local_music">เพลงในเครื่อง</string>
     <string name="audio_files_on_device">ไฟล์เสียงในอุปกรณ์</string>
+    <string name="local_music_loading">กำลังอ่านเพลงบนอุปกรณ์นี้…</string>
+    <string name="local_music_find_duplicates">ค้นหาเพลงซ้ำ</string>
+    <string name="local_music_allow_access">อนุญาตให้เข้าถึงไฟล์เสียง</string>
     <string name="on_device">ในอุปกรณ์</string>
     <string name="playlists">เพลย์ลิสต์</string>
     <string name="new_playlist">เพลย์ลิสต์ใหม่</string>

@@ -31,6 +31,9 @@
     <string name="downloaded_songs">已下载的歌曲</string>
     <string name="local_music">本地音乐</string>
     <string name="audio_files_on_device">设备上的音频文件</string>
+    <string name="local_music_loading">正在读取此设备上的音乐…</string>
+    <string name="local_music_find_duplicates">查找重复歌曲</string>
+    <string name="local_music_allow_access">允许访问音频</string>
     <string name="on_device">设备内</string>
     <string name="playlists">播放列表</string>
     <string name="new_playlist">新建播放列表</string>

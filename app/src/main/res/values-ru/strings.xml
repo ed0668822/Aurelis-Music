@@ -34,6 +34,9 @@
     <string name="downloaded_songs">Загруженные песни</string>
     <string name="local_music">Локальная музыка</string>
     <string name="audio_files_on_device">Аудиофайлы на устройстве</string>
+    <string name="local_music_loading">Загрузка музыки с этого устройства…</string>
+    <string name="local_music_find_duplicates">Найти дубликаты песен</string>
+    <string name="local_music_allow_access">Разрешить доступ к аудио</string>
     <string name="on_device">На устройстве</string>
     <string name="playlists">Плейлисты</string>
     <string name="new_playlist">Новый плейлист</string>

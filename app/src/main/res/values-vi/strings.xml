@@ -32,6 +32,9 @@
     <string name="downloaded_songs">Bài hát đã tải</string>
     <string name="local_music">Nhạc trên thiết bị</string>
     <string name="audio_files_on_device">Tệp âm thanh trên thiết bị</string>
+    <string name="local_music_loading">Đang đọc nhạc trên thiết bị này…</string>
+    <string name="local_music_find_duplicates">Tìm bài hát trùng lặp</string>
+    <string name="local_music_allow_access">Cho phép truy cập tệp âm thanh</string>
     <string name="on_device">Trên thiết bị</string>
     <string name="playlists">Danh sách phát</string>
     <string name="new_playlist">Danh sách phát mới</string>
