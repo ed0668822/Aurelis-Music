@@ -44,6 +44,8 @@ object AppUpdateChecker {
     )
 
     private const val CACHE_SUBDIR = "updates"
+    private val SIGNED_WORKFLOW_APK =
+        Regex("""Aurelis[ .]Music[ .]V[0-9]+(?:\.[0-9]+)+(?:-[a-z0-9.-]+)?\.apk""", RegexOption.IGNORE_CASE)
 
     private const val LATEST_RELEASE_URL =
         "https://api.github.com/repos/ed0668822/Aurelis-Music/releases/latest"
@@ -77,7 +79,7 @@ object AppUpdateChecker {
             val release = json.parseToJsonElement(body) as? JsonObject ?: return@runCatching
             val tag = release["tag_name"]?.jsonPrimitive?.contentOrNull ?: return@runCatching
             val url = release["html_url"]?.jsonPrimitive?.contentOrNull ?: return@runCatching
-            val apkUrl = apkAssetUrl(release)
+            val apkUrl = apkAssetUrl(release, Build.SUPPORTED_ABIS)
             val notes = release["body"]?.jsonPrimitive?.contentOrNull
             val latest = tag.removePrefix("v")
             if (isNewer(latest, BuildConfig.VERSION_NAME)) {
@@ -97,21 +99,10 @@ object AppUpdateChecker {
     }
 
     /**
-     * One release carries the phone app and the TV app, each as a universal
-     * APK plus per-ABI splits:
-     *
-     *     Aurelis-v1.8.apk     Aurelis-v1.8_arm64-v8a.apk     ...
-     *     AurelisTV-v1.8.apk   AurelisTV-v1.8_arm64-v8a.apk   ...
-     *
-     * so this app's APKs are the ones named with its own
-     * [BuildConfig.UPDATE_APK_PREFIX] — "Aurelis-" never matches a TV file,
-     * since the prefix ends at the hyphen. The universal build (no `_ABI`
-     * suffix) is taken first, as it installs anywhere; failing that, the split
-     * for this device's ABI. A release with neither leaves
-     * [UpdateInfo.apkUrl] null and the UI falls back to opening the releases
-     * page.
+     * Prefer a universal APK, then the first split supported by this device.
+     * The signed Android workflow publishes an ARM64 APK with a display name.
      */
-    private fun apkAssetUrl(release: JsonObject): String? = runCatching {
+    internal fun apkAssetUrl(release: JsonObject, supportedAbis: Array<String>): String? = runCatching {
         val apks = release["assets"]?.jsonArray
             ?.mapNotNull { it as? JsonObject }
             ?.mapNotNull { asset ->
@@ -119,15 +110,20 @@ object AppUpdateChecker {
                 val url = asset["browser_download_url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
                 // Never offer an APK from another repository, even if a
                 // malformed release asset supplies a matching name.
-                val ours = name.startsWith(BuildConfig.UPDATE_APK_PREFIX, ignoreCase = true) &&
-                    name.endsWith(".apk", ignoreCase = true) &&
-                    asset["state"]?.jsonPrimitive?.contentOrNull == "uploaded" &&
-                    isOfficialReleaseAssetUrl(url)
-                if (ours) name.removeSuffix(".apk").removeSuffix(".APK") to url else null
+                if (!name.endsWith(".apk", ignoreCase = true) ||
+                    asset["state"]?.jsonPrimitive?.contentOrNull != "uploaded" ||
+                    !isOfficialReleaseAssetUrl(url)
+                ) return@mapNotNull null
+                val stem = name.dropLast(4)
+                when {
+                    SIGNED_WORKFLOW_APK.matches(name) -> "${stem}_arm64-v8a" to url
+                    name.startsWith(BuildConfig.UPDATE_APK_PREFIX, ignoreCase = true) -> stem to url
+                    else -> null
+                }
             }
             .orEmpty()
         apks.firstOrNull { (name, _) -> '_' !in name }?.second
-            ?: Build.SUPPORTED_ABIS.firstNotNullOfOrNull { abi ->
+            ?: supportedAbis.firstNotNullOfOrNull { abi ->
                 apks.firstOrNull { (name, _) -> name.endsWith("_$abi") }?.second
             }
     }.getOrNull()
