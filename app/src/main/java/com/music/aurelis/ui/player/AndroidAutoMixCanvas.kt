@@ -10,20 +10,17 @@ import com.music.aurelis.playback.AutoMixVisualFeed
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 
-/** The attached Now Playing slots share these two leases. Main only. */
-internal object NowPlayingCanvasDecoders {
+/** Current, preloaded and retiring Canvas players share this limit. Main only. */
+internal object CanvasDecoders {
     private const val MAX_DECODERS = 2
-    /** See CanvasArtworkPlayer's DEFERRED_RELEASE_MS: release() blocks main for 40-50ms. */
     private const val DEFERRED_RELEASE_MS = 1_000L
     private val inUse = MutableStateFlow(0)
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    suspend fun awaitCapacity() {
-        inUse.first { it < MAX_DECODERS }
-    }
-
-    fun open(context: Context): Lease? {
-        if (inUse.value >= MAX_DECODERS) return null
+    suspend fun open(context: Context): Lease? {
+        while (inUse.value >= MAX_DECODERS) {
+            inUse.first { it < MAX_DECODERS }
+        }
         val player = runCatching { newCanvasDecoder(context) }.getOrNull() ?: return null
         inUse.value++
         return Lease(player) { inUse.value-- }
@@ -38,35 +35,30 @@ internal object NowPlayingCanvasDecoders {
             private set
 
         /**
-         * stop() hands the codec back on the player's own thread, so the slot is free
-         * straight away. release() blocks the main thread until that thread quits, which
-         * landed on the reveal's final frames (outgoing promotion) or mid-reveal (a
-         * sealed-out standby), so it runs later, off the transition.
+         * Stop loading immediately and keep the slot until the player and its
+         * surface are released. Delay blocking teardown to give the reveal time
+         * to settle, with a second delay at most if the mix is still active.
          */
         fun close(afterRelease: () -> Unit = {}) {
             if (closed) return
             closed = true
-            try {
-                runCatching { player.stop() }
-            } finally {
-                returnSlot()
+            runCatching { player.stop() }
+            val release = Runnable {
+                try {
+                    runCatching { player.release() }
+                    released = true
+                    afterRelease()
+                } finally {
+                    returnSlot()
+                }
             }
-            pendingRelease = afterRelease
-            mainHandler.postDelayed(::releaseWhenIdle, DEFERRED_RELEASE_MS)
-        }
-
-        private var pendingRelease: () -> Unit = {}
-
-        // A retired Spotify Canvas or sealed-out standby closes while the mix is still
-        // animating. Keep its blocking release() off every frame of that mix.
-        private fun releaseWhenIdle() {
-            if (AutoMixVisualFeed.state.value?.mixActive == true) {
-                mainHandler.postDelayed(::releaseWhenIdle, DEFERRED_RELEASE_MS)
-                return
-            }
-            runCatching { player.release() }
-            released = true
-            pendingRelease()
+            mainHandler.postDelayed({
+                if (AutoMixVisualFeed.state.value?.mixActive == true) {
+                    mainHandler.postDelayed(release, DEFERRED_RELEASE_MS)
+                } else {
+                    release.run()
+                }
+            }, DEFERRED_RELEASE_MS)
         }
     }
 }

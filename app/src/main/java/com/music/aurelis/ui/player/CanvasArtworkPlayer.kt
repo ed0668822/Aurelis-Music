@@ -59,6 +59,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import com.music.aurelis.ui.graphics.FADE_CURVE_STOPS
 import com.music.aurelis.ui.graphics.smootherStep
@@ -88,8 +89,7 @@ private const val TAG = "CanvasArtworkPlayer"
  */
 private const val REPAINT_TIMEOUT_MS = 700L
 
-/** How long after a clip leaves the screen its player is released — see its onDispose. */
-private const val DEFERRED_RELEASE_MS = 1_000L
+private const val CANVAS_BUFFER_BYTES = 4 * 1024 * 1024
 
 private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -261,11 +261,11 @@ internal fun AndroidCanvasArtworkPlayer(
     val teardown = remember { Teardown() }
     val gate = remember { ResumeGate() }
 
-    val owned = if (nowPlaying) rememberNowPlayingDecoder(context, teardown) else null
-    val player = if (nowPlaying) owned?.player ?: return else remember { newCanvasDecoder(context) }
+    val owned = rememberCanvasDecoder(context, teardown) ?: return
+    val player = owned.player
 
     fun confirmTextureFrame(surface: SurfaceTexture): Boolean {
-        if (owned?.closed == true) return false
+        if (owned.closed) return false
         val view = textureView ?: return false
         if (nowPlaying && (surface !== view.surfaceTexture || surface.timestamp == lastMediaTimestamp ||
                 player.playerError != null || clipAspect <= 0f)
@@ -328,20 +328,8 @@ internal fun AndroidCanvasArtworkPlayer(
         }
         player.addListener(listener)
         onDispose {
-            if (owned?.closed != true) player.removeListener(listener)
+            if (!owned.closed) player.removeListener(listener)
             teardown.disposed = true
-            if (!nowPlaying) {
-                // Unmanaged callers retain the deferred teardown. Now Playing
-                // holds its decoder lease until release() finishes.
-                player.stop()
-                mainHandler.postDelayed(
-                    {
-                        player.release()
-                        teardown.releaseOrphan()
-                    },
-                    DEFERRED_RELEASE_MS,
-                )
-            }
         }
     }
 
@@ -568,7 +556,7 @@ internal fun AndroidCanvasArtworkPlayer(
                         // can never become the only visible artwork layer.
                         rendered = false
                         pendingTextureFrame = null
-                        if (owned?.released == true) return true
+                        if (owned.released) return true
                         // Going with the player — see [Teardown.orphan].
                         if (currentPausedForTransition || teardown.disposed) {
                             teardown.orphan = surface
@@ -579,7 +567,7 @@ internal fun AndroidCanvasArtworkPlayer(
 
                     override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
                         delegate?.onSurfaceTextureUpdated(surface)
-                        if (!confirmTextureFrame(surface) && nowPlaying && !rendered && owned?.closed != true) {
+                        if (!confirmTextureFrame(surface) && nowPlaying && !rendered && !owned.closed) {
                             pendingTextureFrame = surface
                         }
                     }
@@ -1106,6 +1094,18 @@ internal fun newCanvasDecoder(context: Context): ExoPlayer {
         .setMediaSourceFactory(
             DefaultMediaSourceFactory(CanvasCache.dataSourceFactory(OkHttpDataSource.Factory(Http.client))),
         )
+        .setLoadControl(
+            DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                    /* minBufferMs = */ 2_000,
+                    /* maxBufferMs = */ 10_000,
+                    /* bufferForPlaybackMs = */ 250,
+                    /* bufferForPlaybackAfterRebufferMs = */ 500,
+                )
+                .setTargetBufferBytes(CANVAS_BUFFER_BYTES)
+                .setPrioritizeTimeOverSizeThresholds(false)
+                .build(),
+        )
         .build()
     try {
         player.volume = 0f
@@ -1121,12 +1121,10 @@ internal fun newCanvasDecoder(context: Context): ExoPlayer {
 }
 
 @Composable
-private fun rememberNowPlayingDecoder(context: Context, teardown: Teardown): NowPlayingCanvasDecoders.Lease? {
-    var lease by remember(context) { mutableStateOf<NowPlayingCanvasDecoders.Lease?>(null) }
+private fun rememberCanvasDecoder(context: Context, teardown: Teardown): CanvasDecoders.Lease? {
+    var lease by remember(context) { mutableStateOf<CanvasDecoders.Lease?>(null) }
     LaunchedEffect(context) {
-        // Do not allocate a third player during the apply pass of a layout switch.
-        NowPlayingCanvasDecoders.awaitCapacity()
-        val opened = NowPlayingCanvasDecoders.open(context) ?: return@LaunchedEffect
+        val opened = CanvasDecoders.open(context) ?: return@LaunchedEffect
         try {
             lease = opened
             awaitCancellation()
