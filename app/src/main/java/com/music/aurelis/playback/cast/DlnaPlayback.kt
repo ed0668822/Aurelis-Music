@@ -175,7 +175,7 @@ internal class DlnaPlayback(
     override val deviceVolume: Int get() = volume
 
     fun connect(target: DlnaRenderer) {
-        if (CastController.state.value.casting || WebTvController.state.value.active ||
+        if (CastController.state.value.casting ||
             com.music.aurelis.wear.WearBridge.watchOutput.value.active
         ) return
         if (active || connectJob?.isActive == true) disconnect(false)
@@ -212,7 +212,7 @@ internal class DlnaPlayback(
                 }
                 // A system Cast / watch route may have started while the
                 // slow UPnP network setup was running. Stop the orphaned TV.
-                if (CastController.state.value.casting || WebTvController.state.value.active ||
+                if (CastController.state.value.casting ||
                     com.music.aurelis.wear.WearBridge.watchOutput.value.active
                 ) {
                     withContext(Dispatchers.IO) {

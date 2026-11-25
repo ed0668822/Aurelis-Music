@@ -129,12 +129,8 @@ internal fun AudioOutputSheet(
             if (cast.supported) CastRow(cast = cast, onClick = onOpenCast)
         }
 
-        // HTML5 browser controls its own audio volume. A phone-side slider
-        // would imply authority it does not have, so hide it on that route.
-        if (!cast.webReceiverActive) {
-            Spacer(Modifier.height(10.dp))
-            VolumeRow(routeKey = outputs)
-        }
+        Spacer(Modifier.height(10.dp))
+        VolumeRow(routeKey = outputs)
 
         Spacer(Modifier.height(6.dp))
         AudioPipelineRow(onClick = onOpenPipeline)

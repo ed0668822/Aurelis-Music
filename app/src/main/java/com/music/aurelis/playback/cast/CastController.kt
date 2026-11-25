@@ -220,9 +220,8 @@ object CastController {
     private fun began(session: CastSession, resumed: Boolean) {
         SmartCastCoordinator.onCastStarted()
         // A system-level Cast selection can arrive outside Aurelis's output picker.
-        // Never keep a browser/DLNA renderer playing alongside a Cast session.
+        // Never keep a DLNA renderer playing alongside a Cast session.
         if (DlnaController.connected.value != null) DlnaController.disconnect(resumeHere = false)
-        if (WebTvController.state.value.url != null) WebTvController.stop(resumeHere = false)
         watch(session)
         update {
             it.copy(

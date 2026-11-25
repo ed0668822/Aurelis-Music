@@ -193,20 +193,11 @@ object LocalMediaRepository {
         takeUnless { it.isNullOrBlank() || it == "<unknown>" }
 
     /**
-     * A way for a build to look beyond MediaStore — the Android TV app reads USB
-     * drives MediaStore does not index. Handed what MediaStore found (nothing,
-     * without the storage permission) and returns the list to use. Null on the
-     * phone, where MediaStore is the whole story.
-     */
-    @Volatile
-    var extraLocalMusic: (suspend (Context, List<Song>) -> List<Song>)? = null
-
-    /**
      * Queries MediaStore for all audio files available on the device.
      */
     suspend fun getLocalMusic(context: Context): List<Song> = withContext(Dispatchers.IO) {
         if (!hasStoragePermission(context)) {
-            return@withContext extraLocalMusic?.invoke(context, emptyList()) ?: emptyList()
+            return@withContext emptyList()
         }
 
         val songs = mutableListOf<Song>()
@@ -277,7 +268,7 @@ object LocalMediaRepository {
             }
         }.onFailure { Log.w(TAG, "Failed scanning device local music: ${it.message}") }
 
-        extraLocalMusic?.invoke(context, songs) ?: songs
+        songs
     }
 
     /**

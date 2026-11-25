@@ -72,8 +72,6 @@ fun YtMusicLoginScreen(
     onCaptureUnavailable: () -> Unit = {},
     /** True once a signed-in YouTube Music page is available for confirmation. */
     onPageReady: (Boolean) -> Unit = {},
-    /** For a host that needs the WebView set up differently — the TV app, for its remote. */
-    configureWebView: (WebView) -> Unit = {},
 ) {
     var webView by remember { mutableStateOf<WebView?>(null) }
     val currentOnCaptured by rememberUpdatedState(onCaptured)
@@ -101,7 +99,6 @@ fun YtMusicLoginScreen(
                 }
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
-                configureWebView(this)
 
                 webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView?, url: String?) {

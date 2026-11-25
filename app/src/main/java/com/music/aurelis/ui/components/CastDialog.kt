@@ -18,9 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.platform.LocalContext
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cast
@@ -50,7 +47,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.aurelis.R
 import com.music.aurelis.playback.cast.CastController
 import com.music.aurelis.playback.cast.DlnaController
-import com.music.aurelis.playback.cast.WebTvController
 import com.music.aurelis.playback.cast.CastOptionsProvider
 import com.music.aurelis.playback.cast.SmartCastRanking
 import com.music.aurelis.playback.cast.SmartCastCoordinator
@@ -78,7 +74,6 @@ fun CastDialog(
     val dlnaConnected by DlnaController.connected.collectAsStateWithLifecycle()
     val dlnaConnectedId by DlnaController.connectedId.collectAsStateWithLifecycle()
     val dlnaFailure by DlnaController.failure.collectAsStateWithLifecycle()
-    val browser by WebTvController.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val customReceiverEnabled = CastOptionsProvider.customReceiverId(context) != null
     val televisions = remember(cast.devices, dlna, customReceiverEnabled) {
@@ -138,7 +133,7 @@ fun CastDialog(
                         connected = connected,
                         isDlna = choice.castId == null,
                         onClick = {
-                            if (cast.casting || dlnaConnected != null || browser.url != null) {
+                            if (cast.casting || dlnaConnected != null) {
                                 if (!connected) {
                                     Toast.makeText(context, R.string.tv_disconnect_first, Toast.LENGTH_SHORT).show()
                                 }
@@ -154,7 +149,7 @@ fun CastDialog(
                             label = stringResource(R.string.tv_manual_dlna_format, choice.name),
                             destructive = false,
                             onClick = {
-                                if (cast.casting || dlnaConnected != null || browser.url != null) {
+                                if (cast.casting || dlnaConnected != null) {
                                     Toast.makeText(context, R.string.tv_disconnect_first, Toast.LENGTH_SHORT).show()
                                 } else {
                                     haptics.play(Haptic.Select)
@@ -180,49 +175,6 @@ fun CastDialog(
                     color = Color(0xFFFFAEAB),
                 )
             }
-            Text(
-                text = stringResource(R.string.tv_browser_section),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.65f),
-            )
-            CastDeviceRow(
-                name = stringResource(R.string.tv_browser_start),
-                detail = stringResource(R.string.tv_browser_manual_hint),
-                connecting = browser.starting,
-                connected = browser.url != null,
-                onClick = {
-                    if (browser.url == null) {
-                        WebTvController.start()
-                    }
-                },
-            )
-            if (browser.failure != null) {
-                Text(
-                    text = stringResource(
-                        if (browser.failure == WebTvController.Failure.CONNECTION_LOST)
-                            R.string.tv_connection_lost else R.string.tv_browser_failed
-                    ),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFFFAEAB),
-                )
-            }
-            if (browser.url != null) {
-                Text(
-                    text = browser.url.orEmpty(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("Aurelis TV", browser.url))
-                            Toast.makeText(context, R.string.tv_browser_copied, Toast.LENGTH_SHORT).show()
-                        }
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.9f),
-                )
-            }
             CastActionRow(
                 label = stringResource(R.string.tv_screen_mirroring_settings),
                 destructive = false,
@@ -243,14 +195,13 @@ fun CastDialog(
                     }
                 },
             )
-            if (cast.casting || dlnaConnected != null || browser.url != null) {
+            if (cast.casting || dlnaConnected != null) {
                 CastActionRow(
                     label = stringResource(R.string.cast_stop),
                     onClick = {
                         haptics.play(Haptic.Select)
                         if (cast.casting) CastController.disconnect(resumeHere = true)
                         if (dlnaConnected != null) DlnaController.disconnect(resumeHere = true)
-                        if (browser.url != null) WebTvController.stop(resumeHere = true)
                         onDismiss()
                     },
                 )

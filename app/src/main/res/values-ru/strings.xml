@@ -1228,9 +1228,6 @@
     <string name="cast_device_connected">Идёт трансляция</string>
     <string name="cast_stop">Остановить трансляцию</string>
     <string name="tv_dlna_section">Телевизоры с DLNA / UPnP</string>
-    <string name="tv_browser_section">Веб-браузер Smart TV</string>
-    <string name="tv_browser_start">Откройте Aurelis Music в браузере телевизора</string>
-    <string name="tv_browser_copied">Адрес телевизора скопирован</string>
     <string name="tv_disconnect_first">Сначала отключите текущий вывод на телевизор</string>
     <string name="tv_smartcast_subtitle">Выберите телевизор. Aurelis подберёт лучшее из доступных подключений.</string>
     <string name="tv_smartcast_auto_cast_dlna">Автоматически: Google Cast, при сбое подключения — DLNA</string>
@@ -1241,8 +1238,6 @@
     <string name="tv_dlna_unsupported">Этот телевизор не поддерживает текущий источник или формат аудио.</string>
     <string name="tv_dlna_connect_failed">Не удалось начать воспроизведение на этом телевизоре с DLNA.</string>
     <string name="tv_connection_lost">Связь с телевизором потеряна. Воспроизведение на телефоне остаётся на паузе.</string>
-    <string name="tv_browser_failed">Не удалось открыть сеанс для браузера телевизора в этой сети.</string>
-    <string name="tv_browser_manual_hint">Откройте временный адрес в браузере телевизора</string>
     <string name="tv_screen_mirroring_settings">Дублирование экрана · Настройки Android</string>
     <string name="tv_mirroring_unavailable">Настройки дублирования экрана недоступны на этом устройстве.</string>
     <string name="cast_track_unsupported">Невозможно транслировать этот трек</string>

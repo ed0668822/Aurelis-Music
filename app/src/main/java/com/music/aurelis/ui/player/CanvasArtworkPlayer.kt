@@ -1112,7 +1112,6 @@ internal fun newCanvasDecoder(context: Context): ExoPlayer {
         player.repeatMode = Player.REPEAT_MODE_ONE
         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
             .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
-            .apply { CanvasPlaybackLimits.maxFrameRate?.let(::setMaxVideoFrameRate) }
             .build()
         return player
     } catch (e: Exception) {
@@ -1176,14 +1175,4 @@ private fun AndroidCanvasVideoContents(spec: CanvasVideoSpec, modifier: Modifier
         onResumed = spec.onResumed,
         nowPlaying = spec.nowPlaying,
     )
-}
-
-/**
- * A ceiling on the frame rate canvas videos are decoded at, or null for none.
- * Left unset on the phone; the Android TV app sets it, where a looping 60 fps
- * clip behind the player costs GPU the television does not have to spare.
- */
-object CanvasPlaybackLimits {
-    @Volatile
-    var maxFrameRate: Int? = null
 }

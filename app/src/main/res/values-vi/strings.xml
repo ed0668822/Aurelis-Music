@@ -1165,9 +1165,6 @@
     <string name="cast_device_connected">Đang truyền</string>
     <string name="cast_stop">Dừng truyền</string>
     <string name="tv_dlna_section">TV hỗ trợ DLNA / UPnP</string>
-    <string name="tv_browser_section">Trình duyệt web của TV thông minh</string>
-    <string name="tv_browser_start">Mở Aurelis Music trong trình duyệt trên TV</string>
-    <string name="tv_browser_copied">Đã sao chép địa chỉ dành cho TV</string>
     <string name="tv_disconnect_first">Trước tiên, hãy ngắt kết nối với TV hiện tại</string>
     <string name="tv_smartcast_subtitle">Chọn một TV. Aurelis sẽ chọn kết nối tốt nhất hiện có.</string>
     <string name="tv_smartcast_auto_cast_dlna">Tự động: dùng Google Cast, chuyển sang DLNA nếu kết nối thất bại</string>
@@ -1178,8 +1175,6 @@
     <string name="tv_dlna_unsupported">TV này không hỗ trợ nguồn hoặc định dạng âm thanh hiện tại.</string>
     <string name="tv_dlna_connect_failed">Không thể bắt đầu phát trên TV DLNA này.</string>
     <string name="tv_connection_lost">Đã mất kết nối với TV. Nội dung trên điện thoại vẫn đang tạm dừng.</string>
-    <string name="tv_browser_failed">Không thể mở phiên cho trình duyệt của TV trên mạng này.</string>
-    <string name="tv_browser_manual_hint">Mở địa chỉ tạm thời trong trình duyệt trên TV</string>
     <string name="tv_screen_mirroring_settings">Phản chiếu màn hình · Cài đặt Android</string>
     <string name="tv_mirroring_unavailable">Cài đặt phản chiếu màn hình không có trên thiết bị này.</string>
     <string name="cast_track_unsupported">Không thể truyền bài hát này</string>

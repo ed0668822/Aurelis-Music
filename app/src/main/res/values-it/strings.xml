@@ -1137,9 +1137,6 @@
     <string name="cast_device_connected">Trasmissione in corso</string>
     <string name="cast_stop">Interrompi trasmissione</string>
     <string name="tv_dlna_section">Televisori DLNA / UPnP</string>
-    <string name="tv_browser_section">Browser web della Smart TV</string>
-    <string name="tv_browser_start">Apri Aurelis Music nel browser del televisore</string>
-    <string name="tv_browser_copied">Indirizzo del televisore copiato</string>
     <string name="tv_disconnect_first">Prima scollega l’uscita TV attiva</string>
     <string name="tv_smartcast_subtitle">Scegli un televisore. Aurelis seleziona la migliore connessione disponibile.</string>
     <string name="tv_smartcast_auto_cast_dlna">Automatico: Google Cast, poi DLNA se la connessione non riesce</string>
@@ -1150,8 +1147,6 @@
     <string name="tv_dlna_unsupported">Questo televisore non supporta la sorgente o il formato audio attuale.</string>
     <string name="tv_dlna_connect_failed">Impossibile avviare la riproduzione su questo televisore DLNA.</string>
     <string name="tv_connection_lost">La connessione al televisore è stata interrotta. La riproduzione sul telefono rimane in pausa.</string>
-    <string name="tv_browser_failed">Impossibile aprire una sessione per il browser del televisore su questa rete.</string>
-    <string name="tv_browser_manual_hint">Apri l’indirizzo temporaneo nel browser del televisore</string>
     <string name="tv_screen_mirroring_settings">Duplicazione dello schermo · Impostazioni Android</string>
     <string name="tv_mirroring_unavailable">Le impostazioni di duplicazione dello schermo non sono disponibili su questo dispositivo.</string>
     <string name="cast_track_unsupported">Questo brano non può essere trasmesso</string>

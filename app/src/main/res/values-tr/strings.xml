@@ -1155,9 +1155,6 @@
     <string name="cast_device_connected">Yayınlanıyor</string>
     <string name="cast_stop">Yayını durdur</string>
     <string name="tv_dlna_section">DLNA / UPnP televizyonlar</string>
-    <string name="tv_browser_section">Akıllı TV web tarayıcısı</string>
-    <string name="tv_browser_start">TV tarayıcınızda Aurelis Music’i açın</string>
-    <string name="tv_browser_copied">TV adresi kopyalandı</string>
     <string name="tv_disconnect_first">Önce mevcut TV çıkışının bağlantısını kesin</string>
     <string name="tv_smartcast_subtitle">Bir televizyon seçin. Aurelis en iyi kullanılabilir bağlantıyı seçer.</string>
     <string name="tv_smartcast_auto_cast_dlna">Otomatik: Google Cast, bağlantı başarısız olursa DLNA</string>
@@ -1168,8 +1165,6 @@
     <string name="tv_dlna_unsupported">Bu televizyon mevcut ses kaynağını veya biçimini desteklemiyor.</string>
     <string name="tv_dlna_connect_failed">Bu DLNA televizyonda oynatma başlatılamadı.</string>
     <string name="tv_connection_lost">TV bağlantısı kesildi. Telefonunuzdaki oynatma duraklatılmış durumda.</string>
-    <string name="tv_browser_failed">Bu ağda TV tarayıcısı için oturum açılamadı.</string>
-    <string name="tv_browser_manual_hint">Geçici adresi TV tarayıcınızda açın</string>
     <string name="tv_screen_mirroring_settings">Ekran yansıtma · Android ayarları</string>
     <string name="tv_mirroring_unavailable">Bu cihazda ekran yansıtma ayarları kullanılamıyor.</string>
     <string name="cast_track_unsupported">Bu parça yayınlanamıyor</string>

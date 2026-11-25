@@ -524,9 +524,6 @@
     <string name="cast_device_connected">Casting</string>
     <string name="cast_stop">Stop casting</string>
     <string name="tv_dlna_section">DLNA / UPnP televisions</string>
-    <string name="tv_browser_section">Smart TV web browser</string>
-    <string name="tv_browser_start">Open Aurelis Music in your TV browser</string>
-    <string name="tv_browser_copied">TV address copied</string>
     <string name="tv_disconnect_first">Disconnect the current TV output first</string>
     <string name="tv_smartcast_subtitle">Choose a television. Aurelis selects the best available connection.</string>
     <string name="tv_smartcast_auto_cast_dlna">Automatic: Google Cast, DLNA if connection fails</string>
@@ -537,8 +534,6 @@
     <string name="tv_dlna_unsupported">This television does not support the current audio source or format.</string>
     <string name="tv_dlna_connect_failed">Could not start playback on this DLNA television.</string>
     <string name="tv_connection_lost">The TV connection was lost. Playback on your phone remains paused.</string>
-    <string name="tv_browser_failed">Could not open a TV browser session on this network.</string>
-    <string name="tv_browser_manual_hint">Open the temporary address in your TV browser</string>
     <string name="tv_screen_mirroring_settings">Screen mirroring · Android settings</string>
     <string name="tv_mirroring_unavailable">Screen mirroring settings are not available on this device.</string>
     <string name="cast_track_unsupported">This track can\'t be cast</string>

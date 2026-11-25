@@ -85,23 +85,3 @@ class Speakers(private val all: List<RemoteSpeaker>) : RemoteSpeaker {
     override fun onLocalRepeatChanged(repeatMode: Int) = all.forEach { it.onLocalRepeatChanged(repeatMode) }
     override fun onLocalStartedPlaying(player: Player) = all.forEach { it.onLocalStartedPlaying(player) }
 }
-
-/** A receiver that never is one — the TV build's watch speaker. */
-object NoSpeaker : RemoteSpeaker {
-    override var sink: CastSink? = null
-    override val active = false
-    override val playWhenReady = false
-    override val isPlaying = false
-    override val playbackState = Player.STATE_IDLE
-    override val positionMs = 0L
-    override val durationMs = C.TIME_UNSET
-    override val deviceVolume = 0
-    override fun play() = Unit
-    override fun pause() = Unit
-    override fun seekTo(positionMs: Long) = Unit
-    override fun setVolume(fraction: Float) = Unit
-    override fun onLocalTransition(item: MediaItem?, reason: Int) = Unit
-    override fun onLocalQueueChanged() = Unit
-    override fun onLocalRepeatChanged(repeatMode: Int) = Unit
-    override fun onLocalStartedPlaying(player: Player) = Unit
-}

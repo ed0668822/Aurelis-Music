@@ -1176,9 +1176,6 @@
     <string name="cast_device_connected">Sedang mentransmisikan</string>
     <string name="cast_stop">Hentikan transmisi</string>
     <string name="tv_dlna_section">Televisi DLNA / UPnP</string>
-    <string name="tv_browser_section">Browser web Smart TV</string>
-    <string name="tv_browser_start">Buka Aurelis Music di browser TV Anda</string>
-    <string name="tv_browser_copied">Alamat TV disalin</string>
     <string name="tv_disconnect_first">Putuskan sambungan keluaran TV saat ini terlebih dahulu</string>
     <string name="tv_smartcast_subtitle">Pilih televisi. Aurelis akan memilih koneksi terbaik yang tersedia.</string>
     <string name="tv_smartcast_auto_cast_dlna">Otomatis: Google Cast, lalu DLNA jika koneksi gagal</string>
@@ -1189,8 +1186,6 @@
     <string name="tv_dlna_unsupported">Televisi ini tidak mendukung sumber atau format audio saat ini.</string>
     <string name="tv_dlna_connect_failed">Pemutaran tidak dapat dimulai di televisi DLNA ini.</string>
     <string name="tv_connection_lost">Koneksi ke TV terputus. Pemutaran di ponsel Anda tetap dijeda.</string>
-    <string name="tv_browser_failed">Sesi untuk browser TV tidak dapat dibuka di jaringan ini.</string>
-    <string name="tv_browser_manual_hint">Buka alamat sementara di browser TV Anda</string>
     <string name="tv_screen_mirroring_settings">Pencerminan layar · Setelan Android</string>
     <string name="tv_mirroring_unavailable">Setelan pencerminan layar tidak tersedia di perangkat ini.</string>
     <string name="cast_track_unsupported">Lagu ini tidak dapat ditransmisikan</string>

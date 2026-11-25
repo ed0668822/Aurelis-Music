@@ -1224,9 +1224,6 @@
     <string name="cast_device_connected">משדר</string>
     <string name="cast_stop">עצירת השידור</string>
     <string name="tv_dlna_section">טלוויזיות DLNA / UPnP</string>
-    <string name="tv_browser_section">דפדפן אינטרנט של טלוויזיה חכמה</string>
-    <string name="tv_browser_start">פותחים את Aurelis Music בדפדפן הטלוויזיה</string>
-    <string name="tv_browser_copied">כתובת הטלוויזיה הועתקה</string>
     <string name="tv_disconnect_first">יש לנתק תחילה את הפלט הנוכחי לטלוויזיה</string>
     <string name="tv_smartcast_subtitle">יש לבחור טלוויזיה. Aurelis תבחר את החיבור הטוב ביותר מבין החיבורים הזמינים.</string>
     <string name="tv_smartcast_auto_cast_dlna">אוטומטי: Google Cast, ובמקרה של כשל בחיבור DLNA</string>
@@ -1237,8 +1234,6 @@
     <string name="tv_dlna_unsupported">הטלוויזיה לא תומכת במקור השמע או בפורמט הנוכחי.</string>
     <string name="tv_dlna_connect_failed">לא ניתן להתחיל בהשמעה בטלוויזיית DLNA זו.</string>
     <string name="tv_connection_lost">החיבור לטלוויזיה נותק. ההשמעה בטלפון נשארת מושהית.</string>
-    <string name="tv_browser_failed">לא ניתן לפתוח הפעלה לדפדפן הטלוויזיה ברשת זו.</string>
-    <string name="tv_browser_manual_hint">פותחים את הכתובת הזמנית בדפדפן הטלוויזיה</string>
     <string name="tv_screen_mirroring_settings">שיקוף מסך · הגדרות Android</string>
     <string name="tv_mirroring_unavailable">הגדרות שיקוף המסך אינן זמינות במכשיר זה.</string>
     <string name="cast_track_unsupported">אי אפשר לשדר את השיר הזה</string>

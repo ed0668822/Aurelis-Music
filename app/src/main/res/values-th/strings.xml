@@ -997,9 +997,6 @@
     <string name="cast_device_connected">กำลังแคสต์</string>
     <string name="cast_stop">หยุดแคสต์</string>
     <string name="tv_dlna_section">โทรทัศน์ DLNA / UPnP</string>
-    <string name="tv_browser_section">เว็บเบราว์เซอร์ของสมาร์ททีวี</string>
-    <string name="tv_browser_start">เปิด Aurelis Music ในเบราว์เซอร์ของทีวี</string>
-    <string name="tv_browser_copied">คัดลอกที่อยู่สำหรับทีวีแล้ว</string>
     <string name="tv_disconnect_first">ยกเลิกการเชื่อมต่อกับทีวีเครื่องปัจจุบันก่อน</string>
     <string name="tv_smartcast_subtitle">เลือกโทรทัศน์ Aurelis จะเลือกการเชื่อมต่อที่ดีที่สุดที่ใช้งานได้</string>
     <string name="tv_smartcast_auto_cast_dlna">อัตโนมัติ: ใช้ Google Cast และเปลี่ยนเป็น DLNA หากเชื่อมต่อไม่สำเร็จ</string>
@@ -1010,8 +1007,6 @@
     <string name="tv_dlna_unsupported">โทรทัศน์เครื่องนี้ไม่รองรับแหล่งที่มาหรือรูปแบบเสียงปัจจุบัน</string>
     <string name="tv_dlna_connect_failed">ไม่สามารถเริ่มเล่นบนโทรทัศน์ DLNA เครื่องนี้ได้</string>
     <string name="tv_connection_lost">การเชื่อมต่อกับทีวีขาดหาย การเล่นบนโทรศัพท์ยังคงหยุดชั่วคราว</string>
-    <string name="tv_browser_failed">ไม่สามารถเปิดเซสชันสำหรับเบราว์เซอร์ของทีวีบนเครือข่ายนี้ได้</string>
-    <string name="tv_browser_manual_hint">เปิดที่อยู่ชั่วคราวในเบราว์เซอร์ของทีวี</string>
     <string name="tv_screen_mirroring_settings">การสะท้อนหน้าจอ · การตั้งค่า Android</string>
     <string name="tv_mirroring_unavailable">อุปกรณ์นี้ไม่มีการตั้งค่าการสะท้อนหน้าจอ</string>
     <string name="cast_track_unsupported">ไม่สามารถแคสต์เพลงนี้ได้</string>
