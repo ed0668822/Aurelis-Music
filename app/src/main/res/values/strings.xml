@@ -265,6 +265,8 @@
     <string name="appearance">Appearance</string>
     <string name="storage">Storage</string>
     <string name="your_data">Your data</string>
+    <string name="share_live_presence">Include my session in the live count</string>
+    <string name="share_live_presence_subtitle">Connects to the Aurelis Music server while the app is visible. No account, installation ID, or listening history is sent.</string>
     <string name="miscellaneous">Miscellaneous</string>
     <string name="lossless_hq_audio">Lossless / HQ Audio</string>
     <string name="on_wifi">On Wi-Fi</string>

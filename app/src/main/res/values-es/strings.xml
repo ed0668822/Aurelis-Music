@@ -197,6 +197,8 @@
     <string name="appearance">Apariencia</string>
     <string name="storage">Almacenamiento</string>
     <string name="your_data">Tus datos</string>
+    <string name="share_live_presence">Incluir mi sesión en el contador en vivo</string>
+    <string name="share_live_presence_subtitle">Se conecta al servidor de Aurelis Music mientras la app está visible. No envía tu cuenta, identificador de instalación ni historial de escucha.</string>
     <string name="miscellaneous">Varios</string>
     <string name="lossless_hq_audio">Audio sin pérdida / alta calidad</string>
     <string name="on_wifi">Con Wi-Fi</string>

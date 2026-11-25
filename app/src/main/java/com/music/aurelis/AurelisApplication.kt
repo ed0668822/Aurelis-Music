@@ -200,8 +200,7 @@ class AurelisApplication : Application(), SingletonImageLoader.Factory, Configur
         }
         // Initialize LastFM with saved settings if available
         initLastfm()
-        // The public "apps open right now" count; see Presence.
-        com.music.aurelis.data.presence.AndroidPresence.install(this)
+        com.music.aurelis.data.presence.AndroidPresence.install()
         backgroundInit.join()
     }
 

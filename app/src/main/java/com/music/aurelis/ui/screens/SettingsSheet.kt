@@ -343,6 +343,7 @@ fun SettingsScreen(
     val listenBrainzToken by AppSettings.listenBrainzToken.collectAsStateWithLifecycle()
 
     val replayGenres by AppSettings.replayGenres.collectAsStateWithLifecycle()
+    val shareLivePresence by AppSettings.shareLivePresence.collectAsStateWithLifecycle()
 
     // Read here so the row can say "In a party · ABC123" rather than making
     // somebody open the screen to find out whether they are still in one.
@@ -1629,6 +1630,21 @@ fun SettingsScreen(
                         )
                     },
                     onClick = { AppSettings.setReplayGenres(!replayGenres) },
+                )
+            }
+            val livePresenceTitle = stringResource(R.string.share_live_presence)
+            row(livePresenceTitle, "privacy", "presence", "sessions") {
+                SettingsRow(
+                    icon = SfIcons.BarChart,
+                    title = livePresenceTitle,
+                    subtitle = stringResource(R.string.share_live_presence_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = shareLivePresence,
+                            onCheckedChange = AppSettings::setShareLivePresence,
+                        )
+                    },
+                    onClick = { AppSettings.setShareLivePresence(!shareLivePresence) },
                 )
             }
             val exportDataTitle = stringResource(R.string.export_data)

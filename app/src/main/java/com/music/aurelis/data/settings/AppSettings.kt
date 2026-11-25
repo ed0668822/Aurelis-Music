@@ -702,6 +702,7 @@ object AppSettings {
      * quarter of the page exist; off, the genre chart simply isn't drawn.
      */
     val replayGenres = MutableStateFlow(true)
+    val shareLivePresence = MutableStateFlow(false)
 
     // ── Library ─────────────────────────────────────────────────────────────
 
@@ -1171,6 +1172,7 @@ object AppSettings {
         listenBrainzPrimaryArtistOnly.value = prefs.getBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, false)
         spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
+        shareLivePresence.value = prefs.getBoolean(KEY_SHARE_LIVE_PRESENCE, false)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, false)
         localMusicTab.value = prefs.getString(KEY_LOCAL_MUSIC_TAB, "SONGS")
             ?.takeIf { it in setOf("SONGS", "ARTISTS", "ALBUMS", "PLAYLISTS", "FOLDERS") }
@@ -2117,6 +2119,11 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_DISCORD_INFO_DISMISSED, value).apply()
     }
 
+    fun setShareLivePresence(value: Boolean) {
+        shareLivePresence.value = value
+        prefs.edit().putBoolean(KEY_SHARE_LIVE_PRESENCE, value).apply()
+    }
+
     fun setReplayGenres(value: Boolean) {
         replayGenres.value = value
         prefs.edit().putBoolean(KEY_REPLAY_GENRES, value).apply()
@@ -2535,6 +2542,7 @@ object AppSettings {
     private const val KEY_PRIORITIZE_SYLLABLE_SYNC = "prioritize_syllable_sync"
     private const val KEY_PAXSENIX_API_KEY = "paxsenix_api_key"
     private const val KEY_REPLAY_GENRES = "replay_genres"
+    private const val KEY_SHARE_LIVE_PRESENCE = "share_live_presence"
     private const val KEY_FILTER_NON_MUSIC_AUDIO = "filter_non_music_audio"
     private const val KEY_SHOW_CACHE_FOLDER = "show_cache_folder"
     private const val KEY_LOCAL_MUSIC_TAB = "local_music_tab"

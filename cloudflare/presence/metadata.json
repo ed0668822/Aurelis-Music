@@ -1,0 +1,23 @@
+{
+  "main_module": "worker.mjs",
+  "compatibility_date": "2026-11-25",
+  "bindings": [
+    {
+      "type": "durable_object_namespace",
+      "name": "PRESENCE",
+      "class_name": "AurelisPresence"
+    },
+    {
+      "type": "ratelimit",
+      "name": "PRESENCE_LIMIT",
+      "namespace_id": "426731",
+      "simple": { "limit": 30, "period": 60 }
+    }
+  ],
+  "migrations": { "new_tag": "v1", "new_sqlite_classes": ["AurelisPresence"] },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": false, "head_sampling_rate": 0.01 },
+    "traces": { "enabled": false }
+  }
+}
