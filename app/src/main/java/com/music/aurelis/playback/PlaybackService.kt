@@ -725,29 +725,13 @@ class PlaybackService : MediaLibraryService() {
 
     private var listenBrainzDurationMs: Long? = null
 
-    /**
-     * The gateway connection publishing what's playing to Discord, or null when
-     * the feature is off or no account is connected. See [DiscordRPC].
-     */
+    /** The official SDK connection used to publish the current song to Discord. */
     private var discordRpc: DiscordSocialPresence? = null
 
-    /**
-     * The in-flight presence push. Held so the next one can cancel it: the
-     * pushes hit the network — the artwork has to be mirrored onto Discord's CDN
-     * before the activity can name it — and a skipped-through queue would
-     * otherwise land its presences in whatever order the requests happened to
-     * finish in, leaving the profile on a track the listener passed seconds ago.
-     */
+    /** Cancel the previous update so a late artwork lookup cannot replace the current song. */
     private var discordUpdateJob: Job? = null
 
-    /**
-     * Whether a presence has been published and not yet taken down.
-     *
-     * Tracked because [KizzyRPC.close] — which is what clears the card — opens a
-     * gateway connection first if one isn't already up. Clearing unconditionally
-     * would therefore dial Discord for the sole purpose of sending it nothing,
-     * every time playback paused without a presence ever having been set.
-     */
+    /** Whether an activity has been published and is still eligible to be cleared. */
     private var discordPresenceUp = false
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
