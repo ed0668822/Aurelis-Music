@@ -2,54 +2,33 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 package com.music.aurelis.ui.player
 
-/** Audio-clock mapping for a future MP4 export, independent of rendering or player. */
+const val LYRICS_VIDEO_MAX_MINUTES = 10
+
 data class LyricsVideoLineWindow(val lineIndex: Int, val fromUs: Long, val toUs: Long)
+
 data class LyricsShareTimeline(
-    val segments: List<Pair<Long, Long>>,
     val windows: List<LyricsVideoLineWindow>,
     val durationMs: Long,
 ) {
-    fun trackMsAt(outputUs: Long): Long {
-        var offsetMs = (outputUs / 1000L).coerceAtLeast(0L)
-        for ((start, end) in segments) {
-            val length = (end - start).coerceAtLeast(0L)
-            if (offsetMs < length) return start + offsetMs
-            offsetMs -= length
-        }
-        return segments.lastOrNull()?.second ?: 0L
-    }
+    val exceedsVideoLimit: Boolean
+        get() = durationMs > LYRICS_VIDEO_MAX_MINUTES * 60_000L
 }
 
-/**
- * Builds contiguous excerpts for lyrics video sharing. Keeps gaps explicit,
- * rejects unknown/invalid timestamps and limits output to a minute.
- * Never invents timing for lyrics whose provider has no synchronized data.
- */
-fun lyricsShareTimeline(lines: List<LyricsShareLine>): LyricsShareTimeline? {
-    val segments = mutableListOf<Pair<Long, Long>>()
-    val windows = mutableListOf<LyricsVideoLineWindow>()
-    var outputMs = 0L
-    var lastGap = false
-    for ((index, line) in lines.withIndex()) {
-        if (line.isGap) {
-            lastGap = true
-            continue
-        }
-        val start = line.startMs ?: continue
-        val end = line.endMs ?: continue
-        if (start < 0L || end - start < 300L || outputMs >= 60_000L) continue
-        val duration = minOf(end - start, 60_000L - outputMs)
-        if (duration < 300L) break
-        // Adjacent lines in the same passage share one source segment.
-        val previous = segments.lastOrNull()
-        if (!lastGap && previous != null && start == previous.second) {
-            segments[segments.lastIndex] = previous.first to (start + duration)
-        } else {
-            segments += start to (start + duration)
-        }
-        windows += LyricsVideoLineWindow(index, outputMs * 1000L, (outputMs + duration) * 1000L)
-        outputMs += duration
-        lastGap = false
+/** Places selected lines on the original track clock, leaving unselected passages empty. */
+fun lyricsShareTimeline(lines: List<LyricsShareLine>, trackDurationMs: Long? = null): LyricsShareTimeline? {
+    val knownDuration = trackDurationMs?.takeIf { it > 0L }
+    val timed = lines.mapIndexedNotNull { index, line ->
+        if (line.isGap || line.text.isBlank()) return@mapIndexedNotNull null
+        val start = line.startMs ?: return@mapIndexedNotNull null
+        val end = line.endMs ?: return@mapIndexedNotNull null
+        val boundedEnd = minOf(end, knownDuration ?: end)
+        if (start < 0L || boundedEnd <= start || boundedEnd > Long.MAX_VALUE / 1000L) return@mapIndexedNotNull null
+        LyricsVideoLineWindow(index, start * 1000L, boundedEnd * 1000L)
+    }.sortedBy { it.fromUs }.distinctBy { it.fromUs }
+    if (timed.isEmpty()) return null
+    val windows = timed.mapIndexed { index, window ->
+        val nextStart = timed.getOrNull(index + 1)?.fromUs ?: window.toUs
+        window.copy(toUs = minOf(window.toUs, nextStart))
     }
-    return if (windows.isEmpty()) null else LyricsShareTimeline(segments, windows, outputMs)
+    return LyricsShareTimeline(windows, knownDuration ?: windows.last().toUs / 1000L)
 }

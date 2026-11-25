@@ -1567,6 +1567,7 @@
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Bild</string>
     <string name="lyrics_share_video_requires_timing">Für Videos sind synchronisierte Liedtexte erforderlich.</string>
+    <string name="lyrics_share_video_limit">Der Videoexport ist auf Titel von höchstens %1$d Minuten begrenzt.</string>
     <string name="lyrics_share_partial_timing">Nur Verse mit gültigen Zeitangaben werden hervorgehoben.</string>
     <string name="lyrics_share_format_full">Die Verse sind für dieses Format zu lang. Bearbeite die Auswahl, ändere das Format oder kopiere den Text.</string>
     <string name="lyrics_share_format_card">Karte</string>

@@ -14,7 +14,8 @@ LOCALES = (
 )
 REQUIRED = (
     "lyrics_share_title", "lyrics_share_image", "lyrics_share_video",
-    "lyrics_share_video_requires_timing", "lyrics_share_partial_timing", "lyrics_share_format_full",
+    "lyrics_share_video_requires_timing", "lyrics_share_video_limit",
+    "lyrics_share_partial_timing", "lyrics_share_format_full",
     "lyrics_share_format_card", "lyrics_share_format_square", "lyrics_share_format_story",
     "lyrics_share_with_audio", "lyrics_share_without_audio", "lyrics_share_include_subtext",
     "lyrics_share_edit", "lyrics_share_copy", "lyrics_share_copied", "lyrics_share_preparing",

@@ -72,33 +72,48 @@ internal fun AndroidLyricsShareSheet(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val shareTitle = stringResource(R.string.lyrics_share_title)
     val scope = rememberCoroutineScope()
     val clipboard = remember(context) { context.getSystemService(ClipboardManager::class.java) }
 
-    val timeline = remember(request) { lyricsShareTimeline(request.lines) }
     val localAudioUri = remember(request) { localLyricsAudioUri(request) }
+    var localDurationMs by remember(localAudioUri) { mutableStateOf<Long?>(null) }
+    LaunchedEffect(localAudioUri) {
+        localDurationMs = localAudioUri?.let { localLyricsAudioDurationMs(context, it) } ?: 0L
+    }
+    val timeline = remember(request, localDurationMs) {
+        val duration = localDurationMs?.takeIf { it > 0L } ?: request.trackDurationMs
+        lyricsShareTimeline(request.lines, duration)
+    }
     val hasSubText = request.lines.any { !it.subText.isNullOrBlank() }
     var asVideo by remember(request) { mutableStateOf(false) }
     var format by remember(request) { mutableStateOf(LyricsImageFormat.CARD) }
     var includeSubText by remember(request) { mutableStateOf(hasSubText) }
     var includeAudio by remember(request) { mutableStateOf(localAudioUri != null) }
     val renderFormat = if (asVideo) LyricsImageFormat.STORY else format
+    val renderRequest = remember(request, asVideo) {
+        if (asVideo) request.copy(lines = emptyList()) else request
+    }
+    val renderSubText = includeSubText && !asVideo
     val audioUri = localAudioUri.takeIf { includeAudio }
-    var card by remember(request, renderFormat, includeSubText) { mutableStateOf<RenderedLyricsCard?>(null) }
-    var rendering by remember(request, renderFormat, includeSubText) { mutableStateOf(true) }
-    var renderError by remember(request, renderFormat, includeSubText) { mutableStateOf(false) }
-    var renderAttempt by remember(request, renderFormat, includeSubText) { mutableStateOf(0) }
+    val checkingAudio = asVideo && localAudioUri != null && localDurationMs == null
+    val unreadableAudio = asVideo && audioUri != null && localDurationMs == 0L
+    val canExportVideo = timeline != null && !timeline.exceedsVideoLimit && !checkingAudio && !unreadableAudio
+    var card by remember(renderRequest, renderFormat, renderSubText) { mutableStateOf<RenderedLyricsCard?>(null) }
+    var rendering by remember(renderRequest, renderFormat, renderSubText) { mutableStateOf(true) }
+    var renderError by remember(renderRequest, renderFormat, renderSubText) { mutableStateOf(false) }
+    var renderAttempt by remember(renderRequest, renderFormat, renderSubText) { mutableStateOf(0) }
     var busy by remember(request) { mutableStateOf(false) }
     var saved by remember(request, asVideo, renderFormat, includeSubText, audioUri) { mutableStateOf(false) }
     var copied by remember(request, includeSubText) { mutableStateOf(false) }
     var failure by remember(request, asVideo, renderFormat, includeSubText, audioUri) {
         mutableStateOf<LyricsExportFailure?>(null)
     }
-    var exportedVideo by remember(request, includeSubText, audioUri) { mutableStateOf<File?>(null) }
+    var exportedVideo by remember(request, includeSubText, audioUri, timeline) { mutableStateOf<File?>(null) }
 
-    LaunchedEffect(request, renderFormat, includeSubText, renderAttempt) {
+    LaunchedEffect(renderRequest, renderFormat, renderSubText, renderAttempt) {
         try {
-            card = renderLyricsShareCard(context, request, renderFormat, includeSubText)
+            card = renderLyricsShareCard(context, renderRequest, renderFormat, renderSubText)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
@@ -110,7 +125,7 @@ internal fun AndroidLyricsShareSheet(
 
     fun export(action: LyricsExportAction) {
         val rendered = card ?: return
-        if (busy) return
+        if (busy || (asVideo && !canExportVideo)) return
         busy = true
         failure = null
         saved = false
@@ -125,7 +140,9 @@ internal fun AndroidLyricsShareSheet(
                     val existing = exportedVideo?.takeIf { it.isFile && it.length() > 0L }
                     existing ?: run {
                         val newVideo = try {
-                            exportLocalLyricsVideo(context, rendered, timeline, audioUri)
+                            exportLocalLyricsVideo(
+                                context, rendered.bitmap, timeline, request.lines, includeSubText, audioUri,
+                            )
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (_: Exception) {
@@ -159,7 +176,7 @@ internal fun AndroidLyricsShareSheet(
                         cacheLyricsImage(context, rendered.bitmap)?.let { shareLyricsMediaIntent(it, "image/png") }
                     }
                     checkNotNull(intent)
-                    context.startActivity(Intent.createChooser(intent, context.getString(R.string.lyrics_share_title)))
+                    context.startActivity(Intent.createChooser(intent, shareTitle))
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -173,7 +190,7 @@ internal fun AndroidLyricsShareSheet(
 
     PlayerDrawer(
         hazeState = hazeState,
-        title = stringResource(R.string.lyrics_share_title),
+        title = shareTitle,
         onDismiss = onDismiss,
         modifier = modifier,
         titleGap = 2.dp,
@@ -213,7 +230,9 @@ internal fun AndroidLyricsShareSheet(
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
                 )
-                else -> LyricsCardPreview(rendered, timeline.takeIf { asVideo }, busy)
+                else -> LyricsCardPreview(
+                    rendered, timeline.takeIf { asVideo && canExportVideo }, request.lines, includeSubText, busy,
+                )
             }
 
             if (!asVideo) {
@@ -230,6 +249,23 @@ internal fun AndroidLyricsShareSheet(
                     }
                 }
             } else {
+                if (timeline?.exceedsVideoLimit == true) {
+                    Text(
+                        stringResource(R.string.lyrics_share_video_limit, LYRICS_VIDEO_MAX_MINUTES),
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                if (checkingAudio) {
+                    CircularProgressIndicator(Modifier.size(20.dp))
+                }
+                if (unreadableAudio) {
+                    Text(
+                        stringResource(R.string.lyrics_share_audio_failed),
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 if (localAudioUri != null) {
                     LyricsShareSwitch(
                         label = stringResource(if (includeAudio) R.string.lyrics_share_with_audio else R.string.lyrics_share_without_audio),
@@ -281,12 +317,13 @@ internal fun AndroidLyricsShareSheet(
                 )
                 TextButton(onClick = { export(failed.action) }) { Text(stringResource(R.string.retry)) }
             }
+            val canExport = rendered != null && !busy && (!asVideo || canExportVideo)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ShareAction(
                     label = stringResource(R.string.save),
                     icon = Icons.Rounded.Download,
                     accent = false,
-                    enabled = rendered != null && !busy,
+                    enabled = canExport,
                     saved = saved,
                     savedLabel = stringResource(R.string.saved_bang),
                     modifier = Modifier.weight(1f),
@@ -296,7 +333,7 @@ internal fun AndroidLyricsShareSheet(
                     label = stringResource(R.string.share),
                     icon = Icons.Rounded.IosShare,
                     accent = true,
-                    enabled = rendered != null && !busy,
+                    enabled = canExport,
                     modifier = Modifier.weight(1f),
                     onClick = { export(LyricsExportAction.SHARE) },
                 )
@@ -361,16 +398,25 @@ private fun LyricsShareSwitch(label: String, checked: Boolean, enabled: Boolean,
 }
 
 @Composable
-private fun LyricsCardPreview(card: RenderedLyricsCard, timeline: LyricsShareTimeline?, busy: Boolean) {
+private fun LyricsCardPreview(
+    card: RenderedLyricsCard,
+    timeline: LyricsShareTimeline?,
+    lines: List<LyricsShareLine>,
+    includeSubText: Boolean,
+    busy: Boolean,
+) {
     val bitmap = remember(card) { card.bitmap.asImageBitmap() }
     val ratio = bitmap.width.toFloat() / bitmap.height
-    val highlight = remember(card, timeline) { timeline?.let { LyricsVideoHighlight(card, it) } }
-    val progress = remember(card, timeline) { Animatable(0f) }
+    val animation = remember(timeline, lines, includeSubText) {
+        timeline?.let { LyricsVideoAnimation(it, lines, includeSubText) }
+    }
+    val startFraction = timeline?.let { it.windows.first().fromUs / (it.durationMs * 1000f) } ?: 0f
+    val progress = remember(card, timeline) { Animatable(startFraction) }
     var playing by remember(card, timeline) { mutableStateOf(false) }
 
     LaunchedEffect(timeline, playing, busy) {
         if (timeline != null && playing && !busy) {
-            if (progress.value >= 1f) progress.snapTo(0f)
+            if (progress.value >= 1f) progress.snapTo(startFraction)
             val remainingMs = (timeline.durationMs * (1f - progress.value)).roundToInt().coerceAtLeast(1)
             progress.animateTo(1f, tween(remainingMs, easing = LinearEasing))
             playing = false
@@ -383,11 +429,11 @@ private fun LyricsCardPreview(card: RenderedLyricsCard, timeline: LyricsShareTim
             .clip(RoundedCornerShape(16.dp)),
     ) {
         Image(bitmap, stringResource(R.string.your_lyrics_card), Modifier.fillMaxSize())
-        if (highlight != null && timeline != null) {
+        if (animation != null && timeline != null) {
             Canvas(Modifier.matchParentSize()) {
                 val durationUs = timeline.durationMs * 1000L
                 val positionUs = (durationUs.toDouble() * progress.value).toLong().coerceAtMost(durationUs - 1)
-                highlight.draw(drawContext.canvas.nativeCanvas, size.width, size.height, positionUs)
+                animation.draw(drawContext.canvas.nativeCanvas, size.width, size.height, positionUs)
             }
         }
     }

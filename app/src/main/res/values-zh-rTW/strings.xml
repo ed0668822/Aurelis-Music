@@ -1543,6 +1543,7 @@
     <string name="lyrics_share_video">影片</string>
     <string name="lyrics_share_image">圖片</string>
     <string name="lyrics_share_video_requires_timing">影片需要有時間軸的歌詞。</string>
+    <string name="lyrics_share_video_limit">只能將長度不超過 %1$d 分鐘的歌曲匯出為影片。</string>
     <string name="lyrics_share_partial_timing">只有時間標記有效的歌詞行會反白顯示。</string>
     <string name="lyrics_share_format_full">所選歌詞對於此格式過長。請編輯選取範圍、變更格式或複製文字。</string>
     <string name="lyrics_share_format_card">卡片</string>

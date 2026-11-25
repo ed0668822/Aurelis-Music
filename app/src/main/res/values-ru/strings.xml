@@ -1601,6 +1601,7 @@
     <string name="lyrics_share_video">Видео</string>
     <string name="lyrics_share_image">Изображение</string>
     <string name="lyrics_share_video_requires_timing">Для видео нужен текст с синхронизацией.</string>
+    <string name="lyrics_share_video_limit">Экспорт видео доступен только для треков длительностью до %1$d минут.</string>
     <string name="lyrics_share_partial_timing">Подсвечиваться будут только строки с корректными метками времени.</string>
     <string name="lyrics_share_format_full">Выбранные строки слишком длинные для этого формата. Измените выбор или формат либо скопируйте текст.</string>
     <string name="lyrics_share_format_card">Карточка</string>

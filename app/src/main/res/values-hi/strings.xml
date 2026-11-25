@@ -1567,6 +1567,7 @@
     <string name="lyrics_share_video">वीडियो</string>
     <string name="lyrics_share_image">चित्र</string>
     <string name="lyrics_share_video_requires_timing">वीडियो के लिए समय से मेल खाते गीत के बोल चाहिए।</string>
+    <string name="lyrics_share_video_limit">वीडियो निर्यात केवल %1$d मिनट तक के गानों के लिए उपलब्ध है।</string>
     <string name="lyrics_share_partial_timing">केवल सही समय वाली पंक्तियाँ हाइलाइट की जाएँगी।</string>
     <string name="lyrics_share_format_full">चुनी गई पंक्तियाँ इस फ़ॉर्मैट के लिए बहुत लंबी हैं। चयन बदलें, फ़ॉर्मैट बदलें या टेक्स्ट कॉपी करें।</string>
     <string name="lyrics_share_format_card">कार्ड</string>

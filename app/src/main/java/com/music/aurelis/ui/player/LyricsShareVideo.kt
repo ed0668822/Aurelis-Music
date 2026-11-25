@@ -10,10 +10,15 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import androidx.core.content.FileProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -37,9 +42,24 @@ import java.io.File
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
+import kotlin.math.roundToInt
 
 internal fun localLyricsAudioUri(request: LyricsShareRequest): String? =
     request.song.localUri?.takeIf { it.startsWith("content://") || it.startsWith("file://") }
+
+internal suspend fun localLyricsAudioDurationMs(context: Context, audioUri: String): Long? =
+    withContext(Dispatchers.IO) {
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, Uri.parse(audioUri))
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull()?.takeIf { it > 0L }
+        } catch (_: Exception) {
+            null
+        } finally {
+            runCatching { retriever.release() }
+        }
+    }
 
 private const val VIDEO_WIDTH = 720
 private const val VIDEO_HEIGHT = 1280
@@ -73,28 +93,32 @@ internal suspend fun cacheLyricsImage(context: Context, bitmap: Bitmap): Uri? =
         }
     }
 
-/** Exports the same card and highlights used by the preview. An audio URI selects audible export. */
+/** Exports the artwork and animated verses over a single, untrimmed local audio track. */
 @androidx.annotation.OptIn(UnstableApi::class)
 internal suspend fun exportLocalLyricsVideo(
     context: Context,
-    poster: RenderedLyricsCard,
+    background: Bitmap,
     timeline: LyricsShareTimeline,
+    lines: List<LyricsShareLine>,
+    includeSubText: Boolean,
     audioUri: String?,
 ): File? = withContext(Dispatchers.IO) {
+    if (timeline.exceedsVideoLimit) return@withContext null
     val image = File.createTempFile(LYRICS_CACHE_PREFIX, ".png", lyricsShareCache(context))
     var output: File? = null
     var exportedOk = false
     try {
-        val resized = Bitmap.createScaledBitmap(poster.bitmap, VIDEO_WIDTH, VIDEO_HEIGHT, true)
+        val resized = Bitmap.createScaledBitmap(background, VIDEO_WIDTH, VIDEO_HEIGHT, true)
         val saved = try {
             image.outputStream().use { resized.compress(Bitmap.CompressFormat.PNG, 100, it) }
         } finally {
-            if (resized !== poster.bitmap) resized.recycle()
+            if (resized !== background) resized.recycle()
         }
         if (!saved) return@withContext null
         val video = File.createTempFile(LYRICS_CACHE_PREFIX, ".mp4", image.parentFile)
         output = video
-        val succeeded = transformLyricsVideo(context, image, video, poster, timeline, audioUri)
+        val animation = LyricsVideoAnimation(timeline, lines, includeSubText)
+        val succeeded = transformLyricsVideo(context, image, video, animation, timeline.durationMs, audioUri)
         exportedOk = succeeded && video.isFile && video.length() > 0L
         video.takeIf { exportedOk }
     } finally {
@@ -108,15 +132,15 @@ private suspend fun transformLyricsVideo(
     context: Context,
     image: File,
     output: File,
-    poster: RenderedLyricsCard,
-    timeline: LyricsShareTimeline,
+    animation: LyricsVideoAnimation,
+    durationMs: Long,
     audioUri: String?,
 ): Boolean = withContext(Dispatchers.Main) {
     val still = EditedMediaItem.Builder(
         MediaItem.Builder()
             .setUri(Uri.fromFile(image))
             .setMimeType(MimeTypes.IMAGE_PNG)
-            .setImageDurationMs(timeline.durationMs)
+            .setImageDurationMs(durationMs)
             .build(),
     )
         .setFrameRate(30)
@@ -124,23 +148,12 @@ private suspend fun transformLyricsVideo(
             VIDEO_WIDTH, VIDEO_HEIGHT, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP,
         ))))
         .build()
-    val sequences = mutableListOf(EditedMediaItemSequence.Builder(still).build())
+    val sequences = mutableListOf(EditedMediaItemSequence.withVideoFrom(listOf(still)))
     if (audioUri != null) {
-        val clips = timeline.segments.map { (start, end) ->
-            EditedMediaItem.Builder(
-                MediaItem.Builder()
-                    .setUri(Uri.parse(audioUri))
-                    .setClippingConfiguration(
-                        MediaItem.ClippingConfiguration.Builder()
-                            .setStartPositionMs(start)
-                            .setEndPositionMs(end)
-                            .build(),
-                    ).build(),
-            ).setRemoveVideo(true).build()
-        }
-        if (clips.isNotEmpty()) sequences += EditedMediaItemSequence.Builder(clips).build()
+        val audio = EditedMediaItem.Builder(MediaItem.fromUri(audioUri)).build()
+        sequences += EditedMediaItemSequence.withAudioFrom(listOf(audio))
     }
-    val overlay = SyncedLyricsVideoOverlay(poster, timeline)
+    val overlay = SyncedLyricsVideoOverlay(animation)
     val composition = Composition.Builder(sequences)
         .setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(overlay)))))
         .build()
@@ -180,27 +193,30 @@ private suspend fun transformLyricsVideo(
     }
 }
 
-internal class LyricsVideoHighlight(
-    private val card: RenderedLyricsCard,
+internal class LyricsVideoAnimation(
     private val timeline: LyricsShareTimeline,
+    private val lines: List<LyricsShareLine>,
+    private val includeSubText: Boolean,
 ) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val lyricPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        typeface = Typeface.DEFAULT_BOLD
+    }
+    private val translationPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private var laidOutLineIndex = -1
+    private var lyric: StaticLayout? = null
+    private var translation: StaticLayout? = null
+    private val fontSizes = floatArrayOf(56f, 48f, 40f, 32f, 24f)
 
     fun draw(canvas: Canvas, width: Float, height: Float, positionUs: Long) {
         canvas.save()
-        canvas.scale(width / card.bitmap.width, height / card.bitmap.height)
+        canvas.scale(width / VIDEO_WIDTH, height / VIDEO_HEIGHT)
         val active = timeline.windows.firstOrNull { positionUs >= it.fromUs && positionUs < it.toUs }
-        val bounds = active?.let { card.lineBounds[it.lineIndex] }
-        if (bounds != null) {
-            paint.color = Color.argb(36, 255, 255, 255)
-            canvas.drawRoundRect(bounds, 16f, 16f, paint)
-            paint.color = Color.WHITE
-            canvas.drawRoundRect(bounds.left - 13f, bounds.top + 4f, bounds.left - 7f,
-                bounds.bottom - 4f, 3f, 3f, paint)
-        }
-        val bottom = card.bitmap.height.toFloat()
-        val right = card.bitmap.width.toFloat()
-        val top = bottom - 12f
+        if (active != null) drawVerse(canvas, active, positionUs)
+        val bottom = VIDEO_HEIGHT.toFloat()
+        val right = VIDEO_WIDTH.toFloat()
+        val top = bottom - 8f
         paint.color = Color.argb(95, 255, 255, 255)
         canvas.drawRect(0f, top, right, bottom, paint)
         paint.color = Color.WHITE
@@ -208,20 +224,67 @@ internal class LyricsVideoHighlight(
         canvas.drawRect(0f, top, right * fraction, bottom, paint)
         canvas.restore()
     }
+
+    private fun drawVerse(canvas: Canvas, window: LyricsVideoLineWindow, positionUs: Long) {
+        if (laidOutLineIndex != window.lineIndex) layoutVerse(window.lineIndex)
+        val main = lyric ?: return
+        val sub = translation
+        val transitionUs = minOf(250_000L, (window.toUs - window.fromUs) / 2)
+        val reveal = (minOf(positionUs - window.fromUs, window.toUs - positionUs).toFloat() / transitionUs)
+            .coerceIn(0f, 1f)
+        val opacity = reveal * reveal * (3f - 2f * reveal)
+        val contentHeight = main.height + (sub?.let { it.height + 16 } ?: 0)
+        val scale = (VIDEO_HEIGHT * 0.55f / contentHeight.coerceAtLeast(1)).coerceAtMost(1f)
+        val textLeft = (VIDEO_WIDTH - main.width * scale) / 2f
+        val textTop = (VIDEO_HEIGHT - contentHeight * scale) / 2f + (1f - opacity) * 24f
+        canvas.save()
+        canvas.translate(textLeft, textTop)
+        canvas.scale(scale, scale)
+        paint.color = Color.argb((135f * opacity).roundToInt(), 0, 0, 0)
+        canvas.drawRoundRect(
+            -18f, -18f, main.width + 18f, contentHeight + 18f, 24f, 24f, paint,
+        )
+        lyricPaint.alpha = (255f * opacity).roundToInt()
+        translationPaint.alpha = (205f * opacity).roundToInt()
+        main.draw(canvas)
+        if (sub != null) {
+            canvas.translate(0f, main.height + 16f)
+            sub.draw(canvas)
+        }
+        canvas.restore()
+    }
+
+    private fun layoutVerse(index: Int) {
+        val line = lines[index]
+        val subText = line.subText?.takeIf { includeSubText && it.isNotBlank() && it != line.text }
+        for (size in fontSizes) {
+            lyricPaint.textSize = size
+            translationPaint.textSize = size * 0.67f
+            val main = textLayout(line.text, lyricPaint)
+            val sub = subText?.let { textLayout(it, translationPaint) }
+            lyric = main
+            translation = sub
+            if (main.height + (sub?.height ?: 0) <= VIDEO_HEIGHT * 0.55f) break
+        }
+        laidOutLineIndex = index
+    }
+
+    private fun textLayout(text: String, textPaint: TextPaint): StaticLayout =
+        StaticLayout.Builder.obtain(text, 0, text.length, textPaint, VIDEO_WIDTH - 112)
+            .setAlignment(Layout.Alignment.ALIGN_CENTER)
+            .setIncludePad(false)
+            .build()
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
 private class SyncedLyricsVideoOverlay(
-    card: RenderedLyricsCard,
-    timeline: LyricsShareTimeline,
+    private val animation: LyricsVideoAnimation,
 ) : BitmapOverlay() {
     private val bitmap = Bitmap.createBitmap(VIDEO_WIDTH, VIDEO_HEIGHT, Bitmap.Config.ARGB_8888)
     private val canvas = Canvas(bitmap)
-    private val highlight = LyricsVideoHighlight(card, timeline)
-
     override fun getBitmap(presentationTimeUs: Long): Bitmap {
         bitmap.eraseColor(Color.TRANSPARENT)
-        highlight.draw(canvas, VIDEO_WIDTH.toFloat(), VIDEO_HEIGHT.toFloat(), presentationTimeUs)
+        animation.draw(canvas, VIDEO_WIDTH.toFloat(), VIDEO_HEIGHT.toFloat(), presentationTimeUs)
         return bitmap
     }
 }

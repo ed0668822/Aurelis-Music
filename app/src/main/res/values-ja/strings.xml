@@ -1544,6 +1544,7 @@
     <string name="lyrics_share_video">動画</string>
     <string name="lyrics_share_image">画像</string>
     <string name="lyrics_share_video_requires_timing">動画には同期された歌詞が必要です。</string>
+    <string name="lyrics_share_video_limit">%1$d 分以内の曲のみ動画として書き出せます。</string>
     <string name="lyrics_share_partial_timing">有効なタイミング情報がある行だけが強調表示されます。</string>
     <string name="lyrics_share_format_full">選択した歌詞はこの形式には長すぎます。選択や形式を変更するか、テキストをコピーしてください。</string>
     <string name="lyrics_share_format_card">カード</string>

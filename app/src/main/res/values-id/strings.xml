@@ -1543,6 +1543,7 @@
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Gambar</string>
     <string name="lyrics_share_video_requires_timing">Video memerlukan lirik tersinkronisasi.</string>
+    <string name="lyrics_share_video_limit">Ekspor video hanya tersedia untuk lagu berdurasi maksimal %1$d menit.</string>
     <string name="lyrics_share_partial_timing">Hanya baris dengan waktu yang valid yang akan disorot.</string>
     <string name="lyrics_share_format_full">Baris yang dipilih terlalu panjang untuk format ini. Edit pilihan, ubah format, atau salin teks.</string>
     <string name="lyrics_share_format_card">Kartu</string>

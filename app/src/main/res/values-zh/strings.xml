@@ -1543,6 +1543,7 @@
     <string name="lyrics_share_video">视频</string>
     <string name="lyrics_share_image">图片</string>
     <string name="lyrics_share_video_requires_timing">视频需要有时间轴的歌词。</string>
+    <string name="lyrics_share_video_limit">只能将时长不超过 %1$d 分钟的歌曲导出为视频。</string>
     <string name="lyrics_share_partial_timing">只有时间标记有效的歌词行会高亮。</string>
     <string name="lyrics_share_format_full">所选歌词对于此格式过长。请编辑选择、更改格式或复制文本。</string>
     <string name="lyrics_share_format_card">卡片</string>

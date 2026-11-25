@@ -1621,6 +1621,7 @@
     <string name="lyrics_share_video">Wideo</string>
     <string name="lyrics_share_image">Obraz</string>
     <string name="lyrics_share_video_requires_timing">Film wymaga zsynchronizowanego tekstu piosenki.</string>
+    <string name="lyrics_share_video_limit">Eksport wideo jest dostępny dla utworów trwających maksymalnie %1$d minut.</string>
     <string name="lyrics_share_partial_timing">Podświetlone zostaną tylko wersy z poprawnymi znacznikami czasu.</string>
     <string name="lyrics_share_format_full">Wybrane wersy są za długie dla tego formatu. Zmień wybór lub format albo skopiuj tekst.</string>
     <string name="lyrics_share_format_card">Karta</string>

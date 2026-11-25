@@ -1572,6 +1572,7 @@
     <string name="lyrics_share_video">Vídeo</string>
     <string name="lyrics_share_image">Imagem</string>
     <string name="lyrics_share_video_requires_timing">O vídeo requer letras sincronizadas.</string>
+    <string name="lyrics_share_video_limit">Só é possível exportar vídeos de músicas com até %1$d minutos.</string>
     <string name="lyrics_share_partial_timing">Só serão realçados os versos com tempos válidos.</string>
     <string name="lyrics_share_format_full">Os versos selecionados são demasiado longos para este formato. Edite a seleção, altere o formato ou copie o texto.</string>
     <string name="lyrics_share_format_card">Cartão</string>

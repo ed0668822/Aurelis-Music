@@ -1595,6 +1595,7 @@
     <string name="lyrics_share_video">וידאו</string>
     <string name="lyrics_share_image">תמונה</string>
     <string name="lyrics_share_video_requires_timing">נדרשות מילים מתוזמנות ליצירת סרטון.</string>
+    <string name="lyrics_share_video_limit">ייצוא וידאו זמין לרצועות באורך של עד %1$d דקות.</string>
     <string name="lyrics_share_partial_timing">רק שורות עם תזמון תקין יודגשו.</string>
     <string name="lyrics_share_format_full">השורות שנבחרו ארוכות מדי לפורמט הזה. אפשר לערוך את הבחירה, לשנות את הפורמט או להעתיק את הטקסט.</string>
     <string name="lyrics_share_format_card">כרטיס</string>

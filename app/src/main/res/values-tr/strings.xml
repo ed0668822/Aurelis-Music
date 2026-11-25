@@ -1524,6 +1524,7 @@
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Görsel</string>
     <string name="lyrics_share_video_requires_timing">Video için zamanlanmış şarkı sözleri gerekir.</string>
+    <string name="lyrics_share_video_limit">Yalnızca %1$d dakika veya daha kısa parçalar video olarak dışa aktarılabilir.</string>
     <string name="lyrics_share_partial_timing">Yalnızca geçerli zaman bilgisi olan dizeler vurgulanır.</string>
     <string name="lyrics_share_format_full">Seçilen dizeler bu biçim için fazla uzun. Seçimi düzenleyin, biçimi değiştirin veya metni kopyalayın.</string>
     <string name="lyrics_share_format_card">Kart</string>

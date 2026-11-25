@@ -1417,6 +1417,7 @@
     <string name="lyrics_share_video">동영상</string>
     <string name="lyrics_share_image">이미지</string>
     <string name="lyrics_share_video_requires_timing">동영상을 만들려면 동기화된 가사가 필요합니다.</string>
+    <string name="lyrics_share_video_limit">길이가 %1$d분 이하인 곡만 동영상으로 내보낼 수 있습니다.</string>
     <string name="lyrics_share_partial_timing">유효한 시간 정보가 있는 가사만 강조 표시됩니다.</string>
     <string name="lyrics_share_format_full">선택한 가사가 이 형식에 비해 너무 깁니다. 선택이나 형식을 바꾸거나 텍스트를 복사하세요.</string>
     <string name="lyrics_share_format_card">카드</string>

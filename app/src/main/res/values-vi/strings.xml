@@ -1483,6 +1483,7 @@
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Hình ảnh</string>
     <string name="lyrics_share_video_requires_timing">Video cần lời bài hát đã đồng bộ thời gian.</string>
+    <string name="lyrics_share_video_limit">Chỉ có thể xuất video cho các bài hát dài tối đa %1$d phút.</string>
     <string name="lyrics_share_partial_timing">Chỉ những dòng có mốc thời gian hợp lệ mới được làm nổi bật.</string>
     <string name="lyrics_share_format_full">Các dòng đã chọn quá dài cho định dạng này. Hãy sửa lựa chọn, đổi định dạng hoặc sao chép văn bản.</string>
     <string name="lyrics_share_format_card">Thẻ</string>

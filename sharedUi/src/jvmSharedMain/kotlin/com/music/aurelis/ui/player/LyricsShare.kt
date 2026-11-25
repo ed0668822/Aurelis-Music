@@ -66,6 +66,7 @@ data class LyricsShareRequest(
     /** Resolved sleeve — remote URL or local file, whatever the player found. */
     val artworkUrl: String?,
     val lines: List<LyricsShareLine>,
+    val trackDurationMs: Long? = null,
 )
 
 /**
@@ -104,6 +105,7 @@ internal fun rememberLyricsPicker(
     subLines: List<LyricLine>?,
     artworkUrl: String?,
     lyricsOffsetMs: Int,
+    trackDurationMs: Long,
     haptics: Haptics,
     /** Where the finished card goes; never called on a platform that has none. */
     onCard: (LyricsShareRequest) -> Unit,
@@ -153,14 +155,18 @@ internal fun rememberLyricsPicker(
                     ?: ((index + 1) until source.size).firstNotNullOfOrNull { next ->
                         source[next].timeMs.takeIf { it > line.timeMs }
                     }
+                val adjustedStart = line.timeMs.takeIf { it >= 0L }?.let {
+                    adjustedLyricsSeekTarget(it, lyricsOffsetMs)
+                }
+                val adjustedEnd = end?.let { adjustedLyricsSeekTarget(it, lyricsOffsetMs) }
+                    ?: adjustedStart?.takeIf { index == source.lastIndex && trackDurationMs > it }
+                        ?.let { minOf(trackDurationMs, it + 5_000L) }
                 add(
                     LyricsShareLine(
                         text = line.text,
                         subText = sub?.takeIf { it.isNotBlank() && it != line.text },
-                        startMs = line.timeMs.takeIf { it >= 0L }?.let {
-                            adjustedLyricsSeekTarget(it, lyricsOffsetMs)
-                        },
-                        endMs = end?.let { adjustedLyricsSeekTarget(it, lyricsOffsetMs) },
+                        startMs = adjustedStart,
+                        endMs = adjustedEnd,
                     ),
                 )
             }
@@ -168,7 +174,12 @@ internal fun rememberLyricsPicker(
         // An empty pick draws nothing worth sending, so it is simply left alone
         // rather than putting an empty card on screen to be dismissed.
         if (picked.isNotEmpty()) {
-            onCard(LyricsShareRequest(song = song, artworkUrl = artworkUrl, lines = picked))
+            onCard(LyricsShareRequest(
+                song = song,
+                artworkUrl = artworkUrl,
+                lines = picked,
+                trackDurationMs = trackDurationMs.takeIf { it > 0L },
+            ))
         }
     }
 

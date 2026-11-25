@@ -1443,6 +1443,7 @@
     <string name="lyrics_share_video">Video</string>
     <string name="lyrics_share_image">Image</string>
     <string name="lyrics_share_video_requires_timing">Video requires timed lyrics.</string>
+    <string name="lyrics_share_video_limit">Video export is limited to tracks of %1$d minutes or less.</string>
     <string name="lyrics_share_partial_timing">Only verses with usable timing will be highlighted.</string>
     <string name="lyrics_share_format_full">The selected verses are too long for this format. Edit the selection, change the format, or copy the text.</string>
     <string name="lyrics_share_format_card">Card</string>

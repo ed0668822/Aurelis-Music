@@ -1549,6 +1549,7 @@
     <string name="lyrics_share_video">วิดีโอ</string>
     <string name="lyrics_share_image">รูปภาพ</string>
     <string name="lyrics_share_video_requires_timing">วิดีโอต้องใช้เนื้อเพลงที่ซิงค์เวลาแล้ว</string>
+    <string name="lyrics_share_video_limit">ส่งออกวิดีโอได้เฉพาะเพลงที่ยาวไม่เกิน %1$d นาที</string>
     <string name="lyrics_share_partial_timing">จะเน้นเฉพาะบรรทัดที่มีข้อมูลเวลาถูกต้อง</string>
     <string name="lyrics_share_format_full">บรรทัดที่เลือกยาวเกินไปสำหรับรูปแบบนี้ แก้ไขการเลือก เปลี่ยนรูปแบบ หรือคัดลอกข้อความ</string>
     <string name="lyrics_share_format_card">การ์ด</string>
