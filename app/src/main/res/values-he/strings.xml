@@ -34,6 +34,9 @@
     <string name="downloaded_songs">שירים שהורדו</string>
     <string name="local_music">מוזיקה מקומית</string>
     <string name="audio_files_on_device">קובצי אודיו במכשיר</string>
+    <string name="local_music_loading">קורא את המוזיקה במכשיר הזה…</string>
+    <string name="local_music_find_duplicates">חיפוש שירים כפולים</string>
+    <string name="local_music_allow_access">אישור גישה לקובצי שמע</string>
     <string name="on_device">במכשיר</string>
     <string name="playlists">פלייליסטים</string>
     <string name="new_playlist">פלייליסט חדש</string>

@@ -34,6 +34,9 @@
     <string name="downloaded_songs">Músicas baixadas</string>
     <string name="local_music">Música local</string>
     <string name="audio_files_on_device">Arquivos de áudio no dispositivo</string>
+    <string name="local_music_loading">A carregar a música deste dispositivo…</string>
+    <string name="local_music_find_duplicates">Procurar músicas duplicadas</string>
+    <string name="local_music_allow_access">Permitir acesso a ficheiros de áudio</string>
     <string name="on_device">No dispositivo</string>
     <string name="playlists">Playlists</string>
     <string name="new_playlist">Nova playlist</string>

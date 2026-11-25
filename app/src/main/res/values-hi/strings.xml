@@ -32,6 +32,9 @@
     <string name="downloaded_songs">डाउनलोड किए गए गाने</string>
     <string name="local_music">लोकल संगीत</string>
     <string name="audio_files_on_device">डिवाइस पर ऑडियो फ़ाइलें</string>
+    <string name="local_music_loading">इस डिवाइस पर संगीत पढ़ा जा रहा है…</string>
+    <string name="local_music_find_duplicates">डुप्लिकेट गाने खोजें</string>
+    <string name="local_music_allow_access">ऑडियो का ऐक्सेस दें</string>
     <string name="on_device">डिवाइस पर</string>
     <string name="playlists">प्लेलिस्ट</string>
     <string name="new_playlist">नई प्लेलिस्ट</string>

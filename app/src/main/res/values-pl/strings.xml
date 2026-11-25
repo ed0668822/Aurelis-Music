@@ -35,6 +35,9 @@
     <string name="downloaded_songs">Pobrane piosenki</string>
     <string name="local_music">Muzyka lokalna</string>
     <string name="audio_files_on_device">Pliki audio na urządzeniu</string>
+    <string name="local_music_loading">Wczytywanie muzyki z tego urządzenia…</string>
+    <string name="local_music_find_duplicates">Znajdź duplikaty utworów</string>
+    <string name="local_music_allow_access">Zezwól na dostęp do dźwięku</string>
     <string name="on_device">Na urządzeniu</string>
     <string name="playlists">Playlisty</string>
     <string name="new_playlist">Nowa playlista</string>

@@ -32,6 +32,9 @@
     <string name="downloaded_songs">İndirilen şarkılar</string>
     <string name="local_music">Yerel Müzik</string>
     <string name="audio_files_on_device">Cihazdaki ses dosyaları</string>
+    <string name="local_music_loading">Bu cihazdaki müzikler okunuyor…</string>
+    <string name="local_music_find_duplicates">Yinelenen şarkıları bul</string>
+    <string name="local_music_allow_access">Ses dosyalarına erişime izin ver</string>
     <string name="on_device">Cihazda</string>
     <string name="playlists">Çalma listeleri</string>
     <string name="new_playlist">Yeni çalma listesi</string>

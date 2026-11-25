@@ -35,6 +35,9 @@
     <string name="search_source_addons">애드온</string>
     <string name="search_addons_none">켜진 애드온이 없습니다. 설정 → 소스에서 하나 켜세요.</string>
     <string name="audio_files_on_device">기기의 오디오 파일</string>
+    <string name="local_music_loading">이 기기의 음악을 불러오는 중…</string>
+    <string name="local_music_find_duplicates">중복된 곡 찾기</string>
+    <string name="local_music_allow_access">오디오 접근 허용</string>
     <string name="on_device">기기 내</string>
     <string name="playlists">재생목록</string>
     <string name="new_playlist">새 재생목록</string>

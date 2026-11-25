@@ -31,6 +31,9 @@
     <string name="downloaded_songs">Lagu yang diunduh</string>
     <string name="local_music">Musik Lokal</string>
     <string name="audio_files_on_device">File audio di perangkat</string>
+    <string name="local_music_loading">Membaca musik di perangkat ini…</string>
+    <string name="local_music_find_duplicates">Cari lagu duplikat</string>
+    <string name="local_music_allow_access">Izinkan akses audio</string>
     <string name="on_device">Di Perangkat</string>
     <string name="playlists">Playlist</string>
     <string name="new_playlist">Playlist baru</string>
