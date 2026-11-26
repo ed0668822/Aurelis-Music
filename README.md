@@ -35,26 +35,9 @@ The standard APK targets **64-bit ARM devices (`arm64-v8a`)** running **Android 
 2. Open the APK on your Android device and follow the installation prompts.
 3. Allow access to audio files when Aurelis Music asks, so it can read your local library.
 
-## Build from source
-
-Use **JDK 17**, the **Android SDK Platform 37**, and **CMake 3.22.1**. Set your Android SDK path in `local.properties` as `sdk.dir`, or through `ANDROID_HOME`.
-
-```sh
-git clone https://github.com/ed0668822/Aurelis-Music.git
-cd Aurelis-Music
-./gradlew :app:assembleDevDebug
-```
-
-On Windows, use `gradlew.bat :app:assembleDevDebug`. Find the APK under `app/build/outputs/apk/dev/debug/`.
-
 ## Contributing
 
 Open a pull request with a short explanation of the change and how you tested it. Include screenshots for visual changes and the Android version you used for device testing.
-
-## Credits
-
-- [BitChord](https://github.com/kushagrasinghx/BitChord) by Kushagra Singh and contributors is the upstream project Aurelis Music is based on.
-- [Mornye](https://github.com/mornyeapp/Mornye) served as a reference for AutoMix work.
 
 ## License
 
